@@ -1,6 +1,27 @@
-# Project Agents
+# Repository Guidelines
 
-This file provides guidance and memory for Codex CLI.
+## Project Structure & Module Organization
+Design artifacts live in `docs/` (`project_brief.md`, `prd.md`, `architecture.md`, `front-end-spec.md`). Follow the architecture’s Gradle monorepo layout: `framework/` (core Kotlin libraries), `products/` (Spring Boot apps such as `licensing-server`), `apps/admin/` (React-Admin portal), `shared/` (cross-cutting API/types), `build-logic/` (convention plugins), and `scripts/` (developer automation). Keep Docker assets like `compose.yml` at the root. Co-locate Kotlin tests with their modules (`src/test/kotlin`, `src/integrationTest/kotlin`) and keep frontend stories next to the components they exercise.
+
+## Build, Test, and Development Commands
+Run `./scripts/init-dev.sh` to launch the local stack (Postgres, Keycloak, supporting services). Start the modular monolith with `./gradlew :products:licensing-server:bootRun`; use `npm run dev --prefix apps/admin` for the operator portal. `./gradlew clean build` runs ktlint, Detekt, Konsist, unit, and Testcontainers integration tests—treat it as the pre-push gate. Frontend unit tests run via `npm test --prefix apps/admin`, with Playwright end-to-end checks executed through `npx playwright test` when flows are ready.
+
+## Coding Style & Naming Conventions
+Backend code stays on Kotlin 2.0.10/Spring Boot 3.3.5 with 4-space indentation and `ktlint`-compatible formatting. Respect hexagonal boundaries enforced by Spring Modulith and Konsist; return `Either<Error, Success>` from domain services and use jOOQ for read models. Frontend code uses TypeScript 5, React functional components, and MUI tokens; name components in PascalCase, hooks in camelCase, and co-locate styles with components. Keep dependency versions in `gradle/libs.versions.toml`; never hard-code them inside module `build.gradle.kts`.
+
+## Testing Guidelines
+Follow Constitutional TDD: write Kotest specs first, run them with Testcontainers (Postgres, Keycloak) instead of in-memory doubles, and forbid H2 or Mockito-heavy tests. Enforce ≥85% line and ≥80% mutation coverage per architecture doc. Frontend stories require Jest + React Testing Library coverage and accessibility checks; use Playwright for end-to-end CQRS flows triggered from React-Admin.
+
+## Commit & Pull Request Guidelines
+Current history (`initial commit`) is sparse; use imperative, descriptive titles and prefer Conventional Commit prefixes (e.g., `feat: add licensing aggregate`) for clarity. Each PR must summarize scope, reference relevant PRD/architecture sections, list commands run (including `./gradlew clean build` and frontend suites), attach UI evidence when behavior changes, and link any tracked issue. Update affected docs in `docs/` and capture follow-up tasks before requesting review.
+
+## Documentation & Workflow Notes
+Regenerate AI workflows with `npx bmad-method install -f -i codex` after agent or checklist changes, and run `npx bmad-method validate` before merging. Document new scripts or conventions directly in `docs/architecture.md` to keep the single source of truth in sync.
+
+
+
+
+
 
 <!-- BEGIN: BMAD-AGENTS -->
 # BMAD-METHOD Agents and Tasks
@@ -1564,10 +1585,10 @@ Then proceed with the manual method below ONLY if markdownExploder is false.]]
    ```
 
 3. **What it does**:
-   - Automatically splits the document by level 2 sections
-   - Creates properly named files
-   - Adjusts heading levels appropriately
-   - Handles all edge cases with code blocks and special markdown
+    - Automatically splits the document by level 2 sections
+    - Creates properly named files
+    - Adjusts heading levels appropriately
+    - Handles all edge cases with code blocks and special markdown
 
 If the user has @kayvan/markdown-tree-parser installed, use it and skip the manual process below.
 
@@ -1590,13 +1611,13 @@ CRITICAL AEGNT SHARDING RULES:
 1. Read the entire document content
 2. Identify all level 2 sections (## headings)
 3. For each level 2 section:
-   - Extract the section heading and ALL content until the next level 2 section
-   - Include all subsections, code blocks, diagrams, lists, tables, etc.
-   - Be extremely careful with:
-     - Fenced code blocks (```) - ensure you capture the full block including closing backticks and account for potential misleading level 2's that are actually part of a fenced section example
-     - Mermaid diagrams - preserve the complete diagram syntax
-     - Nested markdown elements
-     - Multi-line content that might contain ## inside code blocks
+    - Extract the section heading and ALL content until the next level 2 section
+    - Include all subsections, code blocks, diagrams, lists, tables, etc.
+    - Be extremely careful with:
+        - Fenced code blocks (```) - ensure you capture the full block including closing backticks and account for potential misleading level 2's that are actually part of a fenced section example
+        - Mermaid diagrams - preserve the complete diagram syntax
+        - Nested markdown elements
+        - Multi-line content that might contain ## inside code blocks
 
 CRITICAL: Use proper parsing that understands markdown context. A ## inside a code block is NOT a section header.]]
 
@@ -1605,13 +1626,13 @@ CRITICAL: Use proper parsing that understands markdown context. A ## inside a co
 For each extracted section:
 
 1. **Generate filename**: Convert the section heading to lowercase-dash-case
-   - Remove special characters
-   - Replace spaces with dashes
-   - Example: "## Tech Stack" → `tech-stack.md`
+    - Remove special characters
+    - Replace spaces with dashes
+    - Example: "## Tech Stack" → `tech-stack.md`
 
 2. **Adjust heading levels**:
-   - The level 2 heading becomes level 1 (# instead of ##) in the sharded new document
-   - All subsection levels decrease by 1:
+    - The level 2 heading becomes level 1 (# instead of ##) in the sharded new document
+    - All subsection levels decrease by 1:
 
    ```txt
      - ### → ##
@@ -1738,46 +1759,46 @@ Identify, assess, and prioritize risks in the story implementation. Provide risk
 - `OPS`: Operational Risks
 
 1. **Technical Risks (TECH)**
-   - Architecture complexity
-   - Integration challenges
-   - Technical debt
-   - Scalability concerns
-   - System dependencies
+    - Architecture complexity
+    - Integration challenges
+    - Technical debt
+    - Scalability concerns
+    - System dependencies
 
 2. **Security Risks (SEC)**
-   - Authentication/authorization flaws
-   - Data exposure vulnerabilities
-   - Injection attacks
-   - Session management issues
-   - Cryptographic weaknesses
+    - Authentication/authorization flaws
+    - Data exposure vulnerabilities
+    - Injection attacks
+    - Session management issues
+    - Cryptographic weaknesses
 
 3. **Performance Risks (PERF)**
-   - Response time degradation
-   - Throughput bottlenecks
-   - Resource exhaustion
-   - Database query optimization
-   - Caching failures
+    - Response time degradation
+    - Throughput bottlenecks
+    - Resource exhaustion
+    - Database query optimization
+    - Caching failures
 
 4. **Data Risks (DATA)**
-   - Data loss potential
-   - Data corruption
-   - Privacy violations
-   - Compliance issues
-   - Backup/recovery gaps
+    - Data loss potential
+    - Data corruption
+    - Privacy violations
+    - Compliance issues
+    - Backup/recovery gaps
 
 5. **Business Risks (BUS)**
-   - Feature doesn't meet user needs
-   - Revenue impact
-   - Reputation damage
-   - Regulatory non-compliance
-   - Market timing
+    - Feature doesn't meet user needs
+    - Revenue impact
+    - Reputation damage
+    - Regulatory non-compliance
+    - Market timing
 
 6. **Operational Risks (OPS)**
-   - Deployment failures
-   - Monitoring gaps
-   - Incident response readiness
-   - Documentation inadequacy
-   - Knowledge transfer issues
+    - Deployment failures
+    - Monitoring gaps
+    - Incident response readiness
+    - Documentation inadequacy
+    - Knowledge transfer issues
 
 ## Risk Analysis Process
 
@@ -2015,24 +2036,24 @@ Maximum score = 100 (minimal risk)
 Based on risk profile, recommend:
 
 1. **Testing Priority**
-   - Which tests to run first
-   - Additional test types needed
-   - Test environment requirements
+    - Which tests to run first
+    - Additional test types needed
+    - Test environment requirements
 
 2. **Development Focus**
-   - Code review emphasis areas
-   - Additional validation needed
-   - Security controls to implement
+    - Code review emphasis areas
+    - Additional validation needed
+    - Security controls to implement
 
 3. **Deployment Strategy**
-   - Phased rollout for high-risk changes
-   - Feature flags for risky features
-   - Rollback procedures
+    - Phased rollout for high-risk changes
+    - Feature flags for risky features
+    - Rollback procedures
 
 4. **Monitoring Setup**
-   - Metrics to track
-   - Alerts to configure
-   - Dashboard requirements
+    - Metrics to track
+    - Alerts to configure
+    - Dashboard requirements
 
 ## Integration with Quality Gates
 
@@ -2312,21 +2333,21 @@ recommendations:
 If risk_summary exists, apply its thresholds first (≥9 → FAIL, ≥6 → CONCERNS), then NFR statuses, then top_issues severity.
 
 1. **Risk thresholds (if risk_summary present):**
-   - If any risk score ≥ 9 → Gate = FAIL (unless waived)
-   - Else if any score ≥ 6 → Gate = CONCERNS
+    - If any risk score ≥ 9 → Gate = FAIL (unless waived)
+    - Else if any score ≥ 6 → Gate = CONCERNS
 
 2. **Test coverage gaps (if trace available):**
-   - If any P0 test from test-design is missing → Gate = CONCERNS
-   - If security/data-loss P0 test missing → Gate = FAIL
+    - If any P0 test from test-design is missing → Gate = CONCERNS
+    - If security/data-loss P0 test missing → Gate = FAIL
 
 3. **Issue severity:**
-   - If any `top_issues.severity == high` → Gate = FAIL (unless waived)
-   - Else if any `severity == medium` → Gate = CONCERNS
+    - If any `top_issues.severity == high` → Gate = FAIL (unless waived)
+    - Else if any `severity == medium` → Gate = CONCERNS
 
 4. **NFR statuses:**
-   - If any NFR status is FAIL → Gate = FAIL
-   - Else if any NFR status is CONCERNS → Gate = CONCERNS
-   - Else → Gate = PASS
+    - If any NFR status is FAIL → Gate = FAIL
+    - Else if any NFR status is CONCERNS → Gate = CONCERNS
+    - Else → Gate = PASS
 
 - WAIVED only when waiver.active: true with reason/approver
 
@@ -3117,9 +3138,9 @@ The task will provide:
 2. List of newly indexed files (organized by folder)
 3. List of updated entries
 4. List of entries presented for removal and their status:
-   - Confirmed removals
-   - Updated paths
-   - Kept despite missing file
+    - Confirmed removals
+    - Updated paths
+    - Kept despite missing file
 5. Any new folders discovered
 6. Any other issues or inconsistencies found
 
@@ -3151,9 +3172,9 @@ For each file referenced in the index but not found in the filesystem:
 ### Special Cases
 
 1. **Sharded Documents**: If a folder contains an `index.md` file, treat it as a sharded document:
-   - Use the folder's `index.md` title as the section title
-   - List the folder's documents as subsections
-   - Note in the description that this is a multi-part document
+    - Use the folder's `index.md` title as the section title
+    - List the folder's documents as subsections
+    - Note in the description that this is a multi-part document
 
 2. **README files**: Convert `README.md` to more descriptive titles based on content
 
@@ -3776,14 +3797,14 @@ npm run seed        # Seed test data
 ### 4. Document Delivery
 
 1. **In Web UI (Gemini, ChatGPT, Claude)**:
-   - Present the entire document in one response (or multiple if too long)
-   - Tell user to copy and save as `docs/brownfield-architecture.md` or `docs/project-architecture.md`
-   - Mention it can be sharded later in IDE if needed
+    - Present the entire document in one response (or multiple if too long)
+    - Tell user to copy and save as `docs/brownfield-architecture.md` or `docs/project-architecture.md`
+    - Mention it can be sharded later in IDE if needed
 
 2. **In IDE Environment**:
-   - Create the document as `docs/brownfield-architecture.md`
-   - Inform user this single document contains all architectural information
-   - Can be sharded later using PO agent if desired
+    - Create the document as `docs/brownfield-architecture.md`
+    - Inform user this single document contains all architectural information
+    - Can be sharded later using PO agent if desired
 
 The document should be comprehensive enough that future agents can understand:
 
@@ -4301,21 +4322,21 @@ CRITICAL: collaborate with the user to develop specific, actionable research que
 ### 5. Review and Refinement
 
 1. **Present Complete Prompt**
-   - Show the full research prompt
-   - Explain key elements and rationale
-   - Highlight any assumptions made
+    - Show the full research prompt
+    - Explain key elements and rationale
+    - Highlight any assumptions made
 
 2. **Gather Feedback**
-   - Are the objectives clear and correct?
-   - Do the questions address all concerns?
-   - Is the scope appropriate?
-   - Are output requirements sufficient?
+    - Are the objectives clear and correct?
+    - Do the questions address all concerns?
+    - Is the scope appropriate?
+    - Are output requirements sufficient?
 
 3. **Refine as Needed**
-   - Incorporate user feedback
-   - Adjust scope or focus
-   - Add missing elements
-   - Clarify ambiguities
+    - Incorporate user feedback
+    - Adjust scope or focus
+    - Add missing elements
+    - Clarify ambiguities
 
 ### 6. Next Steps Guidance
 
@@ -4578,20 +4599,20 @@ Add section for brownfield-specific risks:
 Before finalizing:
 
 1. **Completeness Check**:
-   - [ ] Story has clear scope and acceptance criteria
-   - [ ] Technical context is sufficient for implementation
-   - [ ] Integration approach is defined
-   - [ ] Risks are identified with mitigation
+    - [ ] Story has clear scope and acceptance criteria
+    - [ ] Technical context is sufficient for implementation
+    - [ ] Integration approach is defined
+    - [ ] Risks are identified with mitigation
 
 2. **Safety Check**:
-   - [ ] Existing functionality protection included
-   - [ ] Rollback plan is feasible
-   - [ ] Testing covers both new and existing features
+    - [ ] Existing functionality protection included
+    - [ ] Rollback plan is feasible
+    - [ ] Testing covers both new and existing features
 
 3. **Information Gaps**:
-   - [ ] All critical missing information gathered from user
-   - [ ] Remaining unknowns documented for dev agent
-   - [ ] Exploration tasks added where needed
+    - [ ] All critical missing information gathered from user
+    - [ ] Remaining unknowns documented for dev agent
+    - [ ] Exploration tasks added where needed
 
 ### 7. Story Output Format
 
@@ -5101,19 +5122,19 @@ optional:
 ## QA Sources to Read
 
 - Gate (YAML): `{qa_root}/gates/{epic}.{story}-*.yml`
-  - If multiple, use the most recent by modified time
+    - If multiple, use the most recent by modified time
 - Assessments (Markdown):
-  - Test Design: `{qa_root}/assessments/{epic}.{story}-test-design-*.md`
-  - Traceability: `{qa_root}/assessments/{epic}.{story}-trace-*.md`
-  - Risk Profile: `{qa_root}/assessments/{epic}.{story}-risk-*.md`
-  - NFR Assessment: `{qa_root}/assessments/{epic}.{story}-nfr-*.md`
+    - Test Design: `{qa_root}/assessments/{epic}.{story}-test-design-*.md`
+    - Traceability: `{qa_root}/assessments/{epic}.{story}-trace-*.md`
+    - Risk Profile: `{qa_root}/assessments/{epic}.{story}-risk-*.md`
+    - NFR Assessment: `{qa_root}/assessments/{epic}.{story}-nfr-*.md`
 
 ## Prerequisites
 
 - Repository builds and tests run locally (Deno 2)
 - Lint and test commands available:
-  - `deno lint`
-  - `deno test -A`
+    - `deno lint`
+    - `deno test -A`
 
 ## Process (Do not skip steps)
 
@@ -5121,17 +5142,17 @@ optional:
 
 - Read `bmad-core/core-config.yaml` and resolve `qa_root` and `story_root`
 - Locate story file in `{story_root}/{epic}.{story}.*.md`
-  - HALT if missing and ask for correct story id/path
+    - HALT if missing and ask for correct story id/path
 
 ### 1) Collect QA Findings
 
 - Parse the latest gate YAML:
-  - `gate` (PASS|CONCERNS|FAIL|WAIVED)
-  - `top_issues[]` with `id`, `severity`, `finding`, `suggested_action`
-  - `nfr_validation.*.status` and notes
-  - `trace` coverage summary/gaps
-  - `test_design.coverage_gaps[]`
-  - `risk_summary.recommendations.must_fix[]` (if present)
+    - `gate` (PASS|CONCERNS|FAIL|WAIVED)
+    - `top_issues[]` with `id`, `severity`, `finding`, `suggested_action`
+    - `nfr_validation.*.status` and notes
+    - `trace` coverage summary/gaps
+    - `test_design.coverage_gaps[]`
+    - `risk_summary.recommendations.must_fix[]` (if present)
 - Read any present assessment markdowns and extract explicit gaps/recommendations
 
 ### 2) Build Deterministic Fix Plan (Priority Order)
@@ -5169,10 +5190,10 @@ CRITICAL: Dev agent is ONLY authorized to update these sections of the story fil
 
 - Tasks / Subtasks Checkboxes (mark any fix subtask you added as done)
 - Dev Agent Record →
-  - Agent Model Used (if changed)
-  - Debug Log References (commands/results, e.g., lint/tests)
-  - Completion Notes List (what changed, why, how)
-  - File List (all added/modified/deleted files)
+    - Agent Model Used (if changed)
+    - Debug Log References (commands/results, e.g., lint/tests)
+    - Completion Notes List (what changed, why, how)
+    - File List (all added/modified/deleted files)
 - Change Log (new dated entry describing applied fixes)
 - Status (see Rule below)
 
@@ -5190,7 +5211,7 @@ Status Rule:
 - Missing `bmad-core/core-config.yaml`
 - Story file not found for `story_id`
 - No QA artifacts found (neither gate nor assessments)
-  - HALT and request QA to generate at least a gate file (or proceed only with clear developer-provided fix list)
+    - HALT and request QA to generate at least a gate file (or proceed only with clear developer-provided fix list)
 
 ## Completion Checklist
 
@@ -5351,4 +5372,3 @@ Choose a number (0-8) or 9 to proceed:
 ```
 
 <!-- END: BMAD-AGENTS -->
-
