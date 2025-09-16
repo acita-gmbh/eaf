@@ -117,34 +117,51 @@ These patterns are mandated by the v0.1 PRD and derived from the successful prot
 
 ## Tech Stack
 
+### Critical Architecture Decisions
+
+**PostgreSQL as Event Store**: Cost-constrained decision with mandatory optimizations (BRIN indexes, partitioning, autovacuum tuning). KPIs: p95 latency <200ms, processor lag <30s.
+
+**Axon Framework 4.9.4 → 5.x Strategy**: Start with stable 4.9.4, parallel PoC with v5, migration before production.
+
+**Constitutional TDD**: No mocks rule enforced - Testcontainers for stateful deps, Nullable Design Pattern for stateless.
+
 #### Technology Stack Table (Revision 2)
 
-| Category | Technology | Version | Purpose | Rationale |
-| :--- | :--- | :--- | :--- | :--- |
-| Frontend Language | TypeScript | 5.x | Primary FE language | Required for React development and type safety. |
-| Frontend Framework | React (with React-Admin) | 18.x | Admin Portal UI | Mandated by PRD & UI Spec. |
-| UI Component Lib | Material-UI (MUI) | 5.x | Core UI Kit | Non-negotiable dependency of React-Admin. |
-| State Management | Zustand / React Context | 4.x | FE State | Lightweight default for managing global UI state. |
-| **Backend Language** | **Kotlin** | **2.0.10 (PINNED)** | Primary BE Language | **Mandatory Constraint.** Locked version per prototype findings. |
-| **Backend Framework** | **Spring Boot** | **3.3.5 (LOCKED)** | Core Application Framework | **Mandatory Constraint.** Locked version for Modulith/Tooling compatibility. |
-| API Style | REST / CQRS | N/A | API Pattern | CQRS (Axon) for core logic; REST endpoints for external interaction (per PRD Epic 2). |
-| **Database (All)** | **PostgreSQL** | **16.1+** | Primary DB | **Mandatory.** Hosts Event Store, Projections, and Flowable schemas. |
-| Cache / Pub-Sub | Redis | 7.x | Caching / Messaging | Required for legacy system integration (Dockets) and real-time FE updates. |
-| **Workflow Engine** | **Flowable** | 7.x | BPMN / Orchestration | **Mandatory Constraint.** Selected to replace legacy Dockets workflow engine. |
-| **CQRS Framework** | **Axon Framework** | **4.9.4** | CQRS/ES Pattern | **Mandatory Constraint.** Core of the EAF architecture. |
-| **Authentication** | **Keycloak** | **26.0.0** | OIDC / Identity | **Mandatory Constraint.** Validated by prototype. |
-| **Func. Programming**| **Arrow** | **1.2.4** | Functional Error Handling | Mandated by prototype for Either<E,A> domain error handling. |
-| **Data Access (Query)**| **jOOQ** | 3.x (Latest) | Type-Safe SQL Queries | Mandated for all Read-Side Projections (CQRS queries) to replace JPA for reads. |
-| Frontend Testing | Jest + RTL | Latest | FE Unit/Integration | Industry standard for React. |
-| **Backend Testing** | **Kotest** + **Testcontainers** | Latest | BE Unit/Integration | **Mandatory Constraint.** (NFR8). "Constitutional TDD". |
-| E2E Testing | Playwright | Latest | End-to-End Validation | Modern standard for full-stack E2E testing. |
-| **Build Tool** | **Gradle (Monorepo)** | 8.x | Build/Dependencies | **Mandatory Constraint.** Required for `build-logic` Convention Plugins. |
-| Bundler | Vite | Latest | FE Build Tool | Modern default for bundling React/TS applications. |
-| IaC / Deployment | Docker Compose | Latest | On-Prem Deployment | **Mandatory Constraint.** Required deployment target. |
-| CI/CD | GitHub Actions | N/A | CI Pipeline | Mandated by PRD Epic 1.4. |
-| **Monitoring** | **Micrometer + Prometheus**| N/A | Metrics Collection | Mandated by PRD Epic 6.2. |
-| **Logging** | **SLF4J/Logback (JSON)** | N/A | Structured Logging | Mandated by PRD Epic 6.1. |
-| **CSS Framework** | **MUI (Emotion / Styled)** | 5.x | Styling | The required styling engine for the MUI component library. |
+**Core Backend Stack**
+| Technology | Version | Purpose | Constraint Level |
+| :--- | :--- | :--- | :--- |
+| **Kotlin** | **2.0.10 (PINNED)** | Primary BE Language | **CRITICAL** - Locked for tool compatibility |
+| **Spring Boot** | **3.3.5 (LOCKED)** | Core Framework | **MANDATORY** - Modulith compatibility |
+| **Spring Modulith** | **1.3.0** | Module boundaries | **MANDATORY** - Kotlin ModuleMetadata required |
+| **Axon Framework** | **4.9.4** | CQRS/ES Pattern | **MANDATORY** - Core architecture |
+| **PostgreSQL** | **16.1+** | Event Store/Projections | **MANDATORY** - Single DB strategy |
+| **Flowable** | **7.1.0** | BPMN Orchestration | **MANDATORY** - Workflow engine |
+| **Keycloak** | **26.0.0** | OIDC/Identity | **MANDATORY** - Security provider |
+
+**Development & Quality Tools**
+| Technology | Version | Purpose | Enforcement |
+| :--- | :--- | :--- | :--- |
+| **Kotest** | **5.9.1** | Testing Framework | **MANDATORY** - JUnit forbidden |
+| **Testcontainers** | **1.20.4** | Integration Testing | **MANDATORY** - No mocks rule |
+| **Konsist** | **0.18.0** | Architecture Testing | **MANDATORY** - Boundary verification |
+| **Pitest** | **1.17.5** | Mutation Testing | **MANDATORY** - 80% coverage |
+| **ktlint** | **1.4.2** | Code Formatting | **MANDATORY** - Style enforcement |
+| **Detekt** | **1.23.7** | Static Analysis | **MANDATORY** - Zero violations |
+
+**Frontend & Infrastructure**
+| Technology | Version | Purpose | Notes |
+| :--- | :--- | :--- | :--- |
+| React + React-Admin | 18.x/Latest | Admin Portal UI | Material-UI dependency |
+| TypeScript | 5.x | FE Language | Type safety required |
+| **jOOQ** | 3.x | Read Projections | **MANDATORY** - No JPA for reads |
+| **Arrow** | **1.2.4** | Functional Programming | **MANDATORY** - Either<E,A> pattern |
+| Redis | 7.2.5 | Cache/Token Store | JWT blacklist management |
+| Gradle | 8.14 | Build Tool | Version Catalog + Convention Plugins |
+
+**Quality Requirements**:
+- 85%+ line coverage, 80%+ mutation coverage
+- PostgreSQL performance: BRIN indexes, partitioning, connection pooling
+- Real dependencies only (Testcontainers), no H2/mocks
 
 -----
 
@@ -523,12 +540,26 @@ eaf-monorepo/
 
 ## Development Workflow
 
-  * **TDD Cycle:** Mandates "Constitutional TDD" (RED-GREEN-Refactor).
-  * **Local Stack:** Requires two separate terminals:
-    1.  Terminal 1 (Services): `./scripts/init-dev.sh` (Starts Docker: Postgres, Keycloak).
-    2.  Terminal 2 (Backend): `./gradlew :products:licensing-server:bootRun`
-    3.  Terminal 3 (Frontend): `npm run dev --prefix apps/admin`
-  * **Quality Check:** Local `./gradlew clean build` runs all gates (ktlint, detekt, all Testcontainers tests). This build is confirmed to be **slow** (running full Keycloak container), which is the accepted trade-off for 100% test fidelity.
+**One-Command Onboarding with Comprehensive Quality Gates**
+
+* **Core Principles:** Constitutional TDD, Quality-First, Integration-First, Modular Development with Spring Modulith boundaries
+* **Onboarding:** Single `./scripts/init-dev.sh` script sets up Docker services, secrets, Git hooks, developer portal, IDE config
+* **Daily Development:** Multi-terminal workflow (infrastructure, backend, frontend, docs portal)
+* **Scaffolding CLI:** Production-ready code generation for modules, aggregates, APIs, tests, and documentation
+* **Quality Enforcement:** Automated pre-commit hooks, architectural compliance, security scanning, performance baselines
+
+**Development Commands:**
+- `./gradlew clean build` - Full quality check (local CI simulation)
+- `./gradlew test -P fastTests=true` - Fast feedback cycle with nullable pattern
+- `./gradlew verifyAllModules` - Architecture compliance verification
+- `eaf scaffold module <name>` - Generate compliant module structure
+
+**Performance Optimizations:**
+- Container reuse patterns for 50% faster test runs
+- Nullable pattern for 61.6% improvement in business logic tests
+- Parallel test execution with timing baselines
+
+**Full specification:** See `docs/architecture/development-workflow.md`.
 
 -----
 
@@ -603,13 +634,35 @@ eaf-monorepo/
 
 ## Security
 
-  * **Input Validation:** Spring Boot Validation (at API boundary).
-  * **AuthN/AuthZ:** Mandates Keycloak OIDC, **10-Layer JWT Validation**, and the **3-Layer Tenancy Model (RLS)**.
-  * **Secrets Management:** Mandates **HashiCorp Vault** (from prototype).
-  * **API Security:** Mandates ProblemDetails (RFC 7807), standard security headers.
-  * **Data Protection:** Mandates RLS, no PII in logs, application-layer encryption for PII.
-  * **Dependency Security:** Mandates **OWASP Dependency-Check** (Gradle) and **SBOM generation**.
-  * **Security Testing:** Mandates SAST (Detekt) and full integration testing via Keycloak Testcontainer.
+**Comprehensive Defense-in-Depth with Production-Validated Patterns**
+
+* **Core Principles:** Input validation, Keycloak OIDC, 10-Layer JWT Validation, 3-Layer Tenancy Model (RLS), HashiCorp Vault, RFC 7807 API security, data protection, dependency security, SAST integration testing.
+
+**10-Layer JWT Validation System:**
+- Comprehensive validation covering format, signature, algorithm, claims, time, issuer/audience, revocation, roles, user, and injection detection
+- Real cryptographic validation with RS256-only enforcement
+- Redis-based token blacklist with emergency recovery procedures
+- ASVS 5.0 Level 2 compliance targeting
+
+**3-Layer Tenant Isolation:**
+- **Layer 1:** Request filter extracts tenant from JWT
+- **Layer 2:** Service boundary validation with AOP
+- **Layer 3:** Database interceptor with automatic tenant filtering
+- Defense-in-depth prevents cross-tenant data access
+
+**Emergency Security Recovery:**
+- 5-phase recovery process (0-120 hours)
+- Automated security validation suite (43+ tests)
+- Real-time threat detection and response
+- ASVS compliance restoration within 5 days
+
+**Advanced Security Features:**
+- Security-lite testing profile for fast validation
+- Production-validated implementation patterns
+- Structured security logging and metrics
+- Comprehensive attack scenario coverage
+
+**Full specification:** See `docs/architecture/security.md`.
 
 ### Network Segmentation & Hardening
 
@@ -651,40 +704,80 @@ eaf-monorepo/
 
 ## Test Strategy and Standards (Revision 3)
 
-(Fulfills "Constitutional TDD").
+**Hybrid Testing Strategy with Nullable Pattern Integration**
 
-  * **Philosophy:** Constitutional TDD (RED-GREEN-Refactor); Inverted Pyramid (40-50% Integration); 85%+ Line Coverage; 80%+ Mutation Coverage.
-  * **Backend Framework:** **Kotest** (JUnit forbidden).
-  * **Testing Mandates (The "No Mocks" rule):**
-    1.  **Stateful Dependencies (DB/Auth):** **Testcontainers ONLY** (Postgres, Keycloak).
-    2.  **Stateless Dependencies (External APIs):** **Nullable Design Pattern** (Stubbed Adapters/Ports). (WireMock is forbidden).
-    3.  **In-Memory DBs (H2):** Explicitly forbidden.
-  * **Frontend Testing:** Jest + React Testing Library.
-  * **E2E Testing:** Playwright.
-  * **CI:** CI build runs *all* checks (Detekt, ktlint, OWASP check, all unit and integration tests).
+* **Philosophy:** Constitutional TDD (RED-GREEN-Refactor); Hybrid distribution (40-50% fast logic, 30-40% critical integration, 10-20% E2E); 85%+ Line Coverage; 80%+ Mutation Coverage.
+* **Backend Framework:** **Kotest** (JUnit forbidden).
+* **Core Strategy:** Integration-first philosophy enhanced with nullable pattern for fast business logic testing (61.6% performance improvement).
+
+**Testing Mandates (Enhanced "No Mocks" rule):**
+1. **Stateful Dependencies (DB/Auth):** **Testcontainers ONLY** (Postgres, Keycloak).
+2. **Stateless Dependencies (External APIs):** **Nullable Design Pattern** (Stubbed Adapters/Ports). (WireMock is forbidden).
+3. **In-Memory DBs (H2):** Explicitly forbidden.
+4. **Security Testing:** Security-lite profile for fast JWT tests (65% faster execution).
+
+**Advanced Features:**
+- **Nullable Pattern:** Factory-based infrastructure substitutes with contract testing
+- **Security-Lite Profile:** Fast JWT/security tests without external dependencies
+- **Mutation Testing:** Pitest with 80% minimum coverage
+- **Performance Optimization:** Container reuse, parallel startup, baseline measurement
+- **Anti-Patterns:** Comprehensive list of prohibited testing approaches
+
+**Quality Gates:** P0 (security) → P1 (core) → P2 (features) with comprehensive coverage requirements.
+
+**Full specification:** See `docs/architecture/test-strategy-and-standards-revision-3.md`.
 
 -----
 
 ## Coding Standards (Revision 2)
 
-(Enforced by Konsist).
+**Enforcement:** These rules are **automated architectural tests** enforced by **Konsist** and `ktlint`/`Detekt` in the CI build (Story 1.2).
 
-  * **Enforcement:** These rules are **automated architectural tests** enforced by **Konsist** and `ktlint`/`Detekt` in the CI build (Story 1.2).
-  * **Critical Rules:**
-    1.  **Functional Error Handling (Arrow):** Domain MUST return `Either<Error, Success>`.
-    2.  **Read Model Querying (jOOQ):** Read projections MUST use jOOQ.
-    3.  (All other rules: No Generic Exceptions, No Wildcards, Version Catalog, No Mocks, No H2, TDD required).
+### Core Principles
+1. **Ubiquitous Language:** All code must use the precise language of the business domain.
+2. **Hexagonal Enforcement:** Code within a `domain` module must **never** depend on code from an `adapter` module.
+3. **Immutability:** All Commands, Events, and Queries must be immutable Kotlin `data class` or `data object`.
+4. **Static Analysis:** All commits will be required to pass `ktlint` and `detekt` checks.
+
+### Critical Architectural Rules
+1. **Functional Error Handling (Arrow):** Domain MUST return `Either<Error, Success>`.
+2. **Read Model Querying (jOOQ):** Read projections MUST use jOOQ.
+3. **No Generic Exceptions:** Always use specific exception types.
+4. **No Wildcard Imports:** Every import must be explicit.
+5. **Version Catalog Required:** All dependencies via Gradle Version Catalog.
+6. **No Mocks:** Use Testcontainers for stateful deps, Nullable Design Pattern for stateless.
+7. **No H2:** PostgreSQL Testcontainers only.
+8. **TDD Required:** Constitutional TDD (RED-GREEN-Refactor).
+
+### Advanced Patterns
+* **Multi-Tenancy:** 3-Layer enforcement (Filter, Service Validation, RLS) with Micrometer Context Propagation.
+* **Security Testing:** Security-lite profile for fast JWT tests with real cryptography.
+* **Nullable Design Pattern:** For testing infrastructure with factory pattern (`createNull()`) and contract tests.
+* **Spring Modulith:** Kotlin-specific configuration with `@PackageInfo` classes and `@ApplicationModule`.
+
+**Full specification:** See `docs/architecture/coding-standards-revision-2.md`.
 
 -----
 
 ## Error Handling Strategy
 
-(This is the "Arrow-Fold-Throw-ProblemDetails" pattern).
+**The "Arrow-Fold-Throw-ProblemDetails" pattern with comprehensive error catalog.**
 
-1.  **Domain (Internal):** Returns `Either.Left(DomainError)`.
-2.  **Boundary (Controller):** "Folds" the Either, translates the `DomainError` into a specific `HttpException`.
-3.  **Framework (Advice):** A global `@ControllerAdvice` catches the `HttpException` and formats it as a standard **RFC 7807 ProblemDetail**.
-4.  **Frontend (Consumer):** The React Data Provider (WebSocket-based) parses the `application/problem+json` response to display errors.
+1. **Domain (Internal):** Returns `Either.Left(DomainError)`.
+2. **Boundary (Controller):** "Folds" the Either, translates the `DomainError` into a specific `HttpException`.
+3. **Framework (Advice):** A global `@ControllerAdvice` catches the `HttpException` and formats it as a standard **RFC 7807 ProblemDetail**.
+4. **Frontend (Consumer):** The React Data Provider (WebSocket-based) parses the `application/problem+json` response to display errors.
+
+**Error Response Format:** All API errors return RFC 7807 Problem Details with `traceId`, `tenantId`, and structured error catalogs by category (auth, validation, resources, rate limiting, system errors).
+
+**Implementation Features:**
+- Comprehensive error catalog with standardized URIs
+- Functional error handling with Arrow Either types
+- Context-aware error enrichment (tenant, trace, user)
+- Frontend integration patterns for error display
+- Structured logging and metrics collection
+
+**Full specification:** See `docs/architecture/error-handling-strategy.md`.
 
 -----
 
