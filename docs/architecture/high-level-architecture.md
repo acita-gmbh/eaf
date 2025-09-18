@@ -1,99 +1,485 @@
-# High Level Architecture
+# High-Level Architecture
 
-### Technical Summary
+## Overview
 
-This document outlines a unified full-stack architecture for the EAF. The system is a **Gradle Monorepo** designed for deployment on customer-hosted servers via **Docker Compose**.
+The Enterprise Application Framework (EAF) v0.1 is a modern, Kotlin-based enterprise platform designed to replace legacy DCA framework components. Built as a **Modular Monolith** using **Hexagonal Architecture** principles, the system provides a scalable, maintainable foundation for multi-tenant enterprise applications.
 
-The backend is a "Modular Monolith" implemented in **Kotlin 2.0.10** on **Spring Boot 3.3.5**. It is built using **Hexagonal Architecture** (with boundaries programmatically enforced by **Spring Modulith**), **CQRS/Event Sourcing** (via **Axon Framework 4.9.4**), and includes the **Flowable BPMN engine** to replace the legacy "Dockets" workflow functionality.
+### Executive Summary
 
-Per our mandated persistence strategy, the persistence layer uses **PostgreSQL 16.1+** as the event store (implemented as a swappable adapter) and also for read model projections.
+- **Architecture Pattern**: Hexagonal + Spring Modulith for enforced boundaries
+- **Domain Logic**: CQRS/Event Sourcing via Axon Framework 4.9.4
+- **Deployment Model**: Docker Compose on customer-hosted infrastructure
+- **Security**: 10-layer JWT validation with 3-layer tenant isolation
+- **Development**: Constitutional TDD with Nullable Pattern for 60%+ faster tests
 
-The frontend consists of an internal **React-Admin Operator Portal** and supports external Product UIs (React, Vaadin, TUI). Security is federated to **Keycloak OIDC**. The entire framework is built using a mandatory **Constitutional TDD (Kotest/Testcontainers)** methodology.
-
-### Platform and Infrastructure Choice
-
-This decision is mandated by the Project Brief and PRD constraints.
-
-* **Platform:** **On-Premise / Customer-Hosted (via Docker Compose)**. The architecture is not designed for a specific serverless cloud vendor, but rather as a self-contained stack that a customer runs on their own hardware.
-* **Key Services (The Core Stack):** The EAF `compose.yml` (from PRD Epic 1.3) must provide:
-    1.  The EAF Application Service (Kotlin/Spring/Axon/Flowable).
-    2.  PostgreSQL 16.1+ (This single instance will host multiple schemas: the event store, projections, and the Flowable engine schema).
-    3.  Keycloak 26.0.0 (For identity and access management).
-* **Deployment Constraints:** The architecture must support `amd64`, `arm64`, and `ppc64le` processor architectures.
-
-### Repository Structure
-
-This decision is mandated by the PRD Technical Assumptions.
-
-* **Structure:** **Gradle Multi-Module Monorepo**.
-* **Tooling:** Gradle (with **Convention Plugins** in `build-logic` mandated by PRD Epic 1).
-* **Package Organization:** The structure validated by the prototype will be used:
-    * `framework/` (Core libraries)
-    * `products/` (Deployable Spring Boot apps)
-    * `shared/` (Shared code, including Kotlin API types and TS types)
-    * `apps/admin/` (React-Admin UI)
-
-### High Level Architecture Diagram
-
-This diagram visualizes the interaction between the primary components (containers and logical blocks) defined in the PRD.
+## System Architecture
 
 ```mermaid
 graph TD
-    subgraph Customer Network
-        direction TB
-        subgraph EAF Docker Compose Stack (On-Prem Host)
-            direction LR
-            
-            subgraph EAF Application Service (Spring Boot/Kotlin)
-                direction TB
-                API[API Layer (REST/GraphQL)]
-                Modulith[Spring Modulith (Boundary Enforcement)]
-                CQRS[Axon Engine (CQRS/ES)]
-                BPMN[Flowable Engine (BPMN)]
-                Adapters[Hexagonal Adapters (Ports)]
-                API --> Modulith;
-                Modulith -- contains --> CQRS;
-                Modulith -- contains --> BPMN;
-                CQRS --> Adapters;
-                BPMN --> Adapters;
-            end
+    subgraph "Customer Infrastructure"
+        subgraph "EAF Platform"
+            API[REST API Layer<br/>Spring Boot + OpenAPI]
+            CMD[Command Bus<br/>Axon Framework]
+            EVT[Event Store<br/>PostgreSQL + BRIN Indexes]
+            PROJ[Read Projections<br/>jOOQ + PostgreSQL]
+            FLOW[Workflow Engine<br/>Flowable BPMN]
 
-            subgraph PostgreSQL (Database)
-                direction TB
-                ES(Schema 1: Event Store);
-                PROJ(Schema 2: Projections);
-                FLOW(Schema 3: Flowable Tables);
-            end
-
-            KEYCLOAK[Keycloak (OIDC)];
-
-            Adapters -- JDBC --> ES;
-            Adapters -- JDBC --> PROJ;
-            Adapters -- JDBC --> FLOW;
-            API -- AuthN/AuthZ --> KEYCLOAK;
+            API --> CMD
+            CMD --> EVT
+            EVT --> PROJ
+            CMD <--> FLOW
         end
 
-        USER[Operator (User)] -- HTTPS --> RA[React-Admin Portal (Browser)];
-        RA -- API Calls --> API;
-        
-        subgraph External Products
-             PROD_UI[Product UIs (React/Vaadin/TUI)]
-             PROD_UI -- API Calls --> API;
+        subgraph "Security Layer"
+            KC[Keycloak OIDC<br/>Identity Provider]
+            JWT[10-Layer JWT Validation<br/>RS256 + Revocation]
+            TEN[3-Layer Tenant Isolation<br/>Request → Service → Database]
+
+            API --> JWT
+            JWT --> KC
+            JWT --> TEN
+        end
+
+        subgraph "Frontend Applications"
+            RA[React-Admin Portal<br/>Administrative Interface]
+            PROD[Product-Specific UIs<br/>Custom Applications]
+
+            RA --> API
+            PROD --> API
+        end
+
+        subgraph "Infrastructure Services"
+            PG[(PostgreSQL 16.1+<br/>Event Store + Projections)]
+            REDIS[(Redis<br/>Token Blacklist + Cache)]
+
+            EVT --> PG
+            PROJ --> PG
+            JWT --> REDIS
         end
     end
-````
+```
 
-### Architectural and Design Patterns (Revised List)
+## Architectural Patterns
 
-These patterns are mandated by the v0.1 PRD and derived from the successful prototype. This architecture *is* the implementation of these patterns:
+### 1. Hexagonal Architecture (Ports & Adapters)
 
-  * **Hexagonal Architecture (enforced by Spring Modulith):** Mandated by PRD NFR4. Isolates our domain logic from infrastructure details.
-  * **CQRS/Event Sourcing:** Mandated by PRD NFR4. Uses Axon Framework for implementation.
-  * **Postgres-as-Adapter:** Our mandated persistence strategy (NFR5).
-  * **BPMN Workflow Integration (Flowable):** Mandated replacement for legacy Dockets (PRD NFR6, Epic 7).
-  * **Constitutional TDD / Integration-First Testing:** Our mandatory quality strategy (PRD NFR8).
-  * **Functional Error Handling (Arrow):** Mandated by the prototype. Domain logic MUST return `Either<Error, Success>`.
-  * **API Error Standardization (ProblemDetails):** All API error responses (exceptions) MUST be mapped (via `@ControllerAdvice`) to the standard RFC 7807 (Problem+JSON) format.
-  * **Type-Safe Read Projections (jOOQ):** All "read-side" projections and query handlers (e.g., PRD Epic 2.4) MUST utilize jOOQ (rather than JPA) for building type-safe, optimized SQL queries.
+The system implements clean separation between business logic and infrastructure concerns:
 
------
+```kotlin
+// Domain core (no external dependencies)
+interface ProductRepository {
+    fun save(product: Product): Either<DomainError, Product>
+    fun findById(id: String): Either<DomainError, Product?>
+}
+
+// Infrastructure adapter
+@Repository
+class JpaProductRepository(
+    private val jpaRepository: JpaProductRepository
+) : ProductRepository {
+    override fun save(product: Product): Either<DomainError, Product> {
+        return try {
+            jpaRepository.save(product).right()
+        } catch (e: DataIntegrityViolationException) {
+            DomainError.Conflict("Product already exists").left()
+        }
+    }
+}
+```
+
+**Benefits**:
+- Domain logic is infrastructure-agnostic
+- Easy testing with nullable implementations
+- Clear dependency direction (infrastructure depends on domain)
+
+### 2. CQRS/Event Sourcing
+
+Separates read and write operations with event-driven architecture:
+
+```mermaid
+graph LR
+    CMD[Commands] --> AGG[Aggregates]
+    AGG --> EVT[Events]
+    EVT --> PROJ[Projections]
+    EVT --> SAGA[Sagas]
+    QUERY[Queries] --> PROJ
+```
+
+**Implementation**:
+- **Commands**: Mutate aggregate state
+- **Events**: Immutable facts about what happened
+- **Queries**: Read from optimized projections
+- **Sagas**: Coordinate long-running processes
+
+### 3. Domain-Driven Design
+
+Organized around bounded contexts with Spring Modulith enforcement:
+
+```
+framework/
+├── core/           # Shared domain patterns
+├── security/       # Identity & access management
+├── cqrs/          # Command/Query infrastructure
+├── tenancy/       # Multi-tenant patterns
+└── workflow/      # Business process management
+```
+
+### 4. Event-Driven Architecture
+
+Asynchronous processing with event projections for scalability:
+
+```kotlin
+@EventSourcingHandler
+class ProductProjectionHandler {
+    fun on(event: ProductCreatedEvent) {
+        productProjectionRepository.save(
+            ProductProjection(
+                productId = event.productId,
+                name = event.name,
+                sku = event.sku,
+                tenantId = event.tenantId
+            )
+        )
+    }
+}
+```
+
+## Core Design Principles
+
+### 1. Modular Monolith with Spring Modulith
+
+Enforces module boundaries programmatically:
+
+```kotlin
+@ApplicationModule(
+    displayName = "EAF Security Module",
+    allowedDependencies = ["core", "shared.api", "shared.testing"]
+)
+class SecurityModule
+
+// Architecture tests verify boundaries
+@Test
+fun `modules should respect dependency rules`() {
+    SpringModulith.of(EafApplication::class.java)
+        .verify()
+}
+```
+
+### 2. Functional Error Handling
+
+Uses Arrow Either types for explicit error handling:
+
+```kotlin
+fun createProduct(command: CreateProductCommand): Either<DomainError, Product> = either {
+    // Validation
+    ensure(command.sku.matches(SKU_PATTERN)) {
+        DomainError.ValidationError("sku", "invalid_format", command.sku)
+    }
+
+    // Business logic
+    val product = Product.create(command).bind()
+    repository.save(product).bind()
+}
+```
+
+### 3. Constitutional TDD
+
+Test-first development with integration focus:
+
+```kotlin
+class ProductServiceTest : BehaviorSpec({
+    Given("a product service") {
+        val service = ProductService(
+            repository = nullable<ProductRepository>(),
+            eventBus = nullable<EventBus>()
+        )
+
+        When("creating a valid product") {
+            val result = service.createProduct(validCommand)
+
+            Then("product should be created") {
+                result.shouldBeRight()
+            }
+        }
+    }
+})
+```
+
+## Technology Decisions
+
+### Core Technology Stack
+
+| Component | Technology | Version | Rationale |
+|-----------|------------|---------|-----------|
+| **Language** | Kotlin | 2.0.10 | Type safety, null safety, interop |
+| **Framework** | Spring Boot | 3.3.5 | Enterprise patterns, ecosystem |
+| **CQRS/ES** | Axon Framework | 4.9.4 | Proven event sourcing platform |
+| **Database** | PostgreSQL | 16.1+ | ACID compliance, performance |
+| **Security** | Keycloak | 26.0.0 | Enterprise identity management |
+
+🔗 **See also**: [Technology Stack](tech-stack.md) for complete technology matrix
+
+### Key Architectural Constraints
+
+1. **Version Pinning**: Kotlin 2.0.10 (PINNED for tool compatibility)
+2. **Spring Boot Lock**: 3.3.5 (LOCKED for Spring Modulith 1.3.0)
+3. **No Wildcard Imports**: Explicit imports required
+4. **Kotest Only**: JUnit explicitly forbidden
+5. **PostgreSQL Only**: H2 and other databases forbidden
+
+## Deployment Architecture
+
+### Single-Tenant Deployment
+
+Each customer receives their own isolated deployment:
+
+```mermaid
+graph TD
+    subgraph "Customer Infrastructure"
+        LB[Load Balancer<br/>Traefik/Nginx]
+
+        subgraph "Application Layer"
+            APP1[EAF Instance 1]
+            APP2[EAF Instance 2]
+            APP3[EAF Instance 3]
+        end
+
+        subgraph "Data Layer"
+            PG_PRIMARY[(PostgreSQL Primary)]
+            PG_STANDBY[(PostgreSQL Standby)]
+            REDIS[(Redis Cluster)]
+        end
+
+        subgraph "Security Services"
+            KC[Keycloak]
+        end
+
+        LB --> APP1
+        LB --> APP2
+        LB --> APP3
+
+        APP1 --> PG_PRIMARY
+        APP2 --> PG_PRIMARY
+        APP3 --> PG_PRIMARY
+
+        PG_PRIMARY --> PG_STANDBY
+
+        APP1 --> REDIS
+        APP2 --> REDIS
+        APP3 --> REDIS
+
+        APP1 --> KC
+        APP2 --> KC
+        APP3 --> KC
+    end
+```
+
+### Multi-Architecture Support
+
+Supports customer hardware diversity:
+
+- **amd64**: Standard x86_64 servers
+- **arm64**: Apple Silicon, AWS Graviton
+- **ppc64le**: IBM Power systems
+
+🔗 **See also**: [Deployment Architecture](deployment-architecture-revision-2.md) for detailed deployment procedures
+
+## Security Architecture Overview
+
+### Defense in Depth
+
+Multiple security layers provide comprehensive protection:
+
+1. **Network Layer**: TLS 1.3, certificate pinning
+2. **Application Layer**: 10-layer JWT validation
+3. **Service Layer**: 3-layer tenant isolation
+4. **Data Layer**: PostgreSQL RLS, encryption at rest
+5. **Infrastructure Layer**: Container isolation, secrets management
+
+### 10-Layer JWT Validation
+
+Comprehensive token validation pipeline:
+
+1. Format validation (JWT structure)
+2. Signature validation (RS256 cryptographic verification)
+3. Algorithm validation (prevent algorithm confusion)
+4. Claim schema validation (required claims)
+5. Time-based validation (exp/iat/nbf with clock skew)
+6. Issuer/Audience validation (trust boundaries)
+7. Token revocation check (Redis blacklist)
+8. Role validation (role whitelist, privilege escalation detection)
+9. User validation (user existence, active status)
+10. Injection detection (SQL injection, XSS, JNDI patterns)
+
+🔗 **See also**: [Security Architecture](security.md) for complete security implementation
+
+## Multi-Tenancy Strategy
+
+### 3-Layer Tenant Isolation
+
+Defense-in-depth approach to tenant isolation:
+
+```mermaid
+graph TD
+    REQUEST[HTTP Request] --> FILTER[Layer 1: Request Filter<br/>Extract tenant from JWT]
+    FILTER --> SERVICE[Layer 2: Service Validation<br/>AOP validation at boundaries]
+    SERVICE --> DATABASE[Layer 3: Database RLS<br/>Automatic tenant filtering]
+
+    FILTER --> CONTEXT[TenantContext<br/>ThreadLocal + MDC]
+    SERVICE --> CONTEXT
+    DATABASE --> CONTEXT
+```
+
+**Implementation**:
+- **Layer 1**: Request filter extracts tenant ID from JWT
+- **Layer 2**: Service-level validation with AOP
+- **Layer 3**: Database-level Row Level Security (RLS)
+
+🔗 **See also**: [Multi-Tenancy Strategy](multi-tenancy-strategy.md) for implementation details
+
+## Testing Strategy Overview
+
+### Constitutional TDD
+
+Test-first development with three testing levels:
+
+- **40-50%**: Fast business logic tests (Nullable Pattern)
+- **30-40%**: Critical integration tests (Testcontainers)
+- **10-20%**: End-to-end tests (Full stack)
+
+### Nullable Design Pattern
+
+Fast infrastructure substitutes for business logic testing:
+
+```kotlin
+interface ProductRepository {
+    fun save(product: Product): Either<DomainError, Product>
+}
+
+class NullableProductRepository : ProductRepository, NullableFactory<ProductRepository> {
+    private val storage = ConcurrentHashMap<String, Product>()
+
+    override fun save(product: Product): Either<DomainError, Product> {
+        storage[product.id] = product
+        return product.right()
+    }
+
+    override fun createNull() = this
+}
+```
+
+**Performance Impact**: 61.6% faster execution than integration tests
+
+🔗 **See also**: [Testing Strategy](test-strategy-and-standards-revision-3.md) for complete testing approach
+
+## Development Experience
+
+### One-Command Onboarding
+
+Complete development environment setup:
+
+```bash
+git clone <repository>
+cd eaf-monorepo
+./scripts/init-dev.sh
+```
+
+This single command:
+1. Starts infrastructure services (PostgreSQL, Keycloak, Redis)
+2. Runs database migrations
+3. Configures Keycloak realms
+4. Builds the project
+5. Runs quality checks
+6. Starts the application
+
+### Scaffolding CLI
+
+Code generation for rapid development:
+
+```bash
+# Generate new module
+eaf scaffold module security:authentication
+
+# Generate new aggregate
+eaf scaffold aggregate License --events Created,Issued,Revoked
+
+# Generate API endpoints
+eaf scaffold api-resource License --path /api/v1/licenses
+```
+
+🔗 **See also**: [Development Workflow](development-workflow.md) for complete development procedures
+
+## Performance & Scalability
+
+### Performance Targets
+
+| Metric | Target | Warning | Critical |
+|--------|--------|---------|----------|
+| API Latency (p95) | <200ms | >500ms | >1000ms |
+| Command Processing | <200ms | >500ms | >5000ms |
+| Event Processor Lag | <10s | >30s | >60s |
+| Concurrent Users | 1000+ | N/A | N/A |
+
+### Scalability Patterns
+
+1. **Horizontal Scaling**: Multiple application instances
+2. **Database Optimization**: BRIN indexes, partitioning
+3. **Caching Strategy**: Redis for frequent reads
+4. **Async Processing**: Event-driven architecture
+5. **Resource Isolation**: Multi-tenancy with quotas
+
+🔗 **See also**: [Performance & Monitoring](performance-monitoring.md) for detailed performance strategy
+
+## Quality Assurance
+
+### Zero-Violations Policy
+
+All code must pass quality gates:
+
+- **ktlint**: Code formatting (zero violations)
+- **Detekt**: Static analysis (zero violations)
+- **Konsist**: Architecture tests (zero violations)
+- **Pitest**: 80% minimum mutation coverage
+- **Test Coverage**: 85% minimum line coverage
+
+### Continuous Quality
+
+Quality enforced at every stage:
+
+```mermaid
+graph LR
+    COMMIT[Commit] --> HOOKS[Pre-commit Hooks<br/>ktlint, detekt]
+    HOOKS --> CI[CI Pipeline<br/>Tests, Quality Gates]
+    CI --> MERGE[Merge to Main<br/>All checks pass]
+    MERGE --> DEPLOY[Deployment<br/>Production ready]
+```
+
+## Future Considerations
+
+### Planned Enhancements
+
+1. **Axon Framework 5.x Migration**: Planned after initial implementation
+2. **Kubernetes Support**: Optional orchestration for larger deployments
+3. **GraphQL Gateway**: Post-MVP API enhancement
+4. **Advanced Analytics**: Enhanced monitoring and business intelligence
+
+### Migration Strategy
+
+Phased approach from legacy DCA framework:
+
+1. **Phase 1**: Deploy alongside legacy (parallel run)
+2. **Phase 2**: Migrate read-only operations
+3. **Phase 3**: Migrate write operations with dual-write
+4. **Phase 4**: Complete cutover and legacy decommission
+
+## Related Documentation
+
+- **[Technology Stack](tech-stack.md)** - Complete technology matrix and constraints
+- **[System Components](components.md)** - Detailed component implementations
+- **[Security Architecture](security.md)** - Comprehensive security implementation
+- **[Development Workflow](development-workflow.md)** - Development procedures and tooling
+- **[Unified Architecture](../architecture.md)** - Complete reference document
+
+---
+
+**Next Steps**: Review the [Technology Stack](tech-stack.md) for detailed technology choices and version constraints, then proceed to [System Components](components.md) for implementation-ready code examples.

@@ -1,94 +1,622 @@
-# Tech Stack
+# Technology Stack
 
-## Critical Architecture Decisions
+## Overview
 
-**PostgreSQL as Event Store (Cost‑Constrained, Pragmatic Choice)**:
+The EAF technology stack is carefully curated to deliver enterprise-grade reliability, developer productivity, and long-term maintainability. All technology choices are production-tested and version-locked to ensure compatibility and stability.
 
-* PostgreSQL is the sole event store for cost reasons; no Axon Server/EventStoreDB in scope
-* **Mandatory optimizations**: BRIN indexes, time‑based partitioning, autovacuum/vacuum tuning, connection pooling
-* **KPIs tracked for health**: p95 latency <200ms, processor lag <30s, conflict rate <1%
-* Future alternatives may be revisited as a budgeted initiative; no migration commitment in current scope
+## Critical Version Constraints
 
-**Axon Framework 4.9.4 → 5.x Strategy**:
+⚠️ **CRITICAL**: These version constraints are MANDATORY and must not be changed without architecture review:
 
-* Start with stable 4.9.4 for immediate development
-* Parallel PoC development against Axon 5 milestones
-* Design patterns to be "v5-ready" (programmatic configuration, immutable entities)
-* Migration planned before production deployment to avoid technical debt
+| Technology | Version | Constraint Type | Rationale |
+|------------|---------|----------------|-----------|
+| **Kotlin** | 2.0.10 | PINNED | Tool compatibility (ktlint 1.4.2, detekt 1.23.7) |
+| **Spring Boot** | 3.3.5 | LOCKED | Spring Modulith 1.3.0 compatibility requirement |
+| **JVM** | 21 LTS | Required | Spring Boot 3.3.5 baseline requirement |
 
-**Concurrency Model Decision**:
+## Core Technologies
 
-* Use Spring Boot virtual threads (Java 21) exclusively
-* Avoid mixing with Kotlin coroutines to prevent complexity
-* Reevaluate only if performance monitoring indicates clear need
+### Language & Runtime
 
-### Technology Stack Table (Revision 2)
+```kotlin
+// gradle/libs.versions.toml
+[versions]
+kotlin = "2.0.10"          # PINNED - Do not change
+java = "21"                # LTS requirement
+```
 
-| Category | Technology | Version | Purpose | Rationale |
-| :--- | :--- | :--- | :--- | :--- |
-| **Backend Language** | **Kotlin** | **2.0.10 (PINNED)** | Primary BE Language | **CRITICAL CONSTRAINT**: Pinned to this exact version for compatibility with Spring Boot 3.3.5 and critical static analysis tools (`ktlint 1.4.2`, `detekt 1.23.7`). Version 2.0.21+ breaks tool compatibility. This version has been proven to work reliably with Spring Boot 3.3.x in EAF4 production environments. **NO UPGRADES PERMITTED** without extensive compatibility validation. |
-| **Backend Framework** | **Spring Boot** | **3.3.5 (LOCKED)** | Core Application Framework | **Mandatory Constraint.** Locked version for Modulith/Tooling compatibility. |
-| **Modularity** | **Spring Modulith** | **1.3.0** | Enforces modular architecture | Verifies logical dependencies between modules at runtime, crucial for maintaining a clean DDD structure. Requires Kotlin-specific ModuleMetadata classes. |
-| **CQRS Framework** | **Axon Framework** | **4.9.4** | CQRS/ES Pattern | **Mandatory Constraint.** Core of the EAF architecture. Migration to 5.x planned. |
-| **Database (All)** | **PostgreSQL** | **16.1+** | Primary DB | **Mandatory.** Hosts Event Store, Projections, and Flowable schemas. Cost‑constrained decision: Event store remains PostgreSQL‑backed (no Axon Server/EventStoreDB). Apply BRIN indexes, time partitioning, autovacuum tuning, and pooled connections. |
-| **Cache/Token Store** | **Redis** | **7.2.5** | Caching / Messaging | Pinned to stable GA version. 7.4 is unreleased. Required for JWT token blacklist management and emergency security procedures. |
-| **Workflow Engine** | **Flowable** | **7.1.0** | BPMN / Orchestration | **Mandatory Constraint.** Pinned to stable 2024 release, not 2025.1.x. A powerful, Java-based engine for orchestrating complex, customizable workflows. |
-| **Authentication** | **Keycloak** | **26.0.0** | OIDC / Identity | **Mandatory Constraint.** Pinned to prevent API drift. Open-source IAM solution that supports OIDC and meets our flexible deployment requirements. |
-| **Func. Programming**| **Arrow** | **1.2.4** | Functional Error Handling | Mandated by prototype for Either<E,A> domain error handling. |
-| **Data Access (Query)**| **jOOQ** | 3.x (Latest) | Type-Safe SQL Queries | Mandated for all Read-Side Projections (CQRS queries) to replace JPA for reads. |
-| **Build Tool** | **Gradle (Monorepo)** | **8.14** | Build/Dependencies | **Mandatory Constraint.** Latest stable 8.x version as of January 2025. Will be configured with a Version Catalog and Convention Plugins to enforce standards. |
-| **Containerization** | **Docker / Podman** | Latest | Packaging and running the application stack | Ensures a consistent, portable development and deployment environment. |
-| Frontend Language | TypeScript | 5.x | Primary FE language | Required for React development and type safety. |
-| Frontend Framework | React (with React-Admin) | Latest | Admin Portal UI | React-Admin is a powerful "batteries-included" solution for the required "cockpit" and management UIs, accelerating development. |
-| UI Component Lib | Material-UI (MUI) | 5.x | Core UI Kit | Non-negotiable dependency of React-Admin. |
-| State Management | Zustand / React Context | 4.x | FE State | Lightweight default for managing global UI state. |
-| **CSS Framework** | **MUI (Emotion / Styled)** | 5.x | Styling | The required styling engine for the MUI component library. |
-| **TUI Framework** | **Lanterna** | 3.1.x | Framework for Terminal User Interfaces | A robust Java/Kotlin library for building TUIs. Keeps the TUI within our core JVM stack for architectural consistency. |
-| **Frontend Framework** | **Vaadin** | Latest | Alternative UI development for applications built on EAF | The PRD specifies Vaadin as another frontend option. |
-| **Developer Portal** | **Docusaurus** | Latest | Documentation and learning platform | Provides a modern, searchable, and maintainable developer portal out of the box. |
-| **Dev Tooling** | **Node.js / npm** | LTS | Prerequisite for Docusaurus and Git hooks | Required for running the developer portal and managing script-based tooling like pre-commit hooks. |
-| API Style | REST / CQRS | N/A | API Pattern | CQRS (Axon) for core logic; REST endpoints for external interaction (per PRD Epic 2). |
-| Bundler | Vite | Latest | FE Build Tool | Modern default for bundling React/TS applications. |
-| IaC / Deployment | Docker Compose | Latest | On-Prem Deployment | **Mandatory Constraint.** Required deployment target. |
-| CI/CD | GitHub Actions | N/A | CI Pipeline | Mandated by PRD Epic 1.4. |
-| **Monitoring** | **Micrometer + Prometheus**| N/A | Metrics Collection | Mandated by PRD Epic 6.2. |
-| **Logging** | **SLF4J/Logback (JSON)** | N/A | Structured Logging | Mandated by PRD Epic 6.1. |
+**Kotlin 2.0.10 Features Used**:
+- Null safety for reduced runtime errors
+- Data classes for immutable domain objects
+- Coroutines for async processing
+- Extension functions for clean APIs
+- Sealed classes for domain modeling
+
+**JVM 21 LTS Benefits**:
+- Virtual threads for improved concurrency
+- Pattern matching (preview features)
+- Enhanced garbage collection
+- Security improvements
+- Long-term support until 2031
+
+### Framework Stack
+
+```kotlin
+// Spring Boot 3.3.5 (LOCKED)
+[versions]
+spring-boot = "3.3.5"     # LOCKED for Spring Modulith
+spring-modulith = "1.3.0" # Module boundary enforcement
+axon = "4.9.4"            # CQRS/Event Sourcing
+arrow = "1.2.4"           # Functional programming
+```
+
+#### Spring Boot 3.3.5 (LOCKED)
+
+**Why This Version**:
+- Required for Spring Modulith 1.3.0 compatibility
+- Stable foundation for enterprise applications
+- Complete Jakarta EE 9+ migration
+- Native compilation ready (GraalVM)
+
+**Key Dependencies**:
+```kotlin
+dependencies {
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.modulith.starter.core)
+}
+```
+
+#### Axon Framework 4.9.4
+
+**CQRS/Event Sourcing Implementation**:
+```kotlin
+[versions]
+axon = "4.9.4"
+
+[libraries]
+axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }
+axon-test = { module = "org.axonframework:axon-test", version.ref = "axon" }
+
+[bundles]
+axon-framework = ["axon-spring-boot-starter"]
+```
+
+**Migration Path**: Axon 5.x migration planned after initial implementation
+- Current: 4.9.4 (stable, production-tested)
+- Target: 5.x (improved performance, modern APIs)
+- Timeline: Post-MVP implementation
+
+#### Arrow 1.2.4 (Functional Programming)
+
+**Either Types for Error Handling**:
+```kotlin
+[versions]
+arrow = "1.2.4"
+
+[libraries]
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+```
+
+**Usage Pattern**:
+```kotlin
+fun createProduct(command: CreateProductCommand): Either<DomainError, Product> = either {
+    // Validation and business logic
+    val validatedCommand = validateCommand(command).bind()
+    val product = Product.create(validatedCommand).bind()
+    repository.save(product).bind()
+}
+```
+
+### Database Stack
+
+#### PostgreSQL 16.1+ (Primary Database)
+
+**Version Requirements**:
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16.1-alpine
+    environment:
+      POSTGRES_VERSION: "16.1"  # Minimum version
+```
+
+**Mandatory Optimizations**:
+```sql
+-- BRIN Indexes for time-series event data
+CREATE INDEX CONCURRENTLY idx_events_timestamp_brin
+ON domain_event_entry USING BRIN (time_stamp, tenant_id);
+
+-- Time-based partitioning
+CREATE TABLE domain_event_entry_2025_01
+PARTITION OF domain_event_entry
+FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+
+-- Connection pooling settings
+max_connections = 200
+shared_buffers = 256MB
+effective_cache_size = 1GB
+```
+
+**Prohibited Alternatives**:
+- ❌ H2 Database (forbidden in all environments)
+- ❌ MySQL (limited event sourcing support)
+- ❌ SQLite (not enterprise-grade)
+
+#### jOOQ (Type-Safe SQL)
+
+**Read Projection Queries**:
+```kotlin
+[versions]
+jooq = "3.19.15"
+
+[libraries]
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
+```
+
+**Code Generation**:
+```kotlin
+// Generated type-safe queries
+val products = dsl.select()
+    .from(PRODUCT_PROJECTION)
+    .where(PRODUCT_PROJECTION.TENANT_ID.eq(tenantId))
+    .and(PRODUCT_PROJECTION.STATUS.eq(ProductStatus.ACTIVE))
+    .fetchInto(ProductProjection::class.java)
+```
+
+### Security Stack
+
+#### Keycloak 26.0.0 (Identity Provider)
+
+```yaml
+# docker-compose.yml
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+```
+
+**Features Used**:
+- OpenID Connect / OAuth 2.0
+- Multi-realm tenant isolation
+- Role-based access control
+- Token revocation support
+- Admin REST API
+
+#### Spring Security 6.x
+
+```kotlin
+[libraries]
+spring-security-oauth2-jose = { module = "org.springframework.security:spring-security-oauth2-jose" }
+spring-security-oauth2-client = { module = "org.springframework.security:spring-security-oauth2-client" }
+```
+
+**JWT Validation Configuration**:
+```kotlin
+@Configuration
+class SecurityConfig {
+    @Bean
+    fun jwtDecoder(): JwtDecoder {
+        return JwtDecoders.fromOidcIssuerLocation("http://localhost:8180/realms/eaf")
+    }
+}
+```
+
+### Workflow Engine
+
+#### Flowable 7.1.x (BPMN)
+
+```kotlin
+[versions]
+flowable = "7.1.0"
+
+[libraries]
+flowable-spring-boot-starter = { module = "org.flowable:flowable-spring-boot-starter", version.ref = "flowable" }
+```
+
+**Integration with Axon**:
+```kotlin
+@Component
+class FlowableAxonBridge(
+    private val commandGateway: CommandGateway
+) : JavaDelegate {
+    override fun execute(execution: DelegateExecution) {
+        val command = createCommandFromExecution(execution)
+        commandGateway.sendAndWait<Any>(command)
+    }
+}
+```
 
 ## Development & Quality Tools
 
-| Category | Technology | Version | Purpose | Rationale |
-| :--- | :--- | :--- | :--- | :--- |
-| **Code Formatting** | **ktlint** | **1.4.2** | Kotlin code style enforcement | Validates EAF4 compatibility. Version must stay compatible with Kotlin 2.0.10. |
-| **Static Analysis** | **Detekt** | **1.23.7** | Kotlin static analysis and security rules | Validates EAF4 compatibility. Enforces zero violations policy for quality gates. |
-| **Architecture Testing** | **Konsist** | **0.18.0** | Architectural compliance verification | Validates Spring Modulith boundaries and hexagonal architecture compliance. |
-| **Testing Framework** | **Kotest** | **5.9.1** | Primary testing framework (NOT JUnit) | **NO MOCKS ENFORCED**: Supports BehaviorSpec for "Integration-First, No Mocks" approach with Arrow extensions. Mocking libraries (Mockito, MockK) are BANNED. |
-| **Integration Testing** | **Testcontainers** | **1.20.4** | Real dependencies for integration tests | **NO MOCKS ENFORCED**: Essential for database, Redis, and Keycloak integration testing. All dependencies must use real containers, never mocks or in-memory substitutes. Requires spring-boot-testcontainers for @ServiceConnection support. |
-| **Mutation Testing** | **Pitest** | **1.17.5** | Test quality verification | Validates 80% minimum mutation coverage to ensure test effectiveness. |
-| **API Documentation** | **Dokka** | **1.9.10** | Kotlin API documentation generation | Official JetBrains documentation engine for Kotlin projects. Generates multi-module HTML documentation with cross-references, GitHub source linking, and architectural layer visibility. Compatible with Kotlin 2.0.10 K2 compiler. |
-| Frontend Testing | Jest + RTL | Latest | FE Unit/Integration | Industry standard for React. |
-| E2E Testing | Playwright | Latest | End-to-End Validation | Modern standard for full-stack E2E testing. |
+### Testing Framework (Kotest ONLY)
 
-## PostgreSQL Performance Requirements
+⚠️ **CRITICAL**: JUnit is explicitly FORBIDDEN. Use Kotest exclusively.
 
-**Mandatory Optimizations for Event Store**:
+```kotlin
+[versions]
+kotest = "5.9.1"
+testcontainers = "1.20.4"
 
-* **BRIN Indexes**: Time-based indexing for event streams
-* **Time-based Partitioning**: Monthly/quarterly partitions for event tables
-* **Autovacuum Tuning**: Optimized for high-write event workloads
-* **Connection Pooling**: PgBouncer or equivalent for connection management
-* **Monitoring KPIs**:
-  * p95 latency < 200ms for event writes
-  * Projection processor lag < 30s
-  * Lock conflict rate < 1%
+[libraries]
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+```
 
-## Testing Strategy Enforcement
+**Test Structure**:
+```kotlin
+class ProductServiceTest : BehaviorSpec({
+    Given("a product service") {
+        When("creating a product") {
+            Then("product should be saved") {
+                // Test implementation
+            }
+        }
+    }
+})
+```
 
-**Constitutional TDD Requirements**:
+**❌ PROHIBITED JUnit Usage**:
+```kotlin
+// NEVER USE THESE
+@Test            // JUnit annotation - FORBIDDEN
+@Disabled        // JUnit annotation - IGNORED by Kotest
+@BeforeEach      // JUnit annotation - FORBIDDEN
+```
 
-* **No Mocks Rule**: Testcontainers for stateful dependencies, Nullable Design Pattern for stateless
-* **Integration-First**: 40-50% integration tests, inverted test pyramid
-* **Coverage Gates**: 85%+ line coverage, 80%+ mutation coverage
-* **Real Dependencies**: PostgreSQL, Redis, Keycloak via Testcontainers
-* **Kotest Only**: JUnit explicitly forbidden
+### Code Quality Tools
 
------
+#### ktlint 1.4.2 (Code Formatting)
+
+```kotlin
+[versions]
+ktlint = "1.4.2"  # Pinned for Kotlin 2.0.10 compatibility
+
+[plugins]
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
+```
+
+**Configuration**:
+```kotlin
+ktlint {
+    version.set(libs.versions.ktlint)
+    verbose.set(true)
+    android.set(false)
+    outputToConsole.set(true)
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
+        reporter(ReporterType.JSON)
+    }
+}
+```
+
+**Zero Violations Policy**: All code must pass ktlint without warnings
+
+#### Detekt 1.23.7 (Static Analysis)
+
+```kotlin
+[versions]
+detekt = "1.23.7"  # Pinned for Kotlin 2.0.10 compatibility
+
+[plugins]
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+```
+
+**Configuration (detekt.yml)**:
+```yaml
+style:
+  WildcardImport:
+    active: true
+    excludeImports: []  # No wildcard imports allowed
+
+complexity:
+  ComplexMethod:
+    active: true
+    threshold: 15
+```
+
+#### Konsist 0.18.0 (Architecture Testing)
+
+```kotlin
+[versions]
+konsist = "0.18.0"
+
+[libraries]
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+```
+
+**Module Boundary Verification**:
+```kotlin
+@Test
+fun `modules should not have circular dependencies`() {
+    Konsist.scopeFromProject()
+        .modules()
+        .assertDoesNotHaveCircularDependencies()
+}
+```
+
+#### Pitest 1.17.5 (Mutation Testing)
+
+```kotlin
+[plugins]
+pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
+
+// Configuration
+pitest {
+    targetClasses.set(setOf("com.axians.eaf.*"))
+    excludedClasses.set(setOf("*Test*", "*Spec*"))
+    mutationThreshold.set(80) // Minimum 80% mutation coverage
+}
+```
+
+### Build System
+
+#### Gradle 8.14 (Build Tool)
+
+```properties
+# gradle/wrapper/gradle-wrapper.properties
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.14-bin.zip
+```
+
+**Version Catalog (gradle/libs.versions.toml)**:
+```toml
+[versions]
+# Core (Version Locked)
+kotlin = "2.0.10"
+spring-boot = "3.3.5"
+java = "21"
+
+# Framework
+axon = "4.9.4"
+spring-modulith = "1.3.0"
+arrow = "1.2.4"
+
+# Database
+postgresql = "42.7.4"
+jooq = "3.19.15"
+
+# Security
+spring-security = "6.4.2"
+
+# Testing (Kotest only)
+kotest = "5.9.1"
+testcontainers = "1.20.4"
+
+# Quality
+ktlint = "1.4.2"
+detekt = "1.23.7"
+konsist = "0.18.0"
+
+# Workflow
+flowable = "7.1.0"
+
+# Documentation
+dokka = "1.9.10"
+```
+
+**Convention Plugins**:
+```kotlin
+// build-logic/src/main/kotlin/eaf.kotlin-common.gradle.kts
+plugins {
+    kotlin("jvm")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("io.gitlab.arturbosch.detekt")
+}
+
+kotlin {
+    jvmToolchain(21)
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+        freeCompilerArgs.add("-Xjsr305=strict")
+    }
+}
+```
+
+## Infrastructure Requirements
+
+### Container Runtime
+
+**Supported Platforms**:
+```dockerfile
+# Multi-architecture support
+FROM openjdk:21-jdk-slim
+
+# Platform support
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+# Supported: linux/amd64, linux/arm64, linux/ppc64le
+```
+
+**Requirements**:
+- Docker 24.x / Podman 4.x
+- Multi-architecture image support
+- Resource limits enforcement
+
+### Minimum System Requirements
+
+| Environment | vCPU | Memory | Storage | Notes |
+|-------------|------|---------|---------|-------|
+| **Development** | 2 | 4GB | 20GB | Local development |
+| **Testing** | 4 | 8GB | 50GB | CI/CD pipelines |
+| **Staging** | 4 | 8GB | 100GB | Pre-production |
+| **Production** | 8+ | 16GB+ | 500GB+ | Customer hosting |
+
+### Network Requirements
+
+```yaml
+# Required ports
+ports:
+  - "8080:8080"    # Application
+  - "5432:5432"    # PostgreSQL
+  - "8180:8180"    # Keycloak
+  - "6379:6379"    # Redis
+  - "9090:9090"    # Prometheus (monitoring)
+  - "3000:3000"    # React Admin
+```
+
+## Compatibility Matrix
+
+### Supported Architectures
+
+| Architecture | Status | Target Platform | Notes |
+|--------------|--------|-----------------|-------|
+| **linux/amd64** | ✅ Primary | Intel/AMD x86_64 | Most common deployment |
+| **linux/arm64** | ✅ Supported | Apple Silicon, AWS Graviton | Growing adoption |
+| **linux/ppc64le** | ✅ Supported | IBM Power Systems | Enterprise requirement |
+
+### Version Compatibility
+
+```mermaid
+graph TD
+    K["Kotlin 2.0.10<br/>PINNED"] --> SB["Spring Boot 3.3.5<br/>LOCKED"]
+    SB --> SM["Spring Modulith 1.3.0<br/>Required"]
+    SB --> SS["Spring Security 6.4.2<br/>Compatible"]
+    K --> KL["ktlint 1.4.2<br/>Pinned"]
+    K --> D["Detekt 1.23.7<br/>Pinned"]
+
+    SB --> A["Axon 4.9.4<br/>Current"]
+    A --> A5["Axon 5.x<br/>Future Migration"]
+
+    PG["PostgreSQL 16.1+<br/>Minimum"] --> J["jOOQ 3.19.15<br/>Compatible"]
+```
+
+## Quality Gate Configuration
+
+### CI/CD Pipeline Tools
+
+```yaml
+# .github/workflows/quality.yml
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./gradlew ktlintCheck  # Zero violations required
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./gradlew detekt      # Zero violations required
+
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./gradlew konsistTest # Architecture compliance
+
+  mutation-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./gradlew pitest      # 80% minimum coverage
+```
+
+### Quality Enforcement
+
+All quality gates are enforced with **zero violations policy**:
+
+1. **ktlint**: Code formatting must be perfect
+2. **Detekt**: No static analysis violations
+3. **Konsist**: Architecture rules must pass
+4. **Pitest**: 80% minimum mutation coverage
+5. **Test Coverage**: 85% minimum line coverage
+
+## Migration Considerations
+
+### Axon Framework 5.x Migration
+
+**Current State**: Axon 4.9.4 (stable)
+**Target State**: Axon 5.x (planned)
+
+**Migration Timeline**:
+1. Complete initial implementation on 4.9.4
+2. Evaluate 5.x stability and features
+3. Plan migration during maintenance window
+4. Implement migration with backward compatibility
+
+**Breaking Changes to Expect**:
+- Event upcasting improvements
+- Configuration simplification
+- Performance optimizations
+- API modernization
+
+### Spring Boot Upgrades
+
+**Current Lock**: 3.3.5 (required for Spring Modulith 1.3.0)
+**Future Considerations**: Monitor Spring Modulith compatibility
+
+## Tool Integration
+
+### IDE Requirements
+
+**IntelliJ IDEA** (Recommended):
+```kotlin
+// .editorconfig
+[*.kt]
+ij_kotlin_imports_layout = *
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+```
+
+**VS Code** (Supported):
+- Kotlin Language Server
+- Gradle extension
+- Test runner integration
+
+### Local Development Tools
+
+```bash
+# Required tools
+java -version      # Java 21
+docker --version   # Docker 24.x
+gradle --version   # Gradle 8.14
+kotlin -version    # Kotlin 2.0.10
+
+# Optional but recommended
+helm version       # Kubernetes deployments
+kubectl version    # Kubernetes management
+```
+
+## Performance Considerations
+
+### JVM Tuning
+
+```bash
+# Production JVM flags
+JAVA_OPTS="-Xmx2g -Xms2g \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=200 \
+  -XX:+UseStringDeduplication \
+  -XX:+EnableJVMCI"
+```
+
+### Database Optimization
+
+```sql
+-- PostgreSQL configuration
+shared_preload_libraries = 'pg_stat_statements'
+max_connections = 200
+shared_buffers = 256MB
+effective_cache_size = 1GB
+random_page_cost = 1.1
+```
+
+## Related Documentation
+
+- **[High-Level Architecture](high-level-architecture.md)** - System overview and patterns
+- **[System Components](components.md)** - Implementation using these technologies
+- **[Development Workflow](development-workflow.md)** - Setup procedures and tooling
+- **[Coding Standards](coding-standards-revision-2.md)** - Implementation guidelines
+
+---
+
+**Next Steps**: Review [System Components](components.md) for implementation examples using this technology stack, then proceed to [Development Workflow](development-workflow.md) for setup procedures.
