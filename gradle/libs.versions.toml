@@ -1,0 +1,143 @@
+[versions]
+# Core language and runtime (PINNED/LOCKED)
+kotlin = "2.0.10"          # PINNED - Critical constraint for tool compatibility
+java = "21"                # LTS requirement
+gradle = "8.14"            # Build tool version
+
+# Framework stack (LOCKED for compatibility)
+spring-boot = "3.3.5"     # LOCKED for Spring Modulith compatibility
+spring-modulith = "1.3.0" # Module boundary enforcement
+spring-dependency-management = "1.1.6"
+
+# CQRS and Event Sourcing
+axon = "4.9.4"             # Current stable, v5 migration planned
+arrow = "1.2.4"            # Functional programming
+
+# Database and persistence
+postgresql = "42.7.4"      # PostgreSQL driver
+jooq = "3.19.15"          # SQL DSL for read projections
+
+# Testing framework (MANDATORY)
+kotest = "5.9.1"          # Primary testing framework (JUnit forbidden)
+testcontainers = "1.20.4" # Integration testing with real dependencies
+mockk = "1.13.12"         # Mocking framework (use sparingly)
+
+# Quality gates and static analysis
+ktlint = "1.4.2"          # Code formatting (enforced)
+detekt = "1.23.7"         # Static analysis (enforced)
+konsist = "0.18.0"        # Architecture testing
+pitest = "1.15.0"         # Mutation testing
+jacoco = "0.8.12"         # Code coverage
+
+# Documentation
+dokka = "1.9.10"          # API documentation
+
+# Observability
+micrometer = "1.13.6"     # Metrics
+logback = "1.4.14"        # Logging
+
+# Security
+keycloak = "25.0.6"       # Identity provider
+jose4j = "0.9.6"          # JWT processing
+
+# Workflow
+flowable = "7.0.1"        # BPMN workflow engine
+
+[libraries]
+# Kotlin and JVM
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
+kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
+
+# Spring Boot starters
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "spring-boot" }
+
+# Spring Modulith
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
+spring-modulith-starter-jpa = { module = "org.springframework.modulith:spring-modulith-starter-jpa", version.ref = "spring-modulith" }
+
+# Axon Framework
+axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }
+axon-test = { module = "org.axonframework:axon-test", version.ref = "axon" }
+
+# Arrow functional programming
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+jooq-core = { module = "org.jooq:jooq", version.ref = "jooq" }
+jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
+jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
+
+# Testing
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-keycloak = { module = "org.testcontainers:keycloak", version.ref = "testcontainers" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+# Observability
+micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+
+# Security
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+
+# Workflow
+flowable-spring-boot-starter-process = { module = "org.flowable:flowable-spring-boot-starter-process", version.ref = "flowable" }
+
+# Gradle plugins for build-logic
+gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradlePlugin-spring-boot = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
+gradlePlugin-spring-dependencyManagement = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "spring-dependency-management" }
+gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "12.1.1" }
+gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
+gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version = "1.15.0" }
+
+[bundles]
+kotlin = ["kotlin-stdlib", "kotlin-reflect", "kotlin-coroutines-core"]
+spring-boot-web = ["spring-boot-starter-web", "spring-boot-starter-actuator", "spring-boot-starter-validation"]
+spring-boot-security = ["spring-boot-starter-security", "spring-boot-starter-oauth2-resource-server"]
+spring-modulith = ["spring-modulith-starter-core", "spring-modulith-starter-jpa"]
+axon-framework = ["axon-spring-boot-starter"]
+arrow = ["arrow-core", "arrow-fx-coroutines"]
+database = ["postgresql", "spring-boot-starter-data-jpa"]
+jooq = ["jooq-core", "jooq-kotlin"]
+kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-property", "kotest-extensions-spring"]
+testcontainers = ["testcontainers-junit-jupiter", "testcontainers-postgresql", "testcontainers-keycloak"]
+observability = ["micrometer-core", "micrometer-registry-prometheus"]
+
+[plugins]
+# Core Kotlin and JVM
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+
+# Spring
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+
+# Quality gates
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
+pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
+
+# Documentation
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+
+# Database
+jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
