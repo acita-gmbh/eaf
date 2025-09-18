@@ -36,7 +36,7 @@ This directory contains the complete sharded architecture documentation for the 
 
 ### 🔧 Implementation Details
 - **[Error Handling Strategy](error-handling-strategy.md)** - Arrow-Fold-Throw-ProblemDetails pattern
-- **[Project Structure](unified-project-structure.md)** - Module organization and Spring Modulith configuration
+- **[Project Structure](high-level-architecture.md#project-structure-guide)** - Module organization and Spring Modulith configuration
 
 ## Document Relationships
 

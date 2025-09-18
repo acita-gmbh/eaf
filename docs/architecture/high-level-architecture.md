@@ -124,6 +124,42 @@ framework/
 └── workflow/      # Business process management
 ```
 
+#### Project Structure Guide
+
+The Gradle monorepo follows a single canonical layout that replaces the retired `unified-project-structure.md` shard. This directory map preserves Spring Modulith boundaries and keeps every layer aligned with the architecture responsibilities.
+
+```
+eaf-monorepo/
+├── build-logic/                 # Convention plugins (Kotlin, Spring Boot, testing, quality gates)
+├── framework/                   # Shared Kotlin modules consumed by all products
+│   ├── core/                    # Domain primitives, Either helpers, Nullable pattern contracts
+│   ├── security/                # 10-layer JWT validation and emergency recovery
+│   ├── cqrs/                    # Axon command/event/query infrastructure
+│   ├── tenancy/                 # Tenant context propagation utilities
+│   ├── workflow/                # Flowable BPMN integration points
+│   ├── observability/           # Metrics, tracing, and structured logging
+│   ├── persistence/             # jOOQ projections and Axon repositories
+│   └── web/                     # REST adapters and ProblemDetails handling
+├── products/                    # Deployable Spring Boot applications (e.g., licensing-server)
+├── shared/                      # Cross-cutting API contracts and generated types
+│   ├── shared-api/              # Commands, events, queries shared across services
+│   ├── shared-types/            # Generated TypeScript schemas for frontend clients
+│   └── testing/                 # Nullable pattern helpers + Testcontainers scaffolding
+├── apps/
+│   └── admin/                   # React-Admin operator portal workspace
+├── scripts/                     # Developer automation (`init-dev.sh`, database utilities)
+├── gradle/
+│   └── libs.versions.toml       # Single source of truth for dependency versions
+└── compose.yml                  # Local Docker stack (PostgreSQL, Keycloak, Redis, etc.)
+```
+
+Implementation notes:
+- All Kotlin modules must apply convention plugins from `build-logic/` to enforce JVM 21, ktlint, Detekt, Konsist, and Pitest gating.
+- Spring Modulith `ModuleMetadata.kt` files live within each `framework/*` submodule to codify allowed dependencies.
+- Product applications can depend on `framework/*` and `shared/*` modules only; cross-product coupling is prohibited.
+- Frontend workspaces under `apps/` consume the published `shared-types` package to stay schema-aligned with backend contracts.
+- Automation scripts and Compose assets remain at the repo root to keep CI and local workflows using identical entry points.
+
 ### 4. Event-Driven Architecture
 
 Asynchronous processing with event projections for scalability:

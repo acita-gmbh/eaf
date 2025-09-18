@@ -16,7 +16,9 @@ customTechnicalDocuments: null
 devLoadAlwaysFiles:
   - docs/architecture/coding-standards-revision-2.md
   - docs/architecture/tech-stack.md
-  - docs/architecture/unified-project-structure.md
+  - docs/architecture/high-level-architecture.md
+  - docs/architecture/development-workflow.md
+  - docs/architecture/test-strategy-and-standards-revision-3.md
 devDebugLog: .ai/debug-log.md
 devStoryLocation: docs/stories
 slashPrefix: BMad
