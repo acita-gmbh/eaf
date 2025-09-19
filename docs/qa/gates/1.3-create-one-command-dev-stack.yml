@@ -1,0 +1,52 @@
+schema: 1
+story: '1.3'
+gate: PASS
+status_reason: 'One-command onboarding stack implements Compose parity and credential rotation; monitor runtime baselines.'
+reviewer: 'Quinn'
+updated: '2025-09-19T19:10:00Z'
+top_issues:
+  - id: 'PERF-001'
+    severity: low
+    finding: 'Monitor onboarding runtime on low-spec machines and capture baseline metrics for regressions.'
+    suggested_action: 'Track duration output from init script; adjust Gradle flags or container profiles if runtimes degrade.'
+assessments:
+  risk_profile: docs/qa/assessments/1.3-risk-20250919.md
+  nfr: docs/qa/assessments/1.3-nfr-20250919.md
+  test_design: docs/qa/assessments/1.3-test-design-20250919.md
+  trace: docs/qa/assessments/1.3-trace-20250919.md
+test_design:
+  scenarios_total: 6
+  by_level:
+    unit: 1
+    integration: 4
+    e2e: 1
+  by_priority:
+    p0: 3
+    p1: 2
+    p2: 1
+  coverage_gaps: []
+nfr_validation:
+  _assessed: [security, performance, reliability, maintainability]
+  security:
+    status: PASS
+    notes: 'Script enforces admin password capture before Keycloak bootstrap and verifies realm import.'
+  performance:
+    status: CONCERNS
+    notes: 'Runtime metrics logged; continue monitoring on lower-spec machines.'
+  reliability:
+    status: PASS
+    notes: 'Health checks and cleanup traps defined in onboarding flow.'
+  maintainability:
+    status: PASS
+    notes: 'Compose manifest and scripts align with architecture conventions; static validation planned.'
+trace:
+  totals:
+    requirements: 4
+    full: 4
+    partial: 0
+    none: 0
+  planning_ref: docs/qa/assessments/1.3-test-design-20250919.md
+  uncovered: []
+  notes: docs/qa/assessments/1.3-trace-20250919.md
+waiver:
+  active: false
