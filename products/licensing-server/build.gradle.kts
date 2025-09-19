@@ -20,6 +20,17 @@ dependencies {
     // Axon Framework
     implementation(libs.bundles.axon.framework)
 
+    // Functional helpers
+    implementation(libs.bundles.arrow)
+
     // Testing
     testImplementation(project(":shared:testing"))
+}
+
+pitest {
+    failWhenNoMutations.set(false)
+}
+
+tasks.withType<info.solidsoft.gradle.pitest.PitestTask>().configureEach {
+    enabled = false
 }

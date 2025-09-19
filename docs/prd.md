@@ -143,7 +143,7 @@ The EAF itself (as an admin/operator portal) will require:
 
 #### Story 1.2: Implement Constitutional Quality Gates
 * **As a** Core Developer, **I want** automated quality gates for static analysis and testing integrated into the Gradle build, **so that** all code (human or AI-generated) strictly adheres to our mandatory standards.
-* **AC 1:** The Gradle build integrates `ktlint` (1.4.2) and `Detekt` (1.23.7) with zero-tolerance failure policies; **this configuration MUST be applied to modules via the convention plugins** defined in Story 1.1.
+* **AC 1:** The Gradle build integrates `ktlint` (1.4.0) and `Detekt` (1.23.7) with zero-tolerance failure policies; **this configuration MUST be applied to modules via the convention plugins** defined in Story 1.1.
 * **AC 2:** The build process enforces the "Constitutional TDD" (RED-GREEN-Refactor) philosophy.
 * **AC 3:** The build is configured to run Kotest and Testcontainers for the `integrationTest` source set; **this configuration MUST also be applied via the convention plugins**.
 

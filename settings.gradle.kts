@@ -41,3 +41,6 @@ include(":products:licensing-server")
 include(":shared:shared-api")
 include(":shared:shared-types")
 include(":shared:testing")
+
+// Frontend applications
+include(":apps:admin")

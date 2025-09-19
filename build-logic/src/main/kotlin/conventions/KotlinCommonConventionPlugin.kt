@@ -14,6 +14,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
  */
 class KotlinCommonConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
+        val catalog = loadCatalog(target.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath())
+
         with(target) {
             with(pluginManager) {
                 apply("org.jetbrains.kotlin.jvm")
@@ -50,7 +52,7 @@ class KotlinCommonConventionPlugin : Plugin<Project> {
 
             // Configure ktlint
             configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-                version.set("1.3.1")
+                version.set(catalog.version("ktlint"))
                 android.set(false)
                 ignoreFailures.set(false)
                 reporters {
@@ -64,7 +66,7 @@ class KotlinCommonConventionPlugin : Plugin<Project> {
 
             // Configure detekt
             configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
-                toolVersion = "1.23.7"
+                toolVersion = catalog.version("detekt")
                 config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
                 buildUponDefaultConfig = true
                 allRules = false

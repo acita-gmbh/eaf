@@ -10,7 +10,7 @@ The EAF technology stack is carefully curated to deliver enterprise-grade reliab
 
 | Technology | Version | Constraint Type | Rationale |
 |------------|---------|----------------|-----------|
-| **Kotlin** | 2.0.10 | PINNED | Tool compatibility (ktlint 1.4.2, detekt 1.23.7) |
+| **Kotlin** | 2.0.10 | PINNED | Tool compatibility (ktlint 1.4.0, detekt 1.23.7) |
 | **Spring Boot** | 3.3.5 | LOCKED | Spring Modulith 1.3.0 compatibility requirement |
 | **JVM** | 21 LTS | Required | Spring Boot 3.3.5 baseline requirement |
 
@@ -278,11 +278,11 @@ class ProductServiceTest : BehaviorSpec({
 
 ### Code Quality Tools
 
-#### ktlint 1.4.2 (Code Formatting)
+#### ktlint 1.4.0 (Code Formatting)
 
 ```kotlin
 [versions]
-ktlint = "1.4.2"  # Pinned for Kotlin 2.0.10 compatibility
+ktlint = "1.4.0"  # Pinned for Kotlin 2.0.10 compatibility
 
 [plugins]
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
@@ -327,11 +327,11 @@ complexity:
     threshold: 15
 ```
 
-#### Konsist 0.18.0 (Architecture Testing)
+#### Konsist 0.17.3 (Architecture Testing)
 
 ```kotlin
 [versions]
-konsist = "0.18.0"
+konsist = "0.17.3"
 
 [libraries]
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
@@ -395,9 +395,9 @@ kotest = "5.9.1"
 testcontainers = "1.20.4"
 
 # Quality
-ktlint = "1.4.2"
+ktlint = "1.4.0"
 detekt = "1.23.7"
-konsist = "0.18.0"
+konsist = "0.17.3"
 
 # Workflow
 flowable = "7.1.0"
@@ -484,7 +484,7 @@ graph TD
     K["Kotlin 2.0.10<br/>PINNED"] --> SB["Spring Boot 3.3.5<br/>LOCKED"]
     SB --> SM["Spring Modulith 1.3.0<br/>Required"]
     SB --> SS["Spring Security 6.4.2<br/>Compatible"]
-    K --> KL["ktlint 1.4.2<br/>Pinned"]
+    K --> KL["ktlint 1.4.0<br/>Pinned"]
     K --> D["Detekt 1.23.7<br/>Pinned"]
 
     SB --> A["Axon 4.9.4<br/>Current"]

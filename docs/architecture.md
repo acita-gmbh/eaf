@@ -114,9 +114,9 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | **Kotest** | 5.9.1 | Testing Framework | Mandatory (JUnit forbidden) |
 | **Testcontainers** | 1.20.4 | Integration Testing | Real dependencies only |
-| **Konsist** | 0.18.0 | Architecture Tests | Module boundary verification |
+| **Konsist** | 0.17.3 | Architecture Tests | Module boundary verification |
 | **Pitest** | 1.17.5 | Mutation Testing | 80% minimum coverage |
-| **ktlint** | 1.4.2 | Code Formatting | Zero violations |
+| **ktlint** | 1.4.0 | Code Formatting | Zero violations |
 | **Detekt** | 1.23.7 | Static Analysis | Zero violations |
 
 ### Infrastructure Requirements

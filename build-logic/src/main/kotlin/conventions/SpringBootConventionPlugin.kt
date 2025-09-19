@@ -10,20 +10,37 @@ import org.gradle.kotlin.dsl.dependencies
  */
 class SpringBootConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
+        val catalog = loadCatalog(target.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath())
+
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
-                // TODO: Add Spring Boot plugin configuration when version catalog is resolved
-                // apply("org.springframework.boot")
-                // apply("io.spring.dependency-management")
-                // apply("org.jetbrains.kotlin.plugin.spring")
-                // apply("org.jetbrains.kotlin.plugin.jpa")
+                apply("org.springframework.boot")
+                apply("io.spring.dependency-management")
+                apply("org.jetbrains.kotlin.plugin.spring")
+                apply("org.jetbrains.kotlin.plugin.jpa")
             }
 
             dependencies {
-                // Note: Version catalog access in convention plugins requires direct dependency references
-                // Core Spring Boot starters - placeholder for now, will be configured when version catalog is resolved
-                // TODO: Add proper dependency configuration once version catalog conflict is resolved
+                fun addAll(configuration: String, aliases: List<String>) {
+                    aliases.forEach { alias ->
+                        val library = catalog.library(alias)
+                        add(configuration, "${library.module}:${library.version}")
+                    }
+                }
+
+                addAll(
+                    "implementation",
+                    listOf(
+                        "spring-boot-starter-web",
+                        "spring-boot-starter-actuator",
+                        "spring-boot-starter-validation",
+                        "spring-boot-starter-security",
+                        "spring-boot-starter-oauth2-resource-server",
+                        "spring-modulith-starter-core",
+                        "spring-modulith-starter-jpa"
+                    )
+                )
             }
         }
     }

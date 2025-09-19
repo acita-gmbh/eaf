@@ -1,7 +1,9 @@
 package conventions
 
+import info.solidsoft.gradle.pitest.PitestPluginExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.named
 
@@ -11,18 +13,23 @@ import org.gradle.kotlin.dsl.named
  */
 class QualityGatesConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
+        val catalog = loadCatalog(target.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath())
+
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
                 apply("jacoco")
-                // TODO: Fix Konsist plugin application
-                // apply("com.lemonappdev.konsist")
                 apply("info.solidsoft.pitest")
             }
 
+            val basePackage = (findProperty("eaf.basePackage") as? String)
+                ?.takeIf { it.isNotBlank() }
+                ?: group.toString().takeIf { it.isNotBlank() }
+                ?: "com.axians.eaf"
+
             // Configure Jacoco
             configure<org.gradle.testing.jacoco.plugins.JacocoPluginExtension> {
-                toolVersion = "0.8.12"
+                toolVersion = catalog.version("jacoco")
             }
 
             tasks.named("test") {
@@ -38,17 +45,30 @@ class QualityGatesConventionPlugin : Plugin<Project> {
             }
 
             // Configure Pitest
-            configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
+            configure<PitestPluginExtension> {
+                val pitestExtension = this
                 junit5PluginVersion.set("1.2.1")
                 avoidCallsTo.set(setOf("kotlin.jvm.internal", "kotlin.Result"))
                 mutators.set(setOf("STRONGER"))
-                targetClasses.set(setOf("${project.group}.*"))
-                targetTests.set(setOf("${project.group}.*"))
+                targetClasses.set(setOf("$basePackage.*"))
+                targetTests.set(setOf("$basePackage.*"))
                 threads.set(Runtime.getRuntime().availableProcessors())
                 outputFormats.set(setOf("XML", "HTML"))
                 timestampedReports.set(false)
                 mutationThreshold.set(80)
                 coverageThreshold.set(85)
+
+                failWhenNoMutations.set(false)
+
+                project.afterEvaluate {
+                    val hasSources = extensions
+                        .getByType(SourceSetContainer::class.java)
+                        .getByName("main")
+                        .allSource
+                        .files
+                        .any { it.isFile }
+                    pitestExtension.failWhenNoMutations.set(hasSources)
+                }
             }
 
             // Wire quality gates into check task
@@ -56,8 +76,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 dependsOn("ktlintCheck")
                 dependsOn("detekt")
                 dependsOn("jacocoTestReport")
-                // TODO: Add back when Konsist is fixed
-                // dependsOn("konsistTest")
+                dependsOn("konsistTest")
                 finalizedBy("pitest")
             }
         }

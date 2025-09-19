@@ -60,9 +60,9 @@ See the full design in docs/architecture.md.
 - **Testing**: Kotest + Testcontainers integration-first approach
 
 ### Quality & Development Tools
-- **Formatting**: ktlint 1.4.2 (enforced, zero violations)
+- **Formatting**: ktlint 1.4.0 (enforced, zero violations)
 - **Static Analysis**: Detekt 1.23.7 (enforced, zero violations)
-- **Architecture Testing**: Konsist 0.18.0 (boundary verification)
+- **Architecture Testing**: Konsist 0.17.3 (boundary verification)
 - **Mutation Testing**: Pitest 1.17.5 (80% minimum coverage)
 - **API Documentation**: Dokka 1.9.10
 
@@ -253,7 +253,7 @@ eaf scaffold ra-resource <Domain> --fields id,name,status
 ### Critical Version Constraints
 **For complete compatibility matrix, see:** [Tech Stack](docs/architecture/tech-stack.md)
 
-- **Kotlin 2.0.10 (PINNED)** - Critical constraint for tool compatibility (ktlint 1.4.2, detekt 1.23.7)
+- **Kotlin 2.0.10 (PINNED)** - Critical constraint for tool compatibility (ktlint 1.4.0, detekt 1.23.7)
 - **Spring Boot 3.3.5 (LOCKED)** - Required for Spring Modulith 1.3.0 compatibility
 - **Axon Framework 4.9.4** - Current stable, v5 migration planned before production
 

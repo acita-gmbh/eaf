@@ -1,15 +1,12 @@
+package conventions
+
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
-import org.gradle.api.tasks.testing.Test
 
-plugins {
-    `kotlin-dsl`
-}
+internal data class CatalogLibrary(val module: String, val version: String)
 
-data class CatalogLibrary(val module: String, val version: String)
-
-class Catalog(private val versions: Map<String, String>, private val libraries: Map<String, CatalogLibrary>) {
+internal class Catalog(private val versions: Map<String, String>, private val libraries: Map<String, CatalogLibrary>) {
     fun version(alias: String): String = versions[alias]
         ?: error("Version alias '$alias' not found in libs.versions.toml")
 
@@ -17,10 +14,10 @@ class Catalog(private val versions: Map<String, String>, private val libraries: 
         ?: error("Library alias '$alias' not found in libs.versions.toml")
 }
 
-private object CatalogParser {
+private object CatalogCache {
     private val cache = ConcurrentHashMap<Pair<Path, Long>, Catalog>()
 
-    fun load(path: Path): Catalog {
+    fun get(path: Path): Catalog {
         val normalized = path.normalize()
         val lastModified = Files.getLastModifiedTime(normalized).toMillis()
         return cache.computeIfAbsent(normalized to lastModified) { parse(normalized) }
@@ -51,10 +48,10 @@ private object CatalogParser {
                 "libraries" -> {
                     if (!line.contains('{')) return@forEach
                     val alias = line.substringBefore('=').trim()
-                    val propertiesBlock = line.substringAfter('{').substringBeforeLast('}').trim()
+                    val properties = line.substringAfter('{').substringBeforeLast('}').trim()
                     var module: String? = null
                     var version: String? = null
-                    propertiesBlock.split(',').forEach { entry ->
+                    properties.split(',').forEach { entry ->
                         val parts = entry.split('=', limit = 2)
                         if (parts.size != 2) return@forEach
                         val key = parts[0].trim()
@@ -68,6 +65,7 @@ private object CatalogParser {
 
                     val resolvedModule = module ?: error("Library '$alias' missing module definition")
                     val resolvedVersion = version ?: error("Library '$alias' missing version information")
+
                     libraries[alias] = CatalogLibrary(resolvedModule, resolvedVersion)
                 }
             }
@@ -78,54 +76,4 @@ private object CatalogParser {
 
 }
 
-val catalog = CatalogParser.load(projectDir.parentFile.resolve("gradle/libs.versions.toml").toPath())
-
-repositories {
-    gradlePluginPortal()
-    mavenCentral()
-}
-
-dependencies {
-    listOf(
-        "gradlePlugin-kotlin-jvm",
-        "gradlePlugin-kotlin-allopen",
-        "gradlePlugin-kotlin-noarg",
-        "gradlePlugin-spring-boot",
-        "gradlePlugin-spring-dependencyManagement",
-        "gradlePlugin-ktlint",
-        "gradlePlugin-detekt",
-        "gradlePlugin-pitest"
-    ).forEach { alias ->
-        val library = catalog.library(alias)
-        implementation("${library.module}:${library.version}")
-    }
-
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit5"))
-    testImplementation(gradleTestKit())
-}
-
-gradlePlugin {
-    plugins {
-        register("eaf.kotlin-common") {
-            id = "eaf.kotlin-common"
-            implementationClass = "conventions.KotlinCommonConventionPlugin"
-        }
-        register("eaf.spring-boot") {
-            id = "eaf.spring-boot"
-            implementationClass = "conventions.SpringBootConventionPlugin"
-        }
-        register("eaf.testing") {
-            id = "eaf.testing"
-            implementationClass = "conventions.TestingConventionPlugin"
-        }
-        register("eaf.quality-gates") {
-            id = "eaf.quality-gates"
-            implementationClass = "conventions.QualityGatesConventionPlugin"
-        }
-    }
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
-}
+internal fun loadCatalog(path: Path): Catalog = CatalogCache.get(path)
