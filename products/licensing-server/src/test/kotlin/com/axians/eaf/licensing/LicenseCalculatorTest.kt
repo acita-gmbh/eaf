@@ -24,4 +24,12 @@ class LicenseCalculatorTest :
                 { fail("Expected validation error but got $it") },
             )
         }
+
+        test("rejects negative bonus seats") {
+            val result = LicenseCalculator.calculate(committed = 1, bonus = -5)
+            result.fold(
+                { error -> error.message shouldBe "bonus seats cannot be negative" },
+                { fail("Expected validation error but got $it") },
+            )
+        }
     })

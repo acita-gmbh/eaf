@@ -1,3 +1,5 @@
+.pids/
+
 # Operating System Files
 .DS_Store
 .DS_Store?

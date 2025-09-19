@@ -23,6 +23,9 @@ dependencies {
     // Functional helpers
     implementation(libs.bundles.arrow)
 
+    // Database driver for local onboarding
+    runtimeOnly(libs.postgresql)
+
     // Testing
     testImplementation(project(":shared:testing"))
 }

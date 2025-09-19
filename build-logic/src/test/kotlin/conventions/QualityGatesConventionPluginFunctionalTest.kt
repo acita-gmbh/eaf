@@ -1,30 +1,47 @@
 package conventions
 
-import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Test
 
 class QualityGatesConventionPluginFunctionalTest {
     @Test
-    fun `wires quality gates into check lifecycle`() {
-        withPluginTestProject(
+    fun `check runs constitutional stack successfully`() {
+        val project = createTestProject()
+        bootstrapSampleProject(project)
+        writeSampleSources(
+            project,
+            extraAppBuildContent = """
+                tasks.named<info.solidsoft.gradle.pitest.PitestTask>("pitest") {
+                    failWhenNoMutations.set(false)
+                }
             """
-            plugins {
-                id("eaf.testing")
-                id("eaf.quality-gates")
-            }
+        )
+        println("Project dir: ${project.path}")
 
-            repositories {
-                mavenCentral()
-            }
-            """.trimIndent()
-        ) {
-            val tasksResult = runGradle("tasks", "--all")
-            assertTrue(tasksResult.output.contains("jacocoTestReport"), "jacocoTestReport task should be available")
-            assertTrue(tasksResult.output.contains("pitest"), "pitest task should be available")
+        val result = project.gradle(":app:check").build()
 
-            val dryRun = runGradle("check", "--dry-run")
-            assertTrue(dryRun.output.contains(":konsistTest SKIPPED"), "check should invoke konsistTest")
-            assertTrue(dryRun.output.contains(":pitest SKIPPED"), "check should finalize with pitest")
-        }
+        val checkTask = result.task(":app:check")
+        assertTrue(checkTask != null && checkTask.outcome == TaskOutcome.SUCCESS, "check task should succeed")
+        assertTrue(result.output.contains("Constitutional TDD stack complete"))
+    }
+
+    @Test
+    fun `detekt version drift is rejected`() {
+        val project = createTestProject()
+        bootstrapSampleProject(project)
+        writeSampleSources(project, extraAppBuildContent = """
+            extensions.configure(io.gitlab.arturbosch.detekt.extensions.DetektExtension::class) {
+                toolVersion = "1.23.5"
+            }
+            tasks.named<info.solidsoft.gradle.pitest.PitestTask>("pitest") {
+                failWhenNoMutations.set(false)
+            }
+        """)
+        println("Project dir (drift test): ${project.path}")
+
+        val result = project.gradle(":app:check").buildAndFail()
+        val output = result.output
+        assertTrue(output.contains("detekt version drift detected"), "Expected detekt drift message in build output but was:\n$output")
     }
 }

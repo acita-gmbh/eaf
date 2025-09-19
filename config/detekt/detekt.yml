@@ -37,3 +37,9 @@ style:
     active: false
   MaxLineLength:
     maxLineLength: 120
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true

@@ -1,25 +1,34 @@
 package conventions
 
-import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Test
 
 class TestingConventionPluginFunctionalTest {
     @Test
-    fun `registers integration and konsist test tasks`() {
-        withPluginTestProject(
-            """
-            plugins {
-                id("eaf.testing")
-            }
+    fun `testing convention registers integration and konsist tasks`() {
+        val project = createTestProject()
+        bootstrapSampleProject(project)
+        writeTestingOnlySources(project)
 
-            repositories {
-                mavenCentral()
+        val result = project.gradle(":app:check").build()
+
+        assertTrue(result.task(":app:integrationTest")?.outcome == TaskOutcome.SUCCESS)
+        assertTrue(result.task(":app:konsistTest")?.outcome == TaskOutcome.SUCCESS)
+    }
+
+    @Test
+    fun `dependency version drift fails fast`() {
+        val project = createTestProject()
+        bootstrapSampleProject(project)
+        writeTestingOnlySources(project, extraAppBuildContent = """
+            dependencies {
+                testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
             }
-            """.trimIndent()
-        ) {
-            val result = runGradle("tasks", "--all")
-            assertTrue(result.output.contains("integrationTest"), "integrationTest task should be available")
-            assertTrue(result.output.contains("konsistTest"), "konsistTest task should be available")
-        }
+        """)
+
+        val result = project.gradle(":app:check").buildAndFail()
+        val output = result.output
+        assertTrue(output.contains("Version drift detected"), "Expected version drift message in build output but was:\n$output")
     }
 }

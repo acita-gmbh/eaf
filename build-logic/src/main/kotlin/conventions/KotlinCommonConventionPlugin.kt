@@ -7,6 +7,8 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 /**
  * Convention plugin for Kotlin modules in EAF.
@@ -51,13 +53,13 @@ class KotlinCommonConventionPlugin : Plugin<Project> {
             }
 
             // Configure ktlint
-            configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+            configure<KtlintExtension> {
                 version.set(catalog.version("ktlint"))
                 android.set(false)
                 ignoreFailures.set(false)
                 reporters {
-                    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
-                    reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+                    reporter(ReporterType.PLAIN)
+                    reporter(ReporterType.CHECKSTYLE)
                 }
                 filter {
                     exclude("**/generated/**")

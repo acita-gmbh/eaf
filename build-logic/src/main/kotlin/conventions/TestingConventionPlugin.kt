@@ -2,6 +2,7 @@ package conventions
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.dependencies
@@ -62,6 +63,7 @@ class TestingConventionPlugin : Plugin<Project> {
                 DependencyHandlerScope_addAll(
                     "testImplementation",
                     listOf(
+                        "kotlin-test",
                         "kotest-runner-junit5",
                         "kotest-assertions-core",
                         "kotest-property",
@@ -71,9 +73,15 @@ class TestingConventionPlugin : Plugin<Project> {
                     )
                 )
 
+                val sharedTestingProject = rootProject.findProject(":shared:testing")
+                if (sharedTestingProject != null) {
+                    add("testImplementation", sharedTestingProject)
+                }
+
                 DependencyHandlerScope_addAll(
                     "integrationTestImplementation",
                     listOf(
+                        "kotlin-test",
                         "kotest-runner-junit5",
                         "kotest-assertions-core",
                         "kotest-property",
@@ -85,9 +93,18 @@ class TestingConventionPlugin : Plugin<Project> {
                     )
                 )
 
+                val testcontainersBom = catalog.library("testcontainers-bom")
+                add("integrationTestImplementation", platform("${testcontainersBom.module}:${testcontainersBom.version}"))
+
+                if (sharedTestingProject != null) {
+                    add("integrationTestImplementation", sharedTestingProject)
+                    add("integrationTestRuntimeOnly", sharedTestingProject)
+                }
+
                 DependencyHandlerScope_addAll(
                     "konsistTestImplementation",
                     listOf(
+                        "kotlin-test",
                         "kotest-runner-junit5",
                         "kotest-assertions-core",
                         "kotest-property",
@@ -104,6 +121,15 @@ class TestingConventionPlugin : Plugin<Project> {
                 classpath = integrationTest.runtimeClasspath
                 shouldRunAfter(tasks.named("test"))
                 useJUnitPlatform()
+                doFirst {
+                    try {
+                        Class.forName("com.axians.eaf.testing.containers.TestContainers")
+                            .getDeclaredMethod("startAll")
+                            .invoke(null)
+                    } catch (ignored: ClassNotFoundException) {
+                        // shared-testing module not on classpath; nothing to bootstrap
+                    }
+                }
             }
 
             val konsistTestTask = tasks.register<Test>("konsistTest") {
@@ -118,6 +144,61 @@ class TestingConventionPlugin : Plugin<Project> {
             tasks.named("check") {
                 dependsOn(integrationTestTask)
                 dependsOn(konsistTestTask)
+            }
+
+            afterEvaluate {
+                enforceCatalogAlignment("testImplementation", listOf(
+                    "kotlin-test",
+                    "kotest-runner-junit5",
+                    "kotest-assertions-core",
+                    "kotest-property",
+                    "kotest-extensions-spring",
+                    "mockk",
+                    "konsist"
+                ), catalog)
+
+                enforceCatalogAlignment("integrationTestImplementation", listOf(
+                    "kotlin-test",
+                    "kotest-runner-junit5",
+                    "kotest-assertions-core",
+                    "kotest-property",
+                    "kotest-extensions-spring",
+                    "mockk",
+                    "testcontainers-junit-jupiter",
+                    "testcontainers-postgresql",
+                    "testcontainers-keycloak"
+                ), catalog)
+
+                enforceCatalogAlignment("konsistTestImplementation", listOf(
+                    "kotlin-test",
+                    "kotest-runner-junit5",
+                    "kotest-assertions-core",
+                    "kotest-property",
+                    "kotest-extensions-spring",
+                    "konsist"
+                ), catalog)
+            }
+        }
+    }
+}
+
+private fun Project.enforceCatalogAlignment(configurationName: String, aliases: List<String>, catalog: Catalog) {
+    val configuration = configurations.findByName(configurationName) ?: return
+    aliases.forEach { alias ->
+        val expected = catalog.library(alias)
+        val matches = configuration.dependencies
+            .filterIsInstance<ExternalModuleDependency>()
+            .filter { dep -> "${dep.group}:${dep.name}" == expected.module }
+
+        require(matches.isNotEmpty()) {
+            "Expected dependency ${expected.module} (alias '$alias') in configuration '$configurationName'."
+        }
+
+        matches.forEach { dependency ->
+            val declaredVersion = dependency.versionConstraint.requiredVersion.takeIf { it.isNotBlank() }
+            require(declaredVersion == expected.version) {
+                val found = declaredVersion ?: "unspecified"
+                "Version drift detected for ${expected.module} in configuration '$configurationName': found $found, expected ${expected.version}."
             }
         }
     }

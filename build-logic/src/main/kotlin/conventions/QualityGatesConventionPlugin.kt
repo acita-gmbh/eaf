@@ -3,9 +3,13 @@ package conventions
 import info.solidsoft.gradle.pitest.PitestPluginExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 
 /**
  * Convention plugin for quality gates in EAF.
@@ -47,7 +51,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
             // Configure Pitest
             configure<PitestPluginExtension> {
                 val pitestExtension = this
-                junit5PluginVersion.set("1.2.1")
+                pitestVersion.set(catalog.version("pitest"))
+                junit5PluginVersion.set(catalog.version("pitest-junit5"))
                 avoidCallsTo.set(setOf("kotlin.jvm.internal", "kotlin.Result"))
                 mutators.set(setOf("STRONGER"))
                 targetClasses.set(setOf("$basePackage.*"))
@@ -71,13 +76,102 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
             }
 
+            val sourceSets = extensions.findByType(SourceSetContainer::class.java)
+
+            val jacocoVerification = try {
+                tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java)
+            } catch (ignored: UnknownTaskException) {
+                tasks.register("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java)
+            }
+
+            jacocoVerification.configure {
+                dependsOn("test")
+                executionData.setFrom(
+                    layout.buildDirectory.dir("jacoco").map { dir ->
+                        dir.asFileTree.matching {
+                            include("test.exec", "test-*.exec")
+                        }
+                    }
+                )
+                onlyIf {
+                    val resolvedExec = executionData.files.filter { it.exists() }
+                    if (resolvedExec.isEmpty()) {
+                        logger.lifecycle("Skipping Jacoco coverage verification for ${'$'}path because no execution data was generated.")
+                    }
+                    resolvedExec.isNotEmpty()
+                }
+                sourceSets?.findByName("main")?.let { mainSourceSet ->
+                    sourceDirectories.setFrom(mainSourceSet.allSource.srcDirs)
+                    classDirectories.setFrom(
+                        mainSourceSet.output.classesDirs.asFileTree.matching {
+                            exclude("**/*Application*")
+                        }
+                    )
+                }
+
+                violationRules.apply {
+                    rule {
+                        limit {
+                            counter = "LINE"
+                            value = "COVEREDRATIO"
+                            minimum = "0.85".toBigDecimal()
+                        }
+                        limit {
+                            counter = "BRANCH"
+                            value = "COVEREDRATIO"
+                            minimum = "0.80".toBigDecimal()
+                        }
+                    }
+                }
+            }
+
+            this@with.tasks.findByName("compileIntegrationTestKotlin")?.let { task ->
+                jacocoVerification.configure { dependsOn(task) }
+            }
+            this@with.tasks.findByName("compileIntegrationTestJava")?.let { task ->
+                jacocoVerification.configure { dependsOn(task) }
+            }
+            this@with.tasks.findByName("integrationTest")?.let { task ->
+                jacocoVerification.configure { dependsOn(task) }
+            }
+
             // Wire quality gates into check task
             tasks.named("check") {
+                dependsOn("test")
                 dependsOn("ktlintCheck")
                 dependsOn("detekt")
                 dependsOn("jacocoTestReport")
-                dependsOn("konsistTest")
-                finalizedBy("pitest")
+                dependsOn(jacocoVerification)
+
+                listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->
+                    if (this@with.tasks.findByName(taskName) != null) {
+                        dependsOn(taskName)
+                    }
+                }
+
+                doFirst {
+                    logger.lifecycle("\n🔴 RED → prepare failing tests | 🟡 GREEN → satisfy Constitutional TDD | 🔵 REFACTOR → keep quality gates clean")
+                }
+
+                doLast {
+                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → integrationTest → konsistTest → pitest).")
+                }
+            }
+
+            afterEvaluate {
+                extensions.findByType(KtlintExtension::class.java)?.let { ktlintExtension ->
+                    val configuredVersion = ktlintExtension.version.orNull
+                    require(configuredVersion == null || configuredVersion == catalog.version("ktlint")) {
+                        "ktlint version drift detected: $configuredVersion (expected ${catalog.version("ktlint")})."
+                    }
+                }
+
+                extensions.findByType(io.gitlab.arturbosch.detekt.extensions.DetektExtension::class.java)?.let { detektExtension ->
+                    val toolVersion = detektExtension.toolVersion
+                    require(toolVersion == catalog.version("detekt")) {
+                        "detekt version drift detected: $toolVersion (expected ${catalog.version("detekt")})."
+                    }
+                }
             }
         }
     }

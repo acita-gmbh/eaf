@@ -28,6 +28,7 @@ detekt = "1.23.7"         # Static analysis (enforced)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.15.0"         # Mutation testing
 jacoco = "0.8.12"         # Code coverage
+pitest-junit5 = "1.2.1"   # Pitest JUnit 5 plugin
 
 # Documentation
 dokka = "1.9.10"          # API documentation
@@ -49,6 +50,7 @@ kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 # Spring Boot starters
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
