@@ -54,9 +54,11 @@ private object CatalogParser {
                     val propertiesBlock = line.substringAfter('{').substringBeforeLast('}').trim()
                     var module: String? = null
                     var version: String? = null
-                    propertiesBlock.split(',').forEach { entry ->
+
+                    // Parse library properties
+                    for (entry in propertiesBlock.split(',')) {
                         val parts = entry.split('=', limit = 2)
-                        if (parts.size != 2) return@forEach
+                        if (parts.size != 2) continue
                         val key = parts[0].trim()
                         val value = parts[1].trim().substringBefore('#').trim().trim('"')
                         when (key) {

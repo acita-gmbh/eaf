@@ -33,6 +33,7 @@ include(":framework:observability")
 include(":framework:workflow")
 include(":framework:persistence")
 include(":framework:web")
+include(":framework:widget")
 
 // Product modules
 include(":products:licensing-server")
