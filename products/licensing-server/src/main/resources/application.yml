@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: eaf-licensing-server
+  profiles:
+    active: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eaf}
+    username: ${SPRING_DATASOURCE_USERNAME:eaf}
+    password: ${SPRING_DATASOURCE_PASSWORD:eaf}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+# Axon Framework configuration
+axon:
+  axonserver:
+    enabled: false
+  eventhandling:
+    processors:
+      # Configure tracking processors for projections
+      default:
+        mode: tracking
+        source: eventBus
+  serializer:
+    events: jackson
+    messages: jackson
+
+# Server configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Logging configuration
+logging:
+  level:
+    com.axians.eaf: DEBUG
+    org.axonframework: INFO
+    org.springframework.web: INFO

@@ -7,10 +7,11 @@ This document provides explicit file path specifications and component location 
 ## Configuration Components
 
 ### Axon Framework Configuration
-- **Primary Config**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt`
-- **Event Store Config**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/EventStoreConfiguration.kt`
-- **Command Gateway Config**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/CommandBusConfiguration.kt`
-- **Query Gateway Config**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/QueryBusConfiguration.kt`
+- **Primary Config**: `products/{application}/src/main/kotlin/com/axians/eaf/{application}/config/AxonConfiguration.kt`
+- **Licensing Server Config**: `products/licensing-server/src/main/kotlin/com/axians/eaf/licensing/config/AxonConfiguration.kt`
+- **Event Store Config**: Application-level configuration with DataSource access
+- **Command Gateway Config**: Auto-configured by Axon Spring Boot starter
+- **Query Gateway Config**: Auto-configured by Axon Spring Boot starter
 
 ### Application Configuration
 - **Main Application**: `products/licensing-server/src/main/resources/application.yml`
