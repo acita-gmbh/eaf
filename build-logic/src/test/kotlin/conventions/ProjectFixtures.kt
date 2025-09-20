@@ -46,6 +46,10 @@ internal fun writeSampleSources(project: TestProject, extraAppBuildContent: Stri
         appendLine()
         appendLine("group = \"com.axians.eaf.sample\"")
         appendLine("version = \"1.0.0\"")
+        appendLine()
+        appendLine("dependencyCheck {")
+        appendLine("    skip = true")
+        appendLine("}")
         if (extraContent.isNotBlank()) {
             appendLine()
             appendLine(extraContent)

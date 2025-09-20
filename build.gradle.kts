@@ -12,3 +12,20 @@ extra["eaf.libs"] = libs
 extra["eaf.version.ktlint"] = libs.findVersion("ktlint").get().requiredVersion
 extra["eaf.version.detekt"] = libs.findVersion("detekt").get().requiredVersion
 extra["eaf.version.jacoco"] = libs.findVersion("jacoco").get().requiredVersion
+
+val dependencyCheckAggregate = tasks.register("dependencyCheckAnalyze") {
+    group = "verification"
+    description = "Runs OWASP Dependency Check across all modules with quality gates enabled."
+}
+
+gradle.projectsEvaluated {
+    val analyzeDependencies = subprojects
+        .filter { it.pluginManager.hasPlugin("org.owasp.dependencycheck") }
+        .map { "${it.path}:dependencyCheckAnalyze" }
+
+    if (analyzeDependencies.isNotEmpty()) {
+        tasks.named("dependencyCheckAnalyze") {
+            dependsOn(analyzeDependencies)
+        }
+    }
+}

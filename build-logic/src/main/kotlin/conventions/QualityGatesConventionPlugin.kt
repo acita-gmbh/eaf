@@ -10,6 +10,8 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension
+import org.owasp.dependencycheck.reporting.ReportGenerator
 
 /**
  * Convention plugin for quality gates in EAF.
@@ -24,6 +26,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 apply("eaf.kotlin-common")
                 apply("jacoco")
                 apply("info.solidsoft.pitest")
+                apply("org.owasp.dependencycheck")
             }
 
             val basePackage = (findProperty("eaf.basePackage") as? String)
@@ -34,6 +37,17 @@ class QualityGatesConventionPlugin : Plugin<Project> {
             // Configure Jacoco
             configure<org.gradle.testing.jacoco.plugins.JacocoPluginExtension> {
                 toolVersion = catalog.version("jacoco")
+            }
+
+            configure<DependencyCheckExtension> {
+                failBuildOnCVSS = 7.0f
+                formats = mutableListOf(
+                    ReportGenerator.Format.HTML.name,
+                    ReportGenerator.Format.JSON.name
+                )
+                analyzers.apply {
+                    assemblyEnabled = false
+                }
             }
 
             tasks.named("test") {
@@ -142,6 +156,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 dependsOn("detekt")
                 dependsOn("jacocoTestReport")
                 dependsOn(jacocoVerification)
+                dependsOn("dependencyCheckAnalyze")
 
                 listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->
                     if (this@with.tasks.findByName(taskName) != null) {

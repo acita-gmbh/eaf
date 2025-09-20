@@ -94,7 +94,8 @@ dependencies {
         "gradlePlugin-spring-dependencyManagement",
         "gradlePlugin-ktlint",
         "gradlePlugin-detekt",
-        "gradlePlugin-pitest"
+        "gradlePlugin-pitest",
+        "gradlePlugin-dependencyCheck"
     ).forEach { alias ->
         val library = catalog.library(alias)
         implementation("${library.module}:${library.version}")
