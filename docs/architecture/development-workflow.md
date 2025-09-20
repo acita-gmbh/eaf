@@ -855,11 +855,16 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v3
+      - name: Install Docker client on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install docker docker-compose || true
       - name: Prepare Docker on macOS
         if: matrix.os == 'macos-latest'
         run: |
           brew install colima || true
           colima start --cpu 4 --memory 8 --disk 60 || colima start
+          docker context use colima || true
           docker info
       - run: ./gradlew test integrationTest jacocoTestReport jacocoTestCoverageVerification
       - name: Upload coverage reports
