@@ -825,6 +825,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+
 jobs:
   quality-gates:
     runs-on: ubuntu-latest
@@ -832,53 +835,76 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      - name: Run quality gates
-        run: |
-          ./gradlew ktlintCheck
-          ./gradlew detekt
-          ./gradlew konsistTest
+      - uses: gradle/actions/setup-gradle@v3
+      - run: ./gradlew compileKotlin
+      - run: ./gradlew ktlintCheck detekt konsistTest
 
   test:
     needs: quality-gates
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
-
-      - name: Run tests
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Prepare Docker on macOS
+        if: matrix.os == 'macos-latest'
         run: |
-          ./gradlew test integrationTest
-          ./gradlew jacocoTestReport
-
+          brew install colima || true
+          colima start --cpu 4 --memory 8 --disk 60 || colima start
+          docker info
+      - run: ./gradlew test integrationTest jacocoTestReport jacocoTestCoverageVerification
       - name: Upload coverage reports
+        if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
         with:
           files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
-  security-scan:
+  mutation-testing:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run security scan
-        run: ./gradlew dependencyCheckAnalyze
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v3
+      - run: ./gradlew pitest
+
+  security-scan:
+    needs: quality-gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v3
+      - run: ./gradlew dependencyCheckAnalyze
 ```
+
+### Required Status Checks
+
+Repository administrators **must** require the following checks on the `main` branch before merging:
+
+- `quality-gates`
+- `test`
+- `mutation-testing`
+- `security-scan`
+
+Capture evidence (screenshot or `gh api repos/<org>/<repo>/branches/main/protection`) and attach it to the corresponding story verification record once updated. This keeps AC4 enforceable and documents Task 5.1 compliance.
 
 ## Related Documentation
 
