@@ -306,6 +306,37 @@ class WidgetTest :
                         )
                 }
             }
+
+            When("updating description to empty string") {
+                val updateCommand =
+                    UpdateWidgetCommand(
+                        widgetId = widgetId,
+                        tenantId = tenantId,
+                        description = "",
+                    )
+
+                Then("should update description to empty string") {
+                    fixture
+                        .given(createdEvent)
+                        .`when`(updateCommand)
+                        .expectSuccessfulHandlerExecution()
+                        .expectEventsMatching(
+                            org.axonframework.test.matchers.Matchers.sequenceOf(
+                                org.axonframework.test.matchers.Matchers.matches { event ->
+                                    val payload = event.payload
+                                    payload is WidgetUpdatedEvent &&
+                                        payload.widgetId == widgetId &&
+                                        payload.tenantId == tenantId &&
+                                        payload.name == null &&
+                                        payload.description == "" &&
+                                        payload.value == null &&
+                                        payload.category == null &&
+                                        payload.metadata == null
+                                },
+                            ),
+                        )
+                }
+            }
         }
 
         Given("Widget validation helpers") {

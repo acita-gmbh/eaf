@@ -114,7 +114,10 @@ class Widget {
     @EventSourcingHandler
     fun on(event: WidgetUpdatedEvent) {
         event.name?.let { this.name = it }
-        event.description?.let { this.description = it }
+        // For description, distinguish between null (don't update) and empty string (update to empty)
+        if (event.description != null) {
+            this.description = event.description
+        }
         event.value?.let { this.value = it }
         event.category?.let { this.category = it }
         event.metadata?.let { this.metadata = it }
@@ -122,7 +125,7 @@ class Widget {
     }
 
     companion object {
-        private val NAME_PATTERN = Regex("^[A-Za-z0-9][A-Za-z0-9 _-]{0,98}[A-Za-z0-9]$")
+        private val NAME_PATTERN = Regex("^[A-Za-z0-9](?:[A-Za-z0-9 _-]{0,98}[A-Za-z0-9])?$")
         private val CATEGORY_PATTERN = Regex("^[A-Z][A-Z_]{2,29}$")
         private val MIN_VALUE = BigDecimal.ZERO
         private val MAX_VALUE = BigDecimal("1000000")
