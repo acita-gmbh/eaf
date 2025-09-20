@@ -68,7 +68,7 @@ jobs:
       - name: Prepare Docker on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          brew install colima || true
+          brew install colima qemu || true
           mkdir -p /tmp/colima
           colima start --cpu 4 --memory 8 --disk 60 --vm-type qemu --mount-type sshfs || colima start --vm-type qemu --mount-type sshfs
           docker context use colima || true
