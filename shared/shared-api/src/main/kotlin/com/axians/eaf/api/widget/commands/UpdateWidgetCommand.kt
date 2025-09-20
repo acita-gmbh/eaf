@@ -11,5 +11,5 @@ data class UpdateWidgetCommand(
     val description: String? = null,
     val value: BigDecimal? = null,
     val category: String? = null,
-    val metadata: Map<String, Any>? = null
+    val metadata: Map<String, Any>? = null,
 )

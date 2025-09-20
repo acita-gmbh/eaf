@@ -11,5 +11,5 @@ data class CreateWidgetCommand(
     val description: String?,
     val value: BigDecimal,
     val category: String,
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
 )

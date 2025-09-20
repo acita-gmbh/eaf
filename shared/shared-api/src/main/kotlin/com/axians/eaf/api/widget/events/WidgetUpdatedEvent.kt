@@ -11,5 +11,5 @@ data class WidgetUpdatedEvent(
     val value: BigDecimal?,
     val category: String?,
     val metadata: Map<String, Any>?,
-    val updatedAt: Instant = Instant.now()
+    val updatedAt: Instant = Instant.now(),
 )

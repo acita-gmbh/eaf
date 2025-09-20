@@ -11,5 +11,5 @@ data class WidgetCreatedEvent(
     val value: BigDecimal,
     val category: String,
     val metadata: Map<String, Any> = emptyMap(),
-    val createdAt: Instant = Instant.now()
+    val createdAt: Instant = Instant.now(),
 )
