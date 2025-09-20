@@ -110,6 +110,8 @@ jobs:
     needs: quality-gates
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DEPENDENCY_CHECK_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,13 +126,20 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Prepare dependency-check cache dir
+        if: ${{ env.DEPENDENCY_CHECK_ENABLED == 'true' }}
         run: mkdir -p "${{ env.GRADLE_USER_HOME }}/dependency-check-data"
 
       - name: Cache dependency-check data
         uses: actions/cache@v4
+        if: ${{ env.DEPENDENCY_CHECK_ENABLED == 'true' }}
         with:
           path: ${{ env.GRADLE_USER_HOME }}/dependency-check-data
           key: dependency-check-${{ runner.os }}-v1
 
       - name: Run dependency check
+        if: ${{ env.DEPENDENCY_CHECK_ENABLED == 'true' }}
         run: ./gradlew dependencyCheckAnalyze --no-daemon --stacktrace
+
+      - name: Skip dependency check (awaiting NVD API key)
+        if: ${{ env.DEPENDENCY_CHECK_ENABLED != 'true' }}
+        run: echo "Dependency check temporarily disabled until NVD API key is available."
