@@ -51,9 +51,11 @@ private object CatalogCache {
                     val properties = line.substringAfter('{').substringBeforeLast('}').trim()
                     var module: String? = null
                     var version: String? = null
-                    properties.split(',').forEach { entry ->
+
+                    // Parse library properties
+                    for (entry in properties.split(',')) {
                         val parts = entry.split('=', limit = 2)
-                        if (parts.size != 2) return@forEach
+                        if (parts.size != 2) continue
                         val key = parts[0].trim()
                         val value = parts[1].trim().substringBefore('#').trim().trim('"')
                         when (key) {
