@@ -863,7 +863,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install colima || true
-          colima start --cpu 4 --memory 8 --disk 60 || colima start
+          mkdir -p /tmp/colima
+          colima start --cpu 4 --memory 8 --disk 60 --vm-type qemu --mount-type sshfs || colima start --vm-type qemu --mount-type sshfs
           docker context use colima || true
           docker info
       - run: ./gradlew test integrationTest jacocoTestReport jacocoTestCoverageVerification
@@ -898,6 +899,8 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v3
       - run: ./gradlew dependencyCheckAnalyze
+
+> **Note:** Provision an [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) and store it as the `NVD_API_KEY` repository secret. The CI workflow exports this secret so dependency-check can download CVE feeds quickly; without it the update phase can take 15+ minutes and may rate-limit. Until a key is available, set `DEPENDENCY_CHECK_ENABLED` to `true` in the `security-scan` job to re-enable the check.
 ```
 
 ### Required Status Checks

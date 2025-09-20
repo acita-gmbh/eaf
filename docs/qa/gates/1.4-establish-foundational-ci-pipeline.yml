@@ -1,20 +1,28 @@
 schema: 1
 story: '1.4'
 story_title: 'Establish Foundational CI Pipeline'
-gate: PASS
-status_reason: 'Story covers AC1-AC4 with explicit CI and merge enforcement tasks; operational follow-ups tracked via risk profile.'
+gate: WAIVED
+status_reason: 'Security lead approved temporary waiver (2025-09-20) while dependency-check remains feature-flagged off pending NVD API key.'
 reviewer: 'Quinn (Test Architect)'
 updated: '2025-09-20T00:00:00Z'
-quality_score: 100
+quality_score: 90
 expires: '2025-10-04T00:00:00Z'
 
-top_issues: []
+top_issues:
+  - id: QA-SEC-001
+    severity: medium
+    summary: 'Dependency-Check job disabled via feature flag pending NVD API key.'
+    detail: 'Waiver approved on 2025-09-20; re-enable scan once credentials are provisioned.'
+    suggested_owner: dev
 waiver:
-  active: false
+  active: true
+  reason: 'Security lead approved temporary bypass of dependency-check until NVD API key is issued.'
+  approver: 'Security Lead'
+  granted: '2025-09-20T00:00:00Z'
 
 evidence:
   tests_reviewed: 6
-  risks_identified: 5
+  risks_identified: 1
   trace:
     ac_covered: [1, 2, 3, 4]
     ac_gaps: []
@@ -22,8 +30,8 @@ evidence:
 nfr_validation:
   _assessed: [security, performance, reliability, maintainability]
   security:
-    status: PASS
-    notes: 'Zero-violation lint/static gates enforced; branch protection completion logged under Task 5.1.'
+    status: CONCERNS
+    notes: 'Dependency-Check feature-flagged off pending NVD API key; waiver approved 2025-09-20 authorizes temporary bypass.'
   performance:
     status: PASS
     notes: 'Caching and decomposed jobs keep runtime aligned with workflow guidance.'
@@ -63,9 +71,12 @@ risk_profile:
   high_risks: ['OPS-001', 'OPS-002']
 
 recommendations:
-  immediate: []
-  future:
-    - action: 'Record completion of repository-required checks (Task 5.1) once administrators update branch protection.'
+  immediate:
+    - action: 'Provision NVD API key and set GitHub secret `NVD_API_KEY`, then flip `DEPENDENCY_CHECK_ENABLED` to true to restore the scan.'
       refs:
+        - '.github/workflows/ci.yml'
         - 'docs/architecture/development-workflow.md#continuous-integration-integration'
-        - 'docs/qa/assessments/1.4-branch-protection-20250920.md'
+  future:
+    - action: 'Reinstate macOS test matrix once hosted runners reliably support Colima-based Docker workloads.'
+      refs:
+        - '.github/workflows/ci.yml'

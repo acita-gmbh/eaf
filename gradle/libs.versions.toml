@@ -29,6 +29,7 @@ konsist = "0.17.3"        # Architecture testing
 pitest = "1.15.0"         # Mutation testing
 jacoco = "0.8.12"         # Code coverage
 pitest-junit5 = "1.2.1"   # Pitest JUnit 5 plugin
+dependency-check = "12.1.3" # Supply chain scanning
 
 # Documentation
 dokka = "1.9.10"          # API documentation
@@ -113,6 +114,7 @@ gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version
 gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
 gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version = "1.15.0" }
+gradlePlugin-dependencyCheck = { module = "org.owasp:dependency-check-gradle", version.ref = "dependency-check" }
 
 [bundles]
 kotlin = ["kotlin-stdlib", "kotlin-reflect", "kotlin-coroutines-core"]
@@ -142,6 +144,7 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
 pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
+dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
 
 # Documentation
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
