@@ -48,6 +48,15 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 analyzers.apply {
                     assemblyEnabled = false
                 }
+                nvd.apply {
+                    val apiKey = sequenceOf(
+                        System.getenv("NVD_API_KEY"),
+                        System.getenv("DEPENDENCY_CHECK_NVD_API_KEY"),
+                        this@with.findProperty("nvd.apiKey") as? String
+                    ).firstOrNull { !it.isNullOrBlank() }?.trim()
+
+                    apiKey?.let { this.apiKey = it }
+                }
             }
 
             tasks.named("test") {

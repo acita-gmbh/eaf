@@ -12,6 +12,7 @@ permissions:
 
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+  NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
 jobs:
   quality-gates:

@@ -899,6 +899,8 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v3
       - run: ./gradlew dependencyCheckAnalyze
+
+> **Note:** Provision an [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) and store it as the `NVD_API_KEY` repository secret. The CI workflow exports this secret so dependency-check can download CVE feeds quickly; without it the update phase can take 15+ minutes and may rate-limit.
 ```
 
 ### Required Status Checks
