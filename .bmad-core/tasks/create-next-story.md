@@ -69,11 +69,17 @@ Extract:
 
 ALWAYS cite source documents: `[Source: architecture/{filename}.md#{section}]`
 
-### 4. Verify Project Structure Alignment
+### 4. Verify Project Structure Alignment & File Path Validation
 
-- Cross-reference story requirements with Project Structure Guide from `docs/architecture/unified-project-structure.md`
-- Ensure file paths, component locations, or module names align with defined structures
+- **MANDATORY**: Cross-reference ALL file paths with `docs/architecture/component-specifications.md`
+- **File Path Verification**: For each file path mentioned in story tasks:
+  - Check if path exists in component-specifications.md
+  - If path is not documented, either find it in codebase or flag as "needs creation"
+  - NEVER infer file paths - only use documented or verified paths
+- **Module Existence Check**: Verify target modules (e.g., framework/web, framework/cqrs) exist in current codebase
+- **Directory Creation Requirements**: If new directories are needed, explicitly document this in tasks
 - Document any structural conflicts in "Project Structure Notes" section within the story draft
+- **Anti-Hallucination Check**: Flag any technical file locations not supported by existing documentation or codebase structure
 
 ### 5. Populate Story Template with Full Context
 
