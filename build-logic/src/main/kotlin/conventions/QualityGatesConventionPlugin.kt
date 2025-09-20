@@ -48,6 +48,13 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 analyzers.apply {
                     assemblyEnabled = false
                 }
+                data {
+                    sequenceOf(
+                        System.getenv("DEPENDENCY_CHECK_DATA_DIR"),
+                        System.getenv("GRADLE_USER_HOME")?.let { "$it/dependency-check-data" }
+                    ).firstOrNull { !it.isNullOrBlank() }
+                        ?.let { directory = it }
+                }
                 nvd.apply {
                     val apiKey = sequenceOf(
                         System.getenv("NVD_API_KEY"),

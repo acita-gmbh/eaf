@@ -123,5 +123,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Prepare dependency-check cache dir
+        run: mkdir -p "${{ env.GRADLE_USER_HOME }}/dependency-check-data"
+
+      - name: Cache dependency-check data
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.GRADLE_USER_HOME }}/dependency-check-data
+          key: dependency-check-${{ runner.os }}-v1
+
       - name: Run dependency check
         run: ./gradlew dependencyCheckAnalyze --no-daemon --stacktrace
