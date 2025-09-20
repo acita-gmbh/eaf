@@ -10,7 +10,6 @@ import javax.sql.DataSource
 
 @Configuration
 open class AxonConfiguration {
-
     @Bean
     open fun eventStorageEngine(dataSource: DataSource): EventStorageEngine =
         JpaEventStorageEngine
