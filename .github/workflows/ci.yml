@@ -69,7 +69,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install colima || true
-          colima start --cpu 4 --memory 8 --disk 60 || colima start
+          mkdir -p /tmp/colima
+          colima start --cpu 4 --memory 8 --disk 60 --vm-type qemu --mount-type sshfs || colima start --vm-type qemu --mount-type sshfs
           docker context use colima || true
           docker info
 
