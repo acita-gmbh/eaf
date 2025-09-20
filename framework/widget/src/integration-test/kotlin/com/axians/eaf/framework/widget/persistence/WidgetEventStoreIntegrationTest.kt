@@ -89,7 +89,7 @@ class WidgetEventStoreIntegrationTest(
                         payloadType shouldBe "com.axians.eaf.api.widget.events.WidgetCreatedEvent"
                         payload shouldNotBe null
                         payload shouldContain "Event Store Test Widget"
-                        payload shouldContain "persistence-test"
+                        payload shouldContain command.tenantId
                         eventFound = true
                     }
                     eventFound shouldBe true
