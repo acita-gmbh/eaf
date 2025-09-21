@@ -1,4 +1,5 @@
 .pids/
+.kotlin/
 
 # Operating System Files
 .DS_Store
