@@ -2,7 +2,7 @@
 
 ## Overview
 
-The EAF testing strategy implements Constitutional TDD (Test-Driven Development) with a hybrid approach combining fast business logic tests using the Nullable Design Pattern and comprehensive integration tests using Testcontainers. This strategy achieves 85% line coverage and 80% mutation coverage while maintaining 61.6% performance improvement for business logic testing.
+The EAF testing strategy implements Constitutional TDD (Test-Driven Development) with a hybrid approach combining fast business logic tests using the Nullable Design Pattern and comprehensive integration tests using Testcontainers. This strategy achieves 80% line coverage and 80% mutation coverage while maintaining 61.6% performance improvement for business logic testing.
 
 ## Testing Philosophy
 
@@ -673,7 +673,7 @@ class ProductApiE2ETest : IntegrationTestBase() {
 
 ### Coverage Requirements
 
-- **Line Coverage**: Minimum 85%
+- **Line Coverage**: Minimum 80%
 - **Mutation Coverage**: Minimum 80% (Pitest)
 - **Branch Coverage**: Minimum 80%
 - **Integration Coverage**: 100% for critical business flows
@@ -702,7 +702,7 @@ tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = "0.85".toBigDecimal() // 85% line coverage
+                minimum = "0.80".toBigDecimal() // 80% line coverage
             }
         }
         rule {
@@ -719,7 +719,7 @@ pitest {
     targetClasses.set(setOf("com.axians.eaf.*"))
     excludedClasses.set(setOf("*Test*", "*Spec*", "*Configuration*"))
     mutationThreshold.set(80) // 80% mutation coverage
-    coverageThreshold.set(85) // 85% line coverage
+    coverageThreshold.set(80) // 80% line coverage
 
     outputFormats.set(setOf("HTML", "XML"))
     timestampedReports.set(false)

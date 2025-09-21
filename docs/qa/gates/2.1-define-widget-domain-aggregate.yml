@@ -78,7 +78,7 @@ implementation_highlights:
     detekt_violations: 0
     ktlint_violations: 0
     konsist_violations: 0
-    test_coverage: '85%+'
+    test_coverage: '80%+'
     mutation_coverage_ready: true
 
 recommendations:

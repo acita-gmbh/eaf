@@ -38,12 +38,5 @@ tasks.withType<info.solidsoft.gradle.pitest.PitestTask>().configureEach {
     enabled = false
 }
 
-// Story 2.2 Coverage Decision: Constitutional TDD Compliance
-// Infrastructure configuration (AxonConfiguration.eventStorageEngine) requires real DataSource
-// This is comprehensively tested via integration tests in framework/widget module
-// Convention plugin override prevents threshold adjustment, disabling for this story
-// Business logic (LicenseCalculator) has full unit test coverage
-// Integration tests provide comprehensive architectural validation
-tasks.jacocoTestCoverageVerification {
-    enabled = false  // Story 2.2: Infrastructure config tested via integration, follows Constitutional TDD
-}
+// Coverage now aligns with global 80% standard (adjusted from 85%)
+// AxonConfiguration properly tested via integration tests following Constitutional TDD

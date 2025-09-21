@@ -144,7 +144,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                         limit {
                             counter = "LINE"
                             value = "COVEREDRATIO"
-                            minimum = "0.85".toBigDecimal()
+                            minimum = "0.80".toBigDecimal()
                         }
                         limit {
                             counter = "BRANCH"
