@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.bundles.kotest)
     implementation(libs.bundles.testcontainers)
     implementation(libs.mockk)
+    implementation(libs.konsist)
 
     // Framework testing support
     implementation(project(":framework:core"))

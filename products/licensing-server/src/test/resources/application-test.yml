@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    # Testcontainers will override these dynamically
+    url: jdbc:postgresql://localhost/testdb
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+axon:
+  axonserver:
+    enabled: false
+  eventhandling:
+    processors:
+      default:
+        mode: tracking
+
+logging:
+  level:
+    com.axians.eaf: DEBUG
+    org.axonframework: DEBUG
+    org.testcontainers: INFO

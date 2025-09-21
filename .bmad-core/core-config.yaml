@@ -19,6 +19,7 @@ devLoadAlwaysFiles:
   - docs/architecture/high-level-architecture.md
   - docs/architecture/development-workflow.md
   - docs/architecture/test-strategy-and-standards-revision-3.md
+  - docs/architecture/component-specifications.md
 devDebugLog: .ai/debug-log.md
 devStoryLocation: docs/stories
 slashPrefix: BMad

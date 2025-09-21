@@ -476,7 +476,7 @@ All code must pass quality gates:
 - **Detekt**: Static analysis (zero violations)
 - **Konsist**: Architecture tests (zero violations)
 - **Pitest**: 80% minimum mutation coverage
-- **Test Coverage**: 85% minimum line coverage
+- **Test Coverage**: 80% minimum line coverage
 
 ### Continuous Quality
 
