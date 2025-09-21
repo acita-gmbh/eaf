@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":shared:shared-api"))
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.spring.boot.web)
+    implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.bundles.axon.framework)
     implementation(libs.bundles.arrow)
 

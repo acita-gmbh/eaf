@@ -22,4 +22,10 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
     testImplementation(libs.bundles.testcontainers)
+
+    integrationTestImplementation(project(":shared:shared-api"))
+    integrationTestImplementation(libs.bundles.kotest)
+    integrationTestImplementation(libs.bundles.testcontainers)
+    integrationTestImplementation(libs.spring.boot.starter.test)
+    integrationTestImplementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 }

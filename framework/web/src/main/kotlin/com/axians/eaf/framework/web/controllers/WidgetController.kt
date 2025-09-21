@@ -1,12 +1,20 @@
 package com.axians.eaf.framework.web.controllers
 
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
+import com.axians.eaf.api.widget.dto.WidgetResponse
+import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
+import com.axians.eaf.api.widget.queries.FindWidgetsQuery
 import org.axonframework.commandhandling.gateway.CommandGateway
+import org.axonframework.queryhandling.QueryGateway
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 import java.net.URI
@@ -17,6 +25,7 @@ import java.util.concurrent.TimeUnit
 @RequestMapping("/widgets")
 class WidgetController(
     private val commandGateway: CommandGateway,
+    private val queryGateway: QueryGateway,
 ) {
     @PostMapping
     fun createWidget(
@@ -42,6 +51,56 @@ class WidgetController(
         return ResponseEntity
             .created(URI.create("/widgets/$widgetId"))
             .body(mapOf("id" to widgetId, "status" to "created"))
+    }
+
+    @GetMapping("/{id}")
+    fun getWidget(
+        @PathVariable("id") widgetId: String,
+        @RequestHeader("Authorization") authorization: String,
+    ): ResponseEntity<WidgetResponse> {
+        val tenantId = extractTenantFromJwt(authorization)
+        val query = FindWidgetByIdQuery(widgetId, tenantId)
+
+        val response = queryGateway.query(query, WidgetResponse::class.java).get(5, TimeUnit.SECONDS)
+
+        return if (response != null) {
+            ResponseEntity.ok(response)
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @GetMapping
+    fun getWidgets(
+        @RequestParam params: Map<String, String>,
+        @RequestHeader("Authorization") authorization: String,
+    ): ResponseEntity<Page<WidgetResponse>> {
+        val tenantId = extractTenantFromJwt(authorization)
+
+        // Extract and validate parameters from map
+        val page = params["page"]?.toIntOrNull() ?: 0
+        val size = (params["size"]?.toIntOrNull() ?: 20).coerceAtMost(100)
+        val sort = params["sort"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+        val category = params["category"]?.takeIf { it.isNotBlank() }
+        val search = params["search"]?.takeIf { it.isNotBlank() }
+
+        val query =
+            FindWidgetsQuery(
+                tenantId = tenantId,
+                page = page,
+                size = size,
+                sort = sort,
+                category = category,
+                search = search,
+            )
+
+        @Suppress("UNCHECKED_CAST")
+        val response =
+            queryGateway
+                .query(query, Page::class.java)
+                .get(5, TimeUnit.SECONDS) as Page<WidgetResponse>
+
+        return ResponseEntity.ok(response)
     }
 
     private fun extractTenantFromJwt(authorization: String): String {
