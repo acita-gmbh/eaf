@@ -29,32 +29,57 @@ class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(problemDetail)
     }
 
-    @ExceptionHandler(RuntimeException::class)
-    fun handleRuntimeError(request: WebRequest): ResponseEntity<ProblemDetail> {
+    @ExceptionHandler(org.axonframework.commandhandling.CommandExecutionException::class)
+    fun handleCommandExecutionError(
+        ex: org.axonframework.commandhandling.CommandExecutionException,
+        request: WebRequest,
+    ): ResponseEntity<ProblemDetail> {
         val problemDetail =
             ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred",
+                "Command execution failed: ${ex.message}",
             )
-        problemDetail.title = "Internal Server Error"
-        problemDetail.type = URI.create("/problems/server-error")
+        problemDetail.title = "Command Execution Error"
+        problemDetail.type = URI.create("/problems/command-execution-error")
         problemDetail.setProperty("timestamp", Instant.now())
         problemDetail.setProperty("path", request.getDescription(false))
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail)
     }
 
+    @ExceptionHandler(java.util.concurrent.TimeoutException::class)
+    fun handleTimeoutError(
+        ex: java.util.concurrent.TimeoutException,
+        request: WebRequest,
+    ): ResponseEntity<ProblemDetail> {
+        val problemDetail =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.REQUEST_TIMEOUT,
+                "Request timed out: ${ex.message}",
+            )
+        problemDetail.title = "Request Timeout"
+        problemDetail.type = URI.create("/problems/timeout-error")
+        problemDetail.setProperty("timestamp", Instant.now())
+        problemDetail.setProperty("path", request.getDescription(false))
+
+        return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(problemDetail)
+    }
+
     @ExceptionHandler(Exception::class)
-    fun handleGenericError(request: WebRequest): ResponseEntity<ProblemDetail> {
+    fun handleGenericError(
+        ex: Exception,
+        request: WebRequest,
+    ): ResponseEntity<ProblemDetail> {
         val problemDetail =
             ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An error occurred while processing the request",
+                "An unexpected error occurred: ${ex.javaClass.simpleName}",
             )
         problemDetail.title = "Server Error"
         problemDetail.type = URI.create("/problems/generic-error")
         problemDetail.setProperty("timestamp", Instant.now())
         problemDetail.setProperty("path", request.getDescription(false))
+        problemDetail.setProperty("exceptionType", ex.javaClass.simpleName)
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail)
     }
