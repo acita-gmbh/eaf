@@ -29,6 +29,13 @@ axon:
       default:
         mode: tracking
         source: eventBus
+      widget-projection:
+        mode: tracking
+        source: eventBus
+        # Performance optimization for projection processing
+        threadCount: 1
+        batchSize: 10
+        # Target <200ms p95 latency processing
   serializer:
     events: jackson
     messages: jackson

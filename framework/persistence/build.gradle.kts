@@ -1,5 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
+    id("eaf.testing")
 }
 
 description = "EAF Persistence Framework - jOOQ adapters and projections"
