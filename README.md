@@ -19,8 +19,8 @@ EAF is built on a foundation of proven architectural patterns to ensure scalabil
 - ✍️ **CQRS & Event Sourcing:** Using the **Axon Framework**, the system separates read and write responsibilities (CQRS) and models business processes as a series of immutable events (Event Sourcing). This provides a full audit trail, improves performance, and simplifies complex domain logic.
 
 - 🛡️ **Secure by Default:** The framework includes pre-built, non-negotiable security modules:
-    - **10-Layer JWT Validation:** A robust, defense-in-depth pipeline for validating JSON Web Tokens.
-    - **3-Layer Tenant Isolation:** A comprehensive multi-tenancy model (Request Filter, Service Validation, Database RLS) to ensure data is strictly segregated.
+    - **10-Layer JWT Validation:** A robust, defense-in-depth pipeline for validating JSON Web Tokens. The layers include format, signature, algorithm, claims schema, expiry, issuer, revocation, roles, user validation, and injection detection.
+    - **3-Layer Tenant Isolation:** A comprehensive multi-tenancy model (Request Filter, Service Validation, Database Row Level Security (RLS)) to ensure data is strictly segregated.
 
 - 🧪 **Constitutional TDD & Integration-First Testing:** The framework mandates a Test-Driven Development approach with a focus on high-value integration tests using **Kotest** and **Testcontainers**. This philosophy ensures that tests are fast, reliable, and validate real-world interactions.
 
@@ -129,7 +129,7 @@ After scaffolding your components, simply re-run the initialization script to bu
 
 The framework uses a standardized error handling approach. All exceptions are handled by a `GlobalExceptionHandler` and formatted as **RFC 7807 Problem Details** (`application/problem+json`). This provides consistent, machine-readable error responses across all APIs.
 
-Domain-specific errors are modeled using sealed hierarchies (e.g., `WidgetError.kt`) and handled within the domain layer using functional constructs from the **Arrow** library (`Either`).
+Domain-specific errors are modeled using sealed hierarchies and handled within the domain layer using functional constructs from the **Arrow** library (`Either`).
 
 ### Input Validation
 
@@ -152,7 +152,7 @@ The framework is built on a philosophy of **Constitutional TDD**. All quality ga
 
 This command is the source of truth for code quality and must pass before any code is merged.
 
-For domain tests, the framework encourages the **Nullable Design Pattern**, where dependencies are replaced with lightweight, in-memory fakes. This allows for extremely fast and focused business logic tests without the overhead of mocking frameworks.
+For domain tests, the framework encourages the **Test Doubles Pattern**, where dependencies are replaced with lightweight, in-memory fakes. This allows for extremely fast and focused business logic tests without the overhead of mocking frameworks.
 
 ## ⚙️ Configuration
 
