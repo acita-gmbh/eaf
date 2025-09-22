@@ -35,7 +35,7 @@ dependency-check = "12.1.3" # Supply chain scanning
 dokka = "1.9.10"          # API documentation
 
 # Observability
-micrometer = "1.13.6"     # Metrics
+micrometer = "1.15.4"     # Metrics
 logback = "1.4.14"        # Logging
 
 # Security
