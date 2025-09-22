@@ -103,7 +103,6 @@ class BasicJwtValidationService : JwtValidationService {
         }
     }
 
-
     private data class RequiredClaims(
         val userId: String,
         val tenantId: String,

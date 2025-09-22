@@ -35,21 +35,23 @@ class SecureController {
         @AuthenticationPrincipal jwt: Jwt,
     ): ResponseEntity<SecureEndpointResponse> {
         // Extract JWT claims for verification
-        val userClaims = UserClaimsDto(
-            id = jwt.getClaimAsString("sub"),
-            tenantId = jwt.getClaimAsString("tenant_id"),
-            roles = JwtClaimsExtractor.extractRolesAsList(jwt),
-            issuer = jwt.issuer?.toString(),
-            audience = jwt.audience,
-            issuedAt = jwt.issuedAt?.epochSecond,
-            expiresAt = jwt.expiresAt?.epochSecond
-        )
+        val userClaims =
+            UserClaimsDto(
+                id = jwt.getClaimAsString("sub"),
+                tenantId = jwt.getClaimAsString("tenant_id"),
+                roles = JwtClaimsExtractor.extractRolesAsList(jwt),
+                issuer = jwt.issuer?.toString(),
+                audience = jwt.audience,
+                issuedAt = jwt.issuedAt?.epochSecond,
+                expiresAt = jwt.expiresAt?.epochSecond,
+            )
 
-        val response = SecureEndpointResponse(
-            message = "Hello from secured endpoint!",
-            user = userClaims,
-            timestamp = System.currentTimeMillis()
-        )
+        val response =
+            SecureEndpointResponse(
+                message = "Hello from secured endpoint!",
+                user = userClaims,
+                timestamp = System.currentTimeMillis(),
+            )
 
         return ResponseEntity.ok(response)
     }

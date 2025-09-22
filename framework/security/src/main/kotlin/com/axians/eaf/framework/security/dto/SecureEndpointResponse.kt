@@ -7,7 +7,7 @@ package com.axians.eaf.framework.security.dto
 data class SecureEndpointResponse(
     val message: String,
     val user: UserClaimsDto,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 /**
@@ -20,5 +20,5 @@ data class UserClaimsDto(
     val issuer: String?,
     val audience: List<String>?,
     val issuedAt: Long?,
-    val expiresAt: Long?
+    val expiresAt: Long?,
 )

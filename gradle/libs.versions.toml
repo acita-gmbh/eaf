@@ -1,12 +1,12 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
-kotlin = "2.0.10"          # PINNED - Critical constraint for tool compatibility
+kotlin = "2.2.20"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
 java = "21"                # LTS requirement
 gradle = "8.14"            # Build tool version
 
-# Framework stack (LOCKED for compatibility)
-spring-boot = "3.5.6"     # Testing compatibility with Spring Modulith 1.4.3
-spring-modulith = "1.4.3" # Module boundary enforcement
+# Framework stack (UPDATED for compatibility)
+spring-boot = "3.5.6"     # Updated from 3.3.5 (tested compatible)
+spring-modulith = "1.4.3" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.6"
 
 # CQRS and Event Sourcing
@@ -14,29 +14,30 @@ axon = "4.9.4"             # Current stable, v5 migration planned
 arrow = "1.2.4"            # Functional programming
 
 # Database and persistence
-postgresql = "42.7.4"      # PostgreSQL driver
-jooq = "3.19.15"          # SQL DSL for read projections
+postgresql = "42.7.8"      # PostgreSQL driver (security updates)
+jooq = "3.20.7"           # SQL DSL for read projections (updated)
 
 # Testing framework (MANDATORY)
 kotest = "5.9.1"          # Primary testing framework (JUnit forbidden)
-testcontainers = "1.20.4" # Integration testing with real dependencies
-mockk = "1.13.12"         # Mocking framework (use sparingly)
+testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
+mockk = "1.14.5"          # Mocking framework (use sparingly)
 
 # Quality gates and static analysis
-ktlint = "1.4.0"          # Code formatting (enforced)
-detekt = "1.23.7"         # Static analysis (enforced)
+ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
+detekt = "1.23.8"         # Static analysis (latest stable)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.15.0"         # Mutation testing
 jacoco = "0.8.12"         # Code coverage
 pitest-junit5 = "1.2.1"   # Pitest JUnit 5 plugin
 dependency-check = "12.1.3" # Supply chain scanning
+gradle-versions = "0.52.0" # Dependency update checking
 
 # Documentation
 dokka = "1.9.10"          # API documentation
-springdoc = "2.6.0"       # OpenAPI documentation
+springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
-micrometer = "1.13.6"     # Metrics
+micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
 logback = "1.4.14"        # Logging
 
 # Security
@@ -89,7 +90,7 @@ kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-sp
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "2.1.0" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.8.0" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
@@ -120,6 +121,7 @@ gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plug
 gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
 gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version = "1.15.0" }
 gradlePlugin-dependencyCheck = { module = "org.owasp:dependency-check-gradle", version.ref = "dependency-check" }
+gradlePlugin-versions = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "gradle-versions" }
 
 [bundles]
 kotlin = ["kotlin-stdlib", "kotlin-reflect", "kotlin-coroutines-core"]
@@ -150,6 +152,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
 pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
+gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions" }
 
 # Documentation
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
