@@ -20,6 +20,9 @@ class SecurityConfiguration {
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8180/realms/eaf}")
     private lateinit var issuerUri: String
 
+    @Value("\${eaf.security.cors.allowed-origin-patterns:http://localhost:3000,http://localhost:8080}")
+    private lateinit var allowedOriginPatterns: String
+
     /**
      * Configures JWT decoder with OIDC discovery.
      * Enhanced validation will be implemented in Story 3.3.
@@ -49,12 +52,7 @@ class SecurityConfiguration {
             }.cors { cors ->
                 cors.configurationSource { _ ->
                     val corsConfiguration = CorsConfiguration()
-                    corsConfiguration.allowedOriginPatterns =
-                        listOf(
-                            "http://localhost:3000", // React dev server
-                            "http://localhost:8080", // Backend dev server
-                            "https://*.axians.com", // Production domains
-                        )
+                    corsConfiguration.allowedOriginPatterns = allowedOriginPatterns.split(",").map { it.trim() }
                     corsConfiguration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     corsConfiguration.allowedHeaders = listOf("*")
                     corsConfiguration.allowCredentials = true
