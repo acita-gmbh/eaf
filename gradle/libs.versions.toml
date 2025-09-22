@@ -1,6 +1,6 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
-kotlin = "2.0.10"          # PINNED - Critical constraint for tool compatibility
+kotlin = "2.2.20"          # PINNED - Critical constraint for tool compatibility
 java = "21"                # LTS requirement
 gradle = "8.14"            # Build tool version
 
