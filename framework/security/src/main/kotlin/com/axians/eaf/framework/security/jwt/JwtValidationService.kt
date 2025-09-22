@@ -77,7 +77,7 @@ class BasicJwtValidationService : JwtValidationService {
             JwtValidationResult(
                 userId = claims.userId,
                 tenantId = claims.tenantId,
-                roles = ((jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>)?.filterIsInstance<String>()?.toSet() ?: emptySet()),
+                roles = extractRolesFromJwt(jwt),
                 issuer = claims.issuer,
                 audience = claims.audience,
                 issuedAt = jwt.issuedAt?.epochSecond ?: 0L,
@@ -102,6 +102,11 @@ class BasicJwtValidationService : JwtValidationService {
             else -> Either.Right(RequiredClaims(userId, tenantId, issuer, audience))
         }
     }
+
+    private fun extractRolesFromJwt(jwt: Jwt): Set<String> =
+        (jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>)
+            ?.filterIsInstance<String>()
+            ?.toSet() ?: emptySet()
 
     private data class RequiredClaims(
         val userId: String,

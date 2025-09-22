@@ -49,11 +49,12 @@ class SecurityConfiguration {
             }.cors { cors ->
                 cors.configurationSource { _ ->
                     val corsConfiguration = CorsConfiguration()
-                    corsConfiguration.allowedOriginPatterns = listOf(
-                        "http://localhost:3000",      // React dev server
-                        "http://localhost:8080",      // Backend dev server
-                        "https://*.axians.com"        // Production domains
-                    )
+                    corsConfiguration.allowedOriginPatterns =
+                        listOf(
+                            "http://localhost:3000", // React dev server
+                            "http://localhost:8080", // Backend dev server
+                            "https://*.axians.com", // Production domains
+                        )
                     corsConfiguration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     corsConfiguration.allowedHeaders = listOf("*")
                     corsConfiguration.allowCredentials = true
