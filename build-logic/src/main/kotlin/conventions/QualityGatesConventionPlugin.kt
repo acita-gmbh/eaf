@@ -29,6 +29,15 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 apply("org.owasp.dependencycheck")
             }
 
+            // Workaround for detekt Kotlin version compatibility (issue #6198)
+            configurations.matching { it.name == "detekt" }.all {
+                resolutionStrategy.eachDependency {
+                    if (requested.group == "org.jetbrains.kotlin") {
+                        useVersion("2.0.21") // Force detekt-compatible Kotlin version
+                    }
+                }
+            }
+
             val basePackage = (findProperty("eaf.basePackage") as? String)
                 ?.takeIf { it.isNotBlank() }
                 ?: group.toString().takeIf { it.isNotBlank() }

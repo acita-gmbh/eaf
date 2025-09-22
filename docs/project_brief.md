@@ -143,8 +143,8 @@ The MVP will be considered successful when these **three** criteria are met:
 
 These are the non-negotiable, version-locked technologies proven by the prototype to work:
 
-* **Backend Language/Framework:** **Kotlin 2.0.10 (PINNED)** and **Spring Boot 3.3.5 (LOCKED)** (due to tooling compatibility breaks in later versions).
-* **CQRS Framework:** **Axon Framework 4.9.4**.
+* **Backend Language/Framework:** **Kotlin 2.2.20 (CURRENT)** and **Spring Boot 3.5.6 (CURRENT)** with full tooling compatibility via detekt workaround.
+* **CQRS Framework:** **Axon Framework 4.12.1**.
 * **Database (Event Store + Projections):** **PostgreSQL 16.1+** (per our "Strategy A" decision).
 * **Frontend Options:** React, Vaadin/Hilla, or TUI (Terminal UI).
 * **Testing Stack:** **Kotest** (replacing JUnit) and **Testcontainers** (for the Integration-First philosophy).
@@ -152,7 +152,7 @@ These are the non-negotiable, version-locked technologies proven by the prototyp
 #### Architecture Considerations (Core Patterns)
 
 * **Repository Structure:** A **Gradle Multi-Module Monorepo**.
-* **Core Architectural Patterns:** The EAF must be built using **Hexagonal Architecture** (programmatically enforced via **Spring Modulith 1.3.0**), **Domain-Driven Design (DDD)**, and **CQRS/Event Sourcing (CQRS/ES)**.
+* **Core Architectural Patterns:** The EAF must be built using **Hexagonal Architecture** (programmatically enforced via **Spring Modulith 1.4.3**), **Domain-Driven Design (DDD)**, and **CQRS/Event Sourcing (CQRS/ES)**.
 * **Security Standard:** **Keycloak OIDC** integration is the standard.
 
 ## Constraints & Assumptions
@@ -192,7 +192,7 @@ The following assumptions (adopted from the prototype brief) must hold true for 
 #### Areas Needing Further Research
 
 * A formal audit of all legacy DCA features (beyond "Dockets") is required to confirm the 100% parity scope required for the DPCM migration.
-* Verification of stable, supported Docker images for *all* locked tech stack components (Keycloak 26.0.0, Kotlin 2.0.10, etc.) on the mandatory `ppc64le` architecture.
+* Verification of stable, supported Docker images for *all* tech stack components (Keycloak 26.0.0, Kotlin 2.2.20, etc.) on the mandatory `ppc64le` architecture.
 
 ## Appendices
 

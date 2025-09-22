@@ -160,9 +160,9 @@ class BadTest : FunSpec({
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-kotlin = "2.0.10"
-spring-boot = "3.3.5"
-axon = "4.9.4"
+kotlin = "2.2.20"
+spring-boot = "3.5.6"
+axon = "4.12.1"
 arrow = "1.2.4"
 
 [libraries]
@@ -192,12 +192,12 @@ dependencies {
 
 // ❌ FORBIDDEN - Hardcoded versions
 plugins {
-    kotlin("jvm") version "2.0.10"  // Forbidden
-    id("org.springframework.boot") version "3.3.5"  // Forbidden
+    kotlin("jvm") version "2.2.20"  // Forbidden
+    id("org.springframework.boot") version "3.5.6"  // Forbidden
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web:3.3.5")  // Forbidden
+    implementation("org.springframework.boot:spring-boot-starter-web:3.5.6")  // Forbidden
 }
 ```
 

@@ -10,9 +10,9 @@ The EAF technology stack is carefully curated to deliver enterprise-grade reliab
 
 | Technology | Version | Constraint Type | Rationale |
 |------------|---------|----------------|-----------|
-| **Kotlin** | 2.0.10 | PINNED | Tool compatibility (ktlint 1.4.0, detekt 1.23.7) |
-| **Spring Boot** | 3.3.5 | LOCKED | Spring Modulith 1.3.0 compatibility requirement |
-| **JVM** | 21 LTS | Required | Spring Boot 3.3.5 baseline requirement |
+| **Kotlin** | 2.2.20 | CURRENT | Latest stable with detekt workaround |
+| **Spring Boot** | 3.5.6 | CURRENT | Latest stable with full compatibility |
+| **JVM** | 21 LTS | Required | Spring Boot 3.5.6 baseline requirement |
 
 ## Core Technologies
 
@@ -21,11 +21,11 @@ The EAF technology stack is carefully curated to deliver enterprise-grade reliab
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-kotlin = "2.0.10"          # PINNED - Do not change
+kotlin = "2.2.20"          # CURRENT - Latest stable
 java = "21"                # LTS requirement
 ```
 
-**Kotlin 2.0.10 Features Used**:
+**Kotlin 2.2.20 Features Used**:
 - Null safety for reduced runtime errors
 - Data classes for immutable domain objects
 - Coroutines for async processing
@@ -42,18 +42,18 @@ java = "21"                # LTS requirement
 ### Framework Stack
 
 ```kotlin
-// Spring Boot 3.3.5 (LOCKED)
+// Spring Boot 3.5.6 (CURRENT)
 [versions]
-spring-boot = "3.3.5"     # LOCKED for Spring Modulith
-spring-modulith = "1.3.0" # Module boundary enforcement
-axon = "4.9.4"            # CQRS/Event Sourcing
+spring-boot = "3.5.6"     # CURRENT - Latest stable
+spring-modulith = "1.4.3" # Module boundary enforcement
+axon = "4.12.1"            # CQRS/Event Sourcing
 arrow = "1.2.4"           # Functional programming
 ```
 
-#### Spring Boot 3.3.5 (LOCKED)
+#### Spring Boot 3.5.6 (CURRENT)
 
 **Why This Version**:
-- Required for Spring Modulith 1.3.0 compatibility
+- Latest stable with full Spring Modulith 1.4.3 compatibility
 - Stable foundation for enterprise applications
 - Complete Jakarta EE 9+ migration
 - Native compilation ready (GraalVM)
@@ -70,12 +70,12 @@ dependencies {
 }
 ```
 
-#### Axon Framework 4.9.4
+#### Axon Framework 4.12.1
 
 **CQRS/Event Sourcing Implementation**:
 ```kotlin
 [versions]
-axon = "4.9.4"
+axon = "4.12.1"
 
 [libraries]
 axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }
@@ -278,11 +278,11 @@ class ProductServiceTest : BehaviorSpec({
 
 ### Code Quality Tools
 
-#### ktlint 1.4.0 (Code Formatting)
+#### ktlint 1.7.1 (Code Formatting)
 
 ```kotlin
 [versions]
-ktlint = "1.4.0"  # Pinned for Kotlin 2.0.10 compatibility
+ktlint = "1.7.1"  # Latest stable with Kotlin 2.2.20 support
 
 [plugins]
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
@@ -304,11 +304,11 @@ ktlint {
 
 **Zero Violations Policy**: All code must pass ktlint without warnings
 
-#### Detekt 1.23.7 (Static Analysis)
+#### Detekt 1.23.8 (Static Analysis)
 
 ```kotlin
 [versions]
-detekt = "1.23.7"  # Pinned for Kotlin 2.0.10 compatibility
+detekt = "1.23.8"  # Latest stable with Kotlin compatibility workaround
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
@@ -373,14 +373,14 @@ distributionUrl=https\://services.gradle.org/distributions/gradle-8.14-bin.zip
 **Version Catalog (gradle/libs.versions.toml)**:
 ```toml
 [versions]
-# Core (Version Locked)
-kotlin = "2.0.10"
-spring-boot = "3.3.5"
+# Core (Current Stable)
+kotlin = "2.2.20"
+spring-boot = "3.5.6"
 java = "21"
 
 # Framework
-axon = "4.9.4"
-spring-modulith = "1.3.0"
+axon = "4.12.1"
+spring-modulith = "1.4.3"
 arrow = "1.2.4"
 
 # Database
@@ -392,11 +392,11 @@ spring-security = "6.4.2"
 
 # Testing (Kotest only)
 kotest = "5.9.1"
-testcontainers = "1.20.4"
+testcontainers = "1.21.3"
 
 # Quality
-ktlint = "1.4.0"
-detekt = "1.23.7"
+ktlint = "1.7.1"
+detekt = "1.23.8"
 konsist = "0.17.3"
 
 # Workflow
@@ -481,11 +481,11 @@ ports:
 
 ```mermaid
 graph TD
-    K["Kotlin 2.0.10<br/>PINNED"] --> SB["Spring Boot 3.3.5<br/>LOCKED"]
-    SB --> SM["Spring Modulith 1.3.0<br/>Required"]
+    K["Kotlin 2.2.20<br/>CURRENT"] --> SB["Spring Boot 3.5.6<br/>CURRENT"]
+    SB --> SM["Spring Modulith 1.4.3<br/>Compatible"]
     SB --> SS["Spring Security 6.4.2<br/>Compatible"]
-    K --> KL["ktlint 1.4.0<br/>Pinned"]
-    K --> D["Detekt 1.23.7<br/>Pinned"]
+    K --> KL["ktlint 1.7.1<br/>Compatible"]
+    K --> D["Detekt 1.23.8<br/>Workaround"]
 
     SB --> A["Axon 4.9.4<br/>Current"]
     A --> A5["Axon 5.x<br/>Future Migration"]
@@ -552,7 +552,7 @@ All quality gates are enforced with **zero violations policy**:
 
 ### Spring Boot Upgrades
 
-**Current Lock**: 3.3.5 (required for Spring Modulith 1.3.0)
+**Current Version**: 3.5.6 (fully compatible with Spring Modulith 1.4.3)
 **Future Considerations**: Monitor Spring Modulith compatibility
 
 ## Tool Integration
@@ -579,7 +579,7 @@ ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
 java -version      # Java 21
 docker --version   # Docker 24.x
 gradle --version   # Gradle 8.14
-kotlin -version    # Kotlin 2.0.10
+kotlin -version    # Kotlin 2.2.20
 
 # Optional but recommended
 helm version       # Kubernetes deployments

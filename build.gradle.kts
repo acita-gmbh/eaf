@@ -4,6 +4,8 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 // Root project build configuration
 // Repositories are managed in settings.gradle.kts
 
+// Removed gradle-versions plugin due to ConcurrentModificationException with Gradle 8.14
+
 group = "com.axians.eaf"
 version = "0.1.0-SNAPSHOT"
 

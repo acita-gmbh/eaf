@@ -18,6 +18,19 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/eaf}
+
+# EAF Security Configuration
+eaf:
+  security:
+    cors:
+      # Configure allowed origins for CORS requests (comma-separated)
+      # For production, set via environment variable: EAF_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS
+      allowed-origin-patterns: ${EAF_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:8080}
 
 # Axon Framework configuration
 axon:
