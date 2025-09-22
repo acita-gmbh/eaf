@@ -17,7 +17,7 @@ These requirements are derived from the "Technical Considerations," "Strategy A"
 
 * **NFR1 (Deployment):** All EAF components must be deployable via Docker Compose onto customer-hosted single servers.
 * **NFR2 (Hardware Compatibility):** All framework components, binaries, and dependencies must be compatible with `amd64`, `arm64`, and `ppc64le` processor architectures.
-* **NFR3 (Stack Lock):** The framework stack is locked to the prototype's validated versions: **Kotlin 2.0.10 (PINNED)**, **Spring Boot 3.3.5 (LOCKED)**, and **Axon Framework 4.9.4**.
+* **NFR3 (Stack Current):** The framework stack uses current stable versions: **Kotlin 2.2.20**, **Spring Boot 3.5.6**, and **Axon Framework 4.9.4**.
 * **NFR4 (Architectural Pattern):** The architecture MUST adhere to Hexagonal Architecture, DDD, and CQRS/ES patterns, with boundaries programmatically enforced (via Spring Modulith).
 * **NFR5 (Persistence Strategy):** The persistence layer (PostgreSQL) must be implemented as a swappable "adapter" (port), isolating the business logic to safeguard a future migration path to a streaming store (like NATS).
 * **NFR6 (Extensibility):** The core command handling architecture must include the necessary interceptor "hooks" or "ports" (e.g., PRESCRIPT/POSTSCRIPT concepts) to allow the deferred Post-MVP "Dockets" orchestration engine (which will be Flowable) to plug in without requiring a core rewrite.

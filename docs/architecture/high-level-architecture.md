@@ -247,8 +247,8 @@ class ProductServiceTest : BehaviorSpec({
 
 | Component | Technology | Version | Rationale |
 |-----------|------------|---------|-----------|
-| **Language** | Kotlin | 2.0.10 | Type safety, null safety, interop |
-| **Framework** | Spring Boot | 3.3.5 | Enterprise patterns, ecosystem |
+| **Language** | Kotlin | 2.2.20 | Type safety, null safety, interop |
+| **Framework** | Spring Boot | 3.5.6 | Enterprise patterns, ecosystem |
 | **CQRS/ES** | Axon Framework | 4.9.4 | Proven event sourcing platform |
 | **Database** | PostgreSQL | 16.1+ | ACID compliance, performance |
 | **Security** | Keycloak | 26.0.0 | Enterprise identity management |
@@ -257,8 +257,8 @@ class ProductServiceTest : BehaviorSpec({
 
 ### Key Architectural Constraints
 
-1. **Version Pinning**: Kotlin 2.0.10 (PINNED for tool compatibility)
-2. **Spring Boot Lock**: 3.3.5 (LOCKED for Spring Modulith 1.3.0)
+1. **Latest Kotlin**: 2.2.20 (CURRENT with detekt compatibility workaround)
+2. **Latest Spring Boot**: 3.5.6 (CURRENT with full Spring Modulith 1.4.3 compatibility)
 3. **No Wildcard Imports**: Explicit imports required
 4. **Kotest Only**: JUnit explicitly forbidden
 5. **PostgreSQL Only**: H2 and other databases forbidden

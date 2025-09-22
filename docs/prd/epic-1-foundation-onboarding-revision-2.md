@@ -6,7 +6,7 @@
 * **As a** Core Developer, **I want** a defined Gradle Multi-Module Monorepo structure configured with version catalogs, **so that** all framework libraries, product apps (like React-Admin), and shared code are managed consistently in one place.
 * **AC 1:** The project root is initialized with a Gradle wrapper and a **`build-logic` directory** for convention plugins.
 * **AC 2:** The monorepo includes the required directory structure (`framework/`, `products/`, `shared/`, `apps/admin/`) defined in the prototype architecture.
-* **AC 3:** A central Gradle version catalog (`libs.versions.toml`) is created and populated with the exact, locked stack versions (Kotlin 2.0.10, Spring Boot 3.3.5, Axon 4.9.4, Kotest).
+* **AC 3:** A central Gradle version catalog (`libs.versions.toml`) is created and populated with the current stable stack versions (Kotlin 2.2.20, Spring Boot 3.5.6, Axon 4.9.4, Kotest).
 * **AC 4:** **All shared build logic (including dependency versions and plugin configurations) MUST be defined via convention plugins within `build-logic` to ensure consistency**.
 
 ### Story 1.2: Implement Constitutional Quality Gates

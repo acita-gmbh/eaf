@@ -43,7 +43,7 @@ These requirements are derived from the "Technical Considerations," "Strategy A"
 
 * **NFR1 (Deployment):** All EAF components must be deployable via Docker Compose onto customer-hosted single servers.
 * **NFR2 (Hardware Compatibility):** All framework components, binaries, and dependencies must be compatible with `amd64`, `arm64`, and `ppc64le` processor architectures.
-* **NFR3 (Stack Lock):** The framework stack is locked to the prototype's validated versions: **Kotlin 2.0.10 (PINNED)**, **Spring Boot 3.3.5 (LOCKED)**, and **Axon Framework 4.9.4**.
+* **NFR3 (Stack Current):** The framework stack uses current stable versions: **Kotlin 2.2.20**, **Spring Boot 3.5.6**, and **Axon Framework 4.9.4**.
 * **NFR4 (Architectural Pattern):** The architecture MUST adhere to Hexagonal Architecture, DDD, and CQRS/ES patterns, with boundaries programmatically enforced (via Spring Modulith).
 * **NFR5 (Persistence Strategy):** The persistence layer (PostgreSQL) must be implemented as a swappable "adapter" (port), isolating the business logic to safeguard a future migration path to a streaming store (like NATS).
 * **NFR6 (Extensibility):** The core command handling architecture must include the necessary interceptor "hooks" or "ports" (e.g., PRESCRIPT/POSTSCRIPT concepts) to allow the deferred Post-MVP "Dockets" orchestration engine (which will be Flowable) to plug in without requiring a core rewrite.
@@ -89,7 +89,7 @@ The EAF itself (as an admin/operator portal) will require:
 * (Revision 2) This is a **Gradle Multi-Module Monorepo**. This structure was validated by the prototype and is required to manage the framework libraries, product apps (like React-Admin), and shared code (like testing patterns) efficiently.
 
 #### Service Architecture
-* (Revision 2) This is a critical decision. The v0.1 EAF architecture is defined by the successful prototype. The architecture **must** implement **Hexagonal Architecture** (with boundaries programmatically enforced by **Spring Modulith 1.3.0**), combined with **Domain-Driven Design (DDD)** and **CQRS/Event Sourcing (CQRS/ES)** patterns using the **Axon Framework 4.9.4**.
+* (Revision 2) This is a critical decision. The v0.1 EAF architecture is defined by the successful prototype. The architecture **must** implement **Hexagonal Architecture** (with boundaries programmatically enforced by **Spring Modulith 1.4.3**), combined with **Domain-Driven Design (DDD)** and **CQRS/Event Sourcing (CQRS/ES)** patterns using the **Axon Framework 4.9.4**.
 
 #### Testing Requirements (Revision 2, incorporating Test Philosophy)
 * The testing requirement is a **Constitutional Test-Driven Development (TDD)** process, defined as "Test-First is Law". All development must follow the mandatory **RED-GREEN-Refactor cycle**.
@@ -101,7 +101,7 @@ The EAF itself (as an admin/operator portal) will require:
     4.  The test framework must be **Kotest** (replacing JUnit).
 
 #### Additional Technical Assumptions and Requests
-* **Stack Lock:** The stack is locked to the prototype's validated versions: **Kotlin 2.0.10 (PINNED)** and **Spring Boot 3.3.5 (LOCKED)**.
+* **Stack Current:** The stack uses current stable versions: **Kotlin 2.2.20** and **Spring Boot 3.5.6**.
 * **Persistence Strategy:** Utilize **PostgreSQL (16.1+)**... implemented as a **swappable adapter**.
 * **CPU Target:** Support for the **`ppc64le`** processor architecture is mandatory.
 * **Security:** Authentication must integrate with **Keycloak OIDC**.
@@ -138,7 +138,7 @@ The EAF itself (as an admin/operator portal) will require:
 * **As a** Core Developer, **I want** a defined Gradle Multi-Module Monorepo structure configured with version catalogs, **so that** all framework libraries, product apps (like React-Admin), and shared code are managed consistently in one place.
 * **AC 1:** The project root is initialized with a Gradle wrapper and a **`build-logic` directory** for convention plugins.
 * **AC 2:** The monorepo includes the required directory structure (`framework/`, `products/`, `shared/`, `apps/admin/`) defined in the prototype architecture.
-* **AC 3:** A central Gradle version catalog (`libs.versions.toml`) is created and populated with the exact, locked stack versions (Kotlin 2.0.10, Spring Boot 3.3.5, Axon 4.9.4, Kotest).
+* **AC 3:** A central Gradle version catalog (`libs.versions.toml`) is created and populated with the current stable stack versions (Kotlin 2.2.20, Spring Boot 3.5.6, Axon 4.9.4, Kotest).
 * **AC 4:** **All shared build logic (including dependency versions and plugin configurations) MUST be defined via convention plugins within `build-logic` to ensure consistency**.
 
 #### Story 1.2: Implement Constitutional Quality Gates

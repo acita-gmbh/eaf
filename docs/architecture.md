@@ -44,7 +44,7 @@ This document defines the complete architecture for the Enterprise Application F
 
 ### System Overview
 
-The EAF is a **Gradle Monorepo** designed for deployment on customer-hosted servers via **Docker Compose**. The backend is a "Modular Monolith" implemented in **Kotlin 2.0.10** on **Spring Boot 3.3.5**, built using **Hexagonal Architecture** with boundaries programmatically enforced by **Spring Modulith**.
+The EAF is a **Gradle Monorepo** designed for deployment on customer-hosted servers via **Docker Compose**. The backend is a "Modular Monolith" implemented in **Kotlin 2.2.20** on **Spring Boot 3.5.6**, built using **Hexagonal Architecture** with boundaries programmatically enforced by **Spring Modulith**.
 
 ```mermaid
 graph TD
@@ -99,9 +99,9 @@ graph TD
 
 | Category | Technology | Version | Constraint | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| **Language** | Kotlin | 2.0.10 | PINNED | Tool compatibility (ktlint, detekt) |
-| **Runtime** | JVM | 21 LTS | Required | Spring Boot 3.3.5 baseline |
-| **Framework** | Spring Boot | 3.3.5 | LOCKED | Spring Modulith 1.3.0 support |
+| **Language** | Kotlin | 2.2.20 | CURRENT | Latest stable with tool compatibility |
+| **Runtime** | JVM | 21 LTS | Required | Spring Boot 3.5.6 baseline |
+| **Framework** | Spring Boot | 3.5.6 | CURRENT | Spring Modulith 1.4.3 support |
 | **CQRS/ES** | Axon Framework | 4.9.4 | Current | v5 migration planned |
 | **Database** | PostgreSQL | 16.1+ | Minimum | Event store + projections |
 | **Workflow** | Flowable | 7.1.x | Required | BPMN orchestration |
@@ -1293,8 +1293,8 @@ The framework is ready for implementation following these specifications, with c
 
 | Component | Version | Compatible With | Notes |
 | :--- | :--- | :--- | :--- |
-| Kotlin | 2.0.10 | Spring Boot 3.3.5 | Pinned for tool compatibility |
-| Spring Boot | 3.3.5 | Spring Modulith 1.3.0 | Locked version |
+| Kotlin | 2.2.20 | Spring Boot 3.5.6 | Latest stable with compatibility |
+| Spring Boot | 3.5.6 | Spring Modulith 1.4.3 | Latest stable version |
 | Axon Framework | 4.9.4 | Spring Boot 3.3.x | v5 migration planned |
 | PostgreSQL | 16.1+ | All components | Minimum version |
 | Keycloak | 26.0.0 | Spring Security 6.x | Enterprise OIDC |
