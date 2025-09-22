@@ -152,7 +152,7 @@ The framework is built on a philosophy of **Constitutional TDD**. All quality ga
 
 This command is the source of truth for code quality and must pass before any code is merged.
 
-For domain tests, the framework encourages the **Test Doubles Pattern**, where dependencies are replaced with lightweight, in-memory fakes. This allows for extremely fast and focused business logic tests without the overhead of mocking frameworks.
+For domain tests, the framework encourages the **Nullable Design Pattern**, where dependencies are replaced with lightweight, in-memory fakes. This allows for extremely fast and focused business logic tests without the overhead of mocking frameworks.
 
 ## ⚙️ Configuration
 
