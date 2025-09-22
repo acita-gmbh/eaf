@@ -39,7 +39,10 @@ class SecureController {
                     mapOf(
                         "id" to jwt.getClaimAsString("sub"),
                         "tenantId" to jwt.getClaimAsString("tenant_id"),
-                        "roles" to (jwt.getClaimAsStringList("realm_access.roles") ?: emptyList()),
+                        "roles" to (
+                            (jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>)?.filterIsInstance<String>()
+                                ?: emptyList()
+                        ),
                         "issuer" to jwt.issuer?.toString(),
                         "audience" to jwt.audience,
                         "issuedAt" to jwt.issuedAt?.epochSecond,

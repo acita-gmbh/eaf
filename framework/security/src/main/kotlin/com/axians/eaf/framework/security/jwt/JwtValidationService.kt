@@ -77,7 +77,7 @@ class BasicJwtValidationService : JwtValidationService {
             JwtValidationResult(
                 userId = claims.userId,
                 tenantId = claims.tenantId,
-                roles = jwt.getClaimAsStringList("realm_access.roles")?.toSet() ?: emptySet(),
+                roles = ((jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>)?.filterIsInstance<String>()?.toSet() ?: emptySet()),
                 issuer = claims.issuer,
                 audience = claims.audience,
                 issuedAt = jwt.issuedAt?.epochSecond ?: 0L,

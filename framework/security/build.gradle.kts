@@ -9,7 +9,6 @@ dependencies {
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.arrow)
     implementation(libs.bundles.spring.boot.security)
-    implementation(libs.spring.security.oauth2.jose)
     implementation(libs.spring.boot.starter.web)
     implementation(libs.jose4j)
 
