@@ -46,7 +46,7 @@ java = "21"                # LTS requirement
 [versions]
 spring-boot = "3.5.6"     # CURRENT - Latest stable
 spring-modulith = "1.4.3" # Module boundary enforcement
-axon = "4.9.4"            # CQRS/Event Sourcing
+axon = "4.12.1"            # CQRS/Event Sourcing
 arrow = "1.2.4"           # Functional programming
 ```
 
@@ -70,12 +70,12 @@ dependencies {
 }
 ```
 
-#### Axon Framework 4.9.4
+#### Axon Framework 4.12.1
 
 **CQRS/Event Sourcing Implementation**:
 ```kotlin
 [versions]
-axon = "4.9.4"
+axon = "4.12.1"
 
 [libraries]
 axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }
@@ -379,7 +379,7 @@ spring-boot = "3.5.6"
 java = "21"
 
 # Framework
-axon = "4.9.4"
+axon = "4.12.1"
 spring-modulith = "1.4.3"
 arrow = "1.2.4"
 

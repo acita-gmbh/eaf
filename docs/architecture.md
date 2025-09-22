@@ -7,7 +7,7 @@ This document defines the complete architecture for the Enterprise Application F
 ### Key Architectural Decisions
 
 - **Hexagonal Architecture** with Spring Modulith enforcement for clean boundaries
-- **CQRS/Event Sourcing** via Axon Framework 4.9.4 for scalable domain logic
+- **CQRS/Event Sourcing** via Axon Framework 4.12.1 for scalable domain logic
 - **PostgreSQL as Event Store** with mandatory optimizations (BRIN indexes, partitioning)
 - **Constitutional TDD** with Kotest and Nullable Pattern for 60%+ faster tests
 - **10-Layer JWT Security** with 3-Layer tenant isolation for enterprise compliance

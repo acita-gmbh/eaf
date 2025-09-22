@@ -162,7 +162,7 @@ class BadTest : FunSpec({
 [versions]
 kotlin = "2.2.20"
 spring-boot = "3.5.6"
-axon = "4.9.4"
+axon = "4.12.1"
 arrow = "1.2.4"
 
 [libraries]

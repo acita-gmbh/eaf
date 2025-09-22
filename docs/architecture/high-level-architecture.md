@@ -7,7 +7,7 @@ The Enterprise Application Framework (EAF) v0.1 is a modern, Kotlin-based enterp
 ### Executive Summary
 
 - **Architecture Pattern**: Hexagonal + Spring Modulith for enforced boundaries
-- **Domain Logic**: CQRS/Event Sourcing via Axon Framework 4.9.4
+- **Domain Logic**: CQRS/Event Sourcing via Axon Framework 4.12.1
 - **Deployment Model**: Docker Compose on customer-hosted infrastructure
 - **Security**: 10-layer JWT validation with 3-layer tenant isolation
 - **Development**: Constitutional TDD with Nullable Pattern for 60%+ faster tests

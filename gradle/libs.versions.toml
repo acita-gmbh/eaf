@@ -10,7 +10,7 @@ spring-modulith = "1.4.3" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.6"
 
 # CQRS and Event Sourcing
-axon = "4.9.4"             # Current stable, v5 migration planned
+axon = "4.12.1"            # Latest stable, v5 migration planned
 arrow = "1.2.4"            # Functional programming
 
 # Database and persistence

@@ -144,7 +144,7 @@ The MVP will be considered successful when these **three** criteria are met:
 These are the non-negotiable, version-locked technologies proven by the prototype to work:
 
 * **Backend Language/Framework:** **Kotlin 2.2.20 (CURRENT)** and **Spring Boot 3.5.6 (CURRENT)** with full tooling compatibility via detekt workaround.
-* **CQRS Framework:** **Axon Framework 4.9.4**.
+* **CQRS Framework:** **Axon Framework 4.12.1**.
 * **Database (Event Store + Projections):** **PostgreSQL 16.1+** (per our "Strategy A" decision).
 * **Frontend Options:** React, Vaadin/Hilla, or TUI (Terminal UI).
 * **Testing Stack:** **Kotest** (replacing JUnit) and **Testcontainers** (for the Integration-First philosophy).
