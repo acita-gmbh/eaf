@@ -26,9 +26,18 @@ object TestContainers {
 
     @JvmStatic
     val keycloak: KeycloakContainer =
-        KeycloakContainer("quay.io/keycloak/keycloak:26.0.0")
-            .withRealmImportFile("test-realm.json")
+        KeycloakContainer("quay.io/keycloak/keycloak:25.0.6")
+            .withRealmImportFile("keycloak/eaf-test-realm.json")
+            .withAdminUsername("admin")
+            .withAdminPassword("admin")
             .withReuse(true)
+            .apply {
+                withEnv("KC_HEALTH_ENABLED", "true")
+                withEnv("KC_METRICS_ENABLED", "true")
+                withEnv("KC_HTTP_ENABLED", "true")
+                withEnv("KC_HOSTNAME_STRICT", "false")
+                withEnv("KC_HOSTNAME_STRICT_HTTPS", "false")
+            }
 
     init {
         startIfNeeded(postgres)
