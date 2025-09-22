@@ -24,7 +24,7 @@ mockk = "1.13.12"         # Mocking framework (use sparingly)
 
 # Quality gates and static analysis
 ktlint = "1.4.0"          # Code formatting (enforced)
-detekt = "1.23.7"         # Static analysis (enforced)
+detekt = "1.23.8"         # Static analysis (enforced)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.15.0"         # Mutation testing
 jacoco = "0.8.12"         # Code coverage
