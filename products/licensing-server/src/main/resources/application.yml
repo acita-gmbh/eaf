@@ -18,6 +18,11 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/eaf}
 
 # Axon Framework configuration
 axon:

@@ -11,6 +11,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Testcontainers will override this dynamically
+          issuer-uri: http://localhost:8180/realms/eaf
 
 axon:
   axonserver:

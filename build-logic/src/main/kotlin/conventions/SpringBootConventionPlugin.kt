@@ -37,6 +37,7 @@ class SpringBootConventionPlugin : Plugin<Project> {
                         "spring-boot-starter-validation",
                         "spring-boot-starter-security",
                         "spring-boot-starter-oauth2-resource-server",
+                        "spring-security-oauth2-jose",
                         "spring-modulith-starter-core",
                         "spring-modulith-starter-jpa"
                     )
