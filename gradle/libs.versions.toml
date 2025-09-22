@@ -6,7 +6,7 @@ gradle = "8.14"            # Build tool version
 
 # Framework stack (LOCKED for compatibility)
 spring-boot = "3.3.5"     # LOCKED for Spring Modulith compatibility
-spring-modulith = "1.3.0" # Module boundary enforcement
+spring-modulith = "1.4.3" # Module boundary enforcement
 spring-dependency-management = "1.1.6"
 
 # CQRS and Event Sourcing
