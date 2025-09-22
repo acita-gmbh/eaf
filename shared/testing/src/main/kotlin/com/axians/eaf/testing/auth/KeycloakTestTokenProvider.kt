@@ -34,6 +34,7 @@ class KeycloakTestTokenProvider {
 
         private const val CLIENT_ID = "eaf-client"
         private const val CLIENT_SECRET = "eaf-client-secret"
+        private const val TOKEN_CACHE_EXPIRATION_SECONDS = 1500 // 25 minutes
 
         /**
          * Gets a valid JWT token for the admin user.
@@ -77,7 +78,7 @@ class KeycloakTestTokenProvider {
             val token = retrieveTokenFromKeycloak(username, password)
 
             // Cache with 25-minute expiration (5 minutes before 30-minute token expiry)
-            val expirationTime = Instant.now().plusSeconds(1500) // 25 minutes
+            val expirationTime = Instant.now().plusSeconds(TOKEN_CACHE_EXPIRATION_SECONDS.toLong())
             tokenCache[cacheKey] = CachedToken(token, expirationTime)
 
             logger.debug("Retrieved and cached new token for user: $username")
