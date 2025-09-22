@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security
 
+import com.axians.eaf.framework.security.dto.SecureEndpointResponse
 import com.axians.eaf.testing.auth.KeycloakTestTokenProvider
 import com.axians.eaf.testing.containers.TestContainers
 import io.kotest.core.spec.style.BehaviorSpec
@@ -68,19 +69,17 @@ class SecurityIntegrationTest : BehaviorSpec() {
                             "http://localhost:$port/api/secure/hello",
                             HttpMethod.GET,
                             entity,
-                            Map::class.java,
+                            SecureEndpointResponse::class.java,
                         )
 
                     response.statusCode shouldBe HttpStatus.OK
                     response.body shouldNotBe null
-                    @Suppress("UNCHECKED_CAST")
-                    val responseBody = response.body as Map<String, Any>
-                    responseBody["message"] shouldBe "Hello from secured endpoint!"
+                    val responseBody = response.body!!
+                    responseBody.message shouldBe "Hello from secured endpoint!"
 
-                    @Suppress("UNCHECKED_CAST")
-                    val userClaims = responseBody["user"] as Map<String, Any>
-                    userClaims["id"] shouldNotBe null
-                    userClaims["tenantId"] shouldNotBe null
+                    val userClaims = responseBody.user
+                    userClaims.id shouldNotBe null
+                    userClaims.tenantId shouldNotBe null
                 }
             }
 
@@ -98,18 +97,17 @@ class SecurityIntegrationTest : BehaviorSpec() {
                             "http://localhost:$port/api/secure/hello",
                             HttpMethod.GET,
                             entity,
-                            Map::class.java,
+                            SecureEndpointResponse::class.java,
                         )
 
                     response.statusCode shouldBe HttpStatus.OK
-                    @Suppress("UNCHECKED_CAST")
-                    val userClaims = ((response.body as Map<String, Any>)["user"] as Map<String, Any>)
+                    val userClaims = response.body!!.user
 
                     // Verify tenant context propagation
-                    userClaims["tenantId"] shouldNotBe null
-                    userClaims["roles"] shouldNotBe null
-                    userClaims["issuer"]?.toString() shouldContain "eaf"
-                    userClaims["audience"] shouldNotBe null
+                    userClaims.tenantId shouldNotBe null
+                    userClaims.roles shouldNotBe null
+                    userClaims.issuer?.toString() shouldContain "eaf"
+                    userClaims.audience shouldNotBe null
                 }
             }
         }

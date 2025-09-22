@@ -1,5 +1,8 @@
 package com.axians.eaf.framework.web.controllers
 
+import com.axians.eaf.framework.security.dto.SecureEndpointResponse
+import com.axians.eaf.framework.security.dto.UserClaimsDto
+import com.axians.eaf.framework.security.jwt.JwtClaimsExtractor
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -30,26 +33,23 @@ class SecureController {
     )
     fun secureHello(
         @AuthenticationPrincipal jwt: Jwt,
-    ): ResponseEntity<Map<String, Any>> {
+    ): ResponseEntity<SecureEndpointResponse> {
         // Extract JWT claims for verification
-        val response =
-            mapOf(
-                "message" to "Hello from secured endpoint!",
-                "user" to
-                    mapOf(
-                        "id" to jwt.getClaimAsString("sub"),
-                        "tenantId" to jwt.getClaimAsString("tenant_id"),
-                        "roles" to (
-                            (jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>)?.filterIsInstance<String>()
-                                ?: emptyList()
-                        ),
-                        "issuer" to jwt.issuer?.toString(),
-                        "audience" to jwt.audience,
-                        "issuedAt" to jwt.issuedAt?.epochSecond,
-                        "expiresAt" to jwt.expiresAt?.epochSecond,
-                    ),
-                "timestamp" to System.currentTimeMillis(),
-            )
+        val userClaims = UserClaimsDto(
+            id = jwt.getClaimAsString("sub"),
+            tenantId = jwt.getClaimAsString("tenant_id"),
+            roles = JwtClaimsExtractor.extractRolesAsList(jwt),
+            issuer = jwt.issuer?.toString(),
+            audience = jwt.audience,
+            issuedAt = jwt.issuedAt?.epochSecond,
+            expiresAt = jwt.expiresAt?.epochSecond
+        )
+
+        val response = SecureEndpointResponse(
+            message = "Hello from secured endpoint!",
+            user = userClaims,
+            timestamp = System.currentTimeMillis()
+        )
 
         return ResponseEntity.ok(response)
     }
