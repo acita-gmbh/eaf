@@ -44,7 +44,7 @@ keycloak = "25.0.6"       # Identity provider
 jose4j = "0.9.6"          # JWT processing
 
 # Workflow
-flowable = "7.0.1"        # BPMN workflow engine
+flowable = "7.2.0"        # BPMN workflow engine
 
 [libraries]
 # Kotlin and JVM
