@@ -64,9 +64,7 @@ class NullableWidgetProjectionRepository private constructor(
         return entity
     }
 
-    override fun <S : WidgetProjection> saveAll(entities: MutableIterable<S>): MutableList<S> {
-        return entities.map { save(it) }.toMutableList()
-    }
+    override fun <S : WidgetProjection> saveAll(items: MutableIterable<S>) = items.map { save(it) }.toMutableList()
 
     override fun findById(id: String): Optional<WidgetProjection> =
         lock.read {
@@ -264,9 +262,7 @@ class NullableWidgetProjectionRepository private constructor(
 
     override fun <S : WidgetProjection> saveAndFlush(entity: S): S = save(entity)
 
-    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> {
-        return saveAll(entities)
-    }
+    override fun <S : WidgetProjection> saveAllAndFlush(items: MutableIterable<S>) = saveAll(items)
 
     override fun deleteAllInBatch(entities: MutableIterable<WidgetProjection>) = deleteAll(entities)
 
