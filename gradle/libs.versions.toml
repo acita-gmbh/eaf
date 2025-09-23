@@ -20,7 +20,7 @@ jooq = "3.20.7"           # SQL DSL for read projections (updated)
 # Testing framework (MANDATORY)
 kotest = "5.9.1"          # Primary testing framework (JUnit forbidden)
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
-mockk = "1.14.5"          # Mocking framework (use sparingly)
+mockk = "1.14.5"          # Mocking framework (minimal usage for infrastructure only)
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
