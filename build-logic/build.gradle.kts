@@ -103,6 +103,9 @@ dependencies {
         implementation("${library.module}:${library.version}")
     }
 
+    // Add Kotest plugin for native test execution
+    implementation("io.kotest:io.kotest.gradle.plugin:${catalog.version("kotest-plugin")}")
+
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
     testImplementation(gradleTestKit())
@@ -129,6 +132,4 @@ gradlePlugin {
     }
 }
 
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
-}
+// Remove JUnit Platform configuration - using native Kotest instead
