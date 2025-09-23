@@ -22,13 +22,55 @@ class TestingConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
-                apply("io.kotest")
+                apply("io.kotest")  // Native Kotest plugin
+                apply("org.jetbrains.kotlin.plugin.serialization")  // For Kotest XML reports
             }
 
-            // Configure native Kotest test execution (no JUnit Platform needed)
-            // Kotest 6.0 native plugin handles test execution directly
+            // Native Kotest execution - no JUnit Platform needed!
+            // Replace standard test task with jvmKotest in check lifecycle
+            tasks.named("check") {
+                dependsOn("jvmKotest")
+            }
+
+
+            // Disable standard test task since we use native Kotest
+            tasks.named("test").configure {
+                onlyIf { false }
+            }
 
             val sourceSets = extensions.getByType(SourceSetContainer::class.java)
+
+            // Create CI test task that uses JUnit Platform for XML reports
+            val ciTestTask = tasks.register("ciTest", Test::class.java) {
+                description = "Runs tests with JUnit Platform for CI/CD XML reporting"
+                group = "verification"
+
+                // Use the standard test source set
+                testClassesDirs = sourceSets.getByName("test").output.classesDirs
+                classpath = sourceSets.getByName("test").runtimeClasspath
+
+                useJUnitPlatform()
+
+                // Enable JUnit XML reports for CI
+                reports {
+                    junitXml.required.set(true)
+                    html.required.set(true)
+                }
+
+                // Set report directories
+                reports.junitXml.outputLocation.set(
+                    project.layout.buildDirectory.dir("test-results/ciTest")
+                )
+                reports.html.outputLocation.set(
+                    project.layout.buildDirectory.dir("reports/tests/ciTest")
+                )
+
+                // This requires kotest-runner-junit5-jvm dependency
+                testLogging {
+                    events("passed", "skipped", "failed")
+                    showStandardStreams = false
+                }
+            }
             val integrationTest = sourceSets.create("integrationTest") {
                 compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
                 runtimeClasspath += output + compileClasspath
@@ -67,10 +109,16 @@ class TestingConventionPlugin : Plugin<Project> {
                         "kotest-assertions-core-jvm",
                         "kotest-property-jvm",
                         "kotest-extensions-spring",
-                        "mockk",
+                        "kotest-extensions-pitest",
+                        "kotlinx-serialization-json",
+                        "kotlinx-serialization-core",
                         "konsist"
                     )
                 )
+
+                // Add JUnit runner for ciTest task only
+                val junit5Runner = catalog.library("kotest-runner-junit5-jvm")
+                add("testRuntimeOnly", "${junit5Runner.module}:${junit5Runner.version}")
 
                 val sharedTestingProject = rootProject.findProject(":shared:testing")
                 if (sharedTestingProject != null) {
@@ -82,11 +130,11 @@ class TestingConventionPlugin : Plugin<Project> {
                     listOf(
                         "kotlin-test",
                         "kotest-framework-engine-jvm",
+                        "kotest-runner-junit5-jvm",
                         "kotest-assertions-core-jvm",
                         "kotest-property-jvm",
                         "kotest-extensions-spring",
-                        "mockk",
-                        "testcontainers-junit-jupiter",
+                        "kotest-extensions-testcontainers",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak"
                     )
@@ -105,6 +153,7 @@ class TestingConventionPlugin : Plugin<Project> {
                     listOf(
                         "kotlin-test",
                         "kotest-framework-engine-jvm",
+                        "kotest-runner-junit5-jvm",
                         "kotest-assertions-core-jvm",
                         "kotest-property-jvm",
                         "kotest-extensions-spring",
@@ -113,13 +162,20 @@ class TestingConventionPlugin : Plugin<Project> {
                 )
             }
 
-            val integrationTestTask = tasks.register<Test>("integrationTest") {
+            // Create test tasks for custom source sets
+            // For now, use Test tasks with useJUnitPlatform until native Kotest plugin
+            // supports custom source sets better
+
+            val integrationTestTask = tasks.register("integrationTest", Test::class.java) {
                 description = "Runs integration tests with Testcontainers."
                 group = "verification"
                 testClassesDirs = integrationTest.output.classesDirs
                 classpath = integrationTest.runtimeClasspath
-                shouldRunAfter(tasks.named("test"))
+
                 useJUnitPlatform()
+
+                shouldRunAfter(tasks.named("jvmKotest"))
+
                 doFirst {
                     try {
                         Class.forName("com.axians.eaf.testing.containers.TestContainers")
@@ -131,19 +187,75 @@ class TestingConventionPlugin : Plugin<Project> {
                 }
             }
 
-            val konsistTestTask = tasks.register<Test>("konsistTest") {
+            val konsistTestTask = tasks.register("konsistTest", Test::class.java) {
                 description = "Runs Konsist architecture and coding standards checks."
                 group = "verification"
                 testClassesDirs = konsistTest.output.classesDirs
                 classpath = konsistTest.runtimeClasspath
-                shouldRunAfter(tasks.named("test"))
-                // Note: Konsist may still need JUnit Platform
+
                 useJUnitPlatform()
+
+                shouldRunAfter(tasks.named("jvmKotest"))
             }
 
             tasks.named("check") {
                 dependsOn(integrationTestTask)
                 dependsOn(konsistTestTask)
+            }
+
+            // Create CI variants that use JUnit Platform for XML reports
+            val ciIntegrationTestTask = tasks.register("ciIntegrationTest", Test::class.java) {
+                description = "Runs integration tests with JUnit Platform for CI/CD"
+                group = "verification"
+                testClassesDirs = integrationTest.output.classesDirs
+                classpath = integrationTest.runtimeClasspath
+
+                useJUnitPlatform()
+
+                reports {
+                    junitXml.required.set(true)
+                    html.required.set(true)
+                }
+
+                reports.junitXml.outputLocation.set(
+                    project.layout.buildDirectory.dir("test-results/ciIntegrationTest")
+                )
+                reports.html.outputLocation.set(
+                    project.layout.buildDirectory.dir("reports/tests/ciIntegrationTest")
+                )
+
+                shouldRunAfter(tasks.named("ciTest"))
+            }
+
+            val ciKonsistTestTask = tasks.register("ciKonsistTest", Test::class.java) {
+                description = "Runs Konsist tests with JUnit Platform for CI/CD"
+                group = "verification"
+                testClassesDirs = konsistTest.output.classesDirs
+                classpath = konsistTest.runtimeClasspath
+
+                useJUnitPlatform()
+
+                reports {
+                    junitXml.required.set(true)
+                    html.required.set(true)
+                }
+
+                reports.junitXml.outputLocation.set(
+                    project.layout.buildDirectory.dir("test-results/ciKonsistTest")
+                )
+                reports.html.outputLocation.set(
+                    project.layout.buildDirectory.dir("reports/tests/ciKonsistTest")
+                )
+
+                shouldRunAfter(tasks.named("ciTest"))
+                shouldRunAfter(ciIntegrationTestTask)
+            }
+
+            // Create aggregate CI task
+            tasks.register("ciTests") {
+                description = "Runs all tests with JUnit Platform for CI/CD"
+                group = "verification"
+                dependsOn("ciTest", ciIntegrationTestTask, ciKonsistTestTask)
             }
 
             afterEvaluate {
@@ -153,7 +265,6 @@ class TestingConventionPlugin : Plugin<Project> {
                     "kotest-assertions-core-jvm",
                     "kotest-property-jvm",
                     "kotest-extensions-spring",
-                    "mockk",
                     "konsist"
                 ), catalog)
 
@@ -163,8 +274,7 @@ class TestingConventionPlugin : Plugin<Project> {
                     "kotest-assertions-core-jvm",
                     "kotest-property-jvm",
                     "kotest-extensions-spring",
-                    "mockk",
-                    "testcontainers-junit-jupiter",
+                    "kotest-extensions-testcontainers",
                     "testcontainers-postgresql",
                     "testcontainers-keycloak"
                 ), catalog)

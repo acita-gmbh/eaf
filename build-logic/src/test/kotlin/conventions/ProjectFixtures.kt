@@ -28,6 +28,7 @@ internal fun bootstrapSampleProject(project: TestProject, includeAppModule: Bool
         allprojects {
             repositories {
                 mavenCentral()
+                gradlePluginPortal()
             }
         }
     """)
@@ -101,29 +102,27 @@ internal fun writeSampleSources(project: TestProject, extraAppBuildContent: Stri
     project.write("app/src/test/kotlin/com/axians/eaf/sample/SampleServiceJvmTest.kt", """
         package com.axians.eaf.sample
 
-        import kotlin.test.Test
-        import kotlin.test.assertEquals
+        import io.kotest.core.spec.style.FunSpec
+        import io.kotest.matchers.shouldBe
 
-        class SampleServiceJvmTest {
-            private val service = SampleService()
-            private val javaService = JavaService()
+        class SampleServiceJvmTest :
+            FunSpec({
+                val service = SampleService()
+                val javaService = JavaService()
 
-            @Test
-            fun `greets named`() {
-                assertEquals("Hello, World!", service.greet("World"))
-            }
+                test("greets named") {
+                    service.greet("World") shouldBe "Hello, World!"
+                }
 
-            @Test
-            fun `falls back to stranger`() {
-                assertEquals("Hello, stranger!", service.greet(""))
-            }
+                test("falls back to stranger") {
+                    service.greet("") shouldBe "Hello, stranger!"
+                }
 
-            @Test
-            fun `reports parity`() {
-                assertEquals("even", javaService.parityLabel(2))
-                assertEquals("odd", javaService.parityLabel(3))
-            }
-        }
+                test("reports parity") {
+                    javaService.parityLabel(2) shouldBe "even"
+                    javaService.parityLabel(3) shouldBe "odd"
+                }
+            })
     """)
 
     project.write("app/src/integrationTest/kotlin/com/axians/eaf/sample/SampleIntegrationTest.kt", """
@@ -146,15 +145,15 @@ internal fun writeSampleSources(project: TestProject, extraAppBuildContent: Stri
     project.write("app/src/konsistTest/kotlin/com/axians/eaf/sample/KonsistSmokeTest.kt", """
         package com.axians.eaf.sample
 
-        import org.junit.jupiter.api.Assertions.assertTrue
-        import org.junit.jupiter.api.Test
+        import io.kotest.core.spec.style.FunSpec
+        import io.kotest.matchers.shouldBe
 
-        class KonsistSmokeTest {
-            @Test
-            fun `konsist task executes`() {
-                assertTrue(true)
-            }
-        }
+        class KonsistSmokeTest :
+            FunSpec({
+                test("konsist task executes") {
+                    true shouldBe true
+                }
+            })
     """)
 }
 
@@ -221,14 +220,14 @@ internal fun writeTestingOnlySources(project: TestProject, extraAppBuildContent:
     project.write("app/src/konsistTest/kotlin/com/axians/eaf/sample/KonsistSmokeTest.kt", """
         package com.axians.eaf.sample
 
-        import org.junit.jupiter.api.Assertions.assertTrue
-        import org.junit.jupiter.api.Test
+        import io.kotest.core.spec.style.FunSpec
+        import io.kotest.matchers.shouldBe
 
-        class KonsistSmokeTest {
-            @Test
-            fun `konsist task executes`() {
-                assertTrue(true)
-            }
-        }
+        class KonsistSmokeTest :
+            FunSpec({
+                test("konsist task executes") {
+                    true shouldBe true
+                }
+            })
     """)
 }

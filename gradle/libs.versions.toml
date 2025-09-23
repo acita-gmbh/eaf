@@ -1,6 +1,7 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.20"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
+kotlinx-serialization = "1.7.3"  # Required for Kotest XML reports
 java = "21"                # LTS requirement
 gradle = "8.14"            # Build tool version
 
@@ -19,17 +20,16 @@ jooq = "3.20.7"           # SQL DSL for read projections (updated)
 
 # Testing framework (MANDATORY)
 kotest = "6.0.3"          # Primary testing framework (JUnit forbidden)
-kotest-plugin = "6.0.3"   # Kotest Gradle plugin for JUnit Platform integration
+kotest-plugin = "6.0.3"   # Kotest Gradle plugin for native test execution
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
-mockk = "1.14.5"          # Mocking framework (use sparingly)
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
 detekt = "1.23.8"         # Static analysis (latest stable)
 konsist = "0.17.3"        # Architecture testing
-pitest = "1.15.0"         # Mutation testing
+pitest = "1.19.0-rc.1"    # Gradle plugin version (Gradle 9 compatible)
+pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
 jacoco = "0.8.12"         # Code coverage
-pitest-junit5 = "1.2.1"   # Pitest JUnit 5 plugin
 dependency-check = "12.1.3" # Supply chain scanning
 
 # Documentation
@@ -54,6 +54,8 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 
 # Spring Boot starters
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
@@ -83,16 +85,17 @@ jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 
 # Testing
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
+kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "1.4.0" }
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
+kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }
+kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.8.0" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 # Static analysis
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
@@ -119,7 +122,7 @@ gradlePlugin-spring-dependencyManagement = { module = "io.spring.gradle:dependen
 gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "12.1.1" }
 gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
-gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version = "1.15.0" }
+gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version.ref = "pitest" }
 gradlePlugin-dependencyCheck = { module = "org.owasp:dependency-check-gradle", version.ref = "dependency-check" }
 
 [bundles]
@@ -132,7 +135,7 @@ arrow = ["arrow-core", "arrow-fx-coroutines"]
 database = ["postgresql", "spring-boot-starter-data-jpa"]
 jooq = ["jooq-core", "jooq-kotlin"]
 kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-assertions-arrow", "kotest-property-jvm", "kotest-extensions-spring"]
-testcontainers = ["testcontainers-junit-jupiter", "testcontainers-postgresql", "testcontainers-keycloak"]
+testcontainers = ["testcontainers-postgresql", "testcontainers-keycloak"]
 observability = ["micrometer-core", "micrometer-registry-prometheus"]
 
 [plugins]
@@ -140,6 +143,7 @@ observability = ["micrometer-core", "micrometer-registry-prometheus"]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 # Spring
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
@@ -149,7 +153,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.1" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
-pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
 kotest-plugin = { id = "io.kotest", version.ref = "kotest-plugin" }
 

@@ -1,11 +1,10 @@
 package conventions
 
-import kotlin.test.Test
-import kotlin.test.assertTrue
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.string.shouldContain
 
-class KotlinCommonConventionPluginFunctionalTest {
-    @Test
-    fun `applies ktlint and detekt tasks`() {
+class KotlinCommonConventionPluginFunctionalTest : FunSpec({
+    test("applies ktlint and detekt tasks") {
         withPluginTestProject(
             """
             plugins {
@@ -18,8 +17,8 @@ class KotlinCommonConventionPluginFunctionalTest {
             """.trimIndent()
         ) {
             val result = runGradle("tasks", "--all")
-            assertTrue(result.output.contains("ktlintCheck"), "ktlintCheck task should be available")
-            assertTrue(result.output.contains("detekt"), "detekt task should be available")
+            result.output.shouldContain("ktlintCheck")
+            result.output.shouldContain("detekt")
         }
     }
-}
+})

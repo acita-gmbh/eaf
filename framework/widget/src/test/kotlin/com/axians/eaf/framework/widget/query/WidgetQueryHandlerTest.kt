@@ -3,30 +3,25 @@ package com.axians.eaf.framework.widget.query
 import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
 import com.axians.eaf.framework.persistence.entities.WidgetProjection
-import com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository
+import com.axians.eaf.framework.widget.infrastructure.NullableWidgetProjectionRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.every
-import io.mockk.mockk
 import java.math.BigDecimal
 import java.time.Instant
 
 /**
  * Unit tests for WidgetQueryHandler.
  * Tests query handling functionality and data transformation.
+ * Uses Nullable Design Pattern instead of mocking frameworks.
  */
 class WidgetQueryHandlerTest :
     FunSpec({
 
         test("2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") {
-            // Given
-            val repository = mockk<WidgetProjectionRepository>()
-            val objectMapper = ObjectMapper()
-            val handler = WidgetQueryHandler(repository, objectMapper)
-
+            // Given - Using Nullable Design Pattern
             val widgetId = "widget-123"
             val tenantId = "tenant-456"
             val projection =
@@ -42,7 +37,10 @@ class WidgetQueryHandlerTest :
                     updatedAt = Instant.now(),
                 )
 
-            every { repository.findByWidgetIdAndTenantId(widgetId, tenantId) } returns projection
+            val repository = NullableWidgetProjectionRepository.createNull()
+                .withProjection(projection)
+            val objectMapper = ObjectMapper()
+            val handler = WidgetQueryHandler(repository, objectMapper)
 
             // When
             val result = handler.handle(FindWidgetByIdQuery(widgetId, tenantId))
@@ -59,15 +57,13 @@ class WidgetQueryHandlerTest :
         }
 
         test("2.4-UNIT-002: FindWidgetByIdQuery returns null when not found") {
-            // Given
-            val repository = mockk<WidgetProjectionRepository>()
+            // Given - Empty repository using Nullable Design Pattern
+            val repository = NullableWidgetProjectionRepository.createNull()
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
 
             val widgetId = "nonexistent"
             val tenantId = "tenant-456"
-
-            every { repository.findByWidgetIdAndTenantId(widgetId, tenantId) } returns null
 
             // When
             val result = handler.handle(FindWidgetByIdQuery(widgetId, tenantId))
@@ -77,39 +73,36 @@ class WidgetQueryHandlerTest :
         }
 
         test("2.4-UNIT-003: FindWidgetsQuery handles pagination correctly") {
-            // Given
-            val repository = mockk<WidgetProjectionRepository>()
+            // Given - Repository with test data using Nullable Design Pattern
+            val tenantId = "tenant-456"
+            val projection1 = WidgetProjection(
+                widgetId = "widget-1",
+                tenantId = tenantId,
+                name = "Widget 1",
+                description = null,
+                value = BigDecimal("100.00"),
+                category = "TEST",
+                metadata = null,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+            )
+            val projection2 = WidgetProjection(
+                widgetId = "widget-2",
+                tenantId = tenantId,
+                name = "Widget 2",
+                description = null,
+                value = BigDecimal("200.00"),
+                category = "TEST",
+                metadata = null,
+                createdAt = Instant.now().minusSeconds(10),
+                updatedAt = Instant.now(),
+            )
+
+            val repository = NullableWidgetProjectionRepository.createNull()
+                .withProjection(projection1)
+                .withProjection(projection2)
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
-
-            val tenantId = "tenant-456"
-            val projections =
-                listOf(
-                    WidgetProjection(
-                        widgetId = "widget-1",
-                        tenantId = tenantId,
-                        name = "Widget 1",
-                        description = null,
-                        value = BigDecimal("100.00"),
-                        category = "TEST",
-                        metadata = null,
-                        createdAt = Instant.now(),
-                        updatedAt = Instant.now(),
-                    ),
-                    WidgetProjection(
-                        widgetId = "widget-2",
-                        tenantId = tenantId,
-                        name = "Widget 2",
-                        description = null,
-                        value = BigDecimal("200.00"),
-                        category = "TEST",
-                        metadata = null,
-                        createdAt = Instant.now(),
-                        updatedAt = Instant.now(),
-                    ),
-                )
-
-            every { repository.findByTenantIdOrderByCreatedAtDesc(tenantId) } returns projections
 
             // When
             val result = handler.handle(FindWidgetsQuery(tenantId = tenantId, page = 0, size = 1))
@@ -124,11 +117,7 @@ class WidgetQueryHandlerTest :
         }
 
         test("2.4-UNIT-004: WidgetResponse excludes sensitive fields") {
-            // Given
-            val repository = mockk<WidgetProjectionRepository>()
-            val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
-            val handler = WidgetQueryHandler(repository, objectMapper)
-
+            // Given - Repository with test data using Nullable Design Pattern
             val widgetId = "widget-123"
             val tenantId = "tenant-456"
             val projection =
@@ -144,7 +133,10 @@ class WidgetQueryHandlerTest :
                     updatedAt = Instant.now(),
                 )
 
-            every { repository.findByWidgetIdAndTenantId(widgetId, tenantId) } returns projection
+            val repository = NullableWidgetProjectionRepository.createNull()
+                .withProjection(projection)
+            val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
+            val handler = WidgetQueryHandler(repository, objectMapper)
 
             // When
             val result = handler.handle(FindWidgetByIdQuery(widgetId, tenantId))
