@@ -68,7 +68,6 @@ class TestingConventionPlugin : Plugin<Project> {
                         "kotest-assertions-core",
                         "kotest-property",
                         "kotest-extensions-spring",
-                        "mockk",
                         "konsist"
                     )
                 )
@@ -86,7 +85,6 @@ class TestingConventionPlugin : Plugin<Project> {
                         "kotest-assertions-core",
                         "kotest-property",
                         "kotest-extensions-spring",
-                        "mockk",
                         "testcontainers-junit-jupiter",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak"
@@ -153,7 +151,6 @@ class TestingConventionPlugin : Plugin<Project> {
                     "kotest-assertions-core",
                     "kotest-property",
                     "kotest-extensions-spring",
-                    "mockk",
                     "konsist"
                 ), catalog)
 
@@ -163,7 +160,6 @@ class TestingConventionPlugin : Plugin<Project> {
                     "kotest-assertions-core",
                     "kotest-property",
                     "kotest-extensions-spring",
-                    "mockk",
                     "testcontainers-junit-jupiter",
                     "testcontainers-postgresql",
                     "testcontainers-keycloak"
