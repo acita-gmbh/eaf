@@ -22,12 +22,11 @@ class TestingConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
+                apply("io.kotest")
             }
 
-            // Configure Kotlin tests to use JUnit Platform
-            tasks.withType<Test>().configureEach {
-                useJUnitPlatform()
-            }
+            // Configure native Kotest test execution (no JUnit Platform needed)
+            // Kotest 6.0 native plugin handles test execution directly
 
             val sourceSets = extensions.getByType(SourceSetContainer::class.java)
             val integrationTest = sourceSets.create("integrationTest") {
@@ -64,9 +63,9 @@ class TestingConventionPlugin : Plugin<Project> {
                     "testImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-runner-junit5",
-                        "kotest-assertions-core",
-                        "kotest-property",
+                        "kotest-framework-engine-jvm",
+                        "kotest-assertions-core-jvm",
+                        "kotest-property-jvm",
                         "kotest-extensions-spring",
                         "konsist"
                     )
@@ -81,9 +80,9 @@ class TestingConventionPlugin : Plugin<Project> {
                     "integrationTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-runner-junit5",
-                        "kotest-assertions-core",
-                        "kotest-property",
+                        "kotest-framework-engine-jvm",
+                        "kotest-assertions-core-jvm",
+                        "kotest-property-jvm",
                         "kotest-extensions-spring",
                         "testcontainers-junit-jupiter",
                         "testcontainers-postgresql",
@@ -103,9 +102,9 @@ class TestingConventionPlugin : Plugin<Project> {
                     "konsistTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-runner-junit5",
-                        "kotest-assertions-core",
-                        "kotest-property",
+                        "kotest-framework-engine-jvm",
+                        "kotest-assertions-core-jvm",
+                        "kotest-property-jvm",
                         "kotest-extensions-spring",
                         "konsist"
                     )
@@ -136,6 +135,7 @@ class TestingConventionPlugin : Plugin<Project> {
                 testClassesDirs = konsistTest.output.classesDirs
                 classpath = konsistTest.runtimeClasspath
                 shouldRunAfter(tasks.named("test"))
+                // Note: Konsist may still need JUnit Platform
                 useJUnitPlatform()
             }
 
@@ -147,18 +147,18 @@ class TestingConventionPlugin : Plugin<Project> {
             afterEvaluate {
                 enforceCatalogAlignment("testImplementation", listOf(
                     "kotlin-test",
-                    "kotest-runner-junit5",
-                    "kotest-assertions-core",
-                    "kotest-property",
+                    "kotest-framework-engine-jvm",
+                    "kotest-assertions-core-jvm",
+                    "kotest-property-jvm",
                     "kotest-extensions-spring",
                     "konsist"
                 ), catalog)
 
                 enforceCatalogAlignment("integrationTestImplementation", listOf(
                     "kotlin-test",
-                    "kotest-runner-junit5",
-                    "kotest-assertions-core",
-                    "kotest-property",
+                    "kotest-framework-engine-jvm",
+                    "kotest-assertions-core-jvm",
+                    "kotest-property-jvm",
                     "kotest-extensions-spring",
                     "testcontainers-junit-jupiter",
                     "testcontainers-postgresql",
@@ -167,9 +167,9 @@ class TestingConventionPlugin : Plugin<Project> {
 
                 enforceCatalogAlignment("konsistTestImplementation", listOf(
                     "kotlin-test",
-                    "kotest-runner-junit5",
-                    "kotest-assertions-core",
-                    "kotest-property",
+                    "kotest-framework-engine-jvm",
+                    "kotest-assertions-core-jvm",
+                    "kotest-property-jvm",
                     "kotest-extensions-spring",
                     "konsist"
                 ), catalog)
