@@ -37,8 +37,10 @@ class WidgetQueryHandlerTest :
                     updatedAt = Instant.now(),
                 )
 
-            val repository = NullableWidgetProjectionRepository.createNull()
-                .withProjection(projection)
+            val repository =
+                NullableWidgetProjectionRepository
+                    .createNull()
+                    .withProjection(projection)
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
 
@@ -75,32 +77,36 @@ class WidgetQueryHandlerTest :
         test("2.4-UNIT-003: FindWidgetsQuery handles pagination correctly") {
             // Given - Repository with test data using Nullable Design Pattern
             val tenantId = "tenant-456"
-            val projection1 = WidgetProjection(
-                widgetId = "widget-1",
-                tenantId = tenantId,
-                name = "Widget 1",
-                description = null,
-                value = BigDecimal("100.00"),
-                category = "TEST",
-                metadata = null,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
-            )
-            val projection2 = WidgetProjection(
-                widgetId = "widget-2",
-                tenantId = tenantId,
-                name = "Widget 2",
-                description = null,
-                value = BigDecimal("200.00"),
-                category = "TEST",
-                metadata = null,
-                createdAt = Instant.now().minusSeconds(10),
-                updatedAt = Instant.now(),
-            )
+            val projection1 =
+                WidgetProjection(
+                    widgetId = "widget-1",
+                    tenantId = tenantId,
+                    name = "Widget 1",
+                    description = null,
+                    value = BigDecimal("100.00"),
+                    category = "TEST",
+                    metadata = null,
+                    createdAt = Instant.now(),
+                    updatedAt = Instant.now(),
+                )
+            val projection2 =
+                WidgetProjection(
+                    widgetId = "widget-2",
+                    tenantId = tenantId,
+                    name = "Widget 2",
+                    description = null,
+                    value = BigDecimal("200.00"),
+                    category = "TEST",
+                    metadata = null,
+                    createdAt = Instant.now().minusSeconds(10),
+                    updatedAt = Instant.now(),
+                )
 
-            val repository = NullableWidgetProjectionRepository.createNull()
-                .withProjection(projection1)
-                .withProjection(projection2)
+            val repository =
+                NullableWidgetProjectionRepository
+                    .createNull()
+                    .withProjection(projection1)
+                    .withProjection(projection2)
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
 
@@ -133,8 +139,10 @@ class WidgetQueryHandlerTest :
                     updatedAt = Instant.now(),
                 )
 
-            val repository = NullableWidgetProjectionRepository.createNull()
-                .withProjection(projection)
+            val repository =
+                NullableWidgetProjectionRepository
+                    .createNull()
+                    .withProjection(projection)
             val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
             val handler = WidgetQueryHandler(repository, objectMapper)
 
