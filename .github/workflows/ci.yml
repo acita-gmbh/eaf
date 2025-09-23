@@ -40,11 +40,20 @@ jobs:
         run: ./gradlew ktlintCheck detekt --no-daemon --stacktrace
 
       - name: Run Konsist architecture tests
-        run: ./gradlew ciKonsistTest --no-daemon --stacktrace
+        id: konsist-test
+        run: |
+          ./gradlew ciKonsistTest --no-daemon --stacktrace
+          # Check if any test results were generated
+          if find . -path "*/build/test-results/ciKonsistTest/*.xml" -print -quit | grep -q .; then
+            echo "has_results=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_results=false" >> $GITHUB_OUTPUT
+            echo "::notice::No Konsist test results found - this is expected if no Konsist tests are defined yet"
+          fi
 
       - name: Publish Konsist Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        if: always() && steps.konsist-test.outputs.has_results == 'true'
         with:
           files: '**/build/test-results/ciKonsistTest/*.xml'
           check_name: Architecture Test Results
