@@ -185,11 +185,11 @@ run_tests() {
         return
     fi
 
-    log_info "Running test suite..."
+    log_info "Running test suite with native Kotest 6.0.3..."
 
-    # Fast tests first (nullable pattern)
-    log_info "Running fast business logic tests..."
-    ./gradlew test -P fastTests=true
+    # Fast tests first (nullable pattern) with enhanced Kotest output
+    log_info "Running fast business logic tests with native Kotest runner..."
+    ./gradlew jvmKotest -P fastTests=true
 
     # Integration tests
     log_info "Running integration tests..."
@@ -288,7 +288,7 @@ main() {
     echo "📋 Quick Commands:"
     echo "   • Stop services:    ./scripts/stop-dev.sh"
     echo "   • View logs:        ./scripts/logs.sh"
-    echo "   • Run tests:        ./gradlew test"
+    echo "   • Run tests:        ./gradlew jvmKotest"
     echo "   • Generate code:    eaf scaffold --help"
     echo
     echo "📖 Documentation: docs/README.md"
@@ -510,7 +510,7 @@ enum class {{aggregateName}}Status {
 
 ```bash
 # Quick feedback loop (< 30 seconds)
-./gradlew test -P fastTests=true          # Fast nullable pattern tests
+./gradlew jvmKotest -P fastTests=true          # Fast nullable pattern tests
 ./gradlew ktlintCheck                     # Code formatting
 ./gradlew detekt                          # Static analysis
 
@@ -631,7 +631,7 @@ if ! ./gradlew detekt; then
 fi
 
 # Fast tests
-if ! ./gradlew test -P fastTests=true; then
+if ! ./gradlew jvmKotest -P fastTests=true; then
     echo "❌ Fast tests failed. Fix test failures."
     exit 1
 fi
@@ -731,7 +731,7 @@ echo "✅ Pre-commit checks passed"
     {
       "label": "test-fast",
       "type": "shell",
-      "command": "./gradlew test -P fastTests=true",
+      "command": "./gradlew jvmKotest -P fastTests=true",
       "group": "test",
       "presentation": {
         "echo": true,
@@ -760,7 +760,7 @@ JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 ./gradlew :products:licensing-server:bootRun
 
 # Debug tests
-./gradlew test --debug-jvm
+./gradlew jvmKotest --debug-jvm
 
 # Debug with specific profile
 SPRING_PROFILES_ACTIVE=dev,debug \
@@ -802,7 +802,7 @@ docker exec eaf-postgres psql -U eaf -c "DROP SCHEMA IF EXISTS eaf_test CASCADE;
 
 ```bash
 # Monitor test performance
-./gradlew test -P profile=true
+./gradlew jvmKotest -P profile=true
 
 # Monitor build performance
 ./gradlew build --profile --scan
@@ -867,7 +867,7 @@ jobs:
           colima start --cpu 4 --memory 8 --disk 60 --vm-type qemu --mount-type sshfs || colima start --vm-type qemu --mount-type sshfs
           docker context use colima || true
           docker info
-      - run: ./gradlew test integrationTest jacocoTestReport jacocoTestCoverageVerification
+      - run: ./gradlew jvmKotest integrationTest jacocoTestReport jacocoTestCoverageVerification
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4

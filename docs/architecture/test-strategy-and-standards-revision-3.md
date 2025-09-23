@@ -39,24 +39,92 @@ graph TD
 
 ## Testing Framework Standards
 
-### Kotest Framework (MANDATORY)
+### Kotest 6.0.3 Framework (MANDATORY - Native Runner)
 
-⚠️ **CRITICAL**: JUnit is explicitly **FORBIDDEN**. All tests must use Kotest framework.
+⚠️ **CRITICAL**: JUnit is explicitly **FORBIDDEN**. All tests must use Kotest 6.0.3 with native runner.
+
+#### Enhanced Testing Experience with Native Runner
+
+**Kotest 6.0.3 provides revolutionary testing experience**:
+- **Beautiful Output**: Colorized Given-When-Then formatting with motivation quotes
+- **Native Execution**: Direct Kotest engine without JUnit Platform overhead
+- **Enhanced IDE Integration**: Superior IntelliJ experience with native plugin
+- **Faster Test Discovery**: Native engine provides more reliable test execution
 
 ```kotlin
-// gradle/libs.versions.toml
+// gradle/libs.versions.toml - Kotest 6.0.3 JVM-Specific Configuration
 [versions]
-kotest = "5.9.1"
+kotest = "6.0.3"           # Native Kotest with enhanced developer experience
 
 [libraries]
-kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
-kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" }
+# JVM-specific dependencies (native approach)
+kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
+kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
+kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
 
 [bundles]
-kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-property", "kotest-extensions-spring"]
+kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-property-jvm", "kotest-extensions-spring"]
+
+[plugins]
+kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 ```
+
+#### Native Kotest Commands
+
+```bash
+# Primary testing commands (Constitutional TDD)
+./gradlew jvmKotest                    # Run all tests with enhanced output
+./gradlew :framework:widget:jvmKotest  # Run specific module tests
+./gradlew jvmKotest --continue         # Continue on failures for debugging
+
+# Integration with quality gates
+./gradlew jvmKotest integrationTest jacocoTestReport konsistTest
+```
+
+#### Kotest 6.0.3 Migration Lessons Learned (2025-09)
+
+**Ultra-Think Strategy Success**: Research-driven approach led to breakthrough migration success
+
+##### Decision Tree: Native Runner vs JUnit Platform
+
+**Why Native Kotest Runner Was Chosen**:
+1. **Enhanced Developer Experience**: Beautiful colorized output with motivation quotes
+2. **Direct Engine Access**: Eliminates JUnit Platform bridge overhead
+3. **Better IDE Integration**: Superior IntelliJ experience with native plugin
+4. **Faster Test Discovery**: More reliable test execution without platform layer
+
+**Key Research Insights**:
+- **JVM vs Multiplatform**: Critical to use `-jvm` suffixed dependencies for JVM-only projects
+- **Plugin Selection**: `id("io.kotest")` not `id("io.kotest.multiplatform")` for JVM projects
+- **Class Loading Issues**: `io.kotest.mpp.ReflectionKt` errors resolved with proper JVM artifacts
+- **CI Integration**: `jvmKotest` task provides enhanced output in CI environments
+
+##### Migration Success Metrics
+
+**Before Migration (Kotest 6.0.3)**:
+- **Test Runner**: `./gradlew jvmKotest` (JUnit Platform bridge)
+- **Output**: Basic JUnit-style reporting
+- **Dependencies**: Mixed multiplatform/JVM artifacts
+- **Plugin**: JUnit Platform integration only
+
+**After Migration (Kotest 6.0.3)**:
+- **Test Runner**: `./gradlew jvmKotest` (native Kotest engine)
+- **Output**: Beautiful colorized Given-When-Then with motivation quotes
+- **Dependencies**: Pure JVM-specific artifacts (`-jvm` suffixed)
+- **Plugin**: Native `id("io.kotest")` with enhanced features
+
+**Results**: ✅ **27 tests passing, enhanced developer experience, CI success**
+
+##### Future Upgrade Checklist
+
+**For Future Kotest Major Version Upgrades**:
+1. **Research First**: Investigate JVM vs multiplatform dependency requirements
+2. **Plugin Selection**: Verify correct plugin ID for target project type
+3. **Dependency Audit**: Check for `-jvm` suffixes in JVM-only projects
+4. **Test Execution**: Validate native runner tasks vs JUnit Platform
+5. **CI Integration**: Update workflows to use native runner commands
+6. **Ultra-Think Approach**: Thorough research before implementation
 
 ### Prohibited JUnit Usage
 

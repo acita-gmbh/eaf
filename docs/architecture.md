@@ -1211,7 +1211,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - run: ./gradlew test integrationTest
+      - run: ./gradlew jvmKotest integrationTest
       - uses: codecov/codecov-action@v4
 
   security-scan:
