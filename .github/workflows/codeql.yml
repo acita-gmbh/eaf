@@ -1,3 +1,14 @@
+# CodeQL Advanced Setup Workflow
+#
+# NOTE: This workflow requires the default CodeQL setup to be disabled first.
+# To enable this workflow:
+# 1. Go to Settings > Code security and analysis
+# 2. Under "Code scanning", disable "Default setup"
+# 3. This custom workflow will then automatically run
+#
+# This custom workflow ensures Java 21 is used for building the project,
+# which fixes the "Dependency requires at least JVM runtime version 21" error.
+
 name: "CodeQL"
 
 on:
