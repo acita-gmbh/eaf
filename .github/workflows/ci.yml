@@ -32,6 +32,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.event_name == 'pull_request' }}
+          gradle-home-cache-includes: caches
+          gradle-home-cache-cleanup: false
 
       - name: Prime compilation
         run: ./gradlew compileKotlin --no-daemon --stacktrace
