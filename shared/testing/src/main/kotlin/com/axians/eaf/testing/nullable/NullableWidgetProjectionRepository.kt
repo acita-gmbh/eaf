@@ -36,12 +36,13 @@ import kotlin.concurrent.write
  * - Supports state pre-population for test scenarios
  * - Maintains business logic contracts without external dependencies
  */
+@Suppress("TooManyFunctions") // Required for complete JpaRepository interface implementation
 class NullableWidgetProjectionRepository private constructor(
     private val widgetIndex: ConcurrentHashMap<String, WidgetProjection> = ConcurrentHashMap(),
     private val tenantIndex: ConcurrentHashMap<String, MutableList<WidgetProjection>> = ConcurrentHashMap(),
-    private val compositeIndex: ConcurrentHashMap<Pair<String, String>, WidgetProjection> = ConcurrentHashMap()
-) : WidgetProjectionRepository, NullableFactory<WidgetProjectionRepository> {
-
+    private val compositeIndex: ConcurrentHashMap<Pair<String, String>, WidgetProjection> = ConcurrentHashMap(),
+) : WidgetProjectionRepository,
+    NullableFactory<WidgetProjectionRepository> {
     private val lock = ReentrantReadWriteLock()
 
     // ===================================================================
@@ -63,33 +64,24 @@ class NullableWidgetProjectionRepository private constructor(
         return entity
     }
 
-    override fun <S : WidgetProjection> saveAll(entities: MutableIterable<S>): MutableList<S> {
-        return entities.map { save(it) }.toMutableList()
-    }
+    override fun <S : WidgetProjection> saveAll(entities: MutableIterable<S>): MutableList<S> =
+        entities.map { save(it) }.toMutableList()
 
-    override fun findById(id: String): Optional<WidgetProjection> {
-        return lock.read {
+    override fun findById(id: String): Optional<WidgetProjection> =
+        lock.read {
             Optional.ofNullable(widgetIndex[id])
         }
-    }
 
-    override fun existsById(id: String): Boolean {
-        return lock.read { widgetIndex.containsKey(id) }
-    }
+    override fun existsById(id: String): Boolean = lock.read { widgetIndex.containsKey(id) }
 
-    override fun findAll(): MutableList<WidgetProjection> {
-        return lock.read { widgetIndex.values.toMutableList() }
-    }
+    override fun findAll(): MutableList<WidgetProjection> = lock.read { widgetIndex.values.toMutableList() }
 
-    override fun findAllById(ids: MutableIterable<String>): MutableList<WidgetProjection> {
-        return lock.read {
+    override fun findAllById(ids: MutableIterable<String>): MutableList<WidgetProjection> =
+        lock.read {
             ids.mapNotNull { widgetIndex[it] }.toMutableList()
         }
-    }
 
-    override fun count(): Long {
-        return lock.read { widgetIndex.size.toLong() }
-    }
+    override fun count(): Long = lock.read { widgetIndex.size.toLong() }
 
     override fun deleteById(id: String) {
         lock.write {
@@ -129,84 +121,98 @@ class NullableWidgetProjectionRepository private constructor(
     // Custom Widget Query Methods
     // ===================================================================
 
-    override fun findByWidgetIdAndTenantId(widgetId: String, tenantId: String): WidgetProjection? {
-        return lock.read {
+    override fun findByWidgetIdAndTenantId(
+        widgetId: String,
+        tenantId: String,
+    ): WidgetProjection? =
+        lock.read {
             compositeIndex[widgetId to tenantId]
         }
-    }
 
-    override fun findByTenantIdOrderByCreatedAtDesc(tenantId: String): List<WidgetProjection> {
-        return lock.read {
+    override fun findByTenantIdOrderByCreatedAtDesc(tenantId: String): List<WidgetProjection> =
+        lock.read {
             tenantIndex[tenantId]?.toList() ?: emptyList()
         }
-    }
 
-    override fun findByTenantIdAndCategoryOrderByCreatedAtDesc(tenantId: String, category: String): List<WidgetProjection> {
-        return lock.read {
+    override fun findByTenantIdAndCategoryOrderByCreatedAtDesc(
+        tenantId: String,
+        category: String,
+    ): List<WidgetProjection> =
+        lock.read {
             tenantIndex[tenantId]
                 ?.filter { it.category == category }
                 ?.sortedByDescending { it.createdAt }
                 ?: emptyList()
         }
-    }
 
-    override fun findByTenantIdAndValueGreaterThanOrderByValueDesc(tenantId: String, minValue: BigDecimal): List<WidgetProjection> {
-        return lock.read {
+    override fun findByTenantIdAndValueGreaterThanOrderByValueDesc(
+        tenantId: String,
+        minValue: BigDecimal,
+    ): List<WidgetProjection> =
+        lock.read {
             tenantIndex[tenantId]
                 ?.filter { it.value > minValue }
                 ?.sortedByDescending { it.value }
                 ?: emptyList()
         }
-    }
 
-    override fun findByTenantIdAndCreatedAtAfterOrderByCreatedAtDesc(tenantId: String, afterTimestamp: Instant): List<WidgetProjection> {
-        return lock.read {
+    override fun findByTenantIdAndCreatedAtAfterOrderByCreatedAtDesc(
+        tenantId: String,
+        afterTimestamp: Instant,
+    ): List<WidgetProjection> =
+        lock.read {
             tenantIndex[tenantId]
                 ?.filter { it.createdAt.isAfter(afterTimestamp) }
                 ?.sortedByDescending { it.createdAt }
                 ?: emptyList()
         }
-    }
 
-    override fun countByTenantId(tenantId: String): Long {
-        return lock.read {
+    override fun countByTenantId(tenantId: String): Long =
+        lock.read {
             tenantIndex[tenantId]?.size?.toLong() ?: 0L
         }
-    }
 
-    override fun findByTenantIdAndNameContainingIgnoreCase(tenantId: String, namePattern: String): List<WidgetProjection> {
-        return lock.read {
+    override fun findByTenantIdAndNameContainingIgnoreCase(
+        tenantId: String,
+        namePattern: String,
+    ): List<WidgetProjection> =
+        lock.read {
             tenantIndex[tenantId]
                 ?.filter { it.name.contains(namePattern, ignoreCase = true) }
                 ?.sortedByDescending { it.createdAt }
                 ?: emptyList()
         }
-    }
 
-    override fun getCategorySummaryByTenantId(tenantId: String): List<Array<Any>> {
-        return lock.read {
+    override fun getCategorySummaryByTenantId(tenantId: String): List<Array<Any>> =
+        lock.read {
             tenantIndex[tenantId]
                 ?.groupBy { it.category }
                 ?.map { (category, widgets) ->
                     arrayOf(
                         category,
                         widgets.size.toLong(),
-                        widgets.map { it.value }.fold(BigDecimal.ZERO) { acc, value -> acc + value }
+                        widgets
+                            .map { it.value }
+                            .fold(BigDecimal.ZERO) { acc, value -> acc + value }
                             .divide(BigDecimal(widgets.size)),
-                        widgets.map { it.value }.fold(BigDecimal.ZERO) { acc, value -> acc + value }
+                        widgets.map { it.value }.fold(BigDecimal.ZERO) { acc, value -> acc + value },
                     )
                 } ?: emptyList()
         }
-    }
 
-    override fun existsByWidgetIdAndTenantId(widgetId: String, tenantId: String): Boolean {
-        return lock.read {
+    override fun existsByWidgetIdAndTenantId(
+        widgetId: String,
+        tenantId: String,
+    ): Boolean =
+        lock.read {
             compositeIndex.containsKey(widgetId to tenantId)
         }
-    }
 
-    override fun deleteByWidgetIdAndTenantId(widgetId: String, tenantId: String): Long {
-        return lock.write {
+    override fun deleteByWidgetIdAndTenantId(
+        widgetId: String,
+        tenantId: String,
+    ): Long =
+        lock.write {
             val entity = compositeIndex.remove(widgetId to tenantId)
             if (entity != null) {
                 widgetIndex.remove(widgetId)
@@ -216,7 +222,6 @@ class NullableWidgetProjectionRepository private constructor(
                 0L
             }
         }
-    }
 
     // ===================================================================
     // JpaRepository Methods (Minimal Implementation for Testing)
@@ -232,29 +237,47 @@ class NullableWidgetProjectionRepository private constructor(
     }
 
     override fun <S : WidgetProjection> findAll(example: Example<S>): MutableList<S> = mutableListOf()
-    override fun <S : WidgetProjection> findAll(example: Example<S>, sort: Sort): MutableList<S> = mutableListOf()
-    override fun <S : WidgetProjection> findAll(example: Example<S>, pageable: Pageable): Page<S> = PageImpl(emptyList())
+
+    override fun <S : WidgetProjection> findAll(
+        example: Example<S>,
+        sort: Sort,
+    ): MutableList<S> = mutableListOf()
+
+    override fun <S : WidgetProjection> findAll(
+        example: Example<S>,
+        pageable: Pageable,
+    ): Page<S> = PageImpl(emptyList())
+
     override fun <S : WidgetProjection> findOne(example: Example<S>): Optional<S> = Optional.empty()
+
     override fun <S : WidgetProjection> exists(example: Example<S>): Boolean = false
+
     override fun <S : WidgetProjection> count(example: Example<S>): Long = 0
 
     override fun <S : WidgetProjection, R : Any> findBy(
         example: Example<S>,
-        queryFunction: Function<FluentQuery.FetchableFluentQuery<S>, R>
-    ): R {
-        throw UnsupportedOperationException("FluentQuery not supported in nullable implementation")
-    }
+        queryFunction: Function<FluentQuery.FetchableFluentQuery<S>, R>,
+    ): R = throw UnsupportedOperationException("FluentQuery not supported in nullable implementation")
 
-    override fun flush() {} // No-op for in-memory
+    override fun flush() { /* No-op for in-memory implementation */ }
+
     override fun <S : WidgetProjection> saveAndFlush(entity: S): S = save(entity)
-    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> = saveAll(entities)
+
+    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> =
+        saveAll(entities)
+
     override fun deleteAllInBatch(entities: MutableIterable<WidgetProjection>) = deleteAll(entities)
+
     override fun deleteAllByIdInBatch(ids: MutableIterable<String>) = deleteAllById(ids)
+
     override fun deleteAllInBatch() = deleteAll()
+
     @Deprecated("Use findById instead")
     override fun getOne(id: String): WidgetProjection = findById(id).orElseThrow()
+
     @Deprecated("Use findById instead")
     override fun getById(id: String): WidgetProjection = findById(id).orElseThrow()
+
     override fun getReferenceById(id: String): WidgetProjection = findById(id).orElseThrow()
 
     // ===================================================================
@@ -342,7 +365,7 @@ class NullableWidgetProjectionRepository private constructor(
                 category = category,
                 metadata = metadata,
                 createdAt = createdAt,
-                updatedAt = updatedAt
+                updatedAt = updatedAt,
             )
         }
     }
@@ -380,13 +403,12 @@ class NullableWidgetProjectionRepository private constructor(
     /**
      * Validates index consistency for testing (internal verification).
      */
-    fun validateIndexConsistency(): Boolean {
-        return lock.read {
+    fun validateIndexConsistency(): Boolean =
+        lock.read {
             val widgetCount = widgetIndex.size
             val compositeCount = compositeIndex.size
             val tenantTotalCount = tenantIndex.values.sumOf { it.size }
 
             widgetCount == compositeCount && compositeCount == tenantTotalCount
         }
-    }
 }

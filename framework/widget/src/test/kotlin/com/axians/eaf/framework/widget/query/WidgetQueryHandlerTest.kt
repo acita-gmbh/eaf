@@ -27,19 +27,20 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") {
             // Given - Nullable repository with pre-populated test data
-            val repository = NullableWidgetProjectionRepository.createNull {
-                widget {
-                    widgetId = "widget-123"
-                    tenantId = "tenant-456"
-                    name = "Test Widget"
-                    description = "Test Description"
-                    value = BigDecimal("100.50")
-                    category = "TEST"
-                    metadata = """{"key": "value"}"""
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
+            val repository =
+                NullableWidgetProjectionRepository.createNull {
+                    widget {
+                        widgetId = "widget-123"
+                        tenantId = "tenant-456"
+                        name = "Test Widget"
+                        description = "Test Description"
+                        value = BigDecimal("100.50")
+                        category = "TEST"
+                        metadata = """{"key": "value"}"""
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
                 }
-            }
 
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
@@ -73,26 +74,27 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-003: FindWidgetsQuery handles pagination correctly") {
             // Given - Repository with multiple widgets
-            val repository = NullableWidgetProjectionRepository.createNull {
-                widget {
-                    widgetId = "widget-1"
-                    tenantId = "tenant-456"
-                    name = "Widget 1"
-                    value = BigDecimal("100.00")
-                    category = "TEST"
-                    createdAt = Instant.now().minusSeconds(60)
-                    updatedAt = Instant.now()
+            val repository =
+                NullableWidgetProjectionRepository.createNull {
+                    widget {
+                        widgetId = "widget-1"
+                        tenantId = "tenant-456"
+                        name = "Widget 1"
+                        value = BigDecimal("100.00")
+                        category = "TEST"
+                        createdAt = Instant.now().minusSeconds(60)
+                        updatedAt = Instant.now()
+                    }
+                    widget {
+                        widgetId = "widget-2"
+                        tenantId = "tenant-456"
+                        name = "Widget 2"
+                        value = BigDecimal("200.00")
+                        category = "TEST"
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
                 }
-                widget {
-                    widgetId = "widget-2"
-                    tenantId = "tenant-456"
-                    name = "Widget 2"
-                    value = BigDecimal("200.00")
-                    category = "TEST"
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
-                }
-            }
 
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
@@ -111,18 +113,19 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-004: WidgetResponse excludes sensitive fields") {
             // Given - Repository with test widget
-            val repository = NullableWidgetProjectionRepository.createNull {
-                widget {
-                    widgetId = "widget-123"
-                    tenantId = "tenant-456"
-                    name = "Security Test Widget"
-                    description = "Testing field exclusion"
-                    value = BigDecimal("999.99")
-                    category = "SECURITY"
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
+            val repository =
+                NullableWidgetProjectionRepository.createNull {
+                    widget {
+                        widgetId = "widget-123"
+                        tenantId = "tenant-456"
+                        name = "Security Test Widget"
+                        description = "Testing field exclusion"
+                        value = BigDecimal("999.99")
+                        category = "SECURITY"
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
                 }
-            }
 
             val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
             val handler = WidgetQueryHandler(repository, objectMapper)
@@ -139,11 +142,12 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-005: Query validation ensures required parameters") {
             // Given - Valid query parameters
-            val validQuery = FindWidgetsQuery(
-                tenantId = "valid-tenant",
-                page = 0,
-                size = 20,
-            )
+            val validQuery =
+                FindWidgetsQuery(
+                    tenantId = "valid-tenant",
+                    page = 0,
+                    size = 20,
+                )
             validQuery.tenantId shouldBe "valid-tenant"
 
             // When/Then - Test query parameter validation
@@ -171,28 +175,29 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-006: Nullable repository maintains tenant isolation") {
             // Given - Repository with widgets for different tenants
-            val repository = NullableWidgetProjectionRepository.createNull {
-                widget {
-                    widgetId = "widget-1"
-                    tenantId = "tenant-1"
-                    name = "Tenant 1 Widget"
-                    description = "Should be isolated"
-                    value = BigDecimal("100.00")
-                    category = "TEST"
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
+            val repository =
+                NullableWidgetProjectionRepository.createNull {
+                    widget {
+                        widgetId = "widget-1"
+                        tenantId = "tenant-1"
+                        name = "Tenant 1 Widget"
+                        description = "Should be isolated"
+                        value = BigDecimal("100.00")
+                        category = "TEST"
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
+                    widget {
+                        widgetId = "widget-2"
+                        tenantId = "tenant-2"
+                        name = "Tenant 2 Widget"
+                        description = "Should be isolated"
+                        value = BigDecimal("200.00")
+                        category = "TEST"
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
                 }
-                widget {
-                    widgetId = "widget-2"
-                    tenantId = "tenant-2"
-                    name = "Tenant 2 Widget"
-                    description = "Should be isolated"
-                    value = BigDecimal("200.00")
-                    category = "TEST"
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
-                }
-            }
 
             val objectMapper = ObjectMapper()
             val handler = WidgetQueryHandler(repository, objectMapper)
@@ -218,17 +223,18 @@ class WidgetQueryHandlerTest :
 
             // Create 100 test widgets across 5 tenants
             repeat(100) { i ->
-                val widget = WidgetProjection(
-                    widgetId = "widget-$i",
-                    tenantId = "tenant-${i % 5}",
-                    name = "Performance Widget $i",
-                    description = "Performance test widget",
-                    value = BigDecimal(i * 10),
-                    category = if (i % 2 == 0) "EVEN" else "ODD",
-                    metadata = """{"index": $i}""",
-                    createdAt = Instant.now().minusSeconds(i.toLong()),
-                    updatedAt = Instant.now()
-                )
+                val widget =
+                    WidgetProjection(
+                        widgetId = "widget-$i",
+                        tenantId = "tenant-${i % 5}",
+                        name = "Performance Widget $i",
+                        description = "Performance test widget",
+                        value = BigDecimal(i * 10),
+                        category = if (i % 2 == 0) "EVEN" else "ODD",
+                        metadata = """{"index": $i}""",
+                        createdAt = Instant.now().minusSeconds(i.toLong()),
+                        updatedAt = Instant.now(),
+                    )
                 repository.save(widget)
             }
 
@@ -261,35 +267,40 @@ class WidgetQueryHandlerTest :
 
         test("2.4-UNIT-008: Complex query method validation") {
             // Given - Repository with categorized widgets
-            val repository = NullableWidgetProjectionRepository.createNull {
-                widget {
-                    widgetId = "widget-expensive"
-                    tenantId = "tenant-test"
-                    name = "Expensive Widget"
-                    value = BigDecimal("500.00")
-                    category = "PREMIUM"
-                    createdAt = Instant.now()
-                    updatedAt = Instant.now()
+            val repository =
+                NullableWidgetProjectionRepository.createNull {
+                    widget {
+                        widgetId = "widget-expensive"
+                        tenantId = "tenant-test"
+                        name = "Expensive Widget"
+                        value = BigDecimal("500.00")
+                        category = "PREMIUM"
+                        createdAt = Instant.now()
+                        updatedAt = Instant.now()
+                    }
+                    widget {
+                        widgetId = "widget-cheap"
+                        tenantId = "tenant-test"
+                        name = "Cheap Widget"
+                        value = BigDecimal("10.00")
+                        category = "BASIC"
+                        createdAt = Instant.now().minusSeconds(30)
+                        updatedAt = Instant.now()
+                    }
                 }
-                widget {
-                    widgetId = "widget-cheap"
-                    tenantId = "tenant-test"
-                    name = "Cheap Widget"
-                    value = BigDecimal("10.00")
-                    category = "BASIC"
-                    createdAt = Instant.now().minusSeconds(30)
-                    updatedAt = Instant.now()
-                }
-            }
 
             // When - Test complex repository methods directly
-            val expensiveWidgets = repository.findByTenantIdAndValueGreaterThanOrderByValueDesc(
-                "tenant-test", BigDecimal("100.00")
-            )
+            val expensiveWidgets =
+                repository.findByTenantIdAndValueGreaterThanOrderByValueDesc(
+                    "tenant-test",
+                    BigDecimal("100.00"),
+                )
             val categoryCount = repository.countByTenantId("tenant-test")
-            val nameSearch = repository.findByTenantIdAndNameContainingIgnoreCase(
-                "tenant-test", "expensive"
-            )
+            val nameSearch =
+                repository.findByTenantIdAndNameContainingIgnoreCase(
+                    "tenant-test",
+                    "expensive",
+                )
 
             // Then - Validate complex query results
             expensiveWidgets.size shouldBe 1

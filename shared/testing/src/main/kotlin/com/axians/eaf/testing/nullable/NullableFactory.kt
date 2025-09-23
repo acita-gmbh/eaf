@@ -58,8 +58,8 @@ interface NullableFactory<T> {
  * @return Nullable implementation instance
  * @throws IllegalArgumentException if no nullable implementation exists for type T
  */
-inline fun <reified T> nullable(): T {
-    return when (T::class) {
+inline fun <reified T> nullable(): T =
+    when (T::class) {
         com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository::class ->
             NullableWidgetProjectionRepository.createNull() as T
         // Add more nullable implementations here as they are created:
@@ -68,10 +68,9 @@ inline fun <reified T> nullable(): T {
         // EventBus::class -> NullableEventBus.createNull() as T
         else -> throw IllegalArgumentException(
             "No nullable implementation available for ${T::class.simpleName}. " +
-            "Create a nullable implementation that implements NullableFactory<${T::class.simpleName}>."
+                "Create a nullable implementation that implements NullableFactory<${T::class.simpleName}>.",
         )
     }
-}
 
 /**
  * Factory function with initial state for complex test scenarios.
@@ -79,16 +78,16 @@ inline fun <reified T> nullable(): T {
  * @param state Initial state data for pre-population
  * @return Configured nullable implementation instance
  */
-inline fun <reified T> nullable(state: Map<String, Any>): T {
-    return when (T::class) {
+inline fun <reified T> nullable(state: Map<String, Any>): T =
+    when (T::class) {
         com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository::class -> {
             @Suppress("UNCHECKED_CAST")
-            val widgets = state["widgets"] as? List<com.axians.eaf.framework.persistence.entities.WidgetProjection>
-                ?: emptyList()
+            val widgets =
+                state["widgets"] as? List<com.axians.eaf.framework.persistence.entities.WidgetProjection>
+                    ?: emptyList()
             NullableWidgetProjectionRepository.createNull(widgets) as T
         }
         else -> throw IllegalArgumentException(
-            "No nullable implementation with state support available for ${T::class.simpleName}."
+            "No nullable implementation with state support available for ${T::class.simpleName}.",
         )
     }
-}
