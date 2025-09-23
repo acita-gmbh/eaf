@@ -75,8 +75,8 @@ jobs:
           docker context use colima || true
           docker info
 
-      - name: Run unit and integration suites
-        run: ./gradlew test integrationTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
+      - name: Run unit and integration suites with native Kotest
+        run: ./gradlew jvmKotest integrationTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
