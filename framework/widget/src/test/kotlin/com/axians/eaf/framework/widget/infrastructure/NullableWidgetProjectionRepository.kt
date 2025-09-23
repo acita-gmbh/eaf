@@ -175,7 +175,8 @@ class NullableWidgetProjectionRepository : WidgetProjectionRepository {
         return PageImpl(content, pageable, allProjections.size.toLong())
     }
 
-    override fun findAllById(ids: MutableIterable<String>): MutableList<WidgetProjection> = ids.mapNotNull { storage[it] }.toMutableList()
+    override fun findAllById(ids: MutableIterable<String>): MutableList<WidgetProjection> =
+        ids.mapNotNull { storage[it] }.toMutableList()
 
     override fun count(): Long = storage.size.toLong()
 
@@ -207,7 +208,8 @@ class NullableWidgetProjectionRepository : WidgetProjectionRepository {
 
     override fun <S : WidgetProjection> saveAndFlush(entity: S): S = save(entity)
 
-    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> = saveAll(entities)
+    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> =
+        saveAll(entities)
 
     override fun deleteAllInBatch(entities: MutableIterable<WidgetProjection>) {
         deleteAll(entities)
@@ -222,7 +224,8 @@ class NullableWidgetProjectionRepository : WidgetProjectionRepository {
     }
 
     @Deprecated("Use getReferenceById instead")
-    override fun getOne(id: String): WidgetProjection = storage[id] ?: throw NoSuchElementException("Widget with id $id not found")
+    override fun getOne(id: String): WidgetProjection =
+        storage[id] ?: throw NoSuchElementException("Widget with id $id not found")
 
     @Deprecated("Use getReferenceById instead")
     override fun getById(id: String): WidgetProjection {
