@@ -89,7 +89,10 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
             override fun hasKey(key: String): Boolean = false
         }
 
-    private val validator = TenLayerJwtValidator(mockJwtDecoder, mockRedisTemplate, meterRegistry)
+    private val formatValidator = JwtFormatValidator(mockJwtDecoder, meterRegistry)
+    private val claimsValidator = JwtClaimsValidator(meterRegistry)
+    private val securityValidator = JwtSecurityValidator(mockRedisTemplate, meterRegistry)
+    private val validator = TenLayerJwtValidator(formatValidator, claimsValidator, securityValidator, meterRegistry)
 
     init {
         given("TenLayerJwtValidator") {
