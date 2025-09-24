@@ -107,7 +107,7 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
                     val result = validator.validateTenLayers(malformedToken)
 
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<SecurityError.InvalidJwtStructure>()
+                    result.leftOrNull().shouldBeInstanceOf<SecurityError.InvalidTokenFormat>()
                 }
 
                 then("should reject oversized tokens") {

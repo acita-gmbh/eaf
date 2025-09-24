@@ -181,7 +181,12 @@ class TenLayerJwtValidatorIntegrationTest(
     private fun createTokenWithHS256Algorithm(): String {
         // Create a token with HS256 algorithm header
         val header = """{"alg":"HS256","typ":"JWT"}"""
-        val payload = """{"sub":"test","tenant_id":"test-tenant","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"test","tenant_id":"test-tenant",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -197,7 +202,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createTokenWithNoneAlgorithm(): String {
         val header = """{"alg":"none","typ":"JWT"}"""
-        val payload = """{"sub":"test","tenant_id":"test-tenant","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"test","tenant_id":"test-tenant",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -213,7 +223,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createTokenWithoutTenantId(): String {
         val header = """{"alg":"RS256","typ":"JWT"}"""
-        val payload = """{"sub":"test","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"test",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -229,7 +244,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createExpiredToken(): String {
         val header = """{"alg":"RS256","typ":"JWT"}"""
-        val payload = """{"sub":"test","tenant_id":"test-tenant","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 - 3600},"iat":${System.currentTimeMillis() / 1000 - 7200}}"""
+        val exp = System.currentTimeMillis() / 1000 - 3600
+        val iat = System.currentTimeMillis() / 1000 - 7200
+        val payload =
+            """{"sub":"test","tenant_id":"test-tenant",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -245,7 +265,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createTokenWithWrongIssuer(): String {
         val header = """{"alg":"RS256","typ":"JWT"}"""
-        val payload = """{"sub":"test","tenant_id":"test-tenant","iss":"http://malicious.com/realms/evil","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"test","tenant_id":"test-tenant",""" +
+                """"iss":"http://malicious.com/realms/evil","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -261,7 +286,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createTokenWithSQLInjection(): String {
         val header = """{"alg":"RS256","typ":"JWT"}"""
-        val payload = """{"sub":"test'; DROP TABLE users; --","tenant_id":"test-tenant","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"test'; DROP TABLE users; --","tenant_id":"test-tenant",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
@@ -277,7 +307,12 @@ class TenLayerJwtValidatorIntegrationTest(
 
     private fun createTokenWithXSSPayload(): String {
         val header = """{"alg":"RS256","typ":"JWT"}"""
-        val payload = """{"sub":"<script>alert('xss')</script>","tenant_id":"test-tenant","iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend","exp":${System.currentTimeMillis() / 1000 + 3600},"iat":${System.currentTimeMillis() / 1000}}"""
+        val exp = System.currentTimeMillis() / 1000 + 3600
+        val iat = System.currentTimeMillis() / 1000
+        val payload =
+            """{"sub":"<script>alert('xss')</script>","tenant_id":"test-tenant",""" +
+                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
+                """"exp":$exp,"iat":$iat}"""
         val encodedHeader =
             java.util.Base64
                 .getUrlEncoder()
