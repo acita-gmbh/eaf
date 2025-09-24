@@ -4,6 +4,7 @@ import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.dto.WidgetResponse
 import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
+import com.axians.eaf.framework.security.tenant.TenantContext
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.queryhandling.QueryGateway
 import org.springframework.data.domain.Page
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -30,9 +30,8 @@ class WidgetController(
     @PostMapping
     fun createWidget(
         @RequestBody request: CreateWidgetRequest,
-        @RequestHeader("Authorization") authorization: String,
     ): ResponseEntity<Any> {
-        val tenantId = extractTenantFromJwt(authorization)
+        val tenantId = TenantContext.getCurrentTenantId()
         val widgetId = UUID.randomUUID().toString()
 
         val command =
@@ -56,9 +55,8 @@ class WidgetController(
     @GetMapping("/{id}")
     fun getWidget(
         @PathVariable("id") widgetId: String,
-        @RequestHeader("Authorization") authorization: String,
     ): ResponseEntity<WidgetResponse> {
-        val tenantId = extractTenantFromJwt(authorization)
+        val tenantId = TenantContext.getCurrentTenantId()
         val query = FindWidgetByIdQuery(widgetId, tenantId)
 
         val response = queryGateway.query(query, WidgetResponse::class.java).get(5, TimeUnit.SECONDS)
@@ -73,9 +71,8 @@ class WidgetController(
     @GetMapping
     fun getWidgets(
         @RequestParam params: Map<String, String>,
-        @RequestHeader("Authorization") authorization: String,
     ): ResponseEntity<Page<WidgetResponse>> {
-        val tenantId = extractTenantFromJwt(authorization)
+        val tenantId = TenantContext.getCurrentTenantId()
 
         // Extract and validate parameters from map
         val page = params["page"]?.toIntOrNull() ?: 0
@@ -101,18 +98,6 @@ class WidgetController(
                 .get(5, TimeUnit.SECONDS) as Page<WidgetResponse>
 
         return ResponseEntity.ok(response)
-    }
-
-    private fun extractTenantFromJwt(authorization: String): String {
-        // Simple extraction for testing - will be replaced with proper JWT parsing
-        // when security module implementation is complete
-        return when {
-            authorization.startsWith("Bearer ") -> {
-                // Extract tenant from Bearer token or use test default
-                "test-tenant"
-            }
-            else -> "default-tenant"
-        }
     }
 
     data class CreateWidgetRequest(

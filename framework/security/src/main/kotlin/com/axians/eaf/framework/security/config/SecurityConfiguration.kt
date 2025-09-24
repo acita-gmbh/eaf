@@ -47,6 +47,8 @@ class SecurityConfiguration(
                     .permitAll()
                     .requestMatchers("/api/secure/**")
                     .authenticated()
+                    .requestMatchers("/widgets/**")
+                    .authenticated()
                     .anyRequest()
                     .permitAll()
             }.oauth2ResourceServer { oauth2 ->

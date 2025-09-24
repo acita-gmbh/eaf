@@ -24,6 +24,7 @@ dependencies {
     testImplementation(libs.bundles.testcontainers)
 
     integrationTestImplementation(project(":shared:shared-api"))
+    integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.bundles.testcontainers)
     integrationTestImplementation(libs.spring.boot.starter.test)
