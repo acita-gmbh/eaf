@@ -62,8 +62,11 @@ class JwtValidationFilter(
             }
 
             filterChain.doFilter(request, response)
-        } catch (e: Exception) {
-            log.error("Unexpected error in JWT validation filter", e)
+        } catch (e: IllegalArgumentException) {
+            log.error("Invalid argument in JWT validation filter", e)
+            handleUnexpectedError(response)
+        } catch (e: SecurityException) {
+            log.error("Security exception in JWT validation filter", e)
             handleUnexpectedError(response)
         }
     }

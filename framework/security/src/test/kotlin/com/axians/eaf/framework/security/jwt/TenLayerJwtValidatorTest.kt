@@ -28,8 +28,8 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
                 val payload =
                     try {
                         String(Base64.getUrlDecoder().decode(parts[1]))
-                    } catch (e: Exception) {
-                        throw JwtException("Invalid payload encoding")
+                    } catch (e: IllegalArgumentException) {
+                        throw JwtException("Invalid payload encoding: ${e.message}")
                     }
 
                 // Simple JSON parsing for test purposes
@@ -68,8 +68,8 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
                 val headerPayload =
                     try {
                         String(Base64.getUrlDecoder().decode(parts[0]))
-                    } catch (e: Exception) {
-                        throw JwtException("Invalid header encoding")
+                    } catch (e: IllegalArgumentException) {
+                        throw JwtException("Invalid header encoding: ${e.message}")
                     }
                 if (headerPayload.contains("\"alg\":")) {
                     val alg = headerPayload.substringAfter("\"alg\":\"").substringBefore("\"")

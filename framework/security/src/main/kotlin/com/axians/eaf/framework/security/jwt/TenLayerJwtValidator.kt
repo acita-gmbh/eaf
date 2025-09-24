@@ -66,8 +66,12 @@ class TenLayerJwtValidator(
         } catch (e: SecurityError) {
             recordValidationFailure(e, startTime)
             Either.Left(e)
-        } catch (e: Exception) {
-            val securityError = SecurityError.ClaimExtractionError(e.message ?: "Unknown error")
+        } catch (e: IllegalArgumentException) {
+            val securityError = SecurityError.ClaimExtractionError(e.message ?: "Invalid argument")
+            recordValidationFailure(securityError, startTime)
+            Either.Left(securityError)
+        } catch (e: ClassCastException) {
+            val securityError = SecurityError.ClaimExtractionError(e.message ?: "Invalid type cast")
             recordValidationFailure(securityError, startTime)
             Either.Left(securityError)
         }

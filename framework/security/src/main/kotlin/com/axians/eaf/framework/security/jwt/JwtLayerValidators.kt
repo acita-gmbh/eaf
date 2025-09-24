@@ -208,11 +208,16 @@ class JwtSecurityValidator(
             } else {
                 Unit.right()
             }
-        } catch (e: Exception) {
+        } catch (e: org.springframework.data.redis.RedisConnectionFailureException) {
             // If Redis is unavailable, fail securely
             meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
-            logger.warn("Redis revocation check failed, allowing token: ${e.message}")
+            logger.warn("Redis connection failed, allowing token: ${e.message}")
             // For stubbed implementation, allow token when Redis unavailable
+            Unit.right()
+        } catch (e: org.springframework.dao.DataAccessException) {
+            // If Redis data access fails, fail securely
+            meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
+            logger.warn("Redis data access failed, allowing token: ${e.message}")
             Unit.right()
         }
 
