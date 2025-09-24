@@ -56,6 +56,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 )
                 analyzers.apply {
                     assemblyEnabled = false
+                    // Disable OSS Index to avoid rate limiting issues
+                    ossIndexEnabled = false
                 }
                 data {
                     sequenceOf(

@@ -6,7 +6,7 @@ java = "21"                # LTS requirement
 gradle = "8.14"            # Build tool version
 
 # Framework stack (UPDATED for compatibility)
-spring-boot = "3.5.6"     # Updated from 3.3.5 (tested compatible)
+spring-boot = "3.5.6"     # 3.5.7 not yet published; pinned to latest GA
 spring-modulith = "1.4.3" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.6"
 
@@ -38,11 +38,16 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
-logback = "1.4.14"        # Logging
+logback = "1.5.6"         # Logging (security update)
+snakeyaml = "2.3"         # YAML parsing (security update)
+commons-io = "2.17.0"     # IO utilities (security update)
 
 # Security
 keycloak = "25.0.6"       # Identity provider
 jose4j = "0.9.6"          # JWT processing
+
+# Cache and session storage
+redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
 
 # Workflow
 flowable = "7.0.1"        # BPMN workflow engine
@@ -103,9 +108,16 @@ konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 # Observability
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 # Security
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+
+# Cache and session storage
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
 
 # Documentation
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }

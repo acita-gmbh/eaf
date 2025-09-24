@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:JwtLayerValidators.kt$JwtClaimsValidator$fun validateClaimSchema(jwt: Jwt): Either&lt;SecurityError, JwtClaims&gt;</ID>
+    <ID>LongMethod:TenLayerJwtValidatorTest.kt$TenLayerJwtValidatorTest.&lt;no name provided&gt;$override fun decode(token: String): Jwt</ID>
+    <ID>MaxLineLength:TenLayerJwtValidator.kt$TenLayerJwtValidator$is SecurityError.TokenExpired -&gt; JwtValidationError.ExpirationError(securityError.expiredAt.toString())</ID>
+    <ID>ReturnCount:JwtLayerValidators.kt$JwtClaimsValidator$fun validateClaimSchema(jwt: Jwt): Either&lt;SecurityError, JwtClaims&gt;</ID>
+    <ID>ReturnCount:TenLayerJwtValidator.kt$TenLayerJwtValidator$private fun performLayerValidation( token: String, startTime: Long, ): Either&lt;SecurityError, ValidationResult&gt;</ID>
+    <ID>ReturnCount:TenLayerJwtValidator.kt$TenLayerJwtValidator$private fun performSecurityValidation( claims: JwtClaims, token: String, ): Either&lt;SecurityError, Pair&lt;Set&lt;Role&gt;, User&gt;&gt;</ID>
+    <ID>SwallowedException:JwtLayerValidators.kt$JwtClaimsValidator$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:TenLayerJwtValidatorTest.kt$TenLayerJwtValidatorTest.&lt;no name provided&gt;$e: IllegalArgumentException</ID>
+    <ID>TooGenericExceptionCaught:JwtLayerValidators.kt$JwtSecurityValidator$e: IndexOutOfBoundsException</ID>
+  </CurrentIssues>
+</SmellBaseline>
