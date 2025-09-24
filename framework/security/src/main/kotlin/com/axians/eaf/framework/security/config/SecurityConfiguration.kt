@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.filters.JwtValidationFilter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -7,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 
@@ -16,7 +18,9 @@ import org.springframework.web.cors.CorsConfiguration
  */
 @Configuration
 @EnableWebSecurity
-class SecurityConfiguration {
+class SecurityConfiguration(
+    private val jwtValidationFilter: JwtValidationFilter,
+) {
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8180/realms/eaf}")
     private lateinit var issuerUri: String
 
@@ -31,8 +35,8 @@ class SecurityConfiguration {
     fun jwtDecoder(): JwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri)
 
     /**
-     * Configures HTTP security with OAuth2 resource server.
-     * Secures endpoints requiring JWT authentication.
+     * Configures HTTP security with OAuth2 resource server and 10-layer JWT validation.
+     * Secures endpoints requiring JWT authentication with comprehensive validation.
      */
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain =
@@ -49,7 +53,8 @@ class SecurityConfiguration {
                 oauth2.jwt { jwt ->
                     jwt.decoder(jwtDecoder())
                 }
-            }.cors { cors ->
+            }.addFilterAfter(jwtValidationFilter, BearerTokenAuthenticationFilter::class.java)
+            .cors { cors ->
                 cors.configurationSource { _ ->
                     val corsConfiguration = CorsConfiguration()
                     corsConfiguration.allowedOriginPatterns = allowedOriginPatterns.split(",").map { it.trim() }

@@ -44,6 +44,9 @@ logback = "1.4.14"        # Logging
 keycloak = "25.0.6"       # Identity provider
 jose4j = "0.9.6"          # JWT processing
 
+# Cache and session storage
+redis = "3.5.6"           # Spring Boot Data Redis (follows Spring Boot version)
+
 # Workflow
 flowable = "7.0.1"        # BPMN workflow engine
 
@@ -106,6 +109,9 @@ micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-p
 
 # Security
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+
+# Cache and session storage
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
 
 # Documentation
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
