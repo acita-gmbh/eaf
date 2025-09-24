@@ -1,10 +1,14 @@
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
-import org.gradle.api.tasks.testing.Test
 
 plugins {
     `kotlin-dsl`
+    id("io.kotest") version "6.0.3"
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 data class CatalogLibrary(val module: String, val version: String)
@@ -106,8 +110,13 @@ dependencies {
     // Add Kotest plugin for native test execution
     implementation("io.kotest:io.kotest.gradle.plugin:${catalog.version("kotest-plugin")}")
 
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit5"))
+    // Add Kotlin serialization plugin for Kotest XML reports
+    implementation("org.jetbrains.kotlin:kotlin-serialization:${catalog.version("kotlin")}")
+
+    // Kotest 6.0.3 JVM-specific dependencies for testing build-logic
+    testImplementation("io.kotest:kotest-framework-engine-jvm:${catalog.version("kotest")}")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:${catalog.version("kotest")}")
+    testImplementation("io.kotest:kotest-property-jvm:${catalog.version("kotest")}")
     testImplementation(gradleTestKit())
 }
 
@@ -132,4 +141,5 @@ gradlePlugin {
     }
 }
 
-// Remove JUnit Platform configuration - using native Kotest instead
+// Native Kotest runner configured via io.kotest plugin
+// No need for useJUnitPlatform() when using native runner

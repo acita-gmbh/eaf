@@ -17,9 +17,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
+import com.axians.eaf.testing.containers.TestContainers
+import io.kotest.extensions.spring.SpringExtension
+import io.kotest.extensions.testcontainers.perSpec
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit
     ]
 )
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Testcontainers
 @ActiveProfiles("test")
 class WidgetEventProcessingIntegrationTest(
     private val commandGateway: CommandGateway,
@@ -57,6 +56,11 @@ class WidgetEventProcessingIntegrationTest(
     private val objectMapper: ObjectMapper
 ) : FunSpec({
 
+    extension(SpringExtension)
+
+    // Use shared TestContainers with Kotest lifecycle management
+    listener(TestContainers.postgres.perSpec())
+
     @TestConfiguration
     class TestConfig {
         @Bean
@@ -64,19 +68,15 @@ class WidgetEventProcessingIntegrationTest(
     }
 
     companion object {
-        @Container
-        @JvmStatic
-        val postgresContainer: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16.1")
-            .withDatabaseName("widget_event_test")
-            .withUsername("test")
-            .withPassword("test")
-
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url", postgresContainer::getJdbcUrl)
-            registry.add("spring.datasource.username", postgresContainer::getUsername)
-            registry.add("spring.datasource.password", postgresContainer::getPassword)
+            // Ensure containers are started
+            TestContainers.startAll()
+
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { TestContainers.postgres.username }
+            registry.add("spring.datasource.password") { TestContainers.postgres.password }
         }
     }
 

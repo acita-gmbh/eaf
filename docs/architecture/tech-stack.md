@@ -259,9 +259,11 @@ testcontainers = "1.21.3"  # Latest stable for integration testing
 [libraries]
 # JVM-specific Kotest 6.0.3 dependencies (native approach)
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
+kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }  # For custom source sets only
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
+kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }  # CRITICAL: GroupId changed to io.kotest in 6.0.3
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 
 [bundles]
@@ -286,9 +288,11 @@ kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 
 ```bash
 # Development workflow with native Kotest
-./gradlew jvmKotest              # Run all tests with beautiful output
+./gradlew jvmKotest              # Run main tests with beautiful output
 ./gradlew :module:jvmKotest      # Run specific module tests
-./gradlew jvmKotest --continue   # Run all tests even if some fail
+./gradlew integrationTest        # Run integration tests
+./gradlew konsistTest            # Run architecture tests
+./gradlew check                  # Run all tests in sequence
 
 # Enhanced output example:
 >> Kotest
@@ -303,17 +307,46 @@ kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 
 #### Technical Migration Details
 
+**⚠️ CRITICAL**: Hybrid Approach for Custom Source Sets
+
+The Kotest Gradle plugin has a **known limitation**: it only creates the `jvmKotest` task for the main `test` source set. Custom source sets (`integrationTest`, `konsistTest`) require a hybrid approach:
+
+| Source Set | Task Type | Runner | Dependencies Required |
+|------------|-----------|--------|----------------------|
+| `test` | `jvmKotest` (automatic) | Native Kotest | `kotest-framework-engine-jvm` only |
+| `integrationTest` | `Test` (manual) | JUnit Platform | `kotest-runner-junit5-jvm` required |
+| `konsistTest` | `Test` (manual) | JUnit Platform | `kotest-runner-junit5-jvm` required |
+
 **Plugin Configuration** (TestingConventionPlugin):
 ```kotlin
 plugins {
-    id("io.kotest") version "6.0.3"  // Native Kotest plugin
+    id("io.kotest") version "6.0.3"  // Native Kotest plugin (for main tests)
 }
 
+// Main test dependencies (native runner)
 dependencies {
     testImplementation("io.kotest:kotest-framework-engine-jvm")
     testImplementation("io.kotest:kotest-assertions-core-jvm")
     testImplementation("io.kotest:kotest-property-jvm")
     testImplementation("io.kotest.extensions:kotest-extensions-spring")
+}
+
+// Custom source set dependencies (JUnit Platform runner)
+dependencies {
+    integrationTestImplementation("io.kotest:kotest-framework-engine-jvm")
+    integrationTestImplementation("io.kotest:kotest-runner-junit5-jvm")  // Required!
+    integrationTestImplementation("io.kotest:kotest-assertions-core-jvm")
+
+    konsistTestImplementation("io.kotest:kotest-framework-engine-jvm")
+    konsistTestImplementation("io.kotest:kotest-runner-junit5-jvm")  // Required!
+    konsistTestImplementation("io.kotest:kotest-assertions-core-jvm")
+}
+
+// Custom source set task configuration
+val integrationTestTask = tasks.register("integrationTest", Test::class.java) {
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+    useJUnitPlatform()  // Uses JUnit Platform to discover Kotest tests
 }
 ```
 
@@ -415,11 +448,16 @@ fun `modules should not have circular dependencies`() {
 }
 ```
 
-#### Pitest 1.17.5 (Mutation Testing)
+#### Pitest 1.19.0-rc.1 (Mutation Testing)
+
+**IMPORTANT UPDATE**: Upgraded to 1.19.0-rc.1 for Gradle 9.1.0 compatibility.
 
 ```kotlin
+[versions]
+pitest = "1.19.0-rc.1"  # Gradle 9 compatible (fixes 'baseDir' property issue)
+
 [plugins]
-pitest = { id = "info.solidsoft.pitest", version = "1.15.0" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
 
 // Configuration
 pitest {
@@ -431,12 +469,20 @@ pitest {
 
 ### Build System
 
-#### Gradle 8.14 (Build Tool)
+#### Gradle 9.1.0 (Build Tool)
+
+**IMPORTANT UPDATE (2025-01)**: Upgraded from Gradle 8.14 to 9.1.0 to resolve Kotlin version compatibility with Kotest 6.0.3.
 
 ```properties
 # gradle/wrapper/gradle-wrapper.properties
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.14-bin.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
 ```
+
+**Why Gradle 9.1.0**:
+- Embeds Kotlin 2.2.0 (required for Kotest 6.0.3 compatibility)
+- Resolves `NoSuchMethodError: kotlin.time.Clock` issues
+- Enables native Kotest runner without workarounds
+- Full compatibility with all enterprise features
 
 **Version Catalog (gradle/libs.versions.toml)**:
 ```toml
@@ -460,7 +506,9 @@ spring-security = "6.4.2"
 
 # Testing (Kotest only)
 kotest = "6.0.3"
+kotest-plugin = "6.0.3"  # Native Gradle plugin
 testcontainers = "1.21.3"
+pitest = "1.19.0-rc.1"  # Gradle 9 compatible version
 
 # Quality
 ktlint = "1.7.1"
@@ -646,7 +694,7 @@ ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
 # Required tools
 java -version      # Java 21
 docker --version   # Docker 24.x
-gradle --version   # Gradle 8.14
+gradle --version   # Gradle 9.1.0
 kotlin -version    # Kotlin 2.2.20
 
 # Optional but recommended

@@ -9,9 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
+import com.axians.eaf.testing.containers.TestContainers
+import io.kotest.extensions.spring.SpringExtension
+import io.kotest.extensions.testcontainers.perSpec
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.util.UUID
@@ -19,25 +19,25 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers
 class WidgetEventStoreIntegrationTest(
     private val commandGateway: CommandGateway,
 ) : FunSpec({
 
-    companion object {
-        @Container
-        @JvmStatic
-        val postgresql = PostgreSQLContainer("postgres:16.1")
-            .withDatabaseName("eaf_event_store_test")
-            .withUsername("test")
-            .withPassword("test")
+    extension(SpringExtension)
 
+    // Use shared TestContainers with Kotest lifecycle management
+    listener(TestContainers.postgres.perSpec())
+
+    companion object {
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url", postgresql::getJdbcUrl)
-            registry.add("spring.datasource.username", postgresql::getUsername)
-            registry.add("spring.datasource.password", postgresql::getPassword)
+            // Ensure containers are started
+            TestContainers.startAll()
+
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { TestContainers.postgres.username }
+            registry.add("spring.datasource.password") { TestContainers.postgres.password }
         }
     }
 
@@ -60,9 +60,9 @@ class WidgetEventStoreIntegrationTest(
 
             // Direct database verification
             DriverManager.getConnection(
-                postgresql.jdbcUrl,
-                postgresql.username,
-                postgresql.password
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             ).use { connection ->
                 val query = """
                     SELECT aggregate_identifier, sequence_number, type, payload_type, payload
@@ -115,9 +115,9 @@ class WidgetEventStoreIntegrationTest(
 
             // Verify sequence number in database
             DriverManager.getConnection(
-                postgresql.jdbcUrl,
-                postgresql.username,
-                postgresql.password
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             ).use { connection ->
                 val query = """
                     SELECT COUNT(*) as event_count, MAX(sequence_number) as max_sequence
@@ -158,9 +158,9 @@ class WidgetEventStoreIntegrationTest(
 
             // Verify tenant context is preserved in event payload
             DriverManager.getConnection(
-                postgresql.jdbcUrl,
-                postgresql.username,
-                postgresql.password
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             ).use { connection ->
                 val query = """
                     SELECT payload
@@ -217,9 +217,9 @@ class WidgetEventStoreIntegrationTest(
 
             // Verify both events persisted correctly
             DriverManager.getConnection(
-                postgresql.jdbcUrl,
-                postgresql.username,
-                postgresql.password
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             ).use { connection ->
                 val query = """
                     SELECT aggregate_identifier, sequence_number
@@ -250,9 +250,9 @@ class WidgetEventStoreIntegrationTest(
         test("should validate event store table structure") {
             // Verify Axon creates required tables automatically
             DriverManager.getConnection(
-                postgresql.jdbcUrl,
-                postgresql.username,
-                postgresql.password
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             ).use { connection ->
                 val query = """
                     SELECT table_name

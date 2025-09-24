@@ -32,18 +32,33 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.event_name == 'pull_request' }}
-          gradle-home-cache-includes: |
-            caches
-            notifications
-          gradle-home-cache-cleanup: false
-          add-job-summary: always
-          dependency-graph: disabled
 
       - name: Prime compilation
         run: ./gradlew compileKotlin --no-daemon --stacktrace
 
-      - name: Run ktlint, Detekt, and Konsist
-        run: ./gradlew ktlintCheck detekt konsistTest --no-daemon --stacktrace
+      - name: Run ktlint and Detekt
+        run: ./gradlew ktlintCheck detekt --no-daemon --stacktrace
+
+      - name: Run Konsist architecture tests
+        id: konsist-test
+        run: |
+          ./gradlew ciKonsistTest --no-daemon --stacktrace
+          # Check if any test results were generated
+          if find . -path "*/build/test-results/ciKonsistTest/*.xml" -print -quit | grep -q .; then
+            echo "has_results=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_results=false" >> $GITHUB_OUTPUT
+            echo "::notice::No Konsist test results found - this is expected if no Konsist tests are defined yet"
+          fi
+
+      # TODO: Re-enable when GitHub Actions permissions are fixed
+      # - name: Publish Konsist Test Results
+      #   uses: EnricoMi/publish-unit-test-result-action@v2
+      #   if: always() && steps.konsist-test.outputs.has_results == 'true'
+      #   with:
+      #     files: '**/build/test-results/ciKonsistTest/*.xml'
+      #     check_name: Architecture Test Results
+      #     comment_mode: always
 
   test:
     name: Test & Coverage
@@ -66,11 +81,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-includes: |
-            caches
-            notifications
-          gradle-home-cache-cleanup: false
 
       - name: Install Docker client on macOS
         if: matrix.os == 'macos-latest'
@@ -86,8 +96,29 @@ jobs:
           docker context use colima || true
           docker info
 
-      - name: Run unit and integration suites with native Kotest
-        run: ./gradlew jvmKotest integrationTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
+      - name: Run unit and integration tests with CI configuration
+        run: ./gradlew ciTest ciIntegrationTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
+
+      # TODO: Re-enable when GitHub Actions permissions are fixed
+      # - name: Publish Test Results
+      #   uses: EnricoMi/publish-unit-test-result-action@v2
+      #   if: always()
+      #   with:
+      #     files: |
+      #       **/build/test-results/ciTest/*.xml
+      #       **/build/test-results/ciIntegrationTest/*.xml
+      #     check_name: Test Results
+      #     comment_mode: always
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: |
+            **/build/reports/tests/ciTest/
+            **/build/reports/tests/ciIntegrationTest/
+          retention-days: 7
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
@@ -113,11 +144,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-includes: |
-            caches
-            notifications
-          gradle-home-cache-cleanup: false
 
       - name: Run mutation testing
         run: ./gradlew pitest --no-daemon --stacktrace
@@ -140,11 +166,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-includes: |
-            caches
-            notifications
-          gradle-home-cache-cleanup: false
 
       - name: Prepare dependency-check cache dir
         if: ${{ env.DEPENDENCY_CHECK_ENABLED == 'true' }}

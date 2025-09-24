@@ -39,9 +39,11 @@ graph TD
 
 ## Testing Framework Standards
 
-### Kotest 6.0.3 Framework (MANDATORY - Native Runner)
+### Kotest 6.0.3 Framework (MANDATORY - Hybrid Runner Approach)
 
-⚠️ **CRITICAL**: JUnit is explicitly **FORBIDDEN**. All tests must use Kotest 6.0.3 with native runner.
+⚠️ **CRITICAL**: JUnit is explicitly **FORBIDDEN** as a testing framework. All tests must use Kotest 6.0.3.
+
+**IMPORTANT UPDATE (2025-01)**: Gradle upgraded to 9.1.0 to support Kotest 6.0.3's Kotlin 2.2.0 requirement.
 
 #### Enhanced Testing Experience with Native Runner
 
@@ -55,13 +57,17 @@ graph TD
 // gradle/libs.versions.toml - Kotest 6.0.3 JVM-Specific Configuration
 [versions]
 kotest = "6.0.3"           # Native Kotest with enhanced developer experience
+kotest-plugin = "6.0.3"    # Native Gradle plugin version
+pitest = "1.19.0-rc.1"     # Gradle 9 compatible
 
 [libraries]
-# JVM-specific dependencies (native approach)
+# JVM-specific dependencies
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
+kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }  # For custom source sets
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
+kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }  # GroupId changed!
 
 [bundles]
 kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-property-jvm", "kotest-extensions-spring"]
@@ -74,15 +80,17 @@ kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 
 ```bash
 # Primary testing commands (Constitutional TDD)
-./gradlew jvmKotest                    # Run all tests with enhanced output
+./gradlew jvmKotest                    # Run main tests with native runner
+./gradlew integrationTest              # Run integration tests (JUnit Platform)
+./gradlew konsistTest                  # Run architecture tests (JUnit Platform)
 ./gradlew :framework:widget:jvmKotest  # Run specific module tests
-./gradlew jvmKotest --continue         # Continue on failures for debugging
+./gradlew check                        # Run all tests and quality gates
 
-# Integration with quality gates
-./gradlew jvmKotest integrationTest jacocoTestReport konsistTest
+# Note: Custom source sets (integrationTest, konsistTest) use JUnit Platform
+# due to Kotest Gradle plugin limitation with custom source sets
 ```
 
-#### Kotest 6.0.3 Migration Lessons Learned (2025-09)
+#### Kotest 6.0.3 Migration Lessons Learned (2025-01)
 
 **Ultra-Think Strategy Success**: Research-driven approach led to breakthrough migration success
 
@@ -102,19 +110,37 @@ kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 
 ##### Migration Success Metrics
 
-**Before Migration (Kotest 6.0.3)**:
-- **Test Runner**: `./gradlew jvmKotest` (JUnit Platform bridge)
+**Before Migration (Kotest 5.9.1)**:
+- **Test Runner**: `./gradlew test` (JUnit Platform bridge)
 - **Output**: Basic JUnit-style reporting
 - **Dependencies**: Mixed multiplatform/JVM artifacts
 - **Plugin**: JUnit Platform integration only
+- **Gradle**: 8.14 with embedded Kotlin 2.0.21
 
-**After Migration (Kotest 6.0.3)**:
-- **Test Runner**: `./gradlew jvmKotest` (native Kotest engine)
+**After Migration (Kotest 6.0.3 with Gradle 9.1.0)**:
+- **Main Tests**: `./gradlew jvmKotest` (native Kotest engine)
+- **Custom Source Sets**: `./gradlew integrationTest konsistTest` (JUnit Platform)
 - **Output**: Beautiful colorized Given-When-Then with motivation quotes
 - **Dependencies**: Pure JVM-specific artifacts (`-jvm` suffixed)
-- **Plugin**: Native `id("io.kotest")` with enhanced features
+- **Plugin**: Native `id("io.kotest")` with hybrid approach
+- **Gradle**: 9.1.0 with embedded Kotlin 2.2.0 (Kotest 6.0.3 compatible)
 
-**Results**: ✅ **27 tests passing, enhanced developer experience, CI success**
+**Results**: ✅ **All tests passing, enhanced developer experience, CI success**
+
+##### Custom Source Set Limitation (IMPORTANT)
+
+The Kotest Gradle plugin has a **known limitation**: it only automatically creates the `jvmKotest` task for the main `test` source set. Custom source sets require a hybrid approach:
+
+```kotlin
+// TestingConventionPlugin.kt - Hybrid approach for custom source sets
+val integrationTestTask = tasks.register("integrationTest", Test::class.java) {
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+    useJUnitPlatform()  // JUnit Platform discovers Kotest tests via kotest-runner-junit5-jvm
+}
+```
+
+This is why `kotest-runner-junit5-jvm` is required for custom source sets but not for main tests.
 
 ##### Future Upgrade Checklist
 

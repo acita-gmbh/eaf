@@ -1,34 +1,33 @@
 package conventions
 
-import kotlin.test.assertTrue
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Test
 
-class TestingConventionPluginFunctionalTest {
-    @Test
-    fun `testing convention registers integration and konsist tasks`() {
+class TestingConventionPluginFunctionalTest : FunSpec({
+    test("testing convention registers integration and konsist tasks") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project)
 
         val result = project.gradle(":app:check").build()
 
-        assertTrue(result.task(":app:integrationTest")?.outcome == TaskOutcome.SUCCESS)
-        assertTrue(result.task(":app:konsistTest")?.outcome == TaskOutcome.SUCCESS)
+        result.task(":app:integrationTest")?.outcome shouldBe TaskOutcome.SUCCESS
+        result.task(":app:konsistTest")?.outcome shouldBe TaskOutcome.SUCCESS
     }
 
-    @Test
-    fun `dependency version drift fails fast`() {
+    test("dependency version drift fails fast") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project, extraAppBuildContent = """
             dependencies {
-                testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+                // Try to use wrong version of kotest-framework-engine-jvm
+                testImplementation("io.kotest:kotest-framework-engine-jvm:5.8.0")
             }
         """)
 
         val result = project.gradle(":app:check").buildAndFail()
-        val output = result.output
-        assertTrue(output.contains("Version drift detected"), "Expected version drift message in build output but was:\n$output")
+        result.output.shouldContain("Version drift detected")
     }
-}
+})

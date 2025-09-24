@@ -112,7 +112,7 @@ graph TD
 
 | Tool | Version | Purpose | Enforcement |
 | :--- | :--- | :--- | :--- |
-| **Kotest** | 5.9.1 | Testing Framework | Mandatory (JUnit forbidden) |
+| **Kotest** | 6.0.3 | Testing Framework | Mandatory (JUnit forbidden) |
 | **Testcontainers** | 1.20.4 | Integration Testing | Real dependencies only |
 | **Konsist** | 0.17.3 | Architecture Tests | Module boundary verification |
 | **Pitest** | 1.17.5 | Mutation Testing | 80% minimum coverage |

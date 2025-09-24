@@ -4,6 +4,16 @@
 
 The EAF development workflow provides a streamlined, developer-friendly experience with one-command onboarding, automated quality gates, and comprehensive scaffolding tools. The workflow supports rapid development while maintaining enterprise-grade quality and security standards.
 
+### Prerequisites
+
+- **Java 21 LTS** (required)
+- **Gradle 9.1.0** (uses wrapper, auto-downloads)
+- **Docker & Docker Compose** (for infrastructure services)
+- **Node.js 18+** (for frontend development)
+- **Git** (version control)
+
+**Important**: The project uses Gradle 9.1.0 (not 8.x) due to Kotest 6.0.3 compatibility requirements. The Gradle wrapper will automatically download the correct version.
+
 ## One-Command Onboarding
 
 ### Complete Environment Setup
@@ -191,9 +201,13 @@ run_tests() {
     log_info "Running fast business logic tests with native Kotest runner..."
     ./gradlew jvmKotest -P fastTests=true
 
-    # Integration tests
+    # Integration tests (uses JUnit Platform for custom source set)
     log_info "Running integration tests..."
     ./gradlew integrationTest
+
+    # Architecture tests (uses JUnit Platform for custom source set)
+    log_info "Running architecture compliance tests..."
+    ./gradlew konsistTest
 
     log_success "All tests passed"
 }
@@ -288,7 +302,7 @@ main() {
     echo "📋 Quick Commands:"
     echo "   • Stop services:    ./scripts/stop-dev.sh"
     echo "   • View logs:        ./scripts/logs.sh"
-    echo "   • Run tests:        ./gradlew jvmKotest"
+    echo "   • Run tests:        ./gradlew jvmKotest integrationTest konsistTest"
     echo "   • Generate code:    eaf scaffold --help"
     echo
     echo "📖 Documentation: docs/README.md"
@@ -510,14 +524,17 @@ enum class {{aggregateName}}Status {
 
 ```bash
 # Quick feedback loop (< 30 seconds)
-./gradlew jvmKotest -P fastTests=true          # Fast nullable pattern tests
+./gradlew jvmKotest -P fastTests=true     # Fast nullable pattern tests (native runner)
 ./gradlew ktlintCheck                     # Code formatting
 ./gradlew detekt                          # Static analysis
 
 # Complete validation (2-5 minutes)
 ./gradlew clean build                     # Full build with all tests
-./gradlew integrationTest                 # Integration tests with Testcontainers
-./gradlew konsistTest                     # Architecture compliance
+./gradlew integrationTest                 # Integration tests (JUnit Platform)
+./gradlew konsistTest                     # Architecture tests (JUnit Platform)
+
+# Note: jvmKotest uses native Kotest runner for main tests
+# integrationTest and konsistTest use JUnit Platform due to Kotest plugin limitation
 
 # Performance validation
 ./gradlew pitest                          # Mutation testing (10-15 minutes)
@@ -630,9 +647,15 @@ if ! ./gradlew detekt; then
     exit 1
 fi
 
-# Fast tests
+# Fast tests with native runner
 if ! ./gradlew jvmKotest -P fastTests=true; then
     echo "❌ Fast tests failed. Fix test failures."
+    exit 1
+fi
+
+# Integration tests (JUnit Platform)
+if ! ./gradlew integrationTest; then
+    echo "❌ Integration tests failed."
     exit 1
 fi
 

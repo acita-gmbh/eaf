@@ -17,9 +17,8 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
+import com.axians.eaf.testing.containers.TestContainers
+import io.kotest.extensions.testcontainers.perSpec
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -40,13 +39,17 @@ import java.util.concurrent.TimeUnit
     classes = [com.axians.eaf.licensing.LicensingServerApplication::class]
 )
 @AutoConfigureWebMvc
-@Testcontainers
 class WidgetWalkingSkeletonIntegrationTest(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val objectMapper: ObjectMapper,
 ) : FunSpec({
 
     extension(SpringExtension)
+
+    // Use shared TestContainers with Kotest lifecycle management
+    listener(TestContainers.postgres.perSpec())
+    listener(TestContainers.redis.perSpec())
+    listener(TestContainers.keycloak.perSpec())
 
     test("2.4-E2E-001: Complete Walking Skeleton flow - POST command → projection → GET query") {
         // Given: Widget creation request data
@@ -278,22 +281,26 @@ class WidgetWalkingSkeletonIntegrationTest(
 
 }) {
     companion object {
-        @Container
-        val postgres = PostgreSQLContainer("postgres:16.1")
-            .withDatabaseName("eaf")
-            .withUsername("eaf")
-            .withPassword("eaf")
-
-        init {
-            postgres.start()
-        }
-
+        // Configure Spring properties to use shared TestContainers
         @JvmStatic
         @DynamicPropertySource
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url") { postgres.jdbcUrl }
-            registry.add("spring.datasource.username") { postgres.username }
-            registry.add("spring.datasource.password") { postgres.password }
+            // Ensure containers are started
+            TestContainers.startAll()
+
+            // Configure PostgreSQL
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { TestContainers.postgres.username }
+            registry.add("spring.datasource.password") { TestContainers.postgres.password }
+
+            // Configure Redis if needed
+            registry.add("spring.redis.host") { TestContainers.redis.host }
+            registry.add("spring.redis.port") { TestContainers.redis.getMappedPort(6379) }
+
+            // Configure Keycloak if needed
+            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                "${TestContainers.keycloak.authServerUrl}/realms/eaf"
+            }
         }
     }
 }

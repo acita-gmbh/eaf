@@ -56,14 +56,14 @@ See the full design in docs/architecture.md.
 - **CQRS**: Axon Framework 4.9.4
 - **Functional**: Arrow 1.2.4 for Either<Error,Success> domain error handling
 - **Database**: PostgreSQL 16.1+ with mandatory optimizations (BRIN indexes, partitioning)
-- **Build**: Gradle 8.14 monorepo with Version Catalogs
-- **Testing**: Kotest + Testcontainers integration-first approach
+- **Build**: Gradle 9.1.0 monorepo with Version Catalogs (upgraded for Kotest 6.0.3 compatibility)
+- **Testing**: Kotest 6.0.3 + Testcontainers integration-first approach
 
 ### Quality & Development Tools
 - **Formatting**: ktlint 1.4.0 (enforced, zero violations)
 - **Static Analysis**: Detekt 1.23.7 (enforced, zero violations)
 - **Architecture Testing**: Konsist 0.17.3 (boundary verification)
-- **Mutation Testing**: Pitest 1.17.5 (80% minimum coverage)
+- **Mutation Testing**: Pitest 1.19.0-rc.1 (80% minimum coverage, Gradle 9 compatible)
 - **API Documentation**: Dokka 1.9.10
 
 ## Critical Kotlin Standards
@@ -256,6 +256,8 @@ eaf scaffold ra-resource <Domain> --fields id,name,status
 - **Kotlin 2.0.10 (PINNED)** - Critical constraint for tool compatibility (ktlint 1.4.0, detekt 1.23.7)
 - **Spring Boot 3.3.5 (LOCKED)** - Required for Spring Modulith 1.3.0 compatibility
 - **Axon Framework 4.9.4** - Current stable, v5 migration planned before production
+- **Gradle 9.1.0** - Required for Kotest 6.0.3 (embeds Kotlin 2.2.0 needed by Kotest)
+- **Kotest 6.0.3** - Testing framework with hybrid runner approach (native + JUnit Platform)
 
 ### Version Catalog Enforcement
 **MANDATORY**: All dependency versions MUST be centralized in `gradle/libs.versions.toml`.
@@ -332,6 +334,36 @@ Monitor these continuously for system health:
 - **Concurrency Conflicts**: <1% conflict rate
 - **Test Execution**: Target 65% improvement with optimizations
 - **Build Time**: <10 seconds incremental, <2 minutes full
+
+## Migration Notes (2025-01)
+
+### Gradle 9.1.0 and Kotest 6.0.3 Migration
+
+**Key Changes**:
+1. **Gradle 8.14 → 9.1.0**: Upgraded to resolve Kotlin version mismatch
+   - Gradle 9.1.0 embeds Kotlin 2.2.0 (required by Kotest 6.0.3)
+   - Fixes `NoSuchMethodError: kotlin.time.Clock` issues
+
+2. **Kotest Plugin Hybrid Approach**:
+   - Main tests: Native `jvmKotest` task (automatic)
+   - Custom source sets: `Test` tasks with `useJUnitPlatform()` (manual)
+   - Requires `kotest-runner-junit5-jvm` for custom source sets only
+
+3. **Dependency Fixes**:
+   - `kotest-extensions-pitest`: GroupId changed from `io.kotest.extensions` to `io.kotest`
+   - Pitest plugin: Updated to 1.19.0-rc.1 for Gradle 9 compatibility
+
+**Migration Commands**:
+```bash
+# Update Gradle wrapper
+./gradlew wrapper --gradle-version 9.1.0
+
+# Run tests with new setup
+./gradlew jvmKotest          # Main tests (native runner)
+./gradlew integrationTest    # Integration tests (JUnit Platform)
+./gradlew konsistTest        # Architecture tests (JUnit Platform)
+./gradlew check              # All tests and quality gates
+```
 
 ## Where to Find More Information
 
