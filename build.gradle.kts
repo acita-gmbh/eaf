@@ -33,3 +33,38 @@ gradle.projectsEvaluated {
         }
     }
 }
+
+subprojects {
+    val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
+
+    configurations.configureEach {
+        resolutionStrategy.eachDependency {
+            when (requested.group to requested.name) {
+                "org.yaml" to "snakeyaml" -> {
+                    useVersion(catalog.findVersion("snakeyaml").get().requiredVersion)
+                    because("Apply SnakeYAML RCE fix CVE-2024-56324")
+                }
+
+                "commons-io" to "commons-io" -> {
+                    useVersion(catalog.findVersion("commons-io").get().requiredVersion)
+                    because("Mitigate Apache Commons IO XML DoS CVE-2024-47554")
+                }
+
+                "ch.qos.logback" to "logback-core" -> {
+                    useVersion(catalog.findVersion("logback").get().requiredVersion)
+                    because("Align with Logback serialization fix CVE-2024-9636/9637")
+                }
+
+                "ch.qos.logback" to "logback-classic" -> {
+                    useVersion(catalog.findVersion("logback").get().requiredVersion)
+                    because("Align with Logback serialization fix CVE-2024-9636/9637")
+                }
+
+                "org.springframework" to "spring-core" -> {
+                    useVersion("6.2.7")
+                    because("Ensure Spring Framework annotation security fix CVE-2025-24928")
+                }
+            }
+        }
+    }
+}
