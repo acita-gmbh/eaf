@@ -116,7 +116,7 @@ class NullableWidgetProjectionRepository : WidgetProjectionRepository {
                 arrayOf<Any>(
                     category,
                     widgets.size.toLong(),
-                    widgets.map { it.value.toDouble() }.average(),
+                    if (widgets.isEmpty()) 0.0 else widgets.map { it.value.toDouble() }.average(),
                     widgets.sumOf { it.value },
                 )
             }?.sortedBy { it[0] as String }

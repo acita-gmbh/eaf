@@ -92,7 +92,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 val pitestExtension = this
                 pitestVersion.set(catalog.version("pitest-tool"))
                 // No JUnit plugin needed - Kotest has its own Pitest extension
-                testPlugin.set("Kotest") // Use Kotest plugin for Pitest
+                testPlugin.set("kotest") // Use kotest plugin for Pitest (lowercase required)
                 avoidCallsTo.set(setOf("kotlin.jvm.internal", "kotlin.Result"))
                 mutators.set(setOf("STRONGER"))
                 targetClasses.set(setOf("$basePackage.*"))

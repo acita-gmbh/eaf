@@ -20,7 +20,7 @@ jooq = "3.20.7"           # SQL DSL for read projections (updated)
 
 # Testing framework (MANDATORY)
 kotest = "6.0.3"          # Primary testing framework (JUnit forbidden)
-kotest-plugin = "6.0.3"   # Kotest Gradle plugin for native test execution
+kotest-plugin = "6.0.3"   # Kotest Gradle plugin for hybrid test execution (native + JUnit Platform)
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 
 # Quality gates and static analysis
