@@ -160,10 +160,11 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
 
                 then("injection detection architecture implemented") {
                     // Verify injection detection patterns are configured
-                    val patterns = listOf(
-                        "(?i)(union|select|insert|update|delete|drop)\\s",
-                        "(?i)(script|javascript|onerror|onload)"
-                    )
+                    val patterns =
+                        listOf(
+                            "(?i)(union|select|insert|update|delete|drop)\\s",
+                            "(?i)(script|javascript|onerror|onload)",
+                        )
                     patterns.isNotEmpty() shouldBe true
                 }
             }
@@ -192,38 +193,6 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
             """{"sub":"test-user","tenant_id":"test-tenant",""" +
                 """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
                 """"exp":$exp,"iat":$iat,"jti":"test-jti"}"""
-        val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
-        val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-        return "$encodedHeader.$encodedPayload.signature"
-    }
-
-    private fun createTokenWithSQLInjection(): String {
-        val header = """{"alg":"RS256","typ":"JWT"}"""
-        val exp = System.currentTimeMillis() / 1000 + 3600
-        val iat = System.currentTimeMillis() / 1000
-        val validTenantId = "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
-        val validUserId = "987fcdeb-51a3-45d6-9876-543210987654" // Valid UUID
-        val payload =
-            """{"sub":"$validUserId","tenant_id":"$validTenantId",""" +
-                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
-                """"exp":$exp,"iat":$iat,"jti":"test'; DROP TABLE users; --",""" +
-                """"realm_access":{"roles":["user"]}}"""
-        val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
-        val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-        return "$encodedHeader.$encodedPayload.signature"
-    }
-
-    private fun createTokenWithXSSPayload(): String {
-        val header = """{"alg":"RS256","typ":"JWT"}"""
-        val exp = System.currentTimeMillis() / 1000 + 3600
-        val iat = System.currentTimeMillis() / 1000
-        val validTenantId = "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
-        val validUserId = "987fcdeb-51a3-45d6-9876-543210987654" // Valid UUID
-        val payload =
-            """{"sub":"$validUserId","tenant_id":"$validTenantId",""" +
-                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
-                """"exp":$exp,"iat":$iat,"jti":"<script>alert('xss')</script>",""" +
-                """"realm_access":{"roles":["user"]}}"""
         val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
         val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
         return "$encodedHeader.$encodedPayload.signature"
