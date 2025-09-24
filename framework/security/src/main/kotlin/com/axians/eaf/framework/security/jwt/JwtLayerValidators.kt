@@ -22,7 +22,7 @@ import java.util.UUID
 @Component
 class JwtFormatValidator(
     private val jwtDecoder: JwtDecoder,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     companion object {
         private val JWT_PATTERN = Regex("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")
@@ -68,7 +68,7 @@ class JwtFormatValidator(
  */
 @Component
 class JwtClaimsValidator(
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     companion object {
         private const val CLOCK_SKEW_TOLERANCE_SECONDS = 60L
@@ -79,32 +79,40 @@ class JwtClaimsValidator(
 
     fun validateClaimSchema(jwt: Jwt): Either<SecurityError, JwtClaims> {
         return try {
-            val sub = jwt.getClaimAsString("sub")
-                ?: return SecurityError.MissingClaim("sub").left()
-            val iss = jwt.getClaimAsString("iss")
-                ?: return SecurityError.MissingClaim("iss").left()
-            val aud = jwt.audience?.firstOrNull()
-                ?: return SecurityError.MissingClaim("aud").left()
-            val exp = jwt.expiresAt?.epochSecond
-                ?: return SecurityError.MissingClaim("exp").left()
-            val iat = jwt.issuedAt?.epochSecond
-                ?: return SecurityError.MissingClaim("iat").left()
-            val jti = jwt.getClaimAsString("jti")
-                ?: return SecurityError.MissingClaim("jti").left()
-            val tenantId = jwt.getClaimAsString("tenant_id")
-                ?: return SecurityError.MissingClaim("tenant_id").left()
+            val sub =
+                jwt.getClaimAsString("sub")
+                    ?: return SecurityError.MissingClaim("sub").left()
+            val iss =
+                jwt.getClaimAsString("iss")
+                    ?: return SecurityError.MissingClaim("iss").left()
+            val aud =
+                jwt.audience?.firstOrNull()
+                    ?: return SecurityError.MissingClaim("aud").left()
+            val exp =
+                jwt.expiresAt?.epochSecond
+                    ?: return SecurityError.MissingClaim("exp").left()
+            val iat =
+                jwt.issuedAt?.epochSecond
+                    ?: return SecurityError.MissingClaim("iat").left()
+            val jti =
+                jwt.getClaimAsString("jti")
+                    ?: return SecurityError.MissingClaim("jti").left()
+            val tenantId =
+                jwt.getClaimAsString("tenant_id")
+                    ?: return SecurityError.MissingClaim("tenant_id").left()
 
-            val claims = JwtClaims(
-                sub = sub,
-                iss = iss,
-                aud = aud,
-                exp = exp,
-                iat = iat,
-                jti = jti,
-                tenantId = tenantId,
-                roles = jwt.getClaimAsStringList("realm_access.roles") ?: emptyList(),
-                sessionId = jwt.getClaimAsString("session_state")
-            )
+            val claims =
+                JwtClaims(
+                    sub = sub,
+                    iss = iss,
+                    aud = aud,
+                    exp = exp,
+                    iat = iat,
+                    jti = jti,
+                    tenantId = tenantId,
+                    roles = jwt.getClaimAsStringList("realm_access.roles") ?: emptyList(),
+                    sessionId = jwt.getClaimAsString("session_state"),
+                )
 
             // Validate claim formats
             if (!isValidUUID(claims.tenantId)) {
@@ -186,17 +194,18 @@ class JwtClaimsValidator(
 @Component
 class JwtSecurityValidator(
     private val redisTemplate: RedisTemplate<String, String>,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(JwtSecurityValidator::class.java)
-        private val INJECTION_PATTERNS = listOf(
-            "(?i)(union|select|insert|update|delete|drop)\\s",
-            "(?i)(script|javascript|onerror|onload)",
-            "(?i)(exec|execute|xp_|sp_)",
-            "(?i)(ldap://|ldaps://|dns://)",
-            "(?i)(<script|<iframe|<object|<embed)"
-        )
+        private val INJECTION_PATTERNS =
+            listOf(
+                "(?i)(union|select|insert|update|delete|drop)\\s",
+                "(?i)(script|javascript|onerror|onload)",
+                "(?i)(exec|execute|xp_|sp_)",
+                "(?i)(ldap://|ldaps://|dns://)",
+                "(?i)(<script|<iframe|<object|<embed)",
+            )
     }
 
     fun ensureNotRevoked(jti: String): Either<SecurityError, Unit> =
@@ -229,9 +238,11 @@ class JwtSecurityValidator(
             }
 
             // Stubbed implementation - create test roles
-            val roles = roleNames.map { roleName ->
-                Role(name = roleName, description = "Role: $roleName")
-            }.toSet()
+            val roles =
+                roleNames
+                    .map { roleName ->
+                        Role(name = roleName, description = "Role: $roleName")
+                    }.toSet()
 
             // Check for privilege escalation attempts
             val suspiciousRoles = roles.filter { it.name.contains("admin", ignoreCase = true) }
@@ -253,12 +264,13 @@ class JwtSecurityValidator(
     fun validateUser(userId: String): Either<SecurityError, User> =
         try {
             // Stubbed implementation - create test user
-            val user = User(
-                id = userId,
-                isActive = true,
-                isLocked = false,
-                isExpired = false
-            )
+            val user =
+                User(
+                    id = userId,
+                    isActive = true,
+                    isLocked = false,
+                    isExpired = false,
+                )
 
             when {
                 !user.isActive -> {
@@ -289,9 +301,10 @@ class JwtSecurityValidator(
             val payload = String(Base64.getUrlDecoder().decode(parts[1]))
             val fullContent = "$header$payload"
 
-            val detectedPatterns = INJECTION_PATTERNS.filter { pattern ->
-                fullContent.matches(Regex(pattern))
-            }
+            val detectedPatterns =
+                INJECTION_PATTERNS.filter { pattern ->
+                    fullContent.matches(Regex(pattern))
+                }
 
             if (detectedPatterns.isNotEmpty()) {
                 meterRegistry

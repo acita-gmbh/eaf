@@ -77,101 +77,118 @@ class TenLayerJwtValidator(
         }
     }
 
-    private fun performLayerValidation(token: String, startTime: Long): Either<SecurityError, ValidationResult> {
+    private fun performLayerValidation(
+        token: String,
+        startTime: Long,
+    ): Either<SecurityError, ValidationResult> {
         // Layer 1: Format Validation
         formatValidator.validateBasicFormat(token).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(1) }
+            ifRight = { recordLayerSuccess(1) },
         )
 
         // Layer 2-3: Signature and Algorithm Validation
-        val jwt = formatValidator.verifySignature(token).fold(
-            ifLeft = { return Either.Left(it) },
-            ifRight = {
-                recordLayerSuccess(2)
-                it
-            }
-        )
+        val jwt =
+            formatValidator.verifySignature(token).fold(
+                ifLeft = { return Either.Left(it) },
+                ifRight = {
+                    recordLayerSuccess(2)
+                    it
+                },
+            )
 
         formatValidator.ensureRS256Algorithm(jwt).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(3) }
+            ifRight = { recordLayerSuccess(3) },
         )
 
         // Layer 4-6: Claims, Time, and Issuer Validation
-        val claims = claimsValidator.validateClaimSchema(jwt).fold(
-            ifLeft = { return Either.Left(it) },
-            ifRight = {
-                recordLayerSuccess(4)
-                it
-            }
-        )
+        val claims =
+            claimsValidator.validateClaimSchema(jwt).fold(
+                ifLeft = { return Either.Left(it) },
+                ifRight = {
+                    recordLayerSuccess(4)
+                    it
+                },
+            )
 
         // Layer 5-6: Time and Issuer Validation
         claimsValidator.ensureNotExpired(claims).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(5) }
+            ifRight = { recordLayerSuccess(5) },
         )
 
         claimsValidator.validateIssuerAudience(claims).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(6) }
+            ifRight = { recordLayerSuccess(6) },
         )
 
         // Layer 7-10: Security Context Validation
-        val (roles, user) = performSecurityValidation(claims, token).fold(
-            ifLeft = { return Either.Left(it) },
-            ifRight = { it }
-        )
+        val (roles, user) =
+            performSecurityValidation(claims, token).fold(
+                ifLeft = { return Either.Left(it) },
+                ifRight = { it },
+            )
 
         return Either.Right(createValidationResult(claims, roles, user, startTime))
     }
 
-    private fun performSecurityValidation(claims: JwtClaims, token: String): Either<SecurityError, Pair<Set<Role>, User>> {
+    private fun performSecurityValidation(
+        claims: JwtClaims,
+        token: String,
+    ): Either<SecurityError, Pair<Set<Role>, User>> {
         // Layer 7: Revocation Check
         securityValidator.ensureNotRevoked(claims.jti).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(7) }
+            ifRight = { recordLayerSuccess(7) },
         )
 
         // Layer 8: Role Validation
-        val roles = securityValidator.validateRoles(claims.roles).fold(
-            ifLeft = { return Either.Left(it) },
-            ifRight = {
-                recordLayerSuccess(8)
-                it
-            }
-        )
+        val roles =
+            securityValidator.validateRoles(claims.roles).fold(
+                ifLeft = { return Either.Left(it) },
+                ifRight = {
+                    recordLayerSuccess(8)
+                    it
+                },
+            )
 
         // Layer 9: User Validation
-        val user = securityValidator.validateUser(claims.sub).fold(
-            ifLeft = { return Either.Left(it) },
-            ifRight = {
-                recordLayerSuccess(9)
-                it
-            }
-        )
+        val user =
+            securityValidator.validateUser(claims.sub).fold(
+                ifLeft = { return Either.Left(it) },
+                ifRight = {
+                    recordLayerSuccess(9)
+                    it
+                },
+            )
 
         // Layer 10: Injection Detection
         securityValidator.ensureNoInjection(token).fold(
             ifLeft = { return Either.Left(it) },
-            ifRight = { recordLayerSuccess(10) }
+            ifRight = { recordLayerSuccess(10) },
         )
 
         return Either.Right(Pair(roles, user))
     }
 
-    private fun createValidationResult(claims: JwtClaims, roles: Set<Role>, user: User, startTime: Long): ValidationResult {
-        val validationResult = ValidationResult(
-            user = user,
-            roles = roles,
-            tenantId = claims.tenantId,
-            sessionId = claims.sessionId,
-            issuer = claims.iss,
-            audience = claims.aud,
-            expiresAt = Instant.ofEpochSecond(claims.exp),
-            issuedAt = Instant.ofEpochSecond(claims.iat),
-        )
+    private fun createValidationResult(
+        claims: JwtClaims,
+        roles: Set<Role>,
+        user: User,
+        startTime: Long,
+    ): ValidationResult {
+        val validationResult =
+            ValidationResult(
+                user = user,
+                roles = roles,
+                tenantId = claims.tenantId,
+                sessionId = claims.sessionId,
+                issuer = claims.iss,
+                audience = claims.aud,
+                expiresAt = Instant.ofEpochSecond(claims.exp),
+                issuedAt = Instant.ofEpochSecond(claims.iat),
+            )
 
         // Record successful validation
         val duration = Duration.ofNanos(System.nanoTime() - startTime)
@@ -179,7 +196,9 @@ class TenLayerJwtValidator(
 
         logger.info(
             "JWT validation successful - userId: {}, tenantId: {}, duration: {}ms",
-            user.id, claims.tenantId, duration.toMillis(),
+            user.id,
+            claims.tenantId,
+            duration.toMillis(),
         )
 
         return validationResult
