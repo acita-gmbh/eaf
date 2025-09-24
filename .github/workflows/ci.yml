@@ -153,7 +153,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DEPENDENCY_CHECK_ENABLED: "true"
+      DEPENDENCY_CHECK_ENABLED: "false"  # Temporarily disabled due to NVD API timeout issues
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,6 +180,7 @@ jobs:
 
       - name: Run dependency check
         if: ${{ env.DEPENDENCY_CHECK_ENABLED == 'true' }}
+        timeout-minutes: 15
         run: ./gradlew dependencyCheckAnalyze --no-daemon --stacktrace
 
       - name: Skip dependency check (awaiting NVD API key)
