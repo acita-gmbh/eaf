@@ -118,6 +118,10 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "eaf-client-secret",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
       "redirectUris": [
         "http://localhost:8080/*",
         "http://localhost:3000/*"
@@ -142,7 +146,7 @@
         "token.response.type.bearer.lower-case": "false"
       },
       "authenticationFlowBindingOverrides": {},
-      "fullScopeAllowed": false,
+      "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
       "protocolMappers": [
         {
@@ -176,6 +180,7 @@
         }
       ],
       "defaultClientScopes": [
+        "openid",
         "web-origins",
         "role_list",
         "roles",
