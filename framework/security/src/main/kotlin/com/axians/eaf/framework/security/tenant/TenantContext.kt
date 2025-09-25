@@ -18,10 +18,12 @@ object TenantContext {
     fun getCurrentTenantId(): String {
         val authentication =
             SecurityContextHolder.getContext().authentication
-                ?: throw IllegalStateException("No authentication context found")
+                ?: error("No authentication context found")
 
-        if (authentication !is org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken) {
-            throw IllegalStateException("Authentication is not JWT-based")
+        check(
+            authentication is org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken,
+        ) {
+            "Authentication is not JWT-based"
         }
 
         val jwt = authentication.token
@@ -45,6 +47,6 @@ object TenantContext {
         }
 
         // If not found, this violates our security requirements
-        throw IllegalStateException("Missing or invalid tenant_id claim in JWT token")
+        error("Missing or invalid tenant_id claim in JWT token")
     }
 }
