@@ -445,7 +445,7 @@ object TestContainers {
         .withReuse(true)
 
     @JvmStatic
-    val keycloak: KeycloakContainer = KeycloakContainer("quay.io/keycloak/keycloak:26.0.0")
+    val keycloak: KeycloakContainer = KeycloakContainer("quay.io/keycloak/keycloak:25.0.6")
         .withRealmImportFile("test-realm.json")
         .withReuse(true)
 

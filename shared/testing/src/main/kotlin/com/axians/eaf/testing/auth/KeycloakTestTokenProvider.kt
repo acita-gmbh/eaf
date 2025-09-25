@@ -122,7 +122,7 @@ class KeycloakTestTokenProvider {
                     append("&client_secret=").append(urlEncode(CLIENT_SECRET))
                     append("&username=").append(urlEncode(username))
                     append("&password=").append(urlEncode(password))
-                    append("&scope=").append(urlEncode("openid profile email"))
+                    append("&scope=").append(urlEncode("openid"))
                 }
 
             val request =

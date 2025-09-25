@@ -11,7 +11,7 @@ class OnboardingScriptSpec :
             script.contains("Keycloak admin password not set").shouldBeTrue()
             script.contains("Keycloak admin password captured for this session").shouldBeTrue()
             script.contains("http://localhost:8080").shouldBeTrue()
-            script.contains("http://localhost:3001").shouldBeTrue()
+            script.contains("http://localhost:3000").shouldBeTrue()
             script.contains("Security reminder: Keycloak admin password persisted").shouldBeTrue()
         }
     })

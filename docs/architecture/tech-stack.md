@@ -172,13 +172,13 @@ val products = dsl.select()
 
 ### Security Stack
 
-#### Keycloak 26.0.0 (Identity Provider)
+#### Keycloak 25.0.6 (Identity Provider)
 
 ```yaml
 # docker-compose.yml
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.0
+    image: quay.io/keycloak/keycloak:25.0.6
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin

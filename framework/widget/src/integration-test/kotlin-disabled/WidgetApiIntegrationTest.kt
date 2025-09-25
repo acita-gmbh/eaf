@@ -1,8 +1,12 @@
 package com.axians.eaf.framework.widget.api
 
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
+import com.axians.eaf.testing.auth.KeycloakTestTokenProvider
+import com.axians.eaf.testing.containers.TestContainers
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.extensions.spring.SpringExtension
+import io.kotest.extensions.testcontainers.perSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -14,16 +18,13 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import com.axians.eaf.testing.containers.TestContainers
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.extensions.testcontainers.perSpec
 import java.math.BigDecimal
-import java.sql.DriverManager
 import java.util.UUID
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -40,22 +41,11 @@ class WidgetApiIntegrationTest(
     // Use shared TestContainers with Kotest lifecycle management
     listener(TestContainers.postgres.perSpec())
     listener(TestContainers.redis.perSpec())
-
-    companion object {
-        @DynamicPropertySource
-        @JvmStatic
-        fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Ensure containers are started
-            TestContainers.startAll()
-
-            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
-            registry.add("spring.datasource.username") { TestContainers.postgres.username }
-            registry.add("spring.datasource.password") { TestContainers.postgres.password }
-        }
-    }
+    listener(TestContainers.keycloak.perSpec())
 
     context("Widget API Integration Tests") {
-        test("should create widget successfully via REST API") {
+        test("should create widget successfully via REST API with JWT authentication") {
+            val validToken = KeycloakTestTokenProvider.getAdminToken()
             val request = mapOf(
                 "name" to "Integration Test Widget",
                 "description" to "Created via REST API integration test",
@@ -67,7 +57,7 @@ class WidgetApiIntegrationTest(
             val result = mockMvc.perform(
                 post("/widgets")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Bearer test-token")
+                    .header("Authorization", "Bearer $validToken")
                     .content(objectMapper.writeValueAsString(request))
             )
                 .andExpect(status().isCreated)
@@ -85,6 +75,7 @@ class WidgetApiIntegrationTest(
         }
 
         test("should handle validation errors with RFC 7807 Problem Details") {
+            val validToken = KeycloakTestTokenProvider.getAdminToken()
             val invalidRequest = mapOf(
                 "name" to "",  // Invalid empty name
                 "description" to null,
@@ -96,7 +87,7 @@ class WidgetApiIntegrationTest(
             mockMvc.perform(
                 post("/widgets")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Bearer test-token")
+                    .header("Authorization", "Bearer $validToken")
                     .content(objectMapper.writeValueAsString(invalidRequest))
             )
                 .andExpect(status().isBadRequest)
@@ -106,7 +97,7 @@ class WidgetApiIntegrationTest(
                 .andExpect(jsonPath("$.detail").exists())
         }
 
-        test("should handle missing authorization header") {
+        test("should return 401 for missing authorization header") {
             val request = mapOf(
                 "name" to "Test Widget",
                 "description" to "Missing auth test",
@@ -119,10 +110,11 @@ class WidgetApiIntegrationTest(
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
             )
-                .andExpect(status().isBadRequest)
+                .andExpect(status().isUnauthorized)
         }
 
         test("should extract tenant context from JWT header") {
+            val validToken = KeycloakTestTokenProvider.getAdminToken()
             val request = mapOf(
                 "name" to "Tenant Test Widget",
                 "description" to "Testing tenant extraction",
@@ -133,11 +125,70 @@ class WidgetApiIntegrationTest(
             mockMvc.perform(
                 post("/widgets")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Bearer tenant-specific-token")
+                    .header("Authorization", "Bearer $validToken")
                     .content(objectMapper.writeValueAsString(request))
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").exists())
+        }
+
+        test("should return 401 for invalid JWT token") {
+            val request = mapOf(
+                "name" to "Test Widget",
+                "description" to "Invalid JWT test",
+                "value" to 100.00,
+                "category" to "TEST_CATEGORY"
+            )
+
+            mockMvc.perform(
+                post("/widgets")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer invalid-jwt-token")
+                    .content(objectMapper.writeValueAsString(request))
+            )
+                .andExpect(status().isUnauthorized)
+        }
+
+        test("should retrieve widget with valid JWT authentication") {
+            val validToken = KeycloakTestTokenProvider.getAdminToken()
+
+            // First create a widget
+            val createRequest = mapOf(
+                "name" to "Retrieval Test Widget",
+                "description" to "Widget for GET endpoint test",
+                "value" to 123.45,
+                "category" to "RETRIEVAL_TEST"
+            )
+
+            val createResult = mockMvc.perform(
+                post("/widgets")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer $validToken")
+                    .content(objectMapper.writeValueAsString(createRequest))
+            )
+                .andExpect(status().isCreated)
+                .andReturn()
+
+            val createResponse = objectMapper.readValue(createResult.response.contentAsString, Map::class.java)
+            val widgetId = createResponse["id"] as String
+
+            // Then retrieve the widget
+            mockMvc.perform(
+                get("/widgets/$widgetId")
+                    .header("Authorization", "Bearer $validToken")
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(widgetId))
+                .andExpect(jsonPath("$.name").value("Retrieval Test Widget"))
+        }
+
+        test("should return 401 when retrieving widget without authentication") {
+            val widgetId = UUID.randomUUID().toString()
+
+            mockMvc.perform(
+                get("/widgets/$widgetId")
+            )
+                .andExpect(status().isUnauthorized)
         }
     }
 
@@ -176,4 +227,20 @@ class WidgetApiIntegrationTest(
             }
         }
     }
-})
+}) {
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            // Ensure containers are started
+            TestContainers.startAll()
+
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { TestContainers.postgres.username }
+            registry.add("spring.datasource.password") { TestContainers.postgres.password }
+            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                "${TestContainers.keycloak.authServerUrl}/realms/eaf-test"
+            }
+        }
+    }
+}

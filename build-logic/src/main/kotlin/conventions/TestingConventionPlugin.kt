@@ -80,11 +80,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 sourceSets.create("integrationTest") {
                     compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
                     runtimeClasspath += output + compileClasspath
+                    java.srcDirs("src/integration-test/kotlin")
                 }
             val konsistTest =
                 sourceSets.create("konsistTest") {
                     compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
                     runtimeClasspath += output + compileClasspath
+                    java.srcDirs("src/konsist-test/kotlin")
                 }
 
             configurations.named("integrationTestImplementation") {
@@ -147,6 +149,8 @@ class TestingConventionPlugin : Plugin<Project> {
                         "kotest-extensions-testcontainers",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak",
+                        "spring-boot-starter-security",
+                        "spring-boot-starter-oauth2-resource-server",
                     ),
                 )
 
