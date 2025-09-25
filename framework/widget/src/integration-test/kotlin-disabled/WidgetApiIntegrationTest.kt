@@ -43,22 +43,6 @@ class WidgetApiIntegrationTest(
     listener(TestContainers.redis.perSpec())
     listener(TestContainers.keycloak.perSpec())
 
-    companion object {
-        @DynamicPropertySource
-        @JvmStatic
-        fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Ensure containers are started
-            TestContainers.startAll()
-
-            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
-            registry.add("spring.datasource.username") { TestContainers.postgres.username }
-            registry.add("spring.datasource.password") { TestContainers.postgres.password }
-            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
-                "${TestContainers.keycloak.authServerUrl}/realms/eaf-test"
-            }
-        }
-    }
-
     context("Widget API Integration Tests") {
         test("should create widget successfully via REST API with JWT authentication") {
             val validToken = KeycloakTestTokenProvider.getAdminToken()
@@ -243,4 +227,20 @@ class WidgetApiIntegrationTest(
             }
         }
     }
-})
+}) {
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            // Ensure containers are started
+            TestContainers.startAll()
+
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { TestContainers.postgres.username }
+            registry.add("spring.datasource.password") { TestContainers.postgres.password }
+            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                "${TestContainers.keycloak.authServerUrl}/realms/eaf-test"
+            }
+        }
+    }
+}
