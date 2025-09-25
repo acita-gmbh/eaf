@@ -46,23 +46,25 @@ class KeycloakTestContainerTest :
 
             // Test 1: Verify the realm exists and is accessible
             val realmCheckUrl = "$baseUrl/realms/eaf-test"
-            val realmRequest = HttpRequest
-                .newBuilder()
-                .uri(URI.create(realmCheckUrl))
-                .GET()
-                .timeout(Duration.ofSeconds(10))
-                .build()
+            val realmRequest =
+                HttpRequest
+                    .newBuilder()
+                    .uri(URI.create(realmCheckUrl))
+                    .GET()
+                    .timeout(Duration.ofSeconds(10))
+                    .build()
 
             val realmResponse = httpClient.send(realmRequest, HttpResponse.BodyHandlers.ofString())
 
             // Test 2: Verify token endpoint is accessible (core OIDC functionality)
             val tokenEndpointUrl = "$baseUrl/realms/eaf-test/protocol/openid-connect/token"
-            val tokenRequest = HttpRequest
-                .newBuilder()
-                .uri(URI.create(tokenEndpointUrl))
-                .POST(HttpRequest.BodyPublishers.ofString(""))
-                .timeout(Duration.ofSeconds(10))
-                .build()
+            val tokenRequest =
+                HttpRequest
+                    .newBuilder()
+                    .uri(URI.create(tokenEndpointUrl))
+                    .POST(HttpRequest.BodyPublishers.ofString(""))
+                    .timeout(Duration.ofSeconds(10))
+                    .build()
 
             val tokenResponse = httpClient.send(tokenRequest, HttpResponse.BodyHandlers.ofString())
 
