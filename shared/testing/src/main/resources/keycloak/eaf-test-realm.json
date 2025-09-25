@@ -197,6 +197,36 @@
   ],
   "clientScopes": [
     {
+      "id": "openid-scope-id",
+      "name": "openid",
+      "description": "OpenID Connect built-in scope: openid",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "id": "profile-scope-id",
+      "name": "profile",
+      "description": "OpenID Connect built-in scope: profile",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "id": "email-scope-id",
+      "name": "email",
+      "description": "OpenID Connect built-in scope: email",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
       "id": "eaf-scope-id",
       "name": "eaf-scope",
       "description": "EAF specific claims and attributes",
