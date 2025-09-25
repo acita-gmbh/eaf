@@ -26,58 +26,55 @@ import java.time.Instant
  */
 @SpringBootApplication(
     scanBasePackages = [
-        "com.axians.eaf.framework.security.tenant"
+        "com.axians.eaf.framework.security.tenant",
     ],
     exclude = [
         DataSourceAutoConfiguration::class,
         HibernateJpaAutoConfiguration::class,
-        org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration::class
-    ]
+        org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration::class,
+    ],
 )
 open class SecurityFrameworkTestApplication {
+    @Bean
+    @Primary
+    open fun testMeterRegistry(): MeterRegistry = SimpleMeterRegistry()
 
     @Bean
     @Primary
-    open fun testMeterRegistry(): MeterRegistry {
-        return SimpleMeterRegistry()
-    }
+    open fun testTenantContext(meterRegistry: MeterRegistry): TenantContext = TenantContext(meterRegistry)
 
     @Bean
     @Primary
-    open fun testTenantContext(meterRegistry: MeterRegistry): TenantContext {
-        return TenantContext(meterRegistry)
-    }
+    open fun testJwtDecoder(): JwtDecoder = NullableJwtDecoder.createNull()
 
     @Bean
-    @Primary
-    open fun testJwtDecoder(): JwtDecoder {
-        return NullableJwtDecoder.createNull()
-    }
+    open fun testController(): TestController = TestController()
 
     @Bean
-    open fun testController(): TestController {
-        return TestController()
-    }
-
-    @Bean
-    open fun testTenantContextFilter(tenantContext: TenantContext, meterRegistry: MeterRegistry): com.axians.eaf.framework.security.filters.TenantContextFilter {
-        return com.axians.eaf.framework.security.filters.TenantContextFilter(tenantContext, meterRegistry)
-    }
+    open fun testTenantContextFilter(
+        tenantContext: TenantContext,
+        meterRegistry: MeterRegistry,
+    ): com.axians.eaf.framework.security.filters.TenantContextFilter =
+        com.axians.eaf.framework.security.filters
+            .TenantContextFilter(tenantContext, meterRegistry)
 
     @Bean
     open fun testSecurityFilterChain(
         http: org.springframework.security.config.annotation.web.builders.HttpSecurity,
-        tenantContextFilter: com.axians.eaf.framework.security.filters.TenantContextFilter
-    ): org.springframework.security.web.SecurityFilterChain {
-        return http
+        tenantContextFilter: com.axians.eaf.framework.security.filters.TenantContextFilter,
+    ): org.springframework.security.web.SecurityFilterChain =
+        http
             .csrf { it.disable() }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/test/**").permitAll()
-                    .anyRequest().permitAll()
-            }
-            .addFilterBefore(tenantContextFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter::class.java)
-            .build()
-    }
+                auth
+                    .requestMatchers("/test/**")
+                    .permitAll()
+                    .anyRequest()
+                    .permitAll()
+            }.addFilterBefore(
+                tenantContextFilter,
+                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter::class.java,
+            ).build()
 }
 
 /**
@@ -87,25 +84,25 @@ open class SecurityFrameworkTestApplication {
 @RestController
 @RequestMapping("/test")
 open class TestController {
-
     @GetMapping("/secure-endpoint")
     open fun secureEndpoint(): ResponseEntity<Map<String, String>> {
-        val tenantId = try {
-            // This would use the actual TenantContext implementation
-            "test-tenant-placeholder" // Simplified for this example
-        } catch (e: Exception) {
-            "no-tenant"
-        }
+        val tenantId =
+            try {
+                // This would use the actual TenantContext implementation
+                "test-tenant-placeholder" // Simplified for this example
+            } catch (e: Exception) {
+                "no-tenant"
+            }
 
-        return ResponseEntity.ok(mapOf(
-            "status" to "ok",
-            "tenant" to tenantId,
-            "timestamp" to Instant.now().toString()
-        ))
+        return ResponseEntity.ok(
+            mapOf(
+                "status" to "ok",
+                "tenant" to tenantId,
+                "timestamp" to Instant.now().toString(),
+            ),
+        )
     }
 
     @GetMapping("/health")
-    open fun health(): ResponseEntity<String> {
-        return ResponseEntity.ok("Framework Security Module - Integration Test Health Check OK")
-    }
+    open fun health(): ResponseEntity<String> = ResponseEntity.ok("Framework Security Module - Integration Test Health Check OK")
 }

@@ -45,8 +45,10 @@ open class SecurityFilterChainConfiguration(
                 oauth2.jwt { jwt ->
                     jwt.decoder(jwtDecoder) // Use injected jwtDecoder
                 }
-            }.addFilterAfter(jwtValidationFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter::class.java)
-            .addFilterAfter(tenantContextFilter, JwtValidationFilter::class.java)
+            }.addFilterAfter(
+                jwtValidationFilter,
+                org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter::class.java,
+            ).addFilterAfter(tenantContextFilter, JwtValidationFilter::class.java)
             .cors { cors ->
                 cors.configurationSource { _ ->
                     val corsConfiguration = CorsConfiguration()

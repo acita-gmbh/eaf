@@ -16,7 +16,6 @@ import org.springframework.security.oauth2.jwt.JwtDecoders
 @EnableWebSecurity
 @Import(SecurityFilterChainConfiguration::class)
 open class SecurityConfiguration {
-
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8180/realms/eaf}")
     private lateinit var issuerUri: String
 

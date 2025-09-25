@@ -65,7 +65,8 @@ class TenantContextFilter(
             tenantContext.clearCurrentTenant()
 
             val processingTimeMs = (System.nanoTime() - startTime) / 1_000_000L
-            meterRegistry?.timer("tenant.filter.processing_time")
+            meterRegistry
+                ?.timer("tenant.filter.processing_time")
                 ?.record(processingTimeMs, java.util.concurrent.TimeUnit.MILLISECONDS)
 
             log.debug("Tenant context cleanup completed (processing time: {}ms)", processingTimeMs)
@@ -80,8 +81,9 @@ class TenantContextFilter(
      * @throws IllegalStateException if no authentication context or missing tenant_id
      */
     private fun extractTenantFromJwt(): String {
-        val authentication = SecurityContextHolder.getContext().authentication
-            ?: error("No authentication context found")
+        val authentication =
+            SecurityContextHolder.getContext().authentication
+                ?: error("No authentication context found")
 
         check(authentication is JwtAuthenticationToken) {
             "Authentication is not JWT-based"
@@ -103,16 +105,18 @@ class TenantContextFilter(
         errorType: String,
     ) {
         when (e) {
-            is IllegalStateException -> log.warn(
-                "Tenant validation failed for request: {} - {}",
-                request.requestURI,
-                e.message,
-            )
-            else -> log.error(
-                "Tenant validation error for request: {}",
-                request.requestURI,
-                e,
-            )
+            is IllegalStateException ->
+                log.warn(
+                    "Tenant validation failed for request: {} - {}",
+                    request.requestURI,
+                    e.message,
+                )
+            else ->
+                log.error(
+                    "Tenant validation error for request: {}",
+                    request.requestURI,
+                    e,
+                )
         }
 
         meterRegistry?.counter(metricName)?.increment()
