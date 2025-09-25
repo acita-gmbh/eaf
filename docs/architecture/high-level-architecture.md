@@ -251,7 +251,7 @@ class ProductServiceTest : BehaviorSpec({
 | **Framework** | Spring Boot | 3.5.6 | Enterprise patterns, ecosystem |
 | **CQRS/ES** | Axon Framework | 4.9.4 | Proven event sourcing platform |
 | **Database** | PostgreSQL | 16.1+ | ACID compliance, performance |
-| **Security** | Keycloak | 26.0.0 | Enterprise identity management |
+| **Security** | Keycloak | 25.0.6 | Enterprise identity management |
 
 🔗 **See also**: [Technology Stack](tech-stack.md) for complete technology matrix
 
