@@ -307,62 +307,154 @@ class TenLayerJwtValidator(
 }
 ```
 
-**3-Layer Tenant Isolation**:
+**3-Layer Tenant Isolation** (Implemented in Stories 4.1 & 4.2):
 
 ```kotlin
-// framework/security/src/main/kotlin/com/axians/eaf/security/tenant/TenantIsolation.kt
+// Layer 1: Request Filter (TenantContextFilter)
+// Implementation: framework/security/src/main/kotlin/com/axians/eaf/framework/security/filters/TenantContextFilter.kt
+// Story: 4.1 - Implement Layer 1 (Request Layer): TenantContext Filter
 
-// Layer 1: Request Filter
-@Component
-class TenantExtractionFilter : OncePerRequestFilter() {
-    override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
-        val tenantId = extractTenantFromJwt(request)
-        TenantContext.set(tenantId)
+class TenantContextFilter(
+    private val tenantContext: TenantContext,
+    private val meterRegistry: MeterRegistry? = null,
+) : OncePerRequestFilter() {
+
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain,
+    ) {
+        val startTime = System.nanoTime()
+
         try {
-            chain.doFilter(request, response)
+            val tenantId = extractTenantFromJwt()
+            tenantContext.setCurrentTenantId(tenantId)
+            filterChain.doFilter(request, response)
+        } catch (e: Exception) {
+            handleTenantValidationError(request, response, e)
         } finally {
-            TenantContext.clear()
+            tenantContext.clearCurrentTenant()
+            recordFilterMetrics(System.nanoTime() - startTime)
         }
     }
+
+    private fun extractTenantFromJwt(): String {
+        val authentication = SecurityContextHolder.getContext().authentication
+            ?: error("No authentication context found")
+
+        check(authentication is JwtAuthenticationToken) {
+            "Authentication is not JWT-based"
+        }
+
+        val jwt = authentication.token as Jwt
+        val tenantId = jwt.getClaim<String>("tenant_id")
+
+        require(!tenantId.isNullOrBlank()) {
+            "Missing or invalid tenant_id claim in JWT token"
+        }
+
+        return tenantId
+    }
+
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+        request.method == "OPTIONS" // Skip CORS preflight
 }
 
-// Layer 2: Service Validation
-@Aspect
+// TenantContext API (ThreadLocal stack-based with WeakReference storage)
 @Component
-class TenantValidationAspect {
-    @Around("@annotation(RequiresTenant)")
-    fun validateTenant(joinPoint: ProceedingJoinPoint): Any? {
-        val currentTenant = TenantContext.current()
-            ?: throw ForbiddenException("No tenant context")
+class TenantContext(private val meterRegistry: MeterRegistry? = null) {
+    companion object {
+        private val contextStack: ThreadLocal<Deque<WeakReference<String>>> =
+            ThreadLocal.withInitial { ArrayDeque() }
+    }
 
-        val args = joinPoint.args
-        val tenantArg = args.firstOrNull { it is TenantAware }
+    fun setCurrentTenantId(tenantId: String) {
+        val stack = contextStack.get()
+        stack.push(WeakReference(tenantId))
+        meterRegistry?.counter("tenant.context.set")?.increment()
+    }
 
-        if (tenantArg != null && (tenantArg as TenantAware).tenantId != currentTenant) {
-            throw ForbiddenException("Tenant mismatch")
+    fun current(): String? {
+        val stack = contextStack.get()
+        while (stack.isNotEmpty()) {
+            val weakRef = stack.peek()
+            val tenantId = weakRef?.get()
+            if (tenantId != null) return tenantId
+            stack.poll() // Remove GC'd reference
         }
+        return null
+    }
 
-        return joinPoint.proceed()
+    fun getCurrentTenantId(): String =
+        current() ?: error("Missing or invalid tenant_id claim in JWT token")
+
+    fun clearCurrentTenant() {
+        val stack = contextStack.get()
+        if (stack.isNotEmpty()) {
+            stack.poll()
+            meterRegistry?.counter("tenant.context.clear")?.increment()
+        }
+        if (stack.isEmpty()) {
+            contextStack.remove()
+            meterRegistry?.counter("tenant.context.threadlocal_removed")?.increment()
+        }
     }
 }
 
-// Layer 3: Database RLS
-@Component
-class TenantDatabaseInterceptor : EmptyInterceptor() {
-    override fun onPrepareStatement(sql: String): String {
-        val tenantId = TenantContext.current() ?: return sql
+// Layer 2: Service Validation (Command Handlers)
+// Implementation: framework/widget/src/main/kotlin/com/axians/eaf/framework/widget/domain/Widget.kt
+// Story: 4.2 - Implement Layer 2 (Service Layer): Tenant Boundary Validation
 
-        return if (requiresTenantFilter(sql)) {
-            addTenantFilter(sql, tenantId)
-        } else {
-            sql
+@Aggregate
+class Widget {
+    @AggregateIdentifier
+    private lateinit var widgetId: String
+    private lateinit var tenantId: String
+
+    @CommandHandler
+    constructor(command: CreateWidgetCommand) {
+        // Validate tenant isolation (fail-closed design)
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209)
         }
+
+        apply(WidgetCreatedEvent(
+            widgetId = command.widgetId,
+            tenantId = command.tenantId,
+            // ...
+        ))
     }
 
-    private fun addTenantFilter(sql: String, tenantId: String): String {
-        return "$sql AND tenant_id = '$tenantId'"
+    @CommandHandler
+    fun handle(command: UpdateWidgetCommand): Either<WidgetError, Unit> {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        // Validate BOTH command and aggregate tenant
+        val error = when {
+            command.tenantId != currentTenant ->
+                WidgetError.TenantIsolationViolation(
+                    requestedTenant = "REDACTED", // Don't expose tenant IDs
+                    actualTenant = "REDACTED"
+                )
+            this.tenantId != currentTenant ->
+                WidgetError.TenantIsolationViolation(
+                    requestedTenant = "REDACTED",
+                    actualTenant = "REDACTED"
+                )
+            else -> null
+        }
+
+        if (error != null) return error.left()
+
+        apply(WidgetUpdatedEvent(...))
+        Unit.right()
     }
 }
+
+// Layer 3: Database RLS (Planned - Story 4.3)
+// Implementation pending - will use PostgreSQL Row-Level Security policies
 ```
 
 ---

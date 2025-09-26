@@ -16,17 +16,32 @@ class GlobalExceptionHandler {
         ex: IllegalArgumentException,
         request: WebRequest,
     ): ResponseEntity<ProblemDetail> {
+        val message =
+            if (ex.message?.contains("tenant context mismatch") == true) {
+                "Access denied"
+            } else {
+                ex.message ?: "Validation failed"
+            }
+
+        val status =
+            if (ex.message?.contains("tenant context mismatch") == true) {
+                HttpStatus.FORBIDDEN
+            } else {
+                HttpStatus.BAD_REQUEST
+            }
+
         val problemDetail =
             ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                ex.message ?: "Validation failed",
+                status,
+                message,
             )
-        problemDetail.title = "Validation Error"
-        problemDetail.type = URI.create("/problems/validation-error")
+        problemDetail.title = if (status == HttpStatus.FORBIDDEN) "Access Denied" else "Validation Error"
+        problemDetail.type =
+            URI.create(if (status == HttpStatus.FORBIDDEN) "/problems/access-denied" else "/problems/validation-error")
         problemDetail.setProperty("timestamp", Instant.now())
         problemDetail.setProperty("path", request.getDescription(false))
 
-        return ResponseEntity.badRequest().body(problemDetail)
+        return ResponseEntity.status(status).body(problemDetail)
     }
 
     @ExceptionHandler(org.axonframework.commandhandling.CommandExecutionException::class)
