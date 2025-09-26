@@ -40,8 +40,8 @@ import javax.sql.DataSource
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class RlsPrototypeIntegrationTest : BehaviorSpec() {
-
     override fun enabled(): Boolean = System.getenv("RUN_PROTOTYPE_TESTS") == "true"
+
     companion object {
         // Test tenant IDs
         private val TENANT_A = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
