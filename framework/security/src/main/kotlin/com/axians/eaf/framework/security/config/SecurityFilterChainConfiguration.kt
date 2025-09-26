@@ -47,7 +47,8 @@ open class SecurityFilterChainConfiguration(
                 }
             }.addFilterAfter(
                 jwtValidationFilter,
-                org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter::class.java,
+                org.springframework.security.oauth2.server.resource.web.authentication
+                    .BearerTokenAuthenticationFilter::class.java,
             ).addFilterAfter(tenantContextFilter, JwtValidationFilter::class.java)
             .cors { cors ->
                 cors.configurationSource { _ ->
