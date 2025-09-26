@@ -33,7 +33,7 @@ import javax.sql.DataSource
 @Component
 @Order(1000)
 class TenantSessionCleanupAspect(
-    private val dataSource: DataSource
+    private val dataSource: DataSource,
 ) {
     private val logger = LoggerFactory.getLogger(TenantSessionCleanupAspect::class.java)
 
@@ -63,7 +63,7 @@ class TenantSessionCleanupAspect(
             logger.warn(
                 "Failed to reset tenant session variable after {}: {}",
                 reason,
-                e.message
+                e.message,
             )
         }
     }

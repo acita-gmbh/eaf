@@ -25,9 +25,8 @@ import javax.sql.DataSource
  */
 @Component
 class TenantSessionInterceptor(
-    private val tenantContext: TenantContext
+    private val tenantContext: TenantContext,
 ) : StatementInspector {
-
     private val logger = LoggerFactory.getLogger(TenantSessionInterceptor::class.java)
 
     companion object {
@@ -37,16 +36,12 @@ class TenantSessionInterceptor(
          * Generate SQL to set session variable using SET LOCAL
          * SET LOCAL scopes the variable to the current transaction only
          */
-        fun generateSetLocalSql(tenantId: String): String {
-            return "SET LOCAL $SESSION_VAR_NAME = '$tenantId'"
-        }
+        fun generateSetLocalSql(tenantId: String): String = "SET LOCAL $SESSION_VAR_NAME = '$tenantId'"
 
         /**
          * Validate session variable SQL for correctness
          */
-        fun validateSessionVariableSql(sql: String): Boolean {
-            return sql.contains("SET LOCAL") && sql.contains(SESSION_VAR_NAME)
-        }
+        fun validateSessionVariableSql(sql: String): Boolean = sql.contains("SET LOCAL") && sql.contains(SESSION_VAR_NAME)
     }
 
     /**
@@ -74,10 +69,11 @@ class TenantSessionInterceptor(
      */
     fun setTenantSessionVariable(connection: Connection) {
         // Fail-closed: throw exception if tenant context missing
-        val tenantId = tenantContext.getCurrentTenantId()
-            ?: throw IllegalStateException(
-                "Cannot set tenant session variable: TenantContext not set (fail-closed security check)"
-            )
+        val tenantId =
+            tenantContext.getCurrentTenantId()
+                ?: throw IllegalStateException(
+                    "Cannot set tenant session variable: TenantContext not set (fail-closed security check)",
+                )
 
         val sql = generateSetLocalSql(tenantId)
 
@@ -85,7 +81,7 @@ class TenantSessionInterceptor(
             "Setting tenant session variable: {} for tenant: {} (tx: {})",
             SESSION_VAR_NAME,
             tenantId,
-            getTransactionId(connection)
+            getTransactionId(connection),
         )
 
         // Execute SET LOCAL statement
@@ -96,7 +92,7 @@ class TenantSessionInterceptor(
         logger.info(
             "Tenant session variable set successfully: tenant={}, tx={}",
             tenantId,
-            getTransactionId(connection)
+            getTransactionId(connection),
         )
     }
 
@@ -118,14 +114,14 @@ class TenantSessionInterceptor(
                     "Verified tenant session variable: {} = {} (tx: {})",
                     SESSION_VAR_NAME,
                     value,
-                    getTransactionId(connection)
+                    getTransactionId(connection),
                 )
                 value
             } else {
                 logger.warn(
                     "Tenant session variable not set: {} (tx: {})",
                     SESSION_VAR_NAME,
-                    getTransactionId(connection)
+                    getTransactionId(connection),
                 )
                 null
             }
@@ -137,9 +133,7 @@ class TenantSessionInterceptor(
      * In prototype, we use connection hash code.
      * Full implementation should use proper transaction ID.
      */
-    private fun getTransactionId(connection: Connection): String {
-        return "conn-${connection.hashCode()}"
-    }
+    private fun getTransactionId(connection: Connection): String = "conn-${connection.hashCode()}"
 }
 
 /**
@@ -150,9 +144,8 @@ class TenantSessionInterceptor(
  */
 class TenantAwareDataSourceWrapper(
     private val delegate: DataSource,
-    private val interceptor: TenantSessionInterceptor
+    private val interceptor: TenantSessionInterceptor,
 ) : DataSource by delegate {
-
     private val logger = LoggerFactory.getLogger(TenantAwareDataSourceWrapper::class.java)
 
     override fun getConnection(): Connection {
@@ -171,7 +164,10 @@ class TenantAwareDataSourceWrapper(
         return connection
     }
 
-    override fun getConnection(username: String, password: String): Connection {
+    override fun getConnection(
+        username: String,
+        password: String,
+    ): Connection {
         val connection = delegate.getConnection(username, password)
         logger.debug("Connection acquired with credentials: {}", connection.hashCode())
 

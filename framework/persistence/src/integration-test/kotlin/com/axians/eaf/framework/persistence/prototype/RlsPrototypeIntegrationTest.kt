@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName
 import java.sql.Connection
 import java.sql.DriverManager
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import javax.sql.DataSource
 
 /**
@@ -37,7 +37,6 @@ import javax.sql.DataSource
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class RlsPrototypeIntegrationTest : BehaviorSpec() {
-
     companion object {
         // Test tenant IDs
         private val TENANT_A = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
@@ -45,13 +44,14 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
         private val TENANT_C = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
 
         // PostgreSQL Testcontainer
-        private val postgresContainer = PostgreSQLContainer(DockerImageName.parse("postgres:16.1-alpine"))
-            .withDatabaseName("eaf_rls_prototype")
-            .withUsername("test")
-            .withPassword("test")
-            .apply {
-                start()
-            }
+        private val postgresContainer =
+            PostgreSQLContainer(DockerImageName.parse("postgres:16.1-alpine"))
+                .withDatabaseName("eaf_rls_prototype")
+                .withUsername("test")
+                .withPassword("test")
+                .apply {
+                    start()
+                }
 
         @JvmStatic
         @DynamicPropertySource
@@ -484,24 +484,29 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
     // Helper Methods
     // =====================================================
 
-    private fun getConnection(): Connection {
-        return DriverManager.getConnection(
+    private fun getConnection(): Connection =
+        DriverManager.getConnection(
             postgresContainer.jdbcUrl,
             postgresContainer.username,
-            postgresContainer.password
+            postgresContainer.password,
         )
-    }
 
     private fun setTenantContext(tenantId: UUID) {
         tenantContext.setCurrentTenantId(tenantId.toString())
     }
 
-    private fun setSessionVariable(connection: Connection, tenantId: UUID) {
+    private fun setSessionVariable(
+        connection: Connection,
+        tenantId: UUID,
+    ) {
         val sql = "SET app.current_tenant = '$tenantId'"
         connection.createStatement().execute(sql)
     }
 
-    private fun setSessionVariableLocal(connection: Connection, tenantId: UUID) {
+    private fun setSessionVariableLocal(
+        connection: Connection,
+        tenantId: UUID,
+    ) {
         val sql = "SET LOCAL app.current_tenant = '$tenantId'"
         connection.createStatement().execute(sql)
     }
@@ -529,15 +534,18 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     widgetId = UUID.fromString(resultSet.getString("widget_id")),
                     tenantId = UUID.fromString(resultSet.getString("tenant_id")),
                     name = resultSet.getString("name"),
-                    status = resultSet.getString("status")
-                )
+                    status = resultSet.getString("status"),
+                ),
             )
         }
 
         return results
     }
 
-    private fun queryProjectionsByTenant(connection: Connection, tenantId: UUID): List<WidgetProjection> {
+    private fun queryProjectionsByTenant(
+        connection: Connection,
+        tenantId: UUID,
+    ): List<WidgetProjection> {
         val sql = "SELECT * FROM prototype_widget_projection WHERE tenant_id = '$tenantId'"
         val resultSet = connection.createStatement().executeQuery(sql)
         val results = mutableListOf<WidgetProjection>()
@@ -548,20 +556,26 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     widgetId = UUID.fromString(resultSet.getString("widget_id")),
                     tenantId = UUID.fromString(resultSet.getString("tenant_id")),
                     name = resultSet.getString("name"),
-                    status = resultSet.getString("status")
-                )
+                    status = resultSet.getString("status"),
+                ),
             )
         }
 
         return results
     }
 
-    private fun insertEvent(connection: Connection, aggregateId: String, sequenceNumber: Long, tenantId: UUID) {
-        val sql = """
+    private fun insertEvent(
+        connection: Connection,
+        aggregateId: String,
+        sequenceNumber: Long,
+        tenantId: UUID,
+    ) {
+        val sql =
+            """
             INSERT INTO prototype_domain_event_entry
             (event_identifier, aggregate_identifier, sequence_number, type, timestamp, payload, tenant_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """.trimIndent()
+            """.trimIndent()
 
         val statement = connection.prepareStatement(sql)
         statement.setString(1, UUID.randomUUID().toString())
@@ -574,7 +588,10 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
         statement.executeUpdate()
     }
 
-    private fun queryEvents(connection: Connection, aggregateId: String): List<DomainEvent> {
+    private fun queryEvents(
+        connection: Connection,
+        aggregateId: String,
+    ): List<DomainEvent> {
         val sql = "SELECT * FROM prototype_domain_event_entry WHERE aggregate_identifier = ? ORDER BY sequence_number"
         val statement = connection.prepareStatement(sql)
         statement.setString(1, aggregateId)
@@ -587,8 +604,8 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     eventIdentifier = resultSet.getString("event_identifier"),
                     aggregateIdentifier = resultSet.getString("aggregate_identifier"),
                     sequenceNumber = resultSet.getLong("sequence_number"),
-                    tenantId = UUID.fromString(resultSet.getString("tenant_id"))
-                )
+                    tenantId = UUID.fromString(resultSet.getString("tenant_id")),
+                ),
             )
         }
 
@@ -597,10 +614,12 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
 
     private fun executeSchemaSetup(connection: Connection) {
         // Read and execute schema SQL
-        val schemaSQL = javaClass.getResourceAsStream("/prototype-rls-schema.sql")
-            ?.bufferedReader()
-            ?.readText()
-            ?: throw IllegalStateException("Could not load prototype-rls-schema.sql")
+        val schemaSQL =
+            javaClass
+                .getResourceAsStream("/prototype-rls-schema.sql")
+                ?.bufferedReader()
+                ?.readText()
+                ?: throw IllegalStateException("Could not load prototype-rls-schema.sql")
 
         connection.createStatement().execute(schemaSQL)
     }
@@ -630,12 +649,19 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
         connection.close()
     }
 
-    private fun insertProjection(connection: Connection, widgetId: UUID, tenantId: UUID, name: String, status: String) {
-        val sql = """
+    private fun insertProjection(
+        connection: Connection,
+        widgetId: UUID,
+        tenantId: UUID,
+        name: String,
+        status: String,
+    ) {
+        val sql =
+            """
             INSERT INTO prototype_widget_projection
             (widget_id, tenant_id, name, status, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
-        """.trimIndent()
+            """.trimIndent()
 
         val statement = connection.prepareStatement(sql)
         statement.setObject(1, widgetId)
@@ -648,7 +674,9 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
     }
 
     private fun createTestDataSource(): DataSource {
-        val ds = org.springframework.jdbc.datasource.DriverManagerDataSource()
+        val ds =
+            org.springframework.jdbc.datasource
+                .DriverManagerDataSource()
         ds.setDriverClassName("org.postgresql.Driver")
         ds.url = postgresContainer.jdbcUrl
         ds.username = postgresContainer.username
@@ -664,13 +692,13 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
         val widgetId: UUID,
         val tenantId: UUID,
         val name: String,
-        val status: String
+        val status: String,
     )
 
     data class DomainEvent(
         val eventIdentifier: String,
         val aggregateIdentifier: String,
         val sequenceNumber: Long,
-        val tenantId: UUID
+        val tenantId: UUID,
     )
 }
