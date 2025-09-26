@@ -4,20 +4,31 @@ import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
 import com.axians.eaf.api.widget.events.WidgetUpdatedEvent
+import com.axians.eaf.framework.security.tenant.TenantContext
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.axonframework.test.aggregate.AggregateTestFixture
 import java.math.BigDecimal
 import java.util.UUID
 
 class WidgetTest :
     BehaviorSpec({
+        val tenantContext = TenantContext(SimpleMeterRegistry())
+
+        afterTest {
+            tenantContext.clearCurrentTenant()
+        }
 
         Given("Widget aggregate creation") {
             val fixture = AggregateTestFixture(Widget::class.java)
+
+            beforeTest {
+                tenantContext.setCurrentTenantId("test-tenant")
+            }
 
             When("creating a widget with valid data") {
                 val widgetId = UUID.randomUUID().toString()
@@ -183,6 +194,10 @@ class WidgetTest :
             val fixture = AggregateTestFixture(Widget::class.java)
             val widgetId = UUID.randomUUID().toString()
             val tenantId = "test-tenant"
+
+            beforeTest {
+                tenantContext.setCurrentTenantId(tenantId)
+            }
 
             val createdEvent =
                 WidgetCreatedEvent(
