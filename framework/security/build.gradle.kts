@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)
+    implementation(libs.spring.boot.starter.aop)
     implementation(libs.bundles.observability)
     implementation(libs.jose4j)
 
