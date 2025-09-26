@@ -48,7 +48,7 @@ open class SecurityFrameworkTestApplication {
     open fun testJwtDecoder(): JwtDecoder = NullableJwtDecoder.createNull()
 
     @Bean
-    open fun testController(): TestController = TestController()
+    open fun testController(tenantContext: TenantContext): TestController = TestController(tenantContext)
 
     @Bean
     open fun testTenantContextFilter(
@@ -74,9 +74,13 @@ open class SecurityFrameworkTestApplication {
                     .permitAll()
                     .anyRequest()
                     .permitAll()
-            }.addFilterBefore(
+            }.oauth2ResourceServer { oauth2 ->
+                oauth2.jwt { jwt ->
+                    jwt.decoder(testJwtDecoder())
+                }
+            }.addFilterAfter(
                 tenantContextFilter,
-                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter::class.java,
+                org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter::class.java,
             ).build()
 }
 
@@ -86,13 +90,14 @@ open class SecurityFrameworkTestApplication {
  */
 @RestController
 @RequestMapping("/test")
-open class TestController {
+open class TestController(
+    private val tenantContext: TenantContext,
+) {
     @GetMapping("/secure-endpoint")
     open fun secureEndpoint(): ResponseEntity<Map<String, String>> {
         val tenantId =
             try {
-                // This would use the actual TenantContext implementation
-                "test-tenant-placeholder" // Simplified for this example
+                tenantContext.current() ?: "no-tenant"
             } catch (e: Exception) {
                 "no-tenant"
             }
