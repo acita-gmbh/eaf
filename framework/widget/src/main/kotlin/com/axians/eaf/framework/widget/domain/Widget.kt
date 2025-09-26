@@ -44,7 +44,7 @@ class Widget {
         val currentTenant = TenantContext().getCurrentTenantId()
 
         require(command.tenantId == currentTenant) {
-            "Tenant isolation violation: command=${command.tenantId}, context=$currentTenant"
+            "Access denied: tenant context mismatch"
         }
 
         validateCreateCommand(command).fold(
