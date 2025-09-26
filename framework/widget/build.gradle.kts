@@ -8,6 +8,7 @@ description = "EAF Widget Framework - Example domain aggregate for CQRS/ES demon
 dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:persistence"))
+    implementation(project(":framework:security"))
     implementation(project(":shared:shared-api"))
 
     implementation(libs.bundles.kotlin)

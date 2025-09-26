@@ -7,6 +7,7 @@ import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
 import com.axians.eaf.api.widget.events.WidgetUpdatedEvent
+import com.axians.eaf.framework.security.tenant.TenantContext
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
@@ -40,6 +41,12 @@ class Widget {
 
     @CommandHandler
     constructor(command: CreateWidgetCommand) {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        require(command.tenantId == currentTenant) {
+            "Tenant isolation violation: command=${command.tenantId}, context=$currentTenant"
+        }
+
         validateCreateCommand(command).fold(
             { error -> throw IllegalArgumentException("Validation failed: $error") },
             {
@@ -60,11 +67,18 @@ class Widget {
 
     @CommandHandler
     fun handle(command: UpdateWidgetCommand): Either<WidgetError, Unit> {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
         val error =
             when {
-                command.tenantId != this.tenantId ->
+                command.tenantId != currentTenant ->
                     WidgetError.TenantIsolationViolation(
                         requestedTenant = command.tenantId,
+                        actualTenant = currentTenant,
+                    )
+                this.tenantId != currentTenant ->
+                    WidgetError.TenantIsolationViolation(
+                        requestedTenant = currentTenant,
                         actualTenant = this.tenantId,
                     )
                 status != WidgetStatus.ACTIVE ->
