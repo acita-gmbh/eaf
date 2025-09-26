@@ -3,6 +3,7 @@ package com.axians.eaf.framework.widget.api
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
 import com.axians.eaf.framework.security.tenant.TenantContext
+import com.axians.eaf.framework.widget.test.WidgetFrameworkTestApplication
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -10,10 +11,18 @@ import io.kotest.matchers.string.shouldContain
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
 import java.util.UUID
 
-@SpringBootTest
+@SpringBootTest(
+    classes = [WidgetFrameworkTestApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+    properties = [
+        "axon.axonserver.enabled=false",
+    ],
+)
+@ActiveProfiles("test")
 class TenantBoundaryValidationIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var commandGateway: CommandGateway

@@ -6,6 +6,14 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
+axon:
+  axonserver:
+    enabled: false
+  eventhandling:
+    processors:
+      __all__:
+        mode: subscribing
+
 logging:
   level:
     com.axians.eaf: DEBUG
