@@ -71,6 +71,25 @@ class TenantContextTest :
                 // Verify metrics increment
                 meterRegistry.counter("tenant.context.threadlocal_removed").count() shouldBe (initialCount + 1.0)
             }
+
+            test("nested push/pop should maintain LIFO order with proper metrics") {
+                val initialClearCount = meterRegistry.counter("tenant.context.clear").count()
+                val initialRemovedCount = meterRegistry.counter("tenant.context.threadlocal_removed").count()
+
+                tenantContext.setCurrentTenantId("A")
+                tenantContext.setCurrentTenantId("B")
+
+                tenantContext.clearCurrentTenant()
+                tenantContext.current() shouldBe "A"
+                tenantContext.getStackDepth() shouldBe 1
+
+                tenantContext.clearCurrentTenant()
+                tenantContext.current() shouldBe null
+                tenantContext.getStackDepth() shouldBe 0
+
+                meterRegistry.counter("tenant.context.clear").count() shouldBe (initialClearCount + 2.0)
+                meterRegistry.counter("tenant.context.threadlocal_removed").count() shouldBe (initialRemovedCount + 1.0)
+            }
         }
 
         context("WeakReference storage and garbage collection") {
