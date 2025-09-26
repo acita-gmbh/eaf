@@ -59,6 +59,17 @@ open class SecurityFilterChainConfiguration(
                     corsConfiguration.allowCredentials = true
                     corsConfiguration
                 }
-            }.csrf { csrf -> csrf.disable() }
-            .build()
+            }.csrf { csrf ->
+                // CSRF protection is intentionally disabled for stateless JWT-based API.
+                // SECURITY RATIONALE:
+                // 1. Stateless JWT authentication prevents CSRF attacks (no session cookies)
+                // 2. JWTs are sent in Authorization header, not susceptible to CSRF
+                // 3. Multi-tenant isolation enforced through JWT claims, not session state
+                // 4. This is the recommended Spring Security configuration for REST APIs
+                // See: https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html#csrf-when
+                csrf.disable()
+            }.sessionManagement { session ->
+                // Enforce stateless session policy for JWT-based resource server
+                session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS)
+            }.build()
 }

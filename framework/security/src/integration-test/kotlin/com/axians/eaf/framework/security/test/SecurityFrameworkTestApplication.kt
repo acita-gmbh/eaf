@@ -64,8 +64,11 @@ open class SecurityFrameworkTestApplication {
         tenantContextFilter: com.axians.eaf.framework.security.filters.TenantContextFilter,
     ): org.springframework.security.web.SecurityFilterChain =
         http
-            .csrf { it.disable() }
-            .authorizeHttpRequests { auth ->
+            .csrf { csrf ->
+                // CSRF disabled for stateless JWT-based API (test configuration)
+                // Security rationale documented in SecurityFilterChainConfiguration
+                csrf.disable()
+            }.authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/test/**")
                     .permitAll()
