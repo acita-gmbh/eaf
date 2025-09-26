@@ -6,6 +6,7 @@ import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
+import java.sql.SQLException
 import javax.sql.DataSource
 
 /**
@@ -59,7 +60,7 @@ class TenantSessionCleanupAspect(
                     logger.trace("Tenant session variable reset after {}", reason)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: SQLException) {
             logger.warn(
                 "Failed to reset tenant session variable after {}: {}",
                 reason,
