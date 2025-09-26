@@ -58,23 +58,23 @@ ALTER TABLE prototype_widget_projection ENABLE ROW LEVEL SECURITY;
 -- Policy: SELECT - Only return rows for current tenant
 CREATE POLICY prototype_event_select_policy ON prototype_domain_event_entry
     FOR SELECT
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: INSERT - Only allow inserts for current tenant
 CREATE POLICY prototype_event_insert_policy ON prototype_domain_event_entry
     FOR INSERT
-    WITH CHECK (tenant_id = current_setting('app.current_tenant')::UUID);
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: UPDATE - Only allow updates for current tenant
 CREATE POLICY prototype_event_update_policy ON prototype_domain_event_entry
     FOR UPDATE
-    USING (tenant_id = current_setting('app.current_tenant')::UUID)
-    WITH CHECK (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: DELETE - Only allow deletes for current tenant
 CREATE POLICY prototype_event_delete_policy ON prototype_domain_event_entry
     FOR DELETE
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- =====================================================
 -- RLS Policies for Projection Table
@@ -83,23 +83,23 @@ CREATE POLICY prototype_event_delete_policy ON prototype_domain_event_entry
 -- Policy: SELECT - Only return rows for current tenant
 CREATE POLICY prototype_projection_select_policy ON prototype_widget_projection
     FOR SELECT
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: INSERT - Only allow inserts for current tenant
 CREATE POLICY prototype_projection_insert_policy ON prototype_widget_projection
     FOR INSERT
-    WITH CHECK (tenant_id = current_setting('app.current_tenant')::UUID);
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: UPDATE - Only allow updates for current tenant
 CREATE POLICY prototype_projection_update_policy ON prototype_widget_projection
     FOR UPDATE
-    USING (tenant_id = current_setting('app.current_tenant')::UUID)
-    WITH CHECK (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- Policy: DELETE - Only allow deletes for current tenant
 CREATE POLICY prototype_projection_delete_policy ON prototype_widget_projection
     FOR DELETE
-    USING (tenant_id = current_setting('app.current_tenant')::UUID);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
 
 -- =====================================================
 -- Validation: Verify RLS is Enabled

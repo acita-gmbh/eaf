@@ -189,7 +189,7 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
             }
 
             `when`("transaction commits") {
-                then("SET LOCAL should clear session variable automatically") {
+                then("session variable should be treated as null after commit (NULLIF pattern)") {
                     val connection = getConnection()
                     connection.autoCommit = false
 
@@ -200,9 +200,13 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     // Commit transaction
                     connection.commit()
 
-                    // Verify session variable is cleared
+                    // Verify PostgreSQL behavior: returns empty string (not NULL)
+                    val rawValue = verifySessionVariableRaw(connection)
+                    rawValue shouldBe "" // PostgreSQL documented behavior
+
+                    // Verify NULLIF pattern converts empty to null
                     val afterCommit = verifySessionVariable(connection)
-                    afterCommit.shouldBeNull() // SET LOCAL clears on commit
+                    afterCommit.shouldBeNull() // NULLIF converts '' to null
 
                     connection.autoCommit = true
                     connection.close()
@@ -210,7 +214,7 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
             }
 
             `when`("transaction rolls back") {
-                then("SET LOCAL should clear session variable automatically") {
+                then("session variable should be treated as null after rollback (NULLIF pattern)") {
                     val connection = getConnection()
                     connection.autoCommit = false
 
@@ -221,9 +225,13 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     // Rollback transaction
                     connection.rollback()
 
-                    // Verify session variable is cleared
+                    // Verify PostgreSQL behavior: returns empty string (not NULL)
+                    val rawValue = verifySessionVariableRaw(connection)
+                    rawValue shouldBe "" // PostgreSQL documented behavior
+
+                    // Verify NULLIF pattern converts empty to null
                     val afterRollback = verifySessionVariable(connection)
-                    afterRollback.shouldBeNull() // SET LOCAL clears on rollback
+                    afterRollback.shouldBeNull() // NULLIF converts '' to null
 
                     connection.autoCommit = true
                     connection.close()
@@ -246,6 +254,32 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
                     }
 
                     connection.autoCommit = true
+                    connection.close()
+                }
+            }
+
+            `when`("session variable is empty string after previous transaction") {
+                then("RLS policy with NULLIF should block all queries (fail-closed)") {
+                    val connection = getConnection()
+                    connection.autoCommit = false
+
+                    // First transaction to initialize the session variable
+                    setSessionVariableLocal(connection, TENANT_A)
+                    verifySessionVariable(connection) shouldBe TENANT_A.toString()
+                    connection.commit()
+
+                    // Verify PostgreSQL documented behavior: empty string after commit
+                    val rawValue = verifySessionVariableRaw(connection)
+                    rawValue shouldBe "" // PostgreSQL returns empty string, not NULL
+
+                    // Attempt to query data without setting session variable again
+                    connection.autoCommit = true
+                    val results = queryProjections(connection)
+
+                    // RLS policy with NULLIF should treat empty string as NULL
+                    // and block all access (fail-closed security)
+                    results.shouldBeEmpty()
+
                     connection.close()
                 }
             }
@@ -473,6 +507,12 @@ class RlsPrototypeIntegrationTest : BehaviorSpec() {
     }
 
     private fun verifySessionVariable(connection: Connection): String? {
+        val sql = "SELECT NULLIF(current_setting('app.current_tenant', true), '')"
+        val resultSet = connection.createStatement().executeQuery(sql)
+        return if (resultSet.next()) resultSet.getString(1) else null
+    }
+
+    private fun verifySessionVariableRaw(connection: Connection): String? {
         val sql = "SELECT current_setting('app.current_tenant', true)"
         val resultSet = connection.createStatement().executeQuery(sql)
         return if (resultSet.next()) resultSet.getString(1) else null

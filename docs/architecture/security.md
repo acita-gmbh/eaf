@@ -823,6 +823,231 @@ class SecurityLiteJwtValidator : JwtValidator {
 }
 ```
 
+## PostgreSQL Row-Level Security (RLS) Implementation
+
+### Overview
+
+PostgreSQL Row-Level Security (RLS) provides database-level tenant isolation as Layer 3 of the defense-in-depth system. RLS policies enforce tenant boundaries at the database layer, protecting against SQL injection, application bypass, and upper-layer failures.
+
+**Story Reference**: Story 4.3 - Implement Layer 3 (Database Layer) PostgreSQL RLS
+**Research**: docs/prototypes/4.3-sec-002-research-synthesis.md
+
+### Critical Security Pattern: NULLIF Wrapper
+
+**CRITICAL**: All RLS policies using session variables MUST use the `NULLIF()` wrapper pattern to prevent fail-open vulnerabilities.
+
+**Why NULLIF is Required**:
+PostgreSQL custom GUC variables, once initialized via `SET LOCAL`, become permanently registered for the session with an **empty string default** rather than reverting to `NULL` after transaction commit/rollback. The `NULLIF()` wrapper ensures fail-closed semantics by treating empty string and NULL equivalently.
+
+**Root Cause**: Tom Lane (PostgreSQL core developer): "Undocumented, unsupported abuse of behavior meant for loadable extensions" - confirmed by PostgreSQL Bug #15646 (2018) and Bug #18544 (2024).
+
+### ✅ SECURE RLS Policy Pattern
+
+```sql
+-- REQUIRED PATTERN: NULLIF wrapper for fail-closed security
+CREATE POLICY tenant_isolation_policy ON sensitive_table
+FOR ALL TO application_user
+USING (
+    tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID
+)
+WITH CHECK (
+    tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID
+);
+```
+
+**How It Works**:
+- `NULLIF(value, '')` returns `NULL` if value equals empty string, otherwise returns value
+- `NULL = NULL` evaluates to `UNKNOWN` (falsy) → No rows returned (fail-closed)
+- `NULL = '<valid-uuid>'` evaluates to `UNKNOWN` → No rows returned (fail-closed)
+- `'<tenant-uuid>' = '<tenant-uuid>'` evaluates to `TRUE` → Tenant's rows returned
+
+**Performance**: 0% overhead - `NULLIF` is an inline function executed at query plan time
+
+**Industry Validation**: PostgREST, Ruby on Rails, AWS SaaS Factory, Crunchy Data, Hibernate
+
+### ❌ INSECURE Pattern (DO NOT USE)
+
+```sql
+-- VULNERABLE: Missing NULLIF wrapper creates fail-open vulnerability
+CREATE POLICY tenant_isolation_policy ON sensitive_table
+USING (tenant_id = current_setting('app.current_tenant')::UUID);  -- DO NOT USE
+
+-- PROBLEMS:
+-- 1. Empty string after commit may bypass security check
+-- 2. Missing 'true' parameter causes error if variable not set (but wrong error mode)
+-- 3. No defense against PostgreSQL GUC lifecycle behavior
+```
+
+### RLS Policy Template for All Tables
+
+```sql
+-- Standard multi-tenant RLS policy (copy this template)
+
+-- Enable RLS on table
+ALTER TABLE your_table ENABLE ROW LEVEL SECURITY;
+
+-- Policy: SELECT - Only return rows for current tenant
+CREATE POLICY your_table_select_policy ON your_table
+    FOR SELECT
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
+
+-- Policy: INSERT - Only allow inserts for current tenant
+CREATE POLICY your_table_insert_policy ON your_table
+    FOR INSERT
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
+
+-- Policy: UPDATE - Only allow updates for current tenant
+CREATE POLICY your_table_update_policy ON your_table
+    FOR UPDATE
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
+
+-- Policy: DELETE - Only allow deletes for current tenant
+CREATE POLICY your_table_delete_policy ON your_table
+    FOR DELETE
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::UUID);
+
+-- Verification queries
+SELECT tablename, rowsecurity FROM pg_tables
+WHERE schemaname = 'public' AND tablename = 'your_table';
+
+SELECT schemaname, tablename, policyname, cmd
+FROM pg_policies WHERE tablename = 'your_table';
+```
+
+### Session Variable Management
+
+**Primary Defense**: NULLIF wrapper in RLS policies (database-enforced)
+**Secondary Defense**: Spring AOP aspect for session cleanup (application-enforced)
+
+#### Session Variable Interceptor
+
+```kotlin
+// framework/security/src/main/kotlin/.../tenant/TenantSessionCleanupAspect.kt
+@Aspect
+@Component
+@Order(1000)  // Runs AFTER transaction management
+class TenantSessionCleanupAspect(private val dataSource: DataSource) {
+
+    @AfterReturning("@annotation(Transactional)")
+    fun cleanupAfterCommit() {
+        dataSource.connection.use { conn ->
+            conn.createStatement().execute("RESET app.current_tenant")
+        }
+    }
+
+    @AfterThrowing("@annotation(Transactional)")
+    fun cleanupAfterRollback() {
+        dataSource.connection.use { conn ->
+            conn.createStatement().execute("RESET app.current_tenant")
+        }
+    }
+}
+```
+
+**Configuration**:
+```kotlin
+@Configuration
+@EnableAspectJAutoProxy
+class SecurityConfiguration {
+    // Existing configuration...
+}
+```
+
+### PostgreSQL Session Variable Lifecycle
+
+Understanding PostgreSQL's custom GUC variable lifecycle is critical for secure RLS implementation:
+
+| State | Behavior | `current_setting()` Result | Security Status |
+|-------|----------|----------------------------|-----------------|
+| **1. Undefined** | Fresh session, variable never set | `NULL` | ✅ Safe |
+| **2. Initialized** | After first `SET LOCAL` in any transaction | Variable registered with `''` default | ⚠️ Transitional |
+| **3. Cleared** | After `COMMIT` or `ROLLBACK` | `''` (empty string) | ❌ **UNSAFE without NULLIF** |
+| **4. Session End** | Connection closed | Returns to undefined (`NULL`) | ✅ Safe |
+
+**Critical Insight**: Custom GUC variables can NEVER return to undefined state within the same session. Only session termination or explicit `DISCARD ALL` can achieve this.
+
+### Performance Considerations
+
+**RLS Overhead**:
+- NULLIF wrapper: **0% overhead** (inline function)
+- Explicit RESET: **<1% overhead** (single SQL statement per transaction)
+- Overall RLS impact: Measured at <5% for properly indexed tables
+
+**Optimization Requirements**:
+- All RLS-enabled tables MUST include `tenant_id` in relevant indexes
+- Example: `CREATE INDEX idx_table_tenant_status ON table(tenant_id, status);`
+- Use `EXPLAIN ANALYZE` to verify RLS doesn't cause sequential scans
+
+### Edge Cases
+
+#### Nested Transactions (Savepoints)
+```sql
+BEGIN;
+SET LOCAL app.current_tenant = 'tenant-a';
+SAVEPOINT sp1;
+SET LOCAL app.current_tenant = 'tenant-b';
+ROLLBACK TO SAVEPOINT sp1;
+-- Variable reverts to 'tenant-a' (value before savepoint)
+```
+
+**Recommendation**: Avoid tenant context changes within savepoints. Set once at transaction start.
+
+#### Connection Pool Saturation
+- HikariCP does NOT automatically reset session variables
+- Connections may be reused with "dirty" session state (empty string)
+- AOP cleanup aspect provides defense-in-depth protection
+
+#### Database Crash/Recovery
+- All sessions terminated on crash → Fresh sessions have no custom GUCs
+- RLS policies enforce security on all new connections
+- No tenant context leakage across recovery events
+
+### Testing Requirements
+
+**Integration tests MUST**:
+1. Validate RLS blocks access when session variable is `NULL`
+2. Validate RLS blocks access when session variable is `''` (empty string)
+3. Validate RLS allows access with correct tenant ID
+4. Validate connection reuse doesn't leak tenant context
+5. Use PostgreSQL Testcontainers (H2 forbidden - cannot test RLS)
+
+**Example Test**:
+```kotlin
+`when`("session variable is empty string after previous transaction") {
+    then("RLS policy with NULLIF should block all queries") {
+        connection.autoCommit = false
+        setSessionVariableLocal(connection, TENANT_A)
+        connection.commit()
+
+        // PostgreSQL returns empty string after commit
+        val rawValue = verifySessionVariableRaw(connection)
+        rawValue shouldBe ""
+
+        // RLS with NULLIF treats empty as NULL (fail-closed)
+        val results = queryTable(connection)
+        results.shouldBeEmpty()
+    }
+}
+```
+
+### References
+
+**PostgreSQL Documentation**:
+- Bug Report #15646 (2018): Session variable lifecycle
+- Bug Report #18544 (2024): Custom GUC behavior
+- Tom Lane mailing list (2024-10-19): Core developer explanation
+
+**Industry Implementations**:
+- PostgREST: Issues #953, #990
+- pgAnalyze: Ruby on Rails + PostgreSQL RLS
+- AWS: Multi-tenant data isolation with RLS
+- Crunchy Data: Row-level security implementation guide
+
+**EAF Prototype Validation**:
+- Research Synthesis: docs/prototypes/4.3-sec-002-research-synthesis.md (PRIMARY)
+- Test Suite: framework/persistence/.../RlsPrototypeIntegrationTest.kt (22 scenarios)
+
 ## Security Best Practices for Multi-Tenant Systems
 
 ### Information Disclosure Prevention (CWE-209)
