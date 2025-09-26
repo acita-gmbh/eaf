@@ -127,7 +127,9 @@ class TenantContextFilter(
     }
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        // Apply to all requests by default - security configuration will determine which endpoints need security
+        if (request.method == "OPTIONS" || request.getHeader("Access-Control-Request-Method") != null) {
+            return true
+        }
         return false
     }
 }
