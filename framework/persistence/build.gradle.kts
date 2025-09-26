@@ -11,6 +11,12 @@ sourceSets {
     }
 }
 
+tasks.named("ciIntegrationTest") {
+    (this as Test).apply {
+        filter.setFailOnNoMatchingTests(false)
+    }
+}
+
 dependencies {
     implementation(project(":framework:core"))
     implementation(libs.bundles.kotlin)
