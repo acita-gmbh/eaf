@@ -11,10 +11,8 @@ sourceSets {
     }
 }
 
-tasks.named("ciIntegrationTest") {
-    (this as Test).apply {
-        filter.setFailOnNoMatchingTests(false)
-    }
+tasks.named<Test>("ciIntegrationTest") {
+    filter.setFailOnNoMatchingTests(false)
 }
 
 dependencies {
