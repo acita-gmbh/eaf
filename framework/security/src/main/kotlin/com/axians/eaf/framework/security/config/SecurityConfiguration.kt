@@ -33,7 +33,7 @@ open class SecurityConfiguration {
     @Bean
     open fun tenantContextFilter(
         tenantContext: TenantContext,
-        meterRegistry: MeterRegistry,
+        meterRegistry: MeterRegistry?,
     ): TenantContextFilter = TenantContextFilter(tenantContext, meterRegistry)
 
     @Bean
