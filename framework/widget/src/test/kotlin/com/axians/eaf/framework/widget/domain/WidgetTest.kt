@@ -448,4 +448,82 @@ class WidgetTest :
                 }
             }
         }
+
+        Given("Tenant validation in command handlers") {
+            val fixture = AggregateTestFixture(Widget::class.java)
+
+            When("CreateWidgetCommand with missing TenantContext") {
+                tenantContext.clearCurrentTenant()
+
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = UUID.randomUUID().toString(),
+                        tenantId = "tenant-a",
+                        name = "Test Widget",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "TEST_CATEGORY",
+                        metadata = emptyMap(),
+                    )
+
+                Then("should throw IllegalStateException") {
+                    fixture
+                        .givenNoPriorActivity()
+                        .`when`(command)
+                        .expectException(IllegalStateException::class.java)
+                }
+            }
+
+            When("CreateWidgetCommand with mismatched tenant") {
+                tenantContext.setCurrentTenantId("tenant-a")
+
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = UUID.randomUUID().toString(),
+                        tenantId = "tenant-b",
+                        name = "Test Widget",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "TEST_CATEGORY",
+                        metadata = emptyMap(),
+                    )
+
+                Then("should throw IllegalArgumentException with tenant violation message") {
+                    fixture
+                        .givenNoPriorActivity()
+                        .`when`(command)
+                        .expectException(IllegalArgumentException::class.java)
+                }
+            }
+
+            When("UpdateWidgetCommand with aggregate tenant mismatch") {
+                tenantContext.setCurrentTenantId("tenant-a")
+
+                val createdEvent =
+                    com.axians.eaf.api.widget.events.WidgetCreatedEvent(
+                        widgetId = "widget-b",
+                        tenantId = "tenant-b",
+                        name = "Tenant B Widget",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "TEST_CATEGORY",
+                        metadata = emptyMap(),
+                    )
+
+                val updateCommand =
+                    UpdateWidgetCommand(
+                        widgetId = "widget-b",
+                        tenantId = "tenant-a",
+                        name = "Hacked Widget",
+                    )
+
+                Then("should fail with TenantIsolationViolation") {
+                    fixture
+                        .given(createdEvent)
+                        .`when`(updateCommand)
+                        .expectNoEvents()
+                        .expectSuccessfulHandlerExecution()
+                }
+            }
+        }
     })

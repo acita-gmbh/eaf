@@ -1,0 +1,12 @@
+spring:
+  main:
+    lazy-initialization: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+logging:
+  level:
+    com.axians.eaf: DEBUG
+    org.axonframework: INFO
