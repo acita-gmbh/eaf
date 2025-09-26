@@ -156,6 +156,44 @@ eaf-monorepo/
 - **Fail-Closed Design**: Missing/invalid tenant context results in immediate rejection
 - **Stack-based TenantContext**: ThreadLocal with automatic cleanup
 
+### TenantContext API (Stories 4.1 & 4.2)
+
+```kotlin
+// Fail-closed (throws exception if missing) - Use in command handlers
+val tenantId: String = TenantContext().getCurrentTenantId()
+
+// Nullable (returns null if missing) - Use for defensive checks
+val tenantId: String? = TenantContext().current()
+
+// Stack operations (handled by Layer 1 filter)
+tenantContext.setCurrentTenantId("tenant-a")
+tenantContext.clearCurrentTenant()
+```
+
+### Command Handler Tenant Validation (Story 4.2)
+
+```kotlin
+@CommandHandler
+constructor(command: CreateWidgetCommand) {
+    val currentTenant = TenantContext().getCurrentTenantId()
+    require(command.tenantId == currentTenant) {
+        "Access denied: tenant context mismatch" // Generic (CWE-209 protection)
+    }
+    apply(WidgetCreatedEvent(...))
+}
+
+@CommandHandler
+fun handle(command: UpdateWidgetCommand): Either<WidgetError, Unit> {
+    val currentTenant = TenantContext().getCurrentTenantId()
+    // Validate command AND aggregate tenant match
+    when {
+        command.tenantId != currentTenant -> return TenantIsolationViolation(...).left()
+        this.tenantId != currentTenant -> return TenantIsolationViolation(...).left()
+    }
+    apply(WidgetUpdatedEvent(...))
+}
+```
+
 ## Security Implementation
 
 **For comprehensive security details, see:** [Security](docs/architecture/security.md)

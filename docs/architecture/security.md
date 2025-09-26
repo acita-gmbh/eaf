@@ -823,6 +823,60 @@ class SecurityLiteJwtValidator : JwtValidator {
 }
 ```
 
+## Security Best Practices for Multi-Tenant Systems
+
+### Information Disclosure Prevention (CWE-209)
+
+**Vulnerability**: Exposing tenant IDs in error messages enables tenant enumeration attacks.
+
+**❌ INSECURE - Exposes Tenant IDs**:
+```kotlin
+require(command.tenantId == currentTenant) {
+    "Tenant isolation violation: command=${command.tenantId}, context=$currentTenant"
+}
+// Error message reveals actual tenant IDs to attacker
+```
+
+**✅ SECURE - Generic Error Messages**:
+```kotlin
+require(command.tenantId == currentTenant) {
+    "Access denied: tenant context mismatch"
+}
+// Generic message prevents tenant enumeration
+```
+
+**Exception Handler Pattern**:
+```kotlin
+@ExceptionHandler(IllegalArgumentException::class)
+fun handleValidationError(ex: IllegalArgumentException): ResponseEntity<ProblemDetail> {
+    val message = if (ex.message?.contains("tenant context mismatch") == true) {
+        "Access denied" // Generic for tenant violations
+    } else {
+        ex.message ?: "Validation failed"
+    }
+
+    val status = if (ex.message?.contains("tenant context mismatch") == true) {
+        HttpStatus.FORBIDDEN
+    } else {
+        HttpStatus.BAD_REQUEST
+    }
+
+    return ResponseEntity.status(status).body(
+        ProblemDetail.forStatusAndDetail(status, message)
+    )
+}
+```
+
+**Security Impact**:
+- Prevents tenant enumeration through error analysis
+- Maintains tenant anonymity principle
+- Complies with OWASP ASVS V8.3.4 (error message security)
+- Tenant IDs still available in secured audit logs for forensics
+
+**Implementation**: Stories 4.1 & 4.2 (Security vulnerability VULN-1 fixed)
+
+---
+
 ## Related Documentation
 
 - **[Multi-Tenancy Strategy](multi-tenancy-strategy.md)** - Tenant isolation implementation
