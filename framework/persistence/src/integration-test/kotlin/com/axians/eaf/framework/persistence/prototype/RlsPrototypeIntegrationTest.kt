@@ -1,7 +1,6 @@
 package com.axians.eaf.framework.persistence.prototype
 
 import com.axians.eaf.framework.security.tenant.TenantContext
-import io.kotest.annotations.EnabledIf
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -37,11 +36,12 @@ import javax.sql.DataSource
  * QA Reference: docs/qa/assessments/4.3-test-design-20250926.md
  *
  * NOTE: Disabled in CI due to long execution time (10+ minutes with Testcontainers).
- * Run manually for validation: ./gradlew :framework:persistence:integrationTest --tests "*RlsPrototype*"
+ * Run manually for validation: RUN_PROTOTYPE_TESTS=true ./gradlew :framework:persistence:integrationTest --tests "*RlsPrototype*"
  */
-@EnabledIf({ System.getenv("RUN_PROTOTYPE_TESTS") == "true" })
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class RlsPrototypeIntegrationTest : BehaviorSpec() {
+
+    override fun enabled(): Boolean = System.getenv("RUN_PROTOTYPE_TESTS") == "true"
     companion object {
         // Test tenant IDs
         private val TENANT_A = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
