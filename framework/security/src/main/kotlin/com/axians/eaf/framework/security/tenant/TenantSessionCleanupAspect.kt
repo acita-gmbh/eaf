@@ -4,6 +4,7 @@ import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.AfterThrowing
 import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import java.sql.SQLException
@@ -32,6 +33,7 @@ import javax.sql.DataSource
  */
 @Aspect
 @Component
+@ConditionalOnBean(DataSource::class)
 @Order(1000)
 class TenantSessionCleanupAspect(
     private val dataSource: DataSource,
