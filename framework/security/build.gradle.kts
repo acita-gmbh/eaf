@@ -19,4 +19,8 @@ dependencies {
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(project(":shared:testing"))
+
+    // Integration test specific dependencies for security framework
+    integrationTestImplementation("org.springframework.security:spring-security-test:6.4.2")
+    integrationTestImplementation(libs.spring.boot.starter.test)
 }

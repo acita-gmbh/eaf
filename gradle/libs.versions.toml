@@ -38,7 +38,7 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
-logback = "1.5.6"         # Logging (security update)
+logback = "1.5.18"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.17.0"     # IO utilities (security update)
 
@@ -94,7 +94,7 @@ kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", vers
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "1.4.0" }
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
-kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
+kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" } # Updated to Kotest 6.0.3 unified versioning
 kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }
 kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
@@ -110,6 +110,7 @@ micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "mic
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+# Restored with correct Spring Boot 3.5.6 BOM version (1.5.18)
 
 # Security
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }

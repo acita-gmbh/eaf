@@ -26,12 +26,13 @@ import java.util.concurrent.TimeUnit
 class WidgetController(
     private val commandGateway: CommandGateway,
     private val queryGateway: QueryGateway,
+    private val tenantContext: TenantContext,
 ) {
     @PostMapping
     fun createWidget(
         @RequestBody request: CreateWidgetRequest,
     ): ResponseEntity<Any> {
-        val tenantId = TenantContext.getCurrentTenantId()
+        val tenantId = tenantContext.getCurrentTenantId()
         val widgetId = UUID.randomUUID().toString()
 
         val command =
@@ -56,7 +57,7 @@ class WidgetController(
     fun getWidget(
         @PathVariable("id") widgetId: String,
     ): ResponseEntity<WidgetResponse> {
-        val tenantId = TenantContext.getCurrentTenantId()
+        val tenantId = tenantContext.getCurrentTenantId()
         val query = FindWidgetByIdQuery(widgetId, tenantId)
 
         val response = queryGateway.query(query, WidgetResponse::class.java).get(5, TimeUnit.SECONDS)
@@ -72,7 +73,7 @@ class WidgetController(
     fun getWidgets(
         @RequestParam params: Map<String, String>,
     ): ResponseEntity<Page<WidgetResponse>> {
-        val tenantId = TenantContext.getCurrentTenantId()
+        val tenantId = tenantContext.getCurrentTenantId()
 
         // Extract and validate parameters from map
         val page = params["page"]?.toIntOrNull() ?: 0
