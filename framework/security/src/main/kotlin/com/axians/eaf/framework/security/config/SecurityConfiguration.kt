@@ -1,6 +1,10 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.filters.TenantContextFilter
+import com.axians.eaf.framework.security.tenant.TenantContext
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -25,4 +29,19 @@ open class SecurityConfiguration {
      */
     @Bean
     open fun jwtDecoder(): JwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri)
+
+    @Bean
+    open fun tenantContextFilter(
+        tenantContext: TenantContext,
+        meterRegistry: MeterRegistry,
+    ): TenantContextFilter = TenantContextFilter(tenantContext, meterRegistry)
+
+    @Bean
+    open fun tenantContextFilterRegistration(
+        tenantContextFilter: TenantContextFilter,
+    ): FilterRegistrationBean<TenantContextFilter> {
+        val registration = FilterRegistrationBean(tenantContextFilter)
+        registration.isEnabled = false
+        return registration
+    }
 }
