@@ -10,6 +10,10 @@ import java.util.Deque
 /**
  * ThreadLocal stack-based tenant context with memory-leak protection.
  * Provides secure, request-scoped access to tenant information with automatic cleanup.
+ *
+ * @param meterRegistry Optional in constructor for test flexibility (nullable pattern).
+ *                      In production, Spring Boot auto-configures MeterRegistry bean.
+ *                      Metrics are silently skipped if null (graceful degradation).
  */
 @Component
 class TenantContext(

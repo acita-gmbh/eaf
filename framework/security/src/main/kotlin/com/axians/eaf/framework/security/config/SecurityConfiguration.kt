@@ -37,11 +37,8 @@ open class SecurityConfiguration {
     ): TenantContextFilter = TenantContextFilter(tenantContext, meterRegistry)
 
     @Bean
-    open fun tenantContextFilterRegistration(
-        tenantContextFilter: TenantContextFilter,
-    ): FilterRegistrationBean<TenantContextFilter> {
-        val registration = FilterRegistrationBean(tenantContextFilter)
-        registration.isEnabled = false
-        return registration
-    }
+    open fun tenantContextFilterRegistration(filter: TenantContextFilter): FilterRegistrationBean<TenantContextFilter> =
+        FilterRegistrationBean(filter).apply {
+            isEnabled = false
+        }
 }

@@ -122,10 +122,6 @@ class TenantContextFilter(
         response.writer.write("""{"error":"Tenant validation failed: $errorType"}""")
     }
 
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        if (request.method == "OPTIONS" || request.getHeader("Access-Control-Request-Method") != null) {
-            return true
-        }
-        return false
-    }
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+        request.method == "OPTIONS" || request.getHeader("Access-Control-Request-Method") != null
 }

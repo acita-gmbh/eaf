@@ -23,6 +23,12 @@ import java.time.Instant
  * and scans only framework security packages.
  *
  * Critical: This class exists ONLY in test scope and NEVER references product modules.
+ *
+ * Rationale for restrictive scanBasePackages:
+ * - Prevents accidental product module dependencies
+ * - Maintains framework isolation for unit testing
+ * - Reduces Spring context initialization time
+ * - Will be expanded as security module grows (filters, validators, etc.)
  */
 @SpringBootApplication(
     scanBasePackages = [
