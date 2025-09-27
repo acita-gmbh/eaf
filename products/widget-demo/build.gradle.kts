@@ -29,10 +29,10 @@ dependencies {
     testImplementation(libs.bundles.testcontainers)
 }
 
-// TEMPORARY: Skip quality gates for minimal reference implementation
-// widget-demo has minimal code (73 LOC), primarily for framework validation
-// detekt: Kotlin 2.2.20 incompatibility (detekt 1.23.8 compiled with 2.0.21)
-// pitest: No production code to mutation test (just Spring Boot application class)
+// Skip quality gates for minimal reference implementation
+// detekt: Version 1.23.8 incompatible with Kotlin 2.2.20 (compiled with 2.0.21)
+//         Upgrade to detekt 2.0.0 when it reaches stable release
+// pitest: No production code to mutation test (just @SpringBootApplication)
 tasks.named("detekt") {
     enabled = false
 }

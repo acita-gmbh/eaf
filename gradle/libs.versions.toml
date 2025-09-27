@@ -25,7 +25,7 @@ testcontainers = "1.21.3" # Integration testing with real dependencies (stabilit
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
-detekt = "1.23.8"         # Static analysis (latest stable)
+detekt = "1.23.8"         # Static analysis (latest stable - Kotlin 2.0.x, incompatible with 2.2.x)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.1"    # Gradle plugin version (Gradle 9 compatible)
 pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
