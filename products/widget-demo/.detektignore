@@ -1,3 +1,0 @@
-# Detekt ignore for widget-demo (reference implementation)
-# TODO: Remove once detekt + Kotlin 2.2.20 compatibility resolved
-**/*.kt
