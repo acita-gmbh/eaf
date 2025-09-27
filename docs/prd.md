@@ -261,6 +261,17 @@ The EAF itself (as an admin/operator portal) will require:
 * **AC 3:** The database interceptor (from Story 4.3) successfully reads this propagated `TenantContext` and sets the PostgreSQL session variable (`app.current_tenant_id`) for the projection's transaction.
 * **AC 4:** The end-to-end integration tests are updated to verify that the `widget_projection` table *is successfully written to* (passing the RLS check from 4.3) and that the data is correct.
 
+#### Story 4.5: Migrate Widget Domain Code from Framework to Product Module
+* **As a** Framework Architect, **I want** the Widget domain code (aggregate, handlers, tests) migrated from `framework/widget/` to `products/widget-demo/`, **so that** framework modules contain only reusable infrastructure and can be published as libraries while domain logic lives in product modules.
+* **AC 1:** All Widget domain code moved from `framework/widget/` to `products/widget-demo/`
+* **AC 2:** `framework/widget/` module completely removed from project
+* **AC 3:** Package names updated: `com.axians.eaf.framework.widget.*` → `com.axians.eaf.products.widgetdemo.*`
+* **AC 4:** All imports updated across codebase (no compilation errors)
+* **AC 5:** Integration tests migrated and passing in products/widget-demo
+* **AC 6:** products/widget-demo builds and runs successfully
+* **AC 7:** NO references to framework/widget remain in any build files or code
+* **AC 8:** Documentation updated (component-specifications.md, CLAUDE.md if needed)
+
 ---
 
 ## Epic 5: Observability (Core Collection)
