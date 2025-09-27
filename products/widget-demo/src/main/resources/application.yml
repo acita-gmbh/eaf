@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: eaf-widget-demo
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eaf_widget_demo
+    username: eaf_user
+    password: eaf_pass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/eaf
+
+# Axon Framework
+axon:
+  axonserver:
+    enabled: false
+  serializer:
+    events: jackson
+    messages: jackson
+
+# EAF Framework Configuration
+eaf:
+  cqrs:
+    tenant-propagation:
+      enabled: true  # Default, explicitly shown for documentation
+
+# Server
+server:
+  port: 8081
+
+# Logging
+logging:
+  level:
+    com.axians.eaf: DEBUG
+    org.axonframework: INFO
+    org.springframework.security: INFO

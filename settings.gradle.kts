@@ -37,6 +37,7 @@ include(":framework:widget")
 
 // Product modules
 include(":products:licensing-server")
+include(":products:widget-demo")  // Reference implementation for framework validation
 
 // Shared modules
 include(":shared:shared-api")

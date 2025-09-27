@@ -1,9 +1,9 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.20"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
-kotlinx-serialization = "1.7.3"  # Required for Kotest XML reports
+kotlinx-serialization = "1.7.3"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
 java = "21"                # LTS requirement
-gradle = "8.14"            # Build tool version
+gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
 # Framework stack (UPDATED for compatibility)
 spring-boot = "3.5.6"     # 3.5.7 not yet published; pinned to latest GA
@@ -25,7 +25,7 @@ testcontainers = "1.21.3" # Integration testing with real dependencies (stabilit
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
-detekt = "1.23.8"         # Static analysis (latest stable)
+detekt = "1.23.8"         # Static analysis (latest stable - Kotlin 2.0.x, incompatible with 2.2.x)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.1"    # Gradle plugin version (Gradle 9 compatible)
 pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)

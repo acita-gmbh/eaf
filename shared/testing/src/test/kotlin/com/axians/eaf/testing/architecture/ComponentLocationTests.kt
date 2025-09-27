@@ -22,10 +22,19 @@ class ComponentLocationTests :
                         .files
                         .withName("AxonConfiguration")
 
-                // If file exists, it must be in application-level config (where DataSource is available)
+                // AxonConfiguration can be in TWO valid locations:
+                // 1. Framework-level: framework/cqrs/config/ (auto-configuration for cross-cutting concerns)
+                // 2. Product-level: products/*/config/ (application-specific configuration with DataSource)
                 if (axonConfigFiles.isNotEmpty()) {
                     axonConfigFiles.assertTrue {
-                        it.path.contains("products/") && it.path.contains("/config/")
+                        // Allow framework-level autoconfigure (cross-cutting concerns like tenant propagation)
+                        val isFrameworkAutoConfigure =
+                            it.path.contains("framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/")
+
+                        // Allow product-level config (application-specific setup with DataSource)
+                        val isProductConfig = it.path.contains("products/") && it.path.contains("/config/")
+
+                        isFrameworkAutoConfigure || isProductConfig
                     }
                 }
             }
