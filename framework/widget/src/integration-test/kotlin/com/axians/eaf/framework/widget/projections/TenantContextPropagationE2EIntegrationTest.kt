@@ -7,14 +7,14 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.axonframework.commandhandling.gateway.CommandGateway
+import org.axonframework.config.EventProcessingConfiguration
 import org.axonframework.eventhandling.EventBus
 import org.axonframework.eventhandling.TrackingEventProcessor
-import org.axonframework.config.EventProcessingConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
 import java.util.UUID
@@ -52,17 +52,18 @@ class TenantContextPropagationE2EIntegrationTest(
     private val tenantContext: TenantContext,
     private val dataSource: DataSource,
 ) : BehaviorSpec() {
-
     companion object {
-        private val postgres = PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
-            .withDatabaseName("eaf_test")
-            .withUsername("test")
-            .withPassword("test")
-            .apply { start() }
+        private val postgres =
+            PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
+                .withDatabaseName("eaf_test")
+                .withUsername("test")
+                .withPassword("test")
+                .apply { start() }
 
-        private val redis = GenericContainer(DockerImageName.parse("redis:7-alpine"))
-            .withExposedPorts(6379)
-            .apply { start() }
+        private val redis =
+            GenericContainer(DockerImageName.parse("redis:7-alpine"))
+                .withExposedPorts(6379)
+                .apply { start() }
 
         @JvmStatic
         @DynamicPropertySource
@@ -81,14 +82,16 @@ class TenantContextPropagationE2EIntegrationTest(
             // Initialize RLS schema
             dataSource.connection.use { conn ->
                 conn.createStatement().use { stmt ->
-                    val schema = this::class.java.getResource("/prototype-rls-schema.sql")?.readText()
-                        ?: throw IllegalStateException("RLS schema not found")
+                    val schema =
+                        this::class.java.getResource("/prototype-rls-schema.sql")?.readText()
+                            ?: throw IllegalStateException("RLS schema not found")
                     stmt.execute(schema)
                 }
             }
 
             // Start tracking event processor
-            eventProcessingConfiguration.eventProcessors()
+            eventProcessingConfiguration
+                .eventProcessors()
                 .filter { it.value is TrackingEventProcessor }
                 .forEach { (name, processor) ->
                     (processor as TrackingEventProcessor).start()
@@ -106,59 +109,61 @@ class TenantContextPropagationE2EIntegrationTest(
 
         Given("Full CQRS stack with RLS-enabled PostgreSQL") {
 
-        When("command is dispatched for tenant-a") {
-            val widgetId = UUID.randomUUID().toString()
-            tenantContext.setCurrentTenantId("tenant-a")
-
-            val command = CreateWidgetCommand(
-                widgetId = widgetId,
-                tenantId = "tenant-a",
-                name = "Test Widget",
-                description = "E2E test",
-                value = BigDecimal("99.99"),
-                category = "TEST",
-                metadata = emptyMap(),
-            )
-
-            commandGateway.sendAndWait<Any>(command)
-
-            // Wait for async projection processing
-            Thread.sleep(1000)
-
-            Then("4.4-INT-007: widget_projection table contains row for tenant-a (RLS passed)") {
+            When("command is dispatched for tenant-a") {
+                val widgetId = UUID.randomUUID().toString()
                 tenantContext.setCurrentTenantId("tenant-a")
 
-                dataSource.connection.use { conn ->
-                    conn.createStatement().use { stmt ->
-                        stmt.execute("SET LOCAL app.current_tenant = 'tenant-a'")
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = widgetId,
+                        tenantId = "tenant-a",
+                        name = "Test Widget",
+                        description = "E2E test",
+                        value = BigDecimal("99.99"),
+                        category = "TEST",
+                        metadata = emptyMap(),
+                    )
+
+                commandGateway.sendAndWait<Any>(command)
+
+                // Wait for async projection processing
+                Thread.sleep(1000)
+
+                Then("4.4-INT-007: widget_projection table contains row for tenant-a (RLS passed)") {
+                    tenantContext.setCurrentTenantId("tenant-a")
+
+                    dataSource.connection.use { conn ->
+                        conn.createStatement().use { stmt ->
+                            stmt.execute("SET LOCAL app.current_tenant = 'tenant-a'")
+                        }
+                    }
+
+                    val projection = repository.findByWidgetIdAndTenantId(widgetId, "tenant-a")
+
+                    projection shouldNotBe null
+                    projection?.name shouldBe "Test Widget"
+                    projection?.widgetId shouldBe widgetId
+                }
+            }
+
+            When("raw SQL is executed without session variable") {
+                tenantContext.clearCurrentTenant()
+
+                Then("4.4-INT-009: RLS blocks access (zero rows returned)") {
+                    dataSource.connection.use { conn ->
+                        conn.createStatement().use { stmt ->
+                            val rs =
+                                stmt.executeQuery(
+                                    "SELECT COUNT(*) FROM prototype_widget_projection WHERE tenant_id = 'tenant-a'::UUID",
+                                )
+                            rs.next()
+                            val count = rs.getInt(1)
+
+                            count shouldBe 0
+                        }
                     }
                 }
-
-                val projection = repository.findByWidgetIdAndTenantId(widgetId, "tenant-a")
-
-                projection shouldNotBe null
-                projection?.name shouldBe "Test Widget"
-                projection?.widgetId shouldBe widgetId
             }
-        }
-
-        When("raw SQL is executed without session variable") {
-            tenantContext.clearCurrentTenant()
-
-            Then("4.4-INT-009: RLS blocks access (zero rows returned)") {
-                dataSource.connection.use { conn ->
-                    conn.createStatement().use { stmt ->
-                        val rs = stmt.executeQuery(
-                            "SELECT COUNT(*) FROM prototype_widget_projection WHERE tenant_id = 'tenant-a'::UUID",
-                        )
-                        rs.next()
-                        val count = rs.getInt(1)
-
-                        count shouldBe 0
-                    }
-                }
-            }
-        }
         }
     }
 }
