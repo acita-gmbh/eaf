@@ -98,6 +98,7 @@ eaf-monorepo/
 │   ├── persistence/            # jOOQ adapters, projections
 │   └── web/                    # REST controllers, global advice
 ├── products/                   # Deployable Spring Boot applications
+│   ├── widget-demo/            # Widget domain reference implementation
 │   └── licensing-server/       # Epic 8 - First product implementation
 ├── shared/                     # Shared code
 │   ├── shared-api/             # Axon commands, events, queries
@@ -110,6 +111,8 @@ eaf-monorepo/
 ├── scripts/                    # Development scripts
 └── docs/                       # Documentation
 ```
+
+**Architectural Principle (Story 4.5)**: Framework modules contain ONLY infrastructure (publishable libraries). Domain aggregates, handlers, and business logic belong in product modules.
 
 ## Testing Requirements
 

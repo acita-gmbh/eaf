@@ -62,9 +62,15 @@ This document provides explicit file path specifications and component location 
 ## Domain Components
 
 ### Aggregates
-- **Base Package**: `framework/{domain}/src/main/kotlin/com/axians/eaf/framework/{domain}/domain/`
-- **Widget Aggregate**: `framework/widget/src/main/kotlin/com/axians/eaf/framework/widget/domain/Widget.kt`
-- **Error Types**: `framework/widget/src/main/kotlin/com/axians/eaf/framework/widget/domain/WidgetError.kt`
+
+**Framework Pattern** (for reference only - domain aggregates live in products):
+- **Base Package Pattern**: `products/{product}/src/main/kotlin/com/axians/eaf/products/{product}/domain/`
+
+**Product Implementations**:
+- **Widget Aggregate**: `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/domain/Widget.kt`
+- **Widget Errors**: `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetError.kt`
+
+**Architectural Note**: Domain aggregates belong in product modules, not framework modules. Framework provides infrastructure (base classes, patterns), products provide domain models.
 
 ### CQRS Types (Shared API)
 - **Commands**: `shared/shared-api/src/main/kotlin/com/axians/eaf/api/{domain}/commands/`
@@ -74,8 +80,15 @@ This document provides explicit file path specifications and component location 
 ## Projection Components
 
 ### Event Handlers
-- **Base Package**: `framework/{domain}/src/main/kotlin/com/axians/eaf/framework/{domain}/projections/`
-- **Widget Projection Handler**: `framework/widget/src/main/kotlin/com/axians/eaf/framework/widget/projections/WidgetProjectionHandler.kt`
+
+**Framework Pattern** (for reference only - projection handlers live in products):
+- **Base Package Pattern**: `products/{product}/src/main/kotlin/com/axians/eaf/products/{product}/projections/`
+
+**Product Implementations**:
+- **Widget Projection Handler**: `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/projections/WidgetProjectionHandler.kt`
+- **Widget Query Handler**: `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/query/WidgetQueryHandler.kt`
+
+**Architectural Note**: Projection and query handlers contain domain-specific logic and belong in product modules, not framework modules.
 
 ### JPA Entities
 - **Base Package**: `framework/persistence/src/main/kotlin/com/axians/eaf/framework/persistence/entities/`
