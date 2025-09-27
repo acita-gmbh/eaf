@@ -1,9 +1,9 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.20"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
-kotlinx-serialization = "1.7.3"  # Required for Kotest XML reports
+kotlinx-serialization = "1.7.3"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
 java = "21"                # LTS requirement
-gradle = "8.14"            # Build tool version
+gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
 # Framework stack (UPDATED for compatibility)
 spring-boot = "3.5.6"     # 3.5.7 not yet published; pinned to latest GA
