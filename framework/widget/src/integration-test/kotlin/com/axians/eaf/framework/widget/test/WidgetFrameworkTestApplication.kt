@@ -59,13 +59,13 @@ open class WidgetFrameworkTestApplication {
 
     @Bean
     @Primary
-    open fun testCommandGateway(commandBus: CommandBus): CommandGateway =
-        DefaultCommandGateway.builder().commandBus(commandBus).build()
+    open fun testCommandGateway(commandBus: CommandBus): CommandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build()
 
     @Bean
     @Primary
     open fun testEventStore(): EventStore =
-        EmbeddedEventStore.builder()
+        EmbeddedEventStore
+            .builder()
             .storageEngine(InMemoryEventStorageEngine())
             .build()
 }
