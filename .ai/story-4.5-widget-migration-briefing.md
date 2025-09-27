@@ -179,7 +179,7 @@ ls framework/widget  # Should error: No such file or directory
 ## Expected Outcome
 
 **Clean Architecture**:
-```
+```text
 framework/
 ├── core/           ✅ Infrastructure
 ├── security/       ✅ Infrastructure

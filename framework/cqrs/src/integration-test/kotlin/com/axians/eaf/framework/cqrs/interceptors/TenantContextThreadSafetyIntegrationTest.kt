@@ -99,12 +99,12 @@ class TenantContextThreadSafetyIntegrationTest :
             When("event handler throws exception during processing") {
                 val event = createEventWithMetadata(mapOf("tenantId" to "tenant-exception"))
                 val unitOfWork = DefaultUnitOfWork.startAndGet(event)
-                val failingChain = InterceptorChain { throw RuntimeException("Handler failed") }
+                val failingChain = InterceptorChain { throw IllegalStateException("Handler failed") }
 
                 try {
                     interceptor.handle(unitOfWork, failingChain)
-                } catch (e: RuntimeException) {
-                    // Expected
+                } catch (e: IllegalStateException) {
+                    // Expected exception from handler
                 }
 
                 Then("TenantContext cleaned up even on exception (finally block)") {

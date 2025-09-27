@@ -44,20 +44,32 @@ class TenantEventMessageInterceptorPerformanceSpec :
             repeat(100) {
                 val event = createTestEvent("tenant-warmup")
                 val unitOfWork = DefaultUnitOfWork.startAndGet(event)
-                interceptor.handle(unitOfWork, successChain)
+                try {
+                    interceptor.handle(unitOfWork, successChain)
+                    unitOfWork.commit()
+                } finally {
+                    if (unitOfWork.isActive) {
+                        unitOfWork.rollback()
+                    }
+                }
             }
 
             // Benchmark: 1000 iterations
             repeat(eventCount) { i ->
                 val event = createTestEvent("tenant-${i % 10}") // 10 different tenants
                 val unitOfWork = DefaultUnitOfWork.startAndGet(event)
-
-                val nanos =
-                    measureNanoTime {
-                        interceptor.handle(unitOfWork, successChain)
+                try {
+                    val nanos =
+                        measureNanoTime {
+                            interceptor.handle(unitOfWork, successChain)
+                        }
+                    latencies.add(nanos)
+                    unitOfWork.commit()
+                } finally {
+                    if (unitOfWork.isActive) {
+                        unitOfWork.rollback()
                     }
-
-                latencies.add(nanos)
+                }
             }
 
             // Calculate p95 (95th percentile)
