@@ -1,0 +1,124 @@
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :products:widget-demo:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:widget:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:web:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:cqrs:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :shared:shared-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:processResources NO-SOURCE
+> Task :framework:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:web:processResources NO-SOURCE
+> Task :products:widget-demo:processResources UP-TO-DATE
+> Task :framework:security:processResources NO-SOURCE
+> Task :framework:widget:processResources NO-SOURCE
+> Task :framework:cqrs:processResources UP-TO-DATE
+> Task :shared:shared-api:compileKotlin UP-TO-DATE
+> Task :framework:core:compileKotlin UP-TO-DATE
+> Task :framework:core:compileJava NO-SOURCE
+> Task :shared:shared-api:compileJava NO-SOURCE
+> Task :framework:core:processResources NO-SOURCE
+> Task :shared:shared-api:processResources NO-SOURCE
+> Task :framework:core:classes UP-TO-DATE
+> Task :shared:shared-api:classes UP-TO-DATE
+> Task :framework:core:jar UP-TO-DATE
+> Task :shared:shared-api:jar UP-TO-DATE
+> Task :framework:persistence:compileKotlin UP-TO-DATE
+> Task :framework:security:compileKotlin UP-TO-DATE
+> Task :framework:persistence:compileJava NO-SOURCE
+> Task :framework:persistence:classes UP-TO-DATE
+> Task :framework:security:compileJava NO-SOURCE
+> Task :framework:security:classes UP-TO-DATE
+> Task :framework:security:jar UP-TO-DATE
+> Task :framework:persistence:jar UP-TO-DATE
+> Task :framework:web:compileKotlin UP-TO-DATE
+> Task :framework:widget:compileKotlin UP-TO-DATE
+> Task :framework:cqrs:compileKotlin UP-TO-DATE
+> Task :framework:widget:compileJava NO-SOURCE
+> Task :framework:widget:classes UP-TO-DATE
+> Task :framework:cqrs:compileJava NO-SOURCE
+> Task :framework:web:compileJava NO-SOURCE
+> Task :framework:cqrs:classes UP-TO-DATE
+> Task :framework:web:classes UP-TO-DATE
+> Task :framework:web:jar UP-TO-DATE
+> Task :framework:widget:jar UP-TO-DATE
+> Task :framework:cqrs:jar UP-TO-DATE
+> Task :products:widget-demo:compileKotlin UP-TO-DATE
+> Task :products:widget-demo:compileJava NO-SOURCE
+> Task :products:widget-demo:classes UP-TO-DATE
+> Task :products:widget-demo:resolveMainClassName
+
+> Task :products:widget-demo:bootRun FAILED
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.6)
+
+2025-09-27T19:37:08.968+02:00  INFO 17408 --- [eaf-widget-demo] [           main] c.a.e.p.w.WidgetDemoApplicationKt        : Starting WidgetDemoApplicationKt using Java 21 with PID 17408 (/Users/michael/acci_eaf/products/widget-demo/build/classes/kotlin/main started by michael in /Users/michael/acci_eaf/products/widget-demo)
+2025-09-27T19:37:08.970+02:00 DEBUG 17408 --- [eaf-widget-demo] [           main] c.a.e.p.w.WidgetDemoApplicationKt        : Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-09-27T19:37:08.970+02:00  INFO 17408 --- [eaf-widget-demo] [           main] c.a.e.p.w.WidgetDemoApplicationKt        : No active profile set, falling back to 1 default profile: "default"
+2025-09-27T19:37:09.054+02:00  WARN 17408 --- [eaf-widget-demo] [           main] o.s.c.annotation.AnnotationTypeMapping   : Support for convention-based annotation attribute overrides is deprecated and will be removed in Spring Framework 7.0. Please annotate the following attributes in @org.axonframework.spring.stereotype.Aggregate with appropriate @AliasFor declarations: [type]
+2025-09-27T19:37:09.056+02:00  WARN 17408 --- [eaf-widget-demo] [           main] o.s.c.annotation.AnnotationTypeMapping   : Support for convention-based annotation attribute overrides is deprecated and will be removed in Spring Framework 7.0. Please annotate the following attributes in @org.axonframework.commandhandling.CommandHandler with appropriate @AliasFor declarations: [payloadType]
+2025-09-27T19:37:09.057+02:00  WARN 17408 --- [eaf-widget-demo] [           main] o.s.c.annotation.AnnotationTypeMapping   : Support for convention-based annotation attribute overrides is deprecated and will be removed in Spring Framework 7.0. Please annotate the following attributes in @org.axonframework.eventsourcing.EventSourcingHandler with appropriate @AliasFor declarations: [payloadType]
+2025-09-27T19:37:09.057+02:00  WARN 17408 --- [eaf-widget-demo] [           main] o.s.c.annotation.AnnotationTypeMapping   : Support for convention-based annotation attribute overrides is deprecated and will be removed in Spring Framework 7.0. Please annotate the following attributes in @org.axonframework.eventsourcing.EventSourcingHandler with appropriate @AliasFor declarations: [payloadType]
+2025-09-27T19:37:09.059+02:00  WARN 17408 --- [eaf-widget-demo] [           main] o.s.c.annotation.AnnotationTypeMapping   : Support for convention-based annotation attribute overrides is deprecated and will be removed in Spring Framework 7.0. Please annotate the following attributes in @org.axonframework.eventhandling.EventHandler with appropriate @AliasFor declarations: [payloadType]
+2025-09-27T19:37:09.416+02:00  WARN 17408 --- [eaf-widget-demo] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.parsing.BeanDefinitionParsingException: Configuration problem: @Configuration class 'OpenApiConfiguration' may not be final. Remove the final modifier to continue.
+Offending resource: class path resource [com/axians/eaf/framework/web/config/OpenApiConfiguration.class]
+2025-09-27T19:37:09.422+02:00  INFO 17408 --- [eaf-widget-demo] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-09-27T19:37:09.432+02:00 ERROR 17408 --- [eaf-widget-demo] [           main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.parsing.BeanDefinitionParsingException: Configuration problem: @Configuration class 'OpenApiConfiguration' may not be final. Remove the final modifier to continue.
+Offending resource: class path resource [com/axians/eaf/framework/web/config/OpenApiConfiguration.class]
+	at org.springframework.beans.factory.parsing.FailFastProblemReporter.error(FailFastProblemReporter.java:72) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.context.annotation.ConfigurationClass.validate(ConfigurationClass.java:239) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.annotation.ConfigurationClassParser.validate(ConfigurationClassParser.java:228) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:419) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:290) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:791) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:609) ~[spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) ~[spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) ~[spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) ~[spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.6.jar:3.5.6]
+	at com.axians.eaf.products.widgetdemo.WidgetDemoApplicationKt.main(WidgetDemoApplication.kt:61) ~[main/:na]
+
+
+[Incubating] Problems report is available at: file:///Users/michael/acci_eaf/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':products:widget-demo:bootRun'.
+> Process 'command '/Users/michael/.sdkman/candidates/java/21-tem/bin/java'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2s
+23 actionable tasks: 2 executed, 21 up-to-date

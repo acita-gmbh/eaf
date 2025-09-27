@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration
  * Documents security requirements for JWT authentication.
  */
 @Configuration
-class OpenApiConfiguration {
+open class OpenApiConfiguration {
     @Bean
-    fun openAPI(): OpenAPI =
+    open fun openAPI(): OpenAPI =
         OpenAPI()
             .info(
                 Info()

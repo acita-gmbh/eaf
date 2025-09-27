@@ -11,10 +11,16 @@ dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:cqrs"))
     implementation(project(":framework:security"))
-    implementation(project(":framework:widget"))
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
     implementation(project(":shared:shared-api"))
+
+    // Domain dependencies (now that Widget domain is local)
+    implementation(libs.bundles.kotlin)
+    implementation(libs.bundles.arrow)
+    implementation(libs.bundles.axon.framework)
+    implementation(libs.spring.modulith.starter.core)
+    implementation("com.fasterxml.jackson.core:jackson-databind")
 
     // Spring Boot starters (via convention plugin)
     // Auto-configured: web, security, oauth2-resource-server, actuator, validation

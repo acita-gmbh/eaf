@@ -1,0 +1,98 @@
+# Widget Domain Pre-Migration Baseline
+# Story 4.5 - Captured before migration from framework/widget to products/widget-demo
+
+metadata:
+  story: "4.5"
+  capture_date: "2025-09-27"
+  commit: "3ab1196"
+  branch: "story/4.5-migrate-widget-domain"
+
+build:
+  gradle_version: "9.1.0"
+  kotlin_version: "2.2.20"
+  spring_boot_version: "3.5.6"
+  axon_version: "4.12.1"
+  kotest_version: "6.0.3"
+
+tests:
+  unit:
+    total: 95
+    passes: 95
+    failures: 0
+    errors: 0
+    time_seconds: 1.69
+    source_set: "jvmKotest"
+    files:
+      - "WidgetTest.kt"
+      - "WidgetQueryHandlerTest.kt"
+  
+  integration:
+    total: 3
+    passes: 3
+    failures: 0
+    errors: 0
+    time_seconds: 0.13
+    source_set: "integrationTest"
+    files:
+      - "TenantBoundaryValidationIntegrationTest.kt"
+  
+  total:
+    count: 98
+    passes: 98
+    failures: 0
+    time_seconds: 1.82
+
+module_info:
+  module_path: "framework/widget"
+  package_base: "com.axians.eaf.framework.widget"
+  main_source_files:
+    - "domain/Widget.kt"
+    - "domain/WidgetError.kt"
+    - "projections/WidgetProjectionHandler.kt"
+    - "query/WidgetQueryHandler.kt"
+    - "WidgetModule.kt"
+  
+  test_source_files:
+    unit:
+      - "domain/WidgetTest.kt"
+      - "query/WidgetQueryHandlerTest.kt"
+      - "infrastructure/NullableWidgetProjectionRepository.kt"
+    integration:
+      - "api/TenantBoundaryValidationIntegrationTest.kt"
+      - "test/WidgetFrameworkTestApplication.kt"
+
+success_criteria:
+  post_migration_requirements:
+    - "All 98 tests must pass in new location"
+    - "Test execution time must be within ±15% (target: <2.1s total)"
+    - "Zero test failures or errors"
+    - "All test files successfully migrated"
+
+notes:
+  - "BUILD SUCCESSFUL in 2s"
+  - "All tests passing before migration (100% baseline)"
+  - "Fast execution time (1.82s total) - good performance baseline"
+  - "No flaky tests detected"
+
+pre_migration_issues:
+  - issue: "widget-demo application fails to start"
+    error: "@Configuration class 'OpenApiConfiguration' may not be final"
+    location: "framework/web/config/OpenApiConfiguration.kt"
+    severity: "high"
+    blocker: true
+    note: "Pre-existing issue (not caused by Story 4.5). Must be fixed for Subtask 1.3 validation."
+    resolution_required: "Remove 'final' modifier from OpenApiConfiguration class"
+
+widget_demo_baseline:
+  status: "requires_infrastructure"
+  compile: "SUCCESS"
+  configuration_parsing: "SUCCESS (after OpenApiConfiguration fix)"
+  runtime_dependency: "Keycloak OIDC at localhost:8180 (expected - not a blocker)"
+  note: "Application is structurally sound. Runtime failure due to missing infrastructure services is expected and acceptable for baseline."
+  infrastructure_required:
+    - "Keycloak OIDC at http://localhost:8180/realms/eaf"
+    - "PostgreSQL (for event store and projections)"
+  fix_applied: "Added 'open' modifier to OpenApiConfiguration class and openAPI() method"
+
+baseline_validation_complete: true
+ready_for_migration: true
