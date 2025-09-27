@@ -74,8 +74,10 @@ class TenantEventMessageInterceptorPerformanceSpec :
             println("  max latency: ${sorted.last() / 1_000_000.0} ms")
 
             // Assert: p95 < threshold (default 5,000,000 nanoseconds = 5ms)
-            // The threshold can be overridden via system property: tenant.interceptor.p95.threshold.nanos
-            val thresholdNanos = System.getProperty("tenant.interceptor.p95.threshold.nanos")?.toLongOrNull() ?: 5_000_000L
+            // Threshold can be overridden via system property
+            val thresholdNanos =
+                System.getProperty("tenant.interceptor.p95.threshold.nanos")?.toLongOrNull()
+                    ?: 5_000_000L
             p95Nanos shouldBeLessThan thresholdNanos
         }
     })
