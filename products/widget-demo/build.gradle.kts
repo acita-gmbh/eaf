@@ -1,5 +1,7 @@
 plugins {
     id("eaf.spring-boot")
+    id("eaf.testing")
+    id("eaf.quality-gates")
 }
 
 description = "EAF Widget Demo - Reference implementation and E2E testing application"
