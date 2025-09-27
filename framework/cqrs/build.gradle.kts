@@ -1,6 +1,7 @@
 plugins {
     id("eaf.kotlin-common")
     id("eaf.testing")
+    alias(libs.plugins.kotlin.spring)
 }
 
 description = "EAF CQRS Framework - Axon Framework integration"

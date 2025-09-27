@@ -5,55 +5,74 @@ import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
 import org.axonframework.config.Configurer
 import org.axonframework.config.EventProcessingConfigurer
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Configuration
+import org.springframework.boot.autoconfigure.AutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 
 /**
- * Axon Framework configuration for CQRS/ES infrastructure.
+ * Spring Boot auto-configuration for EAF tenant context propagation in Axon event processing.
  *
- * Centralizes:
- * - Event processing configuration (tracking processors, interceptors)
- * - Command gateway configuration
- * - Message handler interceptor registration
+ * ## Auto-Configuration Behavior
+ *
+ * This configuration is automatically applied when:
+ * - The `framework-cqrs` module is on the classpath
+ * - Axon Framework's `Configurer` class is available
+ * - The property `eaf.cqrs.tenant-propagation.enabled` is not set to `false`
+ *
+ * **Discovery**: Registered in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+ *
+ * **Disable**: Set `eaf.cqrs.tenant-propagation.enabled=false` in application.yml
+ *
+ * ## What This Configures
+ *
+ * Registers framework-level components for multi-tenant async event processing:
+ * - TenantEventMessageInterceptor: Propagates tenant context to @EventHandler methods
+ * - TenantCorrelationDataProvider: Enriches events with tenantId metadata
  *
  * ## Tenant Context Propagation (Story 4.4)
  *
- * Registers TenantEventMessageInterceptor for all tracking event processors to ensure
- * tenant context is propagated to asynchronous @EventHandler methods before execution.
+ * Ensures tenant context flows from synchronous command handlers to asynchronous
+ * tracking event processors, enabling RLS (Row-Level Security) enforcement for
+ * projection writes to PostgreSQL.
  *
- * This enables downstream RLS (Row-Level Security) enforcement by populating TenantContext
- * ThreadLocal before projection handlers write to PostgreSQL with RLS policies.
+ * **Event Flow**:
+ * 1. Command handler publishes event with TenantContext active
+ * 2. TenantCorrelationDataProvider enriches event metadata with tenantId
+ * 3. Tracking processor receives event asynchronously
+ * 4. TenantEventMessageInterceptor restores TenantContext from metadata
+ * 5. Projection handler writes to database with RLS session variable set
  *
- * ## Micrometer Context Propagation Bridge (Subtask 2.2)
+ * ## Architecture Pattern
  *
- * **Configuration for Async Task Scheduling**:
+ * This follows the Spring Boot Starter pattern for framework libraries:
+ * - Framework module provides auto-configuration
+ * - Product applications auto-discover via classpath scanning
+ * - No manual configuration required in products
+ * - Consistent behavior across all products
  *
- * For scenarios where Axon scheduled tasks need tenant context (e.g., saga timeouts,
- * deadline handlers), integrate with Micrometer Context Propagation:
+ * ## Micrometer Context Propagation (Optional)
+ *
+ * For saga timeouts or scheduled tasks requiring tenant context, integrate with
+ * Micrometer Context Propagation by enabling in application.yml:
  *
  * ```yaml
- * # application.yml
  * management:
  *   metrics:
  *     context-propagation:
  *       enabled: true
  * ```
  *
- * ```kotlin
- * @Configuration
- * class MicrometerConfiguration {
- *     @Bean
- *     fun tenantContextPropagator(tenantContext: TenantContext): ContextSnapshot {
- *         return ContextSnapshot.of("tenant", tenantContext.current())
- *     }
- * }
- * ```
- *
- * **Note**: Current implementation focuses on tracking event processor propagation (AC 1-4).
- * Micrometer bridge for scheduled tasks is optional enhancement for future stories.
- *
  * @see TenantEventMessageInterceptor Thread-safe tenant context propagation
+ * @see TenantCorrelationDataProvider Event metadata enrichment
  */
-@Configuration
+@AutoConfiguration
+@ConditionalOnClass(Configurer::class)
+@ConditionalOnProperty(
+    prefix = "eaf.cqrs.tenant-propagation",
+    name = ["enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class AxonConfiguration {
     /**
      * Registers TenantEventMessageInterceptor for all tracking event processors.

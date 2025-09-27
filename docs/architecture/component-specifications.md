@@ -7,11 +7,37 @@ This document provides explicit file path specifications and component location 
 ## Configuration Components
 
 ### Axon Framework Configuration
-- **Primary Config**: `products/{application}/src/main/kotlin/com/axians/eaf/{application}/config/AxonConfiguration.kt`
-- **Licensing Server Config**: `products/licensing-server/src/main/kotlin/com/axians/eaf/licensing/config/AxonConfiguration.kt`
-- **Event Store Config**: Application-level configuration with DataSource access
-- **Command Gateway Config**: Auto-configured by Axon Spring Boot starter
-- **Query Gateway Config**: Auto-configured by Axon Spring Boot starter
+
+#### Framework-Level Auto-Configuration (Cross-Cutting Concerns)
+- **Location**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt`
+- **Discovery**: Via `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+- **Purpose**: Framework-level cross-cutting concerns (interceptors, correlation providers)
+- **Applies To**: ALL products automatically (when framework-cqrs is on classpath)
+- **Examples**:
+  - TenantEventMessageInterceptor registration (Story 4.4)
+  - TenantCorrelationDataProvider registration (Story 4.4)
+  - Global message handler interceptors
+- **Characteristics**:
+  - Stateless, no application-specific dependencies
+  - Auto-discovered by Spring Boot classpath scanning
+  - Can be disabled via `eaf.cqrs.tenant-propagation.enabled=false`
+  - Follows Spring Boot Starter pattern
+
+#### Product-Level Configuration (Application-Specific)
+- **Location**: `products/{application}/src/main/kotlin/com/axians/eaf/{application}/config/AxonConfiguration.kt`
+- **Discovery**: Via component scanning in product application
+- **Purpose**: Application-specific Axon setup requiring app-level resources
+- **Examples**:
+  - Event store DataSource configuration
+  - Custom aggregate repositories
+  - Product-specific event processors
+  - Application-specific serializers
+- **Characteristics**:
+  - Requires application-specific beans (DataSource, EntityManager)
+  - Product-specific business logic
+  - Manually authored per product
+
+**Architectural Principle**: Cross-cutting framework concerns are auto-configured; application-specific concerns are manually configured.
 
 ### Application Configuration
 - **Main Application**: `products/licensing-server/src/main/resources/application.yml`
