@@ -353,6 +353,44 @@ class SecurityModule
 - ❌ **Domain Logic Mocking**: Never mock business logic - only infrastructure
 - ❌ **H2 Usage**: PostgreSQL Testcontainers only
 - ❌ **Security Mocking**: Real cryptography required, never mock security
+- ❌ **Constructor Injection + @SpringBootTest**: Causes lifecycle timing conflict → 150+ compilation errors
+
+### Spring Boot Integration Test Pattern (MANDATORY - Story 4.6)
+
+**Use @Autowired field injection + init block for @SpringBootTest tests**:
+
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+        test("my test") { /* mockMvc available */ }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            TestContainers.startAll()
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+        }
+    }
+}
+```
+
+**CRITICAL**: Plugin order matters for products modules. In build.gradle.kts:
+```kotlin
+plugins {
+    id("eaf.testing")     // FIRST - Kotest setup
+    id("eaf.spring-boot") // SECOND - Spring Boot
+}
+```
+
+**Reference**: framework/security/TenantContextFilterIntegrationTest.kt
 
 ### Code Anti-Patterns (PROHIBITED)
 - ❌ **Wildcard Imports**: Every import must be explicit

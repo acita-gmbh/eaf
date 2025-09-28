@@ -1,7 +1,7 @@
 plugins {
-    id("eaf.spring-boot")
-    id("eaf.testing")
-    id("eaf.quality-gates")
+    id("eaf.testing")        // Apply FIRST (Kotest setup)
+    id("eaf.spring-boot")    // Apply AFTER Kotest
+    id("eaf.quality-gates")  // Apply LAST
 }
 
 description = "EAF Widget Demo - Reference implementation and E2E testing application"
@@ -35,6 +35,14 @@ dependencies {
     testImplementation(libs.axon.test)
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation(libs.bundles.testcontainers)
+
+    // PHASE 2 FIX: Explicit Kotest dependencies for integrationTest to override Spring Boot BOM
+    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-property:6.0.3")
+    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
+    integrationTestImplementation("org.springframework.boot:spring-boot-starter-test")
+    integrationTestImplementation("org.springframework.security:spring-security-test")
 }
 
 // Skip quality gates for minimal reference implementation
