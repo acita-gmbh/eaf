@@ -98,12 +98,24 @@ This document provides explicit file path specifications and component location 
 ## Testing Components
 
 ### Unit Tests
-- **Domain Tests**: `framework/{domain}/src/test/kotlin/com/axians/eaf/framework/{domain}/domain/`
-- **Widget Domain Tests**: `framework/widget/src/test/kotlin/com/axians/eaf/framework/widget/domain/WidgetTest.kt`
+
+**Framework Pattern** (for reference - domain tests live in products):
+- **Base Package Pattern**: `products/{product}/src/test/kotlin/com/axians/eaf/products/{product}/domain/`
+
+**Product Implementations**:
+- **Widget Domain Tests**: `products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt`
+- **Widget Query Tests**: `products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/query/WidgetQueryHandlerTest.kt`
 
 ### Integration Tests
-- **API Integration**: `framework/{domain}/src/integration-test/kotlin/com/axians/eaf/framework/{domain}/api/`
-- **Widget API Tests**: `framework/widget/src/integration-test/kotlin/com/axians/eaf/framework/widget/api/WidgetApiIntegrationTest.kt`
+
+**Framework Pattern** (for reference - integration tests live in products):
+- **Base Package Pattern**: `products/{product}/src/integration-test/kotlin/com/axians/eaf/products/{product}/api/`
+
+**Product Implementations**:
+- **Widget Integration Tests**: `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widgetdemo/api/TenantBoundaryValidationIntegrationTest.kt`
+- **Widget Test Application**: `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widgetdemo/test/WidgetDemoTestApplication.kt`
+
+**Framework Infrastructure Tests**:
 - **Persistence Tests**: `framework/persistence/src/integration-test/kotlin/com/axians/eaf/framework/persistence/`
 
 ### Test Utilities
