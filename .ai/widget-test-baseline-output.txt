@@ -1,0 +1,1123 @@
+Initialized native services in: /Users/michael/.gradle/native
+Initialized jansi services in: /Users/michael/.gradle/native
+The client will now receive all logging from the daemon (pid: 10633). The daemon log file: /Users/michael/.gradle/daemon/9.1.0/daemon-10633.out.log
+Starting 164th build in daemon [uptime: 7 hrs 25 mins 22.816 secs, performance: 99%, GC rate: 0.00/s, heap usage: 10% of 2 GiB, non-heap usage: 54% of 768 MiB]
+Using 10 worker leases.
+Now considering [/Users/michael/acci_eaf, /Users/michael/acci_eaf/build-logic] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Now considering [/Users/michael/acci_eaf/build-logic, /Users/michael/acci_eaf] as hierarchies to watch
+Using local directory build cache for build ':build-logic' (location = /Users/michael/.gradle/caches/build-cache-1, remove unused entries = after 7 days).
+
+> Configure project :build-logic
+Evaluating project ':build-logic' using build file '/Users/michael/acci_eaf/build-logic/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '6.2.0']
+Resolved plugin [id: 'io.kotest', version: '6.0.3']
+Build f2e0add3-52e7-46dc-8f9c-ea3a15980604 is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+file or directory '/Users/michael/acci_eaf/build-logic/src/main/java', not found
+Configuring kotest task for test
+Resolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.8.0']
+Settings evaluated using settings file '/Users/michael/acci_eaf/settings.gradle.kts'.
+Using local directory build cache for the root build (location = /Users/michael/.gradle/caches/build-cache-1, remove unused entries = after 7 days).
+Projects loaded. Root project using build file '/Users/michael/acci_eaf/build.gradle.kts'.
+Included projects: [root project 'eaf-monorepo', project ':apps', project ':framework', project ':products', project ':shared', project ':apps:admin', project ':framework:core', project ':framework:cqrs', project ':framework:observability', project ':framework:persistence', project ':framework:security', project ':framework:web', project ':framework:widget', project ':framework:workflow', project ':products:licensing-server', project ':products:widget-demo', project ':shared:shared-api', project ':shared:shared-types', project ':shared:testing']
+
+> Configure project :
+Evaluating root project 'eaf-monorepo' using build file '/Users/michael/acci_eaf/build.gradle.kts'.
+
+> Configure project :apps
+Evaluating project ':apps' using build file '/Users/michael/acci_eaf/apps/build.gradle'.
+
+> Configure project :framework
+Evaluating project ':framework' using build file '/Users/michael/acci_eaf/framework/build.gradle'.
+
+> Configure project :products
+Evaluating project ':products' using build file '/Users/michael/acci_eaf/products/build.gradle'.
+
+> Configure project :shared
+Evaluating project ':shared' using build file '/Users/michael/acci_eaf/shared/build.gradle'.
+
+> Configure project :apps:admin
+Evaluating project ':apps:admin' using build file '/Users/michael/acci_eaf/apps/admin/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.base']
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/michael/.gradle/daemon/9.1.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Resolve mutations for :build-logic:checkKotlinGradlePluginConfigurationErrors (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:checkKotlinGradlePluginConfigurationErrors (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':build-logic:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :build-logic:compileKotlin (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:compileKotlin (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:compileKotlin UP-TO-DATE
+Build cache key for task ':build-logic:compileKotlin' is b78525fe0e6fb5b1ce6002d135050f8f
+Skipping task ':build-logic:compileKotlin' as it is up-to-date.
+Resolve mutations for :build-logic:compileJava (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:compileJava (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:compileJava NO-SOURCE
+Skipping task ':build-logic:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :build-logic:pluginDescriptors (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:pluginDescriptors (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+Caching disabled for task ':build-logic:pluginDescriptors' because:
+  Not worth caching
+Skipping task ':build-logic:pluginDescriptors' as it is up-to-date.
+Resolve mutations for :build-logic:processResources (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:processResources (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:processResources UP-TO-DATE
+Caching disabled for task ':build-logic:processResources' because:
+  Not worth caching
+Skipping task ':build-logic:processResources' as it is up-to-date.
+Resolve mutations for :build-logic:classes (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:classes (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:classes UP-TO-DATE
+Skipping task ':build-logic:classes' as it has no actions.
+Resolve mutations for :build-logic:jar (Thread[#23464,Execution worker,5,main]) started.
+:build-logic:jar (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :build-logic:jar UP-TO-DATE
+Caching disabled for task ':build-logic:jar' because:
+  Not worth caching
+Skipping task ':build-logic:jar' as it is up-to-date.
+
+> Configure project :framework:core
+Evaluating project ':framework:core' using build file '/Users/michael/acci_eaf/framework/core/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Build 479832a7-a043-4b2f-972d-fe131c04240b is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :framework:cqrs
+Evaluating project ':framework:cqrs' using build file '/Users/michael/acci_eaf/framework/cqrs/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Resolved plugin [id: 'eaf.testing']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.spring', version: '2.2.20']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Configuring kotest task for test
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+
+> Configure project :framework:observability
+Evaluating project ':framework:observability' using build file '/Users/michael/acci_eaf/framework/observability/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :framework:persistence
+Evaluating project ':framework:persistence' using build file '/Users/michael/acci_eaf/framework/persistence/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Resolved plugin [id: 'eaf.testing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Configuring kotest task for test
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+
+> Configure project :framework:security
+Evaluating project ':framework:security' using build file '/Users/michael/acci_eaf/framework/security/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Resolved plugin [id: 'eaf.testing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Configuring kotest task for test
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+
+> Configure project :framework:web
+Evaluating project ':framework:web' using build file '/Users/michael/acci_eaf/framework/web/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :framework:widget
+Evaluating project ':framework:widget' using build file '/Users/michael/acci_eaf/framework/widget/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Resolved plugin [id: 'eaf.testing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Configuring kotest task for test
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+
+> Configure project :framework:workflow
+Evaluating project ':framework:workflow' using build file '/Users/michael/acci_eaf/framework/workflow/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :products:licensing-server
+Evaluating project ':products:licensing-server' using build file '/Users/michael/acci_eaf/products/licensing-server/build.gradle.kts'.
+Resolved plugin [id: 'eaf.spring-boot']
+Resolved plugin [id: 'eaf.testing']
+Resolved plugin [id: 'eaf.quality-gates']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Applying dependency management to configuration 'annotationProcessor' in project 'licensing-server'
+Applying dependency management to configuration 'api' in project 'licensing-server'
+Applying dependency management to configuration 'apiDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'apiElements' in project 'licensing-server'
+Applying dependency management to configuration 'archives' in project 'licensing-server'
+Applying dependency management to configuration 'bootArchives' in project 'licensing-server'
+Applying dependency management to configuration 'compileClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'compileOnly' in project 'licensing-server'
+Applying dependency management to configuration 'compileOnlyDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'default' in project 'licensing-server'
+Applying dependency management to configuration 'detekt' in project 'licensing-server'
+Applying dependency management to configuration 'detektPlugins' in project 'licensing-server'
+Applying dependency management to configuration 'developmentOnly' in project 'licensing-server'
+Applying dependency management to configuration 'implementation' in project 'licensing-server'
+Applying dependency management to configuration 'implementationDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'intransitiveDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinBouncyCastleConfiguration' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinBuildToolsApiClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathMain' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathTest' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinInternalAbiValidation' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinKlibCommonizerClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinNativeCompilerPluginClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinScriptDef' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinScriptDefExtensions' in project 'licensing-server'
+Applying dependency management to configuration 'ktlint' in project 'licensing-server'
+Applying dependency management to configuration 'ktlintBaselineReporter' in project 'licensing-server'
+Applying dependency management to configuration 'ktlintReporter' in project 'licensing-server'
+Applying dependency management to configuration 'ktlintRuleset' in project 'licensing-server'
+Applying dependency management to configuration 'mainSourceElements' in project 'licensing-server'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'runtimeClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'runtimeElements' in project 'licensing-server'
+Applying dependency management to configuration 'runtimeOnly' in project 'licensing-server'
+Applying dependency management to configuration 'swiftExportClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'swiftExportClasspathResolvable' in project 'licensing-server'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'licensing-server'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'licensing-server'
+Applying dependency management to configuration 'testApi' in project 'licensing-server'
+Applying dependency management to configuration 'testApiDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'testCompileClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'testCompileOnly' in project 'licensing-server'
+Applying dependency management to configuration 'testCompileOnlyDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'testImplementation' in project 'licensing-server'
+Applying dependency management to configuration 'testImplementationDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'testIntransitiveDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'testKotlinScriptDef' in project 'licensing-server'
+Applying dependency management to configuration 'testKotlinScriptDefExtensions' in project 'licensing-server'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'licensing-server'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'licensing-server'
+Configuring kotest task for test
+Applying dependency management to configuration 'integrationTestImplementation' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestCompileOnly' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestCompileClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestAnnotationProcessor' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestRuntimeOnly' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestRuntimeClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestApi' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestApiDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestImplementationDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestCompileOnlyDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestIntransitiveDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathIntegrationTest' in project 'licensing-server'
+Applying dependency management to configuration 'integrationTestKotlinScriptDef' in project 'licensing-server'
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+Applying dependency management to configuration 'integrationTestKotlinScriptDefExtensions' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestImplementation' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestCompileOnly' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestCompileClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestAnnotationProcessor' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestRuntimeOnly' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestRuntimeClasspath' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestApi' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestApiDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestImplementationDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestCompileOnlyDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestIntransitiveDependenciesMetadata' in project 'licensing-server'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathKonsistTest' in project 'licensing-server'
+Applying dependency management to configuration 'konsistTestKotlinScriptDef' in project 'licensing-server'
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+Applying dependency management to configuration 'konsistTestKotlinScriptDefExtensions' in project 'licensing-server'
+Applying dependency management to configuration 'jacocoAgent' in project 'licensing-server'
+Applying dependency management to configuration 'jacocoAnt' in project 'licensing-server'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'licensing-server'
+Applying dependency management to configuration 'pitest' in project 'licensing-server'
+Applying dependency management to configuration 'apiElements-published' in project 'licensing-server'
+Applying dependency management to configuration 'runtimeElements-published' in project 'licensing-server'
+
+> Configure project :products:widget-demo
+Evaluating project ':products:widget-demo' using build file '/Users/michael/acci_eaf/products/widget-demo/build.gradle.kts'.
+Resolved plugin [id: 'eaf.spring-boot']
+Resolved plugin [id: 'eaf.testing']
+Resolved plugin [id: 'eaf.quality-gates']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Applying dependency management to configuration 'annotationProcessor' in project 'widget-demo'
+Applying dependency management to configuration 'api' in project 'widget-demo'
+Applying dependency management to configuration 'apiDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'apiElements' in project 'widget-demo'
+Applying dependency management to configuration 'archives' in project 'widget-demo'
+Applying dependency management to configuration 'bootArchives' in project 'widget-demo'
+Applying dependency management to configuration 'compileClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'compileOnly' in project 'widget-demo'
+Applying dependency management to configuration 'compileOnlyDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'default' in project 'widget-demo'
+Applying dependency management to configuration 'detekt' in project 'widget-demo'
+Applying dependency management to configuration 'detektPlugins' in project 'widget-demo'
+Applying dependency management to configuration 'developmentOnly' in project 'widget-demo'
+Applying dependency management to configuration 'implementation' in project 'widget-demo'
+Applying dependency management to configuration 'implementationDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'intransitiveDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinBouncyCastleConfiguration' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinBuildToolsApiClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathMain' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathTest' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinInternalAbiValidation' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinKlibCommonizerClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinNativeCompilerPluginClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinScriptDef' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinScriptDefExtensions' in project 'widget-demo'
+Applying dependency management to configuration 'ktlint' in project 'widget-demo'
+Applying dependency management to configuration 'ktlintBaselineReporter' in project 'widget-demo'
+Applying dependency management to configuration 'ktlintReporter' in project 'widget-demo'
+Applying dependency management to configuration 'ktlintRuleset' in project 'widget-demo'
+Applying dependency management to configuration 'mainSourceElements' in project 'widget-demo'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'runtimeClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'runtimeElements' in project 'widget-demo'
+Applying dependency management to configuration 'runtimeOnly' in project 'widget-demo'
+Applying dependency management to configuration 'swiftExportClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'swiftExportClasspathResolvable' in project 'widget-demo'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'widget-demo'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'widget-demo'
+Applying dependency management to configuration 'testApi' in project 'widget-demo'
+Applying dependency management to configuration 'testApiDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'testCompileClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'testCompileOnly' in project 'widget-demo'
+Applying dependency management to configuration 'testCompileOnlyDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'testImplementation' in project 'widget-demo'
+Applying dependency management to configuration 'testImplementationDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'testIntransitiveDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'testKotlinScriptDef' in project 'widget-demo'
+Applying dependency management to configuration 'testKotlinScriptDefExtensions' in project 'widget-demo'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'widget-demo'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'widget-demo'
+Configuring kotest task for test
+Applying dependency management to configuration 'integrationTestImplementation' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestCompileOnly' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestCompileClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestAnnotationProcessor' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestRuntimeOnly' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestRuntimeClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestApi' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestApiDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestImplementationDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestCompileOnlyDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestIntransitiveDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathIntegrationTest' in project 'widget-demo'
+Applying dependency management to configuration 'integrationTestKotlinScriptDef' in project 'widget-demo'
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+Applying dependency management to configuration 'integrationTestKotlinScriptDefExtensions' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestImplementation' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestCompileOnly' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestCompileClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestAnnotationProcessor' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestRuntimeOnly' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestRuntimeClasspath' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestApi' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestApiDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestImplementationDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestCompileOnlyDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestIntransitiveDependenciesMetadata' in project 'widget-demo'
+Applying dependency management to configuration 'kotlinCompilerPluginClasspathKonsistTest' in project 'widget-demo'
+Applying dependency management to configuration 'konsistTestKotlinScriptDef' in project 'widget-demo'
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+Applying dependency management to configuration 'konsistTestKotlinScriptDefExtensions' in project 'widget-demo'
+Applying dependency management to configuration 'jacocoAgent' in project 'widget-demo'
+Applying dependency management to configuration 'jacocoAnt' in project 'widget-demo'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'widget-demo'
+Applying dependency management to configuration 'pitest' in project 'widget-demo'
+file or directory '/Users/michael/acci_eaf/products/widget-demo/src/main/java', not found
+Applying dependency management to configuration 'apiElements-published' in project 'widget-demo'
+Applying dependency management to configuration 'runtimeElements-published' in project 'widget-demo'
+
+> Configure project :shared:shared-api
+Evaluating project ':shared:shared-api' using build file '/Users/michael/acci_eaf/shared/shared-api/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :shared:shared-types
+Evaluating project ':shared:shared-types' using build file '/Users/michael/acci_eaf/shared/shared-types/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :shared:testing
+Evaluating project ':shared:testing' using build file '/Users/michael/acci_eaf/shared/testing/build.gradle.kts'.
+Resolved plugin [id: 'eaf.kotlin-common']
+Resolved plugin [id: 'eaf.testing']
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Configuring kotest task for test
+kotlin scripting plugin: created the scripting discovery configuration: integrationTestKotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: konsistTestKotlinScriptDef
+All projects evaluated.
+Task path ':framework:widget:test' matched project ':framework:widget'
+Task name matched 'test'
+Task path ':framework:widget:integrationTest' matched project ':framework:widget'
+Task name matched 'integrationTest'
+Selected primary task 'test' from project :framework:widget
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/michael/.gradle/daemon/9.1.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Selected primary task 'integrationTest' from project :framework:widget
+Tasks to be executed: [task ':framework:core:checkKotlinGradlePluginConfigurationErrors', task ':framework:core:compileKotlin', task ':framework:core:compileJava', task ':framework:core:processResources', task ':framework:core:classes', task ':framework:core:jar', task ':framework:persistence:checkKotlinGradlePluginConfigurationErrors', task ':framework:persistence:compileKotlin', task ':framework:persistence:compileJava', task ':framework:persistence:processResources', task ':framework:persistence:classes', task ':framework:persistence:jar', task ':framework:security:checkKotlinGradlePluginConfigurationErrors', task ':framework:security:compileKotlin', task ':framework:security:compileJava', task ':framework:security:processResources', task ':framework:security:classes', task ':framework:security:jar', task ':framework:widget:checkKotlinGradlePluginConfigurationErrors', task ':shared:shared-api:checkKotlinGradlePluginConfigurationErrors', task ':shared:shared-api:compileKotlin', task ':shared:shared-api:compileJava', task ':shared:shared-api:processResources', task ':shared:shared-api:classes', task ':shared:shared-api:jar', task ':framework:widget:compileKotlin', task ':framework:widget:compileJava', task ':framework:widget:processResources', task ':framework:widget:classes', task ':framework:widget:jar', task ':shared:testing:checkKotlinGradlePluginConfigurationErrors', task ':shared:testing:compileKotlin', task ':shared:testing:compileJava', task ':shared:testing:processResources', task ':shared:testing:classes', task ':shared:testing:jar', task ':framework:widget:compileTestKotlin', task ':framework:widget:compileTestJava', task ':framework:widget:processTestResources', task ':framework:widget:testClasses', task ':framework:widget:test', task ':framework:web:checkKotlinGradlePluginConfigurationErrors', task ':framework:web:compileKotlin', task ':framework:web:compileJava', task ':framework:web:processResources', task ':framework:web:classes', task ':framework:web:jar', task ':framework:widget:compileIntegrationTestKotlin', task ':framework:widget:compileIntegrationTestJava', task ':framework:widget:processIntegrationTestResources', task ':framework:widget:integrationTestClasses', task ':framework:widget:integrationTest']
+Tasks that were excluded: []
+Resolve mutations for :framework:persistence:checkKotlinGradlePluginConfigurationErrors (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:security:checkKotlinGradlePluginConfigurationErrors (Thread[#23469,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :shared:shared-api:checkKotlinGradlePluginConfigurationErrors (Thread[#23466,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :shared:testing:checkKotlinGradlePluginConfigurationErrors (Thread[#23467,Execution worker Thread 4,5,main]) started.
+Resolve mutations for :framework:core:checkKotlinGradlePluginConfigurationErrors (Thread[#23470,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :framework:web:checkKotlinGradlePluginConfigurationErrors (Thread[#23468,Execution worker Thread 5,5,main]) started.
+destroyer locations for task group 0 (Thread[#23471,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :framework:widget:checkKotlinGradlePluginConfigurationErrors (Thread[#23465,Execution worker Thread 2,5,main]) started.
+:framework:security:checkKotlinGradlePluginConfigurationErrors (Thread[#23469,Execution worker Thread 6,5,main]) started.
+:shared:shared-api:checkKotlinGradlePluginConfigurationErrors (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:testing:checkKotlinGradlePluginConfigurationErrors (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:core:checkKotlinGradlePluginConfigurationErrors (Thread[#23470,Execution worker Thread 7,5,main]) started.
+:framework:persistence:checkKotlinGradlePluginConfigurationErrors (Thread[#23463,included builds,5,main]) started.
+:framework:web:checkKotlinGradlePluginConfigurationErrors (Thread[#23468,Execution worker Thread 5,5,main]) started.
+:framework:widget:checkKotlinGradlePluginConfigurationErrors (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :shared:shared-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':shared:shared-api:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :framework:web:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':framework:web:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :shared:shared-api:compileKotlin (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:widget:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':framework:widget:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :framework:widget:processResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :framework:persistence:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':framework:persistence:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :framework:persistence:processResources (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:web:processResources (Thread[#23468,Execution worker Thread 5,5,main]) started.
+
+> Task :framework:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':framework:security:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :framework:security:processResources (Thread[#23469,Execution worker Thread 6,5,main]) started.
+:framework:web:processResources (Thread[#23468,Execution worker Thread 5,5,main]) started.
+
+> Task :shared:testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':shared:testing:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+:shared:shared-api:compileKotlin (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:framework:persistence:processResources (Thread[#23463,included builds,5,main]) started.
+:framework:security:processResources (Thread[#23469,Execution worker Thread 6,5,main]) started.
+:framework:widget:processResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :framework:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':framework:core:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :framework:core:compileKotlin (Thread[#23470,Execution worker Thread 7,5,main]) started.
+Resolve mutations for :shared:testing:processResources (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:persistence:processResources NO-SOURCE
+Skipping task ':framework:persistence:processResources' as it has no source files and no previous output files.
+:framework:core:compileKotlin (Thread[#23470,Execution worker Thread 7,5,main]) started.
+
+> Task :framework:security:processResources NO-SOURCE
+Skipping task ':framework:security:processResources' as it has no source files and no previous output files.
+:shared:testing:processResources (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:web:processResources NO-SOURCE
+Skipping task ':framework:web:processResources' as it has no source files and no previous output files.
+
+> Task :framework:widget:processResources NO-SOURCE
+Skipping task ':framework:widget:processResources' as it has no source files and no previous output files.
+Resolve mutations for :framework:widget:processTestResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+:framework:widget:processTestResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :framework:widget:processTestResources NO-SOURCE
+Skipping task ':framework:widget:processTestResources' as it has no source files and no previous output files.
+Resolve mutations for :framework:widget:processIntegrationTestResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+:framework:widget:processIntegrationTestResources (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :framework:widget:processIntegrationTestResources NO-SOURCE
+Skipping task ':framework:widget:processIntegrationTestResources' as it has no source files and no previous output files.
+
+> Task :shared:testing:processResources UP-TO-DATE
+Caching disabled for task ':shared:testing:processResources' because:
+  Not worth caching
+Skipping task ':shared:testing:processResources' as it is up-to-date.
+
+> Task :shared:shared-api:compileKotlin UP-TO-DATE
+Build cache key for task ':shared:shared-api:compileKotlin' is bece71b3c8679224acb8da84431ff869
+Skipping task ':shared:shared-api:compileKotlin' as it is up-to-date.
+Resolve mutations for :shared:shared-api:compileJava (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:core:compileKotlin UP-TO-DATE
+Build cache key for task ':framework:core:compileKotlin' is 2cbda02c32f98fd19b92b77ef9c1337f
+Skipping task ':framework:core:compileKotlin' as it is up-to-date.
+Resolve mutations for :framework:core:compileJava (Thread[#23470,Execution worker Thread 7,5,main]) started.
+:framework:core:compileJava (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:shared-api:compileJava (Thread[#23469,Execution worker Thread 6,5,main]) started.
+
+> Task :shared:shared-api:compileJava NO-SOURCE
+Skipping task ':shared:shared-api:compileJava' as it has no source files and no previous output files.
+
+> Task :framework:core:compileJava NO-SOURCE
+Skipping task ':framework:core:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :framework:core:processResources (Thread[#23471,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :shared:shared-api:processResources (Thread[#23469,Execution worker Thread 6,5,main]) started.
+:framework:core:processResources (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:shared-api:processResources (Thread[#23469,Execution worker Thread 6,5,main]) started.
+
+> Task :shared:shared-api:processResources NO-SOURCE
+Skipping task ':shared:shared-api:processResources' as it has no source files and no previous output files.
+
+> Task :framework:core:processResources NO-SOURCE
+Skipping task ':framework:core:processResources' as it has no source files and no previous output files.
+Resolve mutations for :shared:shared-api:classes (Thread[#23469,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :framework:core:classes (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:shared-api:classes (Thread[#23469,Execution worker Thread 6,5,main]) started.
+:framework:core:classes (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :shared:shared-api:classes UP-TO-DATE
+Skipping task ':shared:shared-api:classes' as it has no actions.
+
+> Task :framework:core:classes UP-TO-DATE
+Skipping task ':framework:core:classes' as it has no actions.
+Resolve mutations for :shared:shared-api:jar (Thread[#23469,Execution worker Thread 6,5,main]) started.
+Resolve mutations for :framework:core:jar (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:framework:core:jar (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:shared-api:jar (Thread[#23463,included builds,5,main]) started.
+
+> Task :framework:core:jar UP-TO-DATE
+Caching disabled for task ':framework:core:jar' because:
+  Not worth caching
+Skipping task ':framework:core:jar' as it is up-to-date.
+
+> Task :shared:shared-api:jar UP-TO-DATE
+Caching disabled for task ':shared:shared-api:jar' because:
+  Not worth caching
+Skipping task ':shared:shared-api:jar' as it is up-to-date.
+work action resolve core.jar (project :framework:core) (Thread[#23471,Execution worker Thread 8,5,main]) started.
+work action resolve shared-api.jar (project :shared:shared-api) (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:persistence:compileKotlin (Thread[#23471,Execution worker Thread 8,5,main]) started.
+Resolve mutations for :shared:testing:compileKotlin (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:security:compileKotlin (Thread[#23464,Execution worker,5,main]) started.
+:framework:persistence:compileKotlin (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:shared:testing:compileKotlin (Thread[#23463,included builds,5,main]) started.
+:framework:security:compileKotlin (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :framework:persistence:compileKotlin UP-TO-DATE
+Build cache key for task ':framework:persistence:compileKotlin' is 52478fec4aa42a90a645b9a6a0642faf
+Skipping task ':framework:persistence:compileKotlin' as it is up-to-date.
+Resolve mutations for :framework:persistence:compileJava (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:framework:persistence:compileJava (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:persistence:compileJava NO-SOURCE
+Skipping task ':framework:persistence:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :framework:persistence:classes (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:framework:persistence:classes (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:persistence:classes UP-TO-DATE
+Skipping task ':framework:persistence:classes' as it has no actions.
+Resolve mutations for :framework:persistence:jar (Thread[#23471,Execution worker Thread 8,5,main]) started.
+:framework:persistence:jar (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:persistence:jar UP-TO-DATE
+Caching disabled for task ':framework:persistence:jar' because:
+  Not worth caching
+Skipping task ':framework:persistence:jar' as it is up-to-date.
+work action resolve persistence.jar (project :framework:persistence) (Thread[#23471,Execution worker Thread 8,5,main]) started.
+
+> Task :framework:security:compileKotlin UP-TO-DATE
+Build cache key for task ':framework:security:compileKotlin' is 79c9d96f346752915614a119de518671
+Skipping task ':framework:security:compileKotlin' as it is up-to-date.
+
+> Task :shared:testing:compileKotlin UP-TO-DATE
+Build cache key for task ':shared:testing:compileKotlin' is 9be83124a92764f2f8c542b903271166
+Skipping task ':shared:testing:compileKotlin' as it is up-to-date.
+Resolve mutations for :shared:testing:compileJava (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:security:compileJava (Thread[#23464,Execution worker,5,main]) started.
+:shared:testing:compileJava (Thread[#23463,included builds,5,main]) started.
+:framework:security:compileJava (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :framework:security:compileJava NO-SOURCE
+Skipping task ':framework:security:compileJava' as it has no source files and no previous output files.
+
+> Task :shared:testing:compileJava NO-SOURCE
+Skipping task ':shared:testing:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :shared:testing:classes (Thread[#23463,included builds,5,main]) started.
+Resolve mutations for :framework:security:classes (Thread[#23464,Execution worker,5,main]) started.
+:framework:security:classes (Thread[#23464,Execution worker,5,main]) started.
+:shared:testing:classes (Thread[#23463,included builds,5,main]) started.
+
+> Task :framework:security:classes UP-TO-DATE
+Skipping task ':framework:security:classes' as it has no actions.
+Resolve mutations for :framework:security:jar (Thread[#23464,Execution worker,5,main]) started.
+
+> Task :shared:testing:classes UP-TO-DATE
+Skipping task ':shared:testing:classes' as it has no actions.
+Resolve mutations for :shared:testing:jar (Thread[#23463,included builds,5,main]) started.
+:framework:security:jar (Thread[#23464,Execution worker,5,main]) started.
+:shared:testing:jar (Thread[#23463,included builds,5,main]) started.
+
+> Task :framework:security:jar UP-TO-DATE
+Caching disabled for task ':framework:security:jar' because:
+  Not worth caching
+Skipping task ':framework:security:jar' as it is up-to-date.
+work action resolve security.jar (project :framework:security) (Thread[#23464,Execution worker,5,main]) started.
+Resolve mutations for :framework:widget:compileKotlin (Thread[#23464,Execution worker,5,main]) started.
+Resolve mutations for :framework:web:compileKotlin (Thread[#23472,Execution worker Thread 9,5,main]) started.
+
+> Task :shared:testing:jar UP-TO-DATE
+Caching disabled for task ':shared:testing:jar' because:
+  Not worth caching
+Skipping task ':shared:testing:jar' as it is up-to-date.
+work action resolve testing.jar (project :shared:testing) (Thread[#23463,included builds,5,main]) started.
+:framework:widget:compileKotlin (Thread[#23472,Execution worker Thread 9,5,main]) started.
+:framework:web:compileKotlin (Thread[#23465,Execution worker Thread 2,5,main]) started.
+
+> Task :framework:widget:compileKotlin UP-TO-DATE
+Build cache key for task ':framework:widget:compileKotlin' is 5a30dc00375f823442f16b7c21686c08
+Skipping task ':framework:widget:compileKotlin' as it is up-to-date.
+Resolve mutations for :framework:widget:compileJava (Thread[#23472,Execution worker Thread 9,5,main]) started.
+
+> Task :framework:web:compileKotlin UP-TO-DATE
+Build cache key for task ':framework:web:compileKotlin' is a5475600368c62544d112e9956c9b9bc
+Skipping task ':framework:web:compileKotlin' as it is up-to-date.
+Resolve mutations for :framework:web:compileJava (Thread[#23465,Execution worker Thread 2,5,main]) started.
+:framework:widget:compileJava (Thread[#23472,Execution worker Thread 9,5,main]) started.
+:framework:web:compileJava (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:compileJava NO-SOURCE
+Skipping task ':framework:widget:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :framework:widget:classes (Thread[#23472,Execution worker Thread 9,5,main]) started.
+:framework:widget:classes (Thread[#23472,Execution worker Thread 9,5,main]) started.
+
+> Task :framework:widget:classes UP-TO-DATE
+Skipping task ':framework:widget:classes' as it has no actions.
+Resolve mutations for :framework:widget:jar (Thread[#23472,Execution worker Thread 9,5,main]) started.
+
+> Task :framework:web:compileJava NO-SOURCE
+Skipping task ':framework:web:compileJava' as it has no source files and no previous output files.
+:framework:widget:jar (Thread[#23472,Execution worker Thread 9,5,main]) started.
+Resolve mutations for :framework:web:classes (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:web:classes (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:web:classes UP-TO-DATE
+Skipping task ':framework:web:classes' as it has no actions.
+Resolve mutations for :framework:web:jar (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:web:jar (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:jar UP-TO-DATE
+Caching disabled for task ':framework:widget:jar' because:
+  Not worth caching
+Skipping task ':framework:widget:jar' as it is up-to-date.
+
+> Task :framework:web:jar UP-TO-DATE
+Caching disabled for task ':framework:web:jar' because:
+  Not worth caching
+Skipping task ':framework:web:jar' as it is up-to-date.
+Resolve mutations for :framework:widget:compileTestKotlin (Thread[#23466,Execution worker Thread 3,5,main]) started.
+work action resolve web.jar (project :framework:web) (Thread[#23472,Execution worker Thread 9,5,main]) started.
+:framework:widget:compileTestKotlin (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:compileTestKotlin UP-TO-DATE
+Build cache key for task ':framework:widget:compileTestKotlin' is b8aa550b01d55f3c225ef2410a21f100
+Skipping task ':framework:widget:compileTestKotlin' as it is up-to-date.
+Resolve mutations for :framework:widget:compileTestJava (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:compileTestJava (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:compileTestJava NO-SOURCE
+Skipping task ':framework:widget:compileTestJava' as it has no source files and no previous output files.
+Resolve mutations for :framework:widget:testClasses (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:testClasses (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:testClasses UP-TO-DATE
+Skipping task ':framework:widget:testClasses' as it has no actions.
+Resolve mutations for :framework:widget:test (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:test (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:test SKIPPED
+Skipping task ':framework:widget:test' as task onlyIf 'Task satisfies onlyIf spec' is false.
+Resolve mutations for :framework:widget:compileIntegrationTestKotlin (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:compileIntegrationTestKotlin (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:compileIntegrationTestKotlin
+Build cache key for task ':framework:widget:compileIntegrationTestKotlin' is a530de6271dbdd96b1226f5e3dd98476
+Task ':framework:widget:compileIntegrationTestKotlin' is not up-to-date because:
+  Input property 'sources' file /Users/michael/acci_eaf/framework/widget/src/integration-test/kotlin/com/axians/eaf/framework/widget/test/WidgetFrameworkTestApplication.kt has changed.
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/kotlin', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/java', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/kotlin', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/java', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/kotlin', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/java', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/kotlin', not found
+file or directory '/Users/michael/acci_eaf/framework/widget/src/integrationTest/java', not found
+Kotlin source files: /Users/michael/acci_eaf/framework/widget/src/integration-test/kotlin/com/axians/eaf/framework/widget/test/WidgetFrameworkTestApplication.kt, /Users/michael/acci_eaf/framework/widget/src/integration-test/kotlin/com/axians/eaf/framework/widget/api/TenantBoundaryValidationIntegrationTest.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /Users/michael/.sdkman/candidates/java/21-tem
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Known@5c3afc3e, classpathChanges=NoChanges, workingDir=/Users/michael/acci_eaf/framework/widget/build/kotlin/compileIntegrationTestKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/michael/acci_eaf/framework/widget/build/kotlin/compileIntegrationTestKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/Users/michael/acci_eaf/framework/widget/build/classes/kotlin/integrationTest, /Users/michael/acci_eaf/framework/widget/build/kotlin/compileIntegrationTestKotlin/cacheable, /Users/michael/acci_eaf/framework/widget/build/kotlin/compileIntegrationTestKotlin/local-state])
+Finished executing kotlin compiler using DAEMON strategy
+Stored cache entry for task ':framework:widget:compileIntegrationTestKotlin' with cache key a530de6271dbdd96b1226f5e3dd98476
+Resolve mutations for :framework:widget:compileIntegrationTestJava (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:compileIntegrationTestJava (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:compileIntegrationTestJava NO-SOURCE
+Skipping task ':framework:widget:compileIntegrationTestJava' as it has no source files and no previous output files.
+Resolve mutations for :framework:widget:integrationTestClasses (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:integrationTestClasses (Thread[#23466,Execution worker Thread 3,5,main]) started.
+
+> Task :framework:widget:integrationTestClasses UP-TO-DATE
+Skipping task ':framework:widget:integrationTestClasses' as it has no actions.
+Resolve mutations for :framework:widget:integrationTest (Thread[#23466,Execution worker Thread 3,5,main]) started.
+:framework:widget:integrationTest (Thread[#23466,Execution worker Thread 3,5,main]) started.
+Gradle Test Executor 47 started executing tests.
+Gradle Test Executor 47 finished executing tests.
+
+> Task :framework:widget:integrationTest
+Custom actions are attached to task ':framework:widget:integrationTest'.
+Build cache key for task ':framework:widget:integrationTest' is 6fcc39eeec10a18ca5362a03ea9bcf75
+Task ':framework:widget:integrationTest' is not up-to-date because:
+  Input property 'candidateClassFiles' file /Users/michael/acci_eaf/framework/widget/build/classes/kotlin/integrationTest/com/axians/eaf/framework/widget/test/WidgetFrameworkTestApplication.class has changed.
+  Input property 'stableClasspath' file /Users/michael/acci_eaf/framework/widget/build/classes/kotlin/integrationTest/com/axians/eaf/framework/widget/test/WidgetFrameworkTestApplication.class has changed.
+file or directory '/Users/michael/acci_eaf/framework/widget/build/classes/java/integrationTest', not found
+Starting process 'Gradle Test Executor 47'. Working directory: /Users/michael/acci_eaf/framework/widget Command: /Users/michael/.sdkman/candidates/java/21-tem/bin/java -Dorg.gradle.internal.worker.tmpdir=/Users/michael/acci_eaf/framework/widget/build/tmp/integrationTest/work @/Users/michael/.gradle/.tmp/gradle-worker-classpath9323146651832950540txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=DE -Duser.language=de -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 47'
+Successfully started process 'Gradle Test Executor 47'
+
+TenantBoundaryValidationIntegrationTest > Tenant A cannot create widget with Tenant B's tenantId (tenant spoofing prevention) STANDARD_OUT
+    19:34:41.096 [Test worker @spec-scope-1213367860#4] WARN org.axonframework.modelling.command.AbstractRepository -- Exception occurred while trying to create an aggregate.
+    java.lang.IllegalArgumentException: Access denied: tenant context mismatch
+    	at com.axians.eaf.framework.widget.domain.Widget.<init>(Widget.kt:46)
+    	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+    	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+    	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+    	at org.axonframework.messaging.annotation.AnnotatedMessageHandlingMember.handle(AnnotatedMessageHandlingMember.java:155)
+    	at org.axonframework.messaging.annotation.WrappedMessageHandlingMember.handle(WrappedMessageHandlingMember.java:64)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.lambda$handle$0(AggregateAnnotationCommandHandler.java:458)
+    	at org.axonframework.messaging.Scope.executeWithResult(Scope.java:111)
+    	at org.axonframework.modelling.command.inspection.AnnotatedAggregate.registerRoot(AnnotatedAggregate.java:283)
+    	at org.axonframework.eventsourcing.EventSourcedAggregate.initialize(EventSourcedAggregate.java:120)
+    	at org.axonframework.eventsourcing.EventSourcingRepository.doCreateNewForLock(EventSourcingRepository.java:195)
+    	at org.axonframework.eventsourcing.EventSourcingRepository.doCreateNewForLock(EventSourcingRepository.java:56)
+    	at org.axonframework.modelling.command.LockingRepository.doCreateNew(LockingRepository.java:91)
+    	at org.axonframework.modelling.command.LockingRepository.doCreateNew(LockingRepository.java:60)
+    	at org.axonframework.modelling.command.AbstractRepository.newInstance(AbstractRepository.java:110)
+    	at org.axonframework.modelling.command.AbstractRepository.newInstance(AbstractRepository.java:89)
+    	at org.axonframework.test.aggregate.AggregateTestFixture$IdentifierValidatingRepository.newInstance(AggregateTestFixture.java:841)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.handle(AggregateAnnotationCommandHandler.java:458)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.handle(AggregateAnnotationCommandHandler.java:447)
+    	at org.axonframework.messaging.DefaultInterceptorChain.proceed(DefaultInterceptorChain.java:57)
+    	at org.axonframework.messaging.unitofwork.DefaultUnitOfWork.executeWithResult(DefaultUnitOfWork.java:77)
+    	at org.axonframework.commandhandling.SimpleCommandBus.lambda$handle$2(SimpleCommandBus.java:200)
+    	at org.axonframework.tracing.Span.runSupplier(Span.java:163)
+    	at org.axonframework.commandhandling.SimpleCommandBus.handle(SimpleCommandBus.java:191)
+    	at org.axonframework.commandhandling.SimpleCommandBus.doDispatch(SimpleCommandBus.java:165)
+    	at org.axonframework.commandhandling.SimpleCommandBus.lambda$dispatch$1(SimpleCommandBus.java:131)
+    	at org.axonframework.tracing.Span.run(Span.java:101)
+    	at org.axonframework.commandhandling.SimpleCommandBus.dispatch(SimpleCommandBus.java:125)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.lambda$when$2(AggregateTestFixture.java:511)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.lambda$when$8(AggregateTestFixture.java:549)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.executeAtSimulatedTime(AggregateTestFixture.java:452)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:549)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:508)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:503)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$4.invokeSuspend(TenantBoundaryValidationIntegrationTest.kt:93)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$4.invoke(TenantBoundaryValidationIntegrationTest.kt)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$4.invoke(TenantBoundaryValidationIntegrationTest.kt)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$innerExecute$1.invoke(TestCaseExecutor.kt:114)
+    	at io.kotest.engine.test.interceptors.CoroutineDebugProbeInterceptor.intercept(CoroutineDebugProbeInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.TestInvocationInterceptor$runBeforeTestAfter$executeWithBeforeAfter$1.invoke(TestInvocationInterceptor.kt:92)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invokeSuspend(InvocationTimeoutInterceptor.kt:37)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invoke(InvocationTimeoutInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invoke(InvocationTimeoutInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturnIgnoreTimeout(Undispatched.kt:50)
+    	at kotlinx.coroutines.TimeoutKt.setupTimeout(Timeout.kt:149)
+    	at kotlinx.coroutines.TimeoutKt.withTimeoutOrNull(Timeout.kt:105)
+    	at kotlinx.coroutines.TimeoutKt.withTimeoutOrNull-KLykuaI(Timeout.kt:137)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor.intercept(InvocationTimeoutInterceptor.kt:36)
+    	at io.kotest.engine.test.TestInvocationInterceptor$runBeforeTestAfter$wrappedTest$1$1.invoke(TestInvocationInterceptor.kt:100)
+    	at io.kotest.engine.test.TestInvocationInterceptor.runBeforeTestAfter(TestInvocationInterceptor.kt:103)
+    	at io.kotest.engine.test.TestInvocationInterceptor.access$runBeforeTestAfter(TestInvocationInterceptor.kt:18)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invokeSuspend(TestInvocationInterceptor.kt:53)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invoke(TestInvocationInterceptor.kt)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invoke(TestInvocationInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.CoroutineScopeKt.coroutineScope(CoroutineScope.kt:286)
+    	at io.kotest.engine.test.TestInvocationInterceptor.invokeWithRetry(TestInvocationInterceptor.kt:51)
+    	at io.kotest.engine.test.TestInvocationInterceptor.intercept(TestInvocationInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.interceptors.MarkPlatformAbortedExceptionsAsSkippedTestInterceptor.intercept(MarkPlatformAbortedExceptionsAsSkippedTestInterceptor.kt:22)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.HandleSkippedExceptionsTestInterceptor.intercept(HandleSkippedExceptionsTestInterceptor.kt:15)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invokeSuspend(TimeoutInterceptor.kt:54)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invoke(TimeoutInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invoke(TimeoutInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturnIgnoreTimeout(Undispatched.kt:50)
+    	at kotlinx.coroutines.TimeoutKt.setupTimeout(Timeout.kt:149)
+    	at kotlinx.coroutines.TimeoutKt.withTimeout(Timeout.kt:44)
+    	at kotlinx.coroutines.TimeoutKt.withTimeout-KLykuaI(Timeout.kt:72)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptorKt.withAppropriateTimeout-KLykuaI(TimeoutInterceptor.kt:79)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptorKt.access$withAppropriateTimeout-KLykuaI(TimeoutInterceptor.kt:1)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor.intercept(TimeoutInterceptor.kt:53)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.BlockedThreadTimeoutInterceptor.intercept(BlockedThreadTimeoutInterceptor.kt:87)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineLoggingInterceptor.intercept(CoroutineLoggingInterceptor.kt:36)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.SoftAssertInterceptor.intercept(SoftAssertInterceptor.kt:26)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.AssertionModeInterceptor.intercept(AssertionModeInterceptor.kt:29)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.LifecycleInterceptor.intercept(LifecycleInterceptor.kt:48)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestCaseExtensionInterceptor$intercept$2.invoke(TestCaseExtensionInterceptor.kt:21)
+    	at io.kotest.engine.test.TestExtensions.intercept(TestExtensions.kt:148)
+    	at io.kotest.engine.test.interceptors.TestCaseExtensionInterceptor.intercept(TestCaseExtensionInterceptor.kt:21)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.BeforeSpecListenerInterceptor.intercept(BeforeSpecListenerInterceptor.kt:51)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestEnabledCheckInterceptor.intercept(TestEnabledCheckInterceptor.kt:39)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invokeSuspend(CoroutineErrorCollectorInterceptor.kt:39)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invoke(CoroutineErrorCollectorInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invoke(CoroutineErrorCollectorInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor.intercept(CoroutineErrorCollectorInterceptor.kt:38)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineDispatcherFactoryTestInterceptor.intercept(CoroutineDispatcherFactoryTestInterceptor.kt:41)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invokeSuspend(SupervisorScopeInterceptor.kt:23)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invoke(SupervisorScopeInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invoke(SupervisorScopeInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.SupervisorKt.supervisorScope(Supervisor.kt:56)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor.intercept(SupervisorScopeInterceptor.kt:22)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.InvocationCountCheckInterceptor.intercept(InvocationCountCheckInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestFinishedInterceptor.intercept(TestFinishedInterceptor.kt:23)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.FailFastInterceptor.intercept(FailFastInterceptor.kt:32)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invokeSuspend(TestNameContextInterceptor.kt:19)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invoke(TestNameContextInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invoke(TestNameContextInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor.intercept(TestNameContextInterceptor.kt:18)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invokeSuspend(DescriptorPathContextInterceptor.kt:19)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invoke(DescriptorPathContextInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invoke(DescriptorPathContextInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor.intercept(DescriptorPathContextInterceptor.kt:18)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.TestCaseExecutor.execute(TestCaseExecutor.kt:120)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor.executeTest(SingleInstanceSpecExecutor.kt:75)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor.access$executeTest(SingleInstanceSpecExecutor.kt:25)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor$launchRootTests$2$1$1.invokeSuspend(SingleInstanceSpecExecutor.kt:56)
+    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+    	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+    	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+    	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+    	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+    	at io.kotest.engine.RunBlocking_jvmKt.runBlocking(runBlocking.jvm.kt:3)
+    	at io.kotest.engine.TestEngineLauncher.launch(TestEngineLauncher.kt:206)
+    	at io.kotest.runner.junit.platform.KotestJunitPlatformTestEngine.execute(KotestJunitPlatformTestEngine.kt:74)
+    	at io.kotest.runner.junit.platform.KotestJunitPlatformTestEngine.execute(KotestJunitPlatformTestEngine.kt:47)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:230)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:204)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:172)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:101)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:64)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:150)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:63)
+    	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:109)
+    	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:91)
+    	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+    	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+    	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+    	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+    	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:135)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:110)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:104)
+    	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.stop(SuiteTestClassProcessor.java:64)
+    	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)
+    	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+    	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:92)
+    	at jdk.proxy1/jdk.proxy1.$Proxy4.stop(Unknown Source)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker$3.run(TestWorker.java:194)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+    	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+
+TenantBoundaryValidationIntegrationTest > Transaction rollback verification - no events after tenant violation STANDARD_OUT
+    19:34:41.108 [Test worker @spec-scope-1213367860#5] WARN org.axonframework.modelling.command.AbstractRepository -- Exception occurred while trying to create an aggregate.
+    java.lang.IllegalArgumentException: Access denied: tenant context mismatch
+    	at com.axians.eaf.framework.widget.domain.Widget.<init>(Widget.kt:46)
+    	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+    	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+    	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+    	at org.axonframework.messaging.annotation.AnnotatedMessageHandlingMember.handle(AnnotatedMessageHandlingMember.java:155)
+    	at org.axonframework.messaging.annotation.WrappedMessageHandlingMember.handle(WrappedMessageHandlingMember.java:64)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.lambda$handle$0(AggregateAnnotationCommandHandler.java:458)
+    	at org.axonframework.messaging.Scope.executeWithResult(Scope.java:111)
+    	at org.axonframework.modelling.command.inspection.AnnotatedAggregate.registerRoot(AnnotatedAggregate.java:283)
+    	at org.axonframework.eventsourcing.EventSourcedAggregate.initialize(EventSourcedAggregate.java:120)
+    	at org.axonframework.eventsourcing.EventSourcingRepository.doCreateNewForLock(EventSourcingRepository.java:195)
+    	at org.axonframework.eventsourcing.EventSourcingRepository.doCreateNewForLock(EventSourcingRepository.java:56)
+    	at org.axonframework.modelling.command.LockingRepository.doCreateNew(LockingRepository.java:91)
+    	at org.axonframework.modelling.command.LockingRepository.doCreateNew(LockingRepository.java:60)
+    	at org.axonframework.modelling.command.AbstractRepository.newInstance(AbstractRepository.java:110)
+    	at org.axonframework.modelling.command.AbstractRepository.newInstance(AbstractRepository.java:89)
+    	at org.axonframework.test.aggregate.AggregateTestFixture$IdentifierValidatingRepository.newInstance(AggregateTestFixture.java:841)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.handle(AggregateAnnotationCommandHandler.java:458)
+    	at org.axonframework.modelling.command.AggregateAnnotationCommandHandler$AggregateConstructorCommandHandler.handle(AggregateAnnotationCommandHandler.java:447)
+    	at org.axonframework.messaging.DefaultInterceptorChain.proceed(DefaultInterceptorChain.java:57)
+    	at org.axonframework.messaging.unitofwork.DefaultUnitOfWork.executeWithResult(DefaultUnitOfWork.java:77)
+    	at org.axonframework.commandhandling.SimpleCommandBus.lambda$handle$2(SimpleCommandBus.java:200)
+    	at org.axonframework.tracing.Span.runSupplier(Span.java:163)
+    	at org.axonframework.commandhandling.SimpleCommandBus.handle(SimpleCommandBus.java:191)
+    	at org.axonframework.commandhandling.SimpleCommandBus.doDispatch(SimpleCommandBus.java:165)
+    	at org.axonframework.commandhandling.SimpleCommandBus.lambda$dispatch$1(SimpleCommandBus.java:131)
+    	at org.axonframework.tracing.Span.run(Span.java:101)
+    	at org.axonframework.commandhandling.SimpleCommandBus.dispatch(SimpleCommandBus.java:125)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.lambda$when$2(AggregateTestFixture.java:511)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.lambda$when$8(AggregateTestFixture.java:549)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.executeAtSimulatedTime(AggregateTestFixture.java:452)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:549)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:508)
+    	at org.axonframework.test.aggregate.AggregateTestFixture.when(AggregateTestFixture.java:503)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$5.invokeSuspend(TenantBoundaryValidationIntegrationTest.kt:114)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$5.invoke(TenantBoundaryValidationIntegrationTest.kt)
+    	at com.axians.eaf.framework.widget.api.TenantBoundaryValidationIntegrationTest$5.invoke(TenantBoundaryValidationIntegrationTest.kt)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$innerExecute$1.invoke(TestCaseExecutor.kt:114)
+    	at io.kotest.engine.test.interceptors.CoroutineDebugProbeInterceptor.intercept(CoroutineDebugProbeInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.TestInvocationInterceptor$runBeforeTestAfter$executeWithBeforeAfter$1.invoke(TestInvocationInterceptor.kt:92)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invokeSuspend(InvocationTimeoutInterceptor.kt:37)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invoke(InvocationTimeoutInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor$intercept$3.invoke(InvocationTimeoutInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturnIgnoreTimeout(Undispatched.kt:50)
+    	at kotlinx.coroutines.TimeoutKt.setupTimeout(Timeout.kt:149)
+    	at kotlinx.coroutines.TimeoutKt.withTimeoutOrNull(Timeout.kt:105)
+    	at kotlinx.coroutines.TimeoutKt.withTimeoutOrNull-KLykuaI(Timeout.kt:137)
+    	at io.kotest.engine.test.interceptors.InvocationTimeoutInterceptor.intercept(InvocationTimeoutInterceptor.kt:36)
+    	at io.kotest.engine.test.TestInvocationInterceptor$runBeforeTestAfter$wrappedTest$1$1.invoke(TestInvocationInterceptor.kt:100)
+    	at io.kotest.engine.test.TestInvocationInterceptor.runBeforeTestAfter(TestInvocationInterceptor.kt:103)
+    	at io.kotest.engine.test.TestInvocationInterceptor.access$runBeforeTestAfter(TestInvocationInterceptor.kt:18)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invokeSuspend(TestInvocationInterceptor.kt:53)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invoke(TestInvocationInterceptor.kt)
+    	at io.kotest.engine.test.TestInvocationInterceptor$invokeWithRetry$2.invoke(TestInvocationInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.CoroutineScopeKt.coroutineScope(CoroutineScope.kt:286)
+    	at io.kotest.engine.test.TestInvocationInterceptor.invokeWithRetry(TestInvocationInterceptor.kt:51)
+    	at io.kotest.engine.test.TestInvocationInterceptor.intercept(TestInvocationInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.interceptors.MarkPlatformAbortedExceptionsAsSkippedTestInterceptor.intercept(MarkPlatformAbortedExceptionsAsSkippedTestInterceptor.kt:22)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.HandleSkippedExceptionsTestInterceptor.intercept(HandleSkippedExceptionsTestInterceptor.kt:15)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invokeSuspend(TimeoutInterceptor.kt:54)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invoke(TimeoutInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor$intercept$3.invoke(TimeoutInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturnIgnoreTimeout(Undispatched.kt:50)
+    	at kotlinx.coroutines.TimeoutKt.setupTimeout(Timeout.kt:149)
+    	at kotlinx.coroutines.TimeoutKt.withTimeout(Timeout.kt:44)
+    	at kotlinx.coroutines.TimeoutKt.withTimeout-KLykuaI(Timeout.kt:72)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptorKt.withAppropriateTimeout-KLykuaI(TimeoutInterceptor.kt:79)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptorKt.access$withAppropriateTimeout-KLykuaI(TimeoutInterceptor.kt:1)
+    	at io.kotest.engine.test.interceptors.TimeoutInterceptor.intercept(TimeoutInterceptor.kt:53)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.BlockedThreadTimeoutInterceptor.intercept(BlockedThreadTimeoutInterceptor.kt:87)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineLoggingInterceptor.intercept(CoroutineLoggingInterceptor.kt:36)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.SoftAssertInterceptor.intercept(SoftAssertInterceptor.kt:26)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.AssertionModeInterceptor.intercept(AssertionModeInterceptor.kt:29)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.LifecycleInterceptor.intercept(LifecycleInterceptor.kt:48)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestCaseExtensionInterceptor$intercept$2.invoke(TestCaseExtensionInterceptor.kt:21)
+    	at io.kotest.engine.test.TestExtensions.intercept(TestExtensions.kt:148)
+    	at io.kotest.engine.test.interceptors.TestCaseExtensionInterceptor.intercept(TestCaseExtensionInterceptor.kt:21)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.BeforeSpecListenerInterceptor.intercept(BeforeSpecListenerInterceptor.kt:51)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestEnabledCheckInterceptor.intercept(TestEnabledCheckInterceptor.kt:39)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invokeSuspend(CoroutineErrorCollectorInterceptor.kt:39)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invoke(CoroutineErrorCollectorInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor$intercept$3.invoke(CoroutineErrorCollectorInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.CoroutineErrorCollectorInterceptor.intercept(CoroutineErrorCollectorInterceptor.kt:38)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.CoroutineDispatcherFactoryTestInterceptor.intercept(CoroutineDispatcherFactoryTestInterceptor.kt:41)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invokeSuspend(SupervisorScopeInterceptor.kt:23)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invoke(SupervisorScopeInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor$intercept$2.invoke(SupervisorScopeInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.SupervisorKt.supervisorScope(Supervisor.kt:56)
+    	at io.kotest.engine.test.interceptors.SupervisorScopeInterceptor.intercept(SupervisorScopeInterceptor.kt:22)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.InvocationCountCheckInterceptor.intercept(InvocationCountCheckInterceptor.kt:33)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestFinishedInterceptor.intercept(TestFinishedInterceptor.kt:23)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.FailFastInterceptor.intercept(FailFastInterceptor.kt:32)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invokeSuspend(TestNameContextInterceptor.kt:19)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invoke(TestNameContextInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor$intercept$2.invoke(TestNameContextInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.TestNameContextInterceptor.intercept(TestNameContextInterceptor.kt:18)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invokeSuspend(DescriptorPathContextInterceptor.kt:19)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invoke(DescriptorPathContextInterceptor.kt)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor$intercept$2.invoke(DescriptorPathContextInterceptor.kt)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndspatched(Undispatched.kt:66)
+    	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:165)
+    	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+    	at io.kotest.engine.test.interceptors.DescriptorPathContextInterceptor.intercept(DescriptorPathContextInterceptor.kt:18)
+    	at io.kotest.engine.test.TestCaseExecutor$execute$3$1.invoke(TestCaseExecutor.kt:119)
+    	at io.kotest.engine.test.TestCaseExecutor.execute(TestCaseExecutor.kt:120)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor.executeTest(SingleInstanceSpecExecutor.kt:75)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor.access$executeTest(SingleInstanceSpecExecutor.kt:25)
+    	at io.kotest.engine.spec.execution.SingleInstanceSpecExecutor$launchRootTests$2$1$1.invokeSuspend(SingleInstanceSpecExecutor.kt:56)
+    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+    	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+    	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+    	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+    	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+    	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+    	at io.kotest.engine.RunBlocking_jvmKt.runBlocking(runBlocking.jvm.kt:3)
+    	at io.kotest.engine.TestEngineLauncher.launch(TestEngineLauncher.kt:206)
+    	at io.kotest.runner.junit.platform.KotestJunitPlatformTestEngine.execute(KotestJunitPlatformTestEngine.kt:74)
+    	at io.kotest.runner.junit.platform.KotestJunitPlatformTestEngine.execute(KotestJunitPlatformTestEngine.kt:47)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:230)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:204)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:172)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:101)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:64)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:150)
+    	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:63)
+    	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:109)
+    	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:91)
+    	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+    	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$1(InterceptingLauncher.java:39)
+    	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25)
+    	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:38)
+    	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:135)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:110)
+    	at org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:104)
+    	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.stop(SuiteTestClassProcessor.java:64)
+    	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+    	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)
+    	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)
+    	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+    	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:92)
+    	at jdk.proxy1/jdk.proxy1.$Proxy4.stop(Unknown Source)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker$3.run(TestWorker.java:194)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+    	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+    	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+    	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+    	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+Finished generating test XML results (0.001 secs) into: /Users/michael/acci_eaf/framework/widget/build/test-results/integrationTest
+Generating HTML test report...
+Finished generating test html results (0.002 secs) into: /Users/michael/acci_eaf/framework/widget/build/reports/tests/integrationTest
+Stored cache entry for task ':framework:widget:integrationTest' with cache key 6fcc39eeec10a18ca5362a03ea9bcf75
+Build f2e0add3-52e7-46dc-8f9c-ea3a15980604 is closed
+Build 479832a7-a043-4b2f-972d-fe131c04240b is closed
+
+[Incubating] Problems report is available at: file:///Users/michael/acci_eaf/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2s
+22 actionable tasks: 2 executed, 20 up-to-date
+Watched directory hierarchies: [/Users/michael/acci_eaf]
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html

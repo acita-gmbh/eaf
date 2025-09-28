@@ -1,0 +1,10 @@
+Checking for duplicate @Component, @Service, @EventHandler, @QueryHandler beans...
+=== @Component beans ===
+
+=== @EventHandler beans ===
+
+=== @QueryHandler beans ===
+
+=== @Aggregate beans ===
+
+Analysis: Each class/method should appear only once

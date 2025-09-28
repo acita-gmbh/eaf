@@ -261,6 +261,28 @@ The EAF itself (as an admin/operator portal) will require:
 * **AC 3:** The database interceptor (from Story 4.3) successfully reads this propagated `TenantContext` and sets the PostgreSQL session variable (`app.current_tenant_id`) for the projection's transaction.
 * **AC 4:** The end-to-end integration tests are updated to verify that the `widget_projection` table *is successfully written to* (passing the RLS check from 4.3) and that the data is correct.
 
+#### Story 4.5: Migrate Widget Domain Code from Framework to Product Module
+* **As a** Framework Architect, **I want** the Widget domain code (aggregate, handlers, tests) migrated from `framework/widget/` to `products/widget-demo/`, **so that** framework modules contain only reusable infrastructure and can be published as libraries while domain logic lives in product modules.
+* **AC 1:** All Widget domain code moved from `framework/widget/` to `products/widget-demo/`
+* **AC 2:** `framework/widget/` module completely removed from project
+* **AC 3:** Package names updated: `com.axians.eaf.framework.widget.*` → `com.axians.eaf.products.widgetdemo.*`
+* **AC 4:** All imports updated across codebase (no compilation errors)
+* **AC 5:** Integration tests migrated and passing in products/widget-demo
+* **AC 6:** products/widget-demo builds and runs successfully
+* **AC 7:** NO references to framework/widget remain in any build files or code
+* **AC 8:** Documentation updated (component-specifications.md, CLAUDE.md if needed)
+
+#### Story 4.6: Re-enable Widget Integration Tests in widget-demo
+* **As a** Developer, **I want** the 5 disabled Widget integration tests re-enabled in products/widget-demo, **so that** we have comprehensive E2E validation of the Widget domain in a product context with full CQRS flow coverage.
+* **AC 1:** All 5 disabled integration test files moved from `kotlin-disabled/` to `kotlin/` directory
+* **AC 2:** All test references updated from `LicensingServerApplication` to `WidgetDemoApplication`
+* **AC 3:** TestContainers configuration verified and working (PostgreSQL, Keycloak, Redis)
+* **AC 4:** All 5 integration test suites compile without errors
+* **AC 5:** All enabled integration tests pass successfully with infrastructure
+* **AC 6:** Integration tests documented for local execution
+* **AC 7:** Test execution time documented (<5 minutes total)
+* **AC 8:** No regressions in existing integration tests
+
 ---
 
 ## Epic 5: Observability (Core Collection)

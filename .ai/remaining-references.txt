@@ -1,0 +1,5 @@
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt:                .configureAggregate(com.axians.eaf.framework.widget.domain.Widget::class.java)
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt:                .configureAggregate(com.axians.eaf.framework.widget.domain.Widget::class.java)
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt:                .configureAggregate(com.axians.eaf.framework.widget.domain.Widget::class.java)
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt:                .configureAggregate(com.axians.eaf.framework.widget.domain.Widget::class.java)
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt:                .configureAggregate(com.axians.eaf.framework.widget.domain.Widget::class.java)
