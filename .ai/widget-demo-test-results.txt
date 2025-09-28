@@ -1,0 +1,116 @@
+Starting a Gradle Daemon, 1 busy Daemon could not be reused, use --status for details
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :shared:testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :shared:shared-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:web:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :products:widget-demo:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:cqrs:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:processResources NO-SOURCE
+> Task :framework:security:processResources NO-SOURCE
+> Task :framework:cqrs:processResources UP-TO-DATE
+> Task :framework:web:processResources NO-SOURCE
+> Task :products:widget-demo:processResources UP-TO-DATE
+> Task :shared:testing:processResources UP-TO-DATE
+> Task :products:widget-demo:processTestResources NO-SOURCE
+> Task :framework:core:compileKotlin UP-TO-DATE
+> Task :shared:shared-api:compileKotlin UP-TO-DATE
+> Task :framework:core:compileJava NO-SOURCE
+> Task :shared:shared-api:compileJava NO-SOURCE
+> Task :shared:shared-api:processResources NO-SOURCE
+> Task :framework:core:processResources NO-SOURCE
+> Task :framework:core:classes UP-TO-DATE
+> Task :shared:shared-api:classes UP-TO-DATE
+> Task :shared:shared-api:jar UP-TO-DATE
+> Task :framework:core:jar UP-TO-DATE
+> Task :framework:security:compileKotlin UP-TO-DATE
+> Task :framework:persistence:compileKotlin UP-TO-DATE
+> Task :framework:security:compileJava NO-SOURCE
+> Task :framework:persistence:compileJava NO-SOURCE
+> Task :framework:security:classes UP-TO-DATE
+> Task :framework:persistence:classes UP-TO-DATE
+> Task :framework:persistence:jar UP-TO-DATE
+> Task :framework:security:jar UP-TO-DATE
+> Task :shared:testing:compileKotlin UP-TO-DATE
+> Task :shared:testing:compileJava NO-SOURCE
+> Task :shared:testing:classes UP-TO-DATE
+> Task :shared:testing:jar UP-TO-DATE
+> Task :framework:cqrs:compileKotlin UP-TO-DATE
+> Task :framework:cqrs:compileJava NO-SOURCE
+> Task :framework:cqrs:classes UP-TO-DATE
+> Task :framework:cqrs:jar UP-TO-DATE
+> Task :framework:web:compileKotlin UP-TO-DATE
+> Task :framework:web:compileJava NO-SOURCE
+> Task :framework:web:classes UP-TO-DATE
+> Task :framework:web:jar UP-TO-DATE
+> Task :products:widget-demo:compileKotlin
+> Task :products:widget-demo:compileJava NO-SOURCE
+> Task :products:widget-demo:classes UP-TO-DATE
+> Task :products:widget-demo:jar
+
+> Task :products:widget-demo:compileTestKotlin FAILED
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:14:26 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:27:27 Unresolved reference 'AggregateTestFixture'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:50:26 Unresolved reference 'expectSuccessfulHandlerExecution'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:52:47 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:53:51 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:53:84 Cannot infer type for value parameter 'event'. Specify it explicitly.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:54:57 Unresolved reference 'payload'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:194:27 Unresolved reference 'AggregateTestFixture'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:225:33 No value passed for parameter 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:226:26 Unresolved reference 'expectSuccessfulHandlerExecution'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:228:47 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:229:51 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:229:84 Cannot infer type for value parameter 'event'. Specify it explicitly.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:230:57 Unresolved reference 'payload'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:256:33 No value passed for parameter 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:257:26 Unresolved reference 'expectNoEvents'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:305:33 No value passed for parameter 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:306:26 Unresolved reference 'expectSuccessfulHandlerExecution'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:308:47 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:309:51 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:309:84 Cannot infer type for value parameter 'event'. Specify it explicitly.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:310:57 Unresolved reference 'payload'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:336:33 No value passed for parameter 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:337:26 Unresolved reference 'expectSuccessfulHandlerExecution'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:339:47 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:340:51 Unresolved reference 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:340:84 Cannot infer type for value parameter 'event'. Specify it explicitly.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:341:57 Unresolved reference 'payload'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:453:27 Unresolved reference 'AggregateTestFixture'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:473:26 Unresolved reference 'expectException'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:495:26 Unresolved reference 'expectException'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:523:33 No value passed for parameter 'test'.
+e: file:///Users/michael/acci_eaf/products/widget-demo/src/test/kotlin/com/axians/eaf/products/widgetdemo/domain/WidgetTest.kt:524:26 Unresolved reference 'expectNoEvents'.
+
+[Incubating] Problems report is available at: file:///Users/michael/acci_eaf/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':products:widget-demo:compileTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 14s
+24 actionable tasks: 3 executed, 21 up-to-date

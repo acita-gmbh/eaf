@@ -32,6 +32,8 @@ dependencies {
     // Testing
     testImplementation(project(":shared:testing"))
     testImplementation(libs.bundles.kotest)
+    testImplementation(libs.axon.test)
+    testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation(libs.bundles.testcontainers)
 }
 

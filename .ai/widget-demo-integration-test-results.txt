@@ -1,0 +1,76 @@
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :shared:shared-api:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :products:widget-demo:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :shared:testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:cqrs:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:web:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :framework:persistence:processResources NO-SOURCE
+> Task :framework:web:processResources NO-SOURCE
+> Task :products:widget-demo:processResources UP-TO-DATE
+> Task :shared:testing:processResources UP-TO-DATE
+> Task :framework:security:processResources NO-SOURCE
+> Task :products:widget-demo:processTestResources NO-SOURCE
+> Task :framework:cqrs:processResources UP-TO-DATE
+> Task :products:widget-demo:processIntegrationTestResources NO-SOURCE
+> Task :shared:shared-api:compileKotlin UP-TO-DATE
+> Task :framework:core:compileKotlin UP-TO-DATE
+> Task :shared:shared-api:compileJava NO-SOURCE
+> Task :framework:core:compileJava NO-SOURCE
+> Task :framework:core:processResources NO-SOURCE
+> Task :shared:shared-api:processResources NO-SOURCE
+> Task :framework:core:classes UP-TO-DATE
+> Task :shared:shared-api:classes UP-TO-DATE
+> Task :framework:core:jar UP-TO-DATE
+> Task :shared:shared-api:jar UP-TO-DATE
+> Task :framework:persistence:compileKotlin UP-TO-DATE
+> Task :framework:security:compileKotlin UP-TO-DATE
+> Task :framework:persistence:compileJava NO-SOURCE
+> Task :framework:security:compileJava NO-SOURCE
+> Task :framework:security:classes UP-TO-DATE
+> Task :framework:persistence:classes UP-TO-DATE
+> Task :framework:security:jar UP-TO-DATE
+> Task :framework:persistence:jar UP-TO-DATE
+> Task :shared:testing:compileKotlin UP-TO-DATE
+> Task :shared:testing:compileJava NO-SOURCE
+> Task :shared:testing:classes UP-TO-DATE
+> Task :shared:testing:jar UP-TO-DATE
+> Task :framework:cqrs:compileKotlin UP-TO-DATE
+> Task :framework:cqrs:compileJava NO-SOURCE
+> Task :framework:cqrs:classes UP-TO-DATE
+> Task :framework:web:compileKotlin UP-TO-DATE
+> Task :framework:cqrs:jar UP-TO-DATE
+> Task :framework:web:compileJava NO-SOURCE
+> Task :framework:web:classes UP-TO-DATE
+> Task :framework:web:jar UP-TO-DATE
+> Task :products:widget-demo:compileKotlin UP-TO-DATE
+> Task :products:widget-demo:compileJava NO-SOURCE
+> Task :products:widget-demo:classes UP-TO-DATE
+> Task :products:widget-demo:jar UP-TO-DATE
+> Task :products:widget-demo:compileTestKotlin FROM-CACHE
+> Task :products:widget-demo:compileTestJava NO-SOURCE
+> Task :products:widget-demo:testClasses UP-TO-DATE
+> Task :products:widget-demo:compileIntegrationTestKotlin
+> Task :products:widget-demo:compileIntegrationTestJava NO-SOURCE
+> Task :products:widget-demo:integrationTestClasses UP-TO-DATE
+> Task :products:widget-demo:integrationTest
+
+[Incubating] Problems report is available at: file:///Users/michael/acci_eaf/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 3s
+26 actionable tasks: 2 executed, 1 from cache, 23 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html
