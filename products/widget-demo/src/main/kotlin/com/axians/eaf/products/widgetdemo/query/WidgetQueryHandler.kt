@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * Query handler for Widget-related queries.
@@ -24,6 +25,17 @@ class WidgetQueryHandler(
     private val repository: WidgetProjectionRepository,
     private val objectMapper: ObjectMapper,
 ) {
+    companion object {
+        private val METADATA_TYPE_REF: TypeReference<Map<String, Any>> =
+            object : TypeReference<Map<String, Any>>() {}
+
+        // Valid sort fields for WidgetProjection
+        private val VALID_SORT_FIELDS = setOf(
+            "name", "category", "value", "createdAt", "updatedAt"
+        )
+
+        private const val MAX_PAGE_SIZE = 1000
+    }
     /**
      * Handles FindWidgetByIdQuery to retrieve a specific widget.
      * Enforces tenant isolation and converts projection to response DTO.
@@ -32,6 +44,7 @@ class WidgetQueryHandler(
      * @return WidgetResponse if found, null otherwise
      */
     @QueryHandler
+    @Transactional(readOnly = true)
     fun handle(query: FindWidgetByIdQuery): WidgetResponse? {
         val projection = repository.findByWidgetIdAndTenantId(query.widgetId, query.tenantId)
         return projection?.let { convertToResponse(it) }
@@ -45,7 +58,14 @@ class WidgetQueryHandler(
      * @return Page of WidgetResponse with pagination metadata
      */
     @QueryHandler
+    @Transactional(readOnly = true)
     fun handle(query: FindWidgetsQuery): Page<WidgetResponse> {
+        // Validate pagination parameters
+        require(query.page >= 0) { "Page number must be >= 0, got ${query.page}" }
+        require(query.size > 0 && query.size <= MAX_PAGE_SIZE) {
+            "Page size must be between 1 and $MAX_PAGE_SIZE, got ${query.size}"
+        }
+
         val sort = createSort(query.sort)
         val pageable = PageRequest.of(query.page, query.size, sort)
 
@@ -58,13 +78,16 @@ class WidgetQueryHandler(
                 }
                 // Name search only
                 !query.search.isNullOrBlank() && query.category.isNullOrBlank() -> {
-                    repository.findByTenantIdAndNameContainingIgnoreCase(query.tenantId, "%${query.search}%")
+                    // ContainingIgnoreCase already adds % wildcards - pass raw term
+                    val searchTerm = query.search!!
+                    repository.findByTenantIdAndNameContainingIgnoreCase(query.tenantId, searchTerm)
                 }
                 // Both category and search
                 !query.category.isNullOrBlank() && !query.search.isNullOrBlank() -> {
+                    val searchTerm = query.search
                     repository
                         .findByTenantIdAndCategoryOrderByCreatedAtDesc(query.tenantId, query.category!!)
-                        .filter { it.name.contains(query.search!!, ignoreCase = true) }
+                        .filter { searchTerm != null && it.name.contains(searchTerm, ignoreCase = true) }
                 }
                 // No filters
                 else -> {
@@ -100,7 +123,7 @@ class WidgetQueryHandler(
         val metadata =
             projection.metadata?.let { jsonString ->
                 try {
-                    objectMapper.readValue(jsonString, object : TypeReference<Map<String, Any>>() {})
+                    objectMapper.readValue(jsonString, METADATA_TYPE_REF)
                 } catch (e: com.fasterxml.jackson.core.JsonProcessingException) {
                     // Log error and return null if JSON parsing fails
                     // In production, this should use proper logging: logger.warn("Failed to parse metadata JSON", e)
@@ -135,23 +158,34 @@ class WidgetQueryHandler(
         val orders =
             sortSpecs.mapNotNull { spec ->
                 val parts = spec.split(".")
-                if (parts.size == 2) {
-                    val field = parts[0]
-                    val direction =
-                        when (parts[1].lowercase()) {
-                            "asc" -> Sort.Direction.ASC
-                            "desc" -> Sort.Direction.DESC
-                            else -> null
-                        }
-                    direction?.let { Sort.Order(it, field) }
-                } else {
-                    null
+                if (parts.size != 2) {
+                    // Invalid format - skip this sort spec
+                    return@mapNotNull null
                 }
+
+                val field = parts[0]
+                val directionStr = parts[1].lowercase()
+
+                // Validate field against known properties
+                if (!VALID_SORT_FIELDS.contains(field)) {
+                    // Unknown field - skip this sort spec
+                    return@mapNotNull null
+                }
+
+                val direction =
+                    when (directionStr) {
+                        "asc" -> Sort.Direction.ASC
+                        "desc" -> Sort.Direction.DESC
+                        else -> return@mapNotNull null  // Invalid direction - skip
+                    }
+
+                Sort.Order(direction, field)
             }
 
         return if (orders.isNotEmpty()) {
             Sort.by(orders)
         } else {
+            // Fallback to default if all sort specs were invalid
             Sort.by(Sort.Direction.DESC, "createdAt")
         }
     }

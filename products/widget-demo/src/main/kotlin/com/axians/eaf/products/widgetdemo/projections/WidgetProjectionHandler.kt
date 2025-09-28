@@ -49,11 +49,12 @@ class WidgetProjectionHandler(
 
         try {
             // Convert metadata map to JSON string for storage
+            // Empty map serializes to "{}" (explicit clear semantics)
             val metadataJson =
-                if (event.metadata?.isNotEmpty() == true) {
-                    objectMapper.writeValueAsString(event.metadata)
+                if (event.metadata.isEmpty()) {
+                    "{}"  // Explicit empty JSON object
                 } else {
-                    null
+                    objectMapper.writeValueAsString(event.metadata)
                 }
 
             val projection =
@@ -71,7 +72,7 @@ class WidgetProjectionHandler(
 
             repository.save(projection)
 
-            logger.info(
+            logger.debug(
                 "Successfully created widget projection for widgetId: {} in tenant: {}",
                 event.widgetId,
                 event.tenantId,
@@ -128,11 +129,13 @@ class WidgetProjectionHandler(
             }
 
             // Convert metadata map to JSON string for storage
+            // Empty map serializes to "{}" (explicit clear), null means field omitted (keep existing)
+            val metadata = event.metadata
             val metadataJson =
-                if (event.metadata?.isNotEmpty() == true) {
-                    objectMapper.writeValueAsString(event.metadata)
-                } else {
-                    null
+                when {
+                    metadata == null -> existingProjection.metadata  // Field omitted - keep existing
+                    metadata.isEmpty() -> "{}"  // Explicit clear to empty JSON object
+                    else -> objectMapper.writeValueAsString(metadata)
                 }
 
             val updatedProjection =
@@ -141,12 +144,12 @@ class WidgetProjectionHandler(
                     description = event.description ?: existingProjection.description,
                     value = event.value ?: existingProjection.value,
                     category = event.category ?: existingProjection.category,
-                    metadata = metadataJson ?: existingProjection.metadata,
+                    metadata = metadataJson,
                 )
 
             repository.save(updatedProjection)
 
-            logger.info(
+            logger.debug(
                 "Successfully updated widget projection for widgetId: {} in tenant: {}",
                 event.widgetId,
                 event.tenantId,
@@ -180,19 +183,31 @@ class WidgetProjectionHandler(
      *
      * Note: This is called during projection rebuild operations and should
      * handle cleanup gracefully.
+     *
+     * PERFORMANCE NOTE: Uses batch deletion to avoid locking large tables.
+     * Future enhancement: Add repository.deleteAllByTenantId() for tenant-scoped resets.
      */
     @org.axonframework.eventhandling.ResetHandler
     fun resetProjections() {
         logger.info("Resetting widget projections for replay...")
 
         try {
-            // Clear all projections to prepare for replay
-            // In a real-world scenario, you might want to clear only specific tenant data
-            // or use a more sophisticated cleanup strategy
-            val projectionCount = repository.count()
-            repository.deleteAll()
+            // Use batch deletion to reduce lock time on large tables
+            // Processes in chunks to avoid long-running transactions
+            val batchSize = 1000
+            var totalDeleted = 0L
 
-            logger.info("Successfully cleared {} widget projections for replay", projectionCount)
+            while (true) {
+                val batch = repository.findAll(org.springframework.data.domain.PageRequest.of(0, batchSize))
+                if (batch.isEmpty) break
+
+                repository.deleteAll(batch.content)
+                totalDeleted += batch.content.size
+
+                logger.debug("Deleted batch of {} projections", batch.content.size)
+            }
+
+            logger.info("Successfully cleared {} widget projections for replay", totalDeleted)
         } catch (exception: PersistenceException) {
             logger.error("Failed to reset widget projections. Database error: {}", exception.message, exception)
             throw exception
