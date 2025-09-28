@@ -749,10 +749,22 @@ diff /tmp/framework-deps.txt /tmp/widget-deps.txt
 
 ## Files for Deep Analysis
 
-### Plugin Configurations (CRITICAL)
-1. `build-logic/src/main/kotlin/conventions/SpringBootConventionPlugin.kt`
-2. `build-logic/src/main/kotlin/conventions/QualityGatesConventionPlugin.kt`
-3. `build-logic/src/main/kotlin/conventions/TestingConventionPlugin.kt`
+### Plugin Configurations (CRITICAL - FULL SOURCE CODE AVAILABLE)
+
+**PRIORITY: Analyze actual plugin source code directly**
+
+**These files contain the exact logic causing the conflict**:
+1. `build-logic/src/main/kotlin/conventions/SpringBootConventionPlugin.kt` ⚡ (suspected culprit)
+2. `build-logic/src/main/kotlin/conventions/QualityGatesConventionPlugin.kt` (potential contributor)
+3. `build-logic/src/main/kotlin/conventions/TestingConventionPlugin.kt` (working baseline)
+
+**Full source code access**: All convention plugins are available in the repository for direct analysis
+
+**Analysis Approach**:
+- Read complete plugin source code
+- Identify how SpringBootConventionPlugin modifies dependency/classpath resolution
+- Compare with TestingConventionPlugin to find conflicts
+- Look for specific lines that override integrationTest source set configuration
 
 ### Module Configurations
 4. `framework/security/build.gradle.kts` (working reference)
@@ -907,3 +919,126 @@ diff /tmp/framework-deps.txt /tmp/widget-deps.txt
 ```
 
 **Time Budget**: Unlimited - this is the final blocker for Story 4.6 and Epic 4 completion.
+
+---
+
+## Plugin Source Code (FULL ACCESS PROVIDED)
+
+### SpringBootConventionPlugin.kt (SUSPECTED CULPRIT)
+
+```kotlin
+package conventions
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.dependencies
+
+class SpringBootConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        val catalog = loadCatalog(target.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath())
+
+        with(target) {
+            with(pluginManager) {
+                apply("eaf.kotlin-common")           // ← Applies TestingConventionPlugin
+                apply("org.springframework.boot")    // ← Could override configurations?
+                apply("io.spring.dependency-management")  // ← Could conflict with Kotest deps?
+                apply("org.jetbrains.kotlin.plugin.spring")  // ← Kotlin Spring plugin
+                apply("org.jetbrains.kotlin.plugin.jpa")     // ← JPA plugin
+            }
+
+            dependencies {
+                // Adds Spring Boot starters to implementation configuration
+                // Could this interfere with testImplementation/integrationTestImplementation?
+                addAll("implementation", listOf(
+                    "spring-boot-starter-web",
+                    "spring-boot-starter-actuator",
+                    "spring-boot-starter-validation",
+                    "spring-boot-starter-security",
+                    "spring-boot-starter-oauth2-resource-server",
+                    "spring-modulith-starter-core",
+                    "spring-modulith-starter-jpa"
+                ))
+            }
+        }
+    }
+}
+```
+
+**Critical Analysis Points**:
+1. **Line 17**: Applies `eaf.kotlin-common` which includes TestingConventionPlugin
+2. **Line 18**: `org.springframework.boot` plugin - could override @SpringBootTest annotation processing?
+3. **Line 19**: `io.spring.dependency-management` - could override dependency versions?
+4. **Lines 20-21**: Kotlin plugins for Spring/JPA - could affect annotation processing?
+
+### QualityGatesConventionPlugin.kt Excerpt
+
+```kotlin
+class QualityGatesConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            with(pluginManager) {
+                apply("eaf.kotlin-common")  // ← DUPLICATE TestingConventionPlugin application!
+                apply("jacoco")
+                apply("info.solidsoft.pitest")
+                apply("org.owasp.dependencycheck")
+            }
+
+            // Lines 189-194: Explicit integrationTest task dependency
+            listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->
+                if (tasks.findByName(taskName) != null) {
+                    tasks.named("check") { dependsOn(taskName) }
+                }
+            }
+
+            // Line 97: Pitest configuration with Kotest
+            configure<PitestPluginExtension> {
+                testPlugin.set("kotest")  // ← Could interfere with Kotest compilation?
+            }
+        }
+    }
+}
+```
+
+**Critical Discovery**: Multiple Plugin Application Issue
+
+**widget-demo plugin chain**:
+```
+plugins {
+    id("eaf.spring-boot")     // → applies eaf.kotlin-common → TestingConventionPlugin
+    id("eaf.testing")         // → TestingConventionPlugin (DUPLICATE!)
+    id("eaf.quality-gates")   // → applies eaf.kotlin-common → TestingConventionPlugin (TRIPLE!)
+}
+```
+
+**Result**: TestingConventionPlugin applied **3 TIMES** in widget-demo vs **1 TIME** in framework modules
+
+**Hypothesis**: Multiple plugin applications corrupt integrationTest source set configuration
+
+---
+
+**Quick Start for External Research**
+
+**URGENT DISCOVERY**: TestingConventionPlugin applied 3 times due to plugin chain
+
+**Primary Investigation**:
+1. **Multiple plugin application effect** - Does 3x TestingConventionPlugin break integrationTest?
+2. **Spring Boot plugin conflicts** - Does `org.springframework.boot` override @SpringBootTest processing?
+3. **Dependency management conflicts** - Does `io.spring.dependency-management` override Kotest versions?
+4. **Kotlin Spring plugin effects** - Do `kotlin.plugin.spring` affect annotation processing?
+
+**Plugin Analysis Priority**:
+1. **TestingConventionPlugin** multiple application (3x in widget-demo vs 1x in framework)
+2. **SpringBootConventionPlugin** dependencies and plugin applications
+3. **io.spring.dependency-management** version override behavior
+4. **org.springframework.boot** annotation processing changes
+
+**Most Critical Question**: Does applying TestingConventionPlugin 3 times corrupt the integrationTest source set?
+
+**Success**: Make this compile:
+```bash
+./gradlew :products:widget-demo:compileIntegrationTestKotlin
+```
+
+**Evidence**: Full plugin source code provided above for direct analysis
+
+**Time Budget**: Unlimited - final blocker for Story 4.6 and Epic 4 completion
