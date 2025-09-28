@@ -1,8 +1,59 @@
 # Deep Research Prompt: Kotest 6.0.3 + Spring Boot + Custom Gradle Source Sets
 
+## 🔥 CRITICAL BREAKTHROUGH DISCOVERY
+
+**BEFORE DEEP RESEARCH**: A working @SpringBootTest + Kotest FunSpec pattern was discovered in `framework/security` module that COMPILES SUCCESSFULLY in the same `integrationTest` source set!
+
+**Key Difference**: Working pattern uses **@Autowired field injection**, failing pattern uses **constructor injection**.
+
+### Working Pattern (framework/security - COMPILES ✅)
+
+```kotlin
+@SpringBootTest(classes = [SecurityFrameworkTestApplication::class])
+@AutoConfigureMockMvc
+@ActiveProfiles("framework-test")
+class TenantContextFilterIntegrationTest : FunSpec() {  // No constructor params!
+    @Autowired
+    private lateinit var mockMvc: MockMvc  // Field injection with @Autowired
+
+    init {
+        extension(SpringExtension())
+
+        test("test name") {
+            // mockMvc is available here
+        }
+    }
+}
+```
+
+### Broken Pattern (widget-demo - 150+ ERRORS ❌)
+
+```kotlin
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+class WidgetApiIntegrationTest(
+    private val mockMvc: MockMvc,  // Constructor injection - FAILS!
+    private val commandGateway: CommandGateway,
+) : FunSpec({
+    extension(SpringExtension())
+
+    test("test name") {
+        // Never gets here - compilation fails
+    }
+})
+```
+
+**Hypothesis**: Constructor injection pattern incompatible with Kotest 6.0.3 + @SpringBootTest in custom source sets, but @Autowired field injection works.
+
+**Research Priority**:
+1. **FIRST**: Validate if converting to @Autowired field injection solves the issue (15-minute test)
+2. **SECOND**: If that fails, proceed with deep Kotest plugin configuration research below
+
+---
+
 ## Executive Summary
 
-We need a comprehensive technical solution for enabling Kotest 6.0.3 FunSpec DSL in a custom Gradle source set (`integrationTest`) for Spring Boot integration tests. Current configuration causes 150+ compilation errors.
+We need a comprehensive technical solution for enabling Kotest 6.0.3 FunSpec DSL in a custom Gradle source set (`integrationTest`) for Spring Boot integration tests. Current configuration causes 150+ compilation errors when using constructor injection pattern.
 
 ## Problem Statement
 
@@ -280,23 +331,168 @@ extensions.configure(io.kotest.gradle.plugin.KotestPluginExtension::class.java) 
 - Tests require complete architectural fix OR rewrite (12-16 hours)
 - Multiple compilation issues beyond application reference
 
-## Research Questions
+## Confirmation Questions (ANSWERED)
 
-### Primary Question (Critical)
+### Q1: Applied Kotest plugin explicitly in module build.gradle.kts?
 
-**How do you configure Kotest 6.0.3 Gradle plugin to register Kotest DSL (test, context, beforeEach, etc.) for a custom Gradle source set created by a convention plugin?**
+**Answer**: NO - Not attempted
+
+**What was tried**:
+- Added `kotest {}` configuration block (failed - extension unresolved)
+- Did NOT try explicit plugin application: `id("io.kotest") version "6.0.3"`
+
+**Should research**: Does explicit plugin application in module fix DSL availability?
+
+### Q2: All modules affected or only widget-demo?
+
+**Answer**: **ONLY widget-demo affected**
+
+**Evidence**:
+- ✅ `framework/security` module has @SpringBootTest + FunSpec test that COMPILES successfully
+- ✅ `framework/cqrs` module has @SpringBootTest + FunSpec test that COMPILES successfully
+- ✅ Both use same TestingConventionPlugin
+- ✅ Both use integrationTest source set with useJUnitPlatform()
+- ❌ Only widget-demo's disabled tests fail with 150+ errors
+
+**Critical Discovery**: Framework modules prove @SpringBootTest + FunSpec + integrationTest source set CAN work!
+
+### Q3: Fix scoped to integrationTest or generalizable?
+
+**Answer**: **GENERALIZABLE to all custom source sets**
+
+**Reasoning**:
+- Both `integrationTest` and `konsistTest` created by TestingConventionPlugin
+- Both use JUnit Platform (not native Kotest runner)
+- Solution should work for ANY custom source set
+- Framework-wide fix benefits all modules
+
+**Scope**: Fix should apply to:
+- integrationTest (current blocker)
+- konsistTest (future-proofing)
+- Any future custom source sets (e.g., e2eTest, performanceTest)
+
+---
+
+## 🔑 KEY PATTERN DIFFERENCE DISCOVERED
+
+### Framework Tests (WORKING ✅)
+
+**Module**: framework/security
+**File**: TenantContextFilterIntegrationTest.kt
+**Pattern**: @Autowired field injection + init block
+
+```kotlin
+@SpringBootTest(classes = [SecurityFrameworkTestApplication::class])
+@AutoConfigureMockMvc
+@ActiveProfiles("framework-test")
+class TenantContextFilterIntegrationTest : FunSpec() {  // ← No constructor parameters!
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var tenantContext: TenantContext
+
+    init {
+        extension(SpringExtension())
+
+        beforeEach {
+            tenantContext.clearCurrentTenant()
+        }
+
+        test("filter extracts tenant from JWT") {
+            mockMvc.perform(get("/test")
+                .header("Authorization", "Bearer token"))
+                .andExpect(status().isOk)
+        }
+    }
+}
+```
+
+**Compilation**: ✅ BUILD SUCCESSFUL
+**Execution**: ✅ Tests pass
+
+### Widget-Demo Tests (BROKEN ❌)
+
+**Module**: products/widget-demo
+**File**: WidgetApiIntegrationTest.kt (in kotlin-disabled/)
+**Pattern**: Constructor injection + lambda
+
+```kotlin
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+class WidgetApiIntegrationTest(  // ← Constructor injection!
+    private val mockMvc: MockMvc,
+    private val commandGateway: CommandGateway,
+    private val objectMapper: ObjectMapper,
+) : FunSpec({  // ← Lambda, not init block
+    extension(SpringExtension())
+
+    test("create widget via REST API") {
+        mockMvc.perform(post("/widgets")...)
+    }
+})
+```
+
+**Compilation**: ❌ 150+ errors ("Unresolved reference 'test'")
+
+### Hypothesis
+
+**Constructor injection breaks Kotest DSL resolution** in @SpringBootTest tests.
+
+**Why**: Kotlin compiler may process constructor parameters before Kotest DSL extensions are registered, causing cascading resolution failures.
+
+**Solution**: Convert to @Autowired field injection pattern (like framework tests).
+
+---
+
+## Research Questions (UPDATED PRIORITY)
+
+### Primary Question (CRITICAL - Test This First!)
+
+**Does converting constructor injection to @Autowired field injection fix the compilation errors?**
+
+**Test Plan**:
+1. Take one failing test (e.g., WidgetApiIntegrationTest.kt)
+2. Convert from `class Test(params) : FunSpec({...})` to `class Test : FunSpec() { @Autowired fields; init {...} }`
+3. Compile: `./gradlew :products:widget-demo:compileIntegrationTestKotlin`
+4. Expected: BUILD SUCCESSFUL if hypothesis correct
+
+**If this works**: Problem solved! All 5 tests can be converted in ~2 hours.
+
+**If this fails**: Proceed to Secondary Questions below.
+
+---
+
+### Secondary Questions (Deep Research Required)
+
+**Q2A: Why does constructor injection fail but @Autowired field injection work?**
+
+**Context**:
+- Framework modules successfully use @Autowired field injection
+- Widget-demo disabled tests use constructor injection
+- Same TestingConventionPlugin applied to all modules
+- Same integrationTest source set configuration
+- Same dependencies (Kotest 6.0.3, Spring Boot 3.5.6)
+
+**Specific Sub-Questions**:
+1. Is constructor injection officially supported in Kotest 6.0.3 + @SpringBootTest?
+2. Does Kotest SpringExtension handle constructor vs field injection differently?
+3. Is there a timing issue with dependency resolution in constructor injection?
+4. Do the Spring Boot test annotations need to be processed before constructor resolution?
+5. Is `FunSpec({...})` lambda syntax incompatible with @SpringBootTest constructor injection?
+
+**Q2B: How do you configure Kotest 6.0.3 Gradle plugin for custom source sets?** (If Q2A doesn't resolve issue)
 
 **Context**:
 - Source set `integrationTest` created programmatically by TestingConventionPlugin
 - Plugin applies `id("io.kotest")` version 6.0.3
 - Integration tests use JUnit Platform (`useJUnitPlatform()`), not native Kotest runner
-- Need Kotest DSL available for @SpringBootTest FunSpec tests
-- Convention plugin is precompiled (build-logic/src/main/kotlin/conventions/)
+- Framework modules work, widget-demo doesn't (pattern difference?)
 
 **Specific Sub-Questions**:
-1. Can `KotestPluginExtension` be accessed from a precompiled convention plugin?
-2. If yes, what's the correct import path and configuration API?
-3. If no, how can a module's build.gradle.kts configure Kotest for source sets created by convention plugin?
+1. Does framework/security have additional configuration that widget-demo lacks?
+2. Can `KotestPluginExtension` be accessed from a precompiled convention plugin?
+3. Should modules explicitly apply `id("io.kotest")` or rely on convention plugin?
 4. Is there a `kotest {}` DSL available in module build scripts when plugin is applied transitively?
 5. Does Kotest 6.0.3 auto-discover custom source sets or must they be explicitly registered?
 
@@ -636,15 +832,35 @@ Run these commands to validate solution:
 - Switching to JUnit 5 as primary framework (violates mandate)
 - Complete test infrastructure rewrite (too risky)
 
+## Comparative Analysis Required
+
+### Framework vs Widget-Demo Configuration
+
+**Research Task**: Compare framework/security and products/widget-demo to identify configuration differences
+
+**Check**:
+1. `framework/security/build.gradle.kts` vs `products/widget-demo/build.gradle.kts`
+2. Any module-specific plugin applications
+3. Dependency differences in integrationTestImplementation
+4. Source set configurations
+5. Test resource files (application-test.yml, etc.)
+
+**Hypothesis to Test**: Framework modules may have explicit `id("io.kotest")` application or additional configuration
+
+---
+
 ## Expected Outcome
 
 After this research, we should have:
 
-1. ✅ **Clear understanding** of why Kotest DSL is unavailable in integrationTest
-2. ✅ **Working solution** to enable Kotest DSL in custom source sets
-3. ✅ **Code templates** for @SpringBootTest + Kotest FunSpec integration tests
-4. ✅ **Migration guide** to fix Story 4.6 and unblock Epic 4
-5. ✅ **Documentation** for future developers encountering similar issues
+1. ✅ **Clear understanding** of constructor injection vs field injection behavior difference
+2. ✅ **Working solution** - likely converting to @Autowired pattern (2 hours effort)
+3. ✅ **Alternative solution** - Kotest plugin configuration if pattern conversion insufficient
+4. ✅ **Code templates** for @SpringBootTest + Kotest FunSpec integration tests
+5. ✅ **Migration guide** to fix Story 4.6 and unblock Epic 4
+6. ✅ **Documentation** for future developers encountering similar issues
+
+**Priority**: Focus on Q2A (constructor vs field injection) first - this is most likely to provide immediate solution.
 
 ## Contact Information for Follow-up
 
@@ -679,3 +895,123 @@ Target: BUILD SUCCESSFUL
 **Research Depth**: Go as deep as needed. This is a critical blocker affecting multiple epics. Investigate Kotest plugin source code, Gradle internals, Kotlin compiler behavior - whatever is needed to find the solution.
 
 **Time Budget**: Unlimited - quality over speed. A working solution is worth days of research.
+
+---
+
+## Appendix A: Module Comparison
+
+### Framework Security (WORKING)
+
+**File**: framework/security/build.gradle.kts
+```kotlin
+plugins {
+    id("eaf.kotlin-common")
+    id("eaf.testing")  // Same convention plugin
+}
+
+dependencies {
+    implementation(project(":framework:core"))
+    // ... other dependencies
+    integrationTestImplementation("org.springframework.security:spring-security-test:6.4.2")
+    integrationTestImplementation(libs.spring.boot.starter.test)
+}
+```
+
+**Integration Test**: TenantContextFilterIntegrationTest.kt
+- Uses: @Autowired field injection + init block
+- Result: ✅ COMPILES and RUNS successfully
+
+### Widget Demo (BROKEN)
+
+**File**: products/widget-demo/build.gradle.kts
+```kotlin
+plugins {
+    id("eaf.spring-boot")
+    id("eaf.testing")  // Same convention plugin
+    id("eaf.quality-gates")
+}
+
+dependencies {
+    implementation(project(":framework:core"))
+    implementation(project(":framework:cqrs"))
+    implementation(project(":framework:security"))
+    // ... other dependencies
+    testImplementation(project(":shared:testing"))
+    testImplementation(libs.bundles.kotest)
+    testImplementation(libs.axon.test)
+}
+```
+
+**Integration Tests** (disabled): 5 tests in kotlin-disabled/
+- Uses: Constructor injection + FunSpec lambda
+- Result: ❌ 150+ compilation errors
+
+### Key Differences
+
+| Aspect | framework/security | products/widget-demo |
+|--------|-------------------|----------------------|
+| Plugin | eaf.kotlin-common + eaf.testing | eaf.spring-boot + eaf.testing + eaf.quality-gates |
+| Test Pattern | @Autowired fields + init | Constructor params + lambda |
+| FunSpec Style | `FunSpec()` | `FunSpec({...})` |
+| Compilation | ✅ SUCCESS | ❌ 150+ errors |
+
+**Critical Question**: Is the extra `eaf.spring-boot` or `eaf.quality-gates` plugin interfering with Kotest DSL resolution?
+
+---
+
+## Appendix B: Exact File Locations for Analysis
+
+**Working Test for Reference**:
+```
+framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/filters/TenantContextFilterIntegrationTest.kt
+```
+
+**Broken Tests to Fix**:
+```
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetApiIntegrationTest.kt
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetWalkingSkeletonIntegrationTest.kt
+products/widget-demo/src/integration-test/kotlin-disabled/WidgetIntegrationTest.kt
+products/widget-demo/src/integration-test/kotlin-disabled/persistence/WidgetEventStoreIntegrationTest.kt
+products/widget-demo/src/integration-test/kotlin-disabled/projections/WidgetEventProcessingIntegrationTest.kt
+```
+
+**Configuration Files**:
+```
+build-logic/src/main/kotlin/conventions/TestingConventionPlugin.kt
+framework/security/build.gradle.kts
+products/widget-demo/build.gradle.kts
+gradle/libs.versions.toml
+```
+
+---
+
+## Appendix C: Quick Test Validation Script
+
+To validate any proposed solution, run:
+
+```bash
+# 1. Test framework security (should still work)
+./gradlew :framework:security:compileIntegrationTestKotlin
+./gradlew :framework:security:integrationTest
+
+# 2. Test widget-demo baseline (should work)
+./gradlew :products:widget-demo:compileIntegrationTestKotlin
+./gradlew :products:widget-demo:integrationTest
+
+# 3. Move ONE test from kotlin-disabled to kotlin
+# (Apply your proposed fix to the test)
+
+# 4. Compile and validate
+./gradlew :products:widget-demo:compileIntegrationTestKotlin
+# Expected: BUILD SUCCESSFUL
+
+# 5. Run tests
+./gradlew :products:widget-demo:integrationTest
+# Expected: Tests pass or fail for valid business reasons (not compilation errors)
+```
+
+**Success**: If step 4 shows BUILD SUCCESSFUL, solution is validated.
+
+---
+
+**Research Focus**: Start with Phase 1 (constructor vs field injection hypothesis). If that fails, proceed to deep Kotest plugin configuration research.
