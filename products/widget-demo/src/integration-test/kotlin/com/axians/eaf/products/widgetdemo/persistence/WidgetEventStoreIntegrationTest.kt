@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest
 @ActiveProfiles("test")
 class WidgetEventStoreIntegrationTest : FunSpec() {
-
     @Autowired
     private lateinit var commandGateway: CommandGateway
 
@@ -30,30 +29,33 @@ class WidgetEventStoreIntegrationTest : FunSpec() {
         context("Axon Event Store Persistence Validation") {
             test("should persist WidgetCreatedEvent in domain_event_entry table") {
                 val widgetId = UUID.randomUUID().toString()
-                val command = CreateWidgetCommand(
-                    widgetId = widgetId,
-                    tenantId = "persistence-test",
-                    name = "Event Store Test Widget",
-                    description = "Testing event persistence",
-                    value = BigDecimal("75.00"),
-                    category = "PERSISTENCE_TEST",
-                    metadata = emptyMap()
-                )
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = widgetId,
+                        tenantId = "persistence-test",
+                        name = "Event Store Test Widget",
+                        description = "Testing event persistence",
+                        value = BigDecimal("75.00"),
+                        category = "PERSISTENCE_TEST",
+                        metadata = emptyMap(),
+                    )
 
                 val result = commandGateway.sendAndWait<String>(command, 10, TimeUnit.SECONDS)
                 result shouldBe widgetId
 
                 // Verify event was persisted in database
-                val connection = DriverManager.getConnection(
-                    TestContainers.postgres.jdbcUrl,
-                    TestContainers.postgres.username,
-                    TestContainers.postgres.password
-                )
+                val connection =
+                    DriverManager.getConnection(
+                        TestContainers.postgres.jdbcUrl,
+                        TestContainers.postgres.username,
+                        TestContainers.postgres.password,
+                    )
 
                 val statement = connection.createStatement()
-                val resultSet = statement.executeQuery(
-                    "SELECT COUNT(*) FROM domain_event_entry WHERE aggregate_identifier = '$widgetId'"
-                )
+                val resultSet =
+                    statement.executeQuery(
+                        "SELECT COUNT(*) FROM domain_event_entry WHERE aggregate_identifier = '$widgetId'",
+                    )
 
                 resultSet.next()
                 val eventCount = resultSet.getInt(1)
@@ -64,29 +66,32 @@ class WidgetEventStoreIntegrationTest : FunSpec() {
 
             test("should handle event serialization correctly") {
                 val widgetId = UUID.randomUUID().toString()
-                val command = CreateWidgetCommand(
-                    widgetId = widgetId,
-                    tenantId = "serialization-test",
-                    name = "Serialization Test Widget",
-                    description = "Testing JSON serialization",
-                    value = BigDecimal("123.45"),
-                    category = "SERIALIZATION",
-                    metadata = mapOf("test" to "serialization", "complex" to mapOf("nested" to "value"))
-                )
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = widgetId,
+                        tenantId = "serialization-test",
+                        name = "Serialization Test Widget",
+                        description = "Testing JSON serialization",
+                        value = BigDecimal("123.45"),
+                        category = "SERIALIZATION",
+                        metadata = mapOf("test" to "serialization", "complex" to mapOf("nested" to "value")),
+                    )
 
                 commandGateway.sendAndWait<String>(command, 10, TimeUnit.SECONDS)
 
                 // Verify event payload can be retrieved and is valid JSON
-                val connection = DriverManager.getConnection(
-                    TestContainers.postgres.jdbcUrl,
-                    TestContainers.postgres.username,
-                    TestContainers.postgres.password
-                )
+                val connection =
+                    DriverManager.getConnection(
+                        TestContainers.postgres.jdbcUrl,
+                        TestContainers.postgres.username,
+                        TestContainers.postgres.password,
+                    )
 
                 val statement = connection.createStatement()
-                val resultSet = statement.executeQuery(
-                    "SELECT payload FROM domain_event_entry WHERE aggregate_identifier = '$widgetId'"
-                )
+                val resultSet =
+                    statement.executeQuery(
+                        "SELECT payload FROM domain_event_entry WHERE aggregate_identifier = '$widgetId'",
+                    )
 
                 resultSet.next()
                 val payload = resultSet.getString("payload")

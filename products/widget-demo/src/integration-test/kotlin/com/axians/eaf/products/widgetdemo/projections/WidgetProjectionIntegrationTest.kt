@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest
 @ActiveProfiles("test")
 class WidgetProjectionIntegrationTest : FunSpec() {
-
     @Autowired
     private lateinit var commandGateway: CommandGateway
 
@@ -39,15 +38,16 @@ class WidgetProjectionIntegrationTest : FunSpec() {
                 val widgetId = UUID.randomUUID().toString()
                 val tenantId = "projection-test-001"
 
-                val command = CreateWidgetCommand(
-                    widgetId = widgetId,
-                    tenantId = tenantId,
-                    name = "Projection Test Widget",
-                    description = "Testing projection creation",
-                    value = BigDecimal("350.50"),
-                    category = "PROJECTION_TEST",
-                    metadata = mapOf("source" to "projection-test")
-                )
+                val command =
+                    CreateWidgetCommand(
+                        widgetId = widgetId,
+                        tenantId = tenantId,
+                        name = "Projection Test Widget",
+                        description = "Testing projection creation",
+                        value = BigDecimal("350.50"),
+                        category = "PROJECTION_TEST",
+                        metadata = mapOf("source" to "projection-test"),
+                    )
 
                 commandGateway.sendAndWait<String>(command, 5, TimeUnit.SECONDS)
 
@@ -68,25 +68,27 @@ class WidgetProjectionIntegrationTest : FunSpec() {
                 val tenant1 = "projection-tenant-001"
                 val tenant2 = "projection-tenant-002"
 
-                val command1 = CreateWidgetCommand(
-                    widgetId = UUID.randomUUID().toString(),
-                    tenantId = tenant1,
-                    name = "Tenant 1 Widget",
-                    description = null,
-                    value = BigDecimal("100.00"),
-                    category = "ISOLATION_TEST",
-                    metadata = emptyMap()
-                )
+                val command1 =
+                    CreateWidgetCommand(
+                        widgetId = UUID.randomUUID().toString(),
+                        tenantId = tenant1,
+                        name = "Tenant 1 Widget",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "ISOLATION_TEST",
+                        metadata = emptyMap(),
+                    )
 
-                val command2 = CreateWidgetCommand(
-                    widgetId = UUID.randomUUID().toString(),
-                    tenantId = tenant2,
-                    name = "Tenant 2 Widget",
-                    description = null,
-                    value = BigDecimal("200.00"),
-                    category = "ISOLATION_TEST",
-                    metadata = emptyMap()
-                )
+                val command2 =
+                    CreateWidgetCommand(
+                        widgetId = UUID.randomUUID().toString(),
+                        tenantId = tenant2,
+                        name = "Tenant 2 Widget",
+                        description = null,
+                        value = BigDecimal("200.00"),
+                        category = "ISOLATION_TEST",
+                        metadata = emptyMap(),
+                    )
 
                 commandGateway.sendAndWait<String>(command1, 5, TimeUnit.SECONDS)
                 commandGateway.sendAndWait<String>(command2, 5, TimeUnit.SECONDS)

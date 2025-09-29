@@ -52,7 +52,7 @@ class WidgetProjectionHandler(
             // Empty map serializes to "{}" (explicit clear semantics)
             val metadataJson =
                 if (event.metadata.isEmpty()) {
-                    "{}"  // Explicit empty JSON object
+                    "{}" // Explicit empty JSON object
                 } else {
                     objectMapper.writeValueAsString(event.metadata)
                 }
@@ -133,8 +133,8 @@ class WidgetProjectionHandler(
             val metadata = event.metadata
             val metadataJson =
                 when {
-                    metadata == null -> existingProjection.metadata  // Field omitted - keep existing
-                    metadata.isEmpty() -> "{}"  // Explicit clear to empty JSON object
+                    metadata == null -> existingProjection.metadata // Field omitted - keep existing
+                    metadata.isEmpty() -> "{}" // Explicit clear to empty JSON object
                     else -> objectMapper.writeValueAsString(metadata)
                 }
 
@@ -198,7 +198,11 @@ class WidgetProjectionHandler(
             var totalDeleted = 0L
 
             while (true) {
-                val batch = repository.findAll(org.springframework.data.domain.PageRequest.of(0, batchSize))
+                val batch =
+                    repository.findAll(
+                        org.springframework.data.domain.PageRequest
+                            .of(0, batchSize),
+                    )
                 if (batch.isEmpty) break
 
                 repository.deleteAll(batch.content)

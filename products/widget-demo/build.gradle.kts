@@ -1,7 +1,7 @@
 plugins {
-    id("eaf.testing")        // Apply FIRST (Kotest setup)
-    id("eaf.spring-boot")    // Apply AFTER Kotest
-    id("eaf.quality-gates")  // Apply LAST
+    id("eaf.testing") // Apply FIRST (Kotest setup)
+    id("eaf.spring-boot") // Apply AFTER Kotest
+    id("eaf.quality-gates") // Apply LAST
 }
 
 description = "EAF Widget Demo - Reference implementation and E2E testing application"
