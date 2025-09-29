@@ -119,7 +119,7 @@ class StructuredLoggingIntegrationTest : FunSpec() {
             val validJson =
                 """
                 {
-                    "timestamp": "2025-09-29T10:15:30.123Z",
+                    "@timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
                     "logger": "com.example.TestLogger",
                     "message": "Test message",

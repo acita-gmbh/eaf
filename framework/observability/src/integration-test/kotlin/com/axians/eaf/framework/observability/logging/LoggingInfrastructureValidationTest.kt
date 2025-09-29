@@ -2,6 +2,7 @@ package com.axians.eaf.framework.observability.logging
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldStartWith
@@ -80,7 +81,10 @@ class LoggingInfrastructureValidationTest :
             // Then: Should fail validation
             result.isValid shouldBe false
             result.jsonValid shouldBe true
-            result.missingRequiredFields.size shouldBe 4 // missing timestamp, level, logger, thread
+            result.missingRequiredFields shouldContain "@timestamp"
+            result.missingRequiredFields shouldContain "level"
+            result.missingRequiredFields shouldContain "logger"
+            result.missingRequiredFields shouldContain "thread"
         }
 
         test("LoggingContextProvider constants are defined correctly") {
@@ -92,7 +96,7 @@ class LoggingInfrastructureValidationTest :
 
         test("logging produces output at different levels") {
             // Given: Context is set
-            MDC.put("service_name", "validation-test")
+            MDC.put(LoggingContextProvider.SERVICE_NAME_KEY, "validation-test")
 
             // When: Logging at different levels
             logger.info("Infrastructure validation - info level")
@@ -101,6 +105,6 @@ class LoggingInfrastructureValidationTest :
 
             // Then: No exceptions should occur (smoke test)
             // The actual JSON format will be validated in production with proper appender configuration
-            MDC.get("service_name") shouldBe "validation-test"
+            MDC.get(LoggingContextProvider.SERVICE_NAME_KEY) shouldBe "validation-test"
         }
     })

@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.observability.logging
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.slf4j.MDC
@@ -70,6 +71,10 @@ class LoggingContextProviderTest :
             // Then: Should not set in MDC
             MDC.get(LoggingContextProvider.TRACE_ID_KEY) shouldBe null
             MDC.get(LoggingContextProvider.TENANT_ID_KEY) shouldBe null
+
+            // And: Provider getters should also return null
+            loggingContextProvider.getCurrentTraceId() shouldBe null
+            loggingContextProvider.getCurrentTenantId() shouldBe null
         }
 
         test("LoggingFormatValidator should work correctly") {
@@ -96,7 +101,7 @@ class LoggingContextProviderTest :
             // Then: Should pass validation
             result.isValid shouldBe true
             result.jsonValid shouldBe true
-            result.presentContextFields.size shouldBe 3
+            result.presentContextFields.shouldContainAll(listOf("service_name", "trace_id", "tenant_id"))
         }
 
         test("constants should be defined correctly") {
