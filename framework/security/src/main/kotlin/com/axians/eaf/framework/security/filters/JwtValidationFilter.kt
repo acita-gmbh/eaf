@@ -52,7 +52,12 @@ class JwtValidationFilter(
                         val jwt = jwtDecoder.decode(token)
                         val authorities =
                             validationResult.roles
-                                .map { role -> SimpleGrantedAuthority("ROLE_${role.name}") }
+                                .map { role ->
+                                    // Normalize role name: remove ROLE_ prefix if present to prevent
+                                    // double-prefixing (ROLE_ROLE_x) when roles are stored with prefix in Keycloak
+                                    val normalizedRoleName = role.name.removePrefix("ROLE_")
+                                    SimpleGrantedAuthority("ROLE_$normalizedRoleName")
+                                }
                         val authentication =
                             JwtAuthenticationToken(
                                 jwt,
