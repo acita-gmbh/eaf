@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.observability.logging
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
@@ -19,7 +20,7 @@ class LoggingFormatValidator {
      */
     val requiredFields =
         listOf(
-            "timestamp",
+            "@timestamp",
             "level",
             "logger",
             "message",
@@ -56,7 +57,7 @@ class LoggingFormatValidator {
                 presentContextFields = presentContextFields,
                 allFields = jsonNode.fieldNames().asSequence().toList(),
             )
-        } catch (e: com.fasterxml.jackson.core.JsonProcessingException) {
+        } catch (e: JsonProcessingException) {
             ValidationResult(
                 isValid = false,
                 jsonValid = false,
