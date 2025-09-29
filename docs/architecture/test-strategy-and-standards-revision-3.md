@@ -651,8 +651,60 @@ class ProductIntegrationTest : IntegrationTestBase() {
 
 When testing secured endpoints, **always use real Spring Security beans**. Never mock security infrastructure.
 
+#### Option 1: Test with Production Security Configuration (Recommended)
+
 ```kotlin
-// ✅ CORRECT - Real security configuration in integration test
+// ✅ BEST - Use actual application class with production security config
+@SpringBootTest(
+    classes = [LicensingServerApplication::class],  // Real application with real SecurityFilterChain
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+@ActiveProfiles("test")
+class SecuredEndpointProductionConfigTest : FunSpec() {
+    @Autowired
+    private lateinit var restTemplate: TestRestTemplate
+
+    init {
+        extension(SpringExtension())
+
+        test("unauthenticated requests are rejected") {
+            val response = restTemplate.getForEntity(
+                "/actuator/prometheus",
+                String::class.java
+            )
+            response.statusCode shouldBe HttpStatus.UNAUTHORIZED
+        }
+
+        test("authenticated requests succeed with proper role") {
+            // Uses real security configuration from SecurityFilterChainConfiguration
+            val response = restTemplate
+                .withBasicAuth("test-admin", "password")
+                .getForEntity("/actuator/prometheus", String::class.java)
+
+            response.statusCode shouldBe HttpStatus.OK
+        }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureTestUsers(registry: DynamicPropertyRegistry) {
+            // Configure test user via properties instead of redefining UserDetailsService
+            registry.add("spring.security.user.name") { "test-admin" }
+            registry.add("spring.security.user.password") { "password" }
+            registry.add("spring.security.user.roles") { "eaf-admin" }
+        }
+    }
+}
+```
+
+#### Option 2: Focused Module Test (When Production Config Not Available)
+
+For **framework module tests** where full application context isn't available, define minimal security config **matching production behavior**:
+
+```kotlin
+// ✅ ACCEPTABLE - Focused test replicating production security behavior
+// Use only when testing framework modules in isolation
 @SpringBootTest(
     classes = [SecuredEndpointTest.TestApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -713,6 +765,15 @@ class SecuredEndpointTest : FunSpec() {
                 .build()
     }
 }
+
+// IMPORTANT: Keep this test security config aligned with production SecurityFilterChainConfiguration
+// Review: framework/security/src/main/kotlin/.../SecurityFilterChainConfiguration.kt
+```
+
+**Decision Guide:**
+- **Product-level tests**: Use Option 1 (production application class)
+- **Framework module tests**: Use Option 2 (focused test config matching production)
+- **Never**: Mock SecurityFilterChain, UserDetailsService, or other security infrastructure
 ```
 
 **Why real security beans matter:**

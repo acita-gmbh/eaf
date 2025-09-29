@@ -1,7 +1,7 @@
 plugins {
-    id("eaf.spring-boot")
+    id("eaf.testing") // FIRST - Kotest DSL before Spring Boot (Story 4.6)
+    id("eaf.spring-boot") // SECOND - After Kotest established
     id("eaf.observability")
-    id("eaf.testing")
     id("eaf.quality-gates")
 }
 

@@ -11,10 +11,16 @@ This document establishes comprehensive coding standards for the Enterprise Appl
 These requirements are **MANDATORY** and violations will cause build failures:
 
 1. **NO wildcard imports** - Every import must be explicit
-2. **NO generic exceptions** - Always use specific exception types
+2. **NO generic exceptions** - Always use specific exception types *except* in infrastructure interceptors (see Infrastructure Interceptor Exception Pattern)
 3. **Kotest ONLY** - JUnit is explicitly forbidden
 4. **Version Catalog REQUIRED** - All versions in `gradle/libs.versions.toml`
 5. **Zero violations** - ktlint, detekt, and konsist must pass without warnings
+
+**Exception to Policy #2**: Infrastructure interceptors (metrics, logging, tracing) may catch generic `Exception` **only when**:
+- Purpose is pure observability (record metrics/logs then re-throw)
+- Exception is immediately re-thrown unchanged
+- Pattern is documented with `@Suppress("TooGenericExceptionCaught")` and justification comment
+- See [Infrastructure Interceptor Exception Pattern](#infrastructure-interceptor-exception-pattern) for details
 
 ## Kotlin Standards
 
