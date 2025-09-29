@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
-import java.time.Instant
 
 /**
  * Axon message interceptor that propagates tenant context from event metadata to ThreadLocal
@@ -144,7 +143,7 @@ class TenantEventMessageInterceptor(
     ): Any? {
         val event = unitOfWork.message
         val timer = meterRegistry?.let { Timer.start(it) }
-        val start = Instant.now()
+        val startNanos = System.nanoTime()
 
         return try {
             // SECURITY: Extract tenant ID with fail-closed validation
@@ -165,7 +164,7 @@ class TenantEventMessageInterceptor(
             val result = interceptorChain.proceed()
             customMetrics.recordEvent(
                 event.payloadType.simpleName,
-                Duration.between(start, Instant.now()),
+                Duration.ofNanos(System.nanoTime() - startNanos),
                 success = true,
             )
             result
@@ -177,7 +176,7 @@ class TenantEventMessageInterceptor(
             // We record metrics for ANY exception type then re-throw immediately
             customMetrics.recordEvent(
                 event.payloadType.simpleName,
-                Duration.between(start, Instant.now()),
+                Duration.ofNanos(System.nanoTime() - startNanos),
                 success = false,
             )
             throw ex
