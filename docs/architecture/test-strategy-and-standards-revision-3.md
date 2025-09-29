@@ -698,13 +698,12 @@ class SecuredEndpointProductionConfigTest : FunSpec() {
 }
 ```
 
-#### Option 2: Focused Module Test (When Production Config Not Available)
+#### Option 2: Framework Module Test (Import Production Security Config)
 
-For **framework module tests** where full application context isn't available, define minimal security config **matching production behavior**:
+For **framework module tests** where full application context isn't available, **import the production SecurityFilterChain** to ensure test exercises real configuration:
 
 ```kotlin
-// ✅ ACCEPTABLE - Focused test replicating production security behavior
-// Use only when testing framework modules in isolation
+// ✅ CORRECT - Import production security config (framework module isolation)
 @SpringBootTest(
     classes = [SecuredEndpointTest.TestApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -740,7 +739,10 @@ class SecuredEndpointTest : FunSpec() {
         }
     }
 
-    @SpringBootApplication
+    @SpringBootApplication(
+        scanBasePackages = ["com.axians.eaf.framework.observability"]
+    )
+    @Import(SecurityFilterChainConfiguration::class)  // Import production security config
     open class TestApplication {
         @Bean
         open fun userDetailsService(): UserDetailsService =
@@ -751,30 +753,27 @@ class SecuredEndpointTest : FunSpec() {
                     .build()
             )
 
-        @Bean
-        open fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
-            http
-                .authorizeHttpRequests { authorize ->
-                    authorize
-                        .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/actuator/prometheus").hasRole("eaf-admin")
-                        .anyRequest().permitAll()
-                }
-                .httpBasic { }
-                .csrf { it.disable() }
-                .build()
+        // SecurityFilterChain bean comes from SecurityFilterChainConfiguration import
+        // This ensures test validates actual production security behavior
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            // Ensure Prometheus endpoint is exposed for test
+            registry.add("management.endpoints.web.exposure.include") { "prometheus" }
+            registry.add("management.endpoint.prometheus.enabled") { "true" }
+        }
     }
 }
-
-// IMPORTANT: Keep this test security config aligned with production SecurityFilterChainConfiguration
-// Review: framework/security/src/main/kotlin/.../SecurityFilterChainConfiguration.kt
 ```
 
 **Decision Guide:**
-- **Product-level tests**: Use Option 1 (production application class)
-- **Framework module tests**: Use Option 2 (focused test config matching production)
+- **Product-level tests**: Use Option 1 (full production application class)
+- **Framework module tests**: Use Option 2 (import production SecurityFilterChainConfiguration)
+- **Never**: Redefine SecurityFilterChain in tests (causes config drift)
 - **Never**: Mock SecurityFilterChain, UserDetailsService, or other security infrastructure
-```
 
 **Why real security beans matter:**
 - ✅ Validates actual authorization behavior (not mock interactions)

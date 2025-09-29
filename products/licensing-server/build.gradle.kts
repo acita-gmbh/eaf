@@ -28,10 +28,16 @@ dependencies {
     // Database driver for local onboarding
     runtimeOnly(libs.postgresql)
 
-    // Testing
-    testImplementation(libs.spring.boot.starter.test)
+    // Testing - Kotest-only policy (JUnit explicitly excluded)
+    testImplementation(libs.spring.boot.starter.test) {
+        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+        exclude(group = "org.junit.jupiter", module = "junit-jupiter")
+    }
     testImplementation(project(":shared:testing"))
-    integrationTestImplementation(libs.spring.boot.starter.test)
+    integrationTestImplementation(libs.spring.boot.starter.test) {
+        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+        exclude(group = "org.junit.jupiter", module = "junit-jupiter")
+    }
     integrationTestImplementation(project(":shared:testing"))
 }
 
