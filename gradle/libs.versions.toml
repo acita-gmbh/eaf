@@ -39,6 +39,7 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 # Observability
 micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
 logback = "1.5.18"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
+logstash-logback-encoder = "8.0"  # JSON logging encoder for structured logs
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.17.0"     # IO utilities (security update)
 
@@ -111,6 +112,7 @@ micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "mic
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
 # Restored with correct Spring Boot 3.5.6 BOM version (1.5.18)
 
 # Security

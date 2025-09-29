@@ -138,6 +138,10 @@ gradlePlugin {
             id = "eaf.quality-gates"
             implementationClass = "conventions.QualityGatesConventionPlugin"
         }
+        register("eaf.logging") {
+            id = "eaf.logging"
+            implementationClass = "conventions.LoggingConventionPlugin"
+        }
     }
 }
 
