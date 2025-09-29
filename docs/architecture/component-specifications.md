@@ -123,6 +123,15 @@ This document provides explicit file path specifications and component location 
 - **Test Data Builders**: `shared/testing/src/main/kotlin/com/axians/eaf/testing/builders/`
 - **Testcontainer Helpers**: `shared/testing/src/main/kotlin/com/axians/eaf/testing/containers/`
 
+## Observability Components
+
+### Metrics Infrastructure
+- **Configuration**: `framework/observability/src/main/kotlin/com/axians/eaf/framework/observability/metrics/MetricsConfiguration.kt`
+- **Custom Metrics API**: `framework/observability/src/main/kotlin/com/axians/eaf/framework/observability/metrics/CustomMetrics.kt`
+- **Command Metrics Interceptor**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/interceptors/CommandMetricsInterceptor.kt`
+- **Event Metrics Interceptor**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/interceptors/TenantEventMessageInterceptor.kt`
+- **Prometheus Endpoint Integration Test**: `framework/observability/src/integration-test/kotlin/com/axians/eaf/framework/observability/metrics/PrometheusEndpointIntegrationTest.kt`
+
 ## Security Components
 
 ### Authentication
@@ -175,5 +184,5 @@ All story references to file paths MUST:
 
 ---
 
-**Last Updated**: 2025-09-20
+**Last Updated**: 2025-09-29
 **Purpose**: Prevent inferred file paths and ensure documentation ecosystem integrity

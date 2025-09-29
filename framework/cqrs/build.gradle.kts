@@ -9,6 +9,7 @@ description = "EAF CQRS Framework - Axon Framework integration"
 dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:security"))
+    implementation(project(":framework:observability"))
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.axon.framework)
     implementation(libs.spring.boot.starter.web)

@@ -647,6 +647,156 @@ class ProductIntegrationTest : IntegrationTestBase() {
 }
 ```
 
+### Security Testing Pattern: Real Beans, No Mocks
+
+When testing secured endpoints, **always use real Spring Security beans**. Never mock security infrastructure.
+
+#### Option 1: Test with Production Security Configuration (Recommended)
+
+```kotlin
+// ✅ BEST - Use actual application class with production security config
+@SpringBootTest(
+    classes = [LicensingServerApplication::class],  // Real application with real SecurityFilterChain
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+@ActiveProfiles("test")
+class SecuredEndpointProductionConfigTest : FunSpec() {
+    @Autowired
+    private lateinit var restTemplate: TestRestTemplate
+
+    init {
+        extension(SpringExtension())
+
+        test("unauthenticated requests are rejected") {
+            val response = restTemplate.getForEntity(
+                "/actuator/prometheus",
+                String::class.java
+            )
+            response.statusCode shouldBe HttpStatus.UNAUTHORIZED
+        }
+
+        test("authenticated requests succeed with proper role") {
+            // Uses real security configuration from SecurityFilterChainConfiguration
+            val response = restTemplate
+                .withBasicAuth("test-admin", "password")
+                .getForEntity("/actuator/prometheus", String::class.java)
+
+            response.statusCode shouldBe HttpStatus.OK
+        }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureTestUsers(registry: DynamicPropertyRegistry) {
+            // Configure test user via properties instead of redefining UserDetailsService
+            registry.add("spring.security.user.name") { "test-admin" }
+            registry.add("spring.security.user.password") { "password" }
+            registry.add("spring.security.user.roles") { "eaf-admin" }
+        }
+    }
+}
+```
+
+#### Option 2: Framework Module Test (Import Production Security Config)
+
+For **framework module tests** where full application context isn't available, **import the production SecurityFilterChain** to ensure test exercises real configuration:
+
+```kotlin
+// ✅ CORRECT - Import production security config (framework module isolation)
+@SpringBootTest(
+    classes = [SecuredEndpointTest.TestApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = [
+        "spring.application.name=security-test",
+        "spring.security.user.name=test-admin",
+        "spring.security.user.password=password",
+        "spring.security.user.roles=eaf-admin"
+    ]
+)
+@ActiveProfiles("test")
+class SecuredEndpointTest : FunSpec() {
+    @Autowired
+    private lateinit var restTemplate: TestRestTemplate
+
+    init {
+        extension(SpringExtension())
+
+        test("unauthenticated requests are rejected") {
+            val response = restTemplate.getForEntity(
+                "/actuator/prometheus",
+                String::class.java
+            )
+            response.statusCode shouldBe HttpStatus.UNAUTHORIZED
+        }
+
+        test("authenticated requests succeed with proper role") {
+            val response = restTemplate
+                .withBasicAuth("test-admin", "password")
+                .getForEntity("/actuator/prometheus", String::class.java)
+
+            response.statusCode shouldBe HttpStatus.OK
+        }
+    }
+
+    @SpringBootApplication(
+        scanBasePackages = ["com.axians.eaf.framework.observability"]
+    )
+    @Import(SecurityFilterChainConfiguration::class)  // Import production security config
+    open class TestApplication {
+        @Bean
+        open fun userDetailsService(): UserDetailsService =
+            InMemoryUserDetailsManager(
+                User.withUsername("test-admin")
+                    .password("{noop}password")
+                    .roles("eaf-admin")
+                    .build()
+            )
+
+        // SecurityFilterChain bean comes from SecurityFilterChainConfiguration import
+        // This ensures test validates actual production security behavior
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            // Ensure Prometheus endpoint is exposed for test
+            registry.add("management.endpoints.web.exposure.include") { "prometheus" }
+            registry.add("management.endpoint.prometheus.enabled") { "true" }
+        }
+    }
+}
+```
+
+**Decision Guide:**
+- **Product-level tests**: Use Option 1 (full production application class)
+- **Framework module tests**: Use Option 2 (import production SecurityFilterChainConfiguration)
+- **Never**: Redefine SecurityFilterChain in tests (causes config drift)
+- **Never**: Mock SecurityFilterChain, UserDetailsService, or other security infrastructure
+
+**Why real security beans matter:**
+- ✅ Validates actual authorization behavior (not mock interactions)
+- ✅ Tests security filter chain configuration correctness
+- ✅ Catches misconfigurations that mocks would hide
+- ✅ Provides confidence in production security behavior
+
+```kotlin
+// ❌ FORBIDDEN - Mocking security infrastructure
+@SpringBootTest
+class BadSecurityTest {
+    @MockBean  // ❌ FORBIDDEN: Never mock security infrastructure
+    private lateinit var securityFilterChain: SecurityFilterChain
+
+    test("this validates nothing") {
+        // You're testing mock behavior, not real security
+        // Security bugs won't be caught
+    }
+}
+```
+
+**Reference**: Story 5.2 PrometheusEndpointIntegrationTest implementation
+
 ## End-to-End Testing
 
 ### API Testing with TestRestTemplate

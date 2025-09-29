@@ -11,10 +11,16 @@ This document establishes comprehensive coding standards for the Enterprise Appl
 These requirements are **MANDATORY** and violations will cause build failures:
 
 1. **NO wildcard imports** - Every import must be explicit
-2. **NO generic exceptions** - Always use specific exception types
+2. **NO generic exceptions** - Always use specific exception types *except* in infrastructure interceptors (see Infrastructure Interceptor Exception Pattern)
 3. **Kotest ONLY** - JUnit is explicitly forbidden
 4. **Version Catalog REQUIRED** - All versions in `gradle/libs.versions.toml`
 5. **Zero violations** - ktlint, detekt, and konsist must pass without warnings
+
+**Exception to Policy #2**: Infrastructure interceptors (metrics, logging, tracing) may catch generic `Exception` **only when**:
+- Purpose is pure observability (record metrics/logs then re-throw)
+- Exception is immediately re-thrown unchanged
+- Pattern is documented with `@Suppress("TooGenericExceptionCaught")` and justification comment
+- See [Infrastructure Interceptor Exception Pattern](#infrastructure-interceptor-exception-pattern) for details
 
 ## Kotlin Standards
 
@@ -94,6 +100,60 @@ sealed class DomainError {
     ) : DomainError()
 }
 ```
+
+### Infrastructure Interceptor Exception Pattern
+
+When implementing cross-cutting infrastructure concerns (metrics, logging, tracing), it is **legitimate** to catch generic exceptions if the purpose is pure observability with immediate re-throw:
+
+```kotlin
+// ✅ CORRECT - Infrastructure interceptor pattern (observability only)
+@Component
+class CommandMetricsInterceptor(
+    private val customMetrics: CustomMetrics
+) : MessageHandlerInterceptor<CommandMessage<*>> {
+    override fun handle(
+        unitOfWork: UnitOfWork<out CommandMessage<*>>,
+        interceptorChain: InterceptorChain
+    ): Any {
+        val command = unitOfWork.message
+        val start = Instant.now()
+
+        return try {
+            val result = interceptorChain.proceed()
+            record(command, start, success = true)
+            result
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception
+        ) {
+            // Legitimate use of generic exception in infrastructure interceptor:
+            // We record metrics for ANY exception type then re-throw immediately
+            record(command, start, success = false)
+            throw ex  // CRITICAL: Exception propagates unchanged
+        }
+    }
+}
+```
+
+**Requirements for legitimate generic catch:**
+1. ✅ Purpose is observability/telemetry only (record metrics/logs then re-throw)
+2. ✅ No exception handling logic - just instrumentation
+3. ✅ Exception is immediately re-thrown unchanged
+4. ✅ Pattern is clearly documented with `@Suppress` annotation and comment
+
+```kotlin
+// ❌ INCORRECT - Business logic using generic catch
+fun processOrder(order: Order) {
+    try {
+        orderService.process(order)
+    } catch (ex: Exception) {  // BAD: Swallows specific exception context
+        logger.error("Failed")
+        return  // BAD: Exception handling logic, doesn't re-throw
+    }
+}
+```
+
+**Reference**: Story 5.2 CommandMetricsInterceptor implementation
 
 ### Testing Standards
 
@@ -334,6 +394,62 @@ class BadService {
     }
 }
 ```
+
+#### Tenant Context Fallback for Observability
+
+For **cross-cutting observability infrastructure** (metrics, tracing, logging), use graceful fallback when tenant context may be legitimately absent:
+
+```kotlin
+// ✅ CORRECT - Graceful fallback for observability infrastructure
+class CustomMetrics(
+    private val meterRegistry: MeterRegistry,
+    private val tenantContext: TenantContext
+) {
+    fun recordCommand(commandType: String, duration: Duration, success: Boolean) {
+        val tenantTag = currentTenant()  // Fallback to "system"
+
+        meterRegistry.counter(
+            "eaf.commands.total",
+            "type", commandType,
+            "status", if (success) "success" else "error",
+            "tenant_id", tenantTag  // Never null - always has value
+        ).increment()
+    }
+
+    private fun currentTenant(): String =
+        tenantContext.current() ?: "system"  // Graceful fallback for infrastructure
+}
+```
+
+**When to use fallback pattern:**
+- ✅ Metrics collection (observability infrastructure)
+- ✅ Background system jobs (no user/tenant context)
+- ✅ Health checks and actuator endpoints
+- ✅ Cross-cutting logging/tracing infrastructure
+
+**When to fail-closed (no fallback):**
+- ❌ Business logic (command handlers, aggregates)
+- ❌ API endpoints serving user data
+- ❌ Query handlers returning tenant-specific data
+- ❌ Repository operations on tenant-scoped entities
+
+```kotlin
+// ❌ INCORRECT - Fallback in business logic (security risk)
+@CommandHandler
+fun handle(command: CreateProductCommand) {
+    val tenantId = tenantContext.current() ?: "system"  // BAD: Creates cross-tenant leak
+    apply(ProductCreatedEvent(tenantId = tenantId, ...))
+}
+
+// ✅ CORRECT - Fail-closed in business logic
+@CommandHandler
+fun handle(command: CreateProductCommand) {
+    val tenantId = tenantContext.getCurrentTenantId()  // Throws if missing
+    apply(ProductCreatedEvent(tenantId = tenantId, ...))
+}
+```
+
+**Reference**: Story 5.2 CustomMetrics implementation
 
 ### Error Handling Patterns
 

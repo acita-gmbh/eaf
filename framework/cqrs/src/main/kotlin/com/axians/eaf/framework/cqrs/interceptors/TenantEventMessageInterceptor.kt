@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.cqrs.interceptors
 
+import com.axians.eaf.framework.observability.metrics.CustomMetrics
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -109,6 +110,7 @@ class TenantEventMessageInterceptor(
     private val tenantContext: TenantContext,
     private val redisTemplate: RedisTemplate<String, String>?,
     private val meterRegistry: MeterRegistry?,
+    private val customMetrics: CustomMetrics,
 ) : MessageHandlerInterceptor<EventMessage<*>> {
     companion object {
         private val logger = LoggerFactory.getLogger(TenantEventMessageInterceptor::class.java)
@@ -141,8 +143,9 @@ class TenantEventMessageInterceptor(
     ): Any? {
         val event = unitOfWork.message
         val timer = meterRegistry?.let { Timer.start(it) }
+        val startNanos = System.nanoTime()
 
-        try {
+        return try {
             // SECURITY: Extract tenant ID with fail-closed validation
             val tenantId = extractTenantId(event)
 
@@ -158,7 +161,25 @@ class TenantEventMessageInterceptor(
             )
 
             // Proceed with event handler execution
-            return interceptorChain.proceed()
+            val result = interceptorChain.proceed()
+            customMetrics.recordEvent(
+                event.payloadType.simpleName,
+                Duration.ofNanos(System.nanoTime() - startNanos),
+                success = true,
+            )
+            result
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Legitimate use of generic exception in infrastructure interceptor:
+            // We record metrics for ANY exception type then re-throw immediately
+            customMetrics.recordEvent(
+                event.payloadType.simpleName,
+                Duration.ofNanos(System.nanoTime() - startNanos),
+                success = false,
+            )
+            throw ex
         } finally {
             // CRITICAL SECURITY REQUIREMENT (SEC-001 mitigation - Risk Score 9):
             // Mandatory cleanup prevents cross-tenant leakage in pooled worker threads.

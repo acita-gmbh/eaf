@@ -1,8 +1,10 @@
 package com.axians.eaf.framework.cqrs.interceptors
 
+import com.axians.eaf.framework.observability.metrics.CustomMetrics
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.axonframework.eventhandling.EventMessage
 import org.axonframework.eventhandling.GenericEventMessage
 import org.axonframework.messaging.InterceptorChain
@@ -32,6 +34,8 @@ class TenantContextThreadSafetyIntegrationTest :
         lateinit var tenantContext: TenantContext
         lateinit var redisTemplate: RedisTemplate<String, String>
         lateinit var interceptor: TenantEventMessageInterceptor
+        lateinit var meterRegistry: SimpleMeterRegistry
+        lateinit var customMetrics: CustomMetrics
 
         beforeSpec {
             redis =
@@ -49,8 +53,10 @@ class TenantContextThreadSafetyIntegrationTest :
             redisTemplate.valueSerializer = StringRedisSerializer()
             redisTemplate.afterPropertiesSet()
 
-            tenantContext = TenantContext(meterRegistry = null)
-            interceptor = TenantEventMessageInterceptor(tenantContext, redisTemplate, null)
+            meterRegistry = SimpleMeterRegistry()
+            tenantContext = TenantContext(meterRegistry)
+            customMetrics = CustomMetrics(meterRegistry, tenantContext)
+            interceptor = TenantEventMessageInterceptor(tenantContext, redisTemplate, meterRegistry, customMetrics)
         }
 
         afterSpec {

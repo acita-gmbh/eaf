@@ -142,6 +142,10 @@ gradlePlugin {
             id = "eaf.logging"
             implementationClass = "conventions.LoggingConventionPlugin"
         }
+        register("eaf.observability") {
+            id = "eaf.observability"
+            implementationClass = "conventions.ObservabilityConventionPlugin"
+        }
     }
 }
 
