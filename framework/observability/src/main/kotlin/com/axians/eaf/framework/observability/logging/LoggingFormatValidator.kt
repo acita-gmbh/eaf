@@ -20,7 +20,7 @@ class LoggingFormatValidator {
      */
     val requiredFields =
         listOf(
-            "@timestamp",
+            "timestamp",
             "level",
             "logger",
             "message",

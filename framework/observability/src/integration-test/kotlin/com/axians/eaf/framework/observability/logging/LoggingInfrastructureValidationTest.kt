@@ -54,7 +54,7 @@ class LoggingInfrastructureValidationTest :
             val validJson =
                 """
                 {
-                    "@timestamp": "2025-09-29T10:15:30.123Z",
+                    "timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
                     "logger": "test.logger",
                     "message": "Test message",
@@ -81,7 +81,7 @@ class LoggingInfrastructureValidationTest :
             // Then: Should fail validation
             result.isValid shouldBe false
             result.jsonValid shouldBe true
-            result.missingRequiredFields shouldContain "@timestamp"
+            result.missingRequiredFields shouldContain "timestamp"
             result.missingRequiredFields shouldContain "level"
             result.missingRequiredFields shouldContain "logger"
             result.missingRequiredFields shouldContain "thread"
