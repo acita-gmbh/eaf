@@ -3,30 +3,29 @@ package com.axians.eaf.framework.security.filters
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 /**
- * Unit test validating role name normalization logic prevents ROLE_ prefix duplication.
+ * Unit test validating JwtValidationFilter role name normalization prevents ROLE_ prefix duplication.
  *
  * Critical security fix (Story 5.2 Security Review):
  * Ensures roles work correctly regardless of whether they're stored in Keycloak
  * with or without ROLE_ prefix, preventing authorization bypass or admin lockout.
+ *
+ * Tests call the actual production normalization function to catch regressions.
  */
 class JwtValidationFilterRolePrefixTest :
     FunSpec({
 
-        context("role prefix normalization logic") {
+        context("role prefix normalization via production function") {
 
             test("should normalize roles WITHOUT ROLE_ prefix correctly") {
                 // Simulates Keycloak role: "eaf-admin" (no prefix)
                 val roleNameFromJwt = "eaf-admin"
 
-                // Apply the normalization logic from JwtValidationFilter
-                val normalizedRoleName = roleNameFromJwt.removePrefix("ROLE_")
-                val authority = SimpleGrantedAuthority("ROLE_$normalizedRoleName")
+                // Call actual production normalization function
+                val authority = JwtValidationFilter.normalizeRoleAuthority(roleNameFromJwt)
 
                 // Verify result
-                normalizedRoleName shouldBe "eaf-admin"
                 authority.authority shouldBe "ROLE_eaf-admin"
             }
 
@@ -34,12 +33,10 @@ class JwtValidationFilterRolePrefixTest :
                 // Simulates Keycloak role: "ROLE_eaf-admin" (with prefix)
                 val roleNameFromJwt = "ROLE_eaf-admin"
 
-                // Apply the normalization logic from JwtValidationFilter
-                val normalizedRoleName = roleNameFromJwt.removePrefix("ROLE_")
-                val authority = SimpleGrantedAuthority("ROLE_$normalizedRoleName")
+                // Call actual production normalization function
+                val authority = JwtValidationFilter.normalizeRoleAuthority(roleNameFromJwt)
 
                 // Verify result - prefix removed, then re-added (only once)
-                normalizedRoleName shouldBe "eaf-admin"
                 authority.authority shouldBe "ROLE_eaf-admin"
             }
 
@@ -49,8 +46,7 @@ class JwtValidationFilterRolePrefixTest :
 
                 val authorities =
                     roleFormats.map { roleName ->
-                        val normalized = roleName.removePrefix("ROLE_")
-                        SimpleGrantedAuthority("ROLE_$normalized")
+                        JwtValidationFilter.normalizeRoleAuthority(roleName)
                     }
 
                 // Both should produce ROLE_eaf-admin
@@ -73,8 +69,7 @@ class JwtValidationFilterRolePrefixTest :
 
                 val authorities =
                     mixedRoleNames.map { roleName ->
-                        val normalized = roleName.removePrefix("ROLE_")
-                        SimpleGrantedAuthority("ROLE_$normalized")
+                        JwtValidationFilter.normalizeRoleAuthority(roleName)
                     }
 
                 val authorityStrings = authorities.map { it.authority }
@@ -94,8 +89,7 @@ class JwtValidationFilterRolePrefixTest :
 
                 val authorities =
                     roleNamesWithoutPrefix.map { roleName ->
-                        val normalized = roleName.removePrefix("ROLE_")
-                        SimpleGrantedAuthority("ROLE_$normalized")
+                        JwtValidationFilter.normalizeRoleAuthority(roleName)
                     }
 
                 // All should have ROLE_ prefix added

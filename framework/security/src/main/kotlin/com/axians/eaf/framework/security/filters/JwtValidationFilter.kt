@@ -30,6 +30,18 @@ class JwtValidationFilter(
         private val log = LoggerFactory.getLogger(JwtValidationFilter::class.java)
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
+
+        /**
+         * Normalizes role name by removing ROLE_ prefix if present.
+         * Prevents double-prefixing when Keycloak roles include ROLE_ prefix.
+         *
+         * @param roleName Role name from JWT (may or may not have ROLE_ prefix)
+         * @return SimpleGrantedAuthority with normalized ROLE_ prefix
+         */
+        fun normalizeRoleAuthority(roleName: String): SimpleGrantedAuthority {
+            val normalized = roleName.removePrefix("ROLE_")
+            return SimpleGrantedAuthority("ROLE_$normalized")
+        }
     }
 
     override fun doFilterInternal(
@@ -52,12 +64,7 @@ class JwtValidationFilter(
                         val jwt = jwtDecoder.decode(token)
                         val authorities =
                             validationResult.roles
-                                .map { role ->
-                                    // Normalize role name: remove ROLE_ prefix if present to prevent
-                                    // double-prefixing (ROLE_ROLE_x) when roles are stored with prefix in Keycloak
-                                    val normalizedRoleName = role.name.removePrefix("ROLE_")
-                                    SimpleGrantedAuthority("ROLE_$normalizedRoleName")
-                                }
+                                .map { role -> normalizeRoleAuthority(role.name) }
                         val authentication =
                             JwtAuthenticationToken(
                                 jwt,
