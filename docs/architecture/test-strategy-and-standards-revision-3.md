@@ -90,6 +90,34 @@ kotest-plugin = { id = "io.kotest", version.ref = "kotest" }
 # due to Kotest Gradle plugin limitation with custom source sets
 ```
 
+#### Critical Plugin Configuration (Story 4.6 Lessons)
+
+**MANDATORY**: For product modules using @SpringBootTest + Kotest integration tests:
+
+```kotlin
+// In products/*/build.gradle.kts - Plugin order is CRITICAL
+plugins {
+    id("eaf.testing")     // FIRST - Establishes Kotest DSL before Spring Boot
+    id("eaf.spring-boot") // SECOND - After Kotest setup complete
+    id("eaf.quality-gates")
+}
+
+dependencies {
+    // REQUIRED: Explicit Kotest dependencies to override Spring Boot BOM
+    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
+}
+```
+
+**Root Cause**: Multiple TestingConventionPlugin applications + Spring Boot dependency management
+- eaf.spring-boot → eaf.kotlin-common → TestingConventionPlugin (1st)
+- eaf.testing → TestingConventionPlugin (2nd - duplicate)
+- eaf.quality-gates → eaf.kotlin-common → TestingConventionPlugin (3rd - triple)
+
+**Solution Discovery**: Story 4.6 investigation with 3 external research sources
+**Framework Modules**: Unaffected (use eaf.kotlin-common only, no plugin conflicts)
+
 #### Kotest 6.0.3 Migration Lessons Learned (2025-01)
 
 **Ultra-Think Strategy Success**: Research-driven approach led to breakthrough migration success

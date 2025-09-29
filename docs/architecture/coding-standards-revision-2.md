@@ -623,11 +623,73 @@ class BadTest : FunSpec({
 
 ### Integration Test Standards
 
+**CRITICAL** (Story 4.6 Lessons): Plugin configuration and pattern requirements for product modules.
+
+#### Plugin Configuration (Product Modules ONLY)
+
+**MANDATORY** in products/*/build.gradle.kts:
 ```kotlin
-// ✅ CORRECT - Proper integration test with Testcontainers
+plugins {
+    id("eaf.testing")     // FIRST - Kotest DSL before Spring Boot
+    id("eaf.spring-boot") // SECOND - After Kotest established
+    id("eaf.quality-gates")
+}
+
+dependencies {
+    // Override Spring Boot BOM with explicit Kotest versions
+    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
+}
+```
+
+**Root Cause**: Multiple TestingConventionPlugin applications corrupt integrationTest source set
+**Framework Modules**: Unaffected (use eaf.kotlin-common only)
+
+#### @SpringBootTest Pattern (MANDATORY)
+
+```kotlin
+// ✅ CORRECT - @Autowired field injection + init block
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+class ProductIntegrationTest : FunSpec() {
+
+    @Autowired
+    private lateinit var commandGateway: CommandGateway
+
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+
+        test("should create product") {
+            // commandGateway and mockMvc available
+        }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            TestContainers.startAll()
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+        }
+    }
+}
+
+// ❌ FORBIDDEN - Constructor injection with FunSpec lambda (causes 150+ compilation errors)
+class BadProductTest(
+    private val commandGateway: CommandGateway  // ← Timing conflict
+) : FunSpec({
+    test("will never work") { /* Compilation fails */ }
+}
+
+```kotlin
+// ✅ CORRECT - Proper integration test with Testcontainers (LEGACY PATTERN - use above @Autowired pattern)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = ["spring.profiles.active=test"])
-class ProductIntegrationTest : IntegrationTestBase() {
+class LegacyProductIntegrationTest : IntegrationTestBase() {
 
     @Autowired
     private lateinit var commandGateway: CommandGateway
