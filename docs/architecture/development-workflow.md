@@ -937,6 +937,49 @@ Repository administrators **must** require the following checks on the `main` br
 
 Capture evidence (screenshot or `gh api repos/<org>/<repo>/branches/main/protection`) and attach it to the corresponding story verification record once updated. This keeps AC4 enforceable and documents Task 5.1 compliance.
 
+## Integration Testing Lessons (Story 4.6/4.7)
+
+### Critical Plugin Configuration for Product Modules
+
+**Discovery**: Product modules (products/*) have different plugin requirements than framework modules for Kotest + Spring Boot integration.
+
+**MANDATORY Configuration** (products/*/build.gradle.kts):
+```kotlin
+plugins {
+    id("eaf.testing")     // FIRST - Establishes Kotest DSL
+    id("eaf.spring-boot") // SECOND - After Kotest setup
+    id("eaf.quality-gates")
+}
+
+dependencies {
+    // Explicit Kotest dependencies to override Spring Boot BOM
+    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
+}
+```
+
+**@SpringBootTest Pattern** (MANDATORY):
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+        test("my test") { /* dependencies available */ }
+    }
+}
+```
+
+**Root Cause**: Triple TestingConventionPlugin application + Spring Boot dependency management override
+**Research**: Validated by 3 independent external sources (Story 4.6 investigation)
+**Reference**: framework/security/TenantContextFilterIntegrationTest.kt (working example)
+
+---
+
 ## Related Documentation
 
 - **[Technology Stack](tech-stack.md)** - Tools and versions used in development

@@ -671,6 +671,95 @@ All quality gates are enforced with **zero violations policy**:
 **Current Version**: 3.5.6 (fully compatible with Spring Modulith 1.4.3)
 **Future Considerations**: Monitor Spring Modulith compatibility
 
+## Integration Testing Lessons (Story 4.6/4.7)
+
+### Kotest + Spring Boot Configuration
+
+**CRITICAL DISCOVERY** (Story 4.6): Plugin application order affects compilation in product modules.
+
+#### Plugin Conflicts in Product Modules
+
+**Problem**: Products modules using @SpringBootTest + Kotest fail with 150+ compilation errors
+- Symptom: "Unresolved reference 'test'" on all Kotest DSL functions
+- Root Cause: Multiple TestingConventionPlugin applications + Spring Boot dependency override
+
+**Plugin Application Chain** (widget-demo):
+```
+eaf.spring-boot → eaf.kotlin-common → TestingConventionPlugin (1st)
+eaf.testing → TestingConventionPlugin (2nd - duplicate)
+eaf.quality-gates → eaf.kotlin-common → TestingConventionPlugin (3rd - triple)
+```
+
+**Solution** (validated by 3 external research sources):
+
+```kotlin
+// products/*/build.gradle.kts - MANDATORY plugin order
+plugins {
+    id("eaf.testing")     // FIRST - Kotest DSL setup before Spring Boot
+    id("eaf.spring-boot") // SECOND - After Kotest established
+    id("eaf.quality-gates")
+}
+
+dependencies {
+    // REQUIRED: Override Spring Boot BOM with explicit Kotest versions
+    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.3")
+    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
+}
+```
+
+#### @SpringBootTest Pattern Requirements
+
+**WORKING Pattern** (framework modules + fixed product modules):
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+        test("my test") { /* dependencies available */ }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            TestContainers.startAll()
+            registry.add("spring.datasource.url") { TestContainers.postgres.jdbcUrl }
+        }
+    }
+}
+```
+
+**FORBIDDEN Pattern** (causes 150+ compilation errors):
+```kotlin
+// ❌ Constructor injection with FunSpec lambda
+class MyTest(
+    private val mockMvc: MockMvc  // ← Timing conflict
+) : FunSpec({
+    test("my test") { /* Never reached - compilation fails */ }
+})
+```
+
+**Reference**: framework/security/TenantContextFilterIntegrationTest.kt
+
+#### Framework vs Product Module Differences
+
+| Aspect | Framework Modules | Product Modules |
+|--------|------------------|-----------------|
+| **Plugins** | eaf.kotlin-common + eaf.testing | eaf.testing + eaf.spring-boot + eaf.quality-gates |
+| **TestingConventionPlugin** | 1x application | 3x application (causes conflicts) |
+| **Dependencies** | Minimal Spring Boot | Full Spring Boot BOM (overrides Kotest) |
+| **Pattern** | @Autowired field injection | Must use @Autowired field injection |
+| **Compilation** | ✅ Works | ❌ Fails without plugin order fix |
+
+**Solution Impact**: Epic 4 unblocked, Epic 8 pattern established, framework consistency achieved
+
+---
+
 ## Tool Integration
 
 ### IDE Requirements

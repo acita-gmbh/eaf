@@ -30,12 +30,18 @@ class WidgetQueryHandler(
             object : TypeReference<Map<String, Any>>() {}
 
         // Valid sort fields for WidgetProjection
-        private val VALID_SORT_FIELDS = setOf(
-            "name", "category", "value", "createdAt", "updatedAt"
-        )
+        private val VALID_SORT_FIELDS =
+            setOf(
+                "name",
+                "category",
+                "value",
+                "createdAt",
+                "updatedAt",
+            )
 
         private const val MAX_PAGE_SIZE = 1000
     }
+
     /**
      * Handles FindWidgetByIdQuery to retrieve a specific widget.
      * Enforces tenant isolation and converts projection to response DTO.
@@ -176,7 +182,7 @@ class WidgetQueryHandler(
                     when (directionStr) {
                         "asc" -> Sort.Direction.ASC
                         "desc" -> Sort.Direction.DESC
-                        else -> return@mapNotNull null  // Invalid direction - skip
+                        else -> return@mapNotNull null // Invalid direction - skip
                     }
 
                 Sort.Order(direction, field)
