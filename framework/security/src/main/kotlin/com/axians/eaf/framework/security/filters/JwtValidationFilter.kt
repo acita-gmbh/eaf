@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
@@ -49,7 +50,20 @@ class JwtValidationFilter(
                     ifRight = { validationResult ->
                         // Set authentication context for Spring Security
                         val jwt = jwtDecoder.decode(token)
-                        val authentication = JwtAuthenticationToken(jwt)
+                        val authorities =
+                            validationResult.roles
+                                .map { role -> SimpleGrantedAuthority("ROLE_${role.name}") }
+                        val authentication =
+                            JwtAuthenticationToken(
+                                jwt,
+                                authorities,
+                                validationResult.user.id,
+                            )
+                        authentication.details =
+                            mapOf(
+                                "tenantId" to validationResult.tenantId,
+                                "sessionId" to validationResult.sessionId,
+                            )
                         SecurityContextHolder.getContext().authentication = authentication
 
                         log.debug(

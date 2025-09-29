@@ -1,10 +1,12 @@
 package com.axians.eaf.framework.cqrs.interceptors
 
+import com.axians.eaf.framework.observability.metrics.CustomMetrics
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.axonframework.eventhandling.EventMessage
 import org.axonframework.eventhandling.GenericEventMessage
 import org.axonframework.messaging.InterceptorChain
@@ -23,12 +25,15 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork
  */
 class TenantEventMessageInterceptorSpec :
     FunSpec({
-        val tenantContext = TenantContext(meterRegistry = null)
+        val meterRegistry = SimpleMeterRegistry()
+        val tenantContext = TenantContext(meterRegistry)
+        val customMetrics = CustomMetrics(meterRegistry, tenantContext)
         val interceptor =
             TenantEventMessageInterceptor(
                 tenantContext = tenantContext,
                 redisTemplate = null,
                 meterRegistry = null,
+                customMetrics = customMetrics,
             )
         val successChain = InterceptorChain { "success" }
 

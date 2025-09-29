@@ -1,5 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
+    id("eaf.observability")
     id("eaf.testing")
 }
 
@@ -13,7 +14,6 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.spring.boot.starter.aop)
-    implementation(libs.bundles.observability)
     implementation(libs.jose4j)
 
     testImplementation(libs.bundles.kotest)

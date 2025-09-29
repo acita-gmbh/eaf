@@ -1,5 +1,6 @@
 plugins {
     id("eaf.spring-boot")
+    id("eaf.observability")
     id("eaf.testing")
     id("eaf.quality-gates")
 }
@@ -13,6 +14,7 @@ dependencies {
     implementation(project(":framework:cqrs"))
     implementation(project(":framework:web"))
     implementation(project(":framework:persistence"))
+    implementation(project(":framework:observability"))
 
     // Shared APIs
     implementation(project(":shared:shared-api"))
@@ -27,7 +29,10 @@ dependencies {
     runtimeOnly(libs.postgresql)
 
     // Testing
+    testImplementation(libs.spring.boot.starter.test)
     testImplementation(project(":shared:testing"))
+    integrationTestImplementation(libs.spring.boot.starter.test)
+    integrationTestImplementation(project(":shared:testing"))
 }
 
 pitest {

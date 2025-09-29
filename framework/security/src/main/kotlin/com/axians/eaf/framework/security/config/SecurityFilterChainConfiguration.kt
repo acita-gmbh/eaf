@@ -31,8 +31,12 @@ open class SecurityFilterChainConfiguration(
         http
             .authorizeHttpRequests { authorize ->
                 authorize
-                    .requestMatchers("/actuator/**")
+                    .requestMatchers("/actuator/health")
                     .permitAll()
+                    .requestMatchers("/actuator/prometheus")
+                    .hasRole("eaf-admin")
+                    .requestMatchers("/actuator/**")
+                    .authenticated()
                     .requestMatchers("/api/secure/**")
                     .authenticated()
                     .requestMatchers("/widgets/**")

@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.cqrs.interceptors
 
+import com.axians.eaf.framework.observability.metrics.CustomMetrics
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.longs.shouldBeLessThan
@@ -28,12 +29,15 @@ import kotlin.system.measureNanoTime
 class TenantEventMessageInterceptorPerformanceSpec :
     FunSpec({
         test("4.4-UNIT-005: interceptor overhead should be <5ms p95 per event") {
-            val tenantContext = TenantContext(SimpleMeterRegistry())
+            val meterRegistry = SimpleMeterRegistry()
+            val tenantContext = TenantContext(meterRegistry)
+            val customMetrics = CustomMetrics(meterRegistry, tenantContext)
             val interceptor =
                 TenantEventMessageInterceptor(
                     tenantContext = tenantContext,
                     redisTemplate = null, // Skip Redis for pure interceptor overhead measurement
-                    meterRegistry = SimpleMeterRegistry(),
+                    meterRegistry = meterRegistry,
+                    customMetrics = customMetrics,
                 )
 
             val successChain = InterceptorChain { "success" }

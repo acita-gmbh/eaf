@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.cqrs.config
 
+import com.axians.eaf.framework.cqrs.interceptors.CommandMetricsInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCorrelationDataProvider
 import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
 import org.axonframework.config.Configurer
@@ -122,6 +123,16 @@ class AxonConfiguration {
     ) {
         configurer.onInitialize { config ->
             config.correlationDataProviders().add(correlationDataProvider)
+        }
+    }
+
+    @Autowired
+    fun configureCommandMetrics(
+        configurer: Configurer,
+        commandMetricsInterceptor: CommandMetricsInterceptor,
+    ) {
+        configurer.onInitialize { config ->
+            config.commandBus().registerHandlerInterceptor(commandMetricsInterceptor)
         }
     }
 }

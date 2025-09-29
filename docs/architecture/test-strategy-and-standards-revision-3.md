@@ -647,6 +647,96 @@ class ProductIntegrationTest : IntegrationTestBase() {
 }
 ```
 
+### Security Testing Pattern: Real Beans, No Mocks
+
+When testing secured endpoints, **always use real Spring Security beans**. Never mock security infrastructure.
+
+```kotlin
+// ✅ CORRECT - Real security configuration in integration test
+@SpringBootTest(
+    classes = [SecuredEndpointTest.TestApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = [
+        "spring.application.name=security-test",
+        "spring.security.user.name=test-admin",
+        "spring.security.user.password=password",
+        "spring.security.user.roles=eaf-admin"
+    ]
+)
+@ActiveProfiles("test")
+class SecuredEndpointTest : FunSpec() {
+    @Autowired
+    private lateinit var restTemplate: TestRestTemplate
+
+    init {
+        extension(SpringExtension())
+
+        test("unauthenticated requests are rejected") {
+            val response = restTemplate.getForEntity(
+                "/actuator/prometheus",
+                String::class.java
+            )
+            response.statusCode shouldBe HttpStatus.UNAUTHORIZED
+        }
+
+        test("authenticated requests succeed with proper role") {
+            val response = restTemplate
+                .withBasicAuth("test-admin", "password")
+                .getForEntity("/actuator/prometheus", String::class.java)
+
+            response.statusCode shouldBe HttpStatus.OK
+        }
+    }
+
+    @SpringBootApplication
+    open class TestApplication {
+        @Bean
+        open fun userDetailsService(): UserDetailsService =
+            InMemoryUserDetailsManager(
+                User.withUsername("test-admin")
+                    .password("{noop}password")
+                    .roles("eaf-admin")
+                    .build()
+            )
+
+        @Bean
+        open fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
+            http
+                .authorizeHttpRequests { authorize ->
+                    authorize
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/prometheus").hasRole("eaf-admin")
+                        .anyRequest().permitAll()
+                }
+                .httpBasic { }
+                .csrf { it.disable() }
+                .build()
+    }
+}
+```
+
+**Why real security beans matter:**
+- ✅ Validates actual authorization behavior (not mock interactions)
+- ✅ Tests security filter chain configuration correctness
+- ✅ Catches misconfigurations that mocks would hide
+- ✅ Provides confidence in production security behavior
+
+```kotlin
+// ❌ FORBIDDEN - Mocking security infrastructure
+@SpringBootTest
+class BadSecurityTest {
+    @MockBean  // ❌ FORBIDDEN: Never mock security infrastructure
+    private lateinit var securityFilterChain: SecurityFilterChain
+
+    test("this validates nothing") {
+        // You're testing mock behavior, not real security
+        // Security bugs won't be caught
+    }
+}
+```
+
+**Reference**: Story 5.2 PrometheusEndpointIntegrationTest implementation
+
 ## End-to-End Testing
 
 ### API Testing with TestRestTemplate
