@@ -1,0 +1,13 @@
+# Production-specific configuration overrides
+# Story 5.3: Addresses PERF-001 QA concern (performance overhead from 100% sampling)
+
+management:
+  tracing:
+    sampling:
+      probability: ${OTEL_SAMPLING_RATE:0.1}  # 10% sampling for production (reduces overhead)
+
+logging:
+  level:
+    com.axians.eaf: INFO
+    org.axonframework: WARN
+    org.springframework.web: WARN

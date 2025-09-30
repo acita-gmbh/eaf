@@ -3,6 +3,8 @@ package com.axians.eaf.framework.cqrs.config
 import com.axians.eaf.framework.cqrs.interceptors.CommandMetricsInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCorrelationDataProvider
 import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
+import com.axians.eaf.framework.cqrs.interceptors.TracingCommandInterceptor
+import com.axians.eaf.framework.cqrs.interceptors.TracingEventInterceptor
 import org.axonframework.config.Configurer
 import org.axonframework.config.EventProcessingConfigurer
 import org.springframework.beans.factory.annotation.Autowired
@@ -75,6 +77,54 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
     matchIfMissing = true,
 )
 class AxonConfiguration {
+    /**
+     * Registers TracingCommandInterceptor for command dispatch trace context injection.
+     *
+     * **Execution Order**: Registered BEFORE tenant validation to ensure trace context
+     * is available during tenant isolation checks.
+     *
+     * Story 5.3: Trace context propagation for Axon commands
+     *
+     * @param configurer Axon framework configurer
+     * @param tracingCommandInterceptor Tracing interceptor bean (conditionally created)
+     */
+    @Autowired(required = false)
+    fun configureCommandTracing(
+        configurer: Configurer,
+        tracingCommandInterceptor: TracingCommandInterceptor?,
+    ) {
+        tracingCommandInterceptor?.let { interceptor ->
+            configurer.onInitialize { config ->
+                config.commandBus().registerDispatchInterceptor(interceptor)
+            }
+        }
+    }
+
+    /**
+     * Registers TracingEventInterceptor for event handler trace context restoration.
+     *
+     * **Execution Order**: Registered BEFORE tenant propagation to ensure trace spans
+     * are active when tenant validation occurs.
+     *
+     * **CRITICAL**: This interceptor mitigates TECH-001 risk (async trace context loss).
+     *
+     * Story 5.3: Async trace propagation for event handlers
+     *
+     * @param eventProcessingConfigurer Axon event processing configuration
+     * @param tracingEventInterceptor Tracing interceptor bean (conditionally created)
+     */
+    @Autowired(required = false)
+    fun configureEventTracing(
+        eventProcessingConfigurer: EventProcessingConfigurer,
+        tracingEventInterceptor: TracingEventInterceptor?,
+    ) {
+        tracingEventInterceptor?.let { interceptor ->
+            eventProcessingConfigurer.registerDefaultHandlerInterceptor { config, processorName ->
+                interceptor
+            }
+        }
+    }
+
     /**
      * Registers TenantEventMessageInterceptor for all tracking event processors.
      *
