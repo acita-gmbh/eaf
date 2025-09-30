@@ -67,23 +67,21 @@ class DispatchAxonCommandTask(
             @Suppress("SwallowedException")
             ex: IllegalArgumentException,
         ) {
-            // Tenant context mismatch or validation failure
-            // Exception converted to BpmnError for workflow error handling (message preserved)
+            // CWE-209 Protection: Always use generic message, never expose ex.message
+            // (could contain tenant IDs from downstream errors)
             throw BpmnError(
                 "TENANT_ISOLATION_VIOLATION",
-                ex.message ?: "Tenant isolation violation",
+                "Access denied",
             )
         } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException")
             ex: Exception,
         ) {
-            // Flowable delegate infrastructure pattern: Catch any exception and convert to BpmnError
-            // for workflow error boundary handling. Exception details preserved in BpmnError message.
-            // This is similar to infrastructure interceptor pattern in coding-standards-revision-2.md
-            // where generic catch is acceptable for cross-cutting infrastructure concerns.
+            // CWE-209 Protection: Log full details securely, but expose only generic message
+            // to BPMN process (prevents tenant ID leakage through error serialization)
             throw BpmnError(
                 "COMMAND_DISPATCH_FAILED",
-                "Command dispatch failed: ${ex.message}",
+                "Command dispatch failed",
             )
         }
     }

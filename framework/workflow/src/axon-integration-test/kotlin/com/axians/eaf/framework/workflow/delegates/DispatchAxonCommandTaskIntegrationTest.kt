@@ -3,6 +3,7 @@ package com.axians.eaf.framework.workflow.delegates
 import com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository
 import com.axians.eaf.framework.security.tenant.TenantContext
 import com.axians.eaf.testing.containers.TestContainers
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -19,6 +20,7 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import java.math.BigDecimal
 import java.util.UUID
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Integration test for DispatchAxonCommandTask JavaDelegate.
@@ -94,14 +96,13 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
 
             processInstance.shouldNotBeNull()
 
-            // Verify Widget was created via Axon aggregate
-            // Wait for async projection (event processing)
-            Thread.sleep(2000)
-
-            val widget = widgetProjectionRepository.findByWidgetIdAndTenantId(widgetId, "test-tenant")
-            widget.shouldNotBeNull()
-            widget.name shouldBe "Test Widget"
-            widget.getTenantId() shouldBe "test-tenant"
+            // Verify Widget was created via Axon aggregate (with async projection polling)
+            eventually(duration = 5.seconds) {
+                val widget = widgetProjectionRepository.findByWidgetIdAndTenantId(widgetId, "test-tenant")
+                widget.shouldNotBeNull()
+                widget.name shouldBe "Test Widget"
+                widget.getTenantId() shouldBe "test-tenant"
+            }
         }
 
         test("should handle missing required variables with BPMN error") {

@@ -3,6 +3,11 @@
              xmlns:flowable="http://flowable.org/bpmn"
              targetNamespace="http://axians.com/eaf/workflow">
 
+  <!-- Error Definitions (BPMN Spec Compliance) -->
+  <error id="COMMAND_DISPATCH_FAILED" errorCode="COMMAND_DISPATCH_FAILED" name="Command Dispatch Failed"/>
+  <error id="MISSING_VARIABLE" errorCode="MISSING_VARIABLE" name="Missing Required Variable"/>
+  <error id="TENANT_ISOLATION_VIOLATION" errorCode="TENANT_ISOLATION_VIOLATION" name="Tenant Isolation Violation"/>
+
   <process id="example-widget-creation" name="Example Widget Creation" isExecutable="true">
 
     <documentation>
