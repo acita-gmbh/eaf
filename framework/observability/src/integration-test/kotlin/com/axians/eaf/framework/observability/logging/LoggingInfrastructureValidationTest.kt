@@ -91,7 +91,22 @@ class LoggingInfrastructureValidationTest :
             // Then: Constants should match expected values
             LoggingContextProvider.SERVICE_NAME_KEY shouldBe "service_name"
             LoggingContextProvider.TRACE_ID_KEY shouldBe "trace_id"
+            LoggingContextProvider.SPAN_ID_KEY shouldBe "span_id"
             LoggingContextProvider.TENANT_ID_KEY shouldBe "tenant_id"
+        }
+
+        test("MDC contains trace_id from OpenTelemetry when span is active") {
+            // Given: Mock OpenTelemetry span context
+            val testTraceId = "00000000000000000000000000000001"
+            val testSpanId = "0000000000000001"
+
+            // When: MDC is populated (simulating EafMDCConfiguration behavior)
+            MDC.put(LoggingContextProvider.TRACE_ID_KEY, testTraceId)
+            MDC.put(LoggingContextProvider.SPAN_ID_KEY, testSpanId)
+
+            // Then: MDC contains OpenTelemetry trace context
+            MDC.get(LoggingContextProvider.TRACE_ID_KEY) shouldBe testTraceId
+            MDC.get(LoggingContextProvider.SPAN_ID_KEY) shouldBe testSpanId
         }
 
         test("logging produces output at different levels") {

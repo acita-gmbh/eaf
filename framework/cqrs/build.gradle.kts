@@ -1,5 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
+    id("eaf.observability")
     id("eaf.testing")
     alias(libs.plugins.kotlin.spring)
 }
@@ -20,9 +21,11 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
     testImplementation(libs.bundles.testcontainers)
+    testImplementation(libs.opentelemetry.sdk.testing)
 
     integrationTestImplementation(project(":framework:security"))
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.bundles.testcontainers)
+    integrationTestImplementation(libs.spring.boot.starter.test)
     integrationTestImplementation(libs.spring.boot.starter.data.redis)
 }

@@ -68,6 +68,24 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  tracing:
+    enabled: true
+    sampling:
+      probability: ${OTEL_SAMPLING_RATE:1.0}  # 100% for dev/test, override for prod
+
+# OpenTelemetry tracing configuration
+otel:
+  service:
+    name: ${spring.application.name}
+  traces:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_ENDPOINT:http://localhost:4317}
+  resource:
+    attributes:
+      environment: ${EAF_ENVIRONMENT:dev}
+      deployment.environment: ${EAF_ENVIRONMENT:dev}
 
 # Logging configuration
 logging:

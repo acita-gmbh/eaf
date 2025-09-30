@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
 
     testImplementation(libs.bundles.kotest)
+    testImplementation(libs.opentelemetry.sdk.testing)
 
     // Integration test dependencies
     integrationTestImplementation(libs.spring.boot.starter.test)

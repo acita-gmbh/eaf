@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.observability.logging
 
 import com.axians.eaf.framework.security.tenant.TenantContext
+import io.opentelemetry.api.trace.Span
 import jakarta.annotation.PostConstruct
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -13,7 +14,9 @@ import java.util.UUID
 
 /**
  * Configures MDC (Mapped Diagnostic Context) for automatic context field injection.
- * Integrates with TenantContext from Story 4.1 and manages trace_id generation.
+ * Integrates with TenantContext from Story 4.1 and OpenTelemetry from Story 5.3.
+ *
+ * Story 5.3: Extracts trace_id and span_id from active OpenTelemetry span for log-trace correlation.
  */
 @Configuration(proxyBeanMethods = false)
 open class EafMDCConfiguration(
@@ -42,9 +45,22 @@ open class EafMDCConfiguration(
             response: HttpServletResponse,
             handler: Any,
         ): Boolean {
-            // Generate or extract trace ID
-            val traceId = request.getHeader("X-Trace-ID") ?: generateTraceId()
+            // Story 5.3: Extract trace_id from OpenTelemetry span when available
+            val span = Span.current()
+            val traceId =
+                if (span.spanContext.isValid) {
+                    // Use OpenTelemetry trace ID for log-trace correlation
+                    span.spanContext.traceId
+                } else {
+                    // Fallback to header or generate UUID (no active tracing)
+                    request.getHeader("X-Trace-ID") ?: generateTraceId()
+                }
             loggingContextProvider.setTraceId(traceId)
+
+            // Story 5.3: Extract span_id from OpenTelemetry for trace span correlation
+            if (span.spanContext.isValid) {
+                loggingContextProvider.setSpanId(span.spanContext.spanId)
+            }
 
             // Set trace ID in response header for client correlation
             response.setHeader("X-Trace-ID", traceId)
@@ -53,7 +69,12 @@ open class EafMDCConfiguration(
             val tenantId = tenantContext.current()
             loggingContextProvider.setTenantId(tenantId)
 
-            logger.debug("Logging context set for request: trace_id={}, tenant_id={}", traceId, tenantId)
+            logger.debug(
+                "Logging context set for request: trace_id={}, span_id={}, tenant_id={}",
+                traceId,
+                span.spanContext.spanId,
+                tenantId,
+            )
             return true
         }
 
