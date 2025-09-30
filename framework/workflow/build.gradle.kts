@@ -1,13 +1,19 @@
 plugins {
-    id("eaf.kotlin-common")
+    id("eaf.workflow")
+    id("eaf.testing")
 }
 
 description = "EAF Workflow Framework - Flowable BPMN integration"
 
 dependencies {
     implementation(project(":framework:core"))
-    implementation(libs.bundles.kotlin)
-    implementation(libs.flowable.spring.boot.starter.process)
 
     testImplementation(libs.bundles.kotest)
+
+    // Integration test dependencies (Story 6.1)
+    integrationTestImplementation(libs.spring.boot.starter.test)
+    integrationTestImplementation(project(":shared:testing"))
+    integrationTestImplementation(libs.postgresql)
+    integrationTestImplementation(libs.testcontainers.postgresql)
+    integrationTestImplementation(libs.kotest.runner.junit5.jvm) // Required for custom source sets
 }

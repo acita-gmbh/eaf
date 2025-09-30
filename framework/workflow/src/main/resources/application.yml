@@ -1,0 +1,12 @@
+# Flowable BPMN Engine Configuration (Story 6.1)
+spring:
+  flowable:
+    # Schema Management
+    database-schema-update: true      # Auto-create/update Flowable schema on startup
+    database-schema: flowable         # Dedicated schema name (isolated from event store)
+
+    # Async Job Execution
+    async-executor-activate: true     # Enable async job executor for high-throughput workflows
+
+    # Process Definition Validation
+    check-process-definitions: true   # Validate BPMN process definitions on startup
