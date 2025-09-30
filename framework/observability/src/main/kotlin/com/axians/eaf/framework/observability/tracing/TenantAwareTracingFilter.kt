@@ -30,6 +30,8 @@ import org.springframework.web.filter.OncePerRequestFilter
 )
 class TenantAwareTracingFilter(
     private val tenantContext: TenantContext,
+    @param:org.springframework.beans.factory.annotation.Value("\${spring.application.name:eaf-service}")
+    private val serviceName: String,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -44,7 +46,7 @@ class TenantAwareTracingFilter(
             span.setAttribute("tenant_id", tenantId)
 
             // Add service name for consistency with metrics tagging
-            span.setAttribute("service_name", "eaf-licensing-server")
+            span.setAttribute("service_name", serviceName)
         }
 
         filterChain.doFilter(request, response)

@@ -27,7 +27,9 @@ class TracingCommandInterceptor : MessageDispatchInterceptor<CommandMessage<*>> 
     override fun handle(messages: List<CommandMessage<*>>): BiFunction<Int, CommandMessage<*>, CommandMessage<*>> =
         BiFunction { _, message ->
             val span = Span.current()
-            if (span.isRecording) {
+            // Check spanContext validity (not just isRecording) to propagate
+            // context even for unsampled spans (trace_flags=00)
+            if (span.spanContext.isValid) {
                 val traceContext =
                     mapOf(
                         "trace_id" to span.spanContext.traceId,

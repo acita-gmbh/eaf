@@ -44,25 +44,33 @@ class TracingCommandInterceptorTest :
                         .builder()
                         .setTracerProvider(tracerProvider)
                         .buildAndRegisterGlobal()
-                val tracer = openTelemetry.getTracer("test-tracer")
 
-                val testSpan = tracer.spanBuilder("test-parent-span").startSpan()
-                val expectedTraceId = testSpan.spanContext.traceId
-                val expectedSpanId = testSpan.spanContext.spanId
+                try {
+                    val tracer = openTelemetry.getTracer("test-tracer")
 
-                val command = GenericCommandMessage.asCommandMessage<String>("test-command")
+                    val testSpan = tracer.spanBuilder("test-parent-span").startSpan()
+                    val expectedTraceId = testSpan.spanContext.traceId
+                    val expectedSpanId = testSpan.spanContext.spanId
 
-                // Execute interceptor within active span
-                val result =
-                    testSpan.makeCurrent().use {
-                        interceptor.handle(listOf(command)).apply(0, command)
+                    val command = GenericCommandMessage.asCommandMessage<String>("test-command")
+
+                    // Execute interceptor within active span
+                    val result =
+                        testSpan.makeCurrent().use {
+                            interceptor.handle(listOf(command)).apply(0, command)
+                        }
+                    testSpan.end()
+
+                    Then("command metadata should contain trace context") {
+                        result.metaData["trace_id"] shouldBe expectedTraceId
+                        result.metaData["span_id"] shouldBe expectedSpanId
+                        result.metaData["trace_flags"] shouldNotBe null
                     }
-                testSpan.end()
-
-                Then("command metadata should contain trace context") {
-                    result.metaData["trace_id"] shouldBe expectedTraceId
-                    result.metaData["span_id"] shouldBe expectedSpanId
-                    result.metaData["trace_flags"] shouldNotBe null
+                } finally {
+                    // Reset global OpenTelemetry to prevent cross-test contamination
+                    tracerProvider.close()
+                    io.opentelemetry.api.GlobalOpenTelemetry
+                        .resetForTest()
                 }
             }
         }

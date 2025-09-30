@@ -43,11 +43,18 @@ class TracingEventInterceptor(
 
         // Restore trace context for async event handlers
         return if (traceId != null && spanId != null) {
+            // Preserve original sampling decision from trace_flags metadata
+            val traceFlagsHex = message.metaData["trace_flags"] as? String
+            val traceFlags =
+                traceFlagsHex
+                    ?.let { TraceFlags.fromHex(it, 0) }
+                    ?: TraceFlags.getDefault()
+
             val spanContext =
                 SpanContext.create(
                     traceId,
                     spanId,
-                    TraceFlags.getSampled(),
+                    traceFlags,
                     TraceState.getDefault(),
                 )
             val remoteContext = Context.current().with(Span.wrap(spanContext))
