@@ -6,6 +6,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -41,8 +43,11 @@ data class WidgetProjection(
     val value: BigDecimal,
     @Column(name = "category", nullable = false, length = 100)
     val category: String,
+    // Story 6.2: Hibernate 6 JSONB type handler for PostgreSQL
+    // JSON stored as string for PostgreSQL jsonb compatibility
     @Column(name = "metadata", nullable = true, columnDefinition = "jsonb")
-    val metadata: String?, // JSON stored as string for PostgreSQL jsonb compatibility
+    @JdbcTypeCode(SqlTypes.JSON)
+    val metadata: String?,
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)

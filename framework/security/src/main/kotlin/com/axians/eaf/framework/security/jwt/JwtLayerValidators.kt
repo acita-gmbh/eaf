@@ -6,6 +6,7 @@ import arrow.core.right
 import com.axians.eaf.framework.security.errors.SecurityError
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -18,8 +19,11 @@ import java.util.UUID
 
 /**
  * JWT format and signature validation (Layers 1-3).
+ *
+ * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
+@Profile("!test") // Story 6.2: Requires JwtDecoder from SecurityConfiguration
 class JwtFormatValidator(
     private val jwtDecoder: JwtDecoder,
     private val meterRegistry: MeterRegistry,
@@ -65,8 +69,11 @@ class JwtFormatValidator(
 
 /**
  * JWT claims and timing validation (Layers 4-6).
+ *
+ * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
+@Profile("!test") // Story 6.2: Requires live infrastructure validation
 class JwtClaimsValidator(
     private val meterRegistry: MeterRegistry,
 ) {
@@ -190,8 +197,11 @@ class JwtClaimsValidator(
 
 /**
  * JWT security context validation (Layers 7-10).
+ *
+ * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
+@Profile("!test") // Story 6.2: Requires RedisTemplate (live infrastructure)
 class JwtSecurityValidator(
     private val redisTemplate: RedisTemplate<String, String>,
     private val meterRegistry: MeterRegistry,
