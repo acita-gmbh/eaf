@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -19,8 +20,11 @@ import org.springframework.web.filter.OncePerRequestFilter
 /**
  * Spring Security filter that applies 10-layer JWT validation.
  * Integrates TenLayerJwtValidator with Spring Security filter chain.
+ *
+ * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
+@Profile("!test") // Story 6.2: Requires JwtDecoder from SecurityConfiguration
 class JwtValidationFilter(
     private val tenLayerValidator: TenLayerJwtValidator,
     private val jwtDecoder: JwtDecoder,

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://axians.com/eaf/workflow">
+
+  <!-- Error Definitions (BPMN Spec Compliance) -->
+  <error id="COMMAND_DISPATCH_FAILED" errorCode="COMMAND_DISPATCH_FAILED" name="Command Dispatch Failed"/>
+  <error id="MISSING_VARIABLE" errorCode="MISSING_VARIABLE" name="Missing Required Variable"/>
+  <error id="TENANT_ISOLATION_VIOLATION" errorCode="TENANT_ISOLATION_VIOLATION" name="Tenant Isolation Violation"/>
+
+  <process id="example-widget-creation" name="Example Widget Creation" isExecutable="true">
+
+    <documentation>
+      Example BPMN process demonstrating DispatchAxonCommandTask usage.
+
+      Required process variables:
+      - widgetId (String): UUID for widget aggregate identifier
+      - tenantId (String): Tenant identifier for multi-tenancy isolation
+      - name (String): Widget name
+      - description (String, optional): Widget description
+      - value (BigDecimal): Widget value
+      - category (String): Widget category
+    </documentation>
+
+    <startEvent id="startEvent" name="Start"/>
+
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="dispatchCommand"/>
+
+    <serviceTask id="dispatchCommand" name="Create Widget via Axon"
+                 flowable:delegateExpression="${dispatchAxonCommandTask}">
+      <documentation>
+        Dispatches CreateWidgetCommand to Axon CommandGateway.
+        Uses delegateExpression to enable Spring bean injection (CommandGateway, TenantContext).
+        Uses process variables to build the command.
+      </documentation>
+    </serviceTask>
+
+    <boundaryEvent id="commandError" attachedToRef="dispatchCommand">
+      <errorEventDefinition errorRef="COMMAND_DISPATCH_FAILED"/>
+    </boundaryEvent>
+
+    <sequenceFlow id="flow2" sourceRef="dispatchCommand" targetRef="endEvent"/>
+    <sequenceFlow id="errorFlow" sourceRef="commandError" targetRef="errorEndEvent"/>
+
+    <endEvent id="endEvent" name="Success"/>
+    <endEvent id="errorEndEvent" name="Error"/>
+
+  </process>
+
+</definitions>

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
@@ -16,10 +17,15 @@ import org.springframework.security.oauth2.jwt.JwtDecoders
 /**
  * Spring Security configuration for EAF OAuth2 resource server.
  * Configures JWT authentication with Keycloak OIDC discovery.
+ *
+ * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
+ * Tests provide TenantContext via AxonIntegrationTestConfig instead.
+ * Research: 4 external AI sources recommend this as most idiomatic solution.
  */
 @Configuration
 @EnableWebSecurity
 @EnableAspectJAutoProxy
+@Profile("!test") // Story 6.2: Disable in test profile (requires Keycloak)
 @Import(SecurityFilterChainConfiguration::class)
 open class SecurityConfiguration {
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8180/realms/eaf}")

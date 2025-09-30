@@ -15,7 +15,11 @@ sealed class WidgetError {
     data class TenantIsolationViolation(
         val requestedTenant: String,
         val actualTenant: String,
-    ) : WidgetError()
+    ) : WidgetError() {
+        // CWE-209 Protection: Override toString() to prevent tenant ID disclosure
+        // Tenant IDs must never appear in error messages (enables tenant enumeration)
+        override fun toString(): String = "Access denied: tenant context mismatch"
+    }
 
     data class NotFound(
         val widgetId: String,

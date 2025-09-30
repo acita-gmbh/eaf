@@ -1,0 +1,52 @@
+# Axon Integration Test Configuration (Story 6.2)
+
+# Axon Framework - Lightweight in-memory mode (Research: All 4 sources recommend this)
+axon:
+  axonserver:
+    enabled: false  # CRITICAL: Triggers in-memory Axon (SimpleCommandBus, InMemoryEventStorageEngine)
+  eventhandling:
+    processors:
+      widget-projection:
+        mode: subscribing  # Use subscribing mode (in-memory, no token store)
+
+spring:
+  # Flowable configuration
+  flowable:
+    database-schema-update: true
+    database-schema: flowable
+    async-executor-activate: true
+    check-process-definitions: true
+    use-spring-bean-factory: true  # Use Spring to instantiate delegates (enables @Component injection)
+
+  # JPA configuration - enable DDL for Widget projection
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  # Allow test beans to override production beans
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Spring Modulith event publication registry (not needed for this test)
+  modulith:
+    events:
+      jdbc-schema-initialization:
+        enabled: false
+
+  # Exclude additional auto-configurations
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+      - org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor
+
+# Logging
+logging:
+  level:
+    org.flowable: INFO
+    com.axians.eaf: DEBUG
+    org.axonframework: INFO
