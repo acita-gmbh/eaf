@@ -53,7 +53,7 @@ jose4j = "0.9.6"          # JWT processing
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
 
 # Workflow
-flowable = "7.0.1"        # BPMN workflow engine
+flowable = "7.1.0"        # BPMN workflow engine (Story 6.1)
 
 [libraries]
 # Kotlin and JVM
@@ -135,7 +135,7 @@ spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boo
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 
 # Workflow
-flowable-spring-boot-starter-process = { module = "org.flowable:flowable-spring-boot-starter-process", version.ref = "flowable" }
+flowable-spring-boot-starter = { module = "org.flowable:flowable-spring-boot-starter", version.ref = "flowable" }
 
 # Gradle plugins for build-logic
 gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

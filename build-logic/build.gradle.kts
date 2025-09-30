@@ -146,6 +146,10 @@ gradlePlugin {
             id = "eaf.observability"
             implementationClass = "conventions.ObservabilityConventionPlugin"
         }
+        register("eaf.workflow") {
+            id = "eaf.workflow"
+            implementationClass = "conventions.WorkflowConventionPlugin"
+        }
     }
 }
 
