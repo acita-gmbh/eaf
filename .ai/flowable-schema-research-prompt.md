@@ -10,7 +10,7 @@ Investigate how to configure Flowable BPMN Engine 7.1.0 to create database table
 **What We Get**: Flowable tables created in `public` schema despite configuration
 
 **Evidence**:
-```
+```text
 DEBUG: PostgreSQL schemas: [information_schema, pg_catalog, pg_toast, public]
 DEBUG: All Flowable tables in PostgreSQL: [{table_schema=public, table_name=act_ru_execution}, ...]
 DEBUG: Tables in 'flowable' schema: 0 tables - []
@@ -223,7 +223,7 @@ open class FlowableSchemaConfiguration {
 }
 ```
 
-**OR**
+#### Alternative YAML Configuration
 
 ```yaml
 # Complete working YAML configuration
@@ -405,6 +405,6 @@ Please provide research findings in markdown with:
 
 ---
 
-**End of Research Prompt**
+### End of Research Prompt
 
 This prompt should be sent to an external research agent (Gemini, GPT-4, Claude via consult tool, etc.) for comprehensive investigation of Flowable schema configuration in Spring Boot environments.
