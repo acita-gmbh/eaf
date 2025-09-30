@@ -58,9 +58,13 @@ open class EafMDCConfiguration(
             loggingContextProvider.setTraceId(traceId)
 
             // Story 5.3: Extract span_id from OpenTelemetry for trace span correlation
-            if (span.spanContext.isValid) {
-                loggingContextProvider.setSpanId(span.spanContext.spanId)
-            }
+            val spanId =
+                if (span.spanContext.isValid) {
+                    span.spanContext.spanId
+                } else {
+                    null
+                }
+            loggingContextProvider.setSpanId(spanId)
 
             // Set trace ID in response header for client correlation
             response.setHeader("X-Trace-ID", traceId)
@@ -72,7 +76,7 @@ open class EafMDCConfiguration(
             logger.debug(
                 "Logging context set for request: trace_id={}, span_id={}, tenant_id={}",
                 traceId,
-                span.spanContext.spanId,
+                spanId,
                 tenantId,
             )
             return true

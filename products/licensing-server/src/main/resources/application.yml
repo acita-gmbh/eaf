@@ -71,7 +71,9 @@ management:
   tracing:
     enabled: true
     sampling:
-      probability: ${OTEL_SAMPLING_RATE:1.0}  # 100% for dev/test, override for prod
+      # 100% sampling for dev/test. WARNING: Significant performance impact in production.
+      # For production: use application-prod.yml (10% sampling) or set OTEL_SAMPLING_RATE=0.1
+      probability: ${OTEL_SAMPLING_RATE:1.0}
 
 # OpenTelemetry tracing configuration
 otel:

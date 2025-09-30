@@ -5,6 +5,7 @@ import io.opentelemetry.api.trace.Span
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -30,7 +31,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 )
 class TenantAwareTracingFilter(
     private val tenantContext: TenantContext,
-    @param:org.springframework.beans.factory.annotation.Value("\${spring.application.name:eaf-service}")
+    @param:Value("\${spring.application.name:eaf-service}")
     private val serviceName: String,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
