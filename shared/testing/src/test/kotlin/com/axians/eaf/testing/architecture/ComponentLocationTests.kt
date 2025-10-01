@@ -39,16 +39,22 @@ class ComponentLocationTests :
                 }
             }
 
-            test("WidgetController should be in correct location when implemented") {
-                val widgetControllerFiles =
+            test("Product controllers should NOT be in framework modules") {
+                // Story 6.3: Framework modules contain ONLY infrastructure (no product-specific code)
+                // Product controllers belong in products/* modules
+                val controllerFiles =
                     Konsist
                         .scopeFromProject()
                         .files
-                        .withName("WidgetController")
+                        .filter { it.name.endsWith("Controller") && it.path.contains("/controllers/") }
 
-                if (widgetControllerFiles.isNotEmpty()) {
-                    widgetControllerFiles.assertTrue {
-                        it.path.contains("framework/web/src/main/kotlin/com/axians/eaf/framework/web/controllers/")
+                if (controllerFiles.isNotEmpty()) {
+                    controllerFiles.assertTrue {
+                        // Controllers in framework must be generic infrastructure only
+                        // Product-specific controllers must be in products/* modules
+                        !it.path.contains("framework/web/src/main/kotlin/") ||
+                            it.name == "HealthController" || // Generic infrastructure
+                            it.name == "MetricsController" // Generic infrastructure
                     }
                 }
             }
