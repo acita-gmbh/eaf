@@ -581,6 +581,10 @@ class JpaProductRepositoryContractTest : ProductRepositoryContract() {
 
 ## Integration Testing with Testcontainers
 
+### End-to-End Test Location
+
+End-to-end (E2E) tests, which require a full Spring Boot application context, must be placed in **product modules** (e.g., `products/licensing-server`), not in framework modules. Framework modules are libraries and cannot provide the necessary runnable application context.
+
 ### Testcontainers Configuration
 
 ```kotlin
