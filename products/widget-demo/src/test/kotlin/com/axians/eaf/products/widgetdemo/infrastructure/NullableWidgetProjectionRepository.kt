@@ -1,7 +1,7 @@
 package com.axians.eaf.products.widgetdemo.infrastructure
 
-import com.axians.eaf.framework.persistence.entities.WidgetProjection
-import com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository
+import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
+import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl

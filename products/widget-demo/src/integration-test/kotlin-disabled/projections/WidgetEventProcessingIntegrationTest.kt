@@ -2,8 +2,8 @@ package com.axians.eaf.products.widgetdemo.projections
 
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
-import com.axians.eaf.framework.persistence.entities.WidgetProjection
-import com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository
+import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
+import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

@@ -2,7 +2,7 @@ package com.axians.eaf.products.widgetdemo.query
 
 import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
-import com.axians.eaf.framework.persistence.entities.WidgetProjection
+import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
 import com.axians.eaf.products.widgetdemo.infrastructure.NullableWidgetProjectionRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule

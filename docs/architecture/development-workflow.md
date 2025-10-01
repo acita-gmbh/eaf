@@ -16,6 +16,8 @@ The EAF development workflow provides a streamlined, developer-friendly experien
 
 ## One-Command Onboarding
 
+The `scripts/init-dev.sh` script automates the setup of the local development environment. It supports overriding the default Grafana port via the `GRAFANA_PORT` environment variable.
+
 ### Complete Environment Setup
 
 ```bash
@@ -296,7 +298,7 @@ main() {
     echo "   • API Documentation: http://localhost:8080/swagger-ui.html"
     echo "   • Admin Portal:     http://localhost:3000"
     echo "   • Keycloak:         http://localhost:8180"
-    echo "   • Grafana:          http://localhost:3001"
+    echo "   • Grafana:          http://localhost:${GRAFANA_PORT:-3001}"
     echo "   • Prometheus:       http://localhost:9090"
     echo
     echo "📋 Quick Commands:"
@@ -306,6 +308,10 @@ main() {
     echo "   • Generate code:    eaf scaffold --help"
     echo
     echo "📖 Documentation: docs/README.md"
+    echo
+    echo "🩺 Manual Health Checks:"
+    echo "  - EAF API: curl http://localhost:8080/actuator/health"
+    echo "  - Keycloak Realm: curl http://localhost:8180/realms/eaf-test/.well-known/openid-configuration"
     echo
 
     # Keep the script running to maintain services
@@ -467,6 +473,14 @@ eaf scaffold feature ProductCatalog --aggregate Product --api /api/v1/products -
 # - Database projections
 ```
 
+### Documenting Workflow Artifacts
+
+When developing new features, it is important to document any new or modified data models, APIs, or components. This ensures that the project's documentation stays up-to-date. Please refer to the main architecture documents for guidance:
+
+-   **Data Models**: See `docs/architecture/data-models.md`.
+-   **API Specifications**: See `docs/architecture/api-specification-revision-2.md`.
+-   **Component Specifications**: See `docs/architecture/component-specifications.md`.
+
 ### Custom Templates
 
 ```kotlin
@@ -601,6 +615,17 @@ eaf:
     nullable-pattern: true
     container-reuse: true
 ```
+
+### Build Performance Baselines
+
+The following build performance baselines were established to detect regressions.
+
+| Workflow | Command | Real Time |
+| :--- | :--- | :--- |
+| Clean build | `./gradlew clean build` | 13.33 s |
+| Incremental build | `./gradlew build` | 1.77 s |
+
+These timings were captured on a standard developer machine and should be used as a reference.
 
 ### Git Workflow
 

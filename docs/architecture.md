@@ -256,6 +256,83 @@ class FlowableAxonBridge(
 }
 ```
 
+#### Schema Isolation (Technical Debt)
+
+**Status**: Open Technical Debt
+
+Flowable is currently configured to create its tables in the default `public` schema in PostgreSQL, not in a dedicated `flowable` schema as originally intended. While this has no functional impact (Flowable's `ACT_*` table prefixes provide a level of namespacing), it deviates from the desired architectural separation.
+
+**Remediation Plan**
+
+A follow-up story can implement full schema isolation by following this documented, multi-step plan:
+
+1.  **Pre-create Schema**: Ensure the `flowable` schema is created in the PostgreSQL database before the application starts.
+2.  **Implement `EngineConfigurationConfigurer`**: Create a custom Spring bean that implements Flowable's `EngineConfigurationConfigurer` interface.
+3.  **Set `databaseSchema`**: Within the configurer, set the `databaseSchema` property on the `ProcessEngineConfiguration` to `flowable`.
+4.  **Set JDBC `currentSchema`**: Configure the JDBC connection URL to include the `currentSchema=flowable` parameter. This ensures that all subsequent database operations for that connection are scoped to the `flowable` schema.
+
+This approach was identified through research but deferred due to its complexity relative to the immediate benefits for the MVP.
+
+#### Monitoring and Alerting
+
+To ensure the security and reliability of workflow executions, specific monitoring and alerting hooks should be implemented.
+
+**Tenant Isolation Violations**
+
+A critical security concern is the potential for tenant isolation violations within a workflow. The `DispatchAxonCommandTask` delegate and other custom service tasks are designed to throw a `BpmnError` with the code `TENANT_ISOLATION_VIOLATION` if a tenant context mismatch is detected.
+
+Production monitoring systems must be configured to:
+-   **Monitor** for the occurrence of `TENANT_ISOLATION_VIOLATION` BpmnErrors.
+-   **Alert** the security and operations teams when such an error is detected, as it may indicate a potential security attack or a serious bug.
+
+### Event Signaling and Correlation Patterns
+
+When designing workflows that wait for asynchronous events from the Axon event bus, it is crucial to follow specific patterns to ensure reliable and secure operation.
+
+**Message Events for Targeted Signaling**
+
+Use **Message Events** instead of Signal Events for correlating events to specific process instances. Message Events allow for targeted delivery to a single waiting execution based on a correlation key, which is essential for multi-tenant safety. Signal Events, in contrast, are broadcast globally and pose a risk of cross-tenant signaling.
+
+**Two-Step Correlation Query**
+
+Flowable has a limitation where the business key is only stored on the root process instance, not on child executions. To reliably find a waiting execution (e.g., a Message Receive Event Task) within a process, a two-step query pattern is required:
+
+1.  **Find Process Instance by Business Key**: First, find the root process instance using the business key from the event.
+    ```kotlin
+    val processInstance = runtimeService.createProcessInstanceQuery()
+        .processInstanceBusinessKey(event.correlationKey)
+        .singleResult()
+    ```
+2.  **Find Execution by Process Instance ID**: Then, query for the waiting execution within that process instance using its ID and the message name.
+    ```kotlin
+    val execution = runtimeService.createExecutionQuery()
+        .processInstanceId(processInstance.id)
+        .messageEventSubscriptionName("MyMessageEvent")
+        .singleResult()
+    ```
+
+**Asynchronous Test Assertion with `eventually`**
+
+Due to the asynchronous nature of event handling and process state transitions, tests that verify these interactions can be prone to race conditions. To avoid flaky tests, use the `eventually` block from Kotest to poll for the desired state change.
+
+```kotlin
+eventually(duration = 5.seconds) {
+    val historicInstance = processEngine.historyService
+        .createHistoricProcessInstanceQuery()
+        .processInstanceId(processInstance.id)
+        .singleResult()
+
+    historicInstance.endTime.shouldNotBeNull() // Assert that the process has completed
+}
+```
+
+**Process-Level Tenant Validation**
+
+For defense-in-depth security, event handlers that signal BPMN processes must perform a two-layer tenant check:
+
+1.  **Event-Level Check**: Validate that the tenant ID from the incoming Axon event matches the current `TenantContext`.
+2.  **Process-Level Check**: After finding the process instance, retrieve its `tenantId` process variable and validate that it also matches the event's tenant ID. This prevents an event for one tenant from incorrectly signaling a process belonging to another tenant, even if they share a business key.
+
 ### 4. Security Implementation
 
 **10-Layer JWT Validation System**:
@@ -895,51 +972,90 @@ class EmergencySecurityRecovery(
 }
 ```
 
+### Actuator Endpoint Security
+
+The Spring Boot Actuator endpoints are secured to prevent unauthorized access to sensitive application information.
+
+-   **/actuator/health**: This endpoint is public and does not require authentication. It is used for basic health checks by load balancers and container orchestrators.
+-   **/actuator/prometheus**: This endpoint exposes detailed application metrics for Prometheus scraping. Access is restricted and requires an authenticated user with the `ROLE_eaf-admin` role. Unauthenticated requests will be rejected with a 401 Unauthorized status.
+
+This security policy is enforced by the `SecurityFilterChainConfiguration`.
+
 ---
 
 ## Multi-Tenancy Strategy
 
 ### Implementation Architecture
 
+The core of the multi-tenancy implementation is the `TenantContext`, which holds the active tenant ID for the duration of a request. It is implemented as a stack-based `ThreadLocal` to support nested tenant contexts and provide robust memory-leak protection.
+
 ```kotlin
-// framework/tenancy/src/main/kotlin/com/axians/eaf/tenancy/TenantContext.kt
-object TenantContext {
-    private val contextHolder = ThreadLocal<TenantInfo>()
-    private val asyncContextHolder = CoroutineContext.Element // Micrometer integration
-
-    data class TenantInfo(
-        val tenantId: UUID,
-        val realm: String,
-        val tier: TenantTier,
-        val features: Set<Feature>
-    )
-
-    fun set(tenantInfo: TenantInfo) {
-        contextHolder.set(tenantInfo)
-        MDC.put("tenant_id", tenantInfo.tenantId.toString())
-        Span.current().setAttribute("tenant.id", tenantInfo.tenantId.toString())
+// TenantContext API (ThreadLocal stack-based with WeakReference storage)
+@Component
+class TenantContext(private val meterRegistry: MeterRegistry? = null) {
+    companion object {
+        private val contextStack: ThreadLocal<Deque<WeakReference<String>>> =
+            ThreadLocal.withInitial { ArrayDeque() }
     }
 
-    fun current(): TenantInfo? = contextHolder.get()
-
-    fun clear() {
-        contextHolder.remove()
-        MDC.remove("tenant_id")
+    fun setCurrentTenantId(tenantId: String) {
+        val stack = contextStack.get()
+        stack.push(WeakReference(tenantId))
+        meterRegistry?.counter("tenant.context.set")?.increment()
     }
 
-    // Async propagation for Kotlin coroutines
-    suspend fun <T> withTenant(tenantInfo: TenantInfo, block: suspend () -> T): T {
-        return withContext(asyncContextHolder + tenantInfo) {
-            set(tenantInfo)
-            try {
-                block()
-            } finally {
-                clear()
-            }
+    fun current(): String? {
+        val stack = contextStack.get()
+        while (stack.isNotEmpty()) {
+            val weakRef = stack.peek()
+            val tenantId = weakRef?.get()
+            if (tenantId != null) return tenantId
+            stack.poll() // Remove GC'd reference
+        }
+        return null
+    }
+
+    fun getCurrentTenantId(): String =
+        current() ?: error("Missing or invalid tenant_id claim in JWT token")
+
+    fun clearCurrentTenant() {
+        val stack = contextStack.get()
+        if (stack.isNotEmpty()) {
+            stack.poll()
+            meterRegistry?.counter("tenant.context.clear")?.increment()
+        }
+        if (stack.isEmpty()) {
+            contextStack.remove()
+            meterRegistry?.counter("tenant.context.threadlocal_removed")?.increment()
         }
     }
 }
 ```
+
+### Hardening and Operations
+
+The `TenantContext` implementation includes several features for hardening and operational monitoring to ensure stability and security in a multi-tenant environment.
+
+**Context Cleanup**
+
+To prevent memory leaks and context "bleeding" between requests in a thread-pooled environment, the `TenantContext` must be cleared at the end of every request. This is enforced by the `TenantContextFilter`, which calls `tenantContext.clearCurrentTenant()` in a `finally` block. This guarantees that the `ThreadLocal` is cleaned up even if the request processing fails. When the context stack for a thread becomes empty, `ThreadLocal.remove()` is called to fully release the memory associated with that thread.
+
+**Memory Management**
+
+The context stack uses `WeakReference<String>` to hold tenant IDs. This allows the garbage collector to reclaim the memory for a tenant ID if it's no longer referenced anywhere else, providing an additional layer of protection against memory leaks.
+
+**Monitoring**
+
+The `TenantContext` is instrumented with Micrometer metrics to provide visibility into its operation:
+-   `tenant.context.set`: Incremented every time a tenant context is set.
+-   `tenant.context.clear`: Incremented every time a tenant context is cleared.
+-   `tenant.context.threadlocal_removed`: Incremented when the `ThreadLocal` is completely removed for a thread.
+
+Additionally, the stack depth can be monitored. A stack depth greater than zero after a request has completed can indicate a context leak. Production monitoring should include alerts for this condition.
+
+**Denial-of-Service (DoS) Protection**
+
+To protect against potential DoS attacks that might involve rapid or excessive tenant context switching, rate limiting should be applied at the API gateway or load balancer level. The `TenantContextFilter` itself includes basic safeguards, but comprehensive protection requires external rate limiting based on tenant ID, IP address, or other request characteristics.
 
 ### Tenant Isolation Patterns
 
@@ -1010,11 +1126,89 @@ class ProductServiceTest : NullableSpec({
 | Integration | 500ms | 1000ms | Testcontainers |
 | End-to-End | 5000ms | 10000ms | Full stack |
 
+### Spring Integration Testing Standards
+
+When writing Spring Boot integration tests with Kotest, it is critical to use the correct pattern to avoid compilation errors caused by context initialization timing conflicts.
+
+**Recommended Pattern: `@Autowired` Field Injection**
+
+Use `@Autowired` field injection for dependencies and place the test logic within an `init` block. This pattern ensures that the Spring context is fully initialized before dependencies are injected and tests are executed.
+
+```kotlin
+@SpringBootTest
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var commandGateway: CommandGateway
+
+    init {
+        // The SpringExtension is automatically applied by @SpringBootTest
+        test("a test case") {
+            // Test logic using injected mockMvc and commandGateway
+        }
+    }
+}
+```
+
+**Anti-Pattern: Constructor Injection**
+
+Avoid using constructor injection for dependencies in Kotest `FunSpec` tests. This pattern leads to a circular dependency during compilation, as the constructor parameters are required before the Spring context is available to create them.
+
+```kotlin
+// ANTI-PATTERN: DO NOT USE
+@SpringBootTest
+class MyIntegrationTest(
+    private val mockMvc: MockMvc, // Causes compilation errors
+    private val commandGateway: CommandGateway,
+) : FunSpec({
+    test("a test case") {
+        // ...
+    }
+})
+```
+
+### Specialized Test Source Sets
+
+To manage complex integration testing scenarios and avoid conflicts between test frameworks or configurations, specialized test source sets can be introduced.
+
+**`axonIntegrationTest` Source Set**
+
+A dedicated `axonIntegrationTest` source set is used for integration tests involving both Axon Framework and the Flowable engine. This was introduced to resolve a limitation in Kotest 6.0.3 that caused conflicts when multiple `@SpringBootTest` specifications were present in the same standard `integrationTest` source set.
+
+This pattern provides isolation for complex tests and should be used for all future Axon-related integration tests. The configuration can be found in the `build.gradle.kts` file of the relevant module (e.g., `framework/workflow`).
+
+### Isolating Tests with Spring Profiles
+
+To create lightweight and focused integration tests, it is often necessary to exclude certain production configurations, especially those related to security that may have external dependencies like Keycloak.
+
+The `@Profile("!test")` annotation should be used on Spring `@Configuration` or `@Component` classes that should be excluded during tests. When tests are run with the `test` profile active (`@ActiveProfiles("test")`), these components will not be loaded, avoiding the need for their dependencies.
+
+**Example:**
+
+```kotlin
+@Configuration
+@Profile("!test")
+class SecurityConfiguration {
+    // This configuration will not be loaded when the "test" profile is active.
+}
+```
+
+This pattern is mandatory for framework-level tests to ensure they can run without requiring the entire stack of external services.
+
 ---
 
 ## Development Workflow
 
 ### One-Command Setup
+
+The `scripts/init-dev.sh` script provides a one-command onboarding experience. It automates the setup of the entire local development environment.
+
+**Key Features**:
+- Starts all required services (PostgreSQL, Keycloak, Redis, Prometheus, Grafana).
+- Seeds Keycloak with the necessary realm configuration via an automated script.
+- Supports overriding the default Grafana port via the `GRAFANA_PORT` environment variable to prevent port conflicts.
 
 ```bash
 #!/bin/bash
@@ -1035,7 +1229,7 @@ check_prerequisites() {
 # Start infrastructure
 start_infrastructure() {
     echo "Starting infrastructure services..."
-    docker compose up -d postgres keycloak redis
+    docker compose up -d postgres keycloak redis prometheus grafana
 
     echo "Waiting for services to be healthy..."
     ./scripts/wait-for-it.sh postgres:5432 -- echo "PostgreSQL ready"
@@ -1052,6 +1246,7 @@ initialize_database() {
 }
 
 # Configure Keycloak
+# This step automatically seeds Keycloak with the required 'eaf-test' realm.
 configure_keycloak() {
     echo "Configuring Keycloak..."
     ./scripts/keycloak-setup.sh
@@ -1091,6 +1286,12 @@ echo "✅ Setup complete! Access the application at:"
 echo "   - API: http://localhost:8080"
 echo "   - Admin Portal: http://localhost:3000"
 echo "   - Keycloak: http://localhost:8180"
+echo "   - Grafana: http://localhost:${GRAFANA_PORT:-3001}"
+echo "   - Prometheus: http://localhost:9090"
+echo ""
+echo "Manual Health Checks:"
+echo "  - EAF API: curl http://localhost:8080/actuator/health"
+echo "  - Keycloak Realm: curl http://localhost:8180/realms/eaf-test/.well-known/openid-configuration"
 ```
 
 ### Scaffolding CLI Usage
@@ -1206,8 +1407,16 @@ deploy() {
 | API Latency (p95) | <200ms | >500ms | >1000ms |
 | Command Processing | <200ms | >500ms | >5000ms |
 | Event Lag | <10s | >30s | >60s |
+| Event Interceptor Overhead (p95) | < 5ms | > 10ms | > 20ms |
 | Error Rate | <0.1% | >0.5% | >1% |
 | Availability | >99.9% | <99.5% | <99% |
+
+### Rate Limiting
+
+To protect against Denial-of-Service (DoS) attacks, particularly those involving event flooding, a Redis-backed rate limiter is implemented in the `TenantEventMessageInterceptor`.
+
+-   **Threshold**: 100 events per second per tenant.
+-   **Mechanism**: This rate limit is enforced on asynchronous event processing to prevent any single tenant from overwhelming the system's resources.
 
 ### Monitoring Stack
 
@@ -1241,16 +1450,18 @@ services:
 
 ### Grafana Dashboard Configuration
 
+A foundational Grafana dashboard should be provisioned to monitor key performance and security metrics.
+
 ```json
 {
   "dashboard": {
     "title": "EAF Performance Monitoring",
     "panels": [
       {
-        "title": "API Latency",
+        "title": "API Latency (p95)",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, http_server_requests_seconds_bucket)",
+            "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
             "legendFormat": "p95"
           }
         ]
@@ -1263,15 +1474,53 @@ services:
             "legendFormat": "Lag (ms)"
           }
         ]
+      },
+      {
+        "title": "Event Interceptor Overhead (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(tenant_event_interceptor_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          }
+        ]
+      },
+      {
+        "title": "Event Processing Rate (per tenant)",
+        "targets": [
+          {
+            "expr": "sum(rate(tenant_event_interceptor_processed_total[1m])) by (tenantId)",
+            "legendFormat": "{{tenantId}}"
+          }
+        ]
       }
     ]
   }
 }
 ```
 
+### Operational Guidance
+
+**Metrics Scraping**
+
+To scrape metrics from the `/actuator/prometheus` endpoint, operators must use an account with the `ROLE_eaf-admin` role. This role is seeded in the Keycloak `eaf-test` realm for development and testing purposes. In a production environment, operators should be assigned this role in the corresponding production realm.
+
+**Metrics Tagging**
+
+All metrics are automatically tagged with the following labels to allow for granular filtering and analysis in Prometheus and Grafana:
+-   `service_name`: The name of the application instance (from `spring.application.name`).
+-   `tenant_id`: The identifier of the tenant associated with the request or event. For system-level metrics without a tenant context, this tag may be absent or have a default value.
+
 ---
 
 ## Implementation Specifications
+
+### Documenting Pipeline-Owned Artifacts
+
+All new or modified data models, API specifications, and system components that are part of the automated CI/CD workflow must be documented in the appropriate sections of this architecture document. This ensures that the documentation stays synchronized with the implementation.
+
+-   **Data Models**: Document new or updated domain aggregates and database schemas in the [Domain Model & Data Architecture](#domain-model--data-architecture) section.
+-   **API Specifications**: Update the [API Specification](#api-specification) section with any changes to REST endpoints or OpenAPI schemas.
+-   **System Components**: Describe new or modified components, such as services, jobs, or UI elements, in the [System Components](#system-components) section.
 
 ### CI/CD Pipeline (GitHub Actions)
 
@@ -1415,3 +1664,5 @@ The framework is ready for implementation following these specifications, with c
 | Event Processing | 5s | <10s | 3.2s |
 | Test Suite (Full) | 10min | <15min | 8.5min |
 | Test Suite (Fast) | 2min | <3min | 1.8min |
+| Build (Clean) | | < 2 min | 13.33s |
+| Build (Incremental) | | < 10s | 1.77s |

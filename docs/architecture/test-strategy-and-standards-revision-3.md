@@ -118,6 +118,78 @@ dependencies {
 **Solution Discovery**: Story 4.6 investigation with 3 external research sources
 **Framework Modules**: Unaffected (use eaf.kotlin-common only, no plugin conflicts)
 
+**@SpringBootTest Pattern** (MANDATORY):
+
+**Recommended Pattern: `@Autowired` Field Injection**
+
+Use `@Autowired` field injection for dependencies and place the test logic within an `init` block. This pattern ensures that the Spring context is fully initialized before dependencies are injected and tests are executed.
+
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+        test("my test") { /* dependencies available */ }
+    }
+}
+```
+
+**Anti-Pattern: Constructor Injection**
+
+Avoid using constructor injection for dependencies in Kotest `FunSpec` tests. This pattern leads to a circular dependency during compilation, as the constructor parameters are required before the Spring context is available to create them.
+
+```kotlin
+// ANTI-PATTERN: DO NOT USE
+@SpringBootTest
+class MyIntegrationTest(
+    private val mockMvc: MockMvc, // Causes compilation errors
+) : FunSpec({
+    test("a test case") {
+        // ...
+    }
+})
+```
+
+**@SpringBootTest Pattern** (MANDATORY):
+
+**Recommended Pattern: `@Autowired` Field Injection**
+
+Use `@Autowired` field injection for dependencies and place the test logic within an `init` block. This pattern ensures that the Spring context is fully initialized before dependencies are injected and tests are executed.
+
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class MyIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+        test("my test") { /* dependencies available */ }
+    }
+}
+```
+
+**Anti-Pattern: Constructor Injection**
+
+Avoid using constructor injection for dependencies in Kotest `FunSpec` tests. This pattern leads to a circular dependency during compilation, as the constructor parameters are required before the Spring context is available to create them.
+
+```kotlin
+// ANTI-PATTERN: DO NOT USE
+@SpringBootTest
+class MyIntegrationTest(
+    private val mockMvc: MockMvc, // Causes compilation errors
+) : FunSpec({
+    test("a test case") {
+        // ...
+    }
+})
+```
+
 #### Kotest 6.0.3 Migration Lessons Learned (2025-01)
 
 **Ultra-Think Strategy Success**: Research-driven approach led to breakthrough migration success
@@ -169,6 +241,54 @@ val integrationTestTask = tasks.register("integrationTest", Test::class.java) {
 ```
 
 This is why `kotest-runner-junit5-jvm` is required for custom source sets but not for main tests.
+
+### Specialized Test Configurations
+
+#### `axonIntegrationTest` Source Set
+
+To manage complex integration testing scenarios involving both Axon Framework and the Flowable engine, a dedicated `axonIntegrationTest` source set is used. This was introduced to resolve a limitation in Kotest 6.0.3 that caused conflicts when multiple `@SpringBootTest` specifications were present in the same standard `integrationTest` source set.
+
+This pattern provides isolation for complex tests and should be used for all future Axon-related integration tests.
+
+#### Isolating Tests with Spring Profiles
+
+To create lightweight and focused integration tests, it is often necessary to exclude certain production configurations, especially those related to security that may have external dependencies like Keycloak.
+
+The `@Profile("!test")` annotation should be used on Spring `@Configuration` or `@Component` classes that should be excluded during tests. When tests are run with the `test` profile active (`@ActiveProfiles("test")`), these components will not be loaded, avoiding the need for their dependencies.
+
+**Example:**
+
+```kotlin
+@Configuration
+@Profile("!test")
+class SecurityConfiguration {
+    // This configuration will not be loaded when the "test" profile is active.
+}
+```
+
+### Specialized Test Configurations
+
+#### `axonIntegrationTest` Source Set
+
+To manage complex integration testing scenarios involving both Axon Framework and the Flowable engine, a dedicated `axonIntegrationTest` source set is used. This was introduced to resolve a limitation in Kotest 6.0.3 that caused conflicts when multiple `@SpringBootTest` specifications were present in the same standard `integrationTest` source set.
+
+This pattern provides isolation for complex tests and should be used for all future Axon-related integration tests.
+
+#### Isolating Tests with Spring Profiles
+
+To create lightweight and focused integration tests, it is often necessary to exclude certain production configurations, especially those related to security that may have external dependencies like Keycloak.
+
+The `@Profile("!test")` annotation should be used on Spring `@Configuration` or `@Component` classes that should be excluded during tests. When tests are run with the `test` profile active (`@ActiveProfiles("test")`), these components will not be loaded, avoiding the need for their dependencies.
+
+**Example:**
+
+```kotlin
+@Configuration
+@Profile("!test")
+class SecurityConfiguration {
+    // This configuration will not be loaded when the "test" profile is active.
+}
+```
 
 ##### Future Upgrade Checklist
 
@@ -376,13 +496,21 @@ class ProductServiceTest : BehaviorSpec({
 })
 ```
 
-### Performance Benefits
+### Performance
 
 | Test Type | Average Execution Time | Infrastructure Requirements |
 |-----------|----------------------|---------------------------|
 | Nullable Unit Tests | 5ms | In-memory objects only |
 | Integration Tests | 500ms | Testcontainers + Database |
 | Performance Improvement | **61.6% faster** | No external dependencies |
+
+**Async Interceptor Performance**
+
+The `TenantEventMessageInterceptor` for asynchronous tenant context propagation has a performance target of **< 5ms p95 latency per event**. Measurements have shown an overhead of **0.06ms p95**, which is well within the target.
+
+**Rate Limiting**
+
+To protect against DoS attacks via event flooding, a Redis-backed rate limiter is implemented with a threshold of **100 events per second per tenant**.
 
 ### Contract Testing
 
@@ -512,6 +640,58 @@ abstract class IntegrationTestBase : FunSpec() {
     }
 }
 ```
+
+### Asynchronous Testing
+
+#### `eventually` Polling Pattern
+
+Due to the asynchronous nature of event handling and process state transitions, tests that verify these interactions can be prone to race conditions. To avoid flaky tests, use the `eventually` block from Kotest to poll for the desired state change.
+
+```kotlin
+eventually(duration = 5.seconds) {
+    val historicInstance = processEngine.historyService
+        .createHistoricProcessInstanceQuery()
+        .processInstanceId(processInstance.id)
+        .singleResult()
+
+    historicInstance.endTime.shouldNotBeNull() // Assert that the process has completed
+}
+```
+
+#### Async Validation Checklist
+
+When testing asynchronous workflows, ensure to validate:
+-   The process correctly pauses at the waiting state (e.g., Receive Event Task).
+-   The corresponding event is published and handled.
+-   The process resumes and completes successfully after receiving the signal.
+-   Tenant isolation is maintained throughout the async flow.
+-   The system is resilient to orphaned events (events for which no process is waiting).
+
+### Asynchronous Testing
+
+#### `eventually` Polling Pattern
+
+Due to the asynchronous nature of event handling and process state transitions, tests that verify these interactions can be prone to race conditions. To avoid flaky tests, use the `eventually` block from Kotest to poll for the desired state change.
+
+```kotlin
+eventually(duration = 5.seconds) {
+    val historicInstance = processEngine.historyService
+        .createHistoricProcessInstanceQuery()
+        .processInstanceId(processInstance.id)
+        .singleResult()
+
+    historicInstance.endTime.shouldNotBeNull() // Assert that the process has completed
+}
+```
+
+#### Async Validation Checklist
+
+When testing asynchronous workflows, ensure to validate:
+-   The process correctly pauses at the waiting state (e.g., Receive Event Task).
+-   The corresponding event is published and handled.
+-   The process resumes and completes successfully after receiving the signal.
+-   Tenant isolation is maintained throughout the async flow.
+-   The system is resilient to orphaned events (events for which no process is waiting).
 
 ### Integration Test Example
 

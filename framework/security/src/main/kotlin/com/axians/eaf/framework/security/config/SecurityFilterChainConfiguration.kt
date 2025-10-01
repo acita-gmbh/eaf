@@ -44,10 +44,9 @@ open class SecurityFilterChainConfiguration(
                     .authenticated()
                     .requestMatchers("/api/secure/**")
                     .authenticated()
-                    .requestMatchers("/widgets/**")
-                    .authenticated()
                     .requestMatchers("/test/**")
                     .permitAll() // Allow test endpoints for integration testing
+                    // Products should configure their own routes (e.g., "/widgets/**", "/orders/**")
                     .anyRequest()
                     .permitAll()
             }.oauth2ResourceServer { oauth2 ->

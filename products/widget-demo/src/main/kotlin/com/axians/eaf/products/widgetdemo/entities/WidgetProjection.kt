@@ -1,4 +1,4 @@
-package com.axians.eaf.framework.persistence.entities
+package com.axians.eaf.products.widgetdemo.entities
 
 import com.axians.eaf.framework.core.tenant.TenantAware
 import jakarta.persistence.Column

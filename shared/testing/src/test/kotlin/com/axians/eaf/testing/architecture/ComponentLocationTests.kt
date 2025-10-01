@@ -21,6 +21,7 @@ class ComponentLocationTests :
                         .scopeFromProject()
                         .files
                         .withName("AxonConfiguration")
+                        .filter { it.path.contains("/src/main/kotlin/") } // Exclude build artifacts
 
                 // AxonConfiguration can be in TWO valid locations:
                 // 1. Framework-level: framework/cqrs/config/ (auto-configuration for cross-cutting concerns)
@@ -39,16 +40,30 @@ class ComponentLocationTests :
                 }
             }
 
-            test("WidgetController should be in correct location when implemented") {
-                val widgetControllerFiles =
+            test("Product controllers should NOT be in framework modules") {
+                // Story 6.3: Framework modules contain ONLY infrastructure (no product-specific code)
+                // Product controllers belong in products/* modules
+                val controllerFiles =
                     Konsist
                         .scopeFromProject()
                         .files
-                        .withName("WidgetController")
+                        .filter {
+                            it.name.endsWith("Controller") &&
+                                it.path.contains("/controllers/") &&
+                                it.path.contains("/src/main/kotlin/") // Exclude build artifacts (bin/, build/)
+                        }
 
-                if (widgetControllerFiles.isNotEmpty()) {
-                    widgetControllerFiles.assertTrue {
-                        it.path.contains("framework/web/src/main/kotlin/com/axians/eaf/framework/web/controllers/")
+                if (controllerFiles.isNotEmpty()) {
+                    controllerFiles.assertTrue {
+                        // Controllers in framework must be generic infrastructure only
+                        // Product-specific controllers must be in products/* modules
+                        val isInFramework = it.path.contains("/framework/") && !it.path.contains("/products/")
+                        val isAllowedInfrastructureController =
+                            it.name == "HealthController" || // Health check endpoint
+                                it.name == "MetricsController" || // Metrics endpoint
+                                it.name == "SecureController" // JWT auth demonstration
+
+                        !isInFramework || isAllowedInfrastructureController
                     }
                 }
             }
@@ -59,6 +74,7 @@ class ComponentLocationTests :
                         .scopeFromProject()
                         .files
                         .withName("GlobalExceptionHandler")
+                        .filter { it.path.contains("/src/main/kotlin/") } // Exclude build artifacts
 
                 if (exceptionHandlerFiles.isNotEmpty()) {
                     exceptionHandlerFiles.assertTrue {
@@ -72,7 +88,11 @@ class ComponentLocationTests :
                     Konsist
                         .scopeFromProject()
                         .files
-                        .filter { it.path.contains("/integration-test/") && it.name.endsWith("Test.kt") }
+                        .filter {
+                            it.path.contains("/integration-test/") &&
+                                it.name.endsWith("Test.kt") &&
+                                it.path.contains("/src/integration-test/kotlin/") // Exclude build artifacts
+                        }
 
                 if (integrationTestFiles.isNotEmpty()) {
                     integrationTestFiles.assertTrue {

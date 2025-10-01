@@ -1,6 +1,6 @@
-package com.axians.eaf.framework.persistence.repositories
+package com.axians.eaf.products.widgetdemo.repositories
 
-import com.axians.eaf.framework.persistence.entities.WidgetProjection
+import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param

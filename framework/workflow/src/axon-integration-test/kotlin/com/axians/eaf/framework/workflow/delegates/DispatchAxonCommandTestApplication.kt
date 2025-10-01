@@ -1,15 +1,23 @@
 package com.axians.eaf.framework.workflow.delegates
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 /**
  * Test application for Flowable-to-Axon bridge integration tests (Story 6.2).
+ *
+ * ## Architecture: Framework Test Independence
+ *
+ * Framework tests MUST NOT depend on products. This test app uses framework-local test types:
+ * - TestEntityAggregate (framework test aggregate)
+ * - CreateTestEntityCommand (framework test command)
+ * - TestEntityCreatedEvent (framework test event)
+ * - TestEntityProjectionHandler (framework test handler, in-memory only)
+ *
+ * This validates the generic infrastructure works without coupling to Widget domain.
  *
  * ## Configuration Strategy (Research-Driven)
  *
@@ -20,8 +28,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
  * **Enabled Components**:
  * - Flowable BPMN engine (from Story 6.1)
  * - Axon Framework in-memory mode (axon.axonserver.enabled=false)
- * - Widget aggregate and projection handlers
- * - JPA repositories for projections
+ * - Framework test aggregate and projection handlers (in-memory)
  * - TenantContext (via AxonIntegrationTestConfig)
  * - MeterRegistry (via AxonIntegrationTestConfig)
  *
@@ -36,26 +43,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
     scanBasePackages = [
         "com.axians.eaf.framework.workflow",
         "com.axians.eaf.framework.cqrs",
-        "com.axians.eaf.framework.persistence",
         "com.axians.eaf.framework.core",
         // NOTE: framework.observability NOT scanned - depends on framework.security
         // NOTE: framework.security NOT scanned - all beans (@Configuration, @Component) excluded
         // TenantContext provided by AxonIntegrationTestConfig instead
-        "com.axians.eaf.products.widgetdemo",
     ],
     exclude = [
         SecurityAutoConfiguration::class,
         OAuth2ResourceServerAutoConfiguration::class,
-    ],
-)
-@EnableJpaRepositories(
-    basePackages = [
-        "com.axians.eaf.framework.persistence.repositories",
-    ],
-)
-@EntityScan(
-    basePackages = [
-        "com.axians.eaf.framework.persistence.entities",
     ],
 )
 open class DispatchAxonCommandTestApplication {

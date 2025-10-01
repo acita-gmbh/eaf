@@ -132,11 +132,28 @@ This document provides explicit file path specifications and component location 
 - **Event Metrics Interceptor**: `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/interceptors/TenantEventMessageInterceptor.kt`
 - **Prometheus Endpoint Integration Test**: `framework/observability/src/integration-test/kotlin/com/axians/eaf/framework/observability/metrics/PrometheusEndpointIntegrationTest.kt`
 
+### Monitoring Dashboards
+
+A Grafana dashboard should be configured to monitor key metrics, including:
+-   `event.processing.lag`: The lag of event processors.
+-   `interceptor.overhead.p95`: The 95th percentile of the event interceptor overhead.
+-   `tenant.context.set`, `tenant.context.clear`, `tenant.context.threadlocal_removed`: Metrics for tenant context operations.
+-   `tenant_event_interceptor_processed_total`: The rate of processed events per tenant.
+
+### Prometheus Tagging Scheme
+
+All metrics are automatically tagged with the following labels:
+-   `service_name`: The name of the application instance.
+-   `tenant_id`: The identifier of the tenant.
+
 ## Security Components
 
 ### Authentication
 - **JWT Handlers**: `framework/security/src/main/kotlin/com/axians/eaf/framework/security/jwt/`
 - **Tenant Context**: `framework/security/src/main/kotlin/com/axians/eaf/framework/security/tenant/TenantContext.kt`
+  - **Implementation**: `ThreadLocal<Deque<WeakReference<String>>>` stack to hold tenant IDs, preventing memory leaks and supporting nested contexts.
+  - **Monitoring**: Stack depth is monitored to detect context leaks.
+  - **Event Metadata Contract**: All Axon events must include a `tenantId` in their metadata. This is enforced by the `TenantEventMessageInterceptor`.
 
 ### Multi-Tenancy
 - **Request Filters**: `framework/security/src/main/kotlin/com/axians/eaf/framework/security/filters/TenantFilter.kt`
@@ -183,6 +200,18 @@ All story references to file paths MUST:
 **For QA**: Validate all implemented files match these specifications exactly.
 
 ---
+
+## Workflow Components
+
+### Flowable-Axon Integration
+- **Flowable to Axon Bridge**: `framework/workflow/src/main/kotlin/com/axians/eaf/framework/workflow/delegates/DispatchAxonCommandTask.kt`
+  - This `JavaDelegate` dispatches Axon commands from BPMN processes.
+- **Axon to Flowable Bridge**: `framework/workflow/src/main/kotlin/com/axians/eaf/framework/workflow/handlers/AxonEventSignalHandler.kt`
+  - This Axon event handler signals waiting BPMN processes.
+
+### Correlation and Alerting
+- **Two-Step Correlation Query**: Due to a Flowable limitation, a two-step query is required to correlate events to process instances (query by business key, then by process instance ID). This pattern is implemented in `AxonEventSignalHandler.kt`.
+- **Tenant Isolation Alerting**: Production monitoring must alert on `TENANT_ISOLATION_VIOLATION` BpmnErrors, which may indicate a security issue.
 
 **Last Updated**: 2025-09-29
 **Purpose**: Prevent inferred file paths and ensure documentation ecosystem integrity

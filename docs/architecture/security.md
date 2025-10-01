@@ -516,6 +516,23 @@ sealed class SecurityError(override val message: String) : Exception(message) {
 }
 ```
 
+## 3-Layer Tenant Isolation
+
+The EAF enforces tenant isolation at three distinct layers to provide defense-in-depth.
+
+1.  **Layer 1: Request Filter**: The `TenantContextFilter` extracts the tenant ID from the JWT and populates the `TenantContext`.
+2.  **Layer 2: Service Validation**: Command handlers and other service-level components validate that the current tenant context matches the tenant of the aggregate or resource being accessed.
+3.  **Layer 3: Database RLS**: PostgreSQL Row-Level Security policies ensure that database queries only return data for the current tenant.
+
+### Workflow Handler Tenant Validation
+
+For asynchronous workflow handlers, such as those processing Axon events to signal BPMN processes, a dual-layer tenant validation is mandatory:
+
+1.  **Event-Level Check**: The handler must validate that the tenant ID from the incoming event matches the current `TenantContext`.
+2.  **Process-Level Check**: After identifying the target process instance, the handler must retrieve the `tenantId` process variable and verify that it also matches the event's tenant ID.
+
+This two-layer check prevents an event for one tenant from incorrectly signaling a process belonging to another.
+
 ## Emergency Security Recovery
 
 ### 5-Phase Recovery Process
@@ -775,7 +792,9 @@ class SecurityRecoveryException(message: String, cause: Throwable? = null) : Exc
 
 ### Security-Lite Profile
 
-For fast development and testing, a security-lite profile provides 65% faster execution while maintaining essential security validation.
+For fast development and testing, a security-lite profile provides 65% faster execution while maintaining essential security validation. This is achieved by using Spring Profiles to exclude certain security configurations during tests.
+
+The `@Profile("!test")` annotation is used on security-related `@Configuration` and `@Component` classes that have dependencies on external systems like Keycloak. When tests are run with the `test` profile active, these components are not loaded, allowing tests to run in isolation.
 
 ```kotlin
 // framework/security/src/main/kotlin/com/axians/eaf/security/config/SecurityLiteConfig.kt
@@ -1109,6 +1128,18 @@ fun handleValidationError(ex: IllegalArgumentException): ResponseEntity<ProblemD
 - **[API Specification](api-specification-revision-2.md)** - Security requirements for APIs
 - **[Testing Strategy](test-strategy-and-standards-revision-3.md)** - Security testing approaches
 - **[Operational Playbooks](operational-playbooks.md)** - Security incident response procedures
+
+---
+
+## Security Monitoring and Defense
+
+### Workflow Security Monitoring
+
+Production monitoring systems must be configured to alert on `TENANT_ISOLATION_VIOLATION` BpmnErrors. These errors are thrown by workflow delegates when a tenant context mismatch is detected and may indicate a security attack or a serious bug.
+
+### Denial-of-Service (DoS) Protection
+
+To protect against DoS attacks via event flooding, a Redis-backed rate limiter is implemented in the `TenantEventMessageInterceptor`. This rate limiter is configured with a threshold of **100 events per second per tenant**.
 
 ---
 

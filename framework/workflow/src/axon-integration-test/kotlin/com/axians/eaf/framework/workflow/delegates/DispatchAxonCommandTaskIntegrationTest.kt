@@ -1,7 +1,7 @@
 package com.axians.eaf.framework.workflow.delegates
 
-import com.axians.eaf.framework.persistence.repositories.WidgetProjectionRepository
 import com.axians.eaf.framework.security.tenant.TenantContext
+import com.axians.eaf.framework.workflow.test.TestEntityProjectionHandler
 import com.axians.eaf.testing.containers.TestContainers
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.FunSpec
@@ -13,7 +13,6 @@ import org.flowable.engine.ProcessEngine
 import org.flowable.engine.RuntimeService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -25,18 +24,18 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Integration test for DispatchAxonCommandTask JavaDelegate.
  *
- * ## Test-First Spike Strategy (Quinn's Recommendation)
+ * Uses framework-local test types (TestEntity) to validate generic infrastructure
+ * without depending on products module.
  *
- * This test serves as a "test-first spike" to validate technical unknowns before implementing
- * production code. It validates:
- * 1. Spring can inject Axon CommandGateway into Flowable JavaDelegate
- * 2. TenantContext propagates correctly from BPMN execution thread to Axon command bus
- * 3. CommandExecutionException maps correctly to BpmnError for error boundary events
- * 4. Process variables extract and map type-safely to Command fields
+ * ## Architecture: Framework Test Independence
  *
- * If this test passes, the Flowable-Axon integration is validated and implementation can proceed
- * with high confidence. If it fails, integration issues are discovered early (1-2 hours) and the
- * test becomes a debugging harness.
+ * Framework tests MUST NOT depend on products. This test uses:
+ * - TestEntityAggregate (framework test aggregate)
+ * - CreateTestEntityCommand (framework test command)
+ * - TestEntityCreatedEvent (framework test event)
+ * - TestEntityProjectionHandler (framework test handler)
+ *
+ * This validates the generic infrastructure works without coupling to Widget domain.
  *
  * Story 6.2: Create Flowable-to-Axon Bridge (Command Dispatch)
  */
@@ -51,7 +50,7 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
     private lateinit var runtimeService: RuntimeService
 
     @Autowired
-    private lateinit var widgetProjectionRepository: WidgetProjectionRepository
+    private lateinit var testEntityProjectionHandler: TestEntityProjectionHandler
 
     @Autowired
     private lateinit var tenantContext: TenantContext
@@ -63,25 +62,26 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             tenantContext.clearCurrentTenant()
         }
 
-        test("should dispatch CreateWidgetCommand from BPMN process") {
+        test("should dispatch CreateTestEntityCommand from BPMN process") {
             // Set tenant context (required for delegate validation)
             tenantContext.setCurrentTenantId("test-tenant")
             // Deploy BPMN process
             val deployment =
                 processEngine.repositoryService
                     .createDeployment()
-                    .addClasspathResource("processes/example-widget-creation.bpmn20.xml")
+                    .addClasspathResource("processes/example-test-entity-creation.bpmn20.xml")
                     .deploy()
 
             deployment.shouldNotBeNull()
 
-            // Start process with variables
-            val widgetId = UUID.randomUUID().toString()
+            // Start process with variables (including commandType for generic delegate)
+            val entityId = UUID.randomUUID().toString()
             val processVariables =
                 mapOf(
-                    "widgetId" to widgetId,
+                    "commandType" to "CreateTestEntityCommand", // Generic delegate requires command type
+                    "entityId" to entityId,
                     "tenantId" to "test-tenant",
-                    "name" to "Test Widget",
+                    "name" to "Test Entity",
                     "description" to "Created via BPMN process",
                     "value" to BigDecimal("100.00"),
                     "category" to "TEST",
@@ -90,18 +90,18 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
 
             val processInstance =
                 runtimeService.startProcessInstanceByKey(
-                    "example-widget-creation",
+                    "example-test-entity-creation",
                     processVariables,
                 )
 
             processInstance.shouldNotBeNull()
 
-            // Verify Widget was created via Axon aggregate (with async projection polling)
+            // Verify TestEntity was created via Axon aggregate (with async projection polling)
             eventually(duration = 5.seconds) {
-                val widget = widgetProjectionRepository.findByWidgetIdAndTenantId(widgetId, "test-tenant")
-                widget.shouldNotBeNull()
-                widget.name shouldBe "Test Widget"
-                widget.getTenantId() shouldBe "test-tenant"
+                val entity = testEntityProjectionHandler.findById(entityId)
+                entity.shouldNotBeNull()
+                entity.name shouldBe "Test Entity"
+                entity.tenantId shouldBe "test-tenant"
             }
         }
 
@@ -111,13 +111,14 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             // Deploy BPMN process
             processEngine.repositoryService
                 .createDeployment()
-                .addClasspathResource("processes/example-widget-creation.bpmn20.xml")
+                .addClasspathResource("processes/example-test-entity-creation.bpmn20.xml")
                 .deploy()
 
             // Start process WITHOUT required variables
             val processVariables =
                 mapOf(
-                    "widgetId" to UUID.randomUUID().toString(),
+                    "commandType" to "CreateTestEntityCommand",
+                    "entityId" to UUID.randomUUID().toString(),
                     "tenantId" to "test-tenant",
                     // Missing: name, value, category (required fields)
                 )
@@ -125,7 +126,7 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             // Process starts but error boundary event should be triggered
             val processInstance =
                 runtimeService.startProcessInstanceByKey(
-                    "example-widget-creation",
+                    "example-test-entity-creation",
                     processVariables,
                 )
 
@@ -149,31 +150,39 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             // Deploy BPMN process
             processEngine.repositoryService
                 .createDeployment()
-                .addClasspathResource("processes/example-widget-creation.bpmn20.xml")
+                .addClasspathResource("processes/example-test-entity-creation.bpmn20.xml")
                 .deploy()
 
-            // Attempt to create widget for DIFFERENT tenant (tenant-b)
+            // Attempt to create entity for DIFFERENT tenant (tenant-b)
             val processVariables =
                 mapOf(
-                    "widgetId" to UUID.randomUUID().toString(),
+                    "commandType" to "CreateTestEntityCommand",
+                    "entityId" to UUID.randomUUID().toString(),
                     "tenantId" to "tenant-b", // Mismatched tenant!
-                    "name" to "Malicious Widget",
+                    "name" to "Malicious Entity",
                     "description" to "Cross-tenant attack attempt",
                     "value" to BigDecimal("99.99"),
                     "category" to "ATTACK",
                 )
 
-            // Should throw BpmnError due to tenant isolation violation
-            val exception =
-                runCatching {
-                    runtimeService.startProcessInstanceByKey(
-                        "example-widget-creation",
-                        processVariables,
-                    )
-                }.exceptionOrNull()
+            // BpmnError triggers error boundary event (does not throw to caller)
+            val processInstance =
+                runtimeService.startProcessInstanceByKey(
+                    "example-test-entity-creation",
+                    processVariables,
+                )
 
-            exception.shouldNotBeNull()
-            exception.message.shouldContain("TENANT_ISOLATION_VIOLATION")
+            processInstance.shouldNotBeNull()
+
+            // Verify process ended at error end event (tenant isolation enforced)
+            val historicProcessInstance =
+                processEngine.historyService
+                    .createHistoricProcessInstanceQuery()
+                    .processInstanceId(processInstance.id)
+                    .singleResult()
+
+            historicProcessInstance.shouldNotBeNull()
+            historicProcessInstance.endActivityId shouldBe "errorEndEvent"
         }
     }
 

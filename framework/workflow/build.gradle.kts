@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.bundles.axon.framework) // Story 6.2: Axon CommandGateway
     implementation(libs.arrow.core) // Story 6.2: Arrow Either for error handling
     implementation(project(":framework:security")) // Story 6.2: TenantContext
+    // Note: framework:observability will be added in Story 6.4 for formal CustomMetrics integration
     implementation(project(":shared:shared-api")) // Story 6.2: Command types
 
     testImplementation(libs.bundles.kotest)
@@ -57,12 +58,12 @@ dependencies {
     integrationTestImplementation(libs.kotest.runner.junit5.jvm) // Required for custom source sets
 
     // Story 6.2: Axon integration test dependencies (separate source set)
+    // Framework tests use framework-local test types (TestEntity) - NO products dependency
     "axonIntegrationTestImplementation"(libs.spring.boot.starter.test)
-    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa)
+    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa) // Needed for framework dependencies (not for projections)
     "axonIntegrationTestImplementation"(libs.micrometer.core) // For SimpleMeterRegistry in TenantContext
     "axonIntegrationTestImplementation"(project(":shared:testing"))
-    "axonIntegrationTestImplementation"(project(":products:widget-demo"))
-    "axonIntegrationTestImplementation"(project(":framework:persistence"))
+    "axonIntegrationTestImplementation"(project(":framework:observability")) // Story 6.3: For CustomMetrics (tenant propagation)
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
     "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)
