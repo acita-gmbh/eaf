@@ -68,13 +68,15 @@ class DispatchAxonCommandTask(
             dispatchCommand(command)
             execution.setVariable("commandResult", "SUCCESS")
         } catch (
+            @Suppress("SwallowedException")
+            ex: BpmnError,
+        ) {
+            // Re-throw BpmnErrors as-is (TENANT_ISOLATION_VIOLATION, MISSING_VARIABLE, etc.)
+            throw ex
+        } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException")
             ex: Exception,
         ) {
-            // Re-throw BpmnErrors as-is (already have correct error codes)
-            if (ex is BpmnError) {
-                throw ex
-            }
             // CWE-209 Protection: Generic message for unexpected errors
             throw BpmnError("COMMAND_DISPATCH_FAILED", "Command dispatch failed")
         }
