@@ -4,18 +4,12 @@ import java.math.BigDecimal
 import java.time.Instant
 
 /**
- * Test-only event types for framework/workflow integration testing.
- *
- * These types are LOCAL to framework tests (not shared with products).
- * They enable testing generic infrastructure without depending on products module.
- *
- * Architecture: Framework tests must NOT depend on products.
- */
-
-/**
  * Test event for validating Axon→Flowable event signaling.
  *
- * Minimal structure for testing AxonEventSignalHandler.
+ * Test-only event type LOCAL to framework tests (not shared with products).
+ * Enables testing generic infrastructure without depending on products module.
+ *
+ * Architecture: Framework tests must NOT depend on products.
  */
 data class TestEntityCreatedEvent(
     val entityId: String,
