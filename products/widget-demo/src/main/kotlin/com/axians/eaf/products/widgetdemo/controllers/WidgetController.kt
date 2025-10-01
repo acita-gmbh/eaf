@@ -22,7 +22,6 @@ import java.net.URI
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-
 @RestController
 @RequestMapping("/widgets")
 @PreAuthorize("hasRole('USER')")
