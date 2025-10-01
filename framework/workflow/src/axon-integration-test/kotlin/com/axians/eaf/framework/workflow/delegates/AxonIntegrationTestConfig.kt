@@ -51,6 +51,8 @@ open class AxonIntegrationTestConfig {
      * Real implementation with SimpleMeterRegistry (no external dependencies).
      */
     @Bean
-    open fun customMetrics(meterRegistry: MeterRegistry, tenantContext: TenantContext): CustomMetrics =
-        CustomMetrics(meterRegistry, tenantContext)
+    open fun customMetrics(
+        meterRegistry: MeterRegistry,
+        tenantContext: TenantContext,
+    ): CustomMetrics = CustomMetrics(meterRegistry, tenantContext)
 }

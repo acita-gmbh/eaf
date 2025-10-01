@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.workflow.handlers
 
+import com.axians.eaf.framework.workflow.delegates.SecurityConfigExcludeFilter
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
@@ -7,7 +8,6 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
-import com.axians.eaf.framework.workflow.delegates.SecurityConfigExcludeFilter
 
 /**
  * Test application for AxonEventSignalHandler integration tests (Story 6.3).

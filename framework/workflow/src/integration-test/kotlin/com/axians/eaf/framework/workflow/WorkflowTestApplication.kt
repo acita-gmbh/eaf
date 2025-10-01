@@ -23,6 +23,10 @@ import org.springframework.context.annotation.FilterType
             type = FilterType.REGEX,
             pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.delegates\\..*"],
         ),
+        ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.handlers\\..*"], // Story 6.3: Exclude Axon event handlers
+        ),
     ],
 )
 class WorkflowTestApplication

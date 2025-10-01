@@ -30,7 +30,6 @@ import java.util.UUID
 @SpringBootTest(classes = [AxonEventSignalHandlerTestApplication::class])
 @ActiveProfiles("test")
 class FlowableMessageEventsSpikeTest : FunSpec() {
-
     @Autowired
     private lateinit var processEngine: ProcessEngine
 
@@ -53,11 +52,12 @@ class FlowableMessageEventsSpikeTest : FunSpec() {
 
             // Start process with business key
             val widgetId = UUID.randomUUID().toString()
-            val processInstance = runtimeService.startProcessInstanceByKey(
-                "simple-wait",
-                widgetId,
-                emptyMap()
-            )
+            val processInstance =
+                runtimeService.startProcessInstanceByKey(
+                    "simple-wait",
+                    widgetId,
+                    emptyMap(),
+                )
 
             processInstance.shouldNotBeNull()
 
@@ -65,19 +65,23 @@ class FlowableMessageEventsSpikeTest : FunSpec() {
             delay(500)
 
             // CRITICAL TEST: Does Flowable create message subscription?
-            val subscription = runtimeService.createEventSubscriptionQuery()
-                .processInstanceId(processInstance.id)
-                .eventType("message")
-                .eventName("WidgetCreated")
-                .singleResult()
+            val subscription =
+                runtimeService
+                    .createEventSubscriptionQuery()
+                    .processInstanceId(processInstance.id)
+                    .eventType("message")
+                    .eventName("WidgetCreated")
+                    .singleResult()
 
             subscription.shouldNotBeNull() // This should work if Flowable Message Events are configured correctly
 
             // Find waiting execution
-            val execution = runtimeService.createExecutionQuery()
-                .processInstanceId(processInstance.id)
-                .messageEventSubscriptionName("WidgetCreated")
-                .singleResult()
+            val execution =
+                runtimeService
+                    .createExecutionQuery()
+                    .processInstanceId(processInstance.id)
+                    .messageEventSubscriptionName("WidgetCreated")
+                    .singleResult()
 
             execution.shouldNotBeNull() // This should also work
 
@@ -88,17 +92,20 @@ class FlowableMessageEventsSpikeTest : FunSpec() {
             delay(500)
 
             // Verify process completed
-            val running = runtimeService.createProcessInstanceQuery()
-                .processInstanceId(processInstance.id)
-                .singleResult()
+            val running =
+                runtimeService
+                    .createProcessInstanceQuery()
+                    .processInstanceId(processInstance.id)
+                    .singleResult()
 
             running shouldBe null // Process should have completed
 
             // Verify in history
-            val historic = processEngine.historyService
-                .createHistoricProcessInstanceQuery()
-                .processInstanceId(processInstance.id)
-                .singleResult()
+            val historic =
+                processEngine.historyService
+                    .createHistoricProcessInstanceQuery()
+                    .processInstanceId(processInstance.id)
+                    .singleResult()
 
             historic.shouldNotBeNull()
             historic.endTime.shouldNotBeNull() // Process completed successfully

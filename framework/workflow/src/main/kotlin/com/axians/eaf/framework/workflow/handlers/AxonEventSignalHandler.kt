@@ -25,9 +25,8 @@ import org.springframework.stereotype.Component
 @ProcessingGroup("flowable-signaling")
 class AxonEventSignalHandler(
     private val runtimeService: RuntimeService,
-    private val tenantContext: TenantContext
+    private val tenantContext: TenantContext,
 ) {
-
     private val logger: Logger = LoggerFactory.getLogger(AxonEventSignalHandler::class.java)
 
     /**
@@ -49,11 +48,41 @@ class AxonEventSignalHandler(
             "Access denied: tenant context mismatch" // CWE-209 protection
         }
 
-        // Subtask 1.4: Query for waiting process instances using business key correlation
-        val execution = runtimeService.createExecutionQuery()
-            .processInstanceBusinessKey(event.widgetId)
-            .messageEventSubscriptionName("WidgetCreated")
-            .singleResult()
+        // Subtask 1.4: Two-step query for waiting process instances
+        // Research finding: Business key only on root process instance, not child executions
+        // Must first find process instance, then query execution by processInstanceId
+
+        // Step 1: Find process instance by business key (widgetId)
+        val processInstance =
+            runtimeService
+                .createProcessInstanceQuery()
+                .processInstanceBusinessKey(event.widgetId)
+                .singleResult()
+
+        if (processInstance == null) {
+            logger.warn(
+                "No process instance found for business key: widgetId=${event.widgetId}, tenantId=${event.tenantId}",
+            )
+            return
+        }
+
+        // SECURITY: Validate process belongs to current tenant (if tenant variable exists)
+        // Query process variables separately (ProcessInstance might not include them)
+        val processTenantId = runtimeService.getVariable(processInstance.id, "tenantId") as? String
+        if (processTenantId != null && processTenantId != event.tenantId) {
+            logger.warn(
+                "Tenant isolation: Process tenant ($processTenantId) != event tenant (${event.tenantId}) for widgetId=${event.widgetId}",
+            )
+            return // Don't signal cross-tenant process
+        }
+
+        // Step 2: Query execution by processInstanceId (works for child executions)
+        val execution =
+            runtimeService
+                .createExecutionQuery()
+                .processInstanceId(processInstance.id)
+                .messageEventSubscriptionName("WidgetCreated")
+                .singleResult()
 
         // Subtask 1.6: Resilient error handling for missing processes
         if (execution != null) {
@@ -69,7 +98,7 @@ class AxonEventSignalHandler(
         } else {
             // No waiting process - this is OK (not all events require BPMN signaling)
             logger.warn(
-                "No waiting process found for WidgetCreatedEvent: widgetId=${event.widgetId}, tenantId=${event.tenantId}"
+                "No waiting process found for WidgetCreatedEvent: widgetId=${event.widgetId}, tenantId=${event.tenantId}",
             )
         }
     }
