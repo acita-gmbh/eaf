@@ -1,0 +1,77 @@
+schema: 1
+story: "6.4"
+story_title: "Create Ansible Service Task Adapter"
+gate: "PASS"
+status_reason: "Story is of exceptional quality, with comprehensive technical details, clear requirements, and robust handling of security, observability, and operational procedures."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-01T12:05:00Z"
+waiver: { active: false }
+top_issues: []
+
+# --- COMPREHENSIVE REVIEW FINDINGS ---
+
+risk_summary:
+  totals: { critical: 0, high: 1, medium: 2, low: 1 }
+  highest_risk:
+    id: "SEC-002"
+    severity: "high"
+    finding: "Improper handling or exposure of SSH private keys would allow unauthorized access to external systems."
+    mitigation: "Story specifies using environment variables or mounted secrets (K8s) and explicitly forbids committing keys. This is a strong mitigation."
+  recommendations:
+    must_fix: []
+    monitor:
+      - "SEC-002: SSH Key Management - Ensure deployment pipelines and local dev environments handle secrets securely."
+      - "TECH-004: External System Dependency - Monitor health and availability of the target Ansible/SSH environment."
+      - "PERF-001: SSH Connection Performance - Deferral of connection pooling is acceptable, but monitor for bottlenecks under load."
+
+nfr_validation:
+  security:
+    status: "PASS"
+    notes: "Excellent. Tenant isolation is mandatory. SSH key management is clearly defined and follows best practices. BpmnError usage prevents information leaks."
+  performance:
+    status: "PASS"
+    notes: "Acceptable. A 5-minute timeout prevents hung sessions. Deferral of SSH connection pooling to Epic 8 is a reasonable tradeoff for this stage."
+  reliability:
+    status: "PASS"
+    notes: "Excellent. The story includes comprehensive operational procedures, including feature flags for rollback, backup/restore scripts, and defined rollback triggers based on metrics."
+  maintainability:
+    status: "PASS"
+    notes: "Excellent. The introduction of FlowableMetrics, structured logging, and clear documentation for operational procedures significantly enhances maintainability and observability."
+
+evidence:
+  traceability_matrix:
+    - ac: 1 # A new Service Task is created.
+      tasks: [3]
+      tests: ["Happy Path: Ansible playbook executes successfully"]
+    - ac: 2 # This task is configurable via the BPMN model.
+      tasks: [3, 6]
+      tests: ["Happy Path: Ansible playbook executes successfully"]
+    - ac: 3 # This task utilizes the connection configuration...
+      tasks: [3, 4]
+      tests: ["Happy Path: Ansible playbook executes successfully", "Security: Tenant isolation is enforced"]
+    - ac: 4 # Integration tests confirm...
+      tasks: [6, 7, 8]
+      tests: ["Happy Path: Ansible playbook executes successfully", "Failure Path: Invalid playbook triggers BpmnError"]
+    - ac: 5 # Flowable-specific observability metrics are implemented.
+      tasks: [1, 5]
+      tests: ["Validation: FlowableMetrics records process duration and error counts"]
+    - ac: 6 # Operational procedures are documented.
+      tasks: [2]
+      tests: ["N/A (Validated by documentation review)"]
+  test_design_summary:
+    - id: "TD-01"
+      scenario: "Happy Path: Ansible playbook executes successfully via BPMN process"
+      priority: "P0"
+      notes: "End-to-end validation of the core functionality."
+    - id: "TD-02"
+      scenario: "Failure Path: Invalid playbook path triggers BpmnError and error boundary event"
+      priority: "P0"
+      notes: "Ensures error handling and process compensation path works as designed."
+    - id: "TD-03"
+      scenario: "Security: Tenant isolation is enforced in Ansible execution"
+      priority: "P0"
+      notes: "CRITICAL test to prevent cross-tenant data leakage or execution."
+    - id: "TD-04"
+      scenario: "Validation: FlowableMetrics records process duration and error counts"
+      priority: "P1"
+      notes: "Confirms that the new observability features are correctly integrated."
