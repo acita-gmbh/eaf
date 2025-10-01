@@ -4,13 +4,16 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import jakarta.annotation.PostConstruct
 import org.flowable.engine.ProcessEngine
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Flowable Metrics Component
@@ -46,11 +49,54 @@ class FlowableMetrics(
 ) {
     private val logger: Logger = LoggerFactory.getLogger(FlowableMetrics::class.java)
 
+    // QA Fix (MEDIUM-01): Mutable state for Gauge observation (prevents memory leak)
+    // Gauges are registered ONCE during initialization and observe these state holders
+    private val activeInstancesByProcessKey = ConcurrentHashMap<String, AtomicLong>()
+    private val totalActiveInstances = AtomicLong(0)
+    private val suspendedInstances = AtomicLong(0)
+    private val deadLetterJobs = AtomicLong(0)
+
+    /**
+     * Register Gauges ONCE during component initialization (QA Fix MEDIUM-01).
+     *
+     * Gauges observe mutable state via lambda functions. The @Scheduled methods
+     * update the state, and gauges automatically reflect the current values.
+     *
+     * **Fix Rationale**: Previous implementation re-registered gauges on every
+     * @Scheduled invocation (30s/60s), causing ~4,320 new instances per day and
+     * eventual OOM. This pattern registers once and observes state.
+     */
+    @PostConstruct
+    fun registerGauges() {
+        // Total active instances gauge (observes AtomicLong)
+        Gauge
+            .builder("flowable.process.instances.active.total", totalActiveInstances) { it.get().toDouble() }
+            .description("Total number of active process instances across all definitions")
+            .register(meterRegistry)
+
+        // Suspended instances gauge (observes AtomicLong)
+        Gauge
+            .builder("flowable.process.instances.suspended", suspendedInstances) { it.get().toDouble() }
+            .description("Number of suspended process instances")
+            .register(meterRegistry)
+
+        // Dead letter queue depth gauge (observes AtomicLong)
+        Gauge
+            .builder("flowable.jobs.dead_letter", deadLetterJobs) { it.get().toDouble() }
+            .description("Number of jobs in the dead letter queue")
+            .register(meterRegistry)
+
+        logger.info("Flowable metrics gauges registered (total: 3 base gauges + dynamic per-process-key)")
+    }
+
     /**
      * METRIC 1 & 2: Active and Suspended Process Instances (Subtasks 1.2)
      *
-     * Records active process instances grouped by process definition key.
-     * Suspended instances indicate potential workflow issues requiring investigation.
+     * Updates mutable state for active/suspended process instances.
+     * Gauges registered in @PostConstruct observe this state automatically.
+     *
+     * **QA Fix (MEDIUM-01)**: Refactored to UPDATE state instead of re-registering
+     * gauges. Prevents memory leak from duplicate gauge instances.
      *
      * Scheduled execution: Every 30 seconds
      * Alert threshold: Suspended instances > 0 (investigate immediately)
@@ -60,46 +106,56 @@ class FlowableMetrics(
         try {
             val runtime = processEngine.runtimeService
 
-            // Active instances grouped by process definition key
+            // Query active instances
             val activeInstances =
                 runtime
                     .createProcessInstanceQuery()
                     .active()
                     .list()
 
-            activeInstances
-                .groupBy { it.processDefinitionKey }
-                .forEach { (key, instances) ->
-                    Gauge
-                        .builder("flowable.process.instances.active", instances) { it.size.toDouble() }
-                        .tag("process_key", key ?: "unknown")
-                        .description("Number of active process instances by process definition")
-                        .register(meterRegistry)
-                }
+            // Update total active instances state
+            totalActiveInstances.set(activeInstances.size.toLong())
 
-            // Total active instances
-            meterRegistry.gauge(
-                "flowable.process.instances.active.total",
-                activeInstances.size.toDouble(),
-            )
+            // Update per-process-key active instances
+            val currentCounts = activeInstances.groupingBy { it.processDefinitionKey ?: "unknown" }.eachCount()
 
-            // Suspended instances (potential issues)
+            // Clear old keys and update current counts
+            activeInstancesByProcessKey.clear()
+            currentCounts.forEach { (processKey, count) ->
+                val atomicCount =
+                    activeInstancesByProcessKey.computeIfAbsent(processKey) {
+                        // First time seeing this process key - register a new gauge for it
+                        val newGauge = AtomicLong(0)
+                        Gauge
+                            .builder("flowable.process.instances.active", newGauge) { it.get().toDouble() }
+                            .tag("process_key", processKey)
+                            .description("Number of active process instances by process definition")
+                            .register(meterRegistry)
+                        newGauge
+                    }
+                atomicCount.set(count.toLong())
+            }
+
+            // Update suspended instances state
             val suspendedCount = runtime.createProcessInstanceQuery().suspended().count()
-            meterRegistry.gauge(
-                "flowable.process.instances.suspended",
-                suspendedCount.toDouble(),
-            )
+            suspendedInstances.set(suspendedCount)
 
             if (suspendedCount > 0) {
                 logger.warn("Suspended process instances detected: {} instances", suspendedCount)
             }
 
             logger.trace(
-                "Process instance metrics recorded: {} active, {} suspended",
+                "Process instance metrics updated: {} active, {} suspended",
                 activeInstances.size,
                 suspendedCount,
             )
-        } catch (ex: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails
+            // (e.g., Prometheus unavailable). Never crash application due to metrics failure.
             logger.error("Failed to record process instance metrics", ex)
         }
     }
@@ -136,7 +192,12 @@ class FlowableMetrics(
                 durationMs,
                 processKey,
             )
-        } catch (ex: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails.
             logger.error(
                 "Failed to record process duration for instance: {}",
                 processInstanceId,
@@ -174,7 +235,12 @@ class FlowableMetrics(
                 errorCode,
                 processKey,
             )
-        } catch (ex: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails.
             logger.error(
                 "Failed to record BPMN error: error_code={}, process_key={}",
                 errorCode,
@@ -211,7 +277,12 @@ class FlowableMetrics(
             } else {
                 logger.trace("Signal delivery recorded: signal_name={}, delivered={}", signalName, delivered)
             }
-        } catch (ex: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails.
             logger.error("Failed to record signal delivery metric: signal_name={}", signalName, ex)
         }
     }
@@ -219,8 +290,11 @@ class FlowableMetrics(
     /**
      * METRIC 6: Dead Letter Queue Depth (Subtask 1.6)
      *
-     * Monitors Flowable dead letter job queue depth.
-     * High queue depth indicates systematic processing failures requiring investigation.
+     * Updates mutable state for dead letter queue depth.
+     * Gauge registered in @PostConstruct observes this state automatically.
+     *
+     * **QA Fix (MEDIUM-01)**: Refactored to UPDATE state instead of calling
+     * meterRegistry.gauge() repeatedly.
      *
      * Scheduled execution: Every 60 seconds
      * **Alert Threshold:** > 100 jobs (critical - immediate action required)
@@ -230,37 +304,40 @@ class FlowableMetrics(
     fun recordDeadLetterQueue() {
         try {
             val management = processEngine.managementService
-            val deadLetterJobs = management.createDeadLetterJobQuery().count()
+            val count = management.createDeadLetterJobQuery().count()
 
-            meterRegistry.gauge(
-                "flowable.jobs.dead_letter",
-                deadLetterJobs.toDouble(),
-            )
+            // Update state (gauge observes this AtomicLong)
+            deadLetterJobs.set(count)
 
             when {
-                deadLetterJobs > 1000 -> {
+                count > 1000 -> {
                     logger.error(
                         "Dead letter queue depth CRITICAL: {} jobs (rollback threshold exceeded)",
-                        deadLetterJobs,
+                        count,
                     )
                 }
 
-                deadLetterJobs > 100 -> {
+                count > 100 -> {
                     logger.error(
                         "Dead letter queue depth HIGH: {} jobs (alert threshold exceeded)",
-                        deadLetterJobs,
+                        count,
                     )
                 }
 
-                deadLetterJobs > 0 -> {
-                    logger.warn("Dead letter queue depth: {} jobs", deadLetterJobs)
+                count > 0 -> {
+                    logger.warn("Dead letter queue depth: {} jobs", count)
                 }
 
                 else -> {
                     logger.trace("Dead letter queue depth: 0 jobs (healthy)")
                 }
             }
-        } catch (ex: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails.
             logger.error("Failed to record dead letter queue metrics", ex)
         }
     }

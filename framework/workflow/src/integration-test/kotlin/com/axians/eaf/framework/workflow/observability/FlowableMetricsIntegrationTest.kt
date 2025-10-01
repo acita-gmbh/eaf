@@ -45,7 +45,8 @@ class FlowableMetricsIntegrationTest : FunSpec() {
 
             // Then
             val timer =
-                meterRegistry.find("flowable.process.duration")
+                meterRegistry
+                    .find("flowable.process.duration")
                     .tag("process_key", processKey)
                     .tag("status", "completed")
                     .timer()
@@ -66,7 +67,8 @@ class FlowableMetricsIntegrationTest : FunSpec() {
 
             // Then
             val counter =
-                meterRegistry.find("flowable.process.errors")
+                meterRegistry
+                    .find("flowable.process.errors")
                     .tag("error_code", errorCode)
                     .tag("process_key", processKey)
                     .counter()
@@ -84,7 +86,8 @@ class FlowableMetricsIntegrationTest : FunSpec() {
 
             // Then
             val counter =
-                meterRegistry.find("flowable.signal.deliveries")
+                meterRegistry
+                    .find("flowable.signal.deliveries")
                     .tag("signal_name", signalName)
                     .tag("status", "success")
                     .counter()
@@ -102,7 +105,8 @@ class FlowableMetricsIntegrationTest : FunSpec() {
 
             // Then
             val counter =
-                meterRegistry.find("flowable.signal.deliveries")
+                meterRegistry
+                    .find("flowable.signal.deliveries")
                     .tag("signal_name", signalName)
                     .tag("status", "failed")
                     .counter()
@@ -121,7 +125,8 @@ class FlowableMetricsIntegrationTest : FunSpec() {
 
             // Then
             val counter =
-                meterRegistry.find("flowable.process.errors")
+                meterRegistry
+                    .find("flowable.process.errors")
                     .tag("error_code", errorCode)
                     .tag("process_key", processKey)
                     .counter()
