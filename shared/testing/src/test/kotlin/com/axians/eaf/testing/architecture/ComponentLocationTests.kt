@@ -52,9 +52,11 @@ class ComponentLocationTests :
                     controllerFiles.assertTrue {
                         // Controllers in framework must be generic infrastructure only
                         // Product-specific controllers must be in products/* modules
-                        !it.path.contains("framework/web/src/main/kotlin/") ||
-                            it.name == "HealthController" || // Generic infrastructure
-                            it.name == "MetricsController" // Generic infrastructure
+                        val isInFramework = it.path.contains("/framework/") && !it.path.contains("/products/")
+                        val isAllowedInfrastructureController =
+                            it.name == "HealthController" || it.name == "MetricsController"
+
+                        !isInFramework || isAllowedInfrastructureController
                     }
                 }
             }
