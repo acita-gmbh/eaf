@@ -68,16 +68,14 @@ class DispatchAxonCommandTask(
             dispatchCommand(command)
             execution.setVariable("commandResult", "SUCCESS")
         } catch (
-            @Suppress("SwallowedException")
-            ex: IllegalArgumentException,
-        ) {
-            // CWE-209 Protection: Generic message
-            throw BpmnError("TENANT_ISOLATION_VIOLATION", "Access denied")
-        } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException")
             ex: Exception,
         ) {
-            // CWE-209 Protection: Generic message
+            // Re-throw BpmnErrors as-is (already have correct error codes)
+            if (ex is BpmnError) {
+                throw ex
+            }
+            // CWE-209 Protection: Generic message for unexpected errors
             throw BpmnError("COMMAND_DISPATCH_FAILED", "Command dispatch failed")
         }
     }
@@ -88,8 +86,9 @@ class DispatchAxonCommandTask(
             execution.getVariable("tenantId") as? String
                 ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
 
-        require(currentTenant == commandTenant) {
-            "Access denied: tenant context mismatch"
+        // SECURITY: Explicit BpmnError for tenant isolation violations (clearer semantics)
+        if (currentTenant != commandTenant) {
+            throw BpmnError("TENANT_ISOLATION_VIOLATION", "Access denied")
         }
     }
 

@@ -2,6 +2,15 @@
 
 **A batteries-included framework for building robust, secure, and scalable enterprise applications at Axians.**
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Kotlin-2.2.20-blue.svg?logo=kotlin" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen.svg?logo=spring" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Axon%20Framework-4.9.4-blueviolet.svg" alt="Axon Framework">
+  <img src="https://img.shields.io/badge/PostgreSQL-16.1-important.svg?logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Flowable-7.1-orange.svg" alt="Flowable">
+  <img src="https://img.shields.io/badge/Kotest-6.0.3-yellow.svg" alt="Kotest">
+</p>
+
 ---
 
 ## ✨ Overview
@@ -19,12 +28,12 @@ EAF is built on a foundation of proven architectural patterns to ensure scalabil
 - ✍️ **CQRS & Event Sourcing:** Using the **Axon Framework**, the system separates read and write responsibilities (CQRS) and models business processes as a series of immutable events (Event Sourcing). This provides a full audit trail, improves performance, and simplifies complex domain logic.
 
 - 🛡️ **Secure by Default:** The framework includes pre-built, non-negotiable security modules:
-    - **10-Layer JWT Validation:** A robust, defense-in-depth pipeline for validating JSON Web Tokens. The layers include format, signature, algorithm, claims schema, expiry, issuer, revocation, roles, user validation, and injection detection.
+    - **10-Layer JWT Validation:** A robust, defense-in-depth pipeline for validating JSON Web Tokens.
     - **3-Layer Tenant Isolation:** A comprehensive multi-tenancy model (Request Filter, Service Validation, Database Row Level Security (RLS)) to ensure data is strictly segregated.
 
-- 🧪 **Constitutional TDD & Integration-First Testing:** The framework mandates a Test-Driven Development approach with a focus on high-value integration tests using **Kotest** and **Testcontainers**. This philosophy ensures that tests are fast, reliable, and validate real-world interactions.
+- 🧪 **Constitutional TDD & Integration-First Testing:** The framework mandates a Test-Driven Development approach with a focus on high-value integration tests using **Kotest** and **Testcontainers**.
 
-- ⚙️ **Integrated Workflow Engine:** Long-running business processes are orchestrated using the integrated **Flowable BPMN Engine**, providing a powerful and industry-standard solution for complex workflows.
+- ⚙️ **Integrated Workflow Engine:** Long-running business processes are orchestrated using the integrated **Flowable BPMN Engine**.
 
 - 🧑‍💻 **Developer-First Tooling:** The entire developer experience is optimized for productivity:
     - **One-Command Setup:** A single script to provision the entire local development environment.
@@ -83,64 +92,18 @@ Ensure the following tools are installed on your system:
 
 ### One-Command Setup
 
-The entire local development environment can be provisioned with a single command. This script starts all required backing services (PostgreSQL, Keycloak, etc.), runs database migrations, and launches the core application.
+The entire local development environment can be provisioned with a single command. This script starts all required backing services (PostgreSQL, Keycloak, Redis, Prometheus, Grafana), runs database migrations, and launches the core application.
 
 ```bash
 ./scripts/init-dev.sh
 ```
 
-Upon first run, you will be prompted to set a secure password for the Keycloak administrator. The script provides a summary of all running services and their access URLs.
+The script supports overriding the default Grafana port via the `GRAFANA_PORT` environment variable. Upon first run, you will be prompted to set a secure password for the Keycloak administrator. The script provides a summary of all running services and their access URLs, including manual health check commands.
 
-## 🧑‍💻 Developer Workflow: Creating a Product
-
-EAF provides a scaffolding CLI to automate the creation of all boilerplate required by the framework's architecture. This allows you to start writing business logic in minutes.
-
-### Step 1: Create a New Product Module
-
-Create a new, isolated Spring Modulith module for your product. This command sets up the Gradle sub-project and all required build configurations.
-
+To stop all services, use:
 ```bash
-# Usage: eaf scaffold module <your-product-name>
-eaf scaffold module my-new-product
+./scripts/stop-dev.sh
 ```
-
-### Step 2: Scaffold a Domain Aggregate
-
-Next, generate a complete CQRS/ES vertical slice for a core entity within your domain. This command creates the Axon Aggregate, its associated Commands and Events, API stubs, and a full suite of tests.
-
-```bash
-# Usage: eaf scaffold aggregate <AggregateName> --module <your-product-name>
-eaf scaffold aggregate Customer --module my-new-product
-```
-
-This generates all necessary files, allowing you to immediately implement the business rules for your `Customer` aggregate.
-
-### Step 3: Run the Project
-
-After scaffolding your components, simply re-run the initialization script to build and launch your new product.
-
-```bash
-./scripts/init-dev.sh
-```
-
-## 💡 Core Concepts
-
-### Error Handling
-
-The framework uses a standardized error handling approach. All exceptions are handled by a `GlobalExceptionHandler` and formatted as **RFC 7807 Problem Details** (`application/problem+json`). This provides consistent, machine-readable error responses across all APIs.
-
-Domain-specific errors are modeled using sealed hierarchies and handled within the domain layer using functional constructs from the **Arrow** library (`Either`).
-
-### Input Validation
-
-Validation is enforced at two levels:
-
-1.  **Gateway Level:** An `InputValidationFilter` performs initial sanitization and checks for common threats like injection patterns.
-2.  **Domain Level:** The aggregate itself is the final authority on validity. It contains precise validation logic (e.g., regex patterns, range checks) for its commands. This ensures the domain can never enter an invalid state.
-
-### Logging
-
-All logs are written in a **structured JSON format**, enriched with critical context fields like `service_name`, `trace_id`, and `tenant_id`. This enables powerful querying and analysis in external logging platforms like Loki or Splunk.
 
 ## 🧪 Testing
 
@@ -150,25 +113,26 @@ The framework is built on a philosophy of **Constitutional TDD**. All quality ga
 ./gradlew check
 ```
 
-This command is the source of truth for code quality and must pass before any code is merged.
+### Key Testing Patterns
 
-For domain tests, the framework encourages the **Nullable Design Pattern**, where dependencies are replaced with lightweight, in-memory fakes. This allows for extremely fast and focused business logic tests without the overhead of mocking frameworks.
+- **Kotest Framework**: Kotest is the mandatory testing framework. JUnit is forbidden.
+- **Spring Integration Tests**: For Spring Boot integration tests, use `@Autowired` field injection with an `init` block. Avoid constructor injection as it causes compilation issues.
+- **Test Isolation**: Use the `axonIntegrationTest` source set for complex Axon/Flowable tests and the `@Profile("!test")` annotation to isolate tests from external dependencies like Keycloak.
+- **Asynchronous Testing**: Use the `eventually` polling pattern from Kotest to handle asynchronous operations and avoid flaky tests.
+- **Nullable Design Pattern**: For domain tests, the framework encourages the Nullable Design Pattern, where dependencies are replaced with lightweight, in-memory fakes.
 
-## ⚙️ Configuration
+## 🛡️ Security
 
-Application configuration is managed via Spring profiles and environment variables.
+- **Prometheus Endpoint**: Access to the `/actuator/prometheus` endpoint is restricted to operators with the `ROLE_eaf-admin` role.
+- **Tenant Isolation**: Workflow handlers must perform a dual-layer tenant validation (event + process) to prevent cross-tenant data leakage.
+- **Monitoring**: Production monitoring should be configured to alert on `TENANT_ISOLATION_VIOLATION` BpmnErrors.
+- **Rate Limiting**: A Redis-backed rate limiter (100 events/sec/tenant) protects against DoS attacks on asynchronous event processors.
 
-- **Runtime Configuration:** The primary configuration file is `application.yml`. It is used to set database connections, Axon event processor settings, logging levels, and other runtime options.
-- **Environment Variables:** For sensitive values, the configuration uses environment variables (e.g., `${SPRING_DATASOURCE_PASSWORD}`).
-- **Setup Script Options:** The `init-dev.sh` script accepts flags to modify its behavior:
-    - `--skip-tests`: Skips the automated test execution.
-    - `--skip-test-data`: Skips loading optional SQL test data.
-    - `--detach`: Leaves all services running in the background.
+## ⚙️ Flowable Integration
 
-## 🛑 Stopping the Environment
+- **Schema Isolation**: Flowable tables are currently created in the `public` schema. This is a known technical debt (ARCH-001) with a documented remediation plan.
+- **Event Correlation**: A two-step query pattern is required to correlate events to Flowable process instances due to a limitation in how Flowable handles business keys.
 
-If you ran the setup script in the foreground, press `Ctrl+C`. If you used the `--detach` flag, use the following script to stop all services:
+## 📚 Documentation
 
-```bash
-./scripts/stop-dev.sh
-```
+For more detailed information, please refer to the architecture documents in the `docs/architecture/` directory.

@@ -165,17 +165,24 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
                     "category" to "ATTACK",
                 )
 
-            // Should throw BpmnError due to tenant isolation violation
-            val exception =
-                runCatching {
-                    runtimeService.startProcessInstanceByKey(
-                        "example-test-entity-creation",
-                        processVariables,
-                    )
-                }.exceptionOrNull()
+            // BpmnError triggers error boundary event (does not throw to caller)
+            val processInstance =
+                runtimeService.startProcessInstanceByKey(
+                    "example-test-entity-creation",
+                    processVariables,
+                )
 
-            exception.shouldNotBeNull()
-            exception.message.shouldContain("TENANT_ISOLATION_VIOLATION")
+            processInstance.shouldNotBeNull()
+
+            // Verify process ended at error end event (tenant isolation enforced)
+            val historicProcessInstance =
+                processEngine.historyService
+                    .createHistoricProcessInstanceQuery()
+                    .processInstanceId(processInstance.id)
+                    .singleResult()
+
+            historicProcessInstance.shouldNotBeNull()
+            historicProcessInstance.endActivityId shouldBe "errorEndEvent"
         }
     }
 

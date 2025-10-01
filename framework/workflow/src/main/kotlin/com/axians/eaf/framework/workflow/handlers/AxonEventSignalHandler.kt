@@ -127,6 +127,9 @@ class AxonEventSignalHandler(
     }
 
     private fun findProcessInstanceByBusinessKey(correlationKey: String): ProcessInstance? {
+        // NOTE: Flowable's ProcessInstanceQuery doesn't support tenant filtering at query level
+        // Defense-in-depth Layer 1: validateProcessTenant() provides post-query validation
+        // This is acceptable: business keys are UUIDs (collision unlikely), and tenant validation is mandatory
         val processInstance =
             runtimeService
                 .createProcessInstanceQuery()
