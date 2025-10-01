@@ -1,4 +1,4 @@
-package com.axians.eaf.framework.web.controllers
+package com.axians.eaf.products.widgetdemo.controllers
 
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.dto.WidgetResponse
@@ -9,6 +9,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.queryhandling.QueryGateway
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,14 +22,17 @@ import java.net.URI
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+
 @RestController
 @RequestMapping("/widgets")
+@PreAuthorize("hasRole('USER')")
 class WidgetController(
     private val commandGateway: CommandGateway,
     private val queryGateway: QueryGateway,
     private val tenantContext: TenantContext,
 ) {
     @PostMapping
+    @PreAuthorize("hasAuthority('widget:create')")
     fun createWidget(
         @RequestBody request: CreateWidgetRequest,
     ): ResponseEntity<Any> {
@@ -46,7 +50,6 @@ class WidgetController(
                 metadata = request.metadata ?: emptyMap(),
             )
 
-        // Exception handling now delegated to GlobalExceptionHandler
         commandGateway.sendAndWait<String>(command, 5, TimeUnit.SECONDS)
         return ResponseEntity
             .created(URI.create("/widgets/$widgetId"))
@@ -54,6 +57,7 @@ class WidgetController(
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('widget:read')")
     fun getWidget(
         @PathVariable("id") widgetId: String,
     ): ResponseEntity<WidgetResponse> {
@@ -70,12 +74,12 @@ class WidgetController(
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('widget:read')")
     fun getWidgets(
         @RequestParam params: Map<String, String>,
     ): ResponseEntity<Page<WidgetResponse>> {
         val tenantId = tenantContext.getCurrentTenantId()
 
-        // Extract and validate parameters from map
         val page = params["page"]?.toIntOrNull() ?: 0
         val size = (params["size"]?.toIntOrNull() ?: 20).coerceAtMost(100)
         val sort = params["sort"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()

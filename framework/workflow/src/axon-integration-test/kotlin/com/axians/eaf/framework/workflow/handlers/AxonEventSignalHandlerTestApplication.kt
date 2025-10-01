@@ -2,15 +2,18 @@ package com.axians.eaf.framework.workflow.handlers
 
 import com.axians.eaf.framework.workflow.delegates.SecurityConfigExcludeFilter
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 /**
  * Test application for AxonEventSignalHandler integration tests (Story 6.3).
+ *
+ * ## Architecture: Framework Test Independence
+ *
+ * Framework tests MUST NOT depend on products. This test app uses framework-local test types
+ * to validate the generic Axon→Flowable bridge infrastructure.
  *
  * Separate test application from DispatchAxonCommandTestApplication to avoid
  * Kotest Multiple @SpringBootTest conflict (Story 6.2 lesson learned).
@@ -22,23 +25,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
     scanBasePackages = [
         "com.axians.eaf.framework.workflow",
         "com.axians.eaf.framework.cqrs",
-        "com.axians.eaf.framework.persistence",
         "com.axians.eaf.framework.core",
-        "com.axians.eaf.products.widgetdemo",
+        // NOTE: framework.observability NOT scanned - depends on framework.security
+        // NOTE: framework.security NOT scanned - all beans (@Configuration, @Component) excluded
+        // TenantContext provided by AxonIntegrationTestConfig instead
     ],
     exclude = [
         SecurityAutoConfiguration::class,
         OAuth2ResourceServerAutoConfiguration::class,
-    ],
-)
-@EnableJpaRepositories(
-    basePackages = [
-        "com.axians.eaf.framework.persistence.repositories",
-    ],
-)
-@EntityScan(
-    basePackages = [
-        "com.axians.eaf.framework.persistence.entities",
     ],
 )
 open class AxonEventSignalHandlerTestApplication {

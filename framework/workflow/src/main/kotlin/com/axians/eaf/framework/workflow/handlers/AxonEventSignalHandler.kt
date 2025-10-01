@@ -24,8 +24,8 @@ import org.springframework.stereotype.Component
  * event handlers are NOT needed - domains provide correlation via event metadata.
  *
  * **Event Metadata Contract**:
- * - `correlationKey` (String): Business key for process correlation (e.g., widgetId, orderId)
- * - `messageName` (String): Flowable message name for subscription matching (e.g., "WidgetCreated")
+ * - `correlationKey` (String): Business key for process correlation (e.g., orderId, entityId)
+ * - `messageName` (String): Flowable message name for subscription matching (e.g., "OrderCreated")
  * - `tenantId` (String): Tenant identifier for isolation validation
  *
  * **Usage Example** (from any domain):

@@ -58,12 +58,11 @@ dependencies {
     integrationTestImplementation(libs.kotest.runner.junit5.jvm) // Required for custom source sets
 
     // Story 6.2: Axon integration test dependencies (separate source set)
+    // Framework tests use framework-local test types (TestEntity) - NO products dependency
     "axonIntegrationTestImplementation"(libs.spring.boot.starter.test)
-    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa)
+    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa) // Needed for framework dependencies (not for projections)
     "axonIntegrationTestImplementation"(libs.micrometer.core) // For SimpleMeterRegistry in TenantContext
     "axonIntegrationTestImplementation"(project(":shared:testing"))
-    "axonIntegrationTestImplementation"(project(":products:widget-demo"))
-    "axonIntegrationTestImplementation"(project(":framework:persistence"))
     "axonIntegrationTestImplementation"(project(":framework:observability")) // Story 6.3: For CustomMetrics (tenant propagation)
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)

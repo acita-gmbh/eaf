@@ -1,4 +1,7 @@
 # Axon Integration Test Configuration (Story 6.2)
+#
+# Framework Test Independence: Uses framework-local test types (TestEntity) with in-memory handlers.
+# NO database projections (in-memory TestEntityProjectionHandler), NO products dependency.
 
 # Axon Framework - Lightweight in-memory mode (Research: All 4 sources recommend this)
 axon:
@@ -6,8 +9,6 @@ axon:
     enabled: false  # CRITICAL: Triggers in-memory Axon (SimpleCommandBus, InMemoryEventStorageEngine)
   eventhandling:
     processors:
-      widget-projection:
-        mode: subscribing  # Use subscribing mode (in-memory, no token store)
       flowable-signaling:
         mode: subscribing  # Story 6.3: Event signaling processor (in-memory, no token store)
 
@@ -20,15 +21,11 @@ spring:
     check-process-definitions: true
     use-spring-bean-factory: true  # Use Spring to instantiate delegates (enables @Component injection)
 
-  # JPA configuration - enable DDL for Widget projection
+  # JPA configuration (available for framework dependencies, not used for projections)
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create-drop  # Auto-create schema (no entities will be found - framework uses in-memory handlers)
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # Allow test beans to override production beans
   main:
@@ -43,6 +40,7 @@ spring:
   # Exclude additional auto-configurations
   autoconfigure:
     exclude:
+      - org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration  # Use InMemoryEventStorageEngine instead
       - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
       - org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor
 

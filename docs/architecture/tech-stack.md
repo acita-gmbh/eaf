@@ -211,6 +211,10 @@ class SecurityConfig {
 }
 ```
 
+#### Prometheus Access Control
+
+Access to the `/actuator/prometheus` endpoint is restricted to operators with the `ROLE_eaf-admin` role. This role must be seeded in the Keycloak realm, and operators must present a valid JWT with this role to scrape metrics.
+
 ### Workflow Engine
 
 #### Flowable 7.1.x (BPMN)
@@ -235,6 +239,10 @@ class FlowableAxonBridge(
     }
 }
 ```
+
+**Starter Dependency**: The project uses the full `flowable-spring-boot-starter` dependency to enable all Flowable engines (Process, CMMN, DMN, etc.) for future use cases, even though only the Process engine is currently used.
+
+**Schema Isolation (Technical Debt - ARCH-001)**: Flowable tables are currently created in the `public` schema. A follow-up story is planned to move them to a dedicated `flowable` schema using a multi-step remediation plan involving schema pre-creation and a custom `EngineConfigurationConfigurer`.
 
 ## Development & Quality Tools
 

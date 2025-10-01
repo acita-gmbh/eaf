@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  *              flowable:delegateExpression="${dispatchAxonCommandTask}">
  *   <documentation>
  *     Required process variables:
- *     - commandType (String): Command class name (e.g., "CreateWidgetCommand", "CreateOrderCommand")
+ *     - commandType (String): Command class name (e.g., "CreateTestEntityCommand" in framework tests)
  *     - tenantId (String): Tenant identifier for isolation
  *     - [command-specific variables]: Depends on commandType
  *   </documentation>
@@ -96,8 +96,39 @@ class DispatchAxonCommandTask(
     /**
      * Builds command object based on commandType variable.
      *
-     * Generic infrastructure: Domains add cases to when expression for their command types.
-     * Each case delegates to domain-specific builder method.
+     * ## SECURITY CRITICAL: Reflection Code Injection Prevention
+     *
+     * This method uses reflection (Class.forName) in builder methods. To prevent arbitrary class
+     * instantiation attacks (CWE-94), the following security controls are MANDATORY:
+     *
+     * **SECURITY REQUIREMENTS**:
+     * 1. ✅ **Explicit Whitelist**: All command types MUST be in when expression (fail-closed)
+     * 2. ✅ **Hardcoded Class Names**: NEVER use Class.forName(commandType) with variable
+     * 3. ✅ **No Dynamic Construction**: Class names must be string literals in builder methods
+     * 4. ⚠️ **BPMN Trust Boundary**: Only deploy BPMN processes from trusted sources
+     *
+     * **FORBIDDEN PATTERN** (Code Injection Vulnerability):
+     * ```kotlin
+     * // ❌ NEVER DO THIS - Allows arbitrary class instantiation
+     * val commandClass = Class.forName(commandType)
+     * ```
+     *
+     * **SAFE PATTERN** (Current Implementation):
+     * ```kotlin
+     * // ✅ CORRECT - Explicit whitelist + hardcoded class name
+     * when (commandType) {
+     *     "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution)
+     *     else -> throw BpmnError("UNKNOWN_COMMAND_TYPE", ...)
+     * }
+     *
+     * private fun buildCreateTestEntityCommand(...): Any {
+     *     val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CreateTestEntityCommand")
+     *     // ↑ Hardcoded literal - safe
+     * }
+     * ```
+     *
+     * **Framework Purity**: This framework infrastructure only includes TestEntity for framework tests.
+     * Products implement their own delegates following this pattern.
      *
      * @param execution DelegateExecution containing process variables
      * @return Command object to dispatch via CommandGateway
@@ -108,25 +139,30 @@ class DispatchAxonCommandTask(
             execution.getVariable("commandType") as? String
                 ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: commandType")
 
+        // SECURITY: Explicit whitelist - prevents arbitrary class instantiation
         return when (commandType) {
-            "CreateWidgetCommand" -> buildCreateWidgetCommand(execution)
-            // Future domains: Add command builders here
+            "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution) // Framework tests only
+            // Products should create their own delegates for domain-specific commands
+            // Example (in products module):
+            // "CreateWidgetCommand" -> buildCreateWidgetCommand(execution)
             // "CreateOrderCommand" -> buildCreateOrderCommand(execution)
-            // "CreateLicenseCommand" -> buildCreateLicenseCommand(execution)
             else -> throw BpmnError("UNKNOWN_COMMAND_TYPE", "Unsupported command type: $commandType")
         }
     }
 
     /**
-     * Builds CreateWidgetCommand from process variables.
+     * Builds CreateTestEntityCommand from process variables.
      *
-     * Widget-specific builder. Other domains add similar methods for their commands.
+     * **Framework Test Infrastructure**: This builder exists solely for framework integration tests.
+     * It enables testing the generic Flowable→Axon bridge without depending on products module.
+     *
+     * Products should create their own delegates with domain-specific builders following this pattern.
      */
-    @Suppress("ThrowsCount") // Multiple variable validations legitimately require multiple throws
-    private fun buildCreateWidgetCommand(execution: DelegateExecution): Any {
-        val widgetId =
-            execution.getVariable("widgetId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: widgetId")
+    @Suppress("ThrowsCount")
+    private fun buildCreateTestEntityCommand(execution: DelegateExecution): Any {
+        val entityId =
+            execution.getVariable("entityId") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: entityId")
         val tenantId =
             execution.getVariable("tenantId") as? String
                 ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
@@ -144,11 +180,12 @@ class DispatchAxonCommandTask(
         @Suppress("UNCHECKED_CAST")
         val metadata = (execution.getVariable("metadata") as? Map<String, Any>) ?: emptyMap()
 
-        // Use fully qualified name to avoid import
-        val commandClass = Class.forName("com.axians.eaf.api.widget.commands.CreateWidgetCommand")
+        // SECURITY: Hardcoded class name (safe) - NEVER use Class.forName(commandType)
+        // Use fully qualified name for framework test type
+        val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CreateTestEntityCommand")
         val constructor =
             commandClass.getConstructor(
-                String::class.java, // widgetId
+                String::class.java, // entityId
                 String::class.java, // tenantId
                 String::class.java, // name
                 String::class.java, // description (nullable)
@@ -157,7 +194,7 @@ class DispatchAxonCommandTask(
                 Map::class.java, // metadata
             )
 
-        return constructor.newInstance(widgetId, tenantId, name, description, value, category, metadata)
+        return constructor.newInstance(entityId, tenantId, name, description, value, category, metadata)
     }
 
     private fun dispatchCommand(command: Any) {

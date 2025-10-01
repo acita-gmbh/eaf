@@ -50,9 +50,9 @@ See the full design in docs/architecture.md.
 **For complete technology details, see:** [Tech Stack](docs/architecture/tech-stack.md)
 
 ### Core Technologies
-- **Language**: Kotlin 2.0.10 (PINNED - critical constraint for tool compatibility)
+- **Language**: Kotlin 2.2.20 (PINNED - critical constraint for tool compatibility)
 - **Runtime**: JVM 21
-- **Framework**: Spring Boot 3.3.5 (LOCKED for Spring Modulith 1.3.0 compatibility)
+- **Framework**: Spring Boot 3.5.6 (LOCKED for Spring Modulith 1.4.3 compatibility)
 - **CQRS**: Axon Framework 4.9.4
 - **Functional**: Arrow 1.2.4 for Either<Error,Success> domain error handling
 - **Database**: PostgreSQL 16.1+ with mandatory optimizations (BRIN indexes, partitioning)
@@ -132,6 +132,8 @@ eaf-monorepo/
 - **Use Nullable Design Pattern for stateless dependencies** - Infrastructure adapters
 - **H2 explicitly forbidden** - PostgreSQL Testcontainers only
 - **Container timing**: Use companion object init blocks with explicit start() calls
+- **Test Isolation**: Use the `axonIntegrationTest` source set for complex Axon/Flowable tests and `@Profile("!test")` to isolate tests from external dependencies.
+- **Async Testing**: Use the `eventually` polling pattern for asynchronous tests.
 
 ### Nullable Design Pattern
 - **Factory Pattern**: `createNull()` convention for all nullable implementations
@@ -160,6 +162,8 @@ eaf-monorepo/
 - **Stack-based TenantContext**: ThreadLocal with automatic cleanup
 
 ### TenantContext API (Stories 4.1 & 4.2)
+
+The `TenantContext` is implemented as a `ThreadLocal` stack of `WeakReference<String>` to be memory efficient and thread-safe.
 
 ```kotlin
 // Fail-closed (throws exception if missing) - Use in command handlers
@@ -294,8 +298,8 @@ eaf scaffold ra-resource <Domain> --fields id,name,status
 ### Critical Version Constraints
 **For complete compatibility matrix, see:** [Tech Stack](docs/architecture/tech-stack.md)
 
-- **Kotlin 2.0.10 (PINNED)** - Critical constraint for tool compatibility (ktlint 1.4.0, detekt 1.23.7)
-- **Spring Boot 3.3.5 (LOCKED)** - Required for Spring Modulith 1.3.0 compatibility
+- **Kotlin 2.2.20 (PINNED)** - Critical constraint for tool compatibility (ktlint 1.4.0, detekt 1.23.7)
+- **Spring Boot 3.5.6 (LOCKED)** - Required for Spring Modulith 1.4.3 compatibility
 - **Axon Framework 4.9.4** - Current stable, v5 migration planned before production
 - **Gradle 9.1.0** - Required for Kotest 6.0.3 (embeds Kotlin 2.2.0 needed by Kotest)
 - **Kotest 6.0.3** - Testing framework with hybrid runner approach (native + JUnit Platform)
@@ -382,6 +386,22 @@ class MyIntegrationTest : FunSpec() {
 }
 ```
 
+**Anti-Pattern: Constructor Injection**
+
+Avoid using constructor injection for dependencies in Kotest `FunSpec` tests. This pattern leads to a circular dependency during compilation.
+
+```kotlin
+// ANTI-PATTERN: DO NOT USE
+@SpringBootTest
+class MyIntegrationTest(
+    private val mockMvc: MockMvc, // Causes compilation errors
+) : FunSpec({
+    test("a test case") {
+        // ...
+    }
+})
+```
+
 **CRITICAL**: Plugin order matters for products modules. In build.gradle.kts:
 ```kotlin
 plugins {
@@ -410,9 +430,18 @@ plugins {
 Monitor these continuously for system health:
 - **Command Latency**: p95 <200ms threshold
 - **Event Processor Lag**: <30 seconds acceptable
+- **Event Interceptor Overhead (p95)**: < 5ms
 - **Concurrency Conflicts**: <1% conflict rate
 - **Test Execution**: Target 65% improvement with optimizations
 - **Build Time**: <10 seconds incremental, <2 minutes full
+
+## Flowable Integration
+
+### Event Signaling and Correlation
+
+- **Message Events**: Use Message Events for targeted, tenant-safe signaling.
+- **Two-Step Correlation Query**: A two-step query (by business key, then process instance ID) is required to work around Flowable's business key limitation.
+- **Process-Level Tenant Validation**: Perform a dual-layer tenant check (event + process variable) for enhanced security.
 
 ## Migration Notes (2025-01)
 

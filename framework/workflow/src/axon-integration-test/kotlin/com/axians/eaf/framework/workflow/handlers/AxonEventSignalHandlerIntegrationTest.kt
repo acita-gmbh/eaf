@@ -1,8 +1,8 @@
 package com.axians.eaf.framework.workflow.handlers
 
-import com.axians.eaf.api.widget.events.WidgetCreatedEvent
 import com.axians.eaf.framework.security.tenant.TenantContext
 import com.axians.eaf.framework.workflow.delegates.AxonIntegrationTestConfig
+import com.axians.eaf.framework.workflow.test.TestEntityCreatedEvent
 import com.axians.eaf.testing.containers.TestContainers
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.FunSpec
@@ -29,8 +29,11 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Integration tests for AxonEventSignalHandler.
  *
+ * Uses framework-local test types (TestEntityCreatedEvent) to validate generic infrastructure
+ * without depending on products module.
+ *
  * Validates Axon→Flowable bridge:
- * - Event handler receives WidgetCreatedEvent from Axon
+ * - Event handler receives TestEntityCreatedEvent from Axon
  * - Handler correlates event to waiting BPMN process via business key
  * - RuntimeService signals process with message delivery
  * - Process resumes from Receive Event Task and completes
@@ -65,7 +68,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
         }
 
         // Subtasks 4.1-4.6: Happy path - complete async workflow test
-        test("should signal waiting BPMN process when WidgetCreatedEvent published") {
+        test("should signal waiting BPMN process when TestEntityCreatedEvent published") {
             // Set tenant context
             tenantContext.setCurrentTenantId("test-tenant")
 
@@ -76,12 +79,12 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                 .deploy()
                 .shouldNotBeNull()
 
-            // Subtask 4.3: Start process with business key = widgetId (should pause at Receive Event)
-            val widgetId = UUID.randomUUID().toString()
+            // Subtask 4.3: Start process with business key = entityId (should pause at Receive Event)
+            val entityId = UUID.randomUUID().toString()
             val processInstance =
                 runtimeService.startProcessInstanceByKey(
                     "simple-wait",
-                    widgetId, // Business key for correlation
+                    entityId, // Business key for correlation
                     emptyMap<String, Any>(), // No variables needed for simplified process
                 )
 
@@ -95,19 +98,19 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                         runtimeService
                             .createExecutionQuery()
                             .processInstanceId(processInstance.id) // Use processInstanceId (business key only on root)
-                            .messageEventSubscriptionName("WidgetCreated")
+                            .messageEventSubscriptionName("TestEntityCreated")
                             .singleResult()
                     exec.shouldNotBeNull()
                     exec
                 }
 
-            // Subtask 4.5: Publish WidgetCreatedEvent via EventBus with metadata
+            // Subtask 4.5: Publish TestEntityCreatedEvent via EventBus with metadata
             // Research: Subscribing processors deliver synchronously on publishing thread
             val event =
-                WidgetCreatedEvent(
-                    widgetId = widgetId,
+                TestEntityCreatedEvent(
+                    entityId = entityId,
                     tenantId = "test-tenant",
-                    name = "Test Widget",
+                    name = "Test Entity",
                     description = "Created via async workflow",
                     value = BigDecimal("100.00"),
                     category = "TEST",
@@ -116,11 +119,11 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             // Generic handler metadata contract: correlationKey, messageName, tenantId
             val eventMessage =
                 GenericEventMessage
-                    .asEventMessage<WidgetCreatedEvent>(event)
+                    .asEventMessage<TestEntityCreatedEvent>(event)
                     .andMetaData(
                         mapOf(
-                            "correlationKey" to widgetId, // For Flowable process correlation
-                            "messageName" to "WidgetCreated", // For message event subscription
+                            "correlationKey" to entityId, // For Flowable process correlation
+                            "messageName" to "TestEntityCreated", // For message event subscription
                             "tenantId" to "test-tenant", // For tenant validation
                         ),
                     )
@@ -152,11 +155,11 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                 .deploy()
 
             // Start process for tenant-a with business key and tenant variable
-            val widgetId = UUID.randomUUID().toString()
+            val entityId = UUID.randomUUID().toString()
             val processInstance =
                 runtimeService.startProcessInstanceByKey(
                     "simple-wait",
-                    widgetId, // Business key
+                    entityId, // Business key
                     mapOf("tenantId" to "tenant-a"), // Process tenant for cross-tenant validation
                 )
 
@@ -169,7 +172,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                         runtimeService
                             .createExecutionQuery()
                             .processInstanceId(processInstance.id) // Use processInstanceId
-                            .messageEventSubscriptionName("WidgetCreated")
+                            .messageEventSubscriptionName("TestEntityCreated")
                             .singleResult()
                     exec.shouldNotBeNull()
                     exec
@@ -179,12 +182,12 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             tenantContext.clearCurrentTenant()
             tenantContext.setCurrentTenantId("tenant-b")
 
-            // Publish WidgetCreatedEvent for tenant-b (should NOT signal tenant-a process)
+            // Publish TestEntityCreatedEvent for tenant-b (should NOT signal tenant-a process)
             val attackEvent =
-                WidgetCreatedEvent(
-                    widgetId = widgetId,
+                TestEntityCreatedEvent(
+                    entityId = entityId,
                     tenantId = "tenant-b", // Different tenant!
-                    name = "Tenant B Widget",
+                    name = "Tenant B Entity",
                     description = "Cross-tenant attack attempt",
                     value = BigDecimal("200.00"),
                     category = "MALICIOUS",
@@ -193,11 +196,11 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             // Add metadata with tenant-b (handler should reject due to tenant mismatch)
             val attackMessage =
                 GenericEventMessage
-                    .asEventMessage<WidgetCreatedEvent>(attackEvent)
+                    .asEventMessage<TestEntityCreatedEvent>(attackEvent)
                     .andMetaData(
                         mapOf(
-                            "correlationKey" to widgetId, // Same widgetId as tenant-a process
-                            "messageName" to "WidgetCreated",
+                            "correlationKey" to entityId, // Same entityId as tenant-a process
+                            "messageName" to "TestEntityCreated",
                             "tenantId" to "tenant-b", // Different tenant - should trigger isolation violation
                         ),
                     )
@@ -210,7 +213,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                     runtimeService
                         .createExecutionQuery()
                         .processInstanceId(processInstance.id) // Use processInstanceId
-                        .messageEventSubscriptionName("WidgetCreated")
+                        .messageEventSubscriptionName("TestEntityCreated")
                         .singleResult()
 
                 stillWaiting.shouldNotBeNull() // Process still waiting (tenant isolation enforced)
@@ -231,11 +234,11 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             // Set tenant context
             tenantContext.setCurrentTenantId("test-tenant")
 
-            // Publish WidgetCreatedEvent without any waiting BPMN process
-            val widgetId = UUID.randomUUID().toString()
+            // Publish TestEntityCreatedEvent without any waiting BPMN process
+            val entityId = UUID.randomUUID().toString()
             val event =
-                WidgetCreatedEvent(
-                    widgetId = widgetId,
+                TestEntityCreatedEvent(
+                    entityId = entityId,
                     tenantId = "test-tenant",
                     name = "Orphaned Event",
                     description = "No waiting process for this event",
@@ -246,7 +249,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             // Publish event without correlationKey/messageName metadata (tests graceful skip)
             val eventMessage =
                 GenericEventMessage
-                    .asEventMessage<WidgetCreatedEvent>(event)
+                    .asEventMessage<TestEntityCreatedEvent>(event)
                     .andMetaData(
                         mapOf(
                             "tenantId" to "test-tenant", // Required for TenantEventMessageInterceptor
