@@ -1,9 +1,9 @@
 package com.axians.eaf.framework.workflow.handlers
 
-import com.axians.eaf.api.widget.events.WidgetCreatedEvent
 import com.axians.eaf.framework.security.tenant.TenantContext
 import org.axonframework.config.ProcessingGroup
 import org.axonframework.eventhandling.EventHandler
+import org.axonframework.messaging.MetaData
 import org.flowable.common.engine.api.FlowableException
 import org.flowable.engine.RuntimeService
 import org.flowable.engine.runtime.Execution
@@ -13,12 +13,32 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 /**
- * Axon event handler that signals waiting Flowable BPMN processes when domain events occur.
+ * Generic Axon event handler that signals waiting Flowable BPMN processes when domain events occur.
  *
- * This handler implements the Axon→Flowable bridge by:
- * 1. Listening for Axon domain events (e.g., WidgetCreatedEvent)
- * 2. Correlating events to waiting BPMN process instances via business key
+ * This handler implements the Axon→Flowable bridge for ANY domain event by:
+ * 1. Listening for all Axon events (generic event parameter)
+ * 2. Using event metadata for correlation (correlationKey, messageName)
  * 3. Signaling processes using Flowable RuntimeService message delivery
+ *
+ * **Framework Infrastructure**: This is a generic, reusable component. Product-specific
+ * event handlers are NOT needed - domains provide correlation via event metadata.
+ *
+ * **Event Metadata Contract**:
+ * - `correlationKey` (String): Business key for process correlation (e.g., widgetId, orderId)
+ * - `messageName` (String): Flowable message name for subscription matching (e.g., "WidgetCreated")
+ * - `tenantId` (String): Tenant identifier for isolation validation
+ *
+ * **Usage Example** (from any domain):
+ * ```kotlin
+ * val event = OrderCreatedEvent(orderId = "123", customerId = "456")
+ * val eventMessage = GenericEventMessage.asEventMessage(event)
+ *     .andMetaData(mapOf(
+ *         "correlationKey" to "123",      // Order ID for correlation
+ *         "messageName" to "OrderCreated", // Flowable message subscription name
+ *         "tenantId" to "tenant-a"        // Tenant isolation
+ *     ))
+ * eventBus.publish(eventMessage)
+ * ```
  *
  * Security: Enforces tenant isolation with fail-closed validation
  * Resilience: Gracefully handles missing processes (logs warning, continues)
@@ -33,58 +53,90 @@ class AxonEventSignalHandler(
 
     companion object {
         private const val GENERIC_ERROR_MESSAGE = "Access denied: required context missing"
-        private const val MESSAGE_NAME_WIDGET_CREATED = "WidgetCreated"
+
+        // Event metadata keys (contract with event publishers)
+        private const val METADATA_CORRELATION_KEY = "correlationKey"
+        private const val METADATA_MESSAGE_NAME = "messageName"
+        private const val METADATA_TENANT_ID = "tenantId"
     }
 
     /**
-     * Handles WidgetCreatedEvent by signaling waiting BPMN processes.
+     * Handles ANY domain event by signaling waiting BPMN processes.
      *
-     * Process correlation uses business key pattern:
-     * - BPMN process started with businessKey = widgetId
-     * - Event contains widgetId for correlation
-     * - RuntimeService queries for matching process with message subscription
+     * Process correlation uses metadata-driven pattern:
+     * - Event metadata contains correlationKey (business key for process lookup)
+     * - Event metadata contains messageName (Flowable message subscription name)
+     * - BPMN process started with businessKey = correlationKey
+     * - RuntimeService signals process using messageName
      *
-     * @param event WidgetCreatedEvent from Axon aggregate
+     * @param event Any domain event from Axon aggregates
+     * @param metadata Event metadata containing correlation and message information
      */
     @EventHandler
-    fun on(event: WidgetCreatedEvent) {
-        // CRITICAL: Fail-closed tenant validation (Subtask 1.5)
-        validateEventTenant(event)
+    fun on(
+        event: Any,
+        metadata: MetaData,
+    ) {
+        // CRITICAL: Fail-closed tenant validation
+        validateEventTenant(metadata)
+
+        // Extract correlation metadata (fail-safe if missing)
+        val correlationKey = metadata[METADATA_CORRELATION_KEY] as? String
+        val messageName = metadata[METADATA_MESSAGE_NAME] as? String
+
+        if (correlationKey == null || messageName == null) {
+            // Not all events require BPMN signaling (missing metadata is acceptable)
+            if (logger.isDebugEnabled) {
+                logger.debug(
+                    "Event skipped - missing correlation metadata [eventType={}, correlationKey={}, messageName={}]",
+                    event.javaClass.simpleName,
+                    correlationKey,
+                    messageName,
+                )
+            }
+            return
+        }
 
         // Two-step query for waiting process (Flowable business key limitation)
-        val processInstance = findProcessInstanceByBusinessKey(event.widgetId) ?: return
+        val processInstance = findProcessInstanceByBusinessKey(correlationKey) ?: return
 
         // SECURITY: Validate process belongs to current tenant
-        validateProcessTenant(processInstance, event)
+        validateProcessTenant(processInstance, metadata)
 
         // Find and signal waiting execution
-        val execution = findWaitingExecution(processInstance.id)
+        val execution = findWaitingExecution(processInstance.id, messageName)
         if (execution != null) {
-            signalProcess(execution, event.widgetId)
+            signalProcess(execution, messageName, correlationKey)
         } else {
-            logNoWaitingProcess(event)
+            logNoWaitingProcess(correlationKey, messageName)
         }
     }
 
-    private fun validateEventTenant(event: WidgetCreatedEvent) {
+    private fun validateEventTenant(metadata: MetaData) {
         // SEC-001 mitigation: Prevent cross-tenant signaling
+        val eventTenantId = metadata[METADATA_TENANT_ID] as? String
+        if (eventTenantId == null) {
+            logger.warn("Event metadata missing tenantId")
+            throw SecurityException(GENERIC_ERROR_MESSAGE)
+        }
+
         val currentTenant = tenantContext.getCurrentTenantId() // Throws if missing
-        require(event.tenantId == currentTenant) {
+        require(eventTenantId == currentTenant) {
             "Access denied: tenant context mismatch" // CWE-209 protection
         }
     }
 
-    private fun findProcessInstanceByBusinessKey(widgetId: String): ProcessInstance? {
+    private fun findProcessInstanceByBusinessKey(correlationKey: String): ProcessInstance? {
         val processInstance =
             runtimeService
                 .createProcessInstanceQuery()
-                .processInstanceBusinessKey(widgetId)
+                .processInstanceBusinessKey(correlationKey)
                 .singleResult()
 
         if (processInstance == null) {
             logger.warn("No process instance found for business key correlation")
             if (logger.isDebugEnabled) {
-                logger.debug("Process correlation failed [widgetId={}]", widgetId)
+                logger.debug("Process correlation failed [correlationKey={}]", correlationKey)
             }
         }
         return processInstance
@@ -92,7 +144,7 @@ class AxonEventSignalHandler(
 
     private fun validateProcessTenant(
         processInstance: ProcessInstance,
-        event: WidgetCreatedEvent,
+        metadata: MetaData,
     ) {
         // Query process variables separately (ProcessInstance might not include them)
         val processTenantVar = runtimeService.getVariable(processInstance.id, "tenantId")
@@ -107,17 +159,17 @@ class AxonEventSignalHandler(
         }
 
         val processTenantId = processTenantVar as? String
+        val eventTenantId = metadata[METADATA_TENANT_ID] as? String
 
         // Tenant isolation validation (fail-closed)
-        if (processTenantId != null && processTenantId != event.tenantId) {
+        if (processTenantId != null && eventTenantId != null && processTenantId != eventTenantId) {
             logger.warn("Tenant isolation violation detected during process correlation")
 
             if (logger.isDebugEnabled) {
                 logger.debug(
-                    "Tenant mismatch [processTenant={}, eventTenant={}, widgetId={}]",
+                    "Tenant mismatch [processTenant={}, eventTenant={}]",
                     processTenantId,
-                    event.tenantId,
-                    event.widgetId,
+                    eventTenantId,
                 )
             }
 
@@ -128,23 +180,27 @@ class AxonEventSignalHandler(
         }
     }
 
-    private fun findWaitingExecution(processInstanceId: String): Execution? =
+    private fun findWaitingExecution(
+        processInstanceId: String,
+        messageName: String,
+    ): Execution? =
         runtimeService
             .createExecutionQuery()
             .processInstanceId(processInstanceId)
-            .messageEventSubscriptionName(MESSAGE_NAME_WIDGET_CREATED)
+            .messageEventSubscriptionName(messageName)
             .singleResult()
 
     private fun signalProcess(
         execution: Execution,
-        widgetId: String,
+        messageName: String,
+        correlationKey: String,
     ) {
         try {
-            runtimeService.messageEventReceived(MESSAGE_NAME_WIDGET_CREATED, execution.id)
+            runtimeService.messageEventReceived(messageName, execution.id)
             logger.info("BPMN process signaled successfully")
 
             if (logger.isDebugEnabled) {
-                logger.debug("Process signaled [widgetId={}, executionId={}]", widgetId, execution.id)
+                logger.debug("Process signaled [correlationKey={}, executionId={}]", correlationKey, execution.id)
             }
         } catch (ex: FlowableException) {
             // Flowable signaling failure - log error but preserve event processing
@@ -152,12 +208,15 @@ class AxonEventSignalHandler(
         }
     }
 
-    private fun logNoWaitingProcess(event: WidgetCreatedEvent) {
+    private fun logNoWaitingProcess(
+        correlationKey: String,
+        messageName: String,
+    ) {
         // CWE-209 protection: Generic message
         logger.warn("No waiting process found for event correlation")
 
         if (logger.isDebugEnabled) {
-            logger.debug("No process subscription [widgetId={}, tenantId={}]", event.widgetId, event.tenantId)
+            logger.debug("No process subscription [correlationKey={}, messageName={}]", correlationKey, messageName)
         }
     }
 }

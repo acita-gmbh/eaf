@@ -113,11 +113,17 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                     category = "TEST",
                 )
 
-            // Add tenantId metadata for TenantEventMessageInterceptor validation
+            // Generic handler metadata contract: correlationKey, messageName, tenantId
             val eventMessage =
                 GenericEventMessage
                     .asEventMessage<WidgetCreatedEvent>(event)
-                    .andMetaData(mapOf("tenantId" to "test-tenant"))
+                    .andMetaData(
+                        mapOf(
+                            "correlationKey" to widgetId, // For Flowable process correlation
+                            "messageName" to "WidgetCreated", // For message event subscription
+                            "tenantId" to "test-tenant", // For tenant validation
+                        ),
+                    )
 
             eventBus.publish(eventMessage)
 
@@ -188,7 +194,13 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
             val attackMessage =
                 GenericEventMessage
                     .asEventMessage<WidgetCreatedEvent>(attackEvent)
-                    .andMetaData(mapOf("tenantId" to "tenant-b"))
+                    .andMetaData(
+                        mapOf(
+                            "correlationKey" to widgetId, // Same widgetId as tenant-a process
+                            "messageName" to "WidgetCreated",
+                            "tenantId" to "tenant-b", // Different tenant - should trigger isolation violation
+                        ),
+                    )
 
             eventBus.publish(attackMessage)
 
@@ -231,11 +243,16 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
                     category = "TEST",
                 )
 
-            // Add tenantId metadata (prevents SecurityException in TenantEventMessageInterceptor)
+            // Publish event without correlationKey/messageName metadata (tests graceful skip)
             val eventMessage =
                 GenericEventMessage
                     .asEventMessage<WidgetCreatedEvent>(event)
-                    .andMetaData(mapOf("tenantId" to "test-tenant"))
+                    .andMetaData(
+                        mapOf(
+                            "tenantId" to "test-tenant", // Required for TenantEventMessageInterceptor
+                            // NOTE: No correlationKey/messageName - handler should skip gracefully
+                        ),
+                    )
 
             eventBus.publish(eventMessage)
 
