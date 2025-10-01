@@ -63,6 +63,7 @@ dependencies {
     "axonIntegrationTestImplementation"(project(":shared:testing"))
     "axonIntegrationTestImplementation"(project(":products:widget-demo"))
     "axonIntegrationTestImplementation"(project(":framework:persistence"))
+    "axonIntegrationTestImplementation"(project(":framework:observability")) // Story 6.3: For CustomMetrics (tenant propagation)
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
     "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)

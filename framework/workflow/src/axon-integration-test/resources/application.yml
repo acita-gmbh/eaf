@@ -8,13 +8,15 @@ axon:
     processors:
       widget-projection:
         mode: subscribing  # Use subscribing mode (in-memory, no token store)
+      flowable-signaling:
+        mode: subscribing  # Story 6.3: Event signaling processor (in-memory, no token store)
 
 spring:
   # Flowable configuration
   flowable:
     database-schema-update: true
     database-schema: flowable
-    async-executor-activate: true
+    async-executor-activate: false  # Story 6.3: Disable async executor for synchronous message event testing
     check-process-definitions: true
     use-spring-bean-factory: true  # Use Spring to instantiate delegates (enables @Component injection)
 
@@ -49,4 +51,7 @@ logging:
   level:
     org.flowable: INFO
     com.axians.eaf: DEBUG
-    org.axonframework: INFO
+    com.axians.eaf.framework.workflow.handlers: DEBUG
+    org.axonframework: DEBUG
+    org.axonframework.eventhandling: DEBUG
+    org.axonframework.config: DEBUG

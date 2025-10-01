@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.workflow.delegates
 
+import com.axians.eaf.framework.observability.metrics.CustomMetrics
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -44,4 +45,12 @@ open class AxonIntegrationTestConfig {
      */
     @Bean
     open fun tenantContext(meterRegistry: MeterRegistry): TenantContext = TenantContext(meterRegistry)
+
+    /**
+     * Provides CustomMetrics for TenantEventMessageInterceptor (Story 6.3).
+     * Real implementation with SimpleMeterRegistry (no external dependencies).
+     */
+    @Bean
+    open fun customMetrics(meterRegistry: MeterRegistry, tenantContext: TenantContext): CustomMetrics =
+        CustomMetrics(meterRegistry, tenantContext)
 }
