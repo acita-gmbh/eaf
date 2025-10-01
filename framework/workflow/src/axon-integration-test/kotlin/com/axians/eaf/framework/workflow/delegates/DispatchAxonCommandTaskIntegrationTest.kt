@@ -75,10 +75,11 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
 
             deployment.shouldNotBeNull()
 
-            // Start process with variables
+            // Start process with variables (including commandType for generic delegate)
             val widgetId = UUID.randomUUID().toString()
             val processVariables =
                 mapOf(
+                    "commandType" to "CreateWidgetCommand", // Generic delegate requires command type
                     "widgetId" to widgetId,
                     "tenantId" to "test-tenant",
                     "name" to "Test Widget",
