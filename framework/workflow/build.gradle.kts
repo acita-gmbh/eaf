@@ -52,6 +52,10 @@ dependencies {
     implementation(libs.micrometer.core)
     implementation(libs.spring.boot.starter.actuator) // Includes Prometheus support
 
+    // Story 6.4: Ansible execution via SSH (Task 4)
+    implementation(libs.jsch) // Java SSH client
+    // Note: Jackson provided transitively by spring-boot-starter-web
+
     testImplementation(libs.bundles.kotest)
 
     // Integration test dependencies (Story 6.1 - Flowable only)
