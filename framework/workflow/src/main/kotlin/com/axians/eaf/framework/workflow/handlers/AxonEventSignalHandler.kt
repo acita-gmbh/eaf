@@ -33,6 +33,7 @@ class AxonEventSignalHandler(
 
     companion object {
         private const val GENERIC_ERROR_MESSAGE = "Access denied: required context missing"
+        private const val MESSAGE_NAME_WIDGET_CREATED = "WidgetCreated"
     }
 
     /**
@@ -120,7 +121,8 @@ class AxonEventSignalHandler(
                 )
             }
 
-            // TODO Story 6.4: Add security metrics for tenant isolation violations
+            // TODO Story 6.4: Record metric 'workflow.tenant.isolation.violation' via CustomMetrics.recordEvent()
+            // TODO Story 6.4: Alert on tenant isolation violations for security monitoring
             // Fail-closed: Throw SecurityException (consistent with TenantEventMessageInterceptor)
             throw SecurityException(GENERIC_ERROR_MESSAGE)
         }
@@ -130,7 +132,7 @@ class AxonEventSignalHandler(
         runtimeService
             .createExecutionQuery()
             .processInstanceId(processInstanceId)
-            .messageEventSubscriptionName("WidgetCreated")
+            .messageEventSubscriptionName(MESSAGE_NAME_WIDGET_CREATED)
             .singleResult()
 
     private fun signalProcess(
@@ -138,7 +140,7 @@ class AxonEventSignalHandler(
         widgetId: String,
     ) {
         try {
-            runtimeService.messageEventReceived("WidgetCreated", execution.id)
+            runtimeService.messageEventReceived(MESSAGE_NAME_WIDGET_CREATED, execution.id)
             logger.info("BPMN process signaled successfully")
 
             if (logger.isDebugEnabled) {
