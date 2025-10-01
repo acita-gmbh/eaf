@@ -1,6 +1,8 @@
 package com.axians.eaf.framework.workflow
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.FilterType
@@ -15,7 +17,12 @@ import org.springframework.context.annotation.FilterType
  * (DispatchAxonCommandTask requires CommandGateway and TenantContext which aren't
  * needed for pure Flowable engine tests).
  */
-@SpringBootApplication
+@SpringBootApplication(
+    exclude = [
+        SecurityAutoConfiguration::class,
+        OAuth2ResourceServerAutoConfiguration::class,
+    ],
+)
 @ComponentScan(
     basePackages = ["com.axians.eaf.framework.workflow"],
     excludeFilters = [

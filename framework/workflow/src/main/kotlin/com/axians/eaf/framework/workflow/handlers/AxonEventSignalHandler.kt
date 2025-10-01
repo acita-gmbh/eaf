@@ -8,6 +8,7 @@ import org.flowable.common.engine.api.FlowableException
 import org.flowable.engine.RuntimeService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 /**
@@ -28,6 +29,10 @@ class AxonEventSignalHandler(
     private val tenantContext: TenantContext,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AxonEventSignalHandler::class.java)
+
+    companion object {
+        private const val GENERIC_ERROR_MESSAGE = "Access denied: required context missing"
+    }
 
     /**
      * Handles WidgetCreatedEvent by signaling waiting BPMN processes.
@@ -60,20 +65,38 @@ class AxonEventSignalHandler(
                 .singleResult()
 
         if (processInstance == null) {
-            logger.warn(
-                "No process instance found for business key: widgetId=${event.widgetId}, tenantId=${event.tenantId}",
-            )
+            // CWE-209 protection: Generic message, no tenant/widget ID disclosure
+            logger.warn("No process instance found for business key correlation")
+
+            // Debug logging (disabled in production)
+            if (logger.isDebugEnabled) {
+                logger.debug("Process correlation failed [widgetId={}, tenantId={}]", event.widgetId, event.tenantId)
+            }
             return
         }
 
-        // SECURITY: Validate process belongs to current tenant (if tenant variable exists)
+        // SECURITY: Validate process belongs to current tenant (fail-closed enforcement)
         // Query process variables separately (ProcessInstance might not include them)
         val processTenantId = runtimeService.getVariable(processInstance.id, "tenantId") as? String
         if (processTenantId != null && processTenantId != event.tenantId) {
-            logger.warn(
-                "Tenant isolation: Process tenant ($processTenantId) != event tenant (${event.tenantId}) for widgetId=${event.widgetId}",
-            )
-            return // Don't signal cross-tenant process
+            // CWE-209 protection: Generic error message
+            logger.warn("Tenant isolation violation detected during process correlation")
+
+            // Debug logging (disabled in production)
+            if (logger.isDebugEnabled) {
+                logger.debug(
+                    "Tenant mismatch [processTenant={}, eventTenant={}, widgetId={}]",
+                    processTenantId,
+                    event.tenantId,
+                    event.widgetId,
+                )
+            }
+
+            // TODO Story 6.4: Add security metrics for tenant isolation violations
+            // customMetrics?.recordEvent("TenantIsolationViolation", duration, false)
+
+            // Fail-closed: Throw SecurityException (consistent with TenantEventMessageInterceptor)
+            throw SecurityException(GENERIC_ERROR_MESSAGE)
         }
 
         // Step 2: Query execution by processInstanceId (works for child executions)
@@ -89,7 +112,14 @@ class AxonEventSignalHandler(
             try {
                 // Subtask 1.4: Signal the waiting process using message delivery
                 runtimeService.messageEventReceived("WidgetCreated", execution.id)
-                logger.info("Signaled BPMN process for widgetId=${event.widgetId}")
+
+                // CWE-209 protection: Generic success message
+                logger.info("BPMN process signaled successfully")
+
+                // Debug logging (disabled in production)
+                if (logger.isDebugEnabled) {
+                    logger.debug("Process signaled [widgetId={}, executionId={}]", event.widgetId, execution.id)
+                }
             } catch (ex: FlowableException) {
                 // Flowable signaling failure - log error but preserve event processing
                 logger.error("Failed to signal BPMN process: ${ex.message}", ex)
@@ -97,9 +127,13 @@ class AxonEventSignalHandler(
             }
         } else {
             // No waiting process - this is OK (not all events require BPMN signaling)
-            logger.warn(
-                "No waiting process found for WidgetCreatedEvent: widgetId=${event.widgetId}, tenantId=${event.tenantId}",
-            )
+            // CWE-209 protection: Generic message, no tenant/widget ID disclosure
+            logger.warn("No waiting process found for event correlation")
+
+            // Debug logging (disabled in production)
+            if (logger.isDebugEnabled) {
+                logger.debug("No process subscription [widgetId={}, tenantId={}]", event.widgetId, event.tenantId)
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.bundles.axon.framework) // Story 6.2: Axon CommandGateway
     implementation(libs.arrow.core) // Story 6.2: Arrow Either for error handling
     implementation(project(":framework:security")) // Story 6.2: TenantContext
+    // Note: framework:observability will be added in Story 6.4 for formal CustomMetrics integration
     implementation(project(":shared:shared-api")) // Story 6.2: Command types
 
     testImplementation(libs.bundles.kotest)
