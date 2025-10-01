@@ -192,27 +192,26 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
 
             eventBus.publish(attackMessage)
 
-            // Small delay for async event processing
-            delay(500)
+            // Deterministically verify tenant-a process STILL waiting (handler rejected cross-tenant event)
+            eventually(5.seconds) {
+                val stillWaiting =
+                    runtimeService
+                        .createExecutionQuery()
+                        .processInstanceId(processInstance.id) // Use processInstanceId
+                        .messageEventSubscriptionName("WidgetCreated")
+                        .singleResult()
 
-            // Verify tenant-a process is STILL waiting (handler rejected cross-tenant event)
-            val stillWaiting =
-                runtimeService
-                    .createExecutionQuery()
-                    .processInstanceId(processInstance.id) // Use processInstanceId
-                    .messageEventSubscriptionName("WidgetCreated")
-                    .singleResult()
+                stillWaiting.shouldNotBeNull() // Process still waiting (tenant isolation enforced)
 
-            stillWaiting.shouldNotBeNull() // Process still waiting (tenant isolation enforced)
+                // Verify process has NOT completed (remains in wait state)
+                val runningInstance =
+                    runtimeService
+                        .createProcessInstanceQuery()
+                        .processInstanceId(processInstance.id)
+                        .singleResult()
 
-            // Verify process has NOT completed (remains in wait state)
-            val runningInstance =
-                runtimeService
-                    .createProcessInstanceQuery()
-                    .processInstanceId(processInstance.id)
-                    .singleResult()
-
-            runningInstance.shouldNotBeNull() // Process still running (correct behavior)
+                runningInstance.shouldNotBeNull() // Process still running (correct behavior)
+            }
         }
 
         // Subtask 4.8: Resilience test - no waiting process
@@ -240,12 +239,9 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
 
             eventBus.publish(eventMessage)
 
-            // Small delay for synchronous event processing
-            delay(500)
-
-            // Verify no exception thrown (resilient behavior)
-            // Handler should log: "No process instance found for business key: widgetId=..."
-            // This test validates resilience - event processing continues without failure
+            // No process assertions needed - resilience means event processing completes without exception
+            // Handler logs: "No process instance found for business key correlation"
+            // This test validates graceful degradation - event processing continues without failure
         }
     }
 

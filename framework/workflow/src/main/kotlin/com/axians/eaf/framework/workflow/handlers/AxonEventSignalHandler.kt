@@ -77,7 +77,20 @@ class AxonEventSignalHandler(
 
         // SECURITY: Validate process belongs to current tenant (fail-closed enforcement)
         // Query process variables separately (ProcessInstance might not include them)
-        val processTenantId = runtimeService.getVariable(processInstance.id, "tenantId") as? String
+        val processTenantVar = runtimeService.getVariable(processInstance.id, "tenantId")
+
+        // Type validation: Ensure tenantId is String (fail-closed on type mismatch)
+        if (processTenantVar != null && processTenantVar !is String) {
+            logger.warn("Process variable 'tenantId' has invalid type")
+            if (logger.isDebugEnabled) {
+                logger.debug("Invalid tenantId type [expected=String, actual=${processTenantVar.javaClass.name}]")
+            }
+            throw SecurityException(GENERIC_ERROR_MESSAGE)
+        }
+
+        val processTenantId = processTenantVar as? String
+
+        // Tenant isolation validation (fail-closed)
         if (processTenantId != null && processTenantId != event.tenantId) {
             // CWE-209 protection: Generic error message
             logger.warn("Tenant isolation violation detected during process correlation")
