@@ -49,8 +49,8 @@ class ComponentLocationTests :
                         .files
                         .filter {
                             it.name.endsWith("Controller") &&
-                            it.path.contains("/controllers/") &&
-                            it.path.contains("/src/main/kotlin/") // Exclude build artifacts (bin/, build/)
+                                it.path.contains("/controllers/") &&
+                                it.path.contains("/src/main/kotlin/") // Exclude build artifacts (bin/, build/)
                         }
 
                 if (controllerFiles.isNotEmpty()) {
@@ -60,8 +60,8 @@ class ComponentLocationTests :
                         val isInFramework = it.path.contains("/framework/") && !it.path.contains("/products/")
                         val isAllowedInfrastructureController =
                             it.name == "HealthController" || // Health check endpoint
-                            it.name == "MetricsController" || // Metrics endpoint
-                            it.name == "SecureController" // JWT auth demonstration
+                                it.name == "MetricsController" || // Metrics endpoint
+                                it.name == "SecureController" // JWT auth demonstration
 
                         !isInFramework || isAllowedInfrastructureController
                     }
@@ -90,8 +90,8 @@ class ComponentLocationTests :
                         .files
                         .filter {
                             it.path.contains("/integration-test/") &&
-                            it.name.endsWith("Test.kt") &&
-                            it.path.contains("/src/integration-test/kotlin/") // Exclude build artifacts
+                                it.name.endsWith("Test.kt") &&
+                                it.path.contains("/src/integration-test/kotlin/") // Exclude build artifacts
                         }
 
                 if (integrationTestFiles.isNotEmpty()) {
