@@ -56,6 +56,10 @@ redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline
 flowable = "7.1.0"        # BPMN workflow engine (Story 6.1)
 jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
 
+# Tools
+picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
+mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
+
 [libraries]
 # Kotlin and JVM
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -139,6 +143,10 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 flowable-spring-boot-starter = { module = "org.flowable:flowable-spring-boot-starter", version.ref = "flowable" }
 jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }  # Maintained fork (not com.jcraft)
 
+# Tools
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+mustache = { module = "com.github.spullara.mustache.java:compiler", version.ref = "mustache" }
+
 # Gradle plugins for build-logic
 gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradlePlugin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
@@ -189,3 +197,6 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 # Database
 jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+
+# Application
+application = { id = "application" }
