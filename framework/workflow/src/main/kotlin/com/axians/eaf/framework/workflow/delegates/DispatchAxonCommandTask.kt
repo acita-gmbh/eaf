@@ -73,10 +73,11 @@ class DispatchAxonCommandTask(
             dispatchCommand(command)
             execution.setVariable("commandResult", "SUCCESS")
 
-            // Story 6.5 (Task 3.3): Record compensation telemetry if this is a compensation command
-            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+            // Story 6.5 (Task 3.3): Record compensation telemetry for cancellation commands
+            val commandClassName = execution.getVariable("commandClassName") as? String
+            if (commandClassName?.contains("Cancel") == true) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandType,
+                    commandType = commandClassName.substringAfterLast("."),
                     processKey = processKey,
                     success = true,
                 )
@@ -86,9 +87,10 @@ class DispatchAxonCommandTask(
             ex: BpmnError,
         ) {
             // Story 6.5: Record failed compensation telemetry before re-throwing
-            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+            val commandClassName = execution.getVariable("commandClassName") as? String
+            if (commandClassName?.contains("Cancel") == true) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandType,
+                    commandType = commandClassName.substringAfterLast("."),
                     processKey = processKey,
                     success = false,
                 )
@@ -100,9 +102,10 @@ class DispatchAxonCommandTask(
             ex: Exception,
         ) {
             // Story 6.5: Record failed compensation telemetry before throwing generic error
-            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+            val commandClassName = execution.getVariable("commandClassName") as? String
+            if (commandClassName?.contains("Cancel") == true) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandType,
+                    commandType = commandClassName.substringAfterLast("."),
                     processKey = processKey,
                     success = false,
                 )
@@ -125,183 +128,105 @@ class DispatchAxonCommandTask(
     }
 
     /**
-     * Builds command object based on commandType variable.
+     * Builds command object using pure reflection.
+     *
+     * ## ARCHITECTURAL REMEDIATION (Story 6.5 ARCH-001)
+     *
+     * Framework modules MUST be product-agnostic. This method uses pure reflection
+     * to build commands without compile-time dependencies on product types.
      *
      * ## SECURITY CRITICAL: Reflection Code Injection Prevention
      *
-     * This method uses reflection (Class.forName) in builder methods. To prevent arbitrary class
-     * instantiation attacks (CWE-94), the following security controls are MANDATORY:
-     *
      * **SECURITY REQUIREMENTS**:
-     * 1. ✅ **Explicit Whitelist**: All command types MUST be in when expression (fail-closed)
-     * 2. ✅ **Hardcoded Class Names**: NEVER use Class.forName(commandType) with variable
-     * 3. ✅ **No Dynamic Construction**: Class names must be string literals in builder methods
+     * 1. ✅ **Class Name Whitelist**: commandClassName must match allowed package prefixes
+     * 2. ✅ **Package Prefix Validation**: Only allow com.axians.eaf.* classes
+     * 3. ✅ **No Arbitrary Classes**: Reject classes outside trusted packages
      * 4. ⚠️ **BPMN Trust Boundary**: Only deploy BPMN processes from trusted sources
      *
-     * **FORBIDDEN PATTERN** (Code Injection Vulnerability):
+     * **SAFE PATTERN** (ARCH-001 Remediation):
      * ```kotlin
-     * // ❌ NEVER DO THIS - Allows arbitrary class instantiation
-     * val commandClass = Class.forName(commandType)
+     * // Process provides fully qualified class name
+     * val commandClassName = execution.getVariable("commandClassName") as String
+     * // Example: "com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand"
+     *
+     * // Validate package prefix (whitelist approach)
+     * require(commandClassName.startsWith("com.axians.eaf.")) { "Untrusted package" }
+     *
+     * val commandClass = Class.forName(commandClassName)
+     * // Build using reflection from process variables
      * ```
      *
-     * **SAFE PATTERN** (Current Implementation):
-     * ```kotlin
-     * // ✅ CORRECT - Explicit whitelist + hardcoded class name
-     * when (commandType) {
-     *     "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution)
-     *     else -> throw BpmnError("UNKNOWN_COMMAND_TYPE", ...)
-     * }
-     *
-     * private fun buildCreateTestEntityCommand(...): Any {
-     *     val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CreateTestEntityCommand")
-     *     // ↑ Hardcoded literal - safe
-     * }
-     * ```
-     *
-     * **Framework Purity**: This framework infrastructure only includes TestEntity for framework tests.
-     * Products implement their own delegates following this pattern.
+     * **Framework Purity**: Framework has ZERO compile-time knowledge of product domains.
+     * Products provide commandClassName + constructor parameter names via process variables.
      *
      * @param execution DelegateExecution containing process variables
      * @return Command object to dispatch via CommandGateway
-     * @throws BpmnError if commandType unknown or variables missing
+     * @throws BpmnError if commandClassName invalid or variables missing
      */
+    @Suppress("ThrowsCount", "SpreadOperator")
     private fun buildCommand(execution: DelegateExecution): Any {
-        val commandType =
-            execution.getVariable("commandType") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: commandType")
+        val commandClassName =
+            execution.getVariable("commandClassName") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: commandClassName")
 
-        // SECURITY: Explicit whitelist - prevents arbitrary class instantiation
-        return when (commandType) {
-            "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution) // Framework tests
-            "CancelTestEntityCommand" -> buildCancelTestEntityCommand(execution) // Story 6.5: Framework
-            "CancelWidgetCreationCommand" -> buildCancelWidgetCreationCommand(execution) // Story 6.5
-            // Products should create their own delegates for domain-specific commands
-            // Example (in products module):
-            // "CreateWidgetCommand" -> buildCreateWidgetCommand(execution)
-            // "CreateOrderCommand" -> buildCreateOrderCommand(execution)
-            else -> throw BpmnError("UNKNOWN_COMMAND_TYPE", "Unsupported command type: $commandType")
+        // SECURITY: Validate package prefix (whitelist trusted packages)
+        require(commandClassName.startsWith("com.axians.eaf.")) {
+            "Untrusted command class package: $commandClassName"
         }
-    }
 
-    /**
-     * Builds CreateTestEntityCommand from process variables.
-     *
-     * **Framework Test Infrastructure**: This builder exists solely for framework integration tests.
-     * It enables testing the generic Flowable→Axon bridge without depending on products module.
-     *
-     * Products should create their own delegates with domain-specific builders following this pattern.
-     */
-    @Suppress("ThrowsCount")
-    private fun buildCreateTestEntityCommand(execution: DelegateExecution): Any {
-        val entityId =
-            execution.getVariable("entityId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: entityId")
-        val tenantId =
-            execution.getVariable("tenantId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
-        val name =
-            execution.getVariable("name") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: name")
-        val description = execution.getVariable("description") as? String
-        val value =
-            execution.getVariable("value") as? BigDecimal
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: value")
-        val category =
-            execution.getVariable("category") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: category")
+        // Load command class via reflection (framework-agnostic)
+        val commandClass =
+            try {
+                Class.forName(commandClassName)
+            } catch (
+                @Suppress("SwallowedException")
+                ex: ClassNotFoundException,
+            ) {
+                throw BpmnError("UNKNOWN_COMMAND_CLASS", "Command class not found: $commandClassName")
+            }
 
+        // Get constructor parameter names from process variable (products provide this)
         @Suppress("UNCHECKED_CAST")
-        val metadata = (execution.getVariable("metadata") as? Map<String, Any>) ?: emptyMap()
+        val parameterNames =
+            execution.getVariable("constructorParameters") as? List<String>
+                ?: throw BpmnError(
+                    "MISSING_VARIABLE",
+                    "Required process variable missing: constructorParameters",
+                )
 
-        // SECURITY: Hardcoded class name (safe) - NEVER use Class.forName(commandType)
-        // Use fully qualified name for framework test type
-        val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CreateTestEntityCommand")
+        // Build parameter values array from process variables (handles nulls)
+        val parameterValues =
+            parameterNames
+                .map { paramName ->
+                    execution.getVariable(paramName) // May be null for nullable parameters
+                }.toTypedArray()
+
+        // Find primary constructor (Kotlin data class pattern)
+        // Data classes always have a primary constructor with all properties in order
         val constructor =
-            commandClass.getConstructor(
-                String::class.java, // entityId
-                String::class.java, // tenantId
-                String::class.java, // name
-                String::class.java, // description (nullable)
-                BigDecimal::class.java, // value
-                String::class.java, // category
-                Map::class.java, // metadata
+            commandClass.constructors.firstOrNull()
+                ?: throw BpmnError("CONSTRUCTOR_NOT_FOUND", "No constructor found for command class")
+
+        // Validate parameter count matches
+        if (constructor.parameterCount != parameterValues.size) {
+            throw BpmnError(
+                "CONSTRUCTOR_MISMATCH",
+                "Constructor expects ${constructor.parameterCount} parameters, got ${parameterValues.size}",
             )
+        }
 
-        return constructor.newInstance(entityId, tenantId, name, description, value, category, metadata)
-    }
-
-    /**
-     * Builds CancelWidgetCreationCommand for compensation workflows.
-     *
-     * **Story 6.5**: This builder enables BPMN compensation flows to cancel widget creation
-     * when downstream steps fail (e.g., Ansible playbook execution failures). It demonstrates
-     * the compensating action pattern for distributed transaction rollback in CQRS/ES.
-     *
-     * **Security**: Tenant validation is enforced by the Widget aggregate command handler,
-     * but this builder extracts tenantId from process context for fail-closed verification.
-     *
-     * **Framework vs Product Code**: Unlike CreateTestEntityCommand (framework test only),
-     * CancelWidgetCreationCommand is a real product command from widget-demo. This is
-     * acceptable because it's used in axonIntegrationTest suite which bridges framework
-     * and product layers for E2E validation.
-     */
-    @Suppress("ThrowsCount")
-    private fun buildCancelWidgetCreationCommand(execution: DelegateExecution): Any {
-        val widgetId =
-            execution.getVariable("widgetId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: widgetId")
-        val tenantId =
-            execution.getVariable("tenantId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
-        val cancellationReason =
-            execution.getVariable("cancellationReason") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: cancellationReason")
-        val operator = execution.getVariable("operator") as? String ?: "SYSTEM"
-
-        // SECURITY: Hardcoded class name (safe) - NEVER use Class.forName(commandType)
-        val commandClass = Class.forName("com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand")
-        val constructor =
-            commandClass.getConstructor(
-                String::class.java, // widgetId
-                String::class.java, // tenantId
-                String::class.java, // cancellationReason
-                String::class.java, // operator
+        // Instantiate command via reflection
+        return try {
+            constructor.newInstance(*parameterValues)
+        } catch (
+            @Suppress("SwallowedException")
+            ex: IllegalArgumentException,
+        ) {
+            throw BpmnError(
+                "CONSTRUCTOR_INVOCATION_FAILED",
+                "Failed to invoke constructor - parameter type mismatch",
             )
-
-        return constructor.newInstance(widgetId, tenantId, cancellationReason, operator)
-    }
-
-    /**
-     * Builds CancelTestEntityCommand for framework compensation testing (Story 6.5).
-     *
-     * **Framework Test Infrastructure**: Mirrors CancelWidgetCreationCommand builder
-     * but uses framework test types for architectural purity. Enables E2E compensation
-     * flow validation without product module dependencies.
-     */
-    @Suppress("ThrowsCount")
-    private fun buildCancelTestEntityCommand(execution: DelegateExecution): Any {
-        val entityId =
-            execution.getVariable("entityId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: entityId")
-        val tenantId =
-            execution.getVariable("tenantId") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
-        val cancellationReason =
-            execution.getVariable("cancellationReason") as? String
-                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: cancellationReason")
-        val operator = execution.getVariable("operator") as? String ?: "SYSTEM"
-
-        // SECURITY: Hardcoded class name (safe) - framework test infrastructure
-        val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CancelTestEntityCommand")
-        val constructor =
-            commandClass.getConstructor(
-                String::class.java, // entityId
-                String::class.java, // tenantId
-                String::class.java, // cancellationReason
-                String::class.java, // operator
-            )
-
-        return constructor.newInstance(entityId, tenantId, cancellationReason, operator)
+        }
     }
 
     private fun dispatchCommand(command: Any) {

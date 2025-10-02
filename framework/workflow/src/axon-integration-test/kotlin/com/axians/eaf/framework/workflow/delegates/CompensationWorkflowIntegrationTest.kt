@@ -81,13 +81,23 @@ class CompensationWorkflowIntegrationTest : FunSpec() {
 
             val entityId = UUID.randomUUID().toString()
 
-            // When - Start process: create entity → Ansible fails → compensation
+            // When - Start process: create entity → Ansible fails → compensation (ARCH-001 pattern)
             val processInstance =
                 runtimeService.startProcessInstanceByKey(
                     "test-entity-compensation",
                     mapOf(
-                        // Step 1: Create TestEntity
-                        "commandType" to "CreateTestEntityCommand",
+                        // Step 1: Create TestEntity (pure reflection - framework-agnostic)
+                        "commandClassName" to "com.axians.eaf.framework.workflow.test.CreateTestEntityCommand",
+                        "constructorParameters" to
+                            listOf(
+                                "entityId",
+                                "tenantId",
+                                "name",
+                                "description",
+                                "value",
+                                "category",
+                                "metadata",
+                            ),
                         "entityId" to entityId,
                         "tenantId" to "test-tenant",
                         "name" to "Test Entity for Compensation",
@@ -97,7 +107,7 @@ class CompensationWorkflowIntegrationTest : FunSpec() {
                         "metadata" to emptyMap<String, Any>(),
                         // Step 2: Ansible (invalid path forces failure)
                         "playbookPath" to "/playbooks/nonexistent-force-compensation.yml",
-                        // Step 3: Compensation variables
+                        // Step 3: Compensation variables (SetCommandTypeDelegate will set these)
                         "cancellationReason" to "Ansible playbook execution failed",
                         "operator" to "SYSTEM",
                     ),

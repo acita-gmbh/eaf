@@ -100,5 +100,39 @@ class ComponentLocationTests :
                     }
                 }
             }
+
+            test("Framework modules must NOT depend on product-specific types (ARCH-001)") {
+                // Story 6.5 ARCH-001: Framework modules MUST be product-agnostic
+                // Prevents compile-time coupling to product domains (e.g., Widget)
+                val frameworkFiles =
+                    Konsist
+                        .scopeFromProject()
+                        .files
+                        .filter {
+                            it.path.contains("/framework/") &&
+                                it.path.contains("/src/main/kotlin/") &&
+                                !it.path.contains("/test/") &&
+                                !it.path.contains("/build/") &&
+                                !it.path.contains("/bin/")
+                        }
+
+                if (frameworkFiles.isNotEmpty()) {
+                    frameworkFiles.assertTrue { file ->
+                        // Framework files must NOT import from:
+                        // - com.axians.eaf.api.widget.* (product-specific Widget types)
+                        // - com.axians.eaf.products.* (product implementations)
+                        // - Any other product-specific shared-api domains
+                        val imports = file.imports.map { it.name }
+
+                        val hasProductImport =
+                            imports.any { importName ->
+                                importName.startsWith("com.axians.eaf.api.widget") || // Widget domain
+                                    importName.startsWith("com.axians.eaf.products") // Product implementations
+                            }
+
+                        !hasProductImport
+                    }
+                }
+            }
         }
     })

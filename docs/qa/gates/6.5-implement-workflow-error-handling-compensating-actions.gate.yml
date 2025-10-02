@@ -9,8 +9,8 @@ reviewer: "Quinn (Test Architect)"
 updated: "2025-10-02T14:30:00Z"
 
 gate: PASS
-status_reason: "Implementation complete with comprehensive test coverage (42/42 tests passing). All acceptance criteria met. Compensation pattern fully validated via E2E test. Remaining advisory: document Redis rate limiter monitoring (PERF-001) - operational enhancement only."
-quality_score: 98  # 100 - 2 (minor operational documentation gap)
+status_reason: "ARCH-001 remediated: Framework now product-agnostic using pure reflection pattern. All 42 tests passing (100%). Compensation pattern fully validated. Zero compile-time product dependencies. Minor advisory: document Redis rate limiter monitoring (PERF-001)."
+quality_score: 96  # 100 - 2 (PERF-001 docs) - 2 (increased complexity from reflection)
 
 waiver:
   active: false
@@ -137,11 +137,30 @@ trace:
 
 top_issues:
   - id: "PERF-001"
-    severity: low  # Downgraded from medium (operational documentation gap, not implementation blocker)
+    severity: low
     finding: "Missing Redis rate limiter monitoring plan for mass compensation events (100 eps/tenant limit)."
-    suggested_action: "ADVISORY: Document staging drill procedure and Grafana alert thresholds in Dev Notes. Recommended but not blocking."
+    suggested_action: "ADVISORY: Document staging drill procedure and Grafana alert thresholds in Dev Notes or operational runbook. Recommended but not blocking."
+    suggested_owner: "dev"
+    blocking: false
 
 resolved_issues:
+  - id: "ARCH-001"
+    original_severity: critical
+    finding: "Framework/workflow had compile-time dependency on product-specific Widget types (shared-api). Pre-existing from Story 6.2, extended by Story 6.5."
+    resolution: "REMEDIATED (2025-10-02 17:15 UTC): Refactored DispatchAxonCommandTask to pure reflection pattern. Removed shared-api dependency from framework/workflow/build.gradle.kts. Framework now product-agnostic with zero compile-time product dependencies."
+    status: "FULLY RESOLVED"
+    remediation_date: "2025-10-02T17:15:00Z"
+    remediation_details:
+      - "Replaced hardcoded command types with commandClassName variable (FQN)"
+      - "Constructor parameters provided via constructorParameters process variable"
+      - "Package prefix whitelist validation (com.axians.eaf.* only)"
+      - "All 42 tests passing after remediation"
+    files_modified:
+      - "framework/workflow/build.gradle.kts (removed shared-api dependency)"
+      - "DispatchAxonCommandTask.kt (pure reflection, −100 LOC)"
+      - "DispatchAxonCommandTaskIntegrationTest.kt (updated to new pattern)"
+      - "CompensationWorkflowIntegrationTest.kt (updated to new pattern)"
+      - "SetCommandTypeDelegate.kt (sets commandClassName not commandType)"
   - id: "SEC-002"
     original_severity: high
     finding: "Story 6.4 SSH security debt (disabled host key checking, hardcoded credentials) may propagate to compensation error messages, exposing infrastructure details (CWE-209)."
@@ -203,3 +222,25 @@ change_log:
       - "E2E test: framework/workflow/.../CompensationWorkflowIntegrationTest.kt (full compensation flow)"
       - "Quality gates: BUILD SUCCESSFUL with ktlint/detekt/test validation"
       - "Implementation artifacts: 13 files, 838 LOC added/modified"
+  - date: "2025-10-02T17:00:00Z"
+    version: "2.1"
+    changes: "CRITICAL ARCHITECTURAL VIOLATION IDENTIFIED: Framework/workflow has compile-time dependency on product-specific Widget types via shared-api (pre-existing from Story 6.2, extended by Story 6.5). Gate: PASS→FAIL. Quality score 98→50. BLOCKING: Requires immediate remediation - make DispatchAxonCommandTask truly generic using pure reflection."
+    reviewer: "Quinn"
+    architectural_debt:
+      - issue: "Framework→Product coupling via shared-api dependency"
+      - origin: "Story 6.2 introduced CreateWidgetCommand direct import"
+      - extended_by: "Story 6.5 added CancelWidgetCreationCommand with same pattern"
+      - violation: "Framework modules must be product-agnostic per CLAUDE.md and component-specifications.md"
+      - impact: "Framework cannot be published as standalone library; violates hexagonal architecture"
+      - remediation: "Remove shared-api dependency from framework/workflow; use pure reflection with commandClassName variable"
+  - date: "2025-10-02T17:20:00Z"
+    version: "2.2"
+    changes: "ARCH-001 REMEDIATED: Framework architectural purity restored. Pure reflection pattern implemented. Removed shared-api dependency. All 42 tests passing. Gate: FAIL→PASS. Quality score 50→96."
+    reviewer: "Quinn"
+    remediation_summary:
+      - "DispatchAxonCommandTask refactored to pure reflection (−100 LOC, simplified)"
+      - "commandClassName + constructorParameters variables replace hardcoded types"
+      - "Package prefix whitelist validation (CWE-94 protection maintained)"
+      - "All framework tests updated to new pattern (15/15 passing)"
+      - "Zero compile-time dependencies on product domains verified"
+      - "Framework now publishable as standalone library"

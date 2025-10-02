@@ -36,17 +36,20 @@
       <errorEventDefinition errorRef="ansibleFailed" />
     </boundaryEvent>
 
-    <!-- Set Compensation CommandType -->
+    <!-- Set Compensation Command Class (ARCH-001 Remediation) -->
     <serviceTask id="setCompensationCommand"
                  name="Set Compensation Command"
                  flowable:delegateExpression="${setCommandTypeDelegate}">
       <documentation>
-        Sets commandType variable for compensation flow using JavaDelegate.
-        Required because DispatchAxonCommandTask is generic and needs commandType variable.
+        ARCH-001: Sets commandClassName + constructorParameters for compensation flow.
+        Framework-agnostic pure reflection pattern (no compile-time product dependencies).
       </documentation>
       <extensionElements>
-        <flowable:field name="targetCommandType">
-          <flowable:string>CancelTestEntityCommand</flowable:string>
+        <flowable:field name="targetCommandClassName">
+          <flowable:string>com.axians.eaf.framework.workflow.test.CancelTestEntityCommand</flowable:string>
+        </flowable:field>
+        <flowable:field name="targetConstructorParameters">
+          <flowable:string>entityId,tenantId,cancellationReason,operator</flowable:string>
         </flowable:field>
       </extensionElements>
     </serviceTask>
