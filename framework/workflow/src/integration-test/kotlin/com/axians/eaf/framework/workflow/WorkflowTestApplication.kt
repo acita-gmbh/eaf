@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.workflow
 
+import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -17,16 +18,16 @@ import org.springframework.context.annotation.FilterType
  * (DispatchAxonCommandTask requires CommandGateway and TenantContext which aren't
  * needed for pure Flowable engine tests).
  *
- * Story 6.4: Includes observability package for FlowableMetrics integration tests.
+ * Story 6.4 Note: Excludes observability package (FlowableMetrics has @Scheduled methods
+ * that cause AOP conflicts in test contexts without @EnableScheduling).
  */
 @SpringBootApplication(
     exclude = [
         SecurityAutoConfiguration::class,
         OAuth2ResourceServerAutoConfiguration::class,
+        ManagementWebSecurityAutoConfiguration::class, // Story 6.4: Actuator requires this exclusion
     ],
 )
-// Note: @EnableScheduling removed - causes AOP test conflicts
-// FlowableMetrics @Scheduled methods won't run in tests (acceptable)
 @ComponentScan(
     basePackages = ["com.axians.eaf.framework.workflow"],
     excludeFilters = [
@@ -37,6 +38,10 @@ import org.springframework.context.annotation.FilterType
         ComponentScan.Filter(
             type = FilterType.REGEX,
             pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.handlers\\..*"], // Story 6.3: Exclude Axon event handlers
+        ),
+        ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.observability\\..*"], // Story 6.4: Exclude FlowableMetrics (@Scheduled causes AOP conflicts)
         ),
     ],
 )

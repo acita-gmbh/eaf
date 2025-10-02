@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong
     havingValue = "true",
     matchIfMissing = true,
 )
-class FlowableMetrics(
+open class FlowableMetrics(
     private val meterRegistry: MeterRegistry,
     private val processEngine: ProcessEngine,
 ) {

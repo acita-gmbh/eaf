@@ -45,7 +45,8 @@ dependencies {
     implementation(libs.bundles.axon.framework) // Story 6.2: Axon CommandGateway
     implementation(libs.arrow.core) // Story 6.2: Arrow Either for error handling
     implementation(project(":framework:security")) // Story 6.2: TenantContext
-    implementation(project(":framework:observability")) // Story 6.4: For CustomMetrics integration
+    // Note: framework:observability NOT added - causes test conflicts with @Configuration classes
+    // FlowableMetrics only needs Micrometer (added below)
     implementation(project(":shared:shared-api")) // Story 6.2: Command types
 
     // Story 6.4: Micrometer for FlowableMetrics
@@ -75,4 +76,5 @@ dependencies {
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
     "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)
+    // Note: framework:observability in test scope only (provides CustomMetrics for AxonIntegrationTestConfig)
 }
