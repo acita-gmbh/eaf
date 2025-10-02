@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Bean
  */
 @SpringBootApplication(
     scanBasePackages = [
-        "com.axians.eaf.framework.workflow",
+        "com.axians.eaf.framework.workflow", // Includes framework.workflow.test package
         "com.axians.eaf.framework.cqrs",
         "com.axians.eaf.framework.core",
     ],

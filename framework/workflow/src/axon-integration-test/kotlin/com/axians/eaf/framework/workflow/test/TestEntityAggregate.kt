@@ -42,6 +42,27 @@ class TestEntityAggregate() {
         )
     }
 
+    /**
+     * Handles test entity cancellation for compensation workflow testing (Story 6.5).
+     *
+     * **Framework Test Infrastructure**: Simplified cancellation handler for E2E
+     * compensation flow validation. Unlike Widget aggregate, this test version
+     * omits tenant validation to focus on testing BPMN compensation routing.
+     *
+     * Story 6.5 (Task 4.1) - Framework compensation test infrastructure
+     */
+    @CommandHandler
+    fun handle(command: CancelTestEntityCommand) {
+        AggregateLifecycle.apply(
+            TestEntityCancelledEvent(
+                entityId = this.entityId,
+                tenantId = this.tenantId,
+                cancellationReason = command.cancellationReason,
+                operator = command.operator,
+            ),
+        )
+    }
+
     @EventSourcingHandler
     fun on(event: TestEntityCreatedEvent) {
         this.entityId = event.entityId
@@ -50,5 +71,15 @@ class TestEntityAggregate() {
         this.description = event.description
         this.value = event.value
         this.category = event.category
+    }
+
+    /**
+     * Applies test entity cancellation state transition (Story 6.5).
+     *
+     * Framework test infrastructure for compensation pattern validation.
+     */
+    @EventSourcingHandler
+    fun on(event: TestEntityCancelledEvent) {
+        // Test infrastructure - real aggregates would update status field
     }
 }

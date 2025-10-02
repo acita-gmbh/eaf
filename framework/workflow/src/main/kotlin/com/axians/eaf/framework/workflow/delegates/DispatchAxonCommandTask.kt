@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.workflow.delegates
 
 import com.axians.eaf.framework.security.tenant.TenantContext
+import com.axians.eaf.framework.workflow.observability.FlowableMetrics
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.flowable.engine.delegate.BpmnError
 import org.flowable.engine.delegate.DelegateExecution
@@ -60,23 +61,52 @@ import java.util.concurrent.TimeUnit
 class DispatchAxonCommandTask(
     private val commandGateway: CommandGateway,
     private val tenantContext: TenantContext,
+    private val flowableMetrics: FlowableMetrics?,
 ) : JavaDelegate {
     override fun execute(execution: DelegateExecution) {
+        val commandType = execution.getVariable("commandType") as? String
+        val processKey = execution.processDefinitionId.split(":").firstOrNull() ?: "unknown"
+
         try {
             validateTenantContext(execution)
             val command = buildCommand(execution)
             dispatchCommand(command)
             execution.setVariable("commandResult", "SUCCESS")
+
+            // Story 6.5 (Task 3.3): Record compensation telemetry if this is a compensation command
+            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+                flowableMetrics?.recordCompensationCommand(
+                    commandType = commandType,
+                    processKey = processKey,
+                    success = true,
+                )
+            }
         } catch (
             @Suppress("SwallowedException")
             ex: BpmnError,
         ) {
+            // Story 6.5: Record failed compensation telemetry before re-throwing
+            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+                flowableMetrics?.recordCompensationCommand(
+                    commandType = commandType,
+                    processKey = processKey,
+                    success = false,
+                )
+            }
             // Re-throw BpmnErrors as-is (TENANT_ISOLATION_VIOLATION, MISSING_VARIABLE, etc.)
             throw ex
         } catch (
             @Suppress("TooGenericExceptionCaught", "SwallowedException")
             ex: Exception,
         ) {
+            // Story 6.5: Record failed compensation telemetry before throwing generic error
+            if (commandType == "CancelWidgetCreationCommand" || commandType == "CancelTestEntityCommand") {
+                flowableMetrics?.recordCompensationCommand(
+                    commandType = commandType,
+                    processKey = processKey,
+                    success = false,
+                )
+            }
             // CWE-209 Protection: Generic message for unexpected errors
             throw BpmnError("COMMAND_DISPATCH_FAILED", "Command dispatch failed")
         }
@@ -142,7 +172,9 @@ class DispatchAxonCommandTask(
 
         // SECURITY: Explicit whitelist - prevents arbitrary class instantiation
         return when (commandType) {
-            "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution) // Framework tests only
+            "CreateTestEntityCommand" -> buildCreateTestEntityCommand(execution) // Framework tests
+            "CancelTestEntityCommand" -> buildCancelTestEntityCommand(execution) // Story 6.5: Framework
+            "CancelWidgetCreationCommand" -> buildCancelWidgetCreationCommand(execution) // Story 6.5
             // Products should create their own delegates for domain-specific commands
             // Example (in products module):
             // "CreateWidgetCommand" -> buildCreateWidgetCommand(execution)
@@ -196,6 +228,80 @@ class DispatchAxonCommandTask(
             )
 
         return constructor.newInstance(entityId, tenantId, name, description, value, category, metadata)
+    }
+
+    /**
+     * Builds CancelWidgetCreationCommand for compensation workflows.
+     *
+     * **Story 6.5**: This builder enables BPMN compensation flows to cancel widget creation
+     * when downstream steps fail (e.g., Ansible playbook execution failures). It demonstrates
+     * the compensating action pattern for distributed transaction rollback in CQRS/ES.
+     *
+     * **Security**: Tenant validation is enforced by the Widget aggregate command handler,
+     * but this builder extracts tenantId from process context for fail-closed verification.
+     *
+     * **Framework vs Product Code**: Unlike CreateTestEntityCommand (framework test only),
+     * CancelWidgetCreationCommand is a real product command from widget-demo. This is
+     * acceptable because it's used in axonIntegrationTest suite which bridges framework
+     * and product layers for E2E validation.
+     */
+    @Suppress("ThrowsCount")
+    private fun buildCancelWidgetCreationCommand(execution: DelegateExecution): Any {
+        val widgetId =
+            execution.getVariable("widgetId") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: widgetId")
+        val tenantId =
+            execution.getVariable("tenantId") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
+        val cancellationReason =
+            execution.getVariable("cancellationReason") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: cancellationReason")
+        val operator = execution.getVariable("operator") as? String ?: "SYSTEM"
+
+        // SECURITY: Hardcoded class name (safe) - NEVER use Class.forName(commandType)
+        val commandClass = Class.forName("com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand")
+        val constructor =
+            commandClass.getConstructor(
+                String::class.java, // widgetId
+                String::class.java, // tenantId
+                String::class.java, // cancellationReason
+                String::class.java, // operator
+            )
+
+        return constructor.newInstance(widgetId, tenantId, cancellationReason, operator)
+    }
+
+    /**
+     * Builds CancelTestEntityCommand for framework compensation testing (Story 6.5).
+     *
+     * **Framework Test Infrastructure**: Mirrors CancelWidgetCreationCommand builder
+     * but uses framework test types for architectural purity. Enables E2E compensation
+     * flow validation without product module dependencies.
+     */
+    @Suppress("ThrowsCount")
+    private fun buildCancelTestEntityCommand(execution: DelegateExecution): Any {
+        val entityId =
+            execution.getVariable("entityId") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: entityId")
+        val tenantId =
+            execution.getVariable("tenantId") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: tenantId")
+        val cancellationReason =
+            execution.getVariable("cancellationReason") as? String
+                ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: cancellationReason")
+        val operator = execution.getVariable("operator") as? String ?: "SYSTEM"
+
+        // SECURITY: Hardcoded class name (safe) - framework test infrastructure
+        val commandClass = Class.forName("com.axians.eaf.framework.workflow.test.CancelTestEntityCommand")
+        val constructor =
+            commandClass.getConstructor(
+                String::class.java, // entityId
+                String::class.java, // tenantId
+                String::class.java, // cancellationReason
+                String::class.java, // operator
+            )
+
+        return constructor.newInstance(entityId, tenantId, cancellationReason, operator)
     }
 
     private fun dispatchCommand(command: Any) {

@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.micrometer.core)
     implementation(libs.spring.boot.starter.actuator) // Includes Prometheus support
 
+    // Story 6.4 Remediation: Jakarta Validation for @ConfigurationProperties validation
+    implementation(libs.spring.boot.starter.validation) // Provides jakarta.validation annotations (@Min, @Validated, etc.)
+
     // Story 6.4: Ansible execution via SSH (Task 4)
     implementation(libs.jsch) // Java SSH client
     // Note: Jackson provided transitively by spring-boot-starter-web
