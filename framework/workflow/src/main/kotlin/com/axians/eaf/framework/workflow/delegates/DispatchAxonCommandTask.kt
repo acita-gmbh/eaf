@@ -90,7 +90,6 @@ class DispatchAxonCommandTask(
     }
 
     override fun execute(execution: DelegateExecution) {
-        val commandType = execution.getVariable("commandType") as? String
         val processKey = execution.processDefinitionId.split(":").firstOrNull() ?: "unknown"
 
         try {
@@ -198,8 +197,9 @@ class DispatchAxonCommandTask(
         // SECURITY: Explicit whitelist (fail-closed) - prevents arbitrary class loading (CWE-94)
         // Package prefix validation alone is INSUFFICIENT - attacker with BPMN deployment access
         // could load malicious classes within com.axians.eaf.* namespace
-        require(commandClassName in ALLOWED_COMMAND_CLASSES) {
-            "Unauthorized command class: $commandClassName not in whitelist"
+        // CWE-209 Protection: Use BpmnError with generic message (not require() which leaks class name)
+        if (commandClassName !in ALLOWED_COMMAND_CLASSES) {
+            throw BpmnError("UNAUTHORIZED_COMMAND", "Command class not authorized")
         }
 
         // Load command class via reflection (framework-agnostic)
@@ -229,19 +229,14 @@ class DispatchAxonCommandTask(
                     execution.getVariable(paramName) // May be null for nullable parameters
                 }.toTypedArray()
 
-        // Find primary constructor (Kotlin data class pattern)
-        // Data classes always have a primary constructor with all properties in order
+        // Find constructor matching parameter count (handles Kotlin default parameters)
+        // Kotlin generates synthetic constructors for default parameters - select by arity match
         val constructor =
-            commandClass.constructors.firstOrNull()
-                ?: throw BpmnError("CONSTRUCTOR_NOT_FOUND", "No constructor found for command class")
-
-        // Validate parameter count matches
-        if (constructor.parameterCount != parameterValues.size) {
-            throw BpmnError(
-                "CONSTRUCTOR_MISMATCH",
-                "Constructor expects ${constructor.parameterCount} parameters, got ${parameterValues.size}",
-            )
-        }
+            commandClass.constructors.firstOrNull { it.parameterCount == parameterValues.size }
+                ?: throw BpmnError(
+                    "CONSTRUCTOR_NOT_FOUND",
+                    "No constructor found matching ${parameterValues.size} parameters",
+                )
 
         // Instantiate command via reflection
         return try {
