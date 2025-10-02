@@ -74,18 +74,30 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
 
             deployment.shouldNotBeNull()
 
-            // Start process with variables (including commandType for generic delegate)
+            // Start process with variables (ARCH-001 Remediation: Pure reflection pattern)
             val entityId = UUID.randomUUID().toString()
             val processVariables =
                 mapOf(
-                    "commandType" to "CreateTestEntityCommand", // Generic delegate requires command type
+                    // Generic delegate uses pure reflection (framework-agnostic)
+                    "commandClassName" to "com.axians.eaf.framework.workflow.test.CreateTestEntityCommand",
+                    "constructorParameters" to
+                        listOf(
+                            "entityId",
+                            "tenantId",
+                            "name",
+                            "description",
+                            "value",
+                            "category",
+                            "metadata",
+                        ),
+                    // Command constructor parameters
                     "entityId" to entityId,
                     "tenantId" to "test-tenant",
                     "name" to "Test Entity",
                     "description" to "Created via BPMN process",
                     "value" to BigDecimal("100.00"),
                     "category" to "TEST",
-                    // metadata omitted - optional field, avoids JSONB type configuration complexity
+                    "metadata" to emptyMap<String, Any>(),
                 )
 
             val processInstance =
@@ -114,13 +126,23 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
                 .addClasspathResource("processes/example-test-entity-creation.bpmn20.xml")
                 .deploy()
 
-            // Start process WITHOUT required variables
+            // Start process WITHOUT required constructor parameters (ARCH-001 pattern)
             val processVariables =
                 mapOf(
-                    "commandType" to "CreateTestEntityCommand",
+                    "commandClassName" to "com.axians.eaf.framework.workflow.test.CreateTestEntityCommand",
+                    "constructorParameters" to
+                        listOf(
+                            "entityId",
+                            "tenantId",
+                            "name",
+                            "description",
+                            "value",
+                            "category",
+                            "metadata",
+                        ),
                     "entityId" to UUID.randomUUID().toString(),
                     "tenantId" to "test-tenant",
-                    // Missing: name, value, category (required fields)
+                    // Missing: name, value, category (required fields) - should trigger MISSING_VARIABLE error
                 )
 
             // Process starts but error boundary event should be triggered
@@ -153,16 +175,27 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
                 .addClasspathResource("processes/example-test-entity-creation.bpmn20.xml")
                 .deploy()
 
-            // Attempt to create entity for DIFFERENT tenant (tenant-b)
+            // Attempt to create entity for DIFFERENT tenant (tenant-b) - ARCH-001 pattern
             val processVariables =
                 mapOf(
-                    "commandType" to "CreateTestEntityCommand",
+                    "commandClassName" to "com.axians.eaf.framework.workflow.test.CreateTestEntityCommand",
+                    "constructorParameters" to
+                        listOf(
+                            "entityId",
+                            "tenantId",
+                            "name",
+                            "description",
+                            "value",
+                            "category",
+                            "metadata",
+                        ),
                     "entityId" to UUID.randomUUID().toString(),
                     "tenantId" to "tenant-b", // Mismatched tenant!
                     "name" to "Malicious Entity",
                     "description" to "Cross-tenant attack attempt",
                     "value" to BigDecimal("99.99"),
                     "category" to "ATTACK",
+                    "metadata" to emptyMap<String, Any>(),
                 )
 
             // BpmnError triggers error boundary event (does not throw to caller)

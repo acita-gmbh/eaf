@@ -24,14 +24,27 @@ import java.util.concurrent.atomic.AtomicLong
  * - BPMN error rate tracking for rollback trigger monitoring
  * - Message/signal delivery success rate
  * - Dead letter queue depth with alerting threshold
+ * - Compensation command tracking for workflow rollback monitoring (Story 6.5)
  *
  * **Operational Integration:**
  * - Rollback trigger: BPMN error rate > 10% over 15min
  * - Alert threshold: Dead letter queue depth > 100 jobs
  * - Performance baseline: p95 process duration < 30s
+ * - Compensation monitoring: Track rollback frequency for failure storm detection
  *
- * **Story Context:** Story 6.4 (Subtasks 1.1-1.6) - Addresses Epic 6 PO validation gaps
- * for Flowable observability before adding Ansible complexity.
+ * **Configuration** (application.yml):
+ * ```yaml
+ * eaf:
+ *   workflow:
+ *     metrics:
+ *       process-instance-interval-ms: 30000  # 30 seconds (default)
+ *       dead-letter-queue-interval-ms: 60000 # 60 seconds (default)
+ * ```
+ *
+ * **Story Context:**
+ * - Story 6.4 (Subtasks 1.1-1.6) - Addresses Epic 6 PO validation gaps
+ * - Story 6.4 Remediation (PR feedback) - Configurable intervals for environment-specific tuning
+ * - Story 6.5 (Task 3.3) - Compensation telemetry for observability (OPS-001 mitigation)
  *
  * @param meterRegistry Micrometer registry for Prometheus metrics
  * @param processEngine Flowable ProcessEngine for runtime queries
@@ -103,10 +116,14 @@ open class FlowableMetrics(
      * **QA Fix (MEDIUM-01)**: Refactored to UPDATE state instead of re-registering
      * gauges. Prevents memory leak from duplicate gauge instances.
      *
-     * Scheduled execution: Every 30 seconds
-     * Alert threshold: Suspended instances > 0 (investigate immediately)
+     * **Scheduled Execution (Configurable)**:
+     * - Default: Every 30 seconds
+     * - Configure via: `eaf.workflow.metrics.process-instance-interval-ms`
+     * - Recommended: Dev=5000, Staging=15000, Prod=30000
+     *
+     * **Alert Threshold:** Suspended instances > 0 (investigate immediately)
      */
-    @Scheduled(fixedRate = 30000) // Every 30s
+    @Scheduled(fixedRateString = "\${eaf.workflow.metrics.process-instance-interval-ms:30000}")
     fun recordProcessInstanceMetrics() {
         try {
             val runtime = processEngine.runtimeService
@@ -301,6 +318,68 @@ open class FlowableMetrics(
     }
 
     /**
+     * METRIC 7: Compensation Command Tracking (Story 6.5, Task 3.3)
+     *
+     * Records compensation command dispatches for workflow rollback monitoring.
+     * Critical for tracking compensation frequency and detecting failure storms.
+     *
+     * **Use Case**: When BPMN error boundary events trigger compensation (e.g., Ansible
+     * playbook failures), this metric tracks how often rollback logic executes.
+     *
+     * **Operational Alerts**:
+     * - Compensation rate > 5% of total workflows: Investigate upstream failure cause
+     * - Sudden spike in compensation: Potential failure storm requiring immediate action
+     *
+     * Story 6.5 (OPS-001 mitigation): Compensation observability for operational debugging.
+     *
+     * @param commandType Type of compensation command (e.g., "CancelWidgetCreationCommand")
+     * @param processKey Process definition key where compensation occurred
+     * @param success True if command dispatched successfully, false if dispatch failed
+     */
+    fun recordCompensationCommand(
+        commandType: String,
+        processKey: String,
+        success: Boolean,
+    ) {
+        try {
+            Counter
+                .builder("flowable.compensation.commands")
+                .tag("command_type", commandType)
+                .tag("process_key", processKey)
+                .tag("status", if (success) "success" else "failed")
+                .description("Count of compensation commands dispatched during workflow rollback")
+                .register(meterRegistry)
+                .increment()
+
+            if (!success) {
+                logger.error(
+                    "Compensation command dispatch FAILED: command_type={}, process_key={}",
+                    commandType,
+                    processKey,
+                )
+            } else {
+                logger.info(
+                    "Compensation command dispatched: command_type={}, process_key={}",
+                    commandType,
+                    processKey,
+                )
+            }
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
+            // Infrastructure Interceptor Exception Pattern:
+            // Observability component gracefully degrades when metrics recording fails.
+            logger.error(
+                "Failed to record compensation command metric: command_type={}, process_key={}",
+                commandType,
+                processKey,
+                ex,
+            )
+        }
+    }
+
+    /**
      * METRIC 6: Dead Letter Queue Depth (Subtask 1.6)
      *
      * Updates mutable state for dead letter queue depth.
@@ -309,11 +388,15 @@ open class FlowableMetrics(
      * **QA Fix (MEDIUM-01)**: Refactored to UPDATE state instead of calling
      * meterRegistry.gauge() repeatedly.
      *
-     * Scheduled execution: Every 60 seconds
+     * **Scheduled Execution (Configurable)**:
+     * - Default: Every 60 seconds
+     * - Configure via: `eaf.workflow.metrics.dead-letter-queue-interval-ms`
+     * - Recommended: Dev=10000, Staging=30000, Prod=60000
+     *
      * **Alert Threshold:** > 100 jobs (critical - immediate action required)
      * **Rollback Trigger:** > 1000 jobs (investigate then rollback)
      */
-    @Scheduled(fixedRate = 60000) // Every 60s
+    @Scheduled(fixedRateString = "\${eaf.workflow.metrics.dead-letter-queue-interval-ms:60000}")
     fun recordDeadLetterQueue() {
         try {
             val management = processEngine.managementService

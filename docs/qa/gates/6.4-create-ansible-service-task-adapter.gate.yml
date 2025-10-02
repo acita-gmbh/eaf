@@ -152,3 +152,68 @@ completion_metrics:
   quality_gates_passed: "4/4 (detekt, ktlint, compilation, tests)"
   total_implementation_time: "~10 hours (including SSH testcontainer debugging)"
   lines_of_code: "2,250 (production: 1,685, tests: 565)"
+
+# Post-Merge Remediation (PR Feedback - 2025-10-02)
+# Context: Story 6.4 merged with PASS gate. PR reviewers (Copilot, CodeRabbit) identified
+# technical debt opportunities for improvement. Remediation completed proactively before Story 6.5.
+post_merge_remediation:
+  trigger: "GitHub PR #39 review feedback (Copilot, CodeRabbit)"
+  pr_url: "https://github.com/acita-gmbh/eaf/pull/39"
+  remediation_date: "2025-10-02T14:30:00Z"
+  total_time: "90 minutes"
+
+  pr_feedback_items:
+    - id: "PR-SEC-001"
+      concern: "SSH StrictHostKeyChecking disabled (security vulnerability)"
+      actual_finding: "FALSE POSITIVE - Profile-aware security already implemented"
+      resolution: "NO ACTION NEEDED - Production enforces host key verification, dev/test allow relaxed mode"
+      evidence: "AnsibleExecutor.kt:240-276 - configureHostKeyVerification() with isProductionProfile() check"
+      status: "VALIDATED"
+
+    - id: "PR-SEC-002"
+      concern: "Hardcoded test credentials create security anti-patterns"
+      actual_finding: "TRUE - Literal 'testpassword123' and 'root' user in test companion object"
+      resolution: "FIXED - Randomized UUID-based credentials + non-privileged 'ansible' user"
+      changes:
+        - "RunAnsiblePlaybookTaskIntegrationTest.kt:327-341 - UUID.randomUUID() for password generation"
+        - "Testcontainer Docker build - Changed root → ansible user with proper permissions"
+        - "Security: Non-privileged user principle applied (CWE-250 mitigation)"
+      tests_validated: "All 14 axonIntegrationTest tests passing (100%)"
+      status: "RESOLVED"
+
+    - id: "PR-CONFIG-003"
+      concern: "Non-configurable metrics intervals (hardcoded @Scheduled fixedRate)"
+      actual_finding: "TRUE - fixedRate=30000/60000 hardcoded in @Scheduled annotations"
+      resolution: "FIXED - Created @ConfigurationProperties with Spring Boot 3.5 best practices"
+      changes:
+        - "FlowableMetricsProperties.kt - Kotlin data class with @Validated JSR-303 validation"
+        - "FlowableMetrics.kt - Replaced fixedRate with fixedRateString property placeholders"
+        - "application.yml - Default configuration (30s/60s) + test overrides (5s/10s)"
+        - "build.gradle.kts - Added spring-boot-starter-validation dependency"
+      pattern_applied: "Modern Spring Boot 3.5 - @ConfigurationProperties with Records/data classes over @Value"
+      tests_validated: "All quality gates passing (ktlint, detekt, compilation, tests)"
+      status: "RESOLVED"
+
+  artifacts_created:
+    - "framework/workflow/.../FlowableMetricsProperties.kt (48 LOC)"
+    - "framework/workflow/src/main/resources/application.yml (updated)"
+    - "framework/workflow/src/axon-integration-test/resources/application.yml (updated)"
+    - "framework/workflow/build.gradle.kts (added validation dependency)"
+
+  quality_validation:
+    ktlint: "PASS - 0 violations"
+    detekt: "PASS - 0 violations"
+    compilation: "PASS"
+    integration_tests: "14/14 passing (100%)"
+    security_improvements:
+      - "Eliminated hardcoded credentials anti-pattern (CWE-798 mitigation)"
+      - "Applied principle of least privilege (root → ansible user)"
+      - "Randomized credentials per test run (prevents credential reuse)"
+
+  final_gate_status: "PASS (maintained) - Quality score remains 100/100"
+  technical_debt_status: "REDUCED - 2 of 3 PR concerns addressed, 1 false positive validated"
+
+  recommendations_for_story_6_5:
+    - "Clean foundation achieved - zero security anti-patterns to propagate"
+    - "Configurable metrics enable environment-specific tuning (dev=5s, prod=30s)"
+    - "Modern @ConfigurationProperties pattern established for Epic 6"

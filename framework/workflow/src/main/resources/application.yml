@@ -10,3 +10,21 @@ spring:
 
     # Process Definition Validation
     check-process-definitions: true   # Validate BPMN process definitions on startup
+
+# EAF Workflow Configuration
+eaf:
+  workflow:
+    # Feature flag for emergency rollback (Story 6.4)
+    enabled: true
+
+    # Flowable Metrics Collection Intervals (Story 6.4 Remediation)
+    metrics:
+      # Process instance metrics (active/suspended counts)
+      # Default: 30000ms (30 seconds)
+      # Recommended: Dev=5000, Staging=15000, Prod=30000
+      process-instance-interval-ms: 30000
+
+      # Dead letter queue depth metrics
+      # Default: 60000ms (60 seconds)
+      # Recommended: Dev=10000, Staging=30000, Prod=60000
+      dead-letter-queue-interval-ms: 60000

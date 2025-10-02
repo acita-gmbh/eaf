@@ -47,11 +47,16 @@ dependencies {
     implementation(project(":framework:security")) // Story 6.2: TenantContext
     // Note: framework:observability NOT added - causes test conflicts with @Configuration classes
     // FlowableMetrics only needs Micrometer (added below)
-    implementation(project(":shared:shared-api")) // Story 6.2: Command types
+    // REMOVED (Story 6.5 ARCH-001 Remediation): shared-api dependency violates framework purity
+    // Framework modules MUST be product-agnostic - use pure reflection via commandClassName variable
+    // implementation(project(":shared:shared-api"))
 
     // Story 6.4: Micrometer for FlowableMetrics
     implementation(libs.micrometer.core)
     implementation(libs.spring.boot.starter.actuator) // Includes Prometheus support
+
+    // Story 6.4 Remediation: Jakarta Validation for @ConfigurationProperties validation
+    implementation(libs.spring.boot.starter.validation) // Provides jakarta.validation annotations (@Min, @Validated, etc.)
 
     // Story 6.4: Ansible execution via SSH (Task 4)
     implementation(libs.jsch) // Java SSH client

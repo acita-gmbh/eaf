@@ -3,9 +3,11 @@ package com.axians.eaf.products.widgetdemo.domain
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
+import com.axians.eaf.api.widget.events.WidgetCreationCancelledEvent
 import com.axians.eaf.api.widget.events.WidgetUpdatedEvent
 import com.axians.eaf.framework.security.tenant.TenantContext
 import org.axonframework.commandhandling.CommandHandler
@@ -35,6 +37,7 @@ class Widget {
         ACTIVE,
         INACTIVE,
         ARCHIVED,
+        CANCELLED,
     }
 
     constructor()
@@ -112,6 +115,62 @@ class Widget {
         )
     }
 
+    /**
+     * Handles widget creation cancellation for compensation workflows.
+     *
+     * This command handler implements the compensating action pattern for distributed
+     * transaction rollback. When downstream workflow steps fail (e.g., Ansible playbook
+     * execution), this handler reverses the widget creation by transitioning to CANCELLED state.
+     *
+     * **Idempotency**: Multiple cancellation attempts on an already-cancelled widget are
+     * safely ignored (returns success) to support retry scenarios without duplicating events.
+     *
+     * **Security**: Enforces fail-closed tenant validation (SEC-001 mitigation) - tenant
+     * context mismatch results in immediate error without event emission.
+     *
+     * Story 6.5: Implement Workflow Error Handling (Compensating Actions)
+     */
+    @CommandHandler
+    fun handle(command: CancelWidgetCreationCommand): Either<WidgetError, Unit> {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        // Tenant validation - both command and aggregate must match current context
+        val error =
+            when {
+                command.tenantId != currentTenant ->
+                    WidgetError.TenantIsolationViolation(
+                        requestedTenant = command.tenantId,
+                        actualTenant = currentTenant,
+                    )
+                this.tenantId != currentTenant ->
+                    WidgetError.TenantIsolationViolation(
+                        requestedTenant = currentTenant,
+                        actualTenant = this.tenantId,
+                    )
+                else -> null
+            }
+
+        if (error != null) {
+            return error.left()
+        }
+
+        // Idempotency: If already cancelled, succeed without emitting duplicate event
+        if (status == WidgetStatus.CANCELLED) {
+            return Unit.right()
+        }
+
+        // Emit cancellation event
+        AggregateLifecycle.apply(
+            WidgetCreationCancelledEvent(
+                widgetId = this.widgetId,
+                tenantId = this.tenantId,
+                cancellationReason = command.cancellationReason,
+                operator = command.operator,
+            ),
+        )
+        return Unit.right()
+    }
+
     @EventSourcingHandler
     fun on(event: WidgetCreatedEvent) {
         this.widgetId = event.widgetId
@@ -136,6 +195,21 @@ class Widget {
         event.category?.let { this.category = it }
         event.metadata?.let { this.metadata = it }
         this.updatedAt = event.updatedAt
+    }
+
+    /**
+     * Applies widget cancellation state transition.
+     *
+     * This event sourcing handler processes WidgetCreationCancelledEvent and transitions
+     * the aggregate to CANCELLED state. Projection handlers MUST implement idempotent
+     * processing to handle duplicate event replay safely (DATA-001 mitigation).
+     *
+     * Story 6.5: Implement Workflow Error Handling (Compensating Actions)
+     */
+    @EventSourcingHandler
+    fun on(event: WidgetCreationCancelledEvent) {
+        this.status = WidgetStatus.CANCELLED
+        this.updatedAt = event.cancelledAt
     }
 
     companion object {

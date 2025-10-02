@@ -32,6 +32,7 @@
 * **AC 1:** A "compensating command" (e.g., `CancelWidgetCreationCommand`) and corresponding event handler are added to the Widget aggregate (from Epic 2).
 * **AC 2:** A BPMN "Error Boundary Event" is configured in the workflow.
 * **AC 3:** If a downstream step (like the Ansible Task) fails, the BPMN error path must successfully trigger the `DispatchAxonCommandTask` (from 6.2) to send the `CancelWidgetCreationCommand`, reversing the initial transaction.
+* **Dependencies:** Stories 6.2 (Flowable-to-Axon bridge) and 6.4 (Ansible service task adapter) must be completed to provide the command dispatch infrastructure and error boundary hooks required for compensation.
 
 ### Story 6.6: Implement "Dockets Pattern" BPMN Template
 * **As a** Core Developer, **I want** a template BPMN 2.0 XML file that replicates the legacy "Dockets Hook" pattern, **so that** we have a clear path for migrating DPCM/ZEWSSP automation.

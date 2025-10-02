@@ -44,6 +44,14 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
       - org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor
 
+# EAF Workflow Configuration (Test Profile Overrides)
+eaf:
+  workflow:
+    metrics:
+      # TEST PROFILE: Faster intervals for rapid feedback during integration tests
+      process-instance-interval-ms: 5000   # 5 seconds (vs 30s in prod)
+      dead-letter-queue-interval-ms: 10000 # 10 seconds (vs 60s in prod)
+
 # Logging
 logging:
   level:

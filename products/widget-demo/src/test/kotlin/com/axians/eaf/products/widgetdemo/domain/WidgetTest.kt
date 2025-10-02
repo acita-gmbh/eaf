@@ -1,8 +1,10 @@
 package com.axians.eaf.products.widgetdemo.domain
 
+import com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
+import com.axians.eaf.api.widget.events.WidgetCreationCancelledEvent
 import com.axians.eaf.api.widget.events.WidgetUpdatedEvent
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.kotest.assertions.arrow.core.shouldBeLeft
@@ -523,6 +525,172 @@ class WidgetTest :
                         .`when`(updateCommand)
                         .expectNoEvents()
                         .expectSuccessfulHandlerExecution()
+                }
+            }
+        }
+
+        Given("Widget cancellation (compensation workflow)") {
+            val fixture = AggregateTestFixture(Widget::class.java)
+            val widgetId = UUID.randomUUID().toString()
+            val tenantId = "test-tenant"
+
+            beforeTest {
+                tenantContext.setCurrentTenantId(tenantId)
+            }
+
+            val createdEvent =
+                WidgetCreatedEvent(
+                    widgetId = widgetId,
+                    tenantId = tenantId,
+                    name = "Widget to Cancel",
+                    description = "This widget will be cancelled",
+                    value = BigDecimal("100.00"),
+                    category = "TEST_CATEGORY",
+                    metadata = emptyMap(),
+                )
+
+            When("cancelling a widget with valid data") {
+                val cancelCommand =
+                    CancelWidgetCreationCommand(
+                        widgetId = widgetId,
+                        tenantId = tenantId,
+                        cancellationReason = "Ansible playbook failed",
+                        operator = "SYSTEM",
+                    )
+
+                Then("widget should be cancelled successfully (6.5-UNIT-001)") {
+                    fixture
+                        .given(createdEvent)
+                        .`when`(cancelCommand)
+                        .expectSuccessfulHandlerExecution()
+                        .expectEventsMatching(
+                            org.axonframework.test.matchers.Matchers.sequenceOf(
+                                org.axonframework.test.matchers.Matchers.matches { event ->
+                                    val payload = event.payload
+                                    payload is WidgetCreationCancelledEvent &&
+                                        payload.widgetId == widgetId &&
+                                        payload.tenantId == tenantId &&
+                                        payload.cancellationReason == "Ansible playbook failed" &&
+                                        payload.operator == "SYSTEM"
+                                },
+                            ),
+                        )
+                }
+            }
+
+            When("cancelling a widget with wrong tenant ID") {
+                val cancelCommand =
+                    CancelWidgetCreationCommand(
+                        widgetId = widgetId,
+                        tenantId = "wrong-tenant",
+                        cancellationReason = "Unauthorized cancellation attempt",
+                        operator = "HACKER",
+                    )
+
+                Then("should fail with tenant isolation violation (6.5-UNIT-002)") {
+                    fixture
+                        .given(createdEvent)
+                        .`when`(cancelCommand)
+                        .expectNoEvents()
+                        .expectSuccessfulHandlerExecution()
+                }
+            }
+
+            When("cancelling a widget with aggregate tenant mismatch") {
+                // ULTRA-FIX: Use widgetId from outer Given context - don't shadow variable
+                // Axon fixture requires consistent aggregate ID between given() and when() steps
+                tenantContext.setCurrentTenantId("tenant-a")
+
+                val otherTenantEvent =
+                    WidgetCreatedEvent(
+                        widgetId = widgetId, // Reuse from outer Given context (line 534)
+                        tenantId = "tenant-b",
+                        name = "Other Tenant Widget",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "TEST_CATEGORY",
+                        metadata = emptyMap(),
+                    )
+
+                val cancelCommand =
+                    CancelWidgetCreationCommand(
+                        widgetId = widgetId, // Same aggregate ID
+                        tenantId = "tenant-a",
+                        cancellationReason = "Cross-tenant cancellation attempt",
+                        operator = "SYSTEM",
+                    )
+
+                Then("should fail with tenant isolation violation (SEC-001 mitigation)") {
+                    fixture
+                        .given(otherTenantEvent)
+                        .`when`(cancelCommand)
+                        .expectNoEvents()
+                        .expectSuccessfulHandlerExecution()
+                }
+            }
+
+            When("cancelling an already cancelled widget (idempotency test)") {
+                val cancelCommand =
+                    CancelWidgetCreationCommand(
+                        widgetId = widgetId,
+                        tenantId = tenantId,
+                        cancellationReason = "Duplicate cancellation",
+                        operator = "SYSTEM",
+                    )
+
+                val cancelledEvent =
+                    WidgetCreationCancelledEvent(
+                        widgetId = widgetId,
+                        tenantId = tenantId,
+                        cancellationReason = "Original cancellation",
+                        operator = "SYSTEM",
+                    )
+
+                Then("should succeed without emitting duplicate event (idempotency)") {
+                    fixture
+                        .given(createdEvent, cancelledEvent)
+                        .`when`(cancelCommand)
+                        .expectNoEvents()
+                        .expectSuccessfulHandlerExecution()
+                }
+            }
+        }
+
+        Given("Tenant validation for CancelWidgetCreationCommand") {
+            val fixture = AggregateTestFixture(Widget::class.java)
+
+            When("CancelWidgetCreationCommand with missing TenantContext") {
+                // Clear tenant context before test execution
+                // This Given block has NO beforeTest hook, so clearing here affects fixture execution
+                // The outer afterTest hook (line 24) only runs AFTER this test completes,
+                // so there's no interference - this test correctly validates fail-closed behavior
+                tenantContext.clearCurrentTenant()
+
+                val widgetId = UUID.randomUUID().toString()
+                val createdEvent =
+                    WidgetCreatedEvent(
+                        widgetId = widgetId,
+                        tenantId = "test-tenant",
+                        name = "Widget to Cancel",
+                        description = null,
+                        value = BigDecimal("100.00"),
+                        category = "TEST_CATEGORY",
+                        metadata = emptyMap(),
+                    )
+
+                val cancelCommand =
+                    CancelWidgetCreationCommand(
+                        widgetId = widgetId,
+                        tenantId = "test-tenant",
+                        cancellationReason = "Missing context test",
+                        operator = "SYSTEM",
+                    )
+
+                Then("should throw IllegalStateException") {
+                    fixture
+                        .given(createdEvent)
+                        .`when`(cancelCommand)
+                        .expectException(IllegalStateException::class.java)
                 }
             }
         }

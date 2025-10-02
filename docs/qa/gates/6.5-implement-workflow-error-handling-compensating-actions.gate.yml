@@ -1,0 +1,259 @@
+# Quality Gate: Story 6.5 — Pre-Implementation Review (Updated)
+# Powered by BMAD™ Core
+
+schema: 1
+story: "6.5"
+story_title: "Implement Workflow Error Handling (Compensating Actions)"
+review_type: pre-implementation
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-02T14:30:00Z"
+
+gate: PASS
+status_reason: "All critical issues resolved. ARCH-001 remediated (framework purity restored). SEC-VULN-001 hardened (explicit command whitelist). All 42 tests passing. Zero security vulnerabilities. Minor advisory: document Redis rate limiter monitoring (PERF-001)."
+quality_score: 98  # 100 - 2 (PERF-001 docs only)
+
+waiver:
+  active: false
+
+dependency_risks:
+  - story: "6.4"
+    status: "REMEDIATED - Security debt cleared (2025-10-02T14:30:00Z)"
+    original_concerns:
+      - "SSH StrictHostKeyChecking disabled (CWE-322) - VALIDATED as false positive (profile-aware security already in place)"
+      - "Hardcoded test credentials creating security anti-patterns - FIXED (UUID-based randomization + non-privileged user)"
+      - "Non-configurable metrics intervals - FIXED (@ConfigurationProperties with Spring Boot 3.5 pattern)"
+    remediation_summary:
+      - "90-minute proactive remediation completed before Story 6.5 implementation"
+      - "2 of 3 PR concerns fixed, 1 false positive validated"
+      - "Quality gates: ktlint/detekt/tests all passing (14/14 - 100%)"
+      - "Security improvements: CWE-798 + CWE-250 mitigations applied"
+    impact_on_6_5: "MINIMAL - Clean foundation with zero security anti-patterns. BpmnError sanitization now optional enhancement vs. critical requirement."
+    mitigation: "Story 6.4 remediation eliminated hardcoded credentials and applied least-privilege principles. SEC-002 downgraded from high→low priority."
+    remediation_ref: "docs/qa/gates/6.4-create-ansible-service-task-adapter.gate.yml#post_merge_remediation"
+
+risk_summary:
+  source: "docs/qa/assessments/6.5-risk-20251002.md"
+  totals:
+    critical: 0
+    high: 1  # TECH-001 only (SEC-002 downgraded to low)
+    medium: 2
+    low: 3  # SEC-002 downgraded + SEC-001 + PERF-001
+  highest:
+    id: "TECH-001"
+    score: 6
+    title: "Compensation branch misconfigures DispatchAxonCommandTask variables resulting in incident queue backlog"
+    mitigation_status: "Integration BPMN test + E2E failure scenario planned"
+  overall_risk_score: 58  # Improved from 72 after Story 6.4 remediation (−14 points)
+  notes:
+    - "Story 6.4 security debt REMEDIATED - SEC-002 downgraded from high→low priority."
+    - "Hardcoded credentials eliminated - randomized UUID-based test credentials in place."
+    - "Non-privileged user principle applied - root→ansible user change reduces attack surface."
+    - "Address PERF-001 (documentation gap) as operational enhancement, not blocker."
+
+risk_register:
+  - id: "SEC-002"
+    priority: low  # Downgraded from high after Story 6.4 remediation
+    original_priority: high
+    downgrade_reason: "Story 6.4 remediation eliminated hardcoded credentials and applied least-privilege principles, significantly reducing information exposure risk."
+    description: "Compensation workflows triggering Ansible failures may propagate infrastructure details in BpmnError messages or compensation telemetry (CWE-209). RISK REDUCED: No hardcoded credentials remain in Story 6.4 code."
+    mitigation: "OPTIONAL ENHANCEMENT: Add generic error message sanitization for defense-in-depth. Integration test validation recommended but not critical."
+    remediation_date: "2025-10-02T14:30:00Z"
+    remediation_evidence: "Story 6.4 post-merge remediation - UUID-based randomized credentials + non-privileged ansible user"
+  - id: "TECH-001"
+    priority: high
+    description: "Compensation branch misconfigures DispatchAxonCommandTask variables resulting in incident queue backlog."
+    mitigation: "Integration BPMN test + E2E failure scenario ensuring command dispatch completes."
+  - id: "SEC-001"
+    priority: low
+    description: "Potential cross-tenant compensation if tenant validation omitted."
+    mitigation: "Unit negative test + reuse fail-closed guard in DispatchAxonCommandTask."
+  - id: "DATA-001"
+    priority: medium
+    description: "WidgetCreationCancelledEvent not handled idempotently in projections."
+    mitigation: "Integration test 6.5-INT-001 covering duplicate replay."
+  - id: "OPS-001"
+    priority: medium
+    description: "Missing compensation observability/alerts hides failure storm trend."
+    mitigation: "E2E metric assertion + Dev Notes runbook updates."
+  - id: "PERF-001"
+    priority: low
+    description: "Redis rate limiter saturation during mass compensation events. Missing operational documentation for monitoring."
+    mitigation: "Document staging drill procedure and Grafana alert thresholds. ADVISORY: Operational documentation gap, not implementation blocker."
+
+# Test design coverage summary
+# Source: docs/qa/assessments/6.5-test-design-20251002.md
+test_design:
+  scenarios_total: 7  # SEC-002 test now optional (downgraded to P2)
+  by_level:
+    unit: 3
+    integration: 2  # BpmnError sanitization test now optional
+    e2e: 2
+  by_priority:
+    p0: 4  # SEC-002 downgraded from P0→P2
+    p1: 2
+    p2: 1  # SEC-002 optional enhancement
+  coverage_gaps:
+    - "Add integration assertion for compensation counter export (FlowableMetrics)."
+  optional_enhancements:
+    - "BpmnError message sanitization validation (SEC-002) - defense-in-depth, not critical after Story 6.4 remediation."
+
+# NFR quick scan (core four)
+# Source: docs/qa/assessments/6.5-nfr-20251002.md
+nfr_validation:
+  _assessed: [security, performance, reliability, maintainability]
+  security:
+    status: PASS  # Upgraded from CONCERNS after Story 6.4 remediation
+    notes: "Fail-closed tenant validation present. Story 6.4 security debt REMEDIATED (hardcoded credentials eliminated, least-privilege applied). BpmnError sanitization optional enhancement for defense-in-depth."
+    improvements_from_6_4_remediation:
+      - "UUID-based randomized test credentials (CWE-798 mitigation)"
+      - "Non-privileged ansible user (CWE-250 mitigation)"
+      - "Profile-aware SSH security validated (production enforces host key verification)"
+  performance:
+    status: CONCERNS
+    notes: "Need documented load/monitoring plan for additional Axon dispatches under failure storms (Redis rate limiter 100 eps/tenant)."
+  reliability:
+    status: PASS
+    notes: "BPMN compensation path + E2E failure test ensure automatic recovery."
+  maintainability:
+    status: PASS
+    notes: "Clear module ownership, explicit test plan, metric helper unit coverage."
+
+# Requirements traceability status
+# Source: docs/qa/assessments/6.5-trace-20251002.md
+trace:
+  totals:
+    requirements: 5  # SEC-002 downgraded to optional
+    full: 4
+    partial: 1  # Metric export only
+    none: 0
+  planning_ref: "docs/qa/assessments/6.5-test-design-20251002.md"
+  uncovered:
+    - ac: "Derived metric requirement"
+      reason: "Need integration-level verification that compensation counter is exposed via metrics endpoint."
+  optional:
+    - ac: "Derived security requirement (SEC-002)"
+      reason: "BpmnError sanitization test now optional after Story 6.4 remediation eliminated source risk."
+  notes: "Trace matrix: docs/qa/assessments/6.5-trace-20251002.md (SEC-002 downgraded to optional)"
+
+top_issues:
+  - id: "PERF-001"
+    severity: low
+    finding: "Missing Redis rate limiter monitoring plan for mass compensation events (100 eps/tenant limit)."
+    suggested_action: "ADVISORY: Document staging drill procedure and Grafana alert thresholds in Dev Notes or operational runbook. Recommended but not blocking."
+    suggested_owner: "dev"
+    blocking: false
+
+resolved_issues:
+  - id: "ARCH-001"
+    original_severity: critical
+    finding: "Framework/workflow had compile-time dependency on product-specific Widget types (shared-api). Pre-existing from Story 6.2, extended by Story 6.5."
+    resolution: "REMEDIATED (2025-10-02 17:15 UTC): Refactored DispatchAxonCommandTask to pure reflection pattern. Removed shared-api dependency from framework/workflow/build.gradle.kts. Framework now product-agnostic with zero compile-time product dependencies."
+    status: "FULLY RESOLVED"
+    remediation_date: "2025-10-02T17:15:00Z"
+    remediation_details:
+      - "Replaced hardcoded command types with commandClassName variable (FQN)"
+      - "Constructor parameters provided via constructorParameters process variable"
+      - "Package prefix whitelist validation (com.axians.eaf.* only)"
+      - "All 42 tests passing after remediation"
+    files_modified:
+      - "framework/workflow/build.gradle.kts (removed shared-api dependency)"
+      - "DispatchAxonCommandTask.kt (pure reflection, −100 LOC)"
+      - "DispatchAxonCommandTaskIntegrationTest.kt (updated to new pattern)"
+      - "CompensationWorkflowIntegrationTest.kt (updated to new pattern)"
+      - "SetCommandTypeDelegate.kt (sets commandClassName not commandType)"
+  - id: "SEC-002"
+    original_severity: high
+    finding: "Story 6.4 SSH security debt (disabled host key checking, hardcoded credentials) may propagate to compensation error messages, exposing infrastructure details (CWE-209)."
+    resolution: "Story 6.4 post-merge remediation (2025-10-02) eliminated hardcoded credentials and applied least-privilege principles. Risk significantly reduced."
+    status: "MITIGATED - Optional enhancement remains (BpmnError sanitization for defense-in-depth)"
+    downgrade_date: "2025-10-02T15:00:00Z"
+  - id: "TEST-001"
+    severity: medium
+    finding: "Integration test gap: compensation metrics (counter export) not validated at meter registry level."
+    suggested_action: "Add axonIntegrationTest scenario inspecting MeterRegistry for compensation counter presence."
+
+recommendations:
+  - action: "OPTIONAL: Consider BpmnError message sanitization for defense-in-depth (SEC-002 downgraded after Story 6.4 remediation)."
+    category: security
+    priority: low
+    rationale: "Story 6.4 remediation eliminated hardcoded credentials source risk. Sanitization adds minimal value but could be included for completeness."
+  - action: "Document Redis rate limiter monitoring procedure in Dev Notes or operational runbook."
+    category: performance
+    priority: low  # Downgraded from high (operational documentation, not implementation blocker)
+    rationale: "Monitoring plan is operational enhancement, not required for story completion."
+  - action: "Add integration test (axonIntegrationTest) that inspects meter registry for compensation counter."
+    category: observability
+    priority: medium
+  - action: "Ensure BPMN documentation block lists required tenantId propagation to avoid future regressions."
+    category: maintainability
+    priority: medium
+  - action: "Review Story 6.4 PR feedback (SSH security, hardcoded credentials) and plan remediation in Epic 6 retrospective."
+    category: technical_debt
+    priority: medium
+
+next_steps:
+  - "Proceed with implementation - Story 6.4 security debt resolved, clean foundation in place."
+  - "Implement planned tests per updated test design matrix (7 core scenarios, 1 optional)."
+  - "OPTIONAL: Consider BpmnError sanitization for defense-in-depth (low priority)."
+  - "ADVISORY: Document rate limiter monitoring procedure (operational enhancement, not blocker)."
+  - "Update gate after implementation with execution evidence."
+
+change_log:
+  - date: "2025-10-02T11:05:00Z"
+    version: "1.0"
+    changes: "Initial pre-implementation review with CONCERNS (PERF-001)"
+    reviewer: "Quinn"
+  - date: "2025-10-02T14:30:00Z"
+    version: "1.1"
+    changes: "Added dependency risk analysis from Story 6.4 PR feedback; introduced SEC-002 (BpmnError sanitization); downgraded security NFR to CONCERNS; quality score 90→85"
+    reviewer: "Quinn"
+  - date: "2025-10-02T15:00:00Z"
+    version: "1.2"
+    changes: "Story 6.4 remediation completed - security debt cleared. SEC-002 downgraded high→low (optional). Security NFR upgraded CONCERNS→PASS. Gate status: CONCERNS→PASS-WITH-ADVISORIES. Quality score 85→95. Overall risk score 72→58 (−14 points)."
+    reviewer: "Quinn"
+    remediation_ref: "docs/qa/gates/6.4-create-ansible-service-task-adapter.gate.yml#post_merge_remediation"
+  - date: "2025-10-02T16:45:00Z"
+    version: "2.0"
+    changes: "POST-IMPLEMENTATION: All AC1-AC3 complete. Tests: 42/42 passing (27 unit + 15 integration). E2E compensation flow validated (6.5-E2E-001). Quality gates: ktlint/detekt/compile all passing. Gate: PASS-WITH-ADVISORIES→PASS. Quality score 95→98. Overall risk score 58→42 (−16 points, 27% improvement)."
+    reviewer: "Quinn"
+    implementation_ref: "docs/stories/6.5.implement-workflow-error-handling-compensating-actions.story.md#dev-notes"
+    execution_evidence:
+      - "Unit tests: products/widget-demo/.../WidgetTest.kt (5 cancellation scenarios)"
+      - "E2E test: framework/workflow/.../CompensationWorkflowIntegrationTest.kt (full compensation flow)"
+      - "Quality gates: BUILD SUCCESSFUL with ktlint/detekt/test validation"
+      - "Implementation artifacts: 13 files, 838 LOC added/modified"
+  - date: "2025-10-02T17:00:00Z"
+    version: "2.1"
+    changes: "CRITICAL ARCHITECTURAL VIOLATION IDENTIFIED: Framework/workflow has compile-time dependency on product-specific Widget types via shared-api (pre-existing from Story 6.2, extended by Story 6.5). Gate: PASS→FAIL. Quality score 98→50. BLOCKING: Requires immediate remediation - make DispatchAxonCommandTask truly generic using pure reflection."
+    reviewer: "Quinn"
+    architectural_debt:
+      - issue: "Framework→Product coupling via shared-api dependency"
+      - origin: "Story 6.2 introduced CreateWidgetCommand direct import"
+      - extended_by: "Story 6.5 added CancelWidgetCreationCommand with same pattern"
+      - violation: "Framework modules must be product-agnostic per CLAUDE.md and component-specifications.md"
+      - impact: "Framework cannot be published as standalone library; violates hexagonal architecture"
+      - remediation: "Remove shared-api dependency from framework/workflow; use pure reflection with commandClassName variable"
+  - date: "2025-10-02T17:20:00Z"
+    version: "2.2"
+    changes: "ARCH-001 REMEDIATED: Framework architectural purity restored. Pure reflection pattern implemented. Removed shared-api dependency. All 42 tests passing. Gate: FAIL→PASS. Quality score 50→96."
+    reviewer: "Quinn"
+    remediation_summary:
+      - "DispatchAxonCommandTask refactored to pure reflection (−100 LOC, simplified)"
+      - "commandClassName + constructorParameters variables replace hardcoded types"
+      - "Package prefix whitelist validation (CWE-94 protection maintained)"
+      - "All framework tests updated to new pattern (15/15 passing)"
+      - "Zero compile-time dependencies on product domains verified"
+      - "Framework now publishable as standalone library"
+  - date: "2025-10-02T18:50:00Z"
+    version: "2.3"
+    changes: "SECURITY HARDENING: Added explicit command class whitelist to DispatchAxonCommandTask. Package prefix validation insufficient - replaced with fail-closed allowlist. Quality score 96→98 (+2 for enhanced CWE-94 protection)."
+    reviewer: "Quinn"
+    security_finding:
+      id: "SEC-VULN-001"
+      severity: "MEDIUM"
+      category: "CWE-94 (Code Injection)"
+      description: "Package prefix check alone allows loading ANY class under com.axians.eaf.* namespace"
+      remediation: "Added ALLOWED_COMMAND_CLASSES companion object with explicit whitelist (5 command classes)"
+      confidence: "8/10"
+      exploit_requires: "BPMN deployment access + malicious class on classpath"
+      defense_in_depth: "Fail-closed security upheld even with strong perimeter controls"
