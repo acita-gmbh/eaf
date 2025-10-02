@@ -63,6 +63,32 @@ class DispatchAxonCommandTask(
     private val tenantContext: TenantContext,
     private val flowableMetrics: FlowableMetrics?,
 ) : JavaDelegate {
+    companion object {
+        /**
+         * SECURITY: Explicit whitelist of allowed command classes (CWE-94 protection).
+         *
+         * **Fail-Closed Design**: Only explicitly listed classes can be instantiated via reflection.
+         * Package prefix validation alone is INSUFFICIENT - an attacker with BPMN deployment
+         * access could load malicious classes within the com.axians.eaf.* namespace.
+         *
+         * **Adding New Commands**: Products must update this whitelist when adding command types.
+         *
+         * Story 6.5 Security Hardening: Addresses code injection vulnerability identified in
+         * security review (Quinn + /security-review analysis).
+         */
+        private val ALLOWED_COMMAND_CLASSES =
+            setOf(
+                // Framework test infrastructure
+                "com.axians.eaf.framework.workflow.test.CreateTestEntityCommand",
+                "com.axians.eaf.framework.workflow.test.CancelTestEntityCommand",
+                // Widget domain (products/widget-demo)
+                "com.axians.eaf.api.widget.commands.CreateWidgetCommand",
+                "com.axians.eaf.api.widget.commands.UpdateWidgetCommand",
+                "com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand",
+                // Add new command classes here as products expand
+            )
+    }
+
     override fun execute(execution: DelegateExecution) {
         val commandType = execution.getVariable("commandType") as? String
         val processKey = execution.processDefinitionId.split(":").firstOrNull() ?: "unknown"
@@ -169,9 +195,11 @@ class DispatchAxonCommandTask(
             execution.getVariable("commandClassName") as? String
                 ?: throw BpmnError("MISSING_VARIABLE", "Required process variable missing: commandClassName")
 
-        // SECURITY: Validate package prefix (whitelist trusted packages)
-        require(commandClassName.startsWith("com.axians.eaf.")) {
-            "Untrusted command class package: $commandClassName"
+        // SECURITY: Explicit whitelist (fail-closed) - prevents arbitrary class loading (CWE-94)
+        // Package prefix validation alone is INSUFFICIENT - attacker with BPMN deployment access
+        // could load malicious classes within com.axians.eaf.* namespace
+        require(commandClassName in ALLOWED_COMMAND_CLASSES) {
+            "Unauthorized command class: $commandClassName not in whitelist"
         }
 
         // Load command class via reflection (framework-agnostic)
