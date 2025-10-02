@@ -1,0 +1,42 @@
+---
+# Story 6.4 (Task 7): Ansible "Hello World" Test Playbook
+#
+# Purpose: Integration testing of RunAnsiblePlaybookTask delegate
+#
+# Subtask 7.1: Simple debug task for BPMN-Ansible integration validation
+# Subtask 7.2: Accepts 'message' variable via --extra-vars
+# Subtask 7.3: Executes quickly (< 5 seconds) for fast test feedback
+# Subtask 7.4: Documented structure for product playbook development
+
+- name: Hello World Ansible Playbook
+  hosts: localhost
+  gather_facts: no  # Skip fact gathering for speed (Subtask 7.3)
+  connection: local  # Run on SSH server locally (no additional SSH hop)
+
+  vars:
+    message: "Default hello world message"  # Default if not provided via --extra-vars
+
+  tasks:
+    - name: Display hello world message
+      debug:
+        msg: "EAF Ansible Integration: {{ message }}"
+
+    - name: Verify message variable is passed correctly
+      assert:
+        that:
+          - message is defined
+          - message | length > 0
+        fail_msg: "Message variable is missing or empty"
+        success_msg: "Message variable validated successfully"
+
+    - name: Simulate successful infrastructure task
+      debug:
+        msg: "Ansible playbook execution completed successfully"
+
+    - name: Output execution summary
+      debug:
+        msg:
+          - "Playbook: hello-world.yml"
+          - "Message: {{ message }}"
+          - "Status: SUCCESS"
+          - "Execution time: < 1 second (fast feedback)"

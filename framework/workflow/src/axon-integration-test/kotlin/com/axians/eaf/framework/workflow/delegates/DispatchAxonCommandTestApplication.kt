@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.workflow.delegates
 
+import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -51,6 +52,7 @@ import org.springframework.context.annotation.Bean
     exclude = [
         SecurityAutoConfiguration::class,
         OAuth2ResourceServerAutoConfiguration::class,
+        ManagementWebSecurityAutoConfiguration::class, // Story 6.4: Actuator requires this exclusion
     ],
 )
 open class DispatchAxonCommandTestApplication {

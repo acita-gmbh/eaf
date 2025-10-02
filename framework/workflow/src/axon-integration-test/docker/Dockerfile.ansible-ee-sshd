@@ -1,0 +1,57 @@
+# Ansible Execution Environment with SSH Server
+# Story 6.4 (Subtask 8.2) - SSH Testcontainer Infrastructure
+#
+# Purpose: Test container that acts as remote Ansible host for integration testing
+# Base: Red Hat Ansible EE (production-like environment)
+# Added: OpenSSH server for SSH-based playbook execution testing
+
+FROM quay.io/ansible/creator-ee:latest
+
+# Switch to root for system package installation
+USER root
+
+# Install OpenSSH server and dependencies
+# Using microdnf (minimal DNF package manager in Red Hat UBI)
+RUN microdnf install -y \
+    openssh-server \
+    passwd \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
+
+# Generate SSH host keys
+RUN ssh-keygen -A
+
+# Create /run/sshd directory (required by sshd)
+RUN mkdir -p /run/sshd
+
+# Configure SSH for password authentication (test environments only)
+# Production would use key-based authentication
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Set root password for test authentication
+# Note: Password set at container runtime via environment variable
+# This is acceptable for test containers (ephemeral, isolated)
+RUN echo "root:placeholder" | chpasswd
+
+# Create ansible user with sudo privileges (best practice)
+RUN useradd -m -s /bin/bash ansible && \
+    echo "ansible:placeholder" | chpasswd && \
+    echo "ansible ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Create directory for playbooks
+RUN mkdir -p /playbooks && \
+    chown -R ansible:ansible /playbooks
+
+# Expose SSH port
+EXPOSE 22
+
+# Start SSH daemon in foreground (-D flag prevents daemonization)
+# This keeps the container running for Testcontainers
+CMD ["/usr/sbin/sshd", "-D", "-e"]
+
+# Labels for documentation
+LABEL maintainer="EAF Team"
+LABEL description="Ansible Execution Environment with SSH server for testing"
+LABEL story="6.4"
+LABEL purpose="Integration testing of Ansible playbook execution via SSH"

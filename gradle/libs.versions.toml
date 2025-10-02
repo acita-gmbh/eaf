@@ -54,6 +54,7 @@ redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline
 
 # Workflow
 flowable = "7.1.0"        # BPMN workflow engine (Story 6.1)
+jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
 
 [libraries]
 # Kotlin and JVM
@@ -136,6 +137,7 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 
 # Workflow
 flowable-spring-boot-starter = { module = "org.flowable:flowable-spring-boot-starter", version.ref = "flowable" }
+jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }  # Maintained fork (not com.jcraft)
 
 # Gradle plugins for build-logic
 gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

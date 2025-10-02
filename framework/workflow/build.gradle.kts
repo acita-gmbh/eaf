@@ -45,8 +45,17 @@ dependencies {
     implementation(libs.bundles.axon.framework) // Story 6.2: Axon CommandGateway
     implementation(libs.arrow.core) // Story 6.2: Arrow Either for error handling
     implementation(project(":framework:security")) // Story 6.2: TenantContext
-    // Note: framework:observability will be added in Story 6.4 for formal CustomMetrics integration
+    // Note: framework:observability NOT added - causes test conflicts with @Configuration classes
+    // FlowableMetrics only needs Micrometer (added below)
     implementation(project(":shared:shared-api")) // Story 6.2: Command types
+
+    // Story 6.4: Micrometer for FlowableMetrics
+    implementation(libs.micrometer.core)
+    implementation(libs.spring.boot.starter.actuator) // Includes Prometheus support
+
+    // Story 6.4: Ansible execution via SSH (Task 4)
+    implementation(libs.jsch) // Java SSH client
+    // Note: Jackson provided transitively by spring-boot-starter-web
 
     testImplementation(libs.bundles.kotest)
 
@@ -67,4 +76,5 @@ dependencies {
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
     "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)
+    // Note: framework:observability in test scope only (provides CustomMetrics for AxonIntegrationTestConfig)
 }
