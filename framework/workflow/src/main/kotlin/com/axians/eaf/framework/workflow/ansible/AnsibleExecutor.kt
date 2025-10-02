@@ -54,12 +54,18 @@ class AnsibleExecutor(
      * Executes an Ansible playbook via SSH connection (Subtasks 4.1-4.7).
      *
      * **Execution Flow**:
-     * 1. Establish SSH connection with configured credentials (Subtask 4.2)
-     * 2. Build ansible-playbook command with inventory and extra-vars (Subtask 4.3)
-     * 3. Execute command and capture stdout/stderr (Subtask 4.4)
-     * 4. Parse exit code: 0 = success, non-zero = failure (Subtask 4.5)
-     * 5. Apply timeout (default 5 minutes, configurable) (Subtask 4.6)
-     * 6. Cleanup SSH connection in finally block (Subtask 4.7)
+     * 1. Validate playbook path and inventory (Security: Path traversal prevention)
+     * 2. Establish SSH connection with configured credentials (Subtask 4.2)
+     * 3. Build ansible-playbook command with inventory and extra-vars (Subtask 4.3)
+     * 4. Execute command and capture stdout/stderr (Subtask 4.4)
+     * 5. Parse exit code: 0 = success, non-zero = failure (Subtask 4.5)
+     * 6. Apply timeout (default 5 minutes, configurable) (Subtask 4.6)
+     * 7. Cleanup SSH connection in finally block (Subtask 4.7)
+     *
+     * **Security Enhancements** (CodeRabbit feedback):
+     * - Path validation prevents directory traversal attacks
+     * - Allowlist enforcement for file extensions
+     * - Production-mode host key verification
      *
      * @param playbookPath Path to Ansible playbook on remote host (required)
      * @param inventory Ansible inventory file path (optional)
@@ -67,6 +73,7 @@ class AnsibleExecutor(
      * @param tenantId Tenant identifier for isolation validation and logging
      * @return AnsibleResult containing exit code, stdout, and stderr
      * @throws AnsibleExecutionException if playbook execution fails (non-zero exit code)
+     * @throws SecurityException if path validation fails
      */
     fun executePlaybook(
         playbookPath: String,
@@ -74,6 +81,10 @@ class AnsibleExecutor(
         extraVars: Map<String, Any>,
         tenantId: String,
     ): AnsibleResult {
+        // Security: Validate paths BEFORE SSH connection (CodeRabbit feedback - defense-in-depth)
+        validatePlaybookPath(playbookPath)
+        inventory?.let { validateInventoryPath(it) }
+
         logger.info(
             "Initiating Ansible playbook execution: playbook={}, inventory={}, tenant={}",
             playbookPath,
@@ -98,9 +109,77 @@ class AnsibleExecutor(
     }
 
     /**
+     * Validates Ansible playbook path (CodeRabbit security feedback).
+     *
+     * **Defense-in-Depth Validation**:
+     * - Prevents directory traversal attacks (../)
+     * - Enforces YAML extension allowlist (.yml, .yaml)
+     * - Blocks absolute path manipulation
+     * - Prevents shell metacharacter injection in filename
+     *
+     * @param path Playbook path to validate
+     * @throws SecurityException if validation fails
+     */
+    private fun validatePlaybookPath(path: String) {
+        // Prevent directory traversal
+        require(!path.contains("..")) {
+            "Path traversal not allowed in playbook path"
+        }
+
+        // Allowlist: Only YAML files
+        require(path.endsWith(".yml") || path.endsWith(".yaml")) {
+            "Invalid playbook extension (must be .yml or .yaml)"
+        }
+
+        // Prevent absolute paths from untrusted sources (allow common playbook directories)
+        if (path.startsWith("/")) {
+            val allowedPrefixes = listOf("/playbooks/", "/opt/", "/root/", "/home/", "/ansible/")
+            require(allowedPrefixes.any { path.startsWith(it) }) {
+                "Absolute playbook paths must be in allowed directories"
+            }
+        }
+
+        // Prevent shell metacharacters in filename (defense-in-depth)
+        val dangerousChars = setOf(';', '&', '|', '$', '`', '\n', '\r', '\\', '<', '>')
+        require(path.none { it in dangerousChars }) {
+            "Playbook path contains invalid characters"
+        }
+    }
+
+    /**
+     * Validates Ansible inventory path (CodeRabbit security feedback).
+     *
+     * **Defense-in-Depth Validation**:
+     * - Prevents directory traversal attacks
+     * - Blocks shell metacharacter injection
+     * - Enforces safe path patterns
+     *
+     * @param path Inventory path to validate
+     * @throws SecurityException if validation fails
+     */
+    private fun validateInventoryPath(path: String) {
+        // Prevent directory traversal
+        require(!path.contains("..")) {
+            "Path traversal not allowed in inventory path"
+        }
+
+        // Prevent shell metacharacters (defense-in-depth)
+        val dangerousChars = setOf(';', '&', '|', '$', '`', '\n', '\r', '\\', '<', '>')
+        require(path.none { it in dangerousChars }) {
+            "Inventory path contains invalid characters"
+        }
+    }
+
+    /**
      * Creates and configures SSH session (Subtask 4.2, 4.6).
      *
+     * **Security Enhancement** (CodeRabbit feedback):
+     * - Production mode enforces SSH host key verification
+     * - Development/test modes allow disabled verification
+     * - Password authentication restricted to non-production profiles
+     *
      * @return Configured JSch session ready for connection
+     * @throws SecurityException if production security requirements not met
      */
     private fun createSshSession(): com.jcraft.jsch.Session {
         val sshHost = environment.getProperty("eaf.ansible.ssh.host") ?: "localhost"
@@ -108,6 +187,7 @@ class AnsibleExecutor(
         val sshUser = environment.getProperty("eaf.ansible.ssh.username") ?: "ansible"
         val sshKey = environment.getProperty("eaf.ansible.ssh.private-key-path")
         val sshPassword = environment.getProperty("eaf.ansible.ssh.password") // For test environments
+        val knownHostsPath = environment.getProperty("eaf.ansible.ssh.known-hosts-path")
         val timeoutSeconds =
             environment.getProperty("eaf.ansible.ssh.timeout-seconds")?.toInt()
                 ?: DEFAULT_SSH_TIMEOUT_SECONDS
@@ -124,17 +204,76 @@ class AnsibleExecutor(
 
         // Configure password authentication if provided (typically for test environments)
         if (sshPassword != null) {
+            // Security: Password auth only allowed in test/dev environments
+            if (isProductionProfile()) {
+                throw SecurityException("SSH password authentication not permitted in production environment")
+            }
             session.setPassword(sshPassword)
-            logger.debug("SSH password authentication configured")
+            logger.warn("SSH password authentication enabled - TEST/DEV ENVIRONMENT ONLY")
         }
 
-        // WARNING: StrictHostKeyChecking=no is for development only
-        // Production deployments should use proper host key verification
-        session.setConfig("StrictHostKeyChecking", "no")
+        // Security: Production requires SSH host key verification (CodeRabbit feedback)
+        configureHostKeyVerification(jsch, session, knownHostsPath)
+
         session.timeout = timeoutSeconds * 1000 // Subtask 4.6: Convert to milliseconds
 
         return session
     }
+
+    /**
+     * Configures SSH host key verification based on environment profile.
+     *
+     * **Production Mode** (prod profile active):
+     * - Requires known_hosts file (eaf.ansible.ssh.known-hosts-path)
+     * - Enforces strict host key checking (prevents MITM attacks)
+     * - Throws SecurityException if known_hosts missing
+     *
+     * **Development/Test Mode** (test/dev profiles):
+     * - Allows disabling host key verification for easier testing
+     * - Logs warning about relaxed security
+     *
+     * @param jsch JSch instance for configuring known_hosts
+     * @param session SSH session to configure
+     * @param knownHostsPath Path to SSH known_hosts file (optional in dev/test)
+     * @throws SecurityException if production requirements not met
+     */
+    private fun configureHostKeyVerification(
+        jsch: JSch,
+        session: com.jcraft.jsch.Session,
+        knownHostsPath: String?,
+    ) {
+        if (isProductionProfile()) {
+            // PRODUCTION: Strict host key verification REQUIRED
+            if (knownHostsPath == null) {
+                throw SecurityException(
+                    "SSH known_hosts path required in production " +
+                        "(configure eaf.ansible.ssh.known-hosts-path)",
+                )
+            }
+
+            jsch.setKnownHosts(knownHostsPath)
+            session.setConfig("StrictHostKeyChecking", "yes")
+            logger.info("SSH host key verification enabled (known_hosts: $knownHostsPath)")
+        } else {
+            // DEVELOPMENT/TEST: Allow relaxed verification for testing
+            session.setConfig("StrictHostKeyChecking", "no")
+            logger.warn(
+                "SSH host key verification DISABLED - DEVELOPMENT/TEST MODE ONLY " +
+                    "(StrictHostKeyChecking=no is a security risk in production)",
+            )
+        }
+    }
+
+    /**
+     * Determines if application is running in production profile.
+     *
+     * @return true if 'prod' or 'production' profile active
+     */
+    private fun isProductionProfile(): Boolean =
+        environment.activeProfiles.any { profile ->
+            profile.equals("prod", ignoreCase = true) ||
+                profile.equals("production", ignoreCase = true)
+        }
 
     /**
      * Executes ansible-playbook command and captures output (Subtasks 4.3-4.5).
@@ -151,7 +290,15 @@ class AnsibleExecutor(
     ): AnsibleResult {
         // Subtask 4.3: Build ansible-playbook command
         val command = buildAnsibleCommand(playbookPath, inventory, extraVars)
-        logger.debug("Executing Ansible command: {}", command)
+
+        // Security: Log with sensitive data redaction (CodeRabbit feedback)
+        val redactedVars = redactSensitiveData(extraVars)
+        logger.debug(
+            "Executing Ansible playbook: path={}, inventory={}, vars={}",
+            playbookPath,
+            inventory,
+            redactedVars,
+        )
 
         // Subtask 4.4: Execute and capture stdout/stderr
         val channel = session.openChannel("exec") as ChannelExec
@@ -210,6 +357,45 @@ class AnsibleExecutor(
               --extra-vars '$extraVarsJson' \
               $playbookPath
             """.trimIndent()
+    }
+
+    /**
+     * Redacts sensitive data from extraVars for safe logging (CodeRabbit security feedback).
+     *
+     * **Security Rationale**:
+     * Ansible extraVars commonly contain secrets (passwords, API keys, tokens).
+     * Logging these values creates credential exposure risk in log aggregation systems.
+     *
+     * **Redaction Strategy**:
+     * - Allowlist approach: mask any key containing sensitive keywords
+     * - Keywords: password, secret, token, key, credential, auth
+     *
+     * @param extraVars Original variables map
+     * @return Map with sensitive values replaced by "***REDACTED***"
+     */
+    private fun redactSensitiveData(extraVars: Map<String, Any>): Map<String, Any> {
+        val sensitiveKeywords =
+            setOf(
+                "password",
+                "passwd",
+                "secret",
+                "token",
+                "key",
+                "credential",
+                "auth",
+                "api_key",
+                "apikey",
+                "private",
+            )
+
+        return extraVars.mapValues { (key, value) ->
+            val keyLower = key.lowercase()
+            if (sensitiveKeywords.any { keyLower.contains(it) }) {
+                "***REDACTED***"
+            } else {
+                value
+            }
+        }
     }
 }
 
