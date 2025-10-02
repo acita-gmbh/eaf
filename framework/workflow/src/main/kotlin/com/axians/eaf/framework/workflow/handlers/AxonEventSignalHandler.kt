@@ -49,7 +49,7 @@ import org.springframework.stereotype.Component
 class AxonEventSignalHandler(
     private val runtimeService: RuntimeService,
     private val tenantContext: TenantContext,
-    private val flowableMetrics: FlowableMetrics,
+    private val flowableMetrics: FlowableMetrics?,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AxonEventSignalHandler::class.java)
 
@@ -180,7 +180,8 @@ class AxonEventSignalHandler(
 
             // Story 6.4 (Subtask 1.7): Record tenant isolation violation metric
             // This metric feeds rollback trigger monitoring (zero tolerance policy)
-            flowableMetrics.recordBpmnError("TENANT_ISOLATION_VIOLATION", "axon-event-signal")
+            // Graceful degradation: Metrics optional (null in tests without ProcessEngine)
+            flowableMetrics?.recordBpmnError("TENANT_ISOLATION_VIOLATION", "axon-event-signal")
 
             // Fail-closed: Throw SecurityException (consistent with TenantEventMessageInterceptor)
             throw SecurityException(GENERIC_ERROR_MESSAGE)
@@ -211,13 +212,15 @@ class AxonEventSignalHandler(
             }
 
             // Story 6.4 (Subtask 1.7): Record successful signal delivery
-            flowableMetrics.recordSignalDelivery(messageName, delivered = true)
+            // Graceful degradation: Metrics optional (null in tests without ProcessEngine)
+            flowableMetrics?.recordSignalDelivery(messageName, delivered = true)
         } catch (ex: FlowableException) {
             // Flowable signaling failure - log error but preserve event processing
             logger.error("Failed to signal BPMN process: ${ex.message}", ex)
 
             // Story 6.4 (Subtask 1.7): Record failed signal delivery
-            flowableMetrics.recordSignalDelivery(messageName, delivered = false)
+            // Graceful degradation: Metrics optional (null in tests without ProcessEngine)
+            flowableMetrics?.recordSignalDelivery(messageName, delivered = false)
         }
     }
 

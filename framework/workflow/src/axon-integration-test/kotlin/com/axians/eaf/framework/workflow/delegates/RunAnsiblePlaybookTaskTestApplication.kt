@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.O
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
-import org.springframework.scheduling.annotation.EnableScheduling
 
 /**
  * Test application for RunAnsiblePlaybookTask integration tests (Story 6.4, Task 8).
@@ -35,7 +34,8 @@ import org.springframework.scheduling.annotation.EnableScheduling
         OAuth2ResourceServerAutoConfiguration::class,
     ],
 )
-@EnableScheduling // Required for FlowableMetrics @Scheduled methods
+// Note: @EnableScheduling removed - FlowableMetrics @Scheduled methods won't run in tests
+// This is acceptable: tests validate delegate wiring and error handling, not scheduled metrics
 open class RunAnsiblePlaybookTaskTestApplication {
     /**
      * Register TypeExcludeFilter to block security configurations.

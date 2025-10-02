@@ -12,7 +12,9 @@ import org.flowable.engine.RuntimeService
 import org.flowable.engine.delegate.BpmnError
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 
@@ -33,7 +35,8 @@ import org.springframework.test.context.DynamicPropertySource
  *
  * Story 6.4 (Task 8) - Integration Testing
  */
-@SpringBootTest
+@SpringBootTest(classes = [RunAnsiblePlaybookTaskTestApplication::class])
+@Import(AxonIntegrationTestConfig::class)
 @ActiveProfiles("test")
 class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
     @Autowired
@@ -112,7 +115,9 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
 
             // Then - Should throw BpmnError for missing tenantId
             result.isFailure shouldBe true
-            result.exceptionOrNull()?.cause shouldBe io.kotest.matchers.types.instanceOf<BpmnError>()
+            result.exceptionOrNull()?.cause shouldBe
+                io.kotest.matchers.types
+                    .instanceOf<BpmnError>()
 
             tenantContext.clearCurrentTenant()
             processEngine.repositoryService.deleteDeployment(deployment.id, true)

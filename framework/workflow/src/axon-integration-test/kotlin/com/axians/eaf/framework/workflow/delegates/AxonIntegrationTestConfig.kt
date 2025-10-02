@@ -11,12 +11,16 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 
 /**
- * Test configuration for Axon integration tests (Story 6.2).
+ * Test configuration for Axon integration tests (Story 6.2+).
  *
  * Provides minimal beans required for testing Flowable-to-Axon bridge:
  * - InMemoryEventStorageEngine: Lightweight, in-memory Axon event store (no database)
  * - MeterRegistry: Required by various metrics-aware components
  * - TenantContext: Required by DispatchAxonCommandTask for tenant isolation
+ * - CustomMetrics: Required by Axon interceptors (Story 6.3)
+ *
+ * **Note**: FlowableMetrics NOT provided here (would require ProcessEngine not available
+ * in all test contexts). AxonEventSignalHandler uses optional injection for FlowableMetrics.
  *
  * This configuration works with axon.axonserver.enabled=false to get fully in-memory
  * Axon infrastructure (SimpleCommandBus, InMemoryEventStorageEngine).
@@ -55,4 +59,8 @@ open class AxonIntegrationTestConfig {
         meterRegistry: MeterRegistry,
         tenantContext: TenantContext,
     ): CustomMetrics = CustomMetrics(meterRegistry, tenantContext)
+
+    // Note: FlowableMetrics NOT provided here (Story 6.4 decision)
+    // Reason: Requires ProcessEngine which may not be available in all test contexts.
+    // AxonEventSignalHandler uses optional injection (@Autowired(required=false)) instead.
 }

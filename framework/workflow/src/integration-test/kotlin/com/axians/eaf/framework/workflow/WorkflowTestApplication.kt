@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.FilterType
-import org.springframework.scheduling.annotation.EnableScheduling
 
 /**
  * Test application for Flowable workflow engine integration tests (Story 6.1+).
@@ -26,7 +25,8 @@ import org.springframework.scheduling.annotation.EnableScheduling
         OAuth2ResourceServerAutoConfiguration::class,
     ],
 )
-@EnableScheduling // Story 6.4: Required for FlowableMetrics @Scheduled methods
+// Note: @EnableScheduling removed - causes AOP test conflicts
+// FlowableMetrics @Scheduled methods won't run in tests (acceptable)
 @ComponentScan(
     basePackages = ["com.axians.eaf.framework.workflow"],
     excludeFilters = [
