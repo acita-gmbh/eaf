@@ -184,8 +184,11 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 dependsOn("detekt")
                 dependsOn("jacocoTestReport")
                 dependsOn(jacocoVerification)
-                // TEMPORARILY DISABLED: dependencyCheckAnalyze (slows down build process)
-                // Re-enable later in development cycle
+                // TODO(Epic 8 Pre-Production): Re-enable dependencyCheckAnalyze before production deployment
+                // TEMPORARILY DISABLED: CVE scanning disabled to improve build performance during development
+                // SECURITY IMPACT: High/critical CVEs (CVSS ≥7.0) won't fail builds until re-enabled
+                // TRACKING: CodeRabbit review https://github.com/acita-gmbh/eaf/pull/40#discussion_r2399149685
+                // TARGET: Epic 8 pre-production hardening phase
                 // dependsOn("dependencyCheckAnalyze")
 
                 listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->

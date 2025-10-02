@@ -660,8 +660,10 @@ class WidgetTest :
             val fixture = AggregateTestFixture(Widget::class.java)
 
             When("CancelWidgetCreationCommand with missing TenantContext") {
-                // ULTRA-FIX: Clear context in When block (before fixture execution)
-                // This Given block has NO beforeTest hook, so clear takes effect
+                // Clear tenant context before test execution
+                // This Given block has NO beforeTest hook, so clearing here affects fixture execution
+                // The outer afterTest hook (line 24) only runs AFTER this test completes,
+                // so there's no interference - this test correctly validates fail-closed behavior
                 tenantContext.clearCurrentTenant()
 
                 val widgetId = UUID.randomUUID().toString()

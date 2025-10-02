@@ -165,7 +165,7 @@ class Widget {
                 widgetId = this.widgetId,
                 tenantId = this.tenantId,
                 cancellationReason = command.cancellationReason,
-                operator = command.operator ?: "SYSTEM",
+                operator = command.operator,
             ),
         )
         return Unit.right()

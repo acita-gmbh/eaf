@@ -28,5 +28,5 @@ data class CancelWidgetCreationCommand(
     val widgetId: String,
     val tenantId: String,
     val cancellationReason: String,
-    val operator: String? = "SYSTEM",
+    val operator: String = "SYSTEM",
 )
