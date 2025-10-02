@@ -1,6 +1,8 @@
 package com.axians.eaf.tools.cli.templates
 
 import com.github.mustachejava.DefaultMustacheFactory
+import com.github.mustachejava.MustacheException
+import com.github.mustachejava.MustacheNotFoundException
 import java.io.StringWriter
 
 /**
@@ -41,21 +43,16 @@ class TemplateEngine {
             val writer = StringWriter()
             mustache.execute(writer, context)
             writer.toString()
+        } catch (ex: MustacheNotFoundException) {
+            throw TemplateNotFoundException("Template not found: $templateName", ex)
+        } catch (ex: MustacheException) {
+            throw TemplateRenderingException("Failed to render template: $templateName", ex)
         } catch (
             @Suppress("TooGenericExceptionCaught")
             ex: Exception,
         ) {
-            // Legitimate generic catch: Convert any Mustache exception to our specific exception types
-            // for consistent error handling across the CLI. This is pure error translation, not
-            // error handling logic. The exception is immediately rethrown in a more specific form.
-            when {
-                ex::class.simpleName == "MustacheNotFoundException" ||
-                    ex.message?.contains("Template", ignoreCase = true) == true ||
-                    ex.message?.contains("resource", ignoreCase = true) == true ->
-                    throw TemplateNotFoundException("Template not found: $templateName", ex)
-                else ->
-                    throw TemplateRenderingException("Failed to render template: $templateName", ex)
-            }
+            // Fallback for unexpected exceptions (not from Mustache library)
+            throw TemplateRenderingException("Unexpected error rendering template: $templateName", ex)
         }
 }
 
