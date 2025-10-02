@@ -107,19 +107,26 @@ class AnsibleExecutor(
         val sshPort = environment.getProperty("eaf.ansible.ssh.port")?.toInt() ?: 22
         val sshUser = environment.getProperty("eaf.ansible.ssh.username") ?: "ansible"
         val sshKey = environment.getProperty("eaf.ansible.ssh.private-key-path")
+        val sshPassword = environment.getProperty("eaf.ansible.ssh.password") // For test environments
         val timeoutSeconds =
             environment.getProperty("eaf.ansible.ssh.timeout-seconds")?.toInt()
                 ?: DEFAULT_SSH_TIMEOUT_SECONDS
 
         val jsch = JSch()
 
-        // Configure SSH key authentication
+        // Configure SSH authentication (key preferred, password fallback)
         if (sshKey != null) {
             jsch.addIdentity(sshKey)
             logger.debug("Using SSH key authentication")
         }
 
         val session = jsch.getSession(sshUser, sshHost, sshPort)
+
+        // Configure password authentication if provided (typically for test environments)
+        if (sshPassword != null) {
+            session.setPassword(sshPassword)
+            logger.debug("SSH password authentication configured")
+        }
 
         // WARNING: StrictHostKeyChecking=no is for development only
         // Production deployments should use proper host key verification

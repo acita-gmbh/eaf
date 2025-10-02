@@ -47,14 +47,19 @@ open class FlowableMetrics(
     private val meterRegistry: MeterRegistry,
     private val processEngine: ProcessEngine,
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(FlowableMetrics::class.java)
-
     // QA Fix (MEDIUM-01): Mutable state for Gauge observation (prevents memory leak)
     // Gauges are registered ONCE during initialization and observe these state holders
     private val activeInstancesByProcessKey = ConcurrentHashMap<String, AtomicLong>()
     private val totalActiveInstances = AtomicLong(0)
     private val suspendedInstances = AtomicLong(0)
     private val deadLetterJobs = AtomicLong(0)
+
+    companion object {
+        // CGLIB Proxy Fix: Logger in companion object to avoid null reference in proxied instance
+        // When Spring creates CGLIB proxy for @Scheduled methods, instance fields may not initialize properly
+        @JvmStatic
+        private val logger: Logger = LoggerFactory.getLogger(FlowableMetrics::class.java)
+    }
 
     /**
      * Register Gauges ONCE during component initialization (QA Fix MEDIUM-01).
