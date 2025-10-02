@@ -124,21 +124,29 @@ open class FlowableMetrics(
             // Update per-process-key active instances
             val currentCounts = activeInstances.groupingBy { it.processDefinitionKey ?: "unknown" }.eachCount()
 
-            // Clear old keys and update current counts
-            activeInstancesByProcessKey.clear()
+            // Update existing gauges and register new ones lazily (once per process key)
+            val seenProcessKeys = mutableSetOf<String>()
             currentCounts.forEach { (processKey, count) ->
                 val atomicCount =
                     activeInstancesByProcessKey.computeIfAbsent(processKey) {
-                        // First time seeing this process key - register a new gauge for it
-                        val newGauge = AtomicLong(0)
+                        // First time seeing this process key - register a persistent gauge for it
+                        val gaugeState = AtomicLong(0)
                         Gauge
-                            .builder("flowable.process.instances.active", newGauge) { it.get().toDouble() }
+                            .builder("flowable.process.instances.active", gaugeState) { it.get().toDouble() }
                             .tag("process_key", processKey)
                             .description("Number of active process instances by process definition")
                             .register(meterRegistry)
-                        newGauge
+                        gaugeState
                     }
                 atomicCount.set(count.toLong())
+                seenProcessKeys += processKey
+            }
+
+            // Reset gauges for process keys that no longer have active instances (avoid stale values)
+            activeInstancesByProcessKey.forEach { (processKey, atomicCount) ->
+                if (processKey !in seenProcessKeys) {
+                    atomicCount.set(0)
+                }
             }
 
             // Update suspended instances state
