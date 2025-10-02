@@ -57,7 +57,7 @@ flowable = "7.1.0"        # BPMN workflow engine (Story 6.1)
 jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
 
 # Tools
-picocli = "4.7.6"         # CLI framework (Story 7.1)
+picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
 mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 
 [libraries]

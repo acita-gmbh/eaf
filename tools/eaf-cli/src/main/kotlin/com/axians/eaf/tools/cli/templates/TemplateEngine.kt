@@ -23,6 +23,9 @@ class TemplateEngine {
     /**
      * Renders a Mustache template with the provided context.
      *
+     * SECURITY WARNING: All context values must be validated before calling this method.
+     * See class-level KDoc for SEC-001 mitigation requirements (file paths, class names, user input).
+     *
      * @param templateName Name of the template file (relative to resources/templates/)
      * @param context Map of template variables to replace in the template
      * @return Rendered template as a String

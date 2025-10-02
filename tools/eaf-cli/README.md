@@ -91,7 +91,7 @@ eaf scaffold
 
 ### Module Structure
 
-```
+```text
 tools/eaf-cli/
 ├── build.gradle.kts          # Gradle configuration
 ├── README.md                  # This file
@@ -286,11 +286,11 @@ When adding new features:
 ## References
 
 - **Story 7.1**: `docs/stories/7.1.initialize-cli-framework-shell.story.md`
-- **Quality Gate**: `docs/qa/gates/7.1-initialize-cli-framework-shell.gate.yml`
+- **Quality Gate**: `docs/qa/gates/7.1-initialize-cli-framework-shell.yml`
 - **Risk Assessment**: `docs/qa/assessments/7.1-risk-20251002.md`
 - **Test Design**: `docs/qa/assessments/7.1-test-design-20251002.md`
-- **Picocli Documentation**: https://picocli.info/
-- **Mustache Documentation**: https://github.com/spullara/mustache.java
+- **Picocli Documentation**: [https://picocli.info/](https://picocli.info/)
+- **Mustache Documentation**: [https://github.com/spullara/mustache.java](https://github.com/spullara/mustache.java)
 
 ---
 

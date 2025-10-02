@@ -73,8 +73,8 @@ test_design:
 # Evidence of Quality
 evidence:
   tests_planned: 10
-  tests_automated: 9   # 7 unit + 2 integration
-  tests_manual: 1
+  tests_automated: 7   # 7 unit tests (INT-001/002 are build validations, not automated test files)
+  tests_manual: 3      # Manual: project structure review + 2 build/distribution verifications
   risks_identified: 5
   risks_mitigated: 5   # 100% mitigation coverage
   ac_with_tests: 3     # All 3 ACs
