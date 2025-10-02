@@ -41,7 +41,8 @@ import org.springframework.context.annotation.FilterType
         ),
         ComponentScan.Filter(
             type = FilterType.REGEX,
-            pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.observability\\..*"], // Story 6.4: Exclude FlowableMetrics (@Scheduled causes AOP conflicts)
+            // Story 6.4: Exclude FlowableMetrics (@Scheduled causes AOP conflicts)
+            pattern = ["com\\.axians\\.eaf\\.framework\\.workflow\\.observability\\..*"],
         ),
     ],
 )
