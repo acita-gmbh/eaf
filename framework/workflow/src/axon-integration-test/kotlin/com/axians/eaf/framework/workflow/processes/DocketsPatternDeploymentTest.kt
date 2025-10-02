@@ -99,6 +99,9 @@ class DocketsPatternDeploymentTest : FunSpec() {
             val bpmnModel = repositoryService.getBpmnModel(processDefinition.id)
             val process = bpmnModel.mainProcess
 
+            // Validate process is executable (AC2 requirement)
+            process.isExecutable shouldBe true
+
             // Element 1: Start Event (exactly 1)
             val startEvents = process.findFlowElementsOfType(StartEvent::class.java)
             startEvents.shouldHaveSize(1)
