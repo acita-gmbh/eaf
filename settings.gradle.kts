@@ -45,3 +45,6 @@ include(":shared:testing")
 
 // Frontend applications
 include(":apps:admin")
+
+// Tools modules
+include(":tools:eaf-cli")
