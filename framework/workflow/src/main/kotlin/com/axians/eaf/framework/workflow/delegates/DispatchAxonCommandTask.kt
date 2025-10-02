@@ -20,23 +20,26 @@ import java.util.concurrent.TimeUnit
  * **Framework Infrastructure**: This is generic, extensible infrastructure. Domains add command
  * builders via when clauses (see buildCommand method).
  *
- * **BPMN Usage Contract**:
+ * **BPMN Usage Contract** (ARCH-001 Pure Reflection Pattern):
  * ```xml
  * <serviceTask id="dispatchCommand" name="Dispatch Command"
  *              flowable:delegateExpression="${dispatchAxonCommandTask}">
  *   <documentation>
  *     Required process variables:
- *     - commandType (String): Command class name (e.g., "CreateTestEntityCommand" in framework tests)
+ *     - commandClassName (String): Fully qualified class name
+ *       Example: "com.axians.eaf.api.widget.commands.CreateWidgetCommand"
+ *     - constructorParameters (List&lt;String&gt;): Ordered constructor parameter names
+ *       Example: ["widgetId", "tenantId", "name", "description", "value", "category"]
  *     - tenantId (String): Tenant identifier for isolation
- *     - [command-specific variables]: Depends on commandType
+ *     - [constructor parameters]: One process variable per parameter name in constructorParameters list
  *   </documentation>
  * </serviceTask>
  * ```
  *
- * **Adding New Commands** (Extensible Pattern):
- * 1. Add case to buildCommand() when expression
- * 2. Implement private buildXYZCommand() method
- * 3. Extract variables and construct command
+ * **Adding New Commands** (Security-Hardened Pattern):
+ * 1. Add command FQN to ALLOWED_COMMAND_CLASSES whitelist in companion object
+ * 2. If compensation command, add to COMPENSATION_COMMAND_CLASSES for metrics
+ * 3. In BPMN: Set commandClassName + constructorParameters + parameter values
  *
  * ## Security: Tenant Isolation (MANDATORY)
  *
@@ -87,6 +90,20 @@ class DispatchAxonCommandTask(
                 "com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand",
                 // Add new command classes here as products expand
             )
+
+        /**
+         * OBSERVABILITY: Explicit list of compensation command classes for metrics tracking.
+         *
+         * **Purpose**: Identifies which commands represent compensation/rollback actions
+         * for observability telemetry (FlowableMetrics.recordCompensationCommand).
+         *
+         * **Maintenance**: Update when adding new compensation commands.
+         */
+        private val COMPENSATION_COMMAND_CLASSES =
+            setOf(
+                "com.axians.eaf.framework.workflow.test.CancelTestEntityCommand",
+                "com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand",
+            )
     }
 
     override fun execute(execution: DelegateExecution) {
@@ -98,11 +115,11 @@ class DispatchAxonCommandTask(
             dispatchCommand(command)
             execution.setVariable("commandResult", "SUCCESS")
 
-            // Story 6.5 (Task 3.3): Record compensation telemetry for cancellation commands
+            // Story 6.5 (Task 3.3): Record compensation telemetry for compensation commands
             val commandClassName = execution.getVariable("commandClassName") as? String
-            if (commandClassName?.contains("Cancel") == true) {
+            if (commandClassName in COMPENSATION_COMMAND_CLASSES) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandClassName.substringAfterLast("."),
+                    commandType = commandClassName?.substringAfterLast(".") ?: "unknown",
                     processKey = processKey,
                     success = true,
                 )
@@ -113,9 +130,9 @@ class DispatchAxonCommandTask(
         ) {
             // Story 6.5: Record failed compensation telemetry before re-throwing
             val commandClassName = execution.getVariable("commandClassName") as? String
-            if (commandClassName?.contains("Cancel") == true) {
+            if (commandClassName in COMPENSATION_COMMAND_CLASSES) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandClassName.substringAfterLast("."),
+                    commandType = commandClassName?.substringAfterLast(".") ?: "unknown",
                     processKey = processKey,
                     success = false,
                 )
@@ -128,9 +145,9 @@ class DispatchAxonCommandTask(
         ) {
             // Story 6.5: Record failed compensation telemetry before throwing generic error
             val commandClassName = execution.getVariable("commandClassName") as? String
-            if (commandClassName?.contains("Cancel") == true) {
+            if (commandClassName in COMPENSATION_COMMAND_CLASSES) {
                 flowableMetrics?.recordCompensationCommand(
-                    commandType = commandClassName.substringAfterLast("."),
+                    commandType = commandClassName?.substringAfterLast(".") ?: "unknown",
                     processKey = processKey,
                     success = false,
                 )
