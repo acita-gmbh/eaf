@@ -9,8 +9,8 @@ reviewer: "Quinn (Test Architect)"
 updated: "2025-10-02T14:30:00Z"
 
 gate: PASS
-status_reason: "ARCH-001 remediated: Framework now product-agnostic using pure reflection pattern. All 42 tests passing (100%). Compensation pattern fully validated. Zero compile-time product dependencies. Minor advisory: document Redis rate limiter monitoring (PERF-001)."
-quality_score: 96  # 100 - 2 (PERF-001 docs) - 2 (increased complexity from reflection)
+status_reason: "All critical issues resolved. ARCH-001 remediated (framework purity restored). SEC-VULN-001 hardened (explicit command whitelist). All 42 tests passing. Zero security vulnerabilities. Minor advisory: document Redis rate limiter monitoring (PERF-001)."
+quality_score: 98  # 100 - 2 (PERF-001 docs only)
 
 waiver:
   active: false
@@ -244,3 +244,16 @@ change_log:
       - "All framework tests updated to new pattern (15/15 passing)"
       - "Zero compile-time dependencies on product domains verified"
       - "Framework now publishable as standalone library"
+  - date: "2025-10-02T18:50:00Z"
+    version: "2.3"
+    changes: "SECURITY HARDENING: Added explicit command class whitelist to DispatchAxonCommandTask. Package prefix validation insufficient - replaced with fail-closed allowlist. Quality score 96→98 (+2 for enhanced CWE-94 protection)."
+    reviewer: "Quinn"
+    security_finding:
+      id: "SEC-VULN-001"
+      severity: "MEDIUM"
+      category: "CWE-94 (Code Injection)"
+      description: "Package prefix check alone allows loading ANY class under com.axians.eaf.* namespace"
+      remediation: "Added ALLOWED_COMMAND_CLASSES companion object with explicit whitelist (5 command classes)"
+      confidence: "8/10"
+      exploit_requires: "BPMN deployment access + malicious class on classpath"
+      defense_in_depth: "Fail-closed security upheld even with strong perimeter controls"
