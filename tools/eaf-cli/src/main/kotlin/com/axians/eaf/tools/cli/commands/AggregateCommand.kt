@@ -117,6 +117,16 @@ class AggregateCommand : Runnable {
             is GeneratorError.ModuleAlreadyExists -> {
                 System.err.println("Error: Module '${error.name}' already exists")
             }
+            // Story 7.4b UI-specific errors (not applicable to aggregate command)
+            is GeneratorError.ProductModuleNotFound,
+            is GeneratorError.InvalidResourceName,
+            is GeneratorError.AdminShellNotBuilt,
+            is GeneratorError.TemplateRenderFailed,
+            is GeneratorError.PathTraversalDetected,
+            -> {
+                System.err.println("Error: ${error::class.simpleName}")
+                System.err.println("Details: $error")
+            }
         }
     }
 

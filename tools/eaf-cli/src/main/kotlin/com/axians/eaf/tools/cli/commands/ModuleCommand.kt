@@ -96,6 +96,16 @@ class ModuleCommand : Runnable {
                 System.err.println("Error: Failed to render template '${error.template}'")
                 System.err.println("Cause: ${error.cause.message}")
             }
+            // Story 7.4b UI-specific errors (not applicable to module command)
+            is GeneratorError.ProductModuleNotFound,
+            is GeneratorError.InvalidResourceName,
+            is GeneratorError.AdminShellNotBuilt,
+            is GeneratorError.TemplateRenderFailed,
+            is GeneratorError.PathTraversalDetected,
+            -> {
+                System.err.println("Error: ${error::class.simpleName}")
+                System.err.println("Details: $error")
+            }
         }
     }
 
