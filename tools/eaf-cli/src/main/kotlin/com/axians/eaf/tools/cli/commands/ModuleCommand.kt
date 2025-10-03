@@ -91,18 +91,19 @@ class ModuleCommand : Runnable {
         moduleName: String,
         modulePath: String,
     ) {
+        // Use ModuleContext for consistent naming transformations
+        val context =
+            com.axians.eaf.tools.cli.generators.ModuleContext
+                .fromModuleName(moduleName)
+
         println("✓ Module '$moduleName' created successfully!")
         println()
         println("Location: $modulePath/")
         println()
         println("Files created:")
         println("  ✓ build.gradle.kts")
-        println(
-            "  ✓ src/main/kotlin/com/axians/eaf/products/${moduleName.replace(
-                "-",
-                "",
-            )}/${moduleName.replace("-", "").replaceFirstChar { it.uppercaseChar() }}Module.kt",
-        )
+        println("  ✓ src/main/kotlin/com/axians/eaf/products/${context.packageName}/${context.className}Module.kt")
+        println("  ✓ src/main/kotlin/com/axians/eaf/products/${context.packageName}/${context.className}Application.kt")
         println("  ✓ src/main/resources/application.yml")
         println("  ✓ src/test/resources/application-test.yml")
         println()

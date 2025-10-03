@@ -298,8 +298,8 @@ class ModuleGenerator(
             var insertIndex = productSectionIndex + 1
             while (insertIndex < lines.size) {
                 val line = lines[insertIndex].trim()
-                if (line.startsWith("//") && !line.startsWith("include")) {
-                    // Hit next section marker, insert before it
+                if (line.startsWith("//") && line != productSectionMarker) {
+                    // Hit next section marker (like "// Shared modules"), insert before it
                     break
                 }
                 if (line.startsWith("include(\":$directory:")) {
