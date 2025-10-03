@@ -15,6 +15,9 @@ dependencies {
     implementation(libs.mustache)
     implementation(libs.kotlin.stdlib)
 
+    // Functional programming - Arrow Either for error handling
+    implementation(libs.bundles.arrow)
+
     // Testing
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.kotest.runner.junit5.jvm) // Required for JUnit Platform discovery
