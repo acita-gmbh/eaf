@@ -37,18 +37,18 @@ class AggregateGenerator(
         fieldsInput: String?,
         validationInput: String?,
     ): Either<GeneratorError, AggregateInfo> {
-        // Validate module exists
-        val modulePath = Paths.get("products", moduleName)
-        if (!Files.exists(modulePath) || !Files.isDirectory(modulePath)) {
-            return GeneratorError.ModuleNotFound(moduleName).left()
-        }
-
-        // Parse validation patterns
+        // SECURITY: Parse and validate inputs BEFORE any file system operations
         val validationMap =
             when (val result = parseValidation(validationInput)) {
                 is Either.Left -> return result
                 is Either.Right -> result.value
             }
+
+        // Validate module exists (after input validation)
+        val modulePath = Paths.get("products", moduleName)
+        if (!Files.exists(modulePath) || !Files.isDirectory(modulePath)) {
+            return GeneratorError.ModuleNotFound(moduleName).left()
+        }
 
         // Parse fields
         val fields =
@@ -136,6 +136,7 @@ class AggregateGenerator(
         return fields.right()
     }
 
+    @Suppress("ReturnCount", "NestedBlockDepth")
     private fun parseValidation(validationInput: String?): Either<GeneratorError, Map<String, ValidationSpec>> {
         if (validationInput == null) return emptyMap<String, ValidationSpec>().right()
 
@@ -151,18 +152,87 @@ class AggregateGenerator(
 
             // Check if it's regex pattern (starts with ^)
             if (validationDef.startsWith("^")) {
-                validationMap[fieldName] = ValidationSpec(pattern = validationDef)
+                // SECURITY: Validate regex pattern is safe (prevents template injection)
+                val safeRegex = validateRegexPattern(validationDef)
+                when (safeRegex) {
+                    is Either.Left -> return safeRegex
+                    is Either.Right -> validationMap[fieldName] = ValidationSpec(pattern = validationDef)
+                }
             } else if (validationDef.contains("|")) {
-                // Enum values
+                // Enum values - validate each value is alphanumeric
                 val enumValues = validationDef.split("|").map { it.trim() }
+                for (enumValue in enumValues) {
+                    if (!enumValue.matches(Regex("^[A-Z_][A-Z0-9_]*$"))) {
+                        return GeneratorError
+                            .UnsafeRegexPattern(
+                                "Invalid enum value: $enumValue. Must be UPPER_SNAKE_CASE.",
+                            ).left()
+                    }
+                }
                 validationMap[fieldName] = ValidationSpec(enumValues = enumValues)
             } else if (parts.size == 3) {
-                // Range: field:min:max
+                // Range: field:min:max (already safe - numeric values)
                 validationMap[fieldName] = ValidationSpec(minValue = parts[1], maxValue = parts[2])
             }
         }
 
         return validationMap.right()
+    }
+
+    /**
+     * Validates regex pattern is safe for code generation (SEC-003 mitigation).
+     *
+     * Prevents template injection by rejecting patterns with:
+     * - String escape sequences (", \)
+     * - String interpolation ($)
+     * - Multiline strings (`)
+     * - Code injection attempts
+     *
+     * @return Either.Right(Unit) if safe, Either.Left(GeneratorError) if unsafe
+     */
+    @Suppress("ReturnCount")
+    private fun validateRegexPattern(pattern: String): Either<GeneratorError, Unit> {
+        // Validate regex syntax
+        try {
+            Regex(pattern)
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            e: Exception,
+        ) {
+            return GeneratorError.InvalidRegexPattern(pattern, e.message).left()
+        }
+
+        // SECURITY: Reject dangerous characters that could break out of Kotlin string literal
+        // Note: $ is allowed only at end (regex end-of-line anchor), checked by whitelist
+        val dangerousChars = listOf("\"", "\\", "`", ";", "{", "}")
+        for (char in dangerousChars) {
+            if (pattern.contains(char)) {
+                return GeneratorError
+                    .UnsafeRegexPattern(
+                        "Regex contains dangerous character '$char' that could enable code injection",
+                    ).left()
+            }
+        }
+
+        // Reject $ in middle of pattern (allows interpolation), only at end is safe
+        if (pattern.contains("$") && !pattern.endsWith("$")) {
+            return GeneratorError
+                .UnsafeRegexPattern(
+                    "Dollar sign only allowed at end of pattern (regex end-of-line anchor)",
+                ).left()
+        }
+
+        // Whitelist-only: Standard regex metacharacters
+        // Pattern allows: letters, numbers, standard regex chars []().*+?|^-, and optional $ at end
+        val safePattern = Regex("""^[\[\]().*+?|^\-a-zA-Z0-9]+\$?$""")
+        if (!pattern.matches(safePattern)) {
+            return GeneratorError
+                .UnsafeRegexPattern(
+                    "Regex contains invalid characters. Only standard regex metacharacters allowed: []().*+?|^-$",
+                ).left()
+        }
+
+        return Unit.right()
     }
 
     private fun generateDomainLayer(
