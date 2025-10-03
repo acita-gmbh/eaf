@@ -25,9 +25,20 @@
 * **AC 3:** The generated templates must correctly include all required patterns (e.g., Tenancy checks from Epic 4, Logging from Epic 6).
 * **AC 4:** The generated code (including generated test stubs) must pass all Constitutional TDD and Quality Gates (from Story 1.2) immediately upon generation.
 
-### Story 7.4: Create "React-Admin" Generator
-* **As a** Developer, **I want** the CLI to have a `scaffold ra-resource` command, **so that** it generates the basic React-Admin Typescript resource files needed for the aggregate I just created in the admin UI.
-* **AC 1:** Running `eaf scaffold ra-resource <Name>` generates the necessary `.tsx` files (e.g., CreateResource, EditResource, ListResource) within the `apps/admin` codebase.
-* **AC 2:** The generated UI resource components correctly reference the API endpoints and data structures (Typescript types) generated in Story 7.3.
+### Story 7.4a: Create React-Admin Shell Framework
+* **As a** Framework Developer, **I want** to create a reusable React-Admin shell framework in `framework/admin-shell/`, **so that** product UI modules can leverage shared authentication, theming, and infrastructure without code duplication.
+* **AC 1:** `framework/admin-shell/` npm package created with React-Admin 5.4.0, Material-UI 5.x, TypeScript 5.x, and Vite 5.x bundler.
+* **AC 2:** Admin shell provides exportable infrastructure: AdminShell component, dataProvider (JWT auth, tenant injection, RFC 7807 error mapper), authProvider (Keycloak OIDC), Axians theme, shared UI components (EmptyState, LoadingSkeleton).
+* **AC 3:** Admin shell exposes a resource registration API allowing product ui-modules to register their resources dynamically.
+* **AC 4:** Shell is publishable as `@axians/eaf-admin-shell` npm package with zero product-specific domain logic.
+
+### Story 7.4b: Create Product UI Module Generator
+* **As a** Developer, **I want** the CLI to have a `scaffold ui-resource` command, **so that** it generates React-Admin TypeScript resource files within my product's ui-module directory that integrate with the framework admin shell.
+* **AC 1:** Running `eaf scaffold ui-resource <Name> --module <productModule>` generates the necessary `.tsx` files (10 files total) within `products/{productModule}/ui-module/src/resources/{resourceLowerCase}/` with HIGH priority UX enhancements.
+* **AC 2:** The generated UI resource components correctly import and use the framework admin shell (from Story 7.4a), reference API endpoints and data structures from Story 7.3, include RFC 7807 error handling, and follow WCAG AA accessibility standards.
+* **AC 3:** Generated ui-module exports a resource registration object that can be imported by apps/admin for dynamic resource registration.
+* **Dependency:** Requires Story 7.4a to be complete.
+
+**Architectural Note**: Story 7.4 was split into 7.4a and 7.4b on 2025-10-03 to follow Story 4.5's framework/product separation principle. Framework admin shell (infrastructure) lives in `framework/`, product UI resources (domain) live in `products/*/ui-module/`.
 
 ---

@@ -1,0 +1,293 @@
+# Quality Gate: Story 7.4a - Create React-Admin Shell Framework
+# Generated: 2025-10-03
+# Reviewer: Quinn (Test Architect & Quality Advisor)
+
+story_id: "7.4a"
+story_title: "Create React-Admin Shell Framework"
+epic: 7
+status: "CONCERNS"  # High-risk security items + test coverage gap require diligent implementation
+
+assessment_date: "2025-10-03"
+reviewer: "Quinn"
+
+# Gate Decision Rationale
+decision_rationale: |
+  CONCERNS status due to:
+  1. Three high-priority security risks (score 6): SEC-001 (JWT localStorage), SEC-002 (tenant propagation), SEC-003 (Keycloak OIDC flows)
+  2. Test coverage not yet implemented (target 85% line, 80% mutation)
+  3. No linting/formatting configuration
+
+  However, story demonstrates STRONG quality awareness:
+  - Comprehensive security mitigation strategies defined (MVP + post-MVP)
+  - 16 test scenarios designed with clear Given-When-Then
+  - 100% requirements traceability (all 4 ACs covered)
+  - Explicit fail-closed design patterns (tenant validation, error handling)
+
+  RECOMMENDATION: Proceed with implementation following defined mitigations. Prioritize P0 security tests in parallel with core functionality.
+
+# Risk Summary
+risk_summary:
+  totals:
+    critical: 0  # score 9
+    high: 3      # score 6
+    medium: 5    # score 4
+    low: 5       # score 2-3
+  highest:
+    id: "SEC-001"
+    score: 6
+    title: "JWT in localStorage (XSS vulnerability)"
+  highest_3:
+    - id: "SEC-001"
+      score: 6
+      title: "JWT in localStorage (XSS vulnerability)"
+    - id: "SEC-002"
+      score: 6
+      title: "Tenant context propagation failure"
+    - id: "SEC-003"
+      score: 6
+      title: "Keycloak OIDC flow implementation errors"
+  recommendations:
+    must_fix:
+      - "Implement DOMPurify sanitization in dataProvider (SEC-001)"
+      - "Implement fail-closed tenant validation in dataProvider (SEC-002)"
+      - "Comprehensive authProvider testing with edge cases (SEC-003)"
+      - "Token refresh flow with automatic refresh logic (SEC-001)"
+      - "Backend CSP headers for XSS defense (SEC-001)"
+      - "Implement all 16 test scenarios (85% coverage target)"
+      - "Add ESLint + Prettier configuration"
+    monitor:
+      - "Bundle size monitoring in CI (target <500KB)"
+      - "Token refresh errors (detect Keycloak issues)"
+      - "API requests with missing X-Tenant-ID header"
+  overall_risk_score: 52  # Medium-Risk Story (100 = minimal risk, 0 = extreme risk)
+
+# Test Design Summary
+test_design:
+  scenarios_total: 16
+  by_level:
+    unit: 13
+    integration: 3
+    e2e: 0  # Not applicable for framework library
+  by_priority:
+    p0: 6   # Critical security tests
+    p1: 5   # Core infrastructure tests
+    p2: 5   # Theming, components, build tests
+  coverage_gaps: []  # No gaps - all ACs covered
+  planning_ref: "docs/qa/assessments/7.4a-test-design-20251003.md"
+
+# Requirements Traceability
+trace:
+  totals:
+    requirements: 4  # 4 Acceptance Criteria
+    full: 4
+    partial: 0
+    none: 0
+  planning_ref: "docs/qa/assessments/7.4a-test-design-20251003.md"
+  uncovered: []  # All ACs have test coverage
+  notes: "See docs/qa/assessments/7.4a-trace-20251003.md for full traceability matrix"
+
+# NFR Validation
+nfr_validation:
+  _assessed: ["security", "performance", "reliability", "maintainability"]
+  security:
+    status: "CONCERNS"
+    notes: "JWT localStorage risk (XSS), Keycloak OIDC complexity, tenant propagation; MVP mitigations defined but require diligent implementation + comprehensive testing"
+    targets:
+      - "10-layer JWT validation (frontend Layers 1-3)"
+      - "3-layer tenant isolation (frontend Layer 1: Request Filter)"
+      - "Input sanitization (DOMPurify for XSS prevention)"
+      - "Secure session management (15min access token, 8hr refresh token, automatic refresh)"
+    evidence:
+      - "Task 2.3: Tenant ID extraction from JWT with fail-closed validation"
+      - "Task 2.5: DOMPurify sanitization code example"
+      - "Task 3.2-3.6: authProvider Keycloak OIDC implementation"
+      - "Security Considerations: Comprehensive token refresh implementation"
+    gaps:
+      - "JWT localStorage (XSS risk) - MVP mitigations defined (short-lived tokens, DOMPurify, CSP)"
+      - "Keycloak OIDC custom implementation (no battle-tested library) - requires comprehensive testing"
+      - "No frontend rate limiting (backend responsibility, but UX throttling recommended)"
+
+  performance:
+    status: "PASS"
+    notes: "Vite library mode optimized, peer dependencies externalized, minimal bundle size (~50KB); meets frontend framework requirements"
+    targets:
+      - "Bundle size <500KB gzipped"
+      - "Build time <30 seconds"
+      - "API request overhead <5ms"
+    evidence:
+      - "Task 1.4: Vite library mode with rollupOptions.external for peer dependencies"
+      - "Dev Notes: Correct Vite config externalizing react, react-dom, react-admin, @mui/material"
+      - "Estimated bundle: ~50KB (10% of target)"
+    gaps: []
+
+  reliability:
+    status: "PASS"
+    notes: "Comprehensive error handling (RFC 7807 mapper), fail-closed tenant validation, automatic token refresh with fallback"
+    targets:
+      - "No unhandled promise rejections"
+      - "Graceful degradation (token refresh fallback, error mapper fallback)"
+      - "Logging and observability (request/response interceptors)"
+    evidence:
+      - "Task 2.4: RFC 7807 error mapper with traceId extraction"
+      - "Task 2.5: Request/response interceptors for logging with tenant context"
+      - "Security Considerations: Token refresh flow with network error handling"
+      - "Fail-closed tenant validation (reject request if tenant_id missing)"
+    gaps: []
+
+  maintainability:
+    status: "CONCERNS"
+    notes: "Test coverage target 85% line/80% mutation defined but not yet implemented; linting/formatting not configured; TypeScript strict mode enforced (positive)"
+    targets:
+      - "85% line coverage, 80% mutation coverage"
+      - "Zero linting violations (ESLint + Prettier)"
+      - "TypeScript strict mode"
+      - "Comprehensive documentation (README, API docs)"
+    evidence:
+      - "Task 1.3: tsconfig.json strict: true"
+      - "Task 7.5: README.md with usage examples"
+      - "Test Design: 16 test scenarios defined"
+      - "Clear module structure: providers/, components/, theme/, AdminShell.tsx"
+    gaps:
+      - "Test coverage 0% (16 tests defined but not implemented)"
+      - "No linting/formatting configuration (ESLint, Prettier)"
+      - "No mutation testing configured (Stryker Mutator recommended)"
+      - "No API documentation (TypeDoc recommended for .d.ts files)"
+
+quality_score: 70  # 100 - 10 (security CONCERNS) - 10 (maintainability CONCERNS) - 10 (adjustment for not-yet-implemented)
+
+# Gate Status Rules
+# - Any NFR = FAIL → Gate = FAIL
+# - Else if any NFR = CONCERNS → Gate = CONCERNS
+# - Else → Gate = PASS
+# - Any risk score >= 9 → Gate = FAIL (unless waived)
+# - Else if any risk score >= 6 → Gate = CONCERNS
+
+# Assessment Artifacts
+artifacts:
+  risk_profile: "docs/qa/assessments/7.4a-risk-20251003.md"
+  test_design: "docs/qa/assessments/7.4a-test-design-20251003.md"
+  nfr_assessment: "docs/qa/assessments/7.4a-nfr-20251003.md"
+  trace_matrix: "docs/qa/assessments/7.4a-trace-20251003.md"
+
+# Top Issues Identified
+top_issues:
+  - id: "ISSUE-001"
+    severity: "HIGH"
+    category: "Security"
+    title: "JWT localStorage storage (XSS vulnerability)"
+    description: "Storing JWTs in localStorage creates XSS attack surface. If attacker injects malicious JS, tokens can be stolen."
+    mitigation: "MVP: Short-lived tokens (15min), DOMPurify sanitization, backend CSP headers, README advisory. Post-MVP: httpOnly cookies, BFF pattern."
+    tests:
+      - "7.4a-UNIT-P0-001 (XSS sanitization)"
+      - "7.4a-UNIT-P0-005 (token expiration)"
+      - "7.4a-UNIT-P0-006 (token refresh)"
+
+  - id: "ISSUE-002"
+    severity: "HIGH"
+    category: "Security"
+    title: "Tenant context propagation failure"
+    description: "Missing tenant_id in JWT or failed header injection could lead to cross-tenant data exposure."
+    mitigation: "Fail-closed validation in dataProvider: reject request if tenant_id missing. Backend 3-layer enforcement as defense-in-depth."
+    tests:
+      - "7.4a-UNIT-P0-003 (tenant context propagation)"
+
+  - id: "ISSUE-003"
+    severity: "HIGH"
+    category: "Security"
+    title: "Keycloak OIDC flow implementation errors"
+    description: "Custom OIDC implementation (no library) increases risk of subtle protocol errors in login/refresh/logout."
+    mitigation: "Comprehensive unit/integration testing with edge cases (6 P0/P1 tests). Security architect code review. Consider oidc-client-ts library for future."
+    tests:
+      - "7.4a-UNIT-P0-004 (Keycloak login)"
+      - "7.4a-UNIT-P0-005 (token expiration)"
+      - "7.4a-UNIT-P0-006 (token refresh edge cases)"
+      - "7.4a-UNIT-P1-004 (role extraction)"
+      - "7.4a-UNIT-P1-005 (logout flow)"
+
+  - id: "ISSUE-004"
+    severity: "MEDIUM"
+    category: "Maintainability"
+    title: "Test coverage not yet implemented"
+    description: "16 test scenarios defined but no test code written. Current coverage: 0% (target: 85% line, 80% mutation)."
+    mitigation: "Implement all 16 tests in parallel with feature development. Prioritize P0 security tests (6 tests). Enforce coverage in CI before merge."
+    tests:
+      - "All 16 test scenarios from test-design document"
+
+  - id: "ISSUE-005"
+    severity: "MEDIUM"
+    category: "Maintainability"
+    title: "No linting/formatting configuration"
+    description: "No ESLint or Prettier configured. Risk of code style inconsistencies and potential bugs (no-unused-vars, etc)."
+    mitigation: "Add ESLint with TypeScript plugin, Prettier for formatting. Configure in CI/CD. Estimated time: 2 hours."
+    tests:
+      - "N/A (configuration, not test scenario)"
+
+# Implementation Readiness
+implementation_readiness:
+  architecture: "READY"
+  architecture_notes: "Strong architectural foundation following Story 4.5 framework/product separation. Clear module boundaries, plugin architecture pattern (resource registration), factory functions for configurability."
+
+  security: "READY_WITH_CONCERNS"
+  security_notes: "Comprehensive security mitigations defined (MVP + post-MVP). 3 high-risk items (score 6) require diligent implementation and testing. Security-aware design (fail-closed validation, DOMPurify, token refresh)."
+
+  testing: "READY"
+  testing_notes: "16 test scenarios comprehensively designed. Test strategy aligns with risks (38% P0 security tests). 100% requirements traceability. Vitest framework setup described."
+
+  dependencies: "READY"
+  dependencies_notes: "Story 3.3 (Keycloak integration) completed. No blocking dependencies. Story 7.4b depends on 7.4a (generator consumes framework)."
+
+  documentation: "READY"
+  documentation_notes: "Task 7.5 creates README with usage examples. JSDoc comments planned. Dev Notes section has comprehensive architecture examples."
+
+# Recommendations
+recommendations:
+  blocking:
+    - "Implement all 6 P0 security tests before merging to main"
+    - "Security architect code review for authProvider and dataProvider"
+    - "Add ESLint + Prettier configuration before first commit"
+
+  high_priority:
+    - "Implement all 16 test scenarios (enforce 85% line coverage in CI)"
+    - "Configure Stryker Mutator for mutation testing (80% target)"
+    - "Backend CSP headers for XSS defense (coordinate with backend team)"
+
+  medium_priority:
+    - "Bundle size monitoring in CI (rollup-plugin-visualizer)"
+    - "TypeDoc for API documentation (.d.ts → HTML)"
+    - "Structured logging library (winston, pino) for production"
+
+  future_enhancements:
+    - "httpOnly cookies + BFF pattern for token management (post-MVP)"
+    - "oidc-client-ts library to reduce SEC-003 risk"
+    - "Abstraction layer for React-Admin (if migration need emerges)"
+    - "Circuit breaker pattern for API calls (prevent cascading failures)"
+
+# Sign-Off
+reviewed_by: "Quinn (Test Architect & Quality Advisor)"
+review_date: "2025-10-03"
+gate_status: "CONCERNS"
+proceed_with_cautions: true
+waived_issues: []
+
+# Notes
+notes: |
+  Story 7.4a is foundational frontend infrastructure applying Story 4.5's framework/product separation principle.
+  The story demonstrates strong quality awareness with comprehensive security mitigation strategies and explicit fail-closed design patterns.
+
+  CONCERNS status is appropriate given 3 high-risk security items (score 6) and test coverage gap, but these are well-identified with clear mitigation paths.
+
+  The architectural foundation is solid:
+  - Plugin architecture (resource registration API)
+  - Factory functions (createDataProvider, createAuthProvider) for configurability
+  - Clear separation (providers/, components/, theme/)
+  - Vite library mode for publishability
+
+  Security awareness is commendable:
+  - Explicit MVP vs post-MVP mitigation strategies
+  - Fail-closed design (tenant validation, error handling)
+  - Multiple defense layers (DOMPurify + CSP + short-lived tokens)
+  - Comprehensive testing requirements (6 P0 security tests)
+
+  Recommend proceeding with implementation following defined security mitigations and comprehensive testing approach.
+
+  Story 7.4b (UI Module Generator) depends on 7.4a. Recommend completing 7.4a core implementation before starting 7.4b (generator can reference real framework APIs).
