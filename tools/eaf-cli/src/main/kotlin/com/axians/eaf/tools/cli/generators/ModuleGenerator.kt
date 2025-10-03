@@ -8,6 +8,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.exists
 import kotlin.io.path.writeText
 
@@ -135,9 +136,11 @@ class ModuleGenerator(
 
             // Integration test directories
             Files.createDirectories(modulePath.resolve(integrationPackagePath))
+            Files.createDirectories(modulePath.resolve("src/integration-test/resources"))
 
             // Konsist test directories
             Files.createDirectories(modulePath.resolve(konsistPackagePath))
+            Files.createDirectories(modulePath.resolve("src/konsist-test/resources"))
 
             Unit.right()
         } catch (ex: IOException) {
@@ -279,6 +282,11 @@ class ModuleGenerator(
             val originalContent = Files.readString(settingsFile)
             val newInclude = "include(\":$directory:$moduleName\")"
 
+            // Check if module already included (idempotent operation)
+            if (originalContent.lines().any { it.trim() == newInclude }) {
+                return Unit.right() // Already registered, no-op
+            }
+
             // Find product modules section
             val productSectionMarker = "// Product modules"
             if (!originalContent.contains(productSectionMarker)) {
@@ -315,7 +323,15 @@ class ModuleGenerator(
             lines.add(insertIndex, newInclude)
             val updatedContent = lines.joinToString("\n")
 
-            Files.writeString(settingsFile, updatedContent)
+            // Atomic write: temp file → move (prevents corruption on failure)
+            val tempFile = settingsFile.resolveSibling("${settingsFile.fileName}.tmp")
+            Files.writeString(tempFile, updatedContent)
+            Files.move(
+                tempFile,
+                settingsFile,
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
             Unit.right()
         } catch (ex: IOException) {
             GeneratorError.FileSystemError("Failed to update settings.gradle.kts", ex).left()
