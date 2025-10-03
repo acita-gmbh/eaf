@@ -88,4 +88,35 @@ class ModuleCommandTest :
                 tempDir.toFile().deleteRecursively()
             }
         }
+
+        test("7.2-UNIT-010: SECURITY - Malicious directory parameters should be rejected") {
+            // Given: Various directory path attacks attempting path traversal or arbitrary writes
+            // When: ModuleCommand directory validation is applied
+            // Then: All attack attempts are rejected with security violation errors
+
+            val command = ModuleCommand()
+            val cmd = CommandLine(command)
+
+            // Scenario 1: Absolute path attack
+            // Attempt to write to /tmp or /etc
+            val absolutePathResult = cmd.execute("test", "-d", "/tmp")
+            absolutePathResult shouldBe 1 // Validation error
+
+            // Scenario 2: Path traversal attack
+            // Attempt to escape project directory
+            val traversalResult = cmd.execute("test", "-d", "../../etc")
+            traversalResult shouldBe 1 // Validation error
+
+            // Scenario 3: Current directory attack
+            // Attempt to write to project root
+            val currentDirResult = cmd.execute("test", "-d", ".")
+            currentDirResult shouldBe 1 // Validation error
+
+            // Scenario 4: Non-whitelisted directory
+            // Attempt to use arbitrary directory
+            val arbitraryDirResult = cmd.execute("test", "-d", "malicious")
+            arbitraryDirResult shouldBe 1 // Validation error
+
+            // Note: Valid directories (products, apps) tested via integration tests
+        }
     })

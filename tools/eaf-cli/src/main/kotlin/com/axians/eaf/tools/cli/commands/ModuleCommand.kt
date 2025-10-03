@@ -45,6 +45,7 @@ class ModuleCommand : Runnable {
     override fun run() {
         // SEC-002 Mitigation Layer 1: Input Validation
         validateModuleName(moduleName)
+        validateDirectory(directory)
 
         // Initialize generator
         val templateEngine = TemplateEngine()
@@ -138,6 +139,41 @@ class ModuleCommand : Runnable {
         // Template injection protection
         require(!name.contains("<") && !name.contains(">")) {
             "Security violation: potential injection detected in module name"
+        }
+    }
+
+    /**
+     * Validates directory parameter against path traversal attacks (CWE-22 mitigation).
+     *
+     * Validation Rules:
+     * - Whitelist approach: Only "products" and "apps" directories allowed
+     * - No absolute paths (starting with /)
+     * - No path traversal patterns (..)
+     * - No current directory (.)
+     *
+     * Security: Prevents arbitrary file writes outside project boundaries and
+     * protects against settings.gradle.kts injection via malicious path references.
+     *
+     * @throws IllegalArgumentException if validation fails
+     */
+    private fun validateDirectory(dir: String) {
+        // Whitelist approach - most secure
+        val allowedDirs = setOf("products", "apps")
+        require(dir in allowedDirs) {
+            "Invalid directory: '$dir'. Allowed directories: ${allowedDirs.joinToString(", ")}"
+        }
+
+        // Defense-in-depth: Additional checks even with whitelist
+        require(!dir.startsWith("/")) {
+            "Security violation: absolute paths not allowed"
+        }
+
+        require(!dir.contains("..")) {
+            "Security violation: path traversal detected in directory"
+        }
+
+        require(dir != ".") {
+            "Security violation: current directory not allowed"
         }
     }
 }
