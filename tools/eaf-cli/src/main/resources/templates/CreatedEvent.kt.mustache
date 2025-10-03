@@ -1,0 +1,17 @@
+package com.axians.eaf.api.{{aggregateNameKebab}}.events
+
+import java.time.Instant
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+data class {{aggregateName}}CreatedEvent(
+    val {{aggregateIdField}}: String,
+    val tenantId: String,
+{{#fields}}
+    val {{name}}: {{type}},
+{{/fields}}
+    val createdAt: Instant = Instant.now(),
+)

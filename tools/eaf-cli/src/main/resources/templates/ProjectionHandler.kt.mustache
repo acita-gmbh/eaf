@@ -1,0 +1,162 @@
+package com.axians.eaf.products.{{modulePackage}}.projections
+
+import com.axians.eaf.api.{{aggregateNameKebab}}.events.{{aggregateName}}CreatedEvent
+import com.axians.eaf.api.{{aggregateNameKebab}}.events.{{aggregateName}}UpdatedEvent
+import com.axians.eaf.products.{{modulePackage}}.entities.{{aggregateName}}Projection
+import com.axians.eaf.products.{{modulePackage}}.repositories.{{aggregateName}}ProjectionRepository
+import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.PersistenceException
+import org.axonframework.config.ProcessingGroup
+import org.axonframework.eventhandling.EventHandler
+import org.axonframework.eventhandling.ResetHandler
+import org.slf4j.LoggerFactory
+import org.springframework.data.domain.PageRequest
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import java.sql.SQLException
+
+/**
+ * Event handler for {{aggregateName}} projection updates.
+ */
+@Component
+@ProcessingGroup("{{aggregateNameKebab}}-projection")
+class {{aggregateName}}ProjectionHandler(
+    private val repository: {{aggregateName}}ProjectionRepository,
+    private val objectMapper: ObjectMapper,
+) {
+    private val logger = LoggerFactory.getLogger({{aggregateName}}ProjectionHandler::class.java)
+
+    @EventHandler
+    @Transactional
+    fun on(event: {{aggregateName}}CreatedEvent) {
+        logger.debug(
+            "Processing {{aggregateName}}CreatedEvent for {{aggregateIdField}}: {} in tenant: {}",
+            event.{{aggregateIdField}},
+            event.tenantId,
+        )
+
+        try {
+            val projection =
+                {{aggregateName}}Projection(
+                    {{aggregateIdField}} = event.{{aggregateIdField}},
+                    tenantId = event.tenantId,
+{{#fields}}
+                    {{name}} = event.{{name}},
+{{/fields}}
+                    metadata = "{}",
+                    createdAt = event.createdAt,
+                    updatedAt = event.createdAt,
+                )
+
+            repository.save(projection)
+
+            logger.debug(
+                "Successfully created {{aggregateNameLower}} projection for {{aggregateIdField}}: {} in tenant: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+            )
+        } catch (exception: PersistenceException) {
+            logger.error(
+                "Failed to process {{aggregateName}}CreatedEvent for {{aggregateIdField}}: {} in tenant: {}. Database error: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+                exception.message,
+                exception,
+            )
+            throw exception
+        } catch (exception: SQLException) {
+            logger.error(
+                "Failed to process {{aggregateName}}CreatedEvent for {{aggregateIdField}}: {} in tenant: {}. SQL error: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+                exception.message,
+                exception,
+            )
+            throw exception
+        }
+    }
+
+    @EventHandler
+    @Transactional
+    fun on(event: {{aggregateName}}UpdatedEvent) {
+        logger.debug(
+            "Processing {{aggregateName}}UpdatedEvent for {{aggregateIdField}}: {} in tenant: {}",
+            event.{{aggregateIdField}},
+            event.tenantId,
+        )
+
+        try {
+            val existingProjection = repository.findBy{{aggregateName}}IdAndTenantId(event.{{aggregateIdField}}, event.tenantId)
+
+            if (existingProjection == null) {
+                logger.warn(
+                    "No existing projection found for {{aggregateIdField}}: {} in tenant: {} during update.",
+                    event.{{aggregateIdField}},
+                    event.tenantId,
+                )
+                return
+            }
+
+            val updatedProjection =
+                existingProjection.update(
+{{#fields}}
+                    {{name}} = event.{{name}} ?: existingProjection.{{name}},
+{{/fields}}
+                )
+
+            repository.save(updatedProjection)
+
+            logger.debug(
+                "Successfully updated {{aggregateNameLower}} projection for {{aggregateIdField}}: {} in tenant: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+            )
+        } catch (exception: PersistenceException) {
+            logger.error(
+                "Failed to process {{aggregateName}}UpdatedEvent for {{aggregateIdField}}: {} in tenant: {}. Database error: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+                exception.message,
+                exception,
+            )
+            throw exception
+        } catch (exception: SQLException) {
+            logger.error(
+                "Failed to process {{aggregateName}}UpdatedEvent for {{aggregateIdField}}: {} in tenant: {}. SQL error: {}",
+                event.{{aggregateIdField}},
+                event.tenantId,
+                exception.message,
+                exception,
+            )
+            throw exception
+        }
+    }
+
+    @ResetHandler
+    fun resetProjections() {
+        logger.info("Resetting {{aggregateNameLower}} projections for replay...")
+
+        try {
+            val batchSize = 1000
+            var totalDeleted = 0L
+
+            while (true) {
+                val batch = repository.findAll(PageRequest.of(0, batchSize))
+                if (batch.isEmpty) break
+
+                repository.deleteAll(batch.content)
+                totalDeleted += batch.content.size
+
+                logger.debug("Deleted batch of {} projections", batch.content.size)
+            }
+
+            logger.info("Successfully cleared {} {{aggregateNameLower}} projections for replay", totalDeleted)
+        } catch (exception: PersistenceException) {
+            logger.error("Failed to reset {{aggregateNameLower}} projections. Database error: {}", exception.message, exception)
+            throw exception
+        } catch (exception: SQLException) {
+            logger.error("Failed to reset {{aggregateNameLower}} projections. SQL error: {}", exception.message, exception)
+            throw exception
+        }
+    }
+}

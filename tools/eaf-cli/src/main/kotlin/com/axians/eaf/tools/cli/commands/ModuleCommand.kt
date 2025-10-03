@@ -73,6 +73,21 @@ class ModuleCommand : Runnable {
                 System.err.println("Error: Module '${error.name}' already exists at ${error.path}")
                 System.err.println("Please choose a different module name or remove the existing directory.")
             }
+            is GeneratorError.ModuleNotFound -> {
+                System.err.println("Error: Module not found: ${error.moduleName}")
+            }
+            is GeneratorError.AggregateAlreadyExists -> {
+                System.err.println("Error: Aggregate already exists: ${error.aggregateName}")
+            }
+            is GeneratorError.UnsupportedType -> {
+                System.err.println("Error: Unsupported type: ${error.type}")
+            }
+            is GeneratorError.InvalidRegexPattern -> {
+                System.err.println("Error: Invalid regex: ${error.pattern}")
+            }
+            is GeneratorError.UnsafeRegexPattern -> {
+                System.err.println("Error: Unsafe regex: ${error.pattern}")
+            }
             is GeneratorError.FileSystemError -> {
                 System.err.println("Error: ${error.message}")
                 System.err.println("Cause: ${error.cause.message}")

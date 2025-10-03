@@ -1,0 +1,19 @@
+package com.axians.eaf.api.{{aggregateNameKebab}}.dto
+
+import java.time.Instant
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+/**
+ * Response DTO for {{aggregateName}}.
+ */
+data class {{aggregateName}}Response(
+    val id: String,
+{{#fields}}
+    val {{name}}: {{type}}{{#nullable}}?{{/nullable}},
+{{/fields}}
+    val createdAt: Instant,
+)

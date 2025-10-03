@@ -1,0 +1,103 @@
+package com.axians.eaf.products.{{modulePackage}}.controllers
+
+import com.axians.eaf.api.{{aggregateNameKebab}}.commands.Create{{aggregateName}}Command
+import com.axians.eaf.api.{{aggregateNameKebab}}.dto.{{aggregateName}}Response
+import com.axians.eaf.api.{{aggregateNameKebab}}.queries.Find{{aggregateName}}ByIdQuery
+import com.axians.eaf.api.{{aggregateNameKebab}}.queries.Find{{aggregateNamePlural}}Query
+import com.axians.eaf.framework.security.tenant.TenantContext
+import org.axonframework.commandhandling.gateway.CommandGateway
+import org.axonframework.queryhandling.QueryGateway
+import org.springframework.data.domain.Page
+import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+import java.net.URI
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+@RestController
+@RequestMapping("/{{aggregateNamePluralLower}}")
+@PreAuthorize("hasRole('USER')")
+class {{aggregateName}}Controller(
+    private val commandGateway: CommandGateway,
+    private val queryGateway: QueryGateway,
+    private val tenantContext: TenantContext,
+) {
+    @PostMapping
+    @PreAuthorize("hasAuthority('{{aggregateNameLower}}:create')")
+    fun create{{aggregateName}}(
+        @RequestBody request: Create{{aggregateName}}Request,
+    ): ResponseEntity<Any> {
+        val tenantId = tenantContext.getCurrentTenantId()
+        val {{aggregateIdField}} = UUID.randomUUID().toString()
+
+        val command =
+            Create{{aggregateName}}Command(
+                {{aggregateIdField}} = {{aggregateIdField}},
+                tenantId = tenantId,
+{{#fields}}
+                {{name}} = request.{{name}},
+{{/fields}}
+            )
+
+        commandGateway.sendAndWait<String>(command, 5, TimeUnit.SECONDS)
+        return ResponseEntity
+            .created(URI.create("/{{aggregateNamePluralLower}}/${{aggregateIdField}}"))
+            .body(mapOf("id" to {{aggregateIdField}}, "status" to "created"))
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('{{aggregateNameLower}}:read')")
+    fun get{{aggregateName}}(
+        @PathVariable("id") {{aggregateIdField}}: String,
+    ): ResponseEntity<{{aggregateName}}Response> {
+        val tenantId = tenantContext.getCurrentTenantId()
+        val query = Find{{aggregateName}}ByIdQuery({{aggregateIdField}}, tenantId)
+
+        val response = queryGateway.query(query, {{aggregateName}}Response::class.java).get(5, TimeUnit.SECONDS)
+
+        return if (response != null) {
+            ResponseEntity.ok(response)
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAuthority('{{aggregateNameLower}}:read')")
+    fun get{{aggregateNamePlural}}(
+        @RequestParam params: Map<String, String>,
+    ): ResponseEntity<Page<{{aggregateName}}Response>> {
+        val tenantId = tenantContext.getCurrentTenantId()
+
+        val page = params["page"]?.toIntOrNull() ?: 0
+        val size = (params["size"]?.toIntOrNull() ?: 20).coerceAtMost(100)
+        val sort = params["sort"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+        val category = params["category"]?.takeIf { it.isNotBlank() }
+        val search = params["search"]?.takeIf { it.isNotBlank() }
+
+        val query =
+            Find{{aggregateNamePlural}}Query(
+                tenantId = tenantId,
+                page = page,
+                size = size,
+                sort = sort,
+                category = category,
+                search = search,
+            )
+
+        @Suppress("UNCHECKED_CAST")
+        val response =
+            queryGateway
+                .query(query, Page::class.java)
+                .get(5, TimeUnit.SECONDS) as Page<{{aggregateName}}Response>
+
+        return ResponseEntity.ok(response)
+    }
+}

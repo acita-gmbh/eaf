@@ -1,0 +1,12 @@
+package com.axians.eaf.api.{{aggregateNameKebab}}.queries
+
+import org.axonframework.modelling.command.TargetAggregateIdentifier
+
+/**
+ * Query to find a specific {{aggregateNameLower}} by its ID.
+ */
+data class Find{{aggregateName}}ByIdQuery(
+    @TargetAggregateIdentifier
+    val {{aggregateIdField}}: String,
+    val tenantId: String,
+)

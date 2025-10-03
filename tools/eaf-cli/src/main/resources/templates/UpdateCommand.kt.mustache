@@ -1,0 +1,17 @@
+package com.axians.eaf.api.{{aggregateNameKebab}}.commands
+
+import org.axonframework.modelling.command.TargetAggregateIdentifier
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+data class Update{{aggregateName}}Command(
+    @TargetAggregateIdentifier
+    val {{aggregateIdField}}: String,
+    val tenantId: String,
+{{#fields}}
+    val {{name}}: {{type}}?,
+{{/fields}}
+)

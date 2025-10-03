@@ -1,0 +1,22 @@
+package com.axians.eaf.products.{{modulePackage}}.domain
+
+/**
+ * Domain errors for {{aggregateName}} aggregate.
+ */
+sealed class {{aggregateName}}Error {
+    data class ValidationError(
+        val field: String,
+        val constraint: String,
+        val invalidValue: Any?,
+    ) : {{aggregateName}}Error()
+
+    data class BusinessRuleViolation(
+        val rule: String,
+        val reason: String,
+    ) : {{aggregateName}}Error()
+
+    data class TenantIsolationViolation(
+        val requestedTenant: String,
+        val actualTenant: String,
+    ) : {{aggregateName}}Error()
+}

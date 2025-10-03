@@ -8,14 +8,14 @@ import picocli.CommandLine.Command
  *
  * Subcommands:
  * - module: Generate new Spring Modulith product module (Story 7.2)
- * - aggregate: Generate CQRS/ES aggregate (Story 7.3 - planned)
+ * - aggregate: Generate CQRS/ES aggregate (Story 7.3)
  * - ra-resource: Generate React-Admin resource (Story 7.4 - planned)
  */
 @Command(
     name = "scaffold",
     description = ["Generate EAF code scaffolds"],
     mixinStandardHelpOptions = true,
-    subcommands = [ModuleCommand::class],
+    subcommands = [ModuleCommand::class, AggregateCommand::class],
 )
 class ScaffoldCommand : Runnable {
     override fun run() {

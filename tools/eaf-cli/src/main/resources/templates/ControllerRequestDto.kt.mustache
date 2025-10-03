@@ -1,0 +1,16 @@
+package com.axians.eaf.products.{{modulePackage}}.controllers
+
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+/**
+ * Request DTO for creating {{aggregateName}}.
+ */
+data class Create{{aggregateName}}Request(
+{{#fields}}
+    val {{name}}: {{type}},
+{{/fields}}
+)

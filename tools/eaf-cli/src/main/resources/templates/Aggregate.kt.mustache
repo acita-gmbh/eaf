@@ -1,0 +1,176 @@
+package com.axians.eaf.products.{{modulePackage}}.domain
+
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import com.axians.eaf.api.{{aggregateNameKebab}}.commands.Create{{aggregateName}}Command
+import com.axians.eaf.api.{{aggregateNameKebab}}.commands.Update{{aggregateName}}Command
+import com.axians.eaf.api.{{aggregateNameKebab}}.events.{{aggregateName}}CreatedEvent
+import com.axians.eaf.api.{{aggregateNameKebab}}.events.{{aggregateName}}UpdatedEvent
+import com.axians.eaf.framework.security.tenant.TenantContext
+import org.axonframework.commandhandling.CommandHandler
+import org.axonframework.eventsourcing.EventSourcingHandler
+import org.axonframework.modelling.command.AggregateIdentifier
+import org.axonframework.modelling.command.AggregateLifecycle
+import org.axonframework.spring.stereotype.Aggregate
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+@Aggregate
+class {{aggregateName}} {
+    @AggregateIdentifier
+    private lateinit var {{aggregateIdField}}: String
+    private lateinit var tenantId: String
+{{#fields}}
+    private {{#nullable}}var{{/nullable}}{{^nullable}}lateinit var{{/nullable}} {{name}}: {{type}}{{#nullable}} = null{{/nullable}}
+{{/fields}}
+
+    constructor()
+
+    @CommandHandler
+    constructor(command: Create{{aggregateName}}Command) {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch"
+        }
+
+        validateCreateCommand(command).fold(
+            { error -> throw IllegalArgumentException("Validation failed: $error") },
+            {
+                AggregateLifecycle.apply(
+                    {{aggregateName}}CreatedEvent(
+                        {{aggregateIdField}} = command.{{aggregateIdField}},
+                        tenantId = command.tenantId,
+{{#fields}}
+                        {{name}} = command.{{name}},
+{{/fields}}
+                    ),
+                )
+            },
+        )
+    }
+
+    @CommandHandler
+    fun handle(command: Update{{aggregateName}}Command): Either<{{aggregateName}}Error, Unit> {
+        val currentTenant = TenantContext().getCurrentTenantId()
+
+        val error =
+            when {
+                command.tenantId != currentTenant ->
+                    {{aggregateName}}Error.TenantIsolationViolation(
+                        requestedTenant = command.tenantId,
+                        actualTenant = currentTenant,
+                    )
+                this.tenantId != currentTenant ->
+                    {{aggregateName}}Error.TenantIsolationViolation(
+                        requestedTenant = currentTenant,
+                        actualTenant = this.tenantId,
+                    )
+                else -> null
+            }
+
+        if (error != null) {
+            return error.left()
+        }
+
+        return validateUpdateCommand(command).fold(
+            { validationError -> validationError.left() },
+            {
+                AggregateLifecycle.apply(
+                    {{aggregateName}}UpdatedEvent(
+                        {{aggregateIdField}} = this.{{aggregateIdField}},
+                        tenantId = this.tenantId,
+{{#fields}}
+                        {{name}} = command.{{name}},
+{{/fields}}
+                    ),
+                )
+                Unit.right()
+            },
+        )
+    }
+
+    @EventSourcingHandler
+    fun on(event: {{aggregateName}}CreatedEvent) {
+        this.{{aggregateIdField}} = event.{{aggregateIdField}}
+        this.tenantId = event.tenantId
+{{#fields}}
+        this.{{name}} = event.{{name}}
+{{/fields}}
+    }
+
+    @EventSourcingHandler
+    fun on(event: {{aggregateName}}UpdatedEvent) {
+{{#fields}}
+        event.{{name}}?.let { this.{{name}} = it }
+{{/fields}}
+    }
+
+    companion object {
+{{#fields}}
+{{#validationPattern}}
+        private val {{name}}_PATTERN = Regex("{{validationPattern}}")
+{{/validationPattern}}
+{{#minValue}}
+        private const val MIN_{{name}} = {{minValue}}
+{{/minValue}}
+{{#maxValue}}
+        private const val MAX_{{name}} = {{maxValue}}
+{{/maxValue}}
+{{#enumValues}}
+        private val VALID_{{name}} = setOf({{#enumValues}}"{{.}}"{{^-last}}, {{/-last}}{{/enumValues}})
+{{/enumValues}}
+{{/fields}}
+
+        fun validateCreateCommand(command: Create{{aggregateName}}Command): Either<{{aggregateName}}Error, Unit> {
+            val errors = mutableListOf<{{aggregateName}}Error>()
+
+{{#fields}}
+{{#hasValidation}}
+            validate{{name}}(command.{{name}})?.let { errors.add(it) }
+{{/hasValidation}}
+{{/fields}}
+
+            return if (errors.isEmpty()) Unit.right() else errors.first().left()
+        }
+
+        fun validateUpdateCommand(command: Update{{aggregateName}}Command): Either<{{aggregateName}}Error, Unit> {
+            val errors = mutableListOf<{{aggregateName}}Error>()
+
+{{#fields}}
+{{#hasValidation}}
+            command.{{name}}?.let { validate{{name}}(it)?.let { errors.add(it) } }
+{{/hasValidation}}
+{{/fields}}
+
+            return if (errors.isEmpty()) Unit.right() else errors.first().left()
+        }
+
+{{#fields}}
+{{#hasValidation}}
+        private fun validate{{name}}({{name}}: {{type}}): {{aggregateName}}Error.ValidationError? =
+{{#validationPattern}}
+            if (!{{name}}.matches({{name}}_PATTERN)) {
+{{/validationPattern}}
+{{#minValue}}
+            if ({{name}} < MIN_{{name}} || {{name}} > MAX_{{name}}) {
+{{/minValue}}
+{{#enumValues}}
+            if (!VALID_{{name}}.contains({{name}})) {
+{{/enumValues}}
+                {{aggregateName}}Error.ValidationError(
+                    field = "{{name}}",
+                    constraint = "{{#validationPattern}}pattern{{/validationPattern}}{{#minValue}}range{{/minValue}}{{#enumValues}}enum{{/enumValues}}",
+                    invalidValue = {{name}},
+                )
+            } else {
+                null
+            }
+{{/hasValidation}}
+{{/fields}}
+    }
+}

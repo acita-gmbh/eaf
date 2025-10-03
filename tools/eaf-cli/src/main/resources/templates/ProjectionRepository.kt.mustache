@@ -1,0 +1,16 @@
+package com.axians.eaf.products.{{modulePackage}}.repositories
+
+import com.axians.eaf.products.{{modulePackage}}.entities.{{aggregateName}}Projection
+import org.springframework.data.jpa.repository.JpaRepository
+
+/**
+ * Repository for {{aggregateName}}Projection entities.
+ */
+interface {{aggregateName}}ProjectionRepository : JpaRepository<{{aggregateName}}Projection, String> {
+    fun findBy{{aggregateName}}IdAndTenantId(
+        {{aggregateIdField}}: String,
+        tenantId: String,
+    ): {{aggregateName}}Projection?
+
+    fun findByTenantIdOrderByCreatedAtDesc(tenantId: String): List<{{aggregateName}}Projection>
+}
