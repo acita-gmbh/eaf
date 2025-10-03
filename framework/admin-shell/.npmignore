@@ -1,0 +1,30 @@
+# Source files (only dist/ should be published)
+src/
+__tests__/
+
+# Configuration
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+.eslintrc.json
+.prettierrc.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+node_modules/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
