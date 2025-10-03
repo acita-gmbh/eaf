@@ -69,4 +69,42 @@ sealed class GeneratorError {
     data class UnsafeRegexPattern(
         val pattern: String,
     ) : GeneratorError()
+
+    /**
+     * Error when product module is not found (Story 7.4b).
+     */
+    data class ProductModuleNotFound(
+        val moduleName: String,
+    ) : GeneratorError()
+
+    /**
+     * Error when resource name is invalid (Story 7.4b).
+     */
+    data class InvalidResourceName(
+        val resourceName: String,
+        val reason: String,
+    ) : GeneratorError()
+
+    /**
+     * Error when framework/admin-shell is not built (Story 7.4b).
+     */
+    data class AdminShellNotBuilt(
+        val message: String,
+    ) : GeneratorError()
+
+    /**
+     * Error when template rendering fails (Story 7.4b).
+     */
+    data class TemplateRenderFailed(
+        val resourceName: String,
+        val message: String,
+    ) : GeneratorError()
+
+    /**
+     * Error during path traversal detection (Story 7.4b).
+     */
+    data class PathTraversalDetected(
+        val attemptedPath: String,
+        val message: String,
+    ) : GeneratorError()
 }
