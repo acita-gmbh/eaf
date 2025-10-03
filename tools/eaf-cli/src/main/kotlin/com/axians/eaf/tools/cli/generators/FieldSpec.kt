@@ -37,8 +37,26 @@ data class FieldSpec(
             "enumValues" to enumValues,
             "minValue" to minValue,
             "maxValue" to maxValue,
-            "hasValidation" to (validationPattern != null || enumValues != null || minValue != null),
+            "hasValidation" to
+                (validationPattern != null || enumValues != null || minValue != null || maxValue != null),
+            "defaultValue" to computeDefaultValue(kotlinType, nullable),
         )
+
+    private fun computeDefaultValue(
+        kotlinType: String,
+        nullable: Boolean,
+    ): String {
+        if (nullable) return "null"
+        return when (kotlinType) {
+            "kotlin.String" -> "\"\""
+            "kotlin.Int" -> "0"
+            "kotlin.Long" -> "0L"
+            "java.math.BigDecimal" -> "java.math.BigDecimal.ZERO"
+            "kotlin.Boolean" -> "false"
+            "java.time.Instant" -> "java.time.Instant.EPOCH"
+            else -> "null"
+        }
+    }
 
     companion object {
         /**

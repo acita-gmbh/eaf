@@ -48,7 +48,7 @@ data class {{aggregateName}}Projection(
         {{aggregateIdField}} = "",
         tenantId = "",
 {{#fields}}
-        {{name}} = TODO("JPA default constructor - not used"),
+        {{name}} = {{{defaultValue}}},
 {{/fields}}
         metadata = null,
         createdAt = Instant.now(),
