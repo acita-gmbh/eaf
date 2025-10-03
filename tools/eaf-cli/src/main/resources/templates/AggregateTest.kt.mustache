@@ -1,0 +1,57 @@
+package com.axians.eaf.products.{{modulePackage}}.domain
+
+import com.axians.eaf.api.{{aggregateNameKebab}}.commands.Create{{aggregateName}}Command
+import com.axians.eaf.framework.security.tenant.TenantContext
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.shouldNotBe
+
+/**
+ * Unit tests for {{aggregateName}} aggregate.
+ */
+class {{aggregateName}}Test :
+    BehaviorSpec({
+        Given("a {{aggregateNameLower}} aggregate") {
+            When("creating with valid command and matching tenant context") {
+                TenantContext().setCurrentTenantId("tenant-a")
+
+                val command =
+                    Create{{aggregateName}}Command(
+                        {{aggregateIdField}} = "test-id",
+                        tenantId = "tenant-a",
+{{#fields}}
+                        {{name}} = TODO("Add test value"),
+{{/fields}}
+                    )
+
+                val aggregate = {{aggregateName}}(command)
+
+                Then("aggregate should be created successfully") {
+                    aggregate shouldNotBe null
+                }
+
+                TenantContext().clearCurrentTenant()
+            }
+
+            When("creating with mismatched tenant context") {
+                TenantContext().setCurrentTenantId("tenant-a")
+
+                val command =
+                    Create{{aggregateName}}Command(
+                        {{aggregateIdField}} = "test-id",
+                        tenantId = "tenant-b",
+{{#fields}}
+                        {{name}} = TODO("Add test value"),
+{{/fields}}
+                    )
+
+                Then("should throw IllegalArgumentException") {
+                    shouldThrow<IllegalArgumentException> {
+                        {{aggregateName}}(command)
+                    }
+                }
+
+                TenantContext().clearCurrentTenant()
+            }
+        }
+    })

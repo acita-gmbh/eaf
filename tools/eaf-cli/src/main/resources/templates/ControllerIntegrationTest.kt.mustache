@@ -1,0 +1,23 @@
+package com.axians.eaf.products.{{modulePackage}}.api
+
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.extensions.spring.SpringExtension
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+
+/**
+ * Integration tests for {{aggregateName}}Controller.
+ */
+@SpringBootTest
+@ActiveProfiles("test")
+class {{aggregateName}}ControllerIntegrationTest : FunSpec() {
+    init {
+        extension(SpringExtension())
+
+        test("TODO: Implement controller integration tests") {
+            // Test POST /{{aggregateNamePluralLower}} creates aggregate
+            // Test GET /{{aggregateNamePluralLower}}/{id} retrieves aggregate
+            // Test full CQRS flow: command → event → projection → query
+        }
+    }
+}

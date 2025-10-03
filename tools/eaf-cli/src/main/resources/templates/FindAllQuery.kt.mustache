@@ -1,0 +1,13 @@
+package com.axians.eaf.api.{{aggregateNameKebab}}.queries
+
+/**
+ * Query to find {{aggregateNamePluralLower}} with pagination and filtering.
+ */
+data class Find{{aggregateNamePlural}}Query(
+    val tenantId: String,
+    val page: Int = 0,
+    val size: Int = 20,
+    val sort: List<String> = emptyList(),
+    val category: String? = null,
+    val search: String? = null,
+)

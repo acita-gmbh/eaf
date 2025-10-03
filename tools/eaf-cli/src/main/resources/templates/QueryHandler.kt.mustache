@@ -1,0 +1,110 @@
+package com.axians.eaf.products.{{modulePackage}}.query
+
+import com.axians.eaf.api.{{aggregateNameKebab}}.dto.{{aggregateName}}Response
+import com.axians.eaf.api.{{aggregateNameKebab}}.queries.Find{{aggregateName}}ByIdQuery
+import com.axians.eaf.api.{{aggregateNameKebab}}.queries.Find{{aggregateNamePlural}}Query
+import com.axians.eaf.products.{{modulePackage}}.entities.{{aggregateName}}Projection
+import com.axians.eaf.products.{{modulePackage}}.repositories.{{aggregateName}}ProjectionRepository
+import org.axonframework.queryhandling.QueryHandler
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+
+/**
+ * Query handler for {{aggregateName}}-related queries.
+ */
+@Component
+class {{aggregateName}}QueryHandler(
+    private val repository: {{aggregateName}}ProjectionRepository,
+) {
+    companion object {
+        private val VALID_SORT_FIELDS =
+            setOf(
+                "name",
+                "createdAt",
+                "updatedAt",
+            )
+
+        private const val MAX_PAGE_SIZE = 1000
+    }
+
+    @QueryHandler
+    @Transactional(readOnly = true)
+    fun handle(query: Find{{aggregateName}}ByIdQuery): {{aggregateName}}Response? {
+        val projection = repository.findBy{{aggregateName}}IdAndTenantId(query.{{aggregateIdField}}, query.tenantId)
+        return projection?.let { convertToResponse(it) }
+    }
+
+    @QueryHandler
+    @Transactional(readOnly = true)
+    fun handle(query: Find{{aggregateNamePlural}}Query): Page<{{aggregateName}}Response> {
+        require(query.page >= 0) { "Page number must be >= 0, got ${query.page}" }
+        require(query.size > 0 && query.size <= MAX_PAGE_SIZE) {
+            "Page size must be between 1 and $MAX_PAGE_SIZE, got ${query.size}"
+        }
+
+        val sort = createSort(query.sort)
+        val pageable = PageRequest.of(query.page, query.size, sort)
+
+        val projections = repository.findByTenantIdOrderByCreatedAtDesc(query.tenantId)
+
+        val totalElements = projections.size.toLong()
+        val start = (pageable.pageNumber * pageable.pageSize).coerceAtMost(projections.size)
+        val end = ((pageable.pageNumber + 1) * pageable.pageSize).coerceAtMost(projections.size)
+
+        val pagedProjections =
+            if (start < end) {
+                projections.subList(start, end)
+            } else {
+                emptyList()
+            }
+
+        val responses = pagedProjections.map { convertToResponse(it) }
+
+        return PageImpl(responses, pageable, totalElements)
+    }
+
+    private fun convertToResponse(projection: {{aggregateName}}Projection): {{aggregateName}}Response =
+        {{aggregateName}}Response(
+            id = projection.{{aggregateIdField}},
+{{#fields}}
+            {{name}} = projection.{{name}},
+{{/fields}}
+            createdAt = projection.createdAt,
+        )
+
+    private fun createSort(sortSpecs: List<String>): Sort {
+        if (sortSpecs.isEmpty()) {
+            return Sort.by(Sort.Direction.DESC, "createdAt")
+        }
+
+        val orders =
+            sortSpecs.mapNotNull { spec ->
+                val parts = spec.split(".")
+                if (parts.size != 2) return@mapNotNull null
+
+                val field = parts[0]
+                val directionStr = parts[1].lowercase()
+
+                if (!VALID_SORT_FIELDS.contains(field)) return@mapNotNull null
+
+                val direction =
+                    when (directionStr) {
+                        "asc" -> Sort.Direction.ASC
+                        "desc" -> Sort.Direction.DESC
+                        else -> return@mapNotNull null
+                    }
+
+                Sort.Order(direction, field)
+            }
+
+        return if (orders.isNotEmpty()) {
+            Sort.by(orders)
+        } else {
+            Sort.by(Sort.Direction.DESC, "createdAt")
+        }
+    }
+}

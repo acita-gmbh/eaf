@@ -1,0 +1,73 @@
+package com.axians.eaf.products.{{modulePackage}}.entities
+
+import com.axians.eaf.framework.core.tenant.TenantAware
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+import java.time.Instant
+{{#fields}}
+{{#kotlinType}}
+import {{kotlinType}}
+{{/kotlinType}}
+{{/fields}}
+
+/**
+ * JPA entity representing a {{aggregateName}} projection for read operations.
+ */
+@Entity
+@Table(
+    name = "{{aggregateNameKebab}}_projection",
+    indexes = [
+        Index(name = "idx_{{aggregateNameKebab}}_projection_tenant_id", columnList = "tenant_id"),
+        Index(name = "idx_{{aggregateNameKebab}}_projection_created_at", columnList = "created_at"),
+    ],
+)
+data class {{aggregateName}}Projection(
+    @Id
+    @Column(name = "{{aggregateNameKebab}}_id", nullable = false, length = 36)
+    val {{aggregateIdField}}: String,
+    @Column(name = "tenant_id", nullable = false, length = 36)
+    private val tenantId: String,
+{{#fields}}
+    @Column(name = "{{name}}", nullable = {{nullable}})
+    val {{name}}: {{type}}{{#nullable}}?{{/nullable}},
+{{/fields}}
+    @Column(name = "metadata", nullable = true, columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    val metadata: String?,
+    @Column(name = "created_at", nullable = false)
+    val createdAt: Instant,
+    @Column(name = "updated_at", nullable = false)
+    val updatedAt: Instant,
+) : TenantAware {
+    constructor() : this(
+        {{aggregateIdField}} = "",
+        tenantId = "",
+{{#fields}}
+        {{name}} = TODO("JPA default constructor - not used"),
+{{/fields}}
+        metadata = null,
+        createdAt = Instant.now(),
+        updatedAt = Instant.now(),
+    )
+
+    override fun getTenantId(): String = tenantId
+
+    fun update(
+{{#fields}}
+        {{name}}: {{type}}{{#nullable}}?{{/nullable}} = this.{{name}},
+{{/fields}}
+        metadata: String? = this.metadata,
+    ): {{aggregateName}}Projection =
+        copy(
+{{#fields}}
+            {{name}} = {{name}},
+{{/fields}}
+            metadata = metadata,
+            updatedAt = Instant.now(),
+        )
+}
