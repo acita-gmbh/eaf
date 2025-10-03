@@ -1,7 +1,7 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.20"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
-kotlinx-serialization = "1.7.3"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
+kotlinx-serialization = "1.9.0"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
 java = "21"                # LTS requirement
 gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
@@ -40,7 +40,7 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
 logback = "1.5.18"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
-opentelemetry-bom = "1.34.1"  # Latest stable OpenTelemetry for distributed tracing
+opentelemetry-bom = "1.54.1"  # Latest stable OpenTelemetry for distributed tracing
 opentelemetry-instrumentation = "2.20.1"  # Spring Boot auto-instrumentation (latest stable)
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.17.0"     # IO utilities (security update)
@@ -53,7 +53,7 @@ jose4j = "0.9.6"          # JWT processing
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
 
 # Workflow
-flowable = "7.1.0"        # BPMN workflow engine (Story 6.1)
+flowable = "7.2.0"        # BPMN workflow engine (Story 6.1)
 jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
 
 # Tools
