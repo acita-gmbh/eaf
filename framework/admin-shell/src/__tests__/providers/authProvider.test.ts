@@ -10,20 +10,20 @@ import { jwtDecode } from 'jwt-decode';
  * Note: Test mocks use `any` type for flexibility - this is acceptable in test code
  */
 
-describe('7.4a-UNIT-P0-004: Keycloak Login Flow', () => {
+describe('7.4a-UNIT-P0-004: Keycloak Login Flow (FUNCTIONAL)', () => {
   beforeEach(() => {
     localStorage.clear();
     global.fetch = vi.fn();
   });
 
-  it('should successfully login with valid credentials', async () => {
-    // Given: Valid Keycloak credentials
+  it('should successfully login with valid credentials using real authProvider', async () => {
+    // Given: Valid Keycloak credentials and mock token response
     const username = 'testuser';
     const password = 'testpass';
     const mockTokenResponse = {
       access_token: 'valid.access.token',
       refresh_token: 'valid.refresh.token',
-      expires_in: 900, // 15 minutes
+      expires_in: 900,
     };
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -31,34 +31,19 @@ describe('7.4a-UNIT-P0-004: Keycloak Login Flow', () => {
       json: async () => mockTokenResponse,
     });
 
-    // When: authProvider.login() is called
-    const params = { username, password };
+    // When: Call REAL authProvider (not re-implemented mock)
+    const { createAuthProvider } = await import('../../providers/authProvider');
+    const authProvider = createAuthProvider({
+      realm: 'eaf',
+      clientId: 'eaf-admin',
+      serverUrl: 'http://localhost:8180',
+    });
 
-    // Mock login implementation (will be replaced with real authProvider)
-    const login = async (loginParams: { username: string; password: string }) => {
-      const response = await fetch('http://localhost:8180/realms/eaf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          username: loginParams.username,
-          password: loginParams.password,
-          grant_type: 'password',
-          client_id: 'eaf-admin',
-        }),
-      });
+    await authProvider.login({ username, password });
 
-      if (!response.ok) throw new Error('Login failed');
-
-      const data = await response.json();
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-    };
-
-    await login(params);
-
-    // Then: Tokens stored in localStorage
-    expect(localStorage.getItem('token')).toBe('valid.access.token');
-    expect(localStorage.getItem('refresh_token')).toBe('valid.refresh.token');
+    // Then: Real authProvider stores tokens with scoped keys
+    expect(localStorage.getItem('eaf.auth.token')).toBe('valid.access.token');
+    expect(localStorage.getItem('eaf.auth.refreshToken')).toBe('valid.refresh.token');
   });
 
   it('should fail login with invalid credentials', async () => {
