@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useListContext, useNotify, useUnselectAll } from 'react-admin';
+import { useListContext, useNotify, useUnselectAll, useDeleteMany } from 'react-admin';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 /**
@@ -17,7 +17,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
  * Features:
  * - Requires user to type "DELETE" for confirmation (prevents accidents)
  * - Shows count of selected items
- * - Undoable delete with 5-second undo snackbar
+ * - Undoable delete with 5-second undo window (React-Admin mutationMode: undoable)
  * - WCAG AA accessible (keyboard navigation, screen reader support)
  *
  * Security: Type-to-confirm pattern reduces accidental deletions by 90% (UX research)
@@ -32,27 +32,37 @@ import DeleteIcon from '@mui/icons-material/Delete';
  * ```
  */
 export const BulkDeleteWithConfirm = () => {
-  const { selectedIds, resource } = useListContext();
+  const { selectedIds = [], resource } = useListContext();
+  const selectionCount = selectedIds.length;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const notify = useNotify();
   const unselectAll = useUnselectAll(resource);
 
-  const handleBulkDelete = async () => {
-    if (confirmText === 'DELETE') {
-      try {
-        // In real implementation, call dataProvider.deleteMany
-        // For now, just show notification
-        notify(`${selectedIds.length} items deleted`, { type: 'info', undoable: true });
-
+  const [deleteMany, { isLoading }] = useDeleteMany(
+    resource,
+    { ids: selectedIds },
+    {
+      mutationMode: 'undoable',
+      onSuccess: () => {
+        notify(`${selectionCount} item(s) deleted`, { type: 'info' });
         setDialogOpen(false);
         setConfirmText('');
         unselectAll();
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Failed to delete items';
+      },
+      onError: (error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Failed to delete the selected items. Please try again.';
         notify(`Error: ${message}`, { type: 'error' });
-      }
+      },
     }
+  );
+
+  const handleBulkDelete = () => {
+    if (confirmText !== 'DELETE' || selectionCount === 0 || !resource) {
+      return;
+    }
+
+    deleteMany();
   };
 
   return (
@@ -60,9 +70,10 @@ export const BulkDeleteWithConfirm = () => {
       <Button
         startIcon={<DeleteIcon />}
         onClick={() => setDialogOpen(true)}
-        aria-label={`Delete ${selectedIds.length} selected items`}
+        disabled={selectionCount === 0}
+        aria-label={`Delete ${selectionCount} selected items`}
       >
-        Delete {selectedIds.length} items
+        Delete {selectionCount} items
       </Button>
 
       <Dialog
@@ -71,12 +82,12 @@ export const BulkDeleteWithConfirm = () => {
         aria-labelledby="bulk-delete-dialog-title"
       >
         <DialogTitle id="bulk-delete-dialog-title">
-          Delete {selectedIds.length} items?
+          Delete {selectionCount} items?
         </DialogTitle>
 
         <DialogContent>
           <Typography gutterBottom>
-            This action cannot be undone. Type <strong>DELETE</strong> to confirm.
+            You have 5 seconds to undo after deletion. Type <strong>DELETE</strong> to confirm.
           </Typography>
 
           <TextField
@@ -105,10 +116,10 @@ export const BulkDeleteWithConfirm = () => {
             onClick={handleBulkDelete}
             color="error"
             variant="contained"
-            disabled={confirmText !== 'DELETE'}
+            disabled={confirmText !== 'DELETE' || isLoading || selectionCount === 0}
             aria-label="Confirm deletion"
           >
-            Delete
+            {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

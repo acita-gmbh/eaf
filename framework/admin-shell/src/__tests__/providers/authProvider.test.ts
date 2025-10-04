@@ -57,42 +57,35 @@ describe('7.4a-UNIT-P0-004: Keycloak Login Flow (FUNCTIONAL)', () => {
       json: async () => ({ error: 'invalid_grant' }),
     });
 
-    // When: Login with invalid credentials
-    const login = async (loginParams: { username: string; password: string }) => {
-      const response = await fetch('http://localhost:8180/realms/eaf/protocol/openid-connect/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          username: loginParams.username,
-          password: loginParams.password,
-          grant_type: 'password',
-          client_id: 'eaf-admin',
-        }),
-      });
-
-      if (!response.ok) throw new Error('Login failed');
-    };
+    // When: Using real authProvider with invalid credentials
+    const { createAuthProvider } = await import('../../providers/authProvider');
+    const authProvider = createAuthProvider({
+      realm: 'eaf',
+      clientId: 'eaf-admin',
+      serverUrl: 'http://localhost:8180',
+    });
 
     // Then: Login throws error, localStorage remains clear
-    await expect(login({ username, password })).rejects.toThrow('Login failed');
-    expect(localStorage.getItem('token')).toBeNull();
-    expect(localStorage.getItem('refresh_token')).toBeNull();
+    await expect(authProvider.login({ username, password })).rejects.toThrow();
+    expect(localStorage.getItem('eaf.auth.token')).toBeNull();
+    expect(localStorage.getItem('eaf.auth.refreshToken')).toBeNull();
   });
 
   it('should handle network errors during login', async () => {
     // Given: Network error during login
     (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-    // When: Login with network error
-    const login = async () => {
-      await fetch('http://localhost:8180/realms/eaf/protocol/openid-connect/token', {
-        method: 'POST',
-      });
-    };
+    // When: Using real authProvider with network error
+    const { createAuthProvider } = await import('../../providers/authProvider');
+    const authProvider = createAuthProvider({
+      realm: 'eaf',
+      clientId: 'eaf-admin',
+      serverUrl: 'http://localhost:8180',
+    });
 
     // Then: Error propagates, localStorage remains clear
-    await expect(login()).rejects.toThrow('Network error');
-    expect(localStorage.getItem('token')).toBeNull();
+    await expect(authProvider.login({ username: 'test', password: 'test' })).rejects.toThrow('Network error');
+    expect(localStorage.getItem('eaf.auth.token')).toBeNull();
   });
 });
 

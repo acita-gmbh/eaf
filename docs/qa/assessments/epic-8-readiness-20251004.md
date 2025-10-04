@@ -123,7 +123,7 @@ eaf scaffold ui-resource License --module licensing-server \
 ### Test Execution Results
 
 **Backend (Kotlin/Kotest)**:
-```
+```text
 Module: tools/eaf-cli
 Tests: 37/37 PASSING (100%)
 Duration: 0.283s
@@ -136,7 +136,7 @@ Breakdown:
 ```
 
 **Frontend (TypeScript/Vitest)**:
-```
+```text
 Module: framework/admin-shell
 Tests: 18/18 PASSING (100%)
 Duration: 475ms
@@ -225,20 +225,23 @@ Breakdown:
 
 ### Recommended Sequence
 
-**Phase 1: Story 8.2 (Product UI)**
+#### Phase 1: Story 8.2 (Product UI)
+
 1. Run generator: `eaf scaffold ui-resource Product --module licensing-server --fields "name:string,sku:string,price:number,active:boolean,createdAt:date"`
 2. Verify 10 files generated
 3. Run `npm install` in ui-module
 4. Build and validate TypeScript compilation
 5. Integration test in apps/admin
 
-**Phase 2: Story 8.3 (License UI)**
+#### Phase 2: Story 8.3 (License UI)
+
 1. Run generator: `eaf scaffold ui-resource License --module licensing-server --fields "licenseKey:string,productId:string,expiresAt:date,active:boolean,maxSeats:number"`
 2. Verify 10 files generated
 3. Build and validate
 4. Integration test in apps/admin
 
-**Phase 3: Integration**
+#### Phase 3: Integration
+
 1. Import both resources in apps/admin
 2. Register with AdminShell
 3. E2E testing with real backend

@@ -72,7 +72,12 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
   }
   // NOTE: X-Tenant-ID header NOT set by frontend (security fix)
   // Backend Layer 1 filter extracts tenant_id from validated JWT
-  headers.set('Content-Type', 'application/json');
+
+  // Only set Content-Type if not already set and body is not FormData
+  // (FormData sets its own boundary, file uploads need multipart/form-data)
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   // Log request for observability (tenant not logged - security fix)
   console.log(`[DataProvider] ${options.method || 'GET'} ${url}`, {
@@ -120,7 +125,21 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
 }
 
 /**
+ * Check if value is a plain object (not Date, File, FormData, etc.)
+ * @param value - Value to check
+ * @returns true if value is a plain object
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
  * Sanitize data object to prevent XSS attacks (SEC-001, SEC-004)
+ * Preserves non-plain objects (Date, File, FormData, etc.)
  * @param data - Data object with potentially unsafe strings
  * @returns Sanitized data object
  */
@@ -133,7 +152,8 @@ function sanitizeData(data: unknown): unknown {
     return data.map((item) => sanitizeData(item));
   }
 
-  if (data && typeof data === 'object') {
+  // Only sanitize plain objects (not Date, File, FormData, etc.)
+  if (isPlainObject(data)) {
     const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       sanitized[key] = sanitizeData(value);
@@ -141,5 +161,6 @@ function sanitizeData(data: unknown): unknown {
     return sanitized;
   }
 
+  // Return non-plain objects unchanged (Date, File, Blob, FormData, etc.)
   return data;
 }
