@@ -1,6 +1,6 @@
 import simpleRestProvider from 'ra-data-simple-rest';
 import DOMPurify from 'dompurify';
-import { extractTenantFromJWT, parseRFC7807Error } from '../utils';
+import { parseRFC7807Error } from '../utils';
 import type { DataProvider } from 'react-admin';
 
 // Scoped localStorage key (matches authProvider)
@@ -52,25 +52,30 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
   // Get JWT token from localStorage (scoped key)
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
-  // Extract tenant ID from JWT (SEC-002: Tenant context propagation)
-  const tenantId = extractTenantFromJWT(token);
+  // SECURITY FIX (VULN-001): Do NOT extract tenant from unverified JWT
+  // Backend Layer 1 filter (Epic 4) validates JWT signature and extracts tenant_id
+  // Backend includes validated tenant_id in response headers or requires it in requests
 
-  // FAIL-CLOSED: Reject request if tenant ID missing (SEC-002 mitigation)
-  if (!tenantId) {
-    throw new Error('Tenant context missing - access denied. Please re-login.');
-  }
+  // For MVP: Backend handles tenant validation, frontend just forwards JWT
+  // The backend's 3-layer tenant isolation (Epic 4) is authoritative:
+  // - Layer 1: Request filter validates JWT signature and extracts tenant_id
+  // - Layer 2: Service boundary validates tenant access
+  // - Layer 3: Database RLS enforces tenant filtering
 
-  // Inject authentication and tenant headers
+  // Frontend requirement: Include JWT in Authorization header
+  // Backend requirement: Return validated tenant_id in response or validate in Layer 1
+
+  // Inject authentication header (tenant validation handled by backend)
   const headers = new Headers(options.headers);
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  headers.set('X-Tenant-ID', tenantId);
+  // NOTE: X-Tenant-ID header NOT set by frontend (security fix)
+  // Backend Layer 1 filter extracts tenant_id from validated JWT
   headers.set('Content-Type', 'application/json');
 
-  // Log request for observability (Task 2.5)
+  // Log request for observability (tenant not logged - security fix)
   console.log(`[DataProvider] ${options.method || 'GET'} ${url}`, {
-    tenantId,
     hasAuth: !!token,
   });
 

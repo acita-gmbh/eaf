@@ -1,7 +1,5 @@
-import { jwtDecode } from 'jwt-decode';
 import type { AuthProvider } from 'react-admin';
 import type { KeycloakConfig, JWTPayload } from '../types';
-import { isTokenExpired, getTokenExpiresIn } from '../utils';
 
 // Scoped localStorage keys (prevents clearing unrelated data)
 const TOKEN_STORAGE_KEY = 'eaf.auth.token';
@@ -76,7 +74,10 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
     },
 
     /**
-     * Check authentication status and auto-refresh token if needed
+     * Check authentication status
+     *
+     * SECURITY FIX (VULN-001): Removed unsafe JWT decoding
+     * Backend validates token expiration via Epic 3's 10-layer validation
      */
     checkAuth: async () => {
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -86,27 +87,9 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
         return Promise.reject(new Error('Not authenticated'));
       }
 
-      // Check if token expired
-      if (isTokenExpired(token)) {
-        console.warn('[AuthProvider] Token expired, clearing session');
-        clearStoredTokens();
-        return Promise.reject(new Error('Token expired'));
-      }
-
-      // Auto-refresh if <5 minutes remaining (SEC-001: Short-lived tokens mitigation)
-      const expiresIn = getTokenExpiresIn(token);
-      if (expiresIn < 5 * 60 * 1000 && expiresIn > 0) {
-        console.log('[AuthProvider] Token nearing expiration, auto-refreshing');
-
-        try {
-          await refreshAccessToken(tokenEndpoint, config.clientId);
-        } catch (error) {
-          // Refresh failed - logout user
-          console.error('[AuthProvider] Token refresh failed:', error);
-          clearStoredTokens();
-          return Promise.reject(new Error('Session expired, please re-login'));
-        }
-      }
+      // SECURITY: Do NOT check expiration on unverified JWT
+      // Backend Layer 1 filter validates JWT signature and expiration
+      // If token is invalid, backend returns 401 and checkError() clears session
 
       return Promise.resolve();
     },
@@ -158,47 +141,35 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
     },
 
     /**
-     * Extract user permissions from JWT roles
+     * Extract user permissions from backend API
+     *
+     * SECURITY FIX (VULN-001): Get roles from backend, not unverified JWT
      */
     getPermissions: async () => {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      // SECURITY: Do NOT decode unverified JWT for permissions
+      // TODO: Call backend API endpoint that returns validated user roles
+      // For MVP: Return empty array (backend enforces authorization)
 
-      if (!token) {
-        return Promise.reject(new Error('Not authenticated'));
-      }
-
-      try {
-        const decoded = jwtDecode<JWTPayload>(token);
-        const roles = decoded.realm_access?.roles || [];
-
-        console.log('[AuthProvider] Permissions:', roles);
-        return Promise.resolve(roles);
-      } catch (error) {
-        console.error('[AuthProvider] Failed to extract permissions:', error);
-        return Promise.reject(error);
-      }
+      console.warn('[AuthProvider] getPermissions not implemented - backend enforces authorization');
+      return Promise.resolve([]);
     },
 
     /**
-     * Get user identity from JWT
+     * Get user identity from backend API
+     *
+     * SECURITY FIX (VULN-001): Get identity from backend, not unverified JWT
      */
     getIdentity: async () => {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      // SECURITY: Do NOT decode unverified JWT for identity
+      // TODO: Call backend API: GET /api/v1/auth/profile
+      // Returns: { id, fullName, tenant_id, roles } (backend-validated)
 
-      if (!token) {
-        return Promise.reject(new Error('Not authenticated'));
-      }
-
-      try {
-        const decoded = jwtDecode<JWTPayload>(token);
-
-        return Promise.resolve({
-          id: decoded.sub,
-          fullName: decoded.sub, // Could extract from name claim if available
-        });
-      } catch (error) {
-        return Promise.reject(error);
-      }
+      // For MVP: Return placeholder (backend manages identity)
+      console.warn('[AuthProvider] getIdentity not implemented - use backend API');
+      return Promise.resolve({
+        id: 'user',
+        fullName: 'User', // Backend should provide this
+      });
     },
   };
 }

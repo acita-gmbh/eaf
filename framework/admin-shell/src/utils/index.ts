@@ -1,21 +1,24 @@
-import { jwtDecode } from 'jwt-decode';
 import type { JWTPayload, ProblemDetails } from '../types';
 
 /**
- * Extract tenant ID from JWT token
+ * @deprecated SECURITY VULNERABILITY (VULN-001): Do NOT use - JWT signature not validated
+ *
+ * This function uses jwt-decode which performs BASE64 decoding ONLY.
+ * It does NOT validate JWT cryptographic signatures, allowing forged tokens.
+ *
+ * CRITICAL: Frontend must NOT make security decisions on unverified JWT claims.
+ *
+ * Correct approach:
+ * - Backend validates JWT signature (Epic 3: 10-layer validation)
+ * - Backend extracts tenant_id and enforces isolation (Epic 4: 3-layer enforcement)
+ * - Frontend gets validated tenant_id from backend API response
+ *
  * @param token - JWT token string
- * @returns Tenant ID or null if missing
+ * @returns Always returns null (function disabled for security)
  */
-export function extractTenantFromJWT(token: string | null): string | null {
-  if (!token) return null;
-
-  try {
-    const decoded = jwtDecode<JWTPayload>(token);
-    return decoded.tenant_id || null;
-  } catch (error) {
-    console.error('Failed to decode JWT:', error);
-    return null;
-  }
+export function extractTenantFromJWT(_token: string | null): string | null {
+  console.warn('[SECURITY] extractTenantFromJWT is deprecated - use backend API for tenant validation');
+  return null; // Always return null - force backend validation
 }
 
 /**
@@ -51,35 +54,29 @@ export function parseRFC7807Error(error: unknown): { message: string; caption?: 
 }
 
 /**
- * Check if JWT token is expired
+ * @deprecated SECURITY VULNERABILITY (VULN-001): JWT signature not validated
+ *
+ * Checking expiration on unverified JWT is unsafe - attacker can set exp to far future.
+ * Backend checkAuth validates token expiration after signature verification.
+ *
  * @param token - JWT token string
- * @returns True if token is expired or invalid
+ * @returns Always true (force backend validation)
  */
-export function isTokenExpired(token: string | null): boolean {
-  if (!token) return true;
-
-  try {
-    const decoded = jwtDecode<JWTPayload>(token);
-    const expiresIn = decoded.exp * 1000 - Date.now();
-    return expiresIn <= 0;
-  } catch (error) {
-    return true; // Invalid token = expired
-  }
+export function isTokenExpired(_token: string | null): boolean {
+  console.warn('[SECURITY] isTokenExpired is deprecated - backend validates expiration');
+  return true; // Always expired - force backend checkAuth
 }
 
 /**
- * Get remaining time until token expiration in milliseconds
+ * @deprecated SECURITY VULNERABILITY (VULN-001): JWT signature not validated
+ *
+ * Computing expiration time from unverified JWT is unsafe.
+ * Backend manages token lifecycle and expiration.
+ *
  * @param token - JWT token string
- * @returns Milliseconds until expiration, or 0 if expired/invalid
+ * @returns Always 0 (expired - force backend validation)
  */
-export function getTokenExpiresIn(token: string | null): number {
-  if (!token) return 0;
-
-  try {
-    const decoded = jwtDecode<JWTPayload>(token);
-    const expiresIn = decoded.exp * 1000 - Date.now();
-    return Math.max(0, expiresIn);
-  } catch (error) {
-    return 0;
-  }
+export function getTokenExpiresIn(_token: string | null): number {
+  console.warn('[SECURITY] getTokenExpiresIn is deprecated - backend manages token lifecycle');
+  return 0; // Always expired - force backend checkAuth
 }
