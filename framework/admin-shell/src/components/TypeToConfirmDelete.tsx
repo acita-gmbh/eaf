@@ -71,8 +71,9 @@ export const TypeToConfirmDelete = ({
 
         setDialogOpen(false);
         setTypedText('');
-      } catch (error: any) {
-        notify(`Error: ${error.message}`, { type: 'error' });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to delete';
+        notify(`Error: ${message}`, { type: 'error' });
       }
     }
   };

@@ -3,6 +3,9 @@ import DOMPurify from 'dompurify';
 import { extractTenantFromJWT, parseRFC7807Error } from '../utils';
 import type { DataProvider } from 'react-admin';
 
+// Scoped localStorage key (matches authProvider)
+const TOKEN_STORAGE_KEY = 'eaf.auth.token';
+
 /**
  * Create EAF data provider with JWT authentication, tenant injection, and RFC 7807 error mapping
  *
@@ -46,8 +49,8 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
   body: string;
   json: any;
 }> {
-  // Get JWT token from localStorage
-  const token = localStorage.getItem('token');
+  // Get JWT token from localStorage (scoped key)
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
   // Extract tenant ID from JWT (SEC-002: Tenant context propagation)
   const tenantId = extractTenantFromJWT(token);
@@ -102,7 +105,7 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
       body: text,
       json,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Parse RFC 7807 if available, otherwise use generic message
     const parsedError = parseRFC7807Error(error);
     console.error('[DataProvider] Error:', parsedError);

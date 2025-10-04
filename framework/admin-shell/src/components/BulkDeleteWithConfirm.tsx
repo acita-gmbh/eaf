@@ -48,8 +48,9 @@ export const BulkDeleteWithConfirm = () => {
         setDialogOpen(false);
         setConfirmText('');
         unselectAll();
-      } catch (error: any) {
-        notify(`Error: ${error.message}`, { type: 'error' });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to delete items';
+        notify(`Error: ${message}`, { type: 'error' });
       }
     }
   };

@@ -20,13 +20,17 @@ export function extractTenantFromJWT(token: string | null): string | null {
 
 /**
  * Parse RFC 7807 Problem Details from API error response
- * @param error - Error object from fetch/axios
+ * @param error - Error object from fetch/axios (unknown type for safety)
  * @returns Parsed error details with message and caption
  */
-export function parseRFC7807Error(error: any): { message: string; caption?: string } {
+export function parseRFC7807Error(error: unknown): { message: string; caption?: string } {
+  // Type guard for error with body property
+  const hasBody = (err: unknown): err is { body?: { type?: string } } =>
+    typeof err === 'object' && err !== null && 'body' in err;
+
   // Check if error has RFC 7807 structure
-  if (error?.body?.type?.includes('/errors/')) {
-    const problemDetails: ProblemDetails = error.body;
+  if (hasBody(error) && error.body?.type?.includes('/errors/')) {
+    const problemDetails = error.body as ProblemDetails;
 
     return {
       message: problemDetails.detail || problemDetails.title || 'Operation failed',
@@ -36,9 +40,13 @@ export function parseRFC7807Error(error: any): { message: string; caption?: stri
     };
   }
 
+  // Type guard for Error instance
+  const hasMessage = (err: unknown): err is { message: string } =>
+    typeof err === 'object' && err !== null && 'message' in err;
+
   // Fallback for non-RFC 7807 errors
   return {
-    message: error?.message || 'An unexpected error occurred. Please try again.',
+    message: hasMessage(error) ? error.message : 'An unexpected error occurred. Please try again.',
   };
 }
 

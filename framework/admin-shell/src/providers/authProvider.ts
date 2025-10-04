@@ -3,6 +3,10 @@ import type { AuthProvider } from 'react-admin';
 import type { KeycloakConfig, JWTPayload } from '../types';
 import { isTokenExpired, getTokenExpiresIn } from '../utils';
 
+// Scoped localStorage keys (prevents clearing unrelated data)
+const TOKEN_STORAGE_KEY = 'eaf.auth.token';
+const REFRESH_TOKEN_STORAGE_KEY = 'eaf.auth.refreshToken';
+
 const DEFAULT_KEYCLOAK_CONFIG: KeycloakConfig = {
   realm: 'eaf',
   clientId: 'eaf-admin',
@@ -53,17 +57,20 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 
         const data = await response.json();
 
-        // Store tokens in localStorage (SEC-001: XSS risk, see Security Considerations)
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
+        // Store tokens in localStorage with scoped keys (SEC-001: XSS risk, see Security Considerations)
+        localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+        if (data.refresh_token) {
+          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
+        }
 
         console.log('[AuthProvider] Login successful', {
           expiresIn: data.expires_in,
         });
 
         return Promise.resolve();
-      } catch (error: any) {
-        console.error('[AuthProvider] Login failed:', error.message);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Login failed';
+        console.error('[AuthProvider] Login failed:', message);
         return Promise.reject(error);
       }
     },
@@ -72,7 +79,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Check authentication status and auto-refresh token if needed
      */
     checkAuth: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
       // No token = not authenticated
       if (!token) {
@@ -82,7 +89,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
       // Check if token expired
       if (isTokenExpired(token)) {
         console.warn('[AuthProvider] Token expired, clearing session');
-        localStorage.clear();
+        clearStoredTokens();
         return Promise.reject(new Error('Token expired'));
       }
 
@@ -96,7 +103,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
         } catch (error) {
           // Refresh failed - logout user
           console.error('[AuthProvider] Token refresh failed:', error);
-          localStorage.clear();
+          clearStoredTokens();
           return Promise.reject(new Error('Session expired, please re-login'));
         }
       }
@@ -108,10 +115,10 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Handle logout - clear tokens and redirect to Keycloak
      */
     logout: async () => {
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
-      // Clear local storage first
-      localStorage.clear();
+      // Clear our tokens only (not all localStorage)
+      clearStoredTokens();
 
       // Terminate Keycloak session (optional - Keycloak may require id_token_hint)
       if (refreshToken) {
@@ -143,7 +150,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 
       if (status === 401 || status === 403) {
         // Unauthorized - clear tokens and force re-login
-        localStorage.clear();
+        clearStoredTokens();
         return Promise.reject(new Error('Unauthorized'));
       }
 
@@ -154,7 +161,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Extract user permissions from JWT roles
      */
     getPermissions: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
       if (!token) {
         return Promise.reject(new Error('Not authenticated'));
@@ -176,7 +183,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Get user identity from JWT
      */
     getIdentity: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
       if (!token) {
         return Promise.reject(new Error('Not authenticated'));
@@ -202,7 +209,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
  * @param clientId - Client ID
  */
 async function refreshAccessToken(tokenEndpoint: string, clientId: string): Promise<void> {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
   if (!refreshToken) {
     throw new Error('No refresh token available');
@@ -227,8 +234,22 @@ async function refreshAccessToken(tokenEndpoint: string, clientId: string): Prom
 
   const data = await response.json();
 
-  // Update access token (keep refresh token)
-  localStorage.setItem('token', data.access_token);
+  // Update access token
+  localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+
+  // Update refresh token if rotated (Keycloak may issue new refresh_token)
+  if (data.refresh_token) {
+    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
+  }
 
   console.log('[AuthProvider] Token refreshed successfully');
+}
+
+/**
+ * Clear only EAF-scoped authentication tokens from localStorage
+ * (prevents wiping unrelated application data)
+ */
+function clearStoredTokens(): void {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
 }
