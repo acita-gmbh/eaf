@@ -79,7 +79,7 @@ class UiResourceCommandTest :
             result shouldBe 1 // Error: product module not found
         }
 
-        test("7.4b-UNIT-006: Framework admin-shell not built should produce error") {
+        test("7.4b-UNIT-006 - Framework admin-shell exists validation") {
             // Given: Valid resource name and module, but framework/admin-shell not built
             // When: Command attempts to validate framework dependency
             // Then: AdminShellNotBuilt error with clear guidance
