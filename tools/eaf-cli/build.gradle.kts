@@ -28,3 +28,8 @@ tasks.named<Test>("test") {
     // Set working directory to root so tests can find framework/ and products/ directories
     workingDir(rootProject.projectDir)
 }
+
+// Configure jvmKotest task with same working directory (jvmKotest is JavaExec type)
+tasks.named<JavaExec>("jvmKotest") {
+    workingDir(rootProject.projectDir)
+}
