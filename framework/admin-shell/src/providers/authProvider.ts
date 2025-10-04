@@ -1,5 +1,5 @@
 import type { AuthProvider } from 'react-admin';
-import type { KeycloakConfig, JWTPayload } from '../types';
+import type { KeycloakConfig } from '../types';
 
 // Scoped localStorage keys (prevents clearing unrelated data)
 const TOKEN_STORAGE_KEY = 'eaf.auth.token';
@@ -176,9 +176,11 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 
 /**
  * Refresh access token using refresh token
+ * Reserved for future token refresh implementation
  * @param tokenEndpoint - Keycloak token endpoint
  * @param clientId - Client ID
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function refreshAccessToken(tokenEndpoint: string, clientId: string): Promise<void> {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Admin, Resource } from 'react-admin';
 import { createDataProvider } from './providers/dataProvider';
 import { createAuthProvider } from './providers/authProvider';
@@ -42,10 +43,11 @@ export const AdminShell = ({
   keycloakConfig,
   customTheme,
 }: AdminShellProps) => {
-  // Create providers with configuration
-  const dataProvider = createDataProvider(apiBaseUrl);
-  const authProvider = createAuthProvider(keycloakConfig);
-  const theme = customTheme || eafTheme;
+  // Memoize providers to prevent unnecessary reinitialization on re-renders
+  // React-Admin wipes cache and re-authenticates when providers change
+  const dataProvider = useMemo(() => createDataProvider(apiBaseUrl), [apiBaseUrl]);
+  const authProvider = useMemo(() => createAuthProvider(keycloakConfig), [keycloakConfig]);
+  const theme = useMemo(() => customTheme || eafTheme, [customTheme]);
 
   return (
     <Admin

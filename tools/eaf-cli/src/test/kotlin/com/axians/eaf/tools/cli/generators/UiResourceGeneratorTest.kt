@@ -56,7 +56,10 @@ class UiResourceGeneratorTest :
                     apiBasePath = null,
                 )
 
-            // Should succeed
+            // Should succeed - print error if it fails
+            if (result.isLeft()) {
+                println("Generator error: ${result.leftOrNull()}")
+            }
             result.isRight() shouldBe true
 
             // Verify generated List.tsx has conditional rendering for all types
@@ -66,10 +69,10 @@ class UiResourceGeneratorTest :
             val listContent = listFile.readText()
 
             // Each field type should render its correct component
-            listContent shouldContain "<TextField source=\"name\""  // string type
-            listContent shouldContain "<NumberField source=\"price\""  // number type
-            listContent shouldContain "<BooleanField source=\"active\""  // boolean type
-            listContent shouldContain "<DateField source=\"createdAt\""  // date type
+            listContent shouldContain "<TextField source=\"name\"" // string type
+            listContent shouldContain "<NumberField source=\"price\"" // number type
+            listContent shouldContain "<BooleanField source=\"active\"" // boolean type
+            listContent shouldContain "<DateField source=\"createdAt\"" // date type
 
             // Cleanup
             File("products/widget-demo/ui-module").deleteRecursively()

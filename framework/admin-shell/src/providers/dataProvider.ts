@@ -47,7 +47,7 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
   status: number;
   headers: Headers;
   body: string;
-  json: any;
+  json: unknown;
 }> {
   // Get JWT token from localStorage (scoped key)
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -124,7 +124,7 @@ async function httpClient(url: string, options: RequestInit = {}): Promise<{
  * @param data - Data object with potentially unsafe strings
  * @returns Sanitized data object
  */
-function sanitizeData(data: any): any {
+function sanitizeData(data: unknown): unknown {
   if (typeof data === 'string') {
     return DOMPurify.sanitize(data);
   }
@@ -134,7 +134,7 @@ function sanitizeData(data: any): any {
   }
 
   if (data && typeof data === 'object') {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       sanitized[key] = sanitizeData(value);
     }

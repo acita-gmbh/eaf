@@ -1,4 +1,4 @@
-import type { JWTPayload, ProblemDetails } from '../types';
+import type { ProblemDetails } from '../types';
 
 /**
  * @deprecated SECURITY VULNERABILITY (VULN-001): Do NOT use - JWT signature not validated

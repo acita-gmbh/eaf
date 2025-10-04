@@ -93,7 +93,7 @@ export const BulkDeleteWithConfirm = () => {
           />
 
           <Typography variant="caption" id="delete-confirmation-hint" color="text.secondary">
-            Type "DELETE" in all capitals to enable the delete button
+            Type &quot;DELETE&quot; in all capitals to enable the delete button
           </Typography>
         </DialogContent>
 

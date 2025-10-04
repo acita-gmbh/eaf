@@ -25,4 +25,6 @@ dependencies {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+    // Set working directory to root so tests can find framework/ and products/ directories
+    workingDir(rootProject.projectDir)
 }

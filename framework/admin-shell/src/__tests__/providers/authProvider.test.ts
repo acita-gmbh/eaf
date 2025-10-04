@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { jwtDecode } from 'jwt-decode';
 
@@ -5,6 +6,8 @@ import { jwtDecode } from 'jwt-decode';
  * Story 7.4a - P0 Security Tests for Auth Provider
  * CRITICAL: These tests MUST pass before implementing production authProvider code
  * Risk: SEC-003 (Keycloak OIDC implementation errors), SEC-001 (Token management)
+ *
+ * Note: Test mocks use `any` type for flexibility - this is acceptable in test code
  */
 
 describe('7.4a-UNIT-P0-004: Keycloak Login Flow', () => {

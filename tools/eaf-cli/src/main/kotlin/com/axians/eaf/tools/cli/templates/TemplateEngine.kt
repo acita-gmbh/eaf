@@ -3,6 +3,7 @@ package com.axians.eaf.tools.cli.templates
 import com.github.mustachejava.DefaultMustacheFactory
 import com.github.mustachejava.MustacheException
 import com.github.mustachejava.MustacheNotFoundException
+import java.io.InputStreamReader
 import java.io.StringWriter
 
 /**
@@ -20,7 +21,19 @@ import java.io.StringWriter
  * @see <a href="https://github.com/spullara/mustache.java">Mustache.java</a>
  */
 class TemplateEngine {
-    private val mustacheFactory = DefaultMustacheFactory()
+    // Use classpath-based template loading to work regardless of working directory
+    // Templates are loaded from classpath resources (JAR or build/resources/main)
+    private val mustacheFactory =
+        object : DefaultMustacheFactory() {
+            override fun getReader(resourceName: String): InputStreamReader {
+                // Add .mustache extension if not already present
+                val templatePath = if (resourceName.endsWith(".mustache")) resourceName else "$resourceName.mustache"
+                return javaClass.classLoader
+                    .getResourceAsStream(templatePath)
+                    ?.let { InputStreamReader(it) }
+                    ?: throw MustacheNotFoundException(resourceName)
+            }
+        }
 
     /**
      * Renders a Mustache template with the provided context.
