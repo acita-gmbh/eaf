@@ -15,6 +15,7 @@ import java.io.File
  * Generated files go to: products/{module}/ui-module/src/resources/{resourceLowerCase}/
  * Imports from: @axians/eaf-admin-shell (Story 7.4a)
  */
+@Suppress("LongMethod", "ReturnCount", "TooGenericExceptionCaught")
 class UiResourceGenerator {
     private val templateEngine = TemplateEngine()
 
@@ -176,15 +177,16 @@ class UiResourceGenerator {
         val indexFile = File("products/$moduleName/ui-module/src/index.ts")
         val currentContent = if (indexFile.exists()) indexFile.readText() else ""
 
-        val exportStatement = "export { ${resourceLowerCase}Resource } from './resources/$resourceLowerCase/ResourceExport';\n"
+        val exportStatement =
+            "export { ${resourceLowerCase}Resource } from './resources/$resourceLowerCase/ResourceExport';\n"
 
         if (!currentContent.contains(exportStatement)) {
             indexFile.appendText(exportStatement)
         }
     }
 
-    private fun parseFields(fieldsString: String): List<Map<String, String>> {
-        return fieldsString.split(",").map { fieldDef ->
+    private fun parseFields(fieldsString: String): List<Map<String, String>> =
+        fieldsString.split(",").map { fieldDef ->
             val parts = fieldDef.trim().split(":")
             val fieldName = parts[0].trim()
             val fieldType = if (parts.size > 1) parts[1].trim() else "string"
@@ -207,5 +209,4 @@ class UiResourceGenerator {
                 "fieldComponent" to fieldComponent,
             )
         }
-    }
 }

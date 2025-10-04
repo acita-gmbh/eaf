@@ -27,6 +27,7 @@ import java.util.concurrent.Callable
     description = ["Generate React-Admin UI resource files for a product module"],
     mixinStandardHelpOptions = true,
 )
+@Suppress("ReturnCount", "MaxLineLength")
 class UiResourceCommand : Callable<Int> {
     @Parameters(
         index = "0",

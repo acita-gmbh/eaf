@@ -13,6 +13,7 @@ import picocli.CommandLine
  * Story 7.4b: Create Product UI Module Generator
  * Risk: SEC-001 (Path Traversal and Injection Attacks) - score 6 (HIGH)
  */
+@Suppress("MaxLineLength")
 class UiResourceCommandTest :
     FunSpec({
 
