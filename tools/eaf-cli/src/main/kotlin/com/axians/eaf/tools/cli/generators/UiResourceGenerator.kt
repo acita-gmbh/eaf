@@ -207,6 +207,11 @@ class UiResourceGenerator {
                 "fieldType" to tsType,
                 "inputComponent" to inputComponent,
                 "fieldComponent" to fieldComponent,
+                // CRITICAL FIX (Quinn CRITICAL-001): Add boolean flags for Mustache conditional rendering
+                "isString" to (tsType == "string").toString(),
+                "isNumber" to (tsType == "number").toString(),
+                "isBoolean" to (tsType == "boolean").toString(),
+                "isDate" to (tsType == "Date").toString(),
             )
         }
 }
