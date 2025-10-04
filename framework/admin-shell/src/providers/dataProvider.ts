@@ -28,12 +28,12 @@ export function createDataProvider(apiBaseUrl: string = 'http://localhost:8080/a
     ...baseProvider,
     create: async (resource, params) => {
       // Sanitize string inputs to prevent XSS (SEC-001, SEC-004)
-      const sanitizedData = sanitizeData(params.data);
+      const sanitizedData = sanitizeData(params.data) as typeof params.data;
       return baseProvider.create(resource, { ...params, data: sanitizedData });
     },
     update: async (resource, params) => {
       // Sanitize string inputs to prevent XSS
-      const sanitizedData = sanitizeData(params.data);
+      const sanitizedData = sanitizeData(params.data) as typeof params.data;
       return baseProvider.update(resource, { ...params, data: sanitizedData });
     },
   };

@@ -176,19 +176,19 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 
 /**
  * Refresh access token using refresh token
- * Reserved for future token refresh implementation
- * @param tokenEndpoint - Keycloak token endpoint
- * @param clientId - Client ID
+ * Reserved for future token refresh implementation (Story 7.4a.2)
+ * @param _tokenEndpoint - Keycloak token endpoint
+ * @param _clientId - Client ID
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function refreshAccessToken(tokenEndpoint: string, clientId: string): Promise<void> {
+async function refreshAccessToken(_tokenEndpoint: string, _clientId: string): Promise<void> {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
   if (!refreshToken) {
     throw new Error('No refresh token available');
   }
 
-  const response = await fetch(tokenEndpoint, {
+  const response = await fetch(_tokenEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
