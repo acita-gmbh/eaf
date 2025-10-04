@@ -1,0 +1,81 @@
+{
+  "name": "@axians/eaf-admin-shell",
+  "version": "0.1.0",
+  "description": "Enterprise Application Framework - React-Admin Shell Infrastructure",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "^5.0.0",
+    "@mui/material": "^5.0.0",
+    "react": "^18.0.0",
+    "react-admin": "5.4.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.0.0",
+    "jwt-decode": "^4.0.0",
+    "ra-data-simple-rest": "^5.11.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/dompurify": "^3.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/ui": "^1.0.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "happy-dom": "^19.0.2",
+    "jsdom": "^27.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "eaf",
+    "enterprise",
+    "react-admin",
+    "admin-shell",
+    "framework"
+  ],
+  "author": "Axians",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acita-gmbh/eaf",
+    "directory": "framework/admin-shell"
+  }
+}

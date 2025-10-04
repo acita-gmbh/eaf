@@ -13,9 +13,9 @@ import picocli.CommandLine.Command
  */
 @Command(
     name = "scaffold",
-    description = ["Generate EAF code scaffolds"],
+    description = ["Generate EAF code scaffolds (modules, aggregates, UI resources)"],
     mixinStandardHelpOptions = true,
-    subcommands = [ModuleCommand::class, AggregateCommand::class],
+    subcommands = [ModuleCommand::class, AggregateCommand::class, UiResourceCommand::class],
 )
 class ScaffoldCommand : Runnable {
     override fun run() {
