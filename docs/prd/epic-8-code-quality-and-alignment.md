@@ -464,6 +464,12 @@ The following were initially flagged but validated as **architecturally correct*
 - PostgreSQL 16.1+ (available via Testcontainers)
 - Node.js 18+ (for npm builds)
 
+**Internal Story Dependencies:**
+- Story 8.3 (Re-enable Tests) → Story 8.2 (jOOQ Migration) **recommended sequence**
+  - Rationale: Re-enabled tests may query projections; jOOQ implementation ensures tests work correctly
+  - Alternative: Ensure tests work with both JPA and jOOQ implementations
+- Stories 8.1, 8.2, 8.4 can be implemented in parallel (no interdependencies)
+
 **External Dependencies:**
 - jOOQ 3.20.7 (gradle/libs.versions.toml)
 - React-Admin v5.4.0 (framework/admin-shell/package.json)
@@ -484,9 +490,14 @@ The following were initially flagged but validated as **architecturally correct*
 **Notes:**
 - Story 8.1 can be parallelized with 8.2 and 8.4 (Konsist work independent)
 - Stories 8.2 and 8.4 can be parallelized (different developers)
+- **Story 8.3 should be implemented after Story 8.2** if re-enabled tests query projections (recommended sequence to avoid test failures with JPA)
 - Story 8.3 requires systematic investigation (potential blockers)
 - Buffer included for integration issues and testing
 - Assumes familiarity with Konsist, jOOQ, Kotest, React-Admin
+
+**Recommended Implementation Sequence:**
+1. Sprint 1: Stories 8.1, 8.2, 8.4 (parallel)
+2. Sprint 2: Story 8.3 (after 8.2 complete to ensure jOOQ projections available for tests)
 
 ---
 
