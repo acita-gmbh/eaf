@@ -7,7 +7,7 @@ import io.kotest.matchers.string.shouldContain
 import org.gradle.testkit.runner.TaskOutcome
 
 class QualityGatesConventionPluginFunctionalTest : FunSpec({
-    test("check runs constitutional stack successfully") {
+    test("1.2-UNIT-003: check runs constitutional stack successfully") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeSampleSources(
@@ -28,7 +28,7 @@ class QualityGatesConventionPluginFunctionalTest : FunSpec({
         result.output.shouldContain("Constitutional TDD stack complete")
     }
 
-    test("detekt version drift is rejected") {
+    test("1.2-UNIT-004: detekt version drift is rejected") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeSampleSources(project, extraAppBuildContent = """
