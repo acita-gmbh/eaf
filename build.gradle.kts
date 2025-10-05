@@ -1,5 +1,6 @@
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.plugins.JavaPlugin
 
 // Root project build configuration
 // Repositories are managed in settings.gradle.kts
@@ -67,6 +68,17 @@ subprojects {
                     useVersion("6.2.7")
                     because("Ensure Spring Framework annotation security fix CVE-2025-24928")
                 }
+            }
+        }
+    }
+
+    // FIX: Force consistent serialization version to fix Kotest XML report error
+    plugins.withType<JavaPlugin> {
+        dependencies {
+            constraints {
+                val serializationVersion = catalog.findVersion("kotlinx-serialization").get().requiredVersion
+                add("testImplementation", "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion")
+                add("testRuntimeOnly", "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion")
             }
         }
     }

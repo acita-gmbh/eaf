@@ -1,0 +1,53 @@
+# Inherits from the default configuration
+# See: https://detekt.dev/docs/latest/customization/configuration/#configuration-inheritance
+
+inherit:
+  - detekt.yml
+
+# Pre-commit profile: Fast checks for local validation
+# Disables slower, more complex analysis for quick feedback.
+
+complexity:
+  # Disabled for speed during pre-commit
+  ComplexMethod:
+    active: false
+  LongMethod:
+    active: false
+  LongParameterList:
+    active: false
+  LargeClass:
+    active: false
+  TooManyFunctions:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+
+# Performance-intensive rules - disable for pre-commit
+performance:
+  active: false
+
+# Potential issues - can be slow, disable for pre-commit
+potential-bugs:
+  active: false
+
+# Style checks are generally fast, but we can be selective
+style:
+  # Keep these fast checks enabled
+  MaxLineLength:
+    active: true
+  MagicNumber:
+    active: false # Already disabled in parent
+  WildcardImport:
+    active: true # Important for consistency
+  UnusedImports:
+    active: true # Fast and valuable
+  NoTabs:
+    active: true
+  RedundantVisibilityModifier:
+    active: true
+
+  # Disable potentially slower style checks
+  DataClassContainsFunctions:
+    active: false
+  UseDataClass:
+    active: false
