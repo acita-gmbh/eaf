@@ -290,6 +290,16 @@ trap_cleanup() {
   fi
 }
 
+install_pre_commit_hooks() {
+  log_info "Installing pre-commit hooks (Story 8.2)..."
+  if ./gradlew installGitHooks --quiet 2>/dev/null; then
+    log_success "Pre-commit hooks installed (<30s validation target)"
+    log_info "  Bypass for emergencies: git commit --no-verify"
+  else
+    log_warn "Pre-commit hooks installation failed - continuing without hooks"
+  fi
+}
+
 main() {
   parse_args "$@"
   setup_directories
@@ -300,6 +310,10 @@ main() {
   wait_for_services
   load_event_store_schema
   configure_keycloak
+
+  # Story 8.2: Install pre-commit hooks (AC3)
+  install_pre_commit_hooks
+
   run_quality_checks
   run_tests_explicit
   start_backend

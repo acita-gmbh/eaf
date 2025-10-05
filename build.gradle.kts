@@ -4,6 +4,9 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 // Root project build configuration
 // Repositories are managed in settings.gradle.kts
 
+// Story 8.2: Pre-Commit Hook Infrastructure
+// Tasks defined inline for root project only
+
 // Kotest 6.0 Configuration removed from root - handled by convention plugins
 
 // Removed gradle-versions plugin due to ConcurrentModificationException with Gradle 8.14
@@ -66,5 +69,57 @@ subprojects {
                 }
             }
         }
+    }
+}
+
+// Story 8.2: Git Hook Installation Tasks (Task 1.5-1.6)
+tasks.register("installGitHooks") {
+    group = "verification"
+    description = "Install pre-commit and commit-msg hooks (Story 8.2)"
+
+    doLast {
+        val hooksDir = file(".git/hooks")
+        if (!hooksDir.exists()) {
+            logger.warn("⚠️ .git/hooks not found")
+            return@doLast
+        }
+
+        file(".git/hooks/pre-commit").apply {
+            writeText("""#!/bin/sh
+echo "🔍 EAF pre-commit validation..."
+./gradlew preCommitCheck --daemon --quiet || exit 1
+exit 0
+""")
+            setExecutable(true)
+        }
+
+        file(".git/hooks/commit-msg").apply {
+            writeText("""#!/bin/sh
+echo "✓ Commit message (Task 4 pending)"
+exit 0
+""")
+            setExecutable(true)
+        }
+
+        logger.lifecycle("🎉 Git hooks installed! Bypass: git commit --no-verify")
+    }
+}
+
+tasks.register("preCommitCheck") {
+    group = "verification"
+    description = "Run pre-commit validation (Story 8.2)"
+    doLast {
+        logger.lifecycle("🔍 Pre-commit validation (Tasks 2-5 pending)")
+        logger.lifecycle("✅ Placeholder - full implementation in Tasks 2-6")
+    }
+}
+
+tasks.register("uninstallGitHooks") {
+    group = "verification"
+    description = "Remove git hooks (Story 8.2)"
+    doLast {
+        file(".git/hooks/pre-commit").delete()
+        file(".git/hooks/commit-msg").delete()
+        logger.lifecycle("✅ Hooks uninstalled")
     }
 }
