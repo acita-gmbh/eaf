@@ -14,7 +14,9 @@
     * **Goal:** Implement the architectural "hooks" and adapters (Axon-to-Flowable, Flowable-to-Ansible) required for the BPMN workflow engine.
 7.  **Epic 7: Scaffolding CLI (v1)** (Formerly Epic 5)
     * **Goal:** Deliver the primary developer velocity tool: the v1 CLI capable of generating new Modulith modules, domain aggregates, APIs, and React-Admin components based on all finalized patterns from Epics 1-6.
-8.  **Epic 8: Licensing Server (MVP Validation)**
-    * **Goal:** Build the first complete internal application (the Licensing Server) *using only* the EAF components from Epics 1-7, validating all MVP Success Criteria.
+8.  **Epic 8: Code Quality & Architectural Alignment**
+    * **Goal:** Systematically address critical architectural deviations and technical debt (jOOQ migration, disabled tests, React-Admin consumer app) to ensure framework aligns with specifications before MVP validation.
+9.  **Epic 9: Licensing Server (MVP Validation)** (Formerly Epic 8)
+    * **Goal:** Build the first complete internal application (the Licensing Server) *using only* the EAF components from Epics 1-8, validating all MVP Success Criteria.
 
 ---
