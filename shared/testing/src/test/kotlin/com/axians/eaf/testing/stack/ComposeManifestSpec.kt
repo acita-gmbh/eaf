@@ -6,7 +6,7 @@ import java.nio.file.Files
 
 class ComposeManifestSpec :
     FunSpec({
-        test("compose.yml declares required services and versions") {
+        test("1.3-UNIT-001: compose.yml declares required services and versions") {
             val compose = Files.readString(resolveRepoFile("compose.yml"))
             listOf(
                 "image: postgres:16.1-alpine",
