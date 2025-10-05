@@ -25,6 +25,7 @@ class WidgetTest :
             tenantContext.clearCurrentTenant()
         }
 
+        // Story 2.1-UNIT-001: Widget aggregate creation with valid data and validation
         Given("Widget aggregate creation") {
             val fixture = AggregateTestFixture(Widget::class.java)
 
@@ -192,6 +193,7 @@ class WidgetTest :
             }
         }
 
+        // Story 2.1-UNIT-002: Widget aggregate update operations
         Given("Widget aggregate update") {
             val fixture = AggregateTestFixture(Widget::class.java)
             val widgetId = UUID.randomUUID().toString()
@@ -356,6 +358,7 @@ class WidgetTest :
             }
         }
 
+        // Story 2.1-UNIT-003: Widget validation helper methods
         Given("Widget validation helpers") {
             When("validating a complete valid command") {
                 val command =
@@ -451,6 +454,7 @@ class WidgetTest :
             }
         }
 
+        // Story 4.2-UNIT-001: Tenant validation in Widget command handlers (Layer 2 validation)
         Given("Tenant validation in command handlers") {
             val fixture = AggregateTestFixture(Widget::class.java)
 
@@ -529,6 +533,7 @@ class WidgetTest :
             }
         }
 
+        // Story 6.5-UNIT-001: Widget cancellation for compensation workflow
         Given("Widget cancellation (compensation workflow)") {
             val fixture = AggregateTestFixture(Widget::class.java)
             val widgetId = UUID.randomUUID().toString()
@@ -656,6 +661,7 @@ class WidgetTest :
             }
         }
 
+        // Story 4.2-UNIT-002: Tenant validation for CancelWidgetCreationCommand
         Given("Tenant validation for CancelWidgetCreationCommand") {
             val fixture = AggregateTestFixture(Widget::class.java)
 
