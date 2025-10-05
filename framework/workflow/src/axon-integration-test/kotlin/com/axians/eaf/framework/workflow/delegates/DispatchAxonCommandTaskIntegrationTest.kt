@@ -62,7 +62,7 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             tenantContext.clearCurrentTenant()
         }
 
-        test("should dispatch CreateTestEntityCommand from BPMN process") {
+        test("6.2-INT-001: should dispatch CreateTestEntityCommand from BPMN process") {
             // Set tenant context (required for delegate validation)
             tenantContext.setCurrentTenantId("test-tenant")
             // Deploy BPMN process
@@ -117,7 +117,7 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             }
         }
 
-        test("should handle missing required variables with BPMN error") {
+        test("6.2-INT-002: should handle missing required variables with BPMN error") {
             tenantContext.setCurrentTenantId("test-tenant")
 
             // Deploy BPMN process
@@ -165,7 +165,7 @@ class DispatchAxonCommandTaskIntegrationTest : FunSpec() {
             historicProcessInstance.endActivityId shouldBe "errorEndEvent"
         }
 
-        test("should enforce tenant context validation") {
+        test("6.2-INT-003: should enforce tenant context validation") {
             // SECURITY CRITICAL: Validate tenant isolation
             tenantContext.setCurrentTenantId("tenant-a")
 

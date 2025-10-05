@@ -68,7 +68,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
         }
 
         // Subtasks 4.1-4.6: Happy path - complete async workflow test
-        test("should signal waiting BPMN process when TestEntityCreatedEvent published") {
+        test("6.3-INT-001: should signal waiting BPMN process when TestEntityCreatedEvent published") {
             // Set tenant context
             tenantContext.setCurrentTenantId("test-tenant")
 
@@ -144,7 +144,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
         }
 
         // Subtask 4.7: SECURITY CRITICAL - Tenant isolation test
-        test("should enforce tenant isolation when signaling processes") {
+        test("6.3-INT-002: should enforce tenant isolation when signaling processes") {
             // Set tenant context to tenant-a
             tenantContext.setCurrentTenantId("tenant-a")
 
@@ -230,7 +230,7 @@ class AxonEventSignalHandlerIntegrationTest : FunSpec() {
         }
 
         // Subtask 4.8: Resilience test - no waiting process
-        test("should log warning when no waiting process found for event") {
+        test("6.3-INT-003: should log warning when no waiting process found for event") {
             // Set tenant context
             tenantContext.setCurrentTenantId("test-tenant")
 
