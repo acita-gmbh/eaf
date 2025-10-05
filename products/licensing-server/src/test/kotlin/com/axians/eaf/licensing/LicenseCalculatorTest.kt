@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 
 class LicenseCalculatorTest :
     FunSpec({
-        test("returns totals when inputs valid") {
+        test("9.2-UNIT-001: returns totals when inputs valid") {
             val result = LicenseCalculator.calculate(committed = 10, bonus = 2)
             result.fold(
                 { error -> throw AssertionError("Expected successful calculation but got $error") },
@@ -16,7 +16,7 @@ class LicenseCalculatorTest :
             )
         }
 
-        test("rejects negative committed seats") {
+        test("9.2-UNIT-002: rejects negative committed seats") {
             val result = LicenseCalculator.calculate(committed = -1, bonus = 0)
             result.fold(
                 { error -> error.message shouldBe "committed seats cannot be negative" },
@@ -24,7 +24,7 @@ class LicenseCalculatorTest :
             )
         }
 
-        test("rejects negative bonus seats") {
+        test("9.2-UNIT-003: rejects negative bonus seats") {
             val result = LicenseCalculator.calculate(committed = 1, bonus = -5)
             result.fold(
                 { error -> error.message shouldBe "bonus seats cannot be negative" },
