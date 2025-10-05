@@ -153,21 +153,42 @@ effective_cache_size = 1GB
 **Read Projection Queries**:
 ```kotlin
 [versions]
-jooq = "3.19.15"
+jooq = "3.20.7"       # Aligned with gradle/libs.versions.toml
 
 [libraries]
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
 jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 ```
 
-**Code Generation**:
+**Reference Implementation**: `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/repositories/WidgetProjectionRepository.kt` (Story 8.3)
+
 ```kotlin
-// Generated type-safe queries
-val products = dsl.select()
-    .from(PRODUCT_PROJECTION)
-    .where(PRODUCT_PROJECTION.TENANT_ID.eq(tenantId))
-    .and(PRODUCT_PROJECTION.STATUS.eq(ProductStatus.ACTIVE))
-    .fetchInto(ProductProjection::class.java)
+override fun search(criteria: WidgetSearchCriteria): WidgetPage {
+    val filters = mutableListOf<Condition>(WIDGET_PROJECTION.TENANT_ID.eq(criteria.tenantId))
+    criteria.category?.takeIf { it.isNotBlank() }?.let { filters += WIDGET_PROJECTION.CATEGORY.eq(it) }
+    criteria.search?.takeIf { it.isNotBlank() }?.let { filters += WIDGET_PROJECTION.NAME.containsIgnoreCase(it.trim()) }
+
+    val whereCondition = filters.reduce { acc, condition -> acc.and(condition) }
+    val orderBy = resolveSort(criteria.sort)
+
+    val items = dsl.selectFrom(WIDGET_PROJECTION)
+        .where(whereCondition)
+        .orderBy(orderBy)
+        .limit(criteria.size)
+        .offset(criteria.page * criteria.size)
+        .fetch { it.toDomain() }
+
+    val total = dsl.fetchCount(WIDGET_PROJECTION, whereCondition).toLong()
+    return WidgetPage(items = items, total = total)
+}
+```
+
+**Code Generation Pipeline** (Story 8.3):
+```bash
+$ ./gradlew :products:widget-demo:jooqCodegen
+  # Reads ddl from products/widget-demo/src/main/resources/db/jooq/widget_projection.ddl
+  # Emits Kotlin records under build/generated-src/jooq/main
 ```
 
 ### Security Stack

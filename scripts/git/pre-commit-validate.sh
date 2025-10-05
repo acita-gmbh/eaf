@@ -101,7 +101,8 @@ if [ -z "$STAGED_TEST_FILES" ]; then
     STEP_DURATION=$((STEP_END_TIME - STEP_START_TIME))
     log_success "Konsist check passed" "${STEP_DURATION}s"
 else
-    if ./gradlew :shared:testing:jvmKotest --tests "com.axians.eaf.testing.naming.TestCaseNamingConventionTest" --daemon --quiet > /dev/null 2>&1; then
+    # Native Kotest runner doesn't support --tests flag, so run all naming tests
+    if ./gradlew :shared:testing:jvmKotest --daemon --quiet > /dev/null 2>&1; then
         STEP_END_TIME=$(date +%s)
         STEP_DURATION=$((STEP_END_TIME - STEP_START_TIME))
         log_success "Konsist check passed" "${STEP_DURATION}s"

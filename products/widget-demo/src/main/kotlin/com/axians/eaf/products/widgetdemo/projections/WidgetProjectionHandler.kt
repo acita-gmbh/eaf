@@ -5,12 +5,11 @@ import com.axians.eaf.api.widget.events.WidgetUpdatedEvent
 import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
 import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.PersistenceException
 import org.axonframework.eventhandling.EventHandler
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.sql.SQLException
 
 /**
  * Event handler for Widget projection updates.
@@ -77,18 +76,9 @@ class WidgetProjectionHandler(
                 event.widgetId,
                 event.tenantId,
             )
-        } catch (exception: PersistenceException) {
+        } catch (exception: DataAccessException) {
             logger.error(
                 "Failed to process WidgetCreatedEvent for widgetId: {} in tenant: {}. Database error: {}",
-                event.widgetId,
-                event.tenantId,
-                exception.message,
-                exception,
-            )
-            throw exception
-        } catch (exception: SQLException) {
-            logger.error(
-                "Failed to process WidgetCreatedEvent for widgetId: {} in tenant: {}. SQL error: {}",
                 event.widgetId,
                 event.tenantId,
                 exception.message,
@@ -154,18 +144,9 @@ class WidgetProjectionHandler(
                 event.widgetId,
                 event.tenantId,
             )
-        } catch (exception: PersistenceException) {
+        } catch (exception: DataAccessException) {
             logger.error(
                 "Failed to process WidgetUpdatedEvent for widgetId: {} in tenant: {}. Database error: {}",
-                event.widgetId,
-                event.tenantId,
-                exception.message,
-                exception,
-            )
-            throw exception
-        } catch (exception: SQLException) {
-            logger.error(
-                "Failed to process WidgetUpdatedEvent for widgetId: {} in tenant: {}. SQL error: {}",
                 event.widgetId,
                 event.tenantId,
                 exception.message,
@@ -192,31 +173,20 @@ class WidgetProjectionHandler(
         logger.info("Resetting widget projections for replay...")
 
         try {
-            // Use batch deletion to reduce lock time on large tables
-            // Processes in chunks to avoid long-running transactions
             val batchSize = 1000
             var totalDeleted = 0L
 
             while (true) {
-                val batch =
-                    repository.findAll(
-                        org.springframework.data.domain.PageRequest
-                            .of(0, batchSize),
-                    )
-                if (batch.isEmpty) break
+                val deleted = repository.deleteBatch(batchSize)
+                if (deleted == 0L) break
 
-                repository.deleteAll(batch.content)
-                totalDeleted += batch.content.size
-
-                logger.debug("Deleted batch of {} projections", batch.content.size)
+                totalDeleted += deleted
+                logger.debug("Deleted batch of {} projections", deleted)
             }
 
             logger.info("Successfully cleared {} widget projections for replay", totalDeleted)
-        } catch (exception: PersistenceException) {
+        } catch (exception: DataAccessException) {
             logger.error("Failed to reset widget projections. Database error: {}", exception.message, exception)
-            throw exception
-        } catch (exception: SQLException) {
-            logger.error("Failed to reset widget projections. SQL error: {}", exception.message, exception)
             throw exception
         }
     }
