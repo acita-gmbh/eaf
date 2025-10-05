@@ -17,7 +17,7 @@ class CustomMetricsTest :
             meterRegistry.clear()
         }
 
-        test("records command metrics with tenant tag") {
+        test("5.2-UNIT-001: records command metrics with tenant tag") {
             tenantContext.setCurrentTenantId("tenant-metrics-test")
 
             metrics.recordCommand("CreateWidgetCommand", Duration.ofMillis(5), success = true)
@@ -43,7 +43,7 @@ class CustomMetricsTest :
                 ).count() shouldBe 1L
         }
 
-        test("records event metrics when tenant context missing") {
+        test("5.2-UNIT-002: records event metrics when tenant context missing") {
             metrics.recordEvent("WidgetCreatedEvent", Duration.ofMillis(3), success = true)
 
             val counter =

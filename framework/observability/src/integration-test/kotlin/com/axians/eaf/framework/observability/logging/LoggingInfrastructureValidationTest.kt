@@ -29,7 +29,7 @@ class LoggingInfrastructureValidationTest :
             MDC.clear()
         }
 
-        test("MDC context fields can be set and retrieved") {
+        test("5.1-INT-001: MDC context fields can be set and retrieved") {
             // Given: Core logging context fields
             val serviceName = "test-service"
             val traceId = "trace-12345"
@@ -46,7 +46,7 @@ class LoggingInfrastructureValidationTest :
             MDC.get(LoggingContextProvider.TENANT_ID_KEY) shouldBe tenantId
         }
 
-        test("LoggingFormatValidator validates JSON structure correctly") {
+        test("5.1-INT-002: LoggingFormatValidator validates JSON structure correctly") {
             // Given: A validator instance
             val validator = LoggingFormatValidator()
 
@@ -70,7 +70,7 @@ class LoggingInfrastructureValidationTest :
             result.missingRequiredFields.size shouldBe 0
         }
 
-        test("LoggingFormatValidator detects missing required fields") {
+        test("5.1-INT-003: LoggingFormatValidator detects missing required fields") {
             // Given: A validator instance
             val validator = LoggingFormatValidator()
 
@@ -87,7 +87,7 @@ class LoggingInfrastructureValidationTest :
             result.missingRequiredFields shouldContain "thread"
         }
 
-        test("LoggingContextProvider constants are defined correctly") {
+        test("5.1-INT-004: LoggingContextProvider constants are defined correctly") {
             // Then: Constants should match expected values
             LoggingContextProvider.SERVICE_NAME_KEY shouldBe "service_name"
             LoggingContextProvider.TRACE_ID_KEY shouldBe "trace_id"
@@ -95,7 +95,7 @@ class LoggingInfrastructureValidationTest :
             LoggingContextProvider.TENANT_ID_KEY shouldBe "tenant_id"
         }
 
-        test("MDC contains trace_id from OpenTelemetry when span is active") {
+        test("5.3-INT-001: MDC contains trace_id from OpenTelemetry when span is active") {
             // Given: Mock OpenTelemetry span context
             val testTraceId = "00000000000000000000000000000001"
             val testSpanId = "0000000000000001"
@@ -109,7 +109,7 @@ class LoggingInfrastructureValidationTest :
             MDC.get(LoggingContextProvider.SPAN_ID_KEY) shouldBe testSpanId
         }
 
-        test("logging produces output at different levels") {
+        test("5.1-INT-005: logging produces output at different levels") {
             // Given: Context is set
             MDC.put(LoggingContextProvider.SERVICE_NAME_KEY, "validation-test")
 

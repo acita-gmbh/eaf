@@ -58,12 +58,12 @@ class PrometheusEndpointIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        test("unauthenticated requests to /actuator/prometheus are rejected") {
+        test("5.2-INT-001: unauthenticated requests to /actuator/prometheus are rejected") {
             val response = restTemplate.getForEntity("/actuator/prometheus", String::class.java)
             response.statusCode shouldBe HttpStatus.UNAUTHORIZED
         }
 
-        test("authorized requests can scrape Prometheus metrics with service and tenant tags") {
+        test("5.2-INT-002: authorized requests can scrape Prometheus metrics with service and tenant tags") {
             tenantContext.setCurrentTenantId("integration-tenant")
             try {
                 customMetrics.recordCommand("TestCommand", Duration.ofMillis(5), success = true)
