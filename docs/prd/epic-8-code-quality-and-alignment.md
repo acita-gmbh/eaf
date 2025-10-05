@@ -8,7 +8,7 @@
 
 ### Context
 
-The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive architectural documentation. A deep codebase investigation combined with architectural review (Winston) and analytical validation (Mary) identified **4 critical gaps** requiring resolution before Epic 9 (Licensing Server MVP).
+The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive architectural documentation. A deep codebase investigation combined with architectural review (Winston) and analytical validation (Mary) identified **4 critical gaps** requiring resolution before Epic 9 (Licensing Server MVP). During Story 8.1 implementation, a 5th story was added to establish pre-commit hook infrastructure for automated quality enforcement.
 
 ### Validation Methodology
 
@@ -85,92 +85,56 @@ The following were initially flagged but validated as **architecturally correct*
 
 ## Stories
 
-### Story 8.1: Standardize Test Case Naming with Story References
+### Story 8.1: Standardize Test Case Naming with Story References ✅ DONE
+
+**Status:** Complete (100% compliance achieved)
 
 **As a** QA Engineer, **I want** all test cases to follow a consistent naming convention with story references, **so that** test coverage can be traced back to story acceptance criteria and quality gates can be properly validated.
 
-**Context:**
-- Current test cases have inconsistent naming patterns
-- Some use `{STORY}-{TYPE}-{SEQ}: {Description}` (WidgetQueryHandlerTest)
-- Others use natural language without story IDs (WidgetTest BehaviorSpec)
-- Some files mix both approaches (TenantEventMessageInterceptorSpec)
-- No automated enforcement of naming standards
+**Implementation Summary:**
+- ✅ 121 FunSpec tests updated with story references across 24 files
+- ✅ 6 BehaviorSpec comments added with story references
+- ✅ Konsist enforcement rules created and passing (19/19 tests)
+- ✅ Compliance improved from 27% to 100%
+- ✅ CLI templates updated for future test generation
+- Note: Pre-commit hook (AC 16) deferred to Story 8.2
 
-**Scope:**
-1. Define mandatory test naming standard for all test frameworks (FunSpec, BehaviorSpec)
-2. Document standard in test-strategy-and-standards-revision-3.md
-3. Create Konsist architectural rule to enforce naming pattern
-4. Update all existing test cases to follow standard
-5. Add pre-commit hook or CI check to validate compliance
-
-**Acceptance Criteria:**
-
-**Phase 1: Define Standard**
-- [ ] Test naming standard documented with clear patterns:
-  - FunSpec: `test("{STORY}-{TYPE}-{SEQ}: {Description}")`
-  - BehaviorSpec: Comment header `// {STORY}-{TYPE}-{SEQ}` above Given/When/Then blocks
-  - Pattern format: `{EPIC}.{STORY}-{TYPE}-{SEQ}` (e.g., "2.4-UNIT-001", "4.6-INT-003")
-  - TYPE values: UNIT, INT (integration), E2E (end-to-end)
-- [ ] Examples provided for each test framework in documentation
-- [ ] Standard added to test-strategy-and-standards-revision-3.md
-
-**Phase 2: Konsist Enforcement**
-- [ ] Konsist rule created: `TestCaseNamingConventionTest.kt`
-- [ ] Rule validates FunSpec test names match pattern: `^\d+\.\d+-[A-Z]+-\d+:.*`
-- [ ] Rule validates BehaviorSpec blocks have story reference comments
-- [ ] Rule integrated into `konsistTest` task
-- [ ] CI pipeline fails if naming violations detected
-
-**Phase 3: Codebase Migration**
-- [ ] All FunSpec tests updated with story references:
-  ```kotlin
-  test("2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") {
-      // existing test logic
-  }
-  ```
-- [ ] All BehaviorSpec tests updated with story reference comments:
-  ```kotlin
-  // Story 2.1-UNIT-005: Widget aggregate creation validation
-  Given("Widget aggregate creation") {
-      When("creating a widget with valid data") {
-          Then("widget should be created successfully") {
-              // test logic
-          }
-      }
-  }
-  ```
-- [ ] TenantEventMessageInterceptorSpec fully consistent (all tests have IDs)
-- [ ] Zero naming violations in `./gradlew konsistTest`
-
-**Phase 4: Process Integration**
-- [ ] Updated test templates in eaf-cli to include story references
-- [ ] Developer documentation updated with naming examples
-- [ ] Pre-commit hook (optional) warns on missing story references
-
-**Technical Notes:**
-- Konsist rule example:
-  ```kotlin
-  @Test
-  fun `all FunSpec test cases must include story reference`() {
-      Konsist.scopeFromProject()
-          .classes()
-          .withNameEndingWith("Test", "Spec")
-          .functions()
-          .withName("test")
-          .assert { function ->
-              val testName = function.text.substringAfter("test(\"").substringBefore("\")")
-              testName.matches(Regex("^\\d+\\.\\d+-[A-Z]+-\\d+:.*"))
-          }
-  }
-  ```
-- Story reference format allows tracing tests to PRD stories
-- Existing test IDs (e.g., "2.4-UNIT-001") already follow pattern
-
-**Estimated Effort:** 3-5 days
+**Estimated Effort:** 3-5 days | **Actual:** 3 days
 
 ---
 
-### Story 8.2: Migrate Read Projections from JPA to jOOQ
+### Story 8.2: Establish Pre-Commit Hook Infrastructure
+
+**As a** Developer, **I want** automated pre-commit validation infrastructure that enforces code quality standards before commits, **so that** issues are caught locally with fast feedback, reducing CI failures and maintaining consistent code quality.
+
+**Context:**
+- Story 8.1 deferred AC 16 (pre-commit hook for test naming) as optional
+- No existing pre-commit infrastructure in the codebase
+- Developers discover violations only after pushing to CI (10-15 minute feedback loop)
+- Average 3-5 preventable CI failures per developer per week
+
+**Scope:**
+1. Select and integrate git hook framework (Husky, gradle-git-hooks, or native)
+2. Implement fast quality checks (<30 seconds total):
+   - ktlint format validation on staged files
+   - Detekt static analysis (fast rules only)
+   - Konsist test naming validation from Story 8.1
+   - Smart unit test execution (modified modules only)
+3. Commit message validation (JIRA ticket format)
+4. Developer experience optimization (progress output, helpful errors)
+5. CI integration and metrics dashboard
+
+**Key Features:**
+- **Performance Target:** < 30 seconds total execution
+- **Smart Scoping:** Only check staged files and affected modules
+- **Graceful Bypass:** `--no-verify` for emergencies
+- **Metrics Collection:** Track effectiveness and optimization opportunities
+
+**Estimated Effort:** 9-10 days
+
+---
+
+### Story 8.3: Migrate Read Projections from JPA to jOOQ
 
 **As a** Developer, **I want** to replace JPA-based CQRS read projections with jOOQ DSL, **so that** the read model achieves optimal performance and aligns with architectural specifications.
 
@@ -218,7 +182,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.3: Re-enable and Fix 7 Disabled Integration Tests
+### Story 8.4: Re-enable and Fix 7 Disabled Integration Tests
 
 **As a** QA Engineer, **I want** all disabled integration tests re-enabled and passing, **so that** critical system behaviors are continuously validated and test coverage gaps are eliminated.
 
@@ -290,7 +254,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.4: Implement React-Admin Consumer Application
+### Story 8.5: Implement React-Admin Consumer Application
 
 **As an** Administrator, **I want** a functional React-Admin portal that integrates the framework shell with product UI modules, **so that** I can manage widgets through a modern web interface.
 
@@ -438,7 +402,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ## Definition of Done
 
-- [ ] All 3 stories completed with acceptance criteria met
+- [ ] All 5 stories completed with acceptance criteria met (8.1 ✅ DONE, 8.2-8.5 pending)
 - [ ] jOOQ projections outperform JPA baseline by ≥20%
 - [ ] All 7 integration tests passing in CI (<5 min execution)
 - [ ] React-Admin consumer app functional with Widget CRUD
@@ -465,10 +429,12 @@ The following were initially flagged but validated as **architecturally correct*
 - Node.js 18+ (for npm builds)
 
 **Internal Story Dependencies:**
-- Story 8.3 (Re-enable Tests) → Story 8.2 (jOOQ Migration) **recommended sequence**
+- Story 8.1 (Test Naming) ✅ DONE - Foundation for 8.2's Konsist integration
+- Story 8.2 (Pre-Commit Hooks) → Leverages Story 8.1's Konsist rules
+- Story 8.4 (Re-enable Tests) → Story 8.3 (jOOQ Migration) **recommended sequence**
   - Rationale: Re-enabled tests may query projections; jOOQ implementation ensures tests work correctly
   - Alternative: Ensure tests work with both JPA and jOOQ implementations
-- Stories 8.1, 8.2, 8.4 can be implemented in parallel (no interdependencies)
+- Stories 8.2, 8.3, 8.5 can be implemented in parallel (no interdependencies)
 
 **External Dependencies:**
 - jOOQ 3.20.7 (gradle/libs.versions.toml)
@@ -481,23 +447,24 @@ The following were initially flagged but validated as **architecturally correct*
 
 | Story | Complexity | Estimated Effort |
 |-------|-----------|-----------------|
-| 8.1 - Test Case Naming | Medium | 3-5 days |
-| 8.2 - jOOQ Migration | High | 5-8 days |
-| 8.3 - Re-enable Tests | High | 5-7 days |
-| 8.4 - React-Admin Consumer | Medium | 5-7 days |
-| **Total Epic** | **High** | **18-27 days** |
+| 8.1 - Test Case Naming ✅ | Medium | 3-5 days (DONE) |
+| 8.2 - Pre-Commit Hooks | Medium-High | 9-10 days |
+| 8.3 - jOOQ Migration | High | 5-8 days |
+| 8.4 - Re-enable Tests | High | 5-7 days |
+| 8.5 - React-Admin Consumer | Medium | 5-7 days |
+| **Total Epic** | **High** | **27-37 days** |
 
 **Notes:**
-- Story 8.1 can be parallelized with 8.2 and 8.4 (Konsist work independent)
-- Stories 8.2 and 8.4 can be parallelized (different developers)
-- **Story 8.3 should be implemented after Story 8.2** if re-enabled tests query projections (recommended sequence to avoid test failures with JPA)
-- Story 8.3 requires systematic investigation (potential blockers)
+- Story 8.1 ✅ COMPLETE - 100% test naming compliance achieved
+- Story 8.2 provides foundation for all future quality enforcement
+- Stories 8.2, 8.3, and 8.5 can be parallelized (different developers)
+- **Story 8.4 should be implemented after Story 8.3** if re-enabled tests query projections (recommended sequence to avoid test failures with JPA)
+- Story 8.4 requires systematic investigation (potential blockers)
 - Buffer included for integration issues and testing
-- Assumes familiarity with Konsist, jOOQ, Kotest, React-Admin
 
 **Recommended Implementation Sequence:**
-1. Sprint 1: Stories 8.1, 8.2, 8.4 (parallel)
-2. Sprint 2: Story 8.3 (after 8.2 complete to ensure jOOQ projections available for tests)
+1. Sprint 1: Story 8.2 (foundation) + Story 8.3 (jOOQ) in parallel
+2. Sprint 2: Story 8.4 (tests, after 8.3) + Story 8.5 (React-Admin) in parallel
 
 ---
 
@@ -552,11 +519,12 @@ After completing Epic 8, validate:
 - Analytical validation (Mary): Cross-referenced with architecture docs
 - **Refinement (Winston)**: Test case naming re-evaluated - confirmed as valid gap
 
-**Confirmed Gaps:**
-1. ✅ Test case naming inconsistency - No story references in test names (Gap 4)
-2. ✅ jOOQ not used (JPA instead) - Architectural violation (Gap 1)
-3. ✅ 7 tests disabled - Intentional technical debt (Gap 2)
-4. ✅ Consumer app missing - Epic 7 infrastructure exists, integration missing (Gap 3)
+**Confirmed Gaps & Stories:**
+1. ✅ Test case naming inconsistency → **Story 8.1 DONE** (100% compliance achieved)
+2. ✅ Pre-commit infrastructure missing → **Story 8.2 NEW** (emerged from 8.1 AC 16)
+3. ✅ jOOQ not used (JPA instead) → **Story 8.3** (was 8.2)
+4. ✅ 7 tests disabled → **Story 8.4** (was 8.3)
+5. ✅ Consumer app missing → **Story 8.5** (was 8.4)
 
 **Invalidated Findings:**
 1. ❌ Test file naming (*Test.kt vs *Spec.kt) - Intentional architectural choice

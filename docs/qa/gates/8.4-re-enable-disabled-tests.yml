@@ -1,5 +1,5 @@
 schema: 1
-story: "8.3"
+story: "8.4"
 story_title: "Re-enable and Fix 7 Disabled Integration Tests"
 gate: CONCERNS
 status_reason: "Story provides clear guidance using Story 4.6 solution pattern, but re-enabling disabled tests carries investigation risk. Timeboxing strategy (1 day per test) and documented working pattern mitigate risks. Dependency on Story 8.2 (jOOQ) should be clarified."

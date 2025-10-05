@@ -1,5 +1,5 @@
 schema: 1
-story: "8.2"
+story: "8.3"
 story_title: "Migrate Read Projections from JPA to jOOQ"
 gate: CONCERNS
 status_reason: "Story is well-documented with comprehensive migration strategy, but architectural migration carries medium-high risk. Performance baseline measurement and parallel implementation strategy mitigate risks. Recommend proceeding with heightened monitoring."
