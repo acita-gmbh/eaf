@@ -31,14 +31,14 @@ class TenantContextTest :
 
         context("ThreadLocal stack operations") {
 
-            test("setCurrentTenantId should push WeakReference onto ThreadLocal stack") {
+            test("4.1-UNIT-001: setCurrentTenantId should push WeakReference onto ThreadLocal stack") {
                 tenantContext.setCurrentTenantId("tenant-123")
 
                 tenantContext.current() shouldBe "tenant-123"
                 tenantContext.getStackDepth() shouldBe 1
             }
 
-            test("current should peek current tenant ID from stack top without removing") {
+            test("4.1-UNIT-002: current should peek current tenant ID from stack top without removing") {
                 tenantContext.setCurrentTenantId("tenant-123")
                 tenantContext.setCurrentTenantId("tenant-456")
 
@@ -50,7 +50,7 @@ class TenantContextTest :
                 tenantContext.getStackDepth() shouldBe 2
             }
 
-            test("clearCurrentTenant should pop from stack") {
+            test("4.1-UNIT-003: clearCurrentTenant should pop from stack") {
                 tenantContext.setCurrentTenantId("tenant-123")
                 tenantContext.setCurrentTenantId("tenant-456")
 
@@ -59,7 +59,7 @@ class TenantContextTest :
                 tenantContext.getStackDepth() shouldBe 1
             }
 
-            test("clearCurrentTenant should call ThreadLocal.remove when stack becomes empty") {
+            test("4.1-UNIT-004: clearCurrentTenant should call ThreadLocal.remove when stack becomes empty") {
                 val initialCount = meterRegistry.counter("tenant.context.threadlocal_removed").count()
 
                 tenantContext.setCurrentTenantId("tenant-123")
@@ -72,7 +72,7 @@ class TenantContextTest :
                 meterRegistry.counter("tenant.context.threadlocal_removed").count() shouldBe (initialCount + 1.0)
             }
 
-            test("nested push/pop should maintain LIFO order with proper metrics") {
+            test("4.1-UNIT-005: nested push/pop should maintain LIFO order with proper metrics") {
                 val initialClearCount = meterRegistry.counter("tenant.context.clear").count()
                 val initialRemovedCount = meterRegistry.counter("tenant.context.threadlocal_removed").count()
 
@@ -94,7 +94,7 @@ class TenantContextTest :
 
         context("WeakReference storage and garbage collection") {
 
-            test("should store tenant IDs as WeakReference to allow garbage collection") {
+            test("4.1-UNIT-006: should store tenant IDs as WeakReference to allow garbage collection") {
                 tenantContext.setCurrentTenantId("tenant-123")
 
                 // Force garbage collection multiple times
@@ -107,7 +107,7 @@ class TenantContextTest :
                 tenantContext.current() shouldBe "tenant-123"
             }
 
-            test("should handle garbage collected WeakReference gracefully") {
+            test("4.1-UNIT-007: should handle garbage collected WeakReference gracefully") {
                 // This test simulates the edge case where WeakReference gets GC'd
                 // In practice, this is rare for short-lived request contexts
                 tenantContext.setCurrentTenantId("tenant-123")
@@ -120,7 +120,7 @@ class TenantContextTest :
 
         context("fail-closed design") {
 
-            test("getCurrentTenantId should throw exception when no tenant context") {
+            test("4.1-UNIT-008: getCurrentTenantId should throw exception when no tenant context") {
                 val exception =
                     shouldThrow<IllegalStateException> {
                         tenantContext.getCurrentTenantId()
@@ -128,11 +128,11 @@ class TenantContextTest :
                 exception.message shouldBe "Missing or invalid tenant_id claim in JWT token"
             }
 
-            test("current should return null when stack is empty") {
+            test("4.1-UNIT-009: current should return null when stack is empty") {
                 tenantContext.current() shouldBe null
             }
 
-            test("setCurrentTenantId should reject null or blank tenant IDs") {
+            test("4.1-UNIT-010: setCurrentTenantId should reject null or blank tenant IDs") {
                 shouldThrow<IllegalArgumentException> {
                     tenantContext.setCurrentTenantId("")
                 }
@@ -145,7 +145,7 @@ class TenantContextTest :
 
         context("thread isolation and concurrency") {
 
-            test("should maintain separate tenant contexts across concurrent threads") {
+            test("4.1-UNIT-011: should maintain separate tenant contexts across concurrent threads") {
                 val results = ConcurrentHashMap<String, String?>()
 
                 runBlocking {
@@ -176,7 +176,7 @@ class TenantContextTest :
 
         context("production monitoring hooks") {
 
-            test("getStackDepth should return current stack size") {
+            test("4.1-UNIT-012: getStackDepth should return current stack size") {
                 tenantContext.getStackDepth() shouldBe 0
 
                 tenantContext.setCurrentTenantId("tenant-123")
@@ -186,7 +186,7 @@ class TenantContextTest :
                 tenantContext.getStackDepth() shouldBe 2
             }
 
-            test("getStackDepth should emit leak detection metric when depth > 0") {
+            test("4.1-UNIT-013: getStackDepth should emit leak detection metric when depth > 0") {
                 tenantContext.setCurrentTenantId("tenant-123")
 
                 tenantContext.getStackDepth()
@@ -195,7 +195,7 @@ class TenantContextTest :
                 meterRegistry.counter("tenant.context.leak_detected", "depth", "1").count() shouldBe 1.0
             }
 
-            test("should track metrics for set and clear operations") {
+            test("4.1-UNIT-014: should track metrics for set and clear operations") {
                 val initialSetCount = meterRegistry.counter("tenant.context.set").count()
                 val initialClearCount = meterRegistry.counter("tenant.context.clear").count()
                 val initialRemovedCount = meterRegistry.counter("tenant.context.threadlocal_removed").count()
@@ -211,7 +211,7 @@ class TenantContextTest :
 
         context("edge cases and null handling") {
 
-            test("should handle multiple clear operations gracefully") {
+            test("4.1-UNIT-015: should handle multiple clear operations gracefully") {
                 tenantContext.setCurrentTenantId("tenant-123")
                 tenantContext.clearCurrentTenant()
                 tenantContext.clearCurrentTenant() // Should not throw
@@ -220,13 +220,13 @@ class TenantContextTest :
                 tenantContext.getStackDepth() shouldBe 0
             }
 
-            test("should handle current() on empty stack gracefully") {
+            test("4.1-UNIT-016: should handle current() on empty stack gracefully") {
                 repeat(5) {
                     tenantContext.current() shouldBe null
                 }
             }
 
-            test("should maintain backwards compatibility with getCurrentTenantId") {
+            test("4.1-UNIT-017: should maintain backwards compatibility with getCurrentTenantId") {
                 tenantContext.setCurrentTenantId("tenant-123")
 
                 // Test existing API contract
