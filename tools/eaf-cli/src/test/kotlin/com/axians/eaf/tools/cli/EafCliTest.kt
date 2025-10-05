@@ -14,7 +14,7 @@ class EafCliTest :
         context("EAF CLI command execution") {
 
             // 7.1-UNIT-001: Version command
-            test("should display version when --version flag provided") {
+            test("7.1-UNIT-001: should display version when --version flag provided") {
                 // Given
                 val cli = EafCli()
                 val outputStream = ByteArrayOutputStream()
@@ -33,7 +33,7 @@ class EafCliTest :
             }
 
             // 7.1-UNIT-002: Help command
-            test("should display help text when --help flag provided") {
+            test("7.1-UNIT-002: should display help text when --help flag provided") {
                 // Given
                 val cli = EafCli()
                 val outputStream = ByteArrayOutputStream()
@@ -54,7 +54,7 @@ class EafCliTest :
             }
 
             // 7.1-UNIT-003: Scaffold subcommand help
-            test("should display scaffold subcommand help") {
+            test("7.1-UNIT-003: should display scaffold subcommand help") {
                 // Given
                 val cli = EafCli()
                 val outputStream = ByteArrayOutputStream()
@@ -74,7 +74,7 @@ class EafCliTest :
             }
 
             // 7.1-UNIT-004: Invalid command error handling
-            test("should handle invalid command gracefully with error message") {
+            test("7.1-UNIT-004: should handle invalid command gracefully with error message") {
                 // Given
                 val cli = EafCli()
                 val errorStream = ByteArrayOutputStream()
