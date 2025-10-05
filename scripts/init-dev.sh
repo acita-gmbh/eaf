@@ -6,6 +6,8 @@ LOG_DIR="$PROJECT_ROOT/logs"
 PID_DIR="$PROJECT_ROOT/.pids"
 COMPOSE_FILE="$PROJECT_ROOT/compose.yml"
 KEYCLOAK_REALM_FILE="$PROJECT_ROOT/shared/testing/src/main/resources/test-realm.json"
+ENV_FILE="$PROJECT_ROOT/scripts/dev.env"
+ENV_TEMPLATE="$PROJECT_ROOT/scripts/dev.env.example"
 START_TIME=$(date +%s)
 
 BLUE='\033[0;34m'
@@ -52,6 +54,22 @@ parse_args() {
       *) log_error "Unknown option: $1"; print_usage; exit 1 ;;
     esac
   done
+}
+
+load_env_file() {
+  if [[ -f "$ENV_FILE" ]]; then
+    log_info "Loading environment overrides from $ENV_FILE"
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+  else
+    if [[ -f "$ENV_TEMPLATE" ]]; then
+      log_warn "Environment file $ENV_FILE not found. Copy $ENV_TEMPLATE and customize credentials."
+    else
+      log_warn "Environment file $ENV_FILE not found. Create it to persist credentials across runs."
+    fi
+  fi
 }
 
 setup_directories() {
@@ -302,13 +320,25 @@ install_pre_commit_hooks() {
 
 main() {
   parse_args "$@"
+  load_env_file
   setup_directories
   check_prerequisites
   prompt_keycloak_password
   trap_cleanup
+  log_info "Resetting development environment to ensure a clean start..."
+  docker compose -f "$COMPOSE_FILE" down -v --remove-orphans >/dev/null 2>&1
+
   start_infrastructure
   wait_for_services
   load_event_store_schema
+  log_info "Waiting for Keycloak Admin CLI to be ready..."
+  local kcadm_cmd="docker exec eaf-keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user \"${KEYCLOAK_ADMIN:-admin}\" --password \"${KEYCLOAK_ADMIN_PASSWORD}\""
+  if wait_with_timeout "$kcadm_cmd" 5 180; then
+    log_success "Keycloak Admin CLI is ready."
+  else
+    log_error "Keycloak Admin CLI failed to authenticate within 180 seconds. Check Keycloak logs."
+    exit 1
+  fi
   configure_keycloak
 
   # Story 8.2: Install pre-commit hooks (AC3)
