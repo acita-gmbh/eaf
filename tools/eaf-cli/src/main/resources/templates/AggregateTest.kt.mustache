@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldNotBe
  */
 class {{aggregateName}}Test :
     BehaviorSpec({
+        // Story {{epicNumber}}.{{storyNumber}}-UNIT-001: {{aggregateName}} aggregate creation and validation
         Given("a {{aggregateNameLower}} aggregate") {
             When("creating with valid command and matching tenant context") {
                 TenantContext().setCurrentTenantId("tenant-a")

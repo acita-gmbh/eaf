@@ -41,7 +41,7 @@ class TestCaseNamingConventionTest :
                         // Find all test("...") function calls in the file
                         val testCalls = Regex("""test\s*\(\s*"([^"]+)"\s*\)""").findAll(file.text)
 
-                        // If file has test() calls, validate each one
+                        // If file has test() calls, ALL must have story references (STRICT MODE)
                         if (testCalls.any()) {
                             testCalls.all { match ->
                                 val testName = match.groupValues[1]
@@ -53,7 +53,7 @@ class TestCaseNamingConventionTest :
                                 testName.matches(storyReferencePattern)
                             }
                         } else {
-                            // File doesn't use test() calls (might be BehaviorSpec) - pass
+                            // File doesn't use test() calls (might be BehaviorSpec) - allow
                             true
                         }
                     }
