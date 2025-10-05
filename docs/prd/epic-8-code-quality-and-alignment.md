@@ -8,7 +8,7 @@
 
 ### Context
 
-The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive architectural documentation. A deep codebase investigation combined with architectural review (Winston) and analytical validation (Mary) identified **3 critical gaps** requiring resolution before Epic 9 (Licensing Server MVP).
+The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive architectural documentation. A deep codebase investigation combined with architectural review (Winston) and analytical validation (Mary) identified **4 critical gaps** requiring resolution before Epic 9 (Licensing Server MVP).
 
 ### Validation Methodology
 
@@ -19,8 +19,8 @@ The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive
 
 **Results:**
 - 6 initial findings identified
-- 3 findings confirmed as architectural gaps (50% accuracy)
-- 3 findings invalidated (architectural misunderstandings corrected)
+- 4 findings confirmed as architectural gaps (67% accuracy)
+- 2 findings invalidated (architectural misunderstandings corrected)
 
 ### Confirmed Architectural Gaps
 
@@ -49,13 +49,27 @@ The EAF framework (v0.1) has been developed through Epics 1-7 with comprehensive
 - **Impact**: Cannot use React-Admin portal; frontend development blocked
 - **Evidence**: apps/admin/ contains only build.gradle.kts (737 bytes) and empty package-lock.json
 
+#### **Gap 4: Inconsistent Test Case Naming Convention** ⚠️
+- **Current State**: Test case names lack consistent story reference pattern
+- **Evidence**:
+  - WidgetQueryHandlerTest: Uses `{STORY}-{TYPE}-{SEQ}: {Description}` (e.g., "2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") ✅
+  - WidgetTest (BehaviorSpec): No story references in Given/When/Then blocks ❌
+  - TenantEventMessageInterceptorSpec: MIXED - some tests have IDs ("4.4-UNIT-001"), others don't ❌
+- **Root Cause**: No enforced standard for test case naming; evolved organically during development
+- **Impact**:
+  - Difficult to trace test coverage back to story acceptance criteria
+  - Inconsistent test reporting and documentation
+  - Quality gate gaps when validating story completion
+- **Requirement**: All tests must reference their source story for traceability
+
 ### Architectural Misunderstandings Corrected
 
 The following were initially flagged but validated as **architecturally correct**:
 
-1. **Test Naming Patterns** ✅ VALID
+1. **Test File Naming** ✅ VALID
    - Mixed `*Test.kt` and `*Spec.kt` is **intentional** (architecture allows both FunSpec and BehaviorSpec)
-   - No violation exists; both patterns follow test-strategy-and-standards-revision-3.md
+   - File naming follows test-strategy-and-standards-revision-3.md
+   - Note: Test **case** naming within files is Gap 4 (requires standardization)
 
 2. **REST API Layer** ✅ EXISTS
    - WidgetController.kt provides complete CRUD REST API
@@ -71,7 +85,92 @@ The following were initially flagged but validated as **architecturally correct*
 
 ## Stories
 
-### Story 8.1: Migrate Read Projections from JPA to jOOQ
+### Story 8.1: Standardize Test Case Naming with Story References
+
+**As a** QA Engineer, **I want** all test cases to follow a consistent naming convention with story references, **so that** test coverage can be traced back to story acceptance criteria and quality gates can be properly validated.
+
+**Context:**
+- Current test cases have inconsistent naming patterns
+- Some use `{STORY}-{TYPE}-{SEQ}: {Description}` (WidgetQueryHandlerTest)
+- Others use natural language without story IDs (WidgetTest BehaviorSpec)
+- Some files mix both approaches (TenantEventMessageInterceptorSpec)
+- No automated enforcement of naming standards
+
+**Scope:**
+1. Define mandatory test naming standard for all test frameworks (FunSpec, BehaviorSpec)
+2. Document standard in test-strategy-and-standards-revision-3.md
+3. Create Konsist architectural rule to enforce naming pattern
+4. Update all existing test cases to follow standard
+5. Add pre-commit hook or CI check to validate compliance
+
+**Acceptance Criteria:**
+
+**Phase 1: Define Standard**
+- [ ] Test naming standard documented with clear patterns:
+  - FunSpec: `test("{STORY}-{TYPE}-{SEQ}: {Description}")`
+  - BehaviorSpec: Comment header `// {STORY}-{TYPE}-{SEQ}` above Given/When/Then blocks
+  - Pattern format: `{EPIC}.{STORY}-{TYPE}-{SEQ}` (e.g., "2.4-UNIT-001", "4.6-INT-003")
+  - TYPE values: UNIT, INT (integration), E2E (end-to-end)
+- [ ] Examples provided for each test framework in documentation
+- [ ] Standard added to test-strategy-and-standards-revision-3.md
+
+**Phase 2: Konsist Enforcement**
+- [ ] Konsist rule created: `TestCaseNamingConventionTest.kt`
+- [ ] Rule validates FunSpec test names match pattern: `^\d+\.\d+-[A-Z]+-\d+:.*`
+- [ ] Rule validates BehaviorSpec blocks have story reference comments
+- [ ] Rule integrated into `konsistTest` task
+- [ ] CI pipeline fails if naming violations detected
+
+**Phase 3: Codebase Migration**
+- [ ] All FunSpec tests updated with story references:
+  ```kotlin
+  test("2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") {
+      // existing test logic
+  }
+  ```
+- [ ] All BehaviorSpec tests updated with story reference comments:
+  ```kotlin
+  // Story 2.1-UNIT-005: Widget aggregate creation validation
+  Given("Widget aggregate creation") {
+      When("creating a widget with valid data") {
+          Then("widget should be created successfully") {
+              // test logic
+          }
+      }
+  }
+  ```
+- [ ] TenantEventMessageInterceptorSpec fully consistent (all tests have IDs)
+- [ ] Zero naming violations in `./gradlew konsistTest`
+
+**Phase 4: Process Integration**
+- [ ] Updated test templates in eaf-cli to include story references
+- [ ] Developer documentation updated with naming examples
+- [ ] Pre-commit hook (optional) warns on missing story references
+
+**Technical Notes:**
+- Konsist rule example:
+  ```kotlin
+  @Test
+  fun `all FunSpec test cases must include story reference`() {
+      Konsist.scopeFromProject()
+          .classes()
+          .withNameEndingWith("Test", "Spec")
+          .functions()
+          .withName("test")
+          .assert { function ->
+              val testName = function.text.substringAfter("test(\"").substringBefore("\")")
+              testName.matches(Regex("^\\d+\\.\\d+-[A-Z]+-\\d+:.*"))
+          }
+  }
+  ```
+- Story reference format allows tracing tests to PRD stories
+- Existing test IDs (e.g., "2.4-UNIT-001") already follow pattern
+
+**Estimated Effort:** 3-5 days
+
+---
+
+### Story 8.2: Migrate Read Projections from JPA to jOOQ
 
 **As a** Developer, **I want** to replace JPA-based CQRS read projections with jOOQ DSL, **so that** the read model achieves optimal performance and aligns with architectural specifications.
 
@@ -119,7 +218,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.2: Re-enable and Fix 7 Disabled Integration Tests
+### Story 8.3: Re-enable and Fix 7 Disabled Integration Tests
 
 **As a** QA Engineer, **I want** all disabled integration tests re-enabled and passing, **so that** critical system behaviors are continuously validated and test coverage gaps are eliminated.
 
@@ -191,7 +290,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.3: Implement React-Admin Consumer Application
+### Story 8.4: Implement React-Admin Consumer Application
 
 **As an** Administrator, **I want** a functional React-Admin portal that integrates the framework shell with product UI modules, **so that** I can manage widgets through a modern web interface.
 
@@ -376,16 +475,18 @@ The following were initially flagged but validated as **architecturally correct*
 
 | Story | Complexity | Estimated Effort |
 |-------|-----------|-----------------|
-| 8.1 - jOOQ Migration | High | 5-8 days |
-| 8.2 - Re-enable Tests | High | 5-7 days |
-| 8.3 - React-Admin Consumer | Medium | 5-7 days |
-| **Total Epic** | **High** | **15-22 days** |
+| 8.1 - Test Case Naming | Medium | 3-5 days |
+| 8.2 - jOOQ Migration | High | 5-8 days |
+| 8.3 - Re-enable Tests | High | 5-7 days |
+| 8.4 - React-Admin Consumer | Medium | 5-7 days |
+| **Total Epic** | **High** | **18-27 days** |
 
 **Notes:**
-- Stories 8.1 and 8.3 can be parallelized (different developers)
-- Story 8.2 requires systematic investigation (potential blockers)
+- Story 8.1 can be parallelized with 8.2 and 8.4 (Konsist work independent)
+- Stories 8.2 and 8.4 can be parallelized (different developers)
+- Story 8.3 requires systematic investigation (potential blockers)
 - Buffer included for integration issues and testing
-- Assumes familiarity with jOOQ, Kotest, React-Admin
+- Assumes familiarity with Konsist, jOOQ, Kotest, React-Admin
 
 ---
 
@@ -437,18 +538,22 @@ After completing Epic 8, validate:
 **Investigation Methodology:**
 - Initial scan: 6 potential findings identified
 - Architectural review (Winston): Frontend architecture clarified
-- Analytical validation (Mary): 3 findings confirmed, 3 invalidated
+- Analytical validation (Mary): Cross-referenced with architecture docs
+- **Refinement (Winston)**: Test case naming re-evaluated - confirmed as valid gap
 
 **Confirmed Gaps:**
-1. ✅ jOOQ not used (JPA instead) - Architectural violation
-2. ✅ 7 tests disabled - Intentional technical debt
-3. ✅ Consumer app missing - Epic 7 infrastructure exists, integration missing
+1. ✅ Test case naming inconsistency - No story references in test names (Gap 4)
+2. ✅ jOOQ not used (JPA instead) - Architectural violation (Gap 1)
+3. ✅ 7 tests disabled - Intentional technical debt (Gap 2)
+4. ✅ Consumer app missing - Epic 7 infrastructure exists, integration missing (Gap 3)
 
 **Invalidated Findings:**
-1. ❌ Test naming inconsistency - Intentional architectural choice
+1. ❌ Test file naming (*Test.kt vs *Spec.kt) - Intentional architectural choice
 2. ❌ Missing REST API - Already implemented (WidgetController)
 3. ❌ Incomplete event sourcing - Correct CQRS/ES pattern
 
-**Epic 8 Accuracy:** 50% (3 of 6 findings valid)
+**Epic 8 Accuracy:** 67% (4 of 6 findings valid after refinement)
+
+**Key Clarification:** Initial analysis confused test **file** naming (valid) with test **case** naming (gap). Winston's architectural review correctly identified that test case names lack consistent story references, which is a traceability and quality gate issue requiring standardization.
 
 This epic addresses the confirmed architectural gaps, ensuring Epic 9 (Licensing Server MVP) builds on a solid, compliant foundation.
