@@ -95,8 +95,8 @@ exit 0
 
         file(".git/hooks/commit-msg").apply {
             writeText("""#!/bin/sh
-echo "✓ Commit message (Task 4 pending)"
-exit 0
+# EAF Commit Message Validation (Story 8.2 Task 4)
+./scripts/git/validate-commit-msg.sh "$1"
 """)
             setExecutable(true)
         }
