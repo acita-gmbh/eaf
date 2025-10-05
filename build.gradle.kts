@@ -105,13 +105,12 @@ exit 0
     }
 }
 
-tasks.register("preCommitCheck") {
+tasks.register<Exec>("preCommitCheck") {
     group = "verification"
     description = "Run pre-commit validation (Story 8.2)"
-    doLast {
-        logger.lifecycle("🔍 Pre-commit validation (Tasks 2-5 pending)")
-        logger.lifecycle("✅ Placeholder - full implementation in Tasks 2-6")
-    }
+
+    workingDir = rootDir
+    commandLine("scripts/git/pre-commit-validate.sh")
 }
 
 tasks.register("uninstallGitHooks") {
