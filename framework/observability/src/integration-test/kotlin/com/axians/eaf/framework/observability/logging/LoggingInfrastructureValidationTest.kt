@@ -54,11 +54,11 @@ class LoggingInfrastructureValidationTest :
             val validJson =
                 """
                 {
-                    "timestamp": "2025-09-29T10:15:30.123Z",
+                    "@timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
-                    "logger": "test.logger",
+                    "logger_name": "test.logger",
                     "message": "Test message",
-                    "thread": "main"
+                    "thread_name": "main"
                 }
                 """.trimIndent()
 
@@ -81,10 +81,10 @@ class LoggingInfrastructureValidationTest :
             // Then: Should fail validation
             result.isValid shouldBe false
             result.jsonValid shouldBe true
-            result.missingRequiredFields shouldContain "timestamp"
+            result.missingRequiredFields shouldContain "@timestamp"
             result.missingRequiredFields shouldContain "level"
-            result.missingRequiredFields shouldContain "logger"
-            result.missingRequiredFields shouldContain "thread"
+            result.missingRequiredFields shouldContain "logger_name"
+            result.missingRequiredFields shouldContain "thread_name"
         }
 
         test("5.1-INT-004: LoggingContextProvider constants are defined correctly") {

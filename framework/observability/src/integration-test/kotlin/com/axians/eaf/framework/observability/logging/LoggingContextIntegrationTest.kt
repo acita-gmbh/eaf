@@ -1,22 +1,47 @@
 package com.axians.eaf.framework.observability.logging
 
+import com.axians.eaf.framework.observability.ObservabilityTestApplication
 import com.axians.eaf.framework.security.tenant.TenantContext
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.extensions.spring.SpringExtension
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldStartWith
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 
 /**
- * Basic integration test for logging context functionality.
- * Tests core MDC behavior without full Spring Boot context complexity.
+ * Integration test for logging context functionality with Spring Boot context.
+ * Tests MDC propagation and tenant ID in logs with proper Spring integration.
  *
- * This validates the infrastructure patterns from Story 4.6/4.7 approach.
+ * Validates infrastructure patterns from Story 4.6/4.7 approach.
  */
-class LoggingContextIntegrationTest :
-    FunSpec({
+@SpringBootTest(
+    classes = [ObservabilityTestApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.NONE,
+    properties = [
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration",
+        "otel.java.global-autoconfigure.enabled=false",
+        "otel.sdk.disabled=true",
+        "otel.traces.exporter=none",
+        "otel.metrics.exporter=none",
+        "otel.logs.exporter=none",
+    ],
+)
+@ActiveProfiles("observability-test")
+class LoggingContextIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var tenantContext: TenantContext
 
-        val logger = LoggerFactory.getLogger(LoggingContextIntegrationTest::class.java)
+    private val logger = LoggerFactory.getLogger(LoggingContextIntegrationTest::class.java)
+
+    init {
+        extension(SpringExtension())
 
         beforeEach {
             // Clear MDC before each test
@@ -113,9 +138,9 @@ class LoggingContextIntegrationTest :
                 {
                     "@timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
-                    "logger": "com.example.TestLogger",
+                    "logger_name": "com.example.TestLogger",
                     "message": "Test message",
-                    "thread": "main",
+                    "thread_name": "main",
                     "service_name": "test-service",
                     "trace_id": "trace123",
                     "tenant_id": "tenant123"
@@ -129,4 +154,5 @@ class LoggingContextIntegrationTest :
             result.jsonValid shouldBe true
             result.missingRequiredFields.size shouldBe 0
         }
-    })
+    }
+}

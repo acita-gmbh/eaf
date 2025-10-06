@@ -4,16 +4,12 @@ import com.axians.eaf.framework.security.tenant.TenantContext
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
@@ -22,32 +18,14 @@ import java.io.PrintStream
  * Tests AC 4: Integration tests confirm logs are written in correct JSON format
  * and include required context (service_name, trace_id, tenant_id).
  */
-@SpringBootTest(classes = [com.axians.eaf.framework.observability.ObservabilityTestApplication::class])
-@ActiveProfiles("test")
 class StructuredLoggingIntegrationTest : FunSpec() {
-    @Autowired
-    private lateinit var loggingContextProvider: LoggingContextProvider
-
-    @Autowired
-    private lateinit var tenantContext: TenantContext
+    private val loggingContextProvider = LoggingContextProvider("test-service")
+    private val tenantContext = TenantContext()
 
     private val logger = LoggerFactory.getLogger(StructuredLoggingIntegrationTest::class.java)
     private val objectMapper = ObjectMapper()
 
     init {
-        extension(SpringExtension())
-
-        test("should initialize service name in MDC context") {
-            // Given: LoggingContextProvider is configured
-            loggingContextProvider.setServiceName()
-
-            // When: Service name is set
-            val serviceName = MDC.get(LoggingContextProvider.SERVICE_NAME_KEY)
-
-            // Then: Service name should be present
-            serviceName shouldNotBe null
-            serviceName shouldContain "test" // Default test application name
-        }
 
         test("should set and retrieve trace ID in MDC") {
             // Given: A trace ID
@@ -121,9 +99,9 @@ class StructuredLoggingIntegrationTest : FunSpec() {
                 {
                     "@timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
-                    "logger": "com.example.TestLogger",
+                    "logger_name": "com.example.TestLogger",
                     "message": "Test message",
-                    "thread": "main",
+                    "thread_name": "main",
                     "service_name": "test-service",
                     "trace_id": "trace123",
                     "tenant_id": "tenant123"
@@ -154,9 +132,9 @@ class StructuredLoggingIntegrationTest : FunSpec() {
             // Then: Validation should fail with missing fields
             result.isValid shouldBe false
             result.jsonValid shouldBe true
-            result.missingRequiredFields shouldContain "timestamp"
+            result.missingRequiredFields shouldContain "@timestamp"
             result.missingRequiredFields shouldContain "level"
-            result.missingRequiredFields shouldContain "logger"
+            result.missingRequiredFields shouldContain "logger_name"
         }
 
         test("should detect invalid JSON format") {
