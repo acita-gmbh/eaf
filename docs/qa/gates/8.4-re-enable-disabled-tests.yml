@@ -84,7 +84,7 @@ requirements_trace:
       status: "COMPLETED"
     - ac: 3
       description: "Build.gradle.kts plugin order correct"
-      validation: "Task 4 verifies id("eaf.testing") before id("eaf.spring-boot")"
+      validation: 'Task 4 verifies id("eaf.testing") before id("eaf.spring-boot")'
       status: "COMPLETED"
     - ac: 4
       description: "All 7 test files compile without errors"

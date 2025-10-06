@@ -297,7 +297,7 @@ class WidgetApiIntegrationTest : FunSpec() {
             registry.add("spring.datasource.username", TestContainers.postgres::getUsername)
             registry.add("spring.datasource.password", TestContainers.postgres::getPassword)
             registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
-                "${TestContainers.keycloak.authServerUrl}/realms/eaf-test"
+                "${TestContainers.keycloak.authServerUrl}/realms/eaf"
             }
         }
     }

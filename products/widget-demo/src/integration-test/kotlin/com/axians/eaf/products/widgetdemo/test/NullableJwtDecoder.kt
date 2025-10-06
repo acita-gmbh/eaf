@@ -20,14 +20,7 @@ class NullableJwtDecoder : JwtDecoder {
          */
         fun createNull(): NullableJwtDecoder = NullableJwtDecoder()
 
-        /**
-         * Creates nullable JWT decoder with predefined state for specific test scenarios.
-         */
-        fun createNull(state: Map<String, Any>): NullableJwtDecoder {
-            val decoder = NullableJwtDecoder()
-            // Configure decoder state based on test requirements
-            return decoder
-        }
+
     }
 
     override fun decode(token: String): Jwt =

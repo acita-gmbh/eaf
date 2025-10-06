@@ -72,6 +72,10 @@ import java.util.concurrent.TimeUnit
     ],
 )
 class WidgetEventProcessingIntegrationTest : FunSpec() {
+    companion object {
+        private const val CLEANUP_BATCH_SIZE = 1000
+    }
+
     @Autowired
     private lateinit var commandGateway: CommandGateway
 
@@ -86,7 +90,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
 
         beforeTest {
             // Clean up projections before each test
-            repository.deleteBatch(1000)
+            repository.deleteBatch(CLEANUP_BATCH_SIZE)
         }
 
         test("should process CreateWidgetCommand and create projection (8.4-EP-001)") {
