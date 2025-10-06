@@ -144,6 +144,10 @@ tasks.named("runKtlintCheckOverIntegrationTestSourceSet") {
     dependsOn("jooqCodegen")
 }
 
+tasks.named("runKtlintCheckOverPerfTestSourceSet") {
+    dependsOn("jooqCodegen")
+}
+
 // Story 8.3: Force consistent OpenTelemetry versions to prevent downgrades
 // Root cause: Spring Boot BOM forces older versions, causing 1.54.1 -> 1.49.0 downgrade
 // This breaks integration tests with ClassNotFoundException: io.opentelemetry.common.ComponentLoader
