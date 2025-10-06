@@ -114,7 +114,8 @@ class WidgetProjectionRepositoryValidationTest : FunSpec() {
             jooqRepository.existsByWidgetIdAndTenantId("validation-1", VALIDATION_TENANT_ID) shouldBe true
 
             jooqRepository.deleteByWidgetIdAndTenantId("validation-9", VALIDATION_TENANT_ID) shouldBe 1
-            legacyRepository.deleteById("validation-9")
+            // CodeRabbit fix: Don't delete same record twice - check existence instead
+            legacyRepository.existsById("validation-9") shouldBe false
 
             jooqRepository.countByTenantId(VALIDATION_TENANT_ID) shouldBe legacyRepository.count().toLong()
         }
