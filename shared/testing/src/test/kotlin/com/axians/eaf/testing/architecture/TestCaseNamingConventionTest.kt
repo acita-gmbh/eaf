@@ -39,10 +39,11 @@ class TestCaseNamingConventionTest :
                 if (testFiles.isNotEmpty()) {
                     testFiles.assertTrue { file ->
                         // Find all test("...") function calls in the file
-                        val testCalls = Regex("""test\s*\(\s*"([^"]+)"\s*\)""").findAll(file.text)
+                        // Convert to list to avoid sequence consumption issue (Copilot review fix)
+                        val testCalls = Regex("""test\s*\(\s*"([^"]+)"\s*\)""").findAll(file.text).toList()
 
                         // If file has test() calls, ALL must have story references (STRICT MODE)
-                        if (testCalls.any()) {
+                        if (testCalls.isNotEmpty()) {
                             testCalls.all { match ->
                                 val testName = match.groupValues[1]
 
@@ -113,12 +114,13 @@ class TestCaseNamingConventionTest :
                     testFiles.assertTrue { file ->
                         // Extract all story references from the file
                         // Pattern: {EPIC}.{STORY}-{TYPE}-{SEQ}
-                        val storyReferences = Regex("""\d+\.\d+-([A-Z]+)-\d+""").findAll(file.text)
+                        // Convert to list to avoid sequence consumption issue (Copilot review fix)
+                        val storyReferences = Regex("""\d+\.\d+-([A-Z]+)-\d+""").findAll(file.text).toList()
 
                         // Validate each TYPE is one of: UNIT, INT, E2E
                         val validTypes = setOf("UNIT", "INT", "E2E")
 
-                        if (storyReferences.any()) {
+                        if (storyReferences.isNotEmpty()) {
                             storyReferences.all { match ->
                                 val type = match.groupValues[1]
                                 validTypes.contains(type)
@@ -151,10 +153,11 @@ class TestCaseNamingConventionTest :
                 if (testFiles.isNotEmpty()) {
                     testFiles.assertTrue { file ->
                         // Extract all story references
-                        val storyReferences = Regex("""(\d+)\.(\d+)-[A-Z]+-\d+""").findAll(file.text)
+                        // Convert to list to avoid sequence consumption issue (Copilot review fix)
+                        val storyReferences = Regex("""(\d+)\.(\d+)-[A-Z]+-\d+""").findAll(file.text).toList()
 
                         // Validate EPIC and STORY are numeric and in reasonable range
-                        if (storyReferences.any()) {
+                        if (storyReferences.isNotEmpty()) {
                             storyReferences.all { match ->
                                 val epic = match.groupValues[1].toIntOrNull()
                                 val story = match.groupValues[2].toIntOrNull()
