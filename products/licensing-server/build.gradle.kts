@@ -5,6 +5,12 @@ plugins {
     id("eaf.quality-gates")
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry:opentelemetry-bom:1.54.1")
+    }
+}
+
 description = "EAF Licensing Server - First product implementation (Epic 8)"
 
 dependencies {
@@ -24,6 +30,9 @@ dependencies {
 
     // Functional helpers
     implementation(libs.bundles.arrow)
+
+    // OpenTelemetry for observability
+    implementation(libs.opentelemetry.instrumentation.spring.boot)
 
     // Database driver for local onboarding
     runtimeOnly(libs.postgresql)

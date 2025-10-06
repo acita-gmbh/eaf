@@ -85,11 +85,11 @@ class LoggingContextProviderTest :
             val validJson =
                 """
                 {
-                    "timestamp": "2025-09-29T10:15:30.123Z",
+                    "@timestamp": "2025-09-29T10:15:30.123Z",
                     "level": "INFO",
-                    "logger": "test.Logger",
+                    "logger_name": "com.example.TestLogger",
                     "message": "Test message",
-                    "thread": "main",
+                    "thread_name": "main",
                     "service_name": "test-service",
                     "trace_id": "trace123",
                     "tenant_id": "tenant123"

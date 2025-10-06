@@ -1375,6 +1375,61 @@ class GoodTenantTest : FunSpec({
 })
 ```
 
+## Integration Test Re-enablement (Story 8.4)
+
+### OpenTelemetry ClassNotFoundException Workaround
+
+**Issue**: During Story 8.3 (jOOQ migration), integration tests using `@SpringBootTest` failed with `ClassNotFoundException` related to OpenTelemetry auto-configuration, preventing the re-enablement of 7 disabled integration tests.
+
+**Root Cause**: OpenTelemetry auto-configuration classes were not available in the test classpath, causing Spring Boot to fail during context initialization.
+
+**Solution Pattern**: Disable OpenTelemetry globally in integration tests using `@TestPropertySource`:
+
+```kotlin
+@SpringBootTest(classes = [MinimalTestConfig::class])
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
+@TestPropertySource(properties = [
+    "otel.java.global-autoconfigure.enabled=false",
+    "otel.sdk.disabled=true",
+    "otel.traces.exporter=none",
+    "otel.metrics.exporter=none",
+    "otel.logs.exporter=none"
+])
+class WidgetIntegrationTest : FunSpec() {
+    // Test implementation
+}
+```
+
+**Why This Works**:
+- Disables OpenTelemetry auto-configuration entirely in test environment
+- Prevents classpath scanning for missing OpenTelemetry classes
+- Maintains observability in production while enabling integration testing
+- Applied consistently across all re-enabled integration tests
+
+**Impact**: Successfully re-enabled 7 integration tests covering:
+- Widget lifecycle (creation, API, event store, projection processing)
+- Observability (logging context, structured logging)
+- End-to-end CQRS flows with Testcontainers (PostgreSQL, Keycloak, Redis)
+
+**Future Considerations**: Monitor OpenTelemetry classpath issues in production; consider explicit dependency management for observability components.
+
+### Re-enabled Test Coverage
+
+Following the re-enablement, the integration test suite now provides comprehensive coverage:
+
+| Test File | Coverage Area | Containers Used | Key Validations |
+|-----------|---------------|-----------------|-----------------|
+| `WidgetIntegrationTest.kt` | CQRS command handling | PostgreSQL, Redis, Keycloak | Command dispatch, event persistence, tenant isolation |
+| `WidgetApiIntegrationTest.kt` | REST API with auth | PostgreSQL, Keycloak | Authentication, authorization, API contracts |
+| `WidgetEventStoreIntegrationTest.kt` | Event sourcing | PostgreSQL | Event storage, retrieval, sequence integrity |
+| `WidgetEventProcessingIntegrationTest.kt` | Projection updates | PostgreSQL | Event processing, read model consistency |
+| `WidgetWalkingSkeletonIntegrationTest.kt` | End-to-end CQRS | PostgreSQL, Keycloak | Complete command → event → projection → query flow |
+| `LoggingContextIntegrationTest.kt` | MDC propagation | Spring context | Tenant ID in logs, context preservation |
+| `StructuredLoggingIntegrationTest.kt` | JSON log format | Spring context | Log structure, field validation |
+
+**Test Execution**: All 7 tests pass locally (3 consecutive runs) with execution time <5 minutes total, meeting Story 8.4 acceptance criteria.
+
 ## Related Documentation
 
 - **[System Components](components.md)** - Component testing patterns

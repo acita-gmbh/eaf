@@ -50,11 +50,12 @@ dependencies {
     integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
     integrationTestImplementation("org.springframework.boot:spring-boot-starter-test")
     integrationTestImplementation("org.springframework.security:spring-security-test")
+    integrationTestImplementation(project(":framework:observability"))
+    integrationTestImplementation(libs.jakarta.json.bind.api)
+    implementation(libs.jackson.module.kotlin)
 
-    // Story 8.3: OpenTelemetry required for integration tests that load full application context
-    integrationTestImplementation(libs.bundles.opentelemetry)
-    // Story 8.3: Add missing autoconfigure extension that contains ComponentLoader
-    integrationTestImplementation("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.54.1")
+    // Story 8.3: OpenTelemetry causes ClassNotFoundException, exclude it for integration tests
+    // integrationTestImplementation(libs.bundles.opentelemetry)
 }
 
 jooq {
@@ -148,25 +149,8 @@ tasks.named("runKtlintCheckOverPerfTestSourceSet") {
     dependsOn("jooqCodegen")
 }
 
-// Story 8.3: Force consistent OpenTelemetry versions to prevent downgrades
-// Root cause: Spring Boot BOM forces older versions, causing 1.54.1 -> 1.49.0 downgrade
-// This breaks integration tests with ClassNotFoundException: io.opentelemetry.common.ComponentLoader
-configurations.all {
-    resolutionStrategy {
-        force("io.opentelemetry:opentelemetry-api:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-common:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-trace:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-metrics:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-logs:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.54.1")
-        force("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.54.1")
-        force("io.opentelemetry:opentelemetry-exporter-otlp:1.54.1")
-        force("io.opentelemetry:opentelemetry-exporter-common:1.54.1")
-        force("io.opentelemetry:opentelemetry-exporter-sender-okhttp:1.54.1")
-        force("io.opentelemetry:opentelemetry-context:1.54.1")
-    }
-}
+// Story 8.3: Use Spring Boot BOM versions for OpenTelemetry compatibility
+// Removed force rules to use Spring Boot managed versions
 
 // Skip quality gates for minimal reference implementation
 // detekt: Version 1.23.8 incompatible with Kotlin 2.2.20 (compiled with 2.0.21)

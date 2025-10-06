@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.cqrs.config
 
 import com.axians.eaf.framework.cqrs.interceptors.CommandMetricsInterceptor
+import com.axians.eaf.framework.cqrs.interceptors.TenantCommandInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCorrelationDataProvider
 import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TracingCommandInterceptor
@@ -183,6 +184,30 @@ class AxonConfiguration {
     ) {
         configurer.onInitialize { config ->
             config.commandBus().registerHandlerInterceptor(commandMetricsInterceptor)
+        }
+    }
+
+    /**
+     * Registers TenantCommandInterceptor for tenant context setup in command handlers.
+     *
+     * **Execution Order**: Registered BEFORE command metrics to ensure tenant context
+     * is available during command processing and metrics collection.
+     *
+     * **CRITICAL**: This interceptor mitigates SEC-001 risk (tenant isolation bypass)
+     * by ensuring TenantContext is populated before aggregate command handlers execute.
+     *
+     * Story 4.4: Tenant Context Propagation for Commands
+     *
+     * @param configurer Axon framework configurer
+     * @param tenantCommandInterceptor Tenant context interceptor bean
+     */
+    @Autowired
+    fun configureTenantCommandInterceptor(
+        configurer: Configurer,
+        tenantCommandInterceptor: TenantCommandInterceptor,
+    ) {
+        configurer.onInitialize { config ->
+            config.commandBus().registerHandlerInterceptor(tenantCommandInterceptor)
         }
     }
 }
