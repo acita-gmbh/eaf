@@ -319,6 +319,104 @@ class MyTest : FunSpec({
 })
 ```
 
+### Test Case Naming Convention (MANDATORY)
+
+**Epic 8 Story 8.1**: All test cases MUST include story references for traceability and quality gate validation.
+
+#### Standard Format
+
+**Pattern**: `{EPIC}.{STORY}-{TYPE}-{SEQ}: {Description}`
+
+- **{EPIC}.{STORY}**: Story reference (e.g., "2.4", "4.6", "8.1")
+- **{TYPE}**: Test type
+  - `UNIT`: Business logic / domain tests
+  - `INT`: Integration tests (with Testcontainers)
+  - `E2E`: End-to-end / system tests
+- **{SEQ}**: Sequential number within story (001, 002, 003, ...)
+- **{Description}**: Clear description of what is being tested
+
+#### FunSpec Test Naming
+
+```kotlin
+class WidgetQueryHandlerTest : FunSpec({
+    test("2.4-UNIT-001: FindWidgetByIdQuery returns widget response when found") {
+        // Test logic - validates Story 2.4 AC1
+    }
+
+    test("2.4-UNIT-002: FindWidgetByIdQuery returns null when not found") {
+        // Test logic - validates Story 2.4 AC2
+    }
+
+    test("2.4-INT-001: FindWidgetsQuery handles pagination with real database") {
+        // Integration test - validates Story 2.4 AC3
+    }
+})
+```
+
+#### BehaviorSpec Test Naming
+
+For BehaviorSpec, use comment headers to indicate story references:
+
+```kotlin
+class WidgetTest : BehaviorSpec({
+    // Story 2.1-UNIT-001: Widget aggregate creation with valid data
+    Given("Widget aggregate creation") {
+        When("creating a widget with valid data") {
+            Then("widget should be created successfully") {
+                // Test logic
+            }
+        }
+    }
+
+    // Story 2.1-UNIT-002: Widget aggregate validation
+    Given("Widget aggregate creation") {
+        When("creating a widget with invalid name pattern") {
+            Then("should return validation error") {
+                // Test logic
+            }
+        }
+    }
+})
+```
+
+#### Integration Test Naming
+
+Integration tests follow the same pattern with `INT` type:
+
+```kotlin
+class TenantContextFilterIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+
+        test("4.1-INT-001: should extract tenant ID from JWT and populate context") {
+            // Integration test with Spring Boot context
+        }
+
+        test("4.1-INT-002: should enforce fail-closed design when tenant ID missing") {
+            // Security integration test
+        }
+    }
+}
+```
+
+#### Enforcement
+
+- **Konsist Rule**: `TestCaseNamingConventionTest.kt` validates all test names
+- **CI Pipeline**: Fails if naming violations detected
+- **Pre-commit Hook**: Optional warning for missing story references
+
+#### Benefits
+
+1. **Traceability**: Direct mapping from test to story acceptance criteria
+2. **Quality Gates**: Easy validation that all story ACs are tested
+3. **Test Reports**: Clear story coverage in test execution reports
+4. **Documentation**: Self-documenting test purpose and origin
+
+---
+
 ### Test Specifications
 
 ```kotlin

@@ -15,7 +15,7 @@ class ComponentLocationTests :
     FunSpec({
 
         context("Component Location Validation") {
-            test("AxonConfiguration should be in correct location when implemented") {
+            test("4.5-UNIT-001: AxonConfiguration should be in correct location when implemented") {
                 val axonConfigFiles =
                     Konsist
                         .scopeFromProject()
@@ -40,7 +40,7 @@ class ComponentLocationTests :
                 }
             }
 
-            test("Product controllers should NOT be in framework modules") {
+            test("4.5-UNIT-002: Product controllers should NOT be in framework modules") {
                 // Story 6.3: Framework modules contain ONLY infrastructure (no product-specific code)
                 // Product controllers belong in products/* modules
                 val controllerFiles =
@@ -68,7 +68,7 @@ class ComponentLocationTests :
                 }
             }
 
-            test("GlobalExceptionHandler should be in correct location when implemented") {
+            test("4.5-UNIT-003: GlobalExceptionHandler should be in correct location when implemented") {
                 val exceptionHandlerFiles =
                     Konsist
                         .scopeFromProject()
@@ -83,7 +83,7 @@ class ComponentLocationTests :
                 }
             }
 
-            test("Integration tests should follow package structure") {
+            test("4.5-UNIT-004: Integration tests should follow package structure") {
                 val integrationTestFiles =
                     Konsist
                         .scopeFromProject()
@@ -101,7 +101,7 @@ class ComponentLocationTests :
                 }
             }
 
-            test("Framework modules must NOT depend on product-specific types (ARCH-001)") {
+            test("4.5-UNIT-005: Framework modules must NOT depend on product-specific types (ARCH-001)") {
                 // Story 6.5 ARCH-001: Framework modules MUST be product-agnostic
                 // Prevents compile-time coupling to product domains (e.g., Widget)
                 val frameworkFiles =

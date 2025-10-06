@@ -1,0 +1,178 @@
+schema: 1
+story: "8.5"
+story_title: "Implement React-Admin Consumer Application"
+gate: PASS
+status_reason: "Story is comprehensive with excellent micro-frontend architecture guidance, complete WCAG AA accessibility validation (Phase 7), and clear integration strategy. All prerequisites exist (framework shell, UI generator, REST API). Ready for implementation."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-05T20:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+quality_score: 92
+
+expires: "2025-10-19T00:00:00Z"
+
+evidence:
+  tests_reviewed: 0  # Pre-implementation - manual testing workflow defined
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]  # All 41 ACs traceable
+    ac_gaps: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 3, low: 0 }
+  highest_risk:
+    id: "8.4-RISK-001"
+    category: "Frontend-Backend Integration"
+    probability: 3  # Medium
+    impact: 2  # Low-Medium
+    score: 6  # MEDIUM RISK
+    description: "React-Admin consumer app may have authentication/CORS/data format issues when integrating with backend"
+    mitigation: "Contract-first approach using existing OpenAPI spec; Vite proxy avoids CORS in development; manual testing workflow validates all integration points"
+  all_risks:
+    - id: "8.4-RISK-001"
+      category: "Frontend-Backend Integration"
+      probability: 3
+      impact: 2
+      score: 6
+      mitigation: "Contract-first + Vite proxy + manual testing workflow"
+    - id: "8.4-RISK-002"
+      category: "Workspace Configuration"
+      probability: 2  # Low
+      impact: 2  # Low-Medium
+      score: 4  # LOW RISK
+      description: "npm/pnpm workspace dependencies may not resolve correctly across framework shell and product UI modules"
+      mitigation: "Task 3 specifically validates workspace resolution; troubleshooting guide in Dev Notes"
+    - id: "8.4-RISK-003"
+      category: "Keycloak Integration"
+      probability: 2  # Low
+      impact: 2  # Low
+      score: 4  # LOW RISK
+      description: "Keycloak redirect loop or authentication flow issues"
+      mitigation: "Framework shell should provide auth logic; troubleshooting guide includes redirect_uri and clientId validation"
+  recommendations:
+    must_fix: []
+    monitor:
+      - "Monitor Keycloak authentication flow (redirect loop detection)"
+      - "Validate workspace dependency resolution works across framework/products/apps"
+      - "Test WCAG AA compliance using axe DevTools during development"
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Keycloak OIDC integration reuses existing Epic 3 security patterns. JWT in Authorization header enforced. Tenant isolation propagated via API calls. WCAG AA requirements support security (accessible error messages, clear authentication flows)."
+  performance:
+    status: PASS
+    notes: "Target: <2 seconds initial load. Vite optimizes production builds. React-Admin 5.4.0 has good performance characteristics. Reasonable target for MVP."
+  reliability:
+    status: PASS
+    notes: "Error handling comprehensive (AC 28-32): user-friendly messages, RFC 7807 parsing, loading states, success notifications, form validation errors. Robust UX."
+  maintainability:
+    status: PASS
+    notes: "Micro-frontend pattern (thin consumer app, logic in shell/modules) provides excellent maintainability. Adding new products just requires CLI generation + resource registration."
+  accessibility:
+    status: PASS
+    notes: "Phase 7 (AC 33-37) comprehensively validates WCAG AA: keyboard navigation, screen reader compatibility, color contrast (4.5:1 / 3:1), focus indicators, form labels. Validation tools specified (axe, WAVE, NVDA, VoiceOver). Excellent coverage of PRD requirement."
+
+test_design_summary:
+  story_testing_approach: "Manual testing workflow with accessibility validation"
+  test_levels:
+    - level: "Manual Testing"
+      purpose: "Validate all CRUD operations functional"
+      approach: "3-terminal workflow (infrastructure, backend, frontend)"
+      tests:
+        - "Login flow (redirect, authenticate, return)"
+        - "Widget List (display, pagination, filter, search, sort)"
+        - "Create Widget (form validation, submit, success)"
+        - "Edit Widget (optimistic updates, validation)"
+        - "View Widget (details display)"
+        - "Tenant isolation (multi-tenant verification)"
+    - level: "Accessibility Testing"
+      purpose: "WCAG AA compliance validation"
+      approach: "Keyboard testing + screen reader + automated tools"
+      tests:
+        - "Keyboard navigation (Tab, Enter, Space, Escape) - Task 7.1-7.4"
+        - "Screen reader testing (NVDA/VoiceOver) - Task 7.8"
+        - "Color contrast validation (axe DevTools) - Task 7.9"
+        - "ARIA labels and semantic HTML - Task 7.5-7.7, 7.10-7.11"
+    - level: "Build Validation"
+      purpose: "Verify development and production builds work"
+      approach: "Gradle npm tasks"
+      tests:
+        - "./gradlew :apps:admin:npmInstall"
+        - "./gradlew :apps:admin:npmBuild"
+        - "npm run dev (hot reload verification)"
+        - "Vite proxy configuration test"
+  priority_tests:
+    p0:
+      - "Authentication flow working (Keycloak integration)"
+      - "Widget CRUD functional (all operations)"
+      - "Tenant isolation enforced"
+      - "WCAG AA keyboard navigation"
+    p1:
+      - "Error handling (RFC 7807 parsing)"
+      - "WCAG AA screen reader compatibility"
+      - "Build integration (Gradle tasks)"
+    p2:
+      - "Color contrast validation"
+      - "Production build optimization"
+  coverage_gaps: []
+
+requirements_trace:
+  story_reference: "docs/stories/8.4.implement-react-admin-consumer-application.story.md"
+  acceptance_criteria_summary: "41 ACs across 8 phases - all have clear validation approach in tasks"
+  phase_mapping:
+    phase_1_generate_ui_module:
+      acs: [1, 2, 3, 4, 5, 6]
+      validation: "Task 1 - CLI execution and file verification"
+    phase_2_create_consumer_app:
+      acs: [7, 8, 9, 10, 11, 12]
+      validation: "Task 2 - Vite initialization, package.json, App.tsx, configs"
+    phase_3_gradle_integration:
+      acs: [13, 14, 15]
+      validation: "Task 8 - Gradle npm tasks"
+    phase_4_keycloak_auth:
+      acs: [16, 17, 18, 19]
+      validation: "Task 4 - OIDC flow, token management"
+    phase_5_crud_validation:
+      acs: [20, 21, 22, 23, 24, 25, 26, 27]
+      validation: "Task 5 - Manual testing of all operations"
+    phase_6_error_ux:
+      acs: [28, 29, 30, 31, 32]
+      validation: "Task 6 - Error messages, loading, notifications"
+    phase_7_accessibility:
+      acs: [33, 34, 35, 36, 37]
+      validation: "Task 7 - WCAG AA keyboard, screen reader, contrast, focus, labels"
+    phase_8_dev_workflow:
+      acs: [38, 39, 40, 41]
+      validation: "Task 8 - Dev server, hot reload, proxy, CORS"
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding E2E testing framework (Playwright or Cypress) as mandatory rather than optional"
+      refs: ["docs/stories/8.4...story.md"]
+      rationale: "Automated E2E tests would validate CRUD flows more reliably than manual testing; currently only manual workflow provided"
+    - action: "Consider adding visual regression testing for UI consistency"
+      refs: ["Task 9 - Documentation"]
+      rationale: "Would catch unintended UI changes, especially valuable for React-Admin which has complex Material UI theming"
+
+validation_notes: |
+  Story 8.4 is exceptionally comprehensive:
+  - 9 tasks with detailed subtasks
+  - 41 acceptance criteria across 8 phases
+  - Complete code examples (App.tsx, vite.config.ts, package.json)
+  - Micro-frontend architecture clearly explained
+  - WCAG AA accessibility validation added (Phase 7 - 5 ACs, 11 subtasks)
+  - Manual testing workflow with 3-terminal setup
+  - Troubleshooting guide for common issues
+  - Environment variable configuration
+
+  Recent PO update strengthened accessibility:
+  - Added Phase 7 with WCAG AA standards
+  - Added Task 7 with keyboard, screen reader, contrast validation
+  - Added Dev Notes section with WCAG criteria and tools
+
+  No blocking issues identified. Story is ready for implementation.

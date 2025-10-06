@@ -67,7 +67,7 @@ class CompensationWorkflowIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        test("should execute compensation flow when Ansible fails (6.5-E2E-001 - CRITICAL)") {
+        test("6.5-E2E-001: should execute compensation flow when Ansible fails (CRITICAL)") {
             // Given - Deploy compensation test process
             val deployment =
                 processEngine.repositoryService

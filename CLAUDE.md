@@ -504,3 +504,4 @@ Monitor these continuously for system health:
 ## Jira Integration
 
 Commits may include Jira issue numbers in square brackets (e.g., "[DPCMSG-1234] server: fixed xyz"). Use the Jira MCP to lookup additional context when needed.
+- never ever run git commits with "--no-verify", do not skip git commit hooks!

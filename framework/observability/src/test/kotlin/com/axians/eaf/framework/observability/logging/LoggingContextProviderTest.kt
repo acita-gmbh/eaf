@@ -23,7 +23,7 @@ class LoggingContextProviderTest :
             MDC.clear()
         }
 
-        test("should set service name in MDC") {
+        test("5.1-UNIT-001: should set service name in MDC") {
             // When: Service name is set
             loggingContextProvider.setServiceName()
 
@@ -31,7 +31,7 @@ class LoggingContextProviderTest :
             MDC.get(LoggingContextProvider.SERVICE_NAME_KEY) shouldBe "test-service"
         }
 
-        test("should set and clear trace ID") {
+        test("5.1-UNIT-002: should set and clear trace ID") {
             // When: Trace ID is set
             loggingContextProvider.setTraceId("trace-123")
 
@@ -47,7 +47,7 @@ class LoggingContextProviderTest :
             MDC.get(LoggingContextProvider.TRACE_ID_KEY) shouldBe null
         }
 
-        test("should set and clear tenant ID") {
+        test("5.1-UNIT-003: should set and clear tenant ID") {
             // When: Tenant ID is set
             loggingContextProvider.setTenantId("tenant-abc")
 
@@ -63,7 +63,7 @@ class LoggingContextProviderTest :
             MDC.get(LoggingContextProvider.TENANT_ID_KEY) shouldBe null
         }
 
-        test("should handle empty values gracefully") {
+        test("5.1-UNIT-004: should handle empty values gracefully") {
             // When: Empty values are set
             loggingContextProvider.setTraceId("")
             loggingContextProvider.setTenantId("   ")
@@ -77,7 +77,7 @@ class LoggingContextProviderTest :
             loggingContextProvider.getCurrentTenantId() shouldBe null
         }
 
-        test("LoggingFormatValidator should work correctly") {
+        test("5.1-UNIT-005: LoggingFormatValidator should work correctly") {
             // Given: A validator
             val validator = LoggingFormatValidator()
 
@@ -104,7 +104,7 @@ class LoggingContextProviderTest :
             result.presentContextFields.shouldContainAll(listOf("service_name", "trace_id", "tenant_id"))
         }
 
-        test("constants should be defined correctly") {
+        test("5.1-UNIT-006: constants should be defined correctly") {
             LoggingContextProvider.SERVICE_NAME_KEY shouldBe "service_name"
             LoggingContextProvider.TRACE_ID_KEY shouldBe "trace_id"
             LoggingContextProvider.TENANT_ID_KEY shouldBe "tenant_id"

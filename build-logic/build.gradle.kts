@@ -150,6 +150,10 @@ gradlePlugin {
             id = "eaf.workflow"
             implementationClass = "conventions.WorkflowConventionPlugin"
         }
+        register("eaf.pre-commit-hooks") {
+            id = "eaf.pre-commit-hooks"
+            implementationClass = "conventions.PreCommitHooksConventionPlugin"
+        }
     }
 }
 

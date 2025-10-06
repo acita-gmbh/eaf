@@ -1,0 +1,25 @@
+# .github/workflows/validate-hooks.yml
+name: Pre-Commit Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  pre-commit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run Pre-Commit Validation Script
+        run: ./scripts/git/pre-commit-validate.sh

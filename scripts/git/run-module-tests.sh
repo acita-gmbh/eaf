@@ -1,0 +1,29 @@
+#!/bin/bash
+# Story 8.2: Run unit tests for changed modules only (AC8)
+# Usage: ./scripts/git/run-module-tests.sh
+
+set -euo pipefail
+
+# Detect modules from staged files
+MODULES=$(./scripts/git/detect-modules.sh)
+
+if [ -z "$MODULES" ]; then
+    echo "No modules with code changes - skipping tests"
+    exit 0
+fi
+
+echo "Testing changed modules: $(echo "$MODULES" | tr '\n' ' ')"
+
+# Run fast tests only (no Testcontainers)
+for MODULE in $MODULES; do
+    echo "[ ] Testing $MODULE..."
+    # Use -P fastTests=true to skip integration tests
+    if ./gradlew "$MODULE:test" -P fastTests=true --quiet 2>/dev/null; then
+        echo "   ✓ $MODULE tests passed"
+    else
+        echo "   ✗ $MODULE tests failed"
+        exit 1
+    fi
+done
+
+exit 0

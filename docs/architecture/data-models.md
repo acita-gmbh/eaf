@@ -698,6 +698,46 @@ class ProductProjectionEventHandler(
 }
 ```
 
+### Widget Projection (jOOQ Read Model)
+
+```kotlin
+// products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/entities/WidgetProjection.kt
+data class WidgetProjection(
+    val widgetId: String,
+    val tenantId: String,
+    val name: String,
+    val description: String?,
+    val value: BigDecimal,
+    val category: String,
+    val metadata: String?,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+) : TenantAware {
+    override fun getTenantId(): String = tenantId
+}
+
+// products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/repositories/JooqWidgetProjectionRepository.kt
+override fun getCategorySummaryByTenantId(tenantId: String): List<WidgetCategorySummary> =
+    dsl.select(WIDGET_PROJECTION.CATEGORY, COUNT_FIELD, AVG_FIELD, SUM_FIELD)
+        .from(WIDGET_PROJECTION)
+        .where(WIDGET_PROJECTION.TENANT_ID.eq(tenantId))
+        .groupBy(WIDGET_PROJECTION.CATEGORY)
+        .orderBy(WIDGET_PROJECTION.CATEGORY.asc())
+        .fetch { record ->
+            WidgetCategorySummary(
+                category = record.get(WIDGET_PROJECTION.CATEGORY)!!,
+                count = record.get(COUNT_FIELD) ?: 0L,
+                averageValue = record.get(AVG_FIELD) ?: BigDecimal.ZERO,
+                totalValue = record.get(SUM_FIELD) ?: BigDecimal.ZERO,
+            )
+        }
+```
+
+> **Story 8.3 Migration Highlights**
+> - Spring Data JPA repository replaced with a jOOQ-powered implementation (`DSLContext`).
+> - Projection schema defined via `products/widget-demo/src/main/resources/db/jooq/widget_projection.ddl` and generated with `./gradlew :products:widget-demo:jooqCodegen`.
+> - Nullable in-memory repository updated to mirror the new contract for Kotest specs without mocking frameworks.
+
 ### License Projection
 
 ```kotlin
@@ -832,10 +872,86 @@ class LicenseQueryHandler(
 
 ## Repository Interfaces
 
-### Using jOOQ for Type-Safe Queries
+### Using jOOQ for Type-Safe Queries (Story 8.3 - Widget Reference Implementation)
 
 ```kotlin
-// framework/persistence/src/main/kotlin/com/axians/eaf/persistence/repositories/ProductProjectionRepository.kt
+// products/widget-demo/src/main/kotlin/com/axians/eaf/products/widgetdemo/repositories/WidgetProjectionRepository.kt
+@Repository
+class JooqWidgetProjectionRepository(
+    private val dsl: DSLContext
+) : WidgetProjectionRepository {
+
+    override fun save(projection: WidgetProjection): WidgetProjection {
+        val record = projection.toRecord()
+
+        val saved = dsl
+            .insertInto(WidgetProjectionTable.WIDGET_PROJECTION)
+            .set(record)
+            .onConflict(WidgetProjectionTable.WIDGET_PROJECTION.WIDGET_ID)
+            .doUpdate()
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.TENANT_ID, record.tenantId)
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.NAME, record.name)
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.VALUE, record.value)
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.CATEGORY, record.category)
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.METADATA, record.metadata)
+            .set(WidgetProjectionTable.WIDGET_PROJECTION.UPDATED_AT, record.updatedAt)
+            .where(WidgetProjectionTable.WIDGET_PROJECTION.TENANT_ID.eq(record.tenantId)) // CRITICAL: Tenant isolation on UPDATE
+            .returning()
+            .fetchOne() ?: error("Failed to persist widget projection ${projection.widgetId}")
+
+        return saved.toDomain()
+    }
+
+    override fun findByWidgetIdAndTenantId(widgetId: String, tenantId: String): WidgetProjection? =
+        dsl.selectFrom(WidgetProjectionTable.WIDGET_PROJECTION)
+            .where(
+                WidgetProjectionTable.WIDGET_PROJECTION.WIDGET_ID.eq(widgetId.toUuid())
+                    .and(WidgetProjectionTable.WIDGET_PROJECTION.TENANT_ID.eq(tenantId.toUuid()))
+            )
+            .fetchOne()
+            ?.toDomain()
+
+    override fun search(criteria: WidgetSearchCriteria): WidgetPage {
+        val baseCondition = WidgetProjectionTable.WIDGET_PROJECTION.TENANT_ID.eq(criteria.tenantId.toUuid())
+        val filters = mutableListOf<Condition>(baseCondition)
+
+        criteria.category?.takeIf { it.isNotBlank() }?.let {
+            filters += WidgetProjectionTable.WIDGET_PROJECTION.CATEGORY.eq(it)
+        }
+        criteria.search?.takeIf { it.isNotBlank() }?.let {
+            filters += WidgetProjectionTable.WIDGET_PROJECTION.NAME.containsIgnoreCase(it.trim())
+        }
+
+        val whereCondition = filters.reduce { acc, condition -> acc.and(condition) }
+        val orderBy = resolveSort(criteria.sort)
+
+        val items = dsl.selectFrom(WidgetProjectionTable.WIDGET_PROJECTION)
+            .where(whereCondition)
+            .orderBy(orderBy)
+            .limit(criteria.size)
+            .offset(criteria.page * criteria.size)
+            .fetch()
+            .map { it.toDomain() }
+
+        val total = dsl.fetchCount(WidgetProjectionTable.WIDGET_PROJECTION, whereCondition).toLong()
+        return WidgetPage(items = items, total = total)
+    }
+}
+```
+
+**Key Features (Story 8.3)**:
+- **Type-Safe Queries**: Compile-time validation of SQL queries
+- **Tenant Isolation**: All queries include `TENANT_ID` in WHERE clause
+- **Security-Hardened save()**: UPDATE clause includes tenant validation to prevent cross-tenant corruption
+- **Performance**: Direct SQL generation without JPA overhead
+- **Kotlin Extensions**: Native Kotlin DSL for clean query syntax
+
+---
+
+### Future: Product Projection Repository Pattern
+
+```kotlin
+// Future implementation pattern for licensing-server product
 @Repository
 class ProductProjectionRepository(
     private val dsl: DSLContext
@@ -854,7 +970,8 @@ class ProductProjectionRepository(
             .set(PRODUCT_PROJECTION.METADATA, JSON.valueOf(objectMapper.writeValueAsString(projection.metadata)))
             .set(PRODUCT_PROJECTION.CREATED_AT, projection.createdAt)
             .set(PRODUCT_PROJECTION.UPDATED_AT, projection.updatedAt)
-            .onDuplicateKeyUpdate()
+            .onConflict(PRODUCT_PROJECTION.PRODUCT_ID)
+            .doUpdate()
             .set(PRODUCT_PROJECTION.NAME, projection.name)
             .set(PRODUCT_PROJECTION.DESCRIPTION, projection.description)
             .set(PRODUCT_PROJECTION.PRICE, projection.price)
@@ -862,6 +979,7 @@ class ProductProjectionRepository(
             .set(PRODUCT_PROJECTION.FEATURES, JSON.valueOf(objectMapper.writeValueAsString(projection.features)))
             .set(PRODUCT_PROJECTION.METADATA, JSON.valueOf(objectMapper.writeValueAsString(projection.metadata)))
             .set(PRODUCT_PROJECTION.UPDATED_AT, projection.updatedAt)
+            .where(PRODUCT_PROJECTION.TENANT_ID.eq(projection.tenantId)) // Tenant isolation
             .execute()
 
         return projection

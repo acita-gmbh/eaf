@@ -67,7 +67,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        test("should deploy BPMN process with Ansible service task successfully (Subtask 8.3)") {
+        test("6.4-INT-001: should deploy BPMN process with Ansible service task successfully (Subtask 8.3)") {
             // Given - BPMN process definition with RunAnsiblePlaybookTask
             val deployment =
                 processEngine.repositoryService
@@ -95,14 +95,14 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should wire RunAnsiblePlaybookTask delegate via Spring DI (Subtask 8.3)") {
+        test("6.4-INT-002: should wire RunAnsiblePlaybookTask delegate via Spring DI (Subtask 8.3)") {
             // Given - Spring should inject RunAnsiblePlaybookTask bean
 
             // Then - Delegate bean should be available
             runAnsiblePlaybookTask.shouldNotBeNull()
         }
 
-        test("should validate tenant isolation - missing tenantId throws BpmnError (Subtask 8.6)") {
+        test("6.4-INT-003: should validate tenant isolation - missing tenantId throws BpmnError (Subtask 8.6)") {
             // Given - Process deployed
             val deployment =
                 processEngine.repositoryService
@@ -132,7 +132,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should validate tenant isolation - mismatched tenant throws BpmnError (Subtask 8.6 - SECURITY CRITICAL)") {
+        test("6.4-INT-004: should validate tenant isolation - mismatched tenant throws BpmnError (Subtask 8.6 - SECURITY CRITICAL)") {
             // Given
             val deployment =
                 processEngine.repositoryService
@@ -161,7 +161,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should require playbookPath variable - throws BpmnError if missing (Subtask 8.4)") {
+        test("6.4-INT-005: should require playbookPath variable - throws BpmnError if missing (Subtask 8.4)") {
             // Given
             val deployment =
                 processEngine.repositoryService
@@ -190,7 +190,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should execute Ansible playbook successfully via SSH (Subtask 8.5 - E2E)") {
+        test("6.4-E2E-001: should execute Ansible playbook successfully via SSH (Subtask 8.5 - E2E)") {
             // Given - Deploy BPMN with Ansible task
             val deployment =
                 processEngine.repositoryService
@@ -244,7 +244,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should handle Ansible playbook failure via SSH (Subtask 8.7 - E2E)") {
+        test("6.4-E2E-002: should handle Ansible playbook failure via SSH (Subtask 8.7 - E2E)") {
             // Given - Deploy BPMN with error boundary
             val deployment =
                 processEngine.repositoryService
@@ -282,7 +282,7 @@ class RunAnsiblePlaybookTaskIntegrationTest : FunSpec() {
             processEngine.repositoryService.deleteDeployment(deployment.id, true)
         }
 
-        test("should record Flowable metrics during Ansible execution (Subtask 8.8 - E2E)") {
+        test("6.4-E2E-003: should record Flowable metrics during Ansible execution (Subtask 8.8 - E2E)") {
             // Given - Deploy BPMN
             val deployment =
                 processEngine.repositoryService

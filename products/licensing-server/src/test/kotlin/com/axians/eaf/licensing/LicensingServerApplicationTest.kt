@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 
 class LicensingServerApplicationTest :
     FunSpec({
-        test("context loads") {
+        test("9.1-INT-001: context loads") {
             // placeholder to satisfy smoke build; full tests come with domain stories
         }
     })

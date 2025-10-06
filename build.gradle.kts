@@ -1,8 +1,12 @@
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.plugins.JavaPlugin
 
 // Root project build configuration
 // Repositories are managed in settings.gradle.kts
+
+// Story 8.2: Pre-Commit Hook Infrastructure
+// Tasks defined inline for root project only
 
 // Kotest 6.0 Configuration removed from root - handled by convention plugins
 
@@ -66,5 +70,67 @@ subprojects {
                 }
             }
         }
+    }
+
+    // FIX: Force consistent serialization version to fix Kotest XML report error
+    plugins.withType<JavaPlugin> {
+        dependencies {
+            constraints {
+                val serializationVersion = catalog.findVersion("kotlinx-serialization").get().requiredVersion
+                add("testImplementation", "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion")
+                add("testRuntimeOnly", "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion")
+            }
+        }
+    }
+}
+
+// Story 8.2: Git Hook Installation Tasks (Task 1.5-1.6)
+tasks.register("installGitHooks") {
+    group = "verification"
+    description = "Install pre-commit and commit-msg hooks (Story 8.2)"
+
+    doLast {
+        val hooksDir = file(".git/hooks")
+        if (!hooksDir.exists()) {
+            logger.warn("⚠️ .git/hooks not found")
+            return@doLast
+        }
+
+        file(".git/hooks/pre-commit").apply {
+            writeText("""#!/bin/sh
+echo "🔍 EAF pre-commit validation..."
+./gradlew preCommitCheck --daemon --quiet || exit 1
+exit 0
+""")
+            setExecutable(true)
+        }
+
+        file(".git/hooks/commit-msg").apply {
+            writeText("""#!/bin/sh
+# EAF Commit Message Validation (Story 8.2 Task 4)
+./scripts/git/validate-commit-msg.sh "$1"
+""")
+            setExecutable(true)
+        }
+
+        logger.lifecycle("🎉 Git hooks installed! Bypass: git commit --no-verify")
+    }
+}
+
+tasks.register<Exec>("preCommitCheck") {
+    group = "verification"
+    description = "Run pre-commit validation (Story 8.2)"
+
+    workingDir = rootDir
+    commandLine("scripts/git/pre-commit-validate.sh")
+}
+
+tasks.register("uninstallGitHooks") {
+    group = "verification"
+    description = "Remove git hooks (Story 8.2)"
+    doLast {
+        file(".git/hooks/pre-commit").delete()
+        file(".git/hooks/commit-msg").delete()
+        logger.lifecycle("✅ Hooks uninstalled")
     }
 }

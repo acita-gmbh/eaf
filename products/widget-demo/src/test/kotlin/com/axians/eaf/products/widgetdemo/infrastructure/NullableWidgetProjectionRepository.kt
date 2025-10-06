@@ -1,282 +1,182 @@
 package com.axians.eaf.products.widgetdemo.infrastructure
 
 import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
+import com.axians.eaf.products.widgetdemo.repositories.WidgetCategorySummary
+import com.axians.eaf.products.widgetdemo.repositories.WidgetPage
 import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
-import org.springframework.data.domain.Example
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.repository.query.FluentQuery
+import com.axians.eaf.products.widgetdemo.repositories.WidgetSearchCriteria
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
-import java.util.Optional
-import java.util.function.Function
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Nullable implementation of WidgetProjectionRepository for fast unit testing.
- * Follows the Nullable Design Pattern to avoid mocking frameworks.
- *
- * This implementation provides in-memory storage with configurable test data,
- * allowing for deterministic testing without database dependencies.
+ * Nullable Design Pattern implementation of [WidgetProjectionRepository] for unit tests.
+ * Provides deterministic, in-memory behaviour without requiring a database connection.
  */
 class NullableWidgetProjectionRepository : WidgetProjectionRepository {
-    // In-memory storage for test data
-    private val storage = mutableMapOf<String, WidgetProjection>()
-    private val tenantIndex = mutableMapOf<String, MutableList<WidgetProjection>>()
+    private val storage = ConcurrentHashMap<String, WidgetProjection>()
 
-    /**
-     * Factory method following the Nullable Design Pattern convention.
-     */
     companion object {
         fun createNull(): NullableWidgetProjectionRepository = NullableWidgetProjectionRepository()
     }
 
-    /**
-     * Adds test data to the repository.
-     */
     fun withProjection(projection: WidgetProjection): NullableWidgetProjectionRepository {
         storage[projection.widgetId] = projection
-        tenantIndex.computeIfAbsent(projection.getTenantId()) { mutableListOf() }.add(projection)
         return this
     }
 
-    /**
-     * Clears all test data.
-     */
     fun clear() {
         storage.clear()
-        tenantIndex.clear()
     }
 
-    // Custom query methods implementation
+    override fun save(projection: WidgetProjection): WidgetProjection {
+        storage[projection.widgetId] = projection
+        return projection
+    }
 
     override fun findByWidgetIdAndTenantId(
         widgetId: String,
         tenantId: String,
-    ): WidgetProjection? =
-        storage[widgetId]?.takeIf {
-            it.getTenantId() == tenantId
-        }
+    ): WidgetProjection? = storage[widgetId]?.takeIf { it.tenantId == tenantId }
 
     override fun findByTenantIdOrderByCreatedAtDesc(tenantId: String): List<WidgetProjection> =
-        tenantIndex[tenantId]
-            ?.sortedByDescending { it.createdAt }
-            ?: emptyList()
+        storage.values
+            .filter { it.tenantId == tenantId }
+            .sortedByDescending { it.createdAt }
 
     override fun findByTenantIdAndCategoryOrderByCreatedAtDesc(
         tenantId: String,
         category: String,
     ): List<WidgetProjection> =
-        tenantIndex[tenantId]
-            ?.filter { it.category == category }
-            ?.sortedByDescending { it.createdAt }
-            ?: emptyList()
-
-    override fun countByTenantId(tenantId: String): Long = tenantIndex[tenantId]?.size?.toLong() ?: 0L
-
-    override fun existsByWidgetIdAndTenantId(
-        widgetId: String,
-        tenantId: String,
-    ): Boolean = findByWidgetIdAndTenantId(widgetId, tenantId) != null
+        storage.values
+            .filter { it.tenantId == tenantId && it.category == category }
+            .sortedByDescending { it.createdAt }
 
     override fun findByTenantIdAndValueGreaterThanOrderByValueDesc(
         tenantId: String,
         minValue: BigDecimal,
     ): List<WidgetProjection> =
-        tenantIndex[tenantId]
-            ?.filter { it.value > minValue }
-            ?.sortedByDescending { it.value }
-            ?: emptyList()
+        storage.values
+            .filter { it.tenantId == tenantId && it.value > minValue }
+            .sortedByDescending { it.value }
 
     override fun findByTenantIdAndCreatedAtAfterOrderByCreatedAtDesc(
         tenantId: String,
         afterTimestamp: Instant,
     ): List<WidgetProjection> =
-        tenantIndex[tenantId]
-            ?.filter { it.createdAt.isAfter(afterTimestamp) }
-            ?.sortedByDescending { it.createdAt }
-            ?: emptyList()
+        storage.values
+            .filter { it.tenantId == tenantId && it.createdAt.isAfter(afterTimestamp) }
+            .sortedByDescending { it.createdAt }
+
+    override fun countByTenantId(tenantId: String): Long = storage.values.count { it.tenantId == tenantId }.toLong()
 
     override fun findByTenantIdAndNameContainingIgnoreCase(
         tenantId: String,
         namePattern: String,
     ): List<WidgetProjection> {
-        val pattern = namePattern.lowercase()
-        return tenantIndex[tenantId]
-            ?.filter { it.name.lowercase().contains(pattern) }
-            ?.sortedByDescending { it.createdAt }
-            ?: emptyList()
+        val needle = namePattern.lowercase()
+        return storage.values
+            .filter { it.tenantId == tenantId && it.name.lowercase().contains(needle) }
+            .sortedByDescending { it.createdAt }
     }
 
-    override fun getCategorySummaryByTenantId(tenantId: String): List<Array<Any>> =
-        tenantIndex[tenantId]
-            ?.groupBy { it.category }
-            ?.map { (category, widgets) ->
-                arrayOf<Any>(
-                    category,
-                    widgets.size.toLong(),
-                    if (widgets.isEmpty()) 0.0 else widgets.map { it.value.toDouble() }.average(),
-                    widgets.sumOf { it.value },
+    override fun getCategorySummaryByTenantId(tenantId: String): List<WidgetCategorySummary> =
+        storage.values
+            .filter { it.tenantId == tenantId }
+            .groupBy { it.category }
+            .map { (category, items) ->
+                val total = items.fold(BigDecimal.ZERO) { acc, projection -> acc + projection.value }
+                WidgetCategorySummary(
+                    category = category,
+                    count = items.size.toLong(),
+                    averageValue =
+                        if (items.isEmpty()) {
+                            BigDecimal.ZERO
+                        } else {
+                            total.divide(BigDecimal.valueOf(items.size.toLong()), 2, RoundingMode.HALF_UP)
+                        },
+                    totalValue = total,
                 )
-            }?.sortedBy { it[0] as String }
-            ?: emptyList()
+            }.sortedBy { it.category }
+
+    override fun existsByWidgetIdAndTenantId(
+        widgetId: String,
+        tenantId: String,
+    ): Boolean = storage[widgetId]?.tenantId == tenantId
 
     override fun deleteByWidgetIdAndTenantId(
         widgetId: String,
         tenantId: String,
     ): Long {
-        val removed =
-            storage.remove(widgetId)?.let { projection ->
-                if (projection.getTenantId() == tenantId) {
-                    tenantIndex[projection.getTenantId()]?.remove(projection)
-                    1L
-                } else {
-                    storage[widgetId] = projection
-                    0L
-                }
-            } ?: 0L
-        return removed
+        val removed = storage.remove(widgetId)
+        return if (removed != null && removed.tenantId == tenantId) 1 else 0
     }
 
-    // JpaRepository methods - minimal implementation for testing
-
-    override fun <S : WidgetProjection> save(entity: S): S {
-        withProjection(entity)
-        return entity
+    override fun deleteBatch(batchSize: Int): Long {
+        val candidates =
+            storage.values
+                .sortedBy { it.createdAt }
+                .take(batchSize)
+        candidates.forEach { storage.remove(it.widgetId) }
+        return candidates.size.toLong()
     }
 
-    override fun <S : WidgetProjection> saveAll(entities: MutableIterable<S>): MutableList<S> {
-        entities.forEach { withProjection(it) }
-        return entities.toMutableList()
+    override fun search(criteria: WidgetSearchCriteria): WidgetPage {
+        val filtered =
+            storage.values
+                .asSequence()
+                .filter { it.tenantId == criteria.tenantId }
+                .let { seq ->
+                    criteria.category?.let { category -> seq.filter { it.category == category } } ?: seq
+                }.let { seq ->
+                    criteria.search?.let { term ->
+                        val needle = term.lowercase()
+                        seq.filter { it.name.lowercase().contains(needle) }
+                    } ?: seq
+                }.toList()
+
+        val sorted = filtered.sortedWith(sortComparator(criteria.sort))
+        val total = sorted.size.toLong()
+        val fromIndex = (criteria.page * criteria.size).coerceAtMost(sorted.size)
+        val toIndex = (fromIndex + criteria.size).coerceAtMost(sorted.size)
+        val pageItems = if (fromIndex < toIndex) sorted.subList(fromIndex, toIndex) else emptyList()
+
+        return WidgetPage(items = pageItems, total = total)
     }
 
-    override fun findById(id: String): Optional<WidgetProjection> = Optional.ofNullable(storage[id])
-
-    override fun existsById(id: String): Boolean = storage.containsKey(id)
-
-    override fun findAll(): MutableList<WidgetProjection> = storage.values.toMutableList()
-
-    override fun findAll(sort: Sort): MutableList<WidgetProjection> {
-        // Simplified - ignoring sort for nullable implementation
-        return findAll()
-    }
-
-    override fun findAll(pageable: Pageable): Page<WidgetProjection> {
-        val allProjections = findAll()
-        val start = pageable.pageNumber * pageable.pageSize
-        val end = minOf(start + pageable.pageSize, allProjections.size)
-        val content =
-            if (start < allProjections.size) {
-                allProjections.subList(start, end)
-            } else {
-                emptyList()
-            }
-        return PageImpl(content, pageable, allProjections.size.toLong())
-    }
-
-    @Suppress("MaxLineLength")
-    override fun findAllById(ids: MutableIterable<String>): MutableList<WidgetProjection> = ids.mapNotNull { storage[it] }.toMutableList()
-
-    override fun count(): Long = storage.size.toLong()
-
-    override fun deleteById(id: String) {
-        storage.remove(id)?.let { projection ->
-            tenantIndex[projection.getTenantId()]?.remove(projection)
+    private fun sortComparator(sort: List<String>): Comparator<WidgetProjection> {
+        if (sort.isEmpty()) {
+            return compareByDescending { it.createdAt }
         }
-    }
 
-    override fun delete(entity: WidgetProjection) {
-        deleteById(entity.widgetId)
-    }
+        val comparators =
+            sort.mapNotNull { spec ->
+                val parts = spec.split('.')
+                if (parts.size != 2) return@mapNotNull null
 
-    override fun deleteAll(entities: MutableIterable<WidgetProjection>) {
-        entities.forEach { delete(it) }
-    }
+                val field = parts[0]
+                val direction = parts[1].lowercase()
 
-    override fun deleteAll() {
-        clear()
-    }
+                val comparator =
+                    when (field) {
+                        "name" -> compareBy<WidgetProjection> { it.name.lowercase() }
+                        "category" -> compareBy<WidgetProjection> { it.category.lowercase() }
+                        "value" -> compareBy<WidgetProjection> { it.value }
+                        "createdAt" -> compareBy<WidgetProjection> { it.createdAt }
+                        "updatedAt" -> compareBy<WidgetProjection> { it.updatedAt }
+                        else -> null
+                    }
 
-    override fun deleteAllById(ids: MutableIterable<String>) {
-        ids.forEach { deleteById(it) }
-    }
+                comparator?.let {
+                    if (direction == "desc") it.reversed() else it
+                }
+            }
 
-    override fun flush() {
-        // No-op for in-memory implementation
-    }
+        if (comparators.isEmpty()) {
+            return compareByDescending { it.createdAt }
+        }
 
-    override fun <S : WidgetProjection> saveAndFlush(entity: S): S = save(entity)
-
-    @Suppress("MaxLineLength")
-    override fun <S : WidgetProjection> saveAllAndFlush(entities: MutableIterable<S>): MutableList<S> = saveAll(entities)
-
-    override fun deleteAllInBatch(entities: MutableIterable<WidgetProjection>) {
-        deleteAll(entities)
-    }
-
-    override fun deleteAllByIdInBatch(ids: MutableIterable<String>) {
-        deleteAllById(ids)
-    }
-
-    override fun deleteAllInBatch() {
-        deleteAll()
-    }
-
-    @Deprecated("Use getReferenceById instead")
-    @Suppress("MaxLineLength")
-    override fun getOne(id: String): WidgetProjection = storage[id] ?: throw NoSuchElementException("Widget with id $id not found")
-
-    @Deprecated("Use getReferenceById instead")
-    override fun getById(id: String): WidgetProjection {
-        @Suppress("DEPRECATION")
-        return getOne(id)
-    }
-
-    override fun getReferenceById(id: String): WidgetProjection =
-        storage[id] ?: throw NoSuchElementException("Widget with id $id not found")
-
-    override fun <S : WidgetProjection> findOne(example: Example<S>): Optional<S> {
-        // Simplified - not implementing example matching
-        return Optional.empty()
-    }
-
-    override fun <S : WidgetProjection> findAll(example: Example<S>): MutableList<S> {
-        // Simplified - not implementing example matching
-        return mutableListOf()
-    }
-
-    override fun <S : WidgetProjection> findAll(
-        example: Example<S>,
-        sort: Sort,
-    ): MutableList<S> {
-        // Simplified - not implementing example matching
-        return mutableListOf()
-    }
-
-    override fun <S : WidgetProjection> findAll(
-        example: Example<S>,
-        pageable: Pageable,
-    ): Page<S> {
-        // Simplified - not implementing example matching
-        return PageImpl(emptyList(), pageable, 0)
-    }
-
-    override fun <S : WidgetProjection> count(example: Example<S>): Long {
-        // Simplified - not implementing example matching
-        return 0L
-    }
-
-    override fun <S : WidgetProjection> exists(example: Example<S>): Boolean {
-        // Simplified - not implementing example matching
-        return false
-    }
-
-    override fun <S : WidgetProjection, R : Any> findBy(
-        example: Example<S>,
-        queryFunction: Function<FluentQuery.FetchableFluentQuery<S>, R>,
-    ): R {
-        // Simplified - not implementing fluent query
-        throw UnsupportedOperationException("Fluent query not supported in nullable implementation")
+        return comparators.reduce { acc, comparator -> acc.then(comparator) }
     }
 }

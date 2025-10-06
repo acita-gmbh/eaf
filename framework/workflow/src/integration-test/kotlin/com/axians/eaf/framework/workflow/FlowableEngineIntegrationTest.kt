@@ -48,7 +48,7 @@ class FlowableEngineIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        test("Flowable engine beans should be initialized in Spring context") {
+        test("6.1-INT-001: Flowable engine beans should be initialized in Spring context") {
             // Subtask 5.2: Validate ProcessEngine and service beans available
             processEngine.shouldNotBeNull()
             runtimeService.shouldNotBeNull()
@@ -56,7 +56,7 @@ class FlowableEngineIntegrationTest : FunSpec() {
             repositoryService.shouldNotBeNull()
         }
 
-        test("Flowable engine should be operational and able to query deployments") {
+        test("6.1-INT-002: Flowable engine should be operational and able to query deployments") {
             // Subtask 5.3: Verify Flowable auto-migration completed and engine is operational (AC 3)
 
             // Verify RepositoryService is accessible (validates auto-migration completed)
@@ -71,7 +71,7 @@ class FlowableEngineIntegrationTest : FunSpec() {
             deploymentCount shouldBe deploymentCount // Validates query executes without error
         }
 
-        test("Flowable should deploy simple BPMN process definition") {
+        test("6.1-INT-003: Flowable should deploy simple BPMN process definition") {
             // Subtask 5.4: Validate engine operational readiness via BPMN deployment
             val bpmnXml =
                 """

@@ -5,6 +5,7 @@ import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
 import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
 import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
+import com.axians.eaf.products.widgetdemo.repositories.WidgetSearchCriteria
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.axonframework.queryhandling.QueryHandler
@@ -75,47 +76,20 @@ class WidgetQueryHandler(
         val sort = createSort(query.sort)
         val pageable = PageRequest.of(query.page, query.size, sort)
 
-        // Get filtered projections based on query parameters
-        val projections =
-            when {
-                // Category filter only
-                !query.category.isNullOrBlank() && query.search.isNullOrBlank() -> {
-                    repository.findByTenantIdAndCategoryOrderByCreatedAtDesc(query.tenantId, query.category!!)
-                }
-                // Name search only
-                !query.search.isNullOrBlank() && query.category.isNullOrBlank() -> {
-                    // ContainingIgnoreCase already adds % wildcards - pass raw term
-                    val searchTerm = query.search!!
-                    repository.findByTenantIdAndNameContainingIgnoreCase(query.tenantId, searchTerm)
-                }
-                // Both category and search
-                !query.category.isNullOrBlank() && !query.search.isNullOrBlank() -> {
-                    val searchTerm = query.search
-                    repository
-                        .findByTenantIdAndCategoryOrderByCreatedAtDesc(query.tenantId, query.category!!)
-                        .filter { searchTerm != null && it.name.contains(searchTerm, ignoreCase = true) }
-                }
-                // No filters
-                else -> {
-                    repository.findByTenantIdOrderByCreatedAtDesc(query.tenantId)
-                }
-            }
+        val criteria =
+            WidgetSearchCriteria(
+                tenantId = query.tenantId,
+                category = query.category?.takeIf { it.isNotBlank() },
+                search = query.search?.takeIf { it.isNotBlank() },
+                page = query.page,
+                size = query.size,
+                sort = query.sort,
+            )
 
-        // Apply pagination manually since we may have complex filtering
-        val totalElements = projections.size.toLong()
-        val start = (pageable.pageNumber * pageable.pageSize).coerceAtMost(projections.size)
-        val end = ((pageable.pageNumber + 1) * pageable.pageSize).coerceAtMost(projections.size)
+        val result = repository.search(criteria)
+        val responses = result.items.map { convertToResponse(it) }
 
-        val pagedProjections =
-            if (start < end) {
-                projections.subList(start, end)
-            } else {
-                emptyList()
-            }
-
-        val responses = pagedProjections.map { convertToResponse(it) }
-
-        return PageImpl(responses, pageable, totalElements)
+        return PageImpl(responses, pageable, result.total)
     }
 
     /**

@@ -6,7 +6,7 @@ import io.kotest.matchers.string.shouldContain
 import org.gradle.testkit.runner.TaskOutcome
 
 class TestingConventionPluginFunctionalTest : FunSpec({
-    test("testing convention registers integration and konsist tasks") {
+    test("1.2-UNIT-001: testing convention registers integration and konsist tasks") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project)
@@ -17,7 +17,7 @@ class TestingConventionPluginFunctionalTest : FunSpec({
         result.task(":app:konsistTest")?.outcome shouldBe TaskOutcome.SUCCESS
     }
 
-    test("dependency version drift fails fast") {
+    test("1.2-UNIT-002: dependency version drift fails fast") {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project, extraAppBuildContent = """

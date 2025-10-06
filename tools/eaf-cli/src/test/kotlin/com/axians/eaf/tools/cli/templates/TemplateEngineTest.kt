@@ -12,7 +12,7 @@ class TemplateEngineTest :
         context("TemplateEngine rendering") {
 
             // 7.1-UNIT-005: Basic template rendering
-            test("should render test template with simple context") {
+            test("7.1-UNIT-005: should render test template with simple context") {
                 // Given
                 val engine = TemplateEngine()
                 val context =
@@ -30,7 +30,7 @@ class TemplateEngineTest :
             }
 
             // 7.1-UNIT-006: Missing template error handling
-            test("should provide descriptive error when template file not found") {
+            test("7.1-UNIT-006: should provide descriptive error when template file not found") {
                 // Given
                 val engine = TemplateEngine()
 
@@ -45,7 +45,7 @@ class TemplateEngineTest :
             }
 
             // 7.1-UNIT-007: SECURITY - Template injection protection (SEC-001 mitigation)
-            test("should handle empty and malicious context safely") {
+            test("7.1-UNIT-007: should handle empty and malicious context safely") {
                 // Given
                 val engine = TemplateEngine()
 

@@ -6,7 +6,7 @@ import java.nio.file.Files
 
 class OnboardingScriptSpec :
     FunSpec({
-        test("init-dev script documents credential rotation and service URLs") {
+        test("1.3-UNIT-002: init-dev script documents credential rotation and service URLs") {
             val script = Files.readString(resolveRepoFile("scripts/init-dev.sh"))
             script.contains("Keycloak admin password not set").shouldBeTrue()
             script.contains("Keycloak admin password captured for this session").shouldBeTrue()

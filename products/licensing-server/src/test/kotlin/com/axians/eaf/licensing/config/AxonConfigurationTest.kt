@@ -10,7 +10,7 @@ class AxonConfigurationTest :
     FunSpec({
 
         context("Axon Configuration Unit Tests") {
-            test("should create Jackson serializer") {
+            test("9.1-UNIT-001: should create Jackson serializer") {
                 val axonConfiguration = AxonConfiguration()
 
                 val serializer = axonConfiguration.eventSerializer()
@@ -19,7 +19,7 @@ class AxonConfigurationTest :
                 serializer.shouldBeInstanceOf<JacksonSerializer>()
             }
 
-            test("should be properly configured as Spring configuration bean") {
+            test("9.1-UNIT-002: should be properly configured as Spring configuration bean") {
                 // Verify the configuration class has required Spring annotations
                 val configClass = AxonConfiguration::class.java
                 val hasConfigurationAnnotation =
@@ -29,7 +29,7 @@ class AxonConfigurationTest :
                 hasConfigurationAnnotation shouldBe true
             }
 
-            test("should allow Spring to create bean proxies") {
+            test("9.1-UNIT-003: should allow Spring to create bean proxies") {
                 val axonConfiguration = AxonConfiguration()
 
                 // Verify that bean methods can be called (Spring proxy compatibility)

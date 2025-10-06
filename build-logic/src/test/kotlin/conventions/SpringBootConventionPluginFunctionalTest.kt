@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.string.shouldContain
 
 class SpringBootConventionPluginFunctionalTest : FunSpec({
-    test("applies spring boot tasks") {
+    test("1.2-UNIT-005: applies spring boot tasks") {
         withPluginTestProject(
             """
             plugins {

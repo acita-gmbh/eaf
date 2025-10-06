@@ -64,7 +64,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
 
         context("architectural isolation validation") {
 
-            test("should only load security framework beans") {
+            test("4.1-INT-001: should only load security framework beans") {
                 val beanNames = applicationContext.beanDefinitionNames.toList()
 
                 // Verify no product beans are loaded
@@ -85,7 +85,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
 
         context("framework module spring boot context validation") {
 
-            test("should bootstrap minimal Spring Boot context with framework beans only") {
+            test("4.1-INT-002: should bootstrap minimal Spring Boot context with framework beans only") {
                 // Validate that we have a working Spring Boot context
                 // TenantContextFilter correctly enforces fail-closed design (no tenant = 403)
                 mockMvc
@@ -95,12 +95,12 @@ class TenantContextFilterIntegrationTest : FunSpec() {
                     ).andExpect(status().isForbidden) // Expect 403 - filter working correctly!
             }
 
-            test("should have TenantContextFilter properly registered") {
+            test("4.1-INT-003: should have TenantContextFilter properly registered") {
                 tenantContextFilter shouldNotBe null
                 tenantContextFilter.javaClass.simpleName shouldBe "TenantContextFilter"
             }
 
-            test("should maintain tenant context operations in Spring environment") {
+            test("4.1-INT-004: should maintain tenant context operations in Spring environment") {
                 val initialDepth = tenantContext.getStackDepth()
 
                 tenantContext.setCurrentTenantId("spring-context-test-tenant")
@@ -113,7 +113,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
 
         context("HTTP request processing through filter chain") {
 
-            test("should process requests through security filter chain and enforce fail-closed design") {
+            test("4.1-INT-005: should process requests through security filter chain and enforce fail-closed design") {
                 // Test that requests go through the filter chain
                 // TenantContextFilter correctly rejects requests without tenant context (fail-closed design)
                 mockMvc
@@ -123,7 +123,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
                     ).andExpect(status().isForbidden) // Expect 403 - fail-closed security working!
             }
 
-            test("should validate filter performance meets requirements with fail-closed responses") {
+            test("4.1-INT-006: should validate filter performance meets requirements with fail-closed responses") {
                 val startTime = System.nanoTime()
                 val iterations = 20
 

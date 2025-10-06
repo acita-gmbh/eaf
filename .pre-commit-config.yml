@@ -1,0 +1,42 @@
+# Story 8.2: Pre-Commit Hook Configuration (AC9)
+# Controls which validations run and their behavior
+
+version: 1.0
+
+# Hook configuration
+hooks:
+  format:
+    enabled: true
+    autofix: false  # Don't auto-fix, just validate
+    includes: ["*.kt", "*.kts"]
+
+  static-analysis:
+    enabled: false  # Task 2.3 pending - Detekt fast profile
+    config: "config/detekt/detekt-precommit.yml"
+    timeout: 8s
+
+  test-naming:
+    enabled: true
+    fail-fast: true
+
+  unit-tests:
+    enabled: false  # Task 3 implementation pending
+    scope: changed-modules
+    parallel: true
+    timeout: 20s
+
+  commit-message:
+    enabled: false  # Task 4 implementation pending
+    pattern: "^\\[(DPCMSG-\\d+|Epic \\d+)\\]\\s+(feat|fix|docs|style|refactor|test|chore):\\s+.+"
+
+# Performance targets
+performance:
+  total-timeout: 30s
+  fail-on-timeout: false
+  log-metrics: true
+
+# Developer experience
+developer:
+  show-progress: true
+  show-timing: true
+  helpful-errors: true

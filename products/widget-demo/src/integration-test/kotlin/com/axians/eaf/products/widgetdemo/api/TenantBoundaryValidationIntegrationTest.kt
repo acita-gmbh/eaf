@@ -27,7 +27,7 @@ class TenantBoundaryValidationIntegrationTest : FunSpec() {
             tenantContext.clearCurrentTenant()
         }
 
-        test("Tenant A cannot update Tenant B's widget (cross-tenant attack prevention)") {
+        test("4.2-INT-001: Tenant A cannot update Tenant B's widget (cross-tenant attack prevention)") {
             val widgetId = UUID.randomUUID().toString()
 
             tenantContext.setCurrentTenantId("tenant-b")
@@ -73,7 +73,7 @@ class TenantBoundaryValidationIntegrationTest : FunSpec() {
                 .expectSuccessfulHandlerExecution()
         }
 
-        test("Tenant A cannot create widget with Tenant B's tenantId (tenant spoofing prevention)") {
+        test("4.2-INT-002: Tenant A cannot create widget with Tenant B's tenantId (tenant spoofing prevention)") {
             val widgetId = UUID.randomUUID().toString()
             tenantContext.setCurrentTenantId("tenant-a")
 
@@ -94,7 +94,7 @@ class TenantBoundaryValidationIntegrationTest : FunSpec() {
                 .expectException(IllegalArgumentException::class.java)
         }
 
-        test("Transaction rollback verification - no events after tenant violation") {
+        test("4.2-INT-003: Transaction rollback verification - no events after tenant violation") {
             val widgetId = UUID.randomUUID().toString()
             tenantContext.setCurrentTenantId("tenant-a")
 

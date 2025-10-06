@@ -60,7 +60,7 @@ class TenantEventMessageInterceptorSpec :
             tenantContext.current() shouldBe null
         }
 
-        test("should fail-closed when tenantId value is null") {
+        test("4.4-UNIT-002a: should fail-closed when tenantId value is null") {
             val event = createEventWithMetadata(mapOf("tenantId" to null))
             val unitOfWork = DefaultUnitOfWork.startAndGet(event)
 
@@ -69,7 +69,7 @@ class TenantEventMessageInterceptorSpec :
             }
         }
 
-        test("should fail-closed when tenantId value is blank") {
+        test("4.4-UNIT-002b: should fail-closed when tenantId value is blank") {
             val event = createEventWithMetadata(mapOf("tenantId" to "   "))
             val unitOfWork = DefaultUnitOfWork.startAndGet(event)
 
@@ -78,7 +78,7 @@ class TenantEventMessageInterceptorSpec :
             }
         }
 
-        test("should fail-closed when tenantId is non-String type") {
+        test("4.4-UNIT-002c: should fail-closed when tenantId is non-String type") {
             val event = createEventWithMetadata(mapOf("tenantId" to 12345))
             val unitOfWork = DefaultUnitOfWork.startAndGet(event)
 
