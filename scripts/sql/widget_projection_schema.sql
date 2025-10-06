@@ -31,10 +31,12 @@ ALTER TABLE widget_projection ENABLE ROW LEVEL SECURITY;
 
 -- Tenant isolation policies rely on CURRENT_SETTING('app.current_tenant').
 -- Application code is responsible for setting the tenant context before queries.
+DROP POLICY IF EXISTS widget_projection_tenant_isolation_select ON widget_projection;
 CREATE POLICY widget_projection_tenant_isolation_select
     ON widget_projection FOR SELECT
     USING (tenant_id::text = current_setting('app.current_tenant', true));
 
+DROP POLICY IF EXISTS widget_projection_tenant_isolation_modify ON widget_projection;
 CREATE POLICY widget_projection_tenant_isolation_modify
     ON widget_projection FOR ALL
     USING (tenant_id::text = current_setting('app.current_tenant', true))

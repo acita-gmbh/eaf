@@ -53,6 +53,8 @@ dependencies {
 
     // Story 8.3: OpenTelemetry required for integration tests that load full application context
     integrationTestImplementation(libs.bundles.opentelemetry)
+    // Story 8.3: Add missing autoconfigure extension that contains ComponentLoader
+    integrationTestImplementation("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.54.1")
 }
 
 jooq {
@@ -133,6 +135,26 @@ tasks.named("runKtlintCheckOverTestSourceSet") {
 
 tasks.named("runKtlintCheckOverIntegrationTestSourceSet") {
     dependsOn("jooqCodegen")
+}
+
+// Story 8.3: Force consistent OpenTelemetry versions to prevent downgrades
+// Root cause: Spring Boot BOM forces older versions, causing 1.54.1 -> 1.49.0 downgrade
+// This breaks integration tests with ClassNotFoundException: io.opentelemetry.common.ComponentLoader
+configurations.all {
+    resolutionStrategy {
+        force("io.opentelemetry:opentelemetry-api:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-common:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-trace:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-metrics:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-logs:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.54.1")
+        force("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.54.1")
+        force("io.opentelemetry:opentelemetry-exporter-otlp:1.54.1")
+        force("io.opentelemetry:opentelemetry-exporter-common:1.54.1")
+        force("io.opentelemetry:opentelemetry-exporter-sender-okhttp:1.54.1")
+        force("io.opentelemetry:opentelemetry-context:1.54.1")
+    }
 }
 
 // Skip quality gates for minimal reference implementation
