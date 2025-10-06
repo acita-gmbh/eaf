@@ -1,26 +1,26 @@
 schema: 1
 story: "8.4"
 story_title: "Re-enable and Fix 7 Disabled Integration Tests"
-gate: CONCERNS
-status_reason: "Story provides clear guidance using Story 4.6 solution pattern, but re-enabling disabled tests carries investigation risk. Timeboxing strategy (1 day per test) and documented working pattern mitigate risks. Dependency on Story 8.2 (jOOQ) should be clarified."
+gate: PASS
+status_reason: "Story is now a low-risk implementation task. The primary investigation risk has been eliminated by the successful root cause analysis in Story 8.3, which provided a proven solution pattern."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-10-05T20:00:00Z"
+updated: "2025-10-06T12:00:00Z"
 
 waiver: { active: false }
 
 top_issues:
-  - id: "8.3-DEP-001"
+  - id: "8.4-RISK-001"
     severity: medium
-    finding: "Dependency on Story 8.2 not explicit in story document"
-    suggested_action: "Add to story context: 'Should be implemented after Story 8.2 if re-enabled tests query projections'"
-    suggested_owner: "sm"
-  - id: "8.3-RISK-001"
+    finding: "Solution pattern from 8.3 may not apply to all 7 tests, especially observability-specific tests."
+    suggested_action: "Apply the known pattern first. If tests still fail, investigate isolated issues. Adhere to the 1-day timebox per test."
+    suggested_owner: "dev"
+  - id: "8.4-RISK-002"
     severity: medium
-    finding: "Unknown root causes for 7 disabled tests may reveal deep architectural issues"
-    suggested_action: "Strictly enforce 1-day timebox per test; escalate if unfixable within timebox"
+    finding: "Business logic may have drifted in the 6+ months since tests were disabled, causing runtime failures."
+    suggested_action: "Expect and plan for runtime failures. Update tests to match current business logic. Do not change logic to match old tests."
     suggested_owner: "dev"
 
-quality_score: 80
+quality_score: 92
 
 expires: "2025-10-19T00:00:00Z"
 
@@ -133,7 +133,7 @@ requirements_trace:
       status: "PENDING"
     - ac: 3
       description: "Build.gradle.kts plugin order correct"
-      validation: "Task 4 verifies id(\"eaf.testing\") before id(\"eaf.spring-boot\")"
+      validation: "Task 4 verifies id("eaf.testing") before id("eaf.spring-boot")"
       status: "PENDING"
     - ac: 4
       description: "All 7 test files compile without errors"
@@ -181,7 +181,7 @@ recommendations:
       refs: ["All 7 test files"]
       rationale: "Opportunity to apply naming standard during re-enablement"
 
-validation_notes: |
+validation_notes: | 
   Story 8.3 quality is good with clear reference to Story 4.6 solution pattern.
 
   Strengths:
