@@ -30,17 +30,17 @@ class WidgetProjectionRepositoryIntegrationTest : FunSpec() {
         extension(SpringExtension())
 
         beforeSpec {
-            // Create table using jOOQ DSL directly (ensures case consistency)
+            // Create table using lowercase unquoted (matches defaultNameCase = LOWER)
             dsl.execute(
                 """
-                CREATE TABLE IF NOT EXISTS "WIDGET_PROJECTION" (
+                CREATE TABLE IF NOT EXISTS widget_projection (
                     widget_id UUID PRIMARY KEY,
                     tenant_id UUID NOT NULL,
                     name VARCHAR(255) NOT NULL,
                     description VARCHAR(1000),
                     value NUMERIC(19, 2) NOT NULL,
                     category VARCHAR(100) NOT NULL,
-                    metadata TEXT,
+                    metadata JSONB,
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ NOT NULL
                 )
@@ -74,7 +74,8 @@ class WidgetProjectionRepositoryIntegrationTest : FunSpec() {
             fetched shouldNotBe null
             fetched!!.widgetId shouldBe widgetId
             fetched.name shouldBe "Test Widget"
-            fetched.metadata shouldBe "{\"feature\":true}"
+            // PostgreSQL JSONB normalizes whitespace - check semantic content
+            fetched.metadata?.replace(" ", "") shouldBe "{\"feature\":true}"
         }
 
         test("8.3-INT-002: search should honour tenant filters and pagination") {

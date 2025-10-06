@@ -74,6 +74,10 @@ jooq {
                             key = "sort"
                             value = "semantic"
                         },
+                        org.jooq.meta.jaxb.Property().apply {
+                            key = "defaultNameCase"
+                            value = "LOWER"
+                        },
                     ),
                 )
             }

@@ -56,7 +56,7 @@ data class WidgetProjection(
             description = this@WidgetProjection.description
             value = this@WidgetProjection.value
             category = this@WidgetProjection.category
-            metadata = this@WidgetProjection.metadata
+            metadata = this@WidgetProjection.metadata?.let { org.jooq.JSON.valueOf(it) }
             createdAt = this@WidgetProjection.createdAt.atOffset(ZoneOffset.UTC)
             updatedAt = this@WidgetProjection.updatedAt.atOffset(ZoneOffset.UTC)
         }
@@ -70,7 +70,7 @@ data class WidgetProjection(
                 description = record.description,
                 value = record.value ?: BigDecimal.ZERO,
                 category = record.category ?: error("category must not be null"),
-                metadata = record.metadata,
+                metadata = record.metadata?.data(),
                 createdAt = record.createdAt?.toInstant() ?: error("created_at must not be null"),
                 updatedAt = record.updatedAt?.toInstant() ?: error("updated_at must not be null"),
             )

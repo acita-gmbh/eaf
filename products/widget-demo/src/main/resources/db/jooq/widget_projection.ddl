@@ -5,7 +5,7 @@ CREATE TABLE widget_projection (
     description VARCHAR(1000),
     "value" NUMERIC(19, 2) NOT NULL,
     category VARCHAR(100) NOT NULL,
-    metadata CLOB,
+    metadata JSONB,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );
