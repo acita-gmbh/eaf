@@ -11,7 +11,16 @@ import java.time.Instant
 import javax.sql.DataSource
 
 internal fun runWidgetProjectionSchemaMigration(dataSource: DataSource) {
-    val schema = FileSystemResource("${System.getProperty("user.dir")}/scripts/sql/widget_projection_schema.sql")
+    // Working directory is products/widget-demo, go up to repo root
+    val workingDir = java.io.File(System.getProperty("user.dir"))
+    val repoRoot = workingDir.parentFile.parentFile // products/widget-demo -> products -> repo root
+    val schemaFile = java.io.File(repoRoot, "scripts/sql/widget_projection_schema.sql")
+
+    require(schemaFile.exists()) {
+        "Schema file not found. Expected: ${schemaFile.absolutePath}, Working dir: ${workingDir.absolutePath}"
+    }
+
+    val schema = FileSystemResource(schemaFile)
     ResourceDatabasePopulator(schema).execute(dataSource)
 }
 

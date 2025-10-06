@@ -97,7 +97,7 @@ jobs:
           docker info
 
       - name: Run unit and integration tests with CI configuration
-        run: ./gradlew ciTest ciIntegrationTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
+        run: ./gradlew ciTest ciIntegrationTest ciPerfTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
 
       # TODO: Re-enable when GitHub Actions permissions are fixed
       # - name: Publish Test Results

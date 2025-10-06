@@ -117,6 +117,9 @@ sourceSets {
     named("integrationTest") {
         kotlin.srcDir(jooqOutputDir.get().asFile)
     }
+    named("perfTest") {
+        kotlin.srcDir(jooqOutputDir.get().asFile)
+    }
 }
 
 tasks.named("compileKotlin") {
