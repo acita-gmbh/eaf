@@ -19,8 +19,6 @@ class NullableJwtDecoder : JwtDecoder {
          * Creates a fast infrastructure substitute for JWT decoding.
          */
         fun createNull(): NullableJwtDecoder = NullableJwtDecoder()
-
-
     }
 
     override fun decode(token: String): Jwt =
