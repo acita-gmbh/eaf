@@ -76,7 +76,7 @@ class TenantCommandInterceptor(
      */
     private fun extractTenantId(commandPayload: Any): String =
         try {
-            // TODO: Consider caching field metadata for better performance in high-throughput scenarios
+            // Consider caching field metadata for better performance in high-throughput scenarios
             val tenantIdField = commandPayload::class.java.getDeclaredField("tenantId")
             tenantIdField.isAccessible = true
             val tenantId = tenantIdField.get(commandPayload) as? String
