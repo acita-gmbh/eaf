@@ -27,9 +27,7 @@ class NullableRedisTemplate : RedisTemplate<String, String>() {
      * @param key The key to check (e.g., "revoked:<jti>").
      * @return True if the key exists in the set, false otherwise.
      */
-    override fun hasKey(key: String): Boolean {
-        return storage.contains(key)
-    }
+    override fun hasKey(key: String): Boolean = storage.contains(key)
 
     /**
      * Test-only helper method to add a key to the in-memory set,

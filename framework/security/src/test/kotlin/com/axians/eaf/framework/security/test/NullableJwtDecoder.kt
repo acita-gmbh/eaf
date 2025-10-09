@@ -3,72 +3,186 @@ package com.axians.eaf.framework.security.test
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtException
+import java.nio.charset.StandardCharsets
 import java.time.Instant
+import java.util.Base64
+import java.util.UUID
 
 /**
  * Nullable Design Pattern implementation for JwtDecoder.
- * Provides fast infrastructure substitute for JWT decoding in framework testing.
+ * Provides a fast, stateful, in-memory substitute for JWT decoding in unit tests.
  *
- * Maintains real business logic contracts while eliminating external OIDC dependencies.
- * Follows EAF testing standards: "Zero-Mocks Policy" with Nullable Pattern for infrastructure.
+ * This implementation abandons fragile string parsing. Instead, it uses the input
+ * token string as a key to return pre-constructed, valid Jwt objects, making tests
+ * more robust and readable.
  */
 class NullableJwtDecoder : JwtDecoder {
     companion object {
-        /**
-         * Factory method following Nullable Design Pattern convention.
-         * Creates a fast infrastructure substitute for JWT decoding.
-         */
         fun createNull(): NullableJwtDecoder = NullableJwtDecoder()
+    }
 
-        /**
-         * Creates nullable JWT decoder with predefined state for specific test scenarios.
-         */
-        fun createNull(state: Map<String, Any>): NullableJwtDecoder {
-            val decoder = NullableJwtDecoder()
-            // Configure decoder state based on test requirements
-            return decoder
+    override fun decode(token: String): Jwt {
+        val now = Instant.now()
+        val inOneHour = now.plusSeconds(3600)
+
+        return when (token) {
+            JwtTestTokens.validRs256 ->
+                buildJwt(now, inOneHour, "RS256", "test-jti")
+            JwtTestTokens.hs256 ->
+                buildJwt(now, inOneHour, "HS256", "test-jti-hs256")
+            JwtTestTokens.noneAlgorithm ->
+                buildJwt(now, inOneHour, "none", "test-jti-none")
+            JwtTestTokens.expired ->
+                buildJwt(now.minusSeconds(7200), now.minusSeconds(3600), "RS256", "test-jti-expired")
+            JwtTestTokens.missingJti ->
+                buildJwt(now, inOneHour, "RS256", null)
+            else -> throw JwtException("Unhandled token type in NullableJwtDecoder: $token")
         }
     }
 
-    override fun decode(token: String): Jwt =
-        when {
-            token.contains("valid-tenant") -> createValidTenantJwt(token, "test-tenant-123")
-            token.contains("no-tenant") -> createJwtWithoutTenant(token)
-            token.contains("invalid") -> throw JwtException("Invalid JWT token for testing")
-            token.contains("expired") -> throw JwtException("JWT token expired for testing")
-            else -> createValidTenantJwt(token, "default-test-tenant")
-        }
-
-    private fun createValidTenantJwt(
-        token: String,
-        tenantId: String,
+    private fun buildJwt(
+        issuedAt: Instant,
+        expiresAt: Instant,
+        alg: String,
+        jti: String?,
     ): Jwt {
-        val headers = mapOf("alg" to "HS256", "typ" to "JWT")
+        val headers = mapOf("alg" to alg, "typ" to "JWT")
         val claims =
-            mapOf(
-                "sub" to "test-user",
-                "tenant_id" to tenantId,
-                "iss" to "test-issuer",
-                "aud" to "test-audience",
-                "iat" to Instant.now().epochSecond,
-                "exp" to Instant.now().plusSeconds(3600).epochSecond,
+            mutableMapOf<String, Any>(
+                "sub" to UUID.randomUUID().toString(),
+                "iss" to "http://localhost:8180/realms/eaf",
+                "aud" to listOf("eaf-backend"),
+                "iat" to issuedAt,
+                "exp" to expiresAt,
+                "tenant_id" to UUID.randomUUID().toString(),
+                "realm_access" to mapOf("roles" to listOf("user")),
             )
+        jti?.let { claims["jti"] = it }
 
-        return Jwt(token, Instant.now(), Instant.now().plusSeconds(3600), headers, claims)
-    }
-
-    private fun createJwtWithoutTenant(token: String): Jwt {
-        val headers = mapOf("alg" to "HS256", "typ" to "JWT")
-        val claims =
-            mapOf(
-                "sub" to "test-user",
-                // Missing tenant_id claim for fail-closed testing
-                "iss" to "test-issuer",
-                "aud" to "test-audience",
-                "iat" to Instant.now().epochSecond,
-                "exp" to Instant.now().plusSeconds(3600).epochSecond,
-            )
-
-        return Jwt(token, Instant.now(), Instant.now().plusSeconds(3600), headers, claims)
+        return Jwt
+            .withTokenValue("mock-token-value-for-${jti ?: "no-jti"}")
+            .headers { it.putAll(headers) }
+            .claims { it.putAll(claims) }
+            .build()
     }
 }
+
+object JwtTestTokens {
+    private val encoder = Base64.getUrlEncoder().withoutPadding()
+
+    private const val ISSUER = "http://localhost:8180/realms/eaf"
+    private const val AUDIENCE = "eaf-backend"
+    private const val SIGNATURE = "signature"
+
+    private fun encodeSegment(json: String): String = encoder.encodeToString(json.toByteArray(StandardCharsets.UTF_8))
+
+    private fun buildToken(
+        headerJson: String,
+        payload: Map<String, Any?>,
+    ): String =
+        listOf(
+            encodeSegment(headerJson),
+            encodeSegment(payload.toJson()),
+            encodeSegment(SIGNATURE),
+        ).joinToString(".")
+
+    private fun baseClaims(
+        jti: String?,
+        issuedAt: Long,
+        expiresAt: Long,
+    ): MutableMap<String, Any?> =
+        linkedMapOf<String, Any?>().apply {
+            put("sub", UUID.randomUUID().toString())
+            put("iss", ISSUER)
+            put("aud", listOf(AUDIENCE))
+            put("iat", issuedAt)
+            put("exp", expiresAt)
+            put("tenant_id", UUID.randomUUID().toString())
+            if (jti != null) {
+                put("jti", jti)
+            }
+            put("realm_access", mapOf("roles" to listOf("user")))
+        }
+
+    val validRs256: String =
+        buildToken(
+            headerJson = """{"alg":"RS256","typ":"JWT"}""",
+            payload =
+                baseClaims(
+                    jti = "test-jti",
+                    issuedAt = Instant.now().epochSecond,
+                    expiresAt = Instant.now().plusSeconds(3600).epochSecond,
+                ),
+        )
+
+    val hs256: String =
+        buildToken(
+            headerJson = """{"alg":"HS256","typ":"JWT"}""",
+            payload =
+                baseClaims(
+                    jti = "test-jti-hs256",
+                    issuedAt = Instant.now().epochSecond,
+                    expiresAt = Instant.now().plusSeconds(3600).epochSecond,
+                ),
+        )
+
+    val noneAlgorithm: String =
+        buildToken(
+            headerJson = """{"alg":"none","typ":"JWT"}""",
+            payload =
+                baseClaims(
+                    jti = "test-jti-none",
+                    issuedAt = Instant.now().epochSecond,
+                    expiresAt = Instant.now().plusSeconds(3600).epochSecond,
+                ),
+        )
+
+    val expired: String =
+        buildToken(
+            headerJson = """{"alg":"RS256","typ":"JWT"}""",
+            payload =
+                baseClaims(
+                    jti = "test-jti-expired",
+                    issuedAt = Instant.now().minusSeconds(7200).epochSecond,
+                    expiresAt = Instant.now().minusSeconds(3600).epochSecond,
+                ),
+        )
+
+    val missingJti: String =
+        buildToken(
+            headerJson = """{"alg":"RS256","typ":"JWT"}""",
+            payload =
+                baseClaims(
+                    jti = null,
+                    issuedAt = Instant.now().epochSecond,
+                    expiresAt = Instant.now().plusSeconds(3600).epochSecond,
+                ).apply {
+                    remove("jti")
+                },
+        )
+}
+
+private fun Any?.toJson(): String =
+    when (this) {
+        null -> "null"
+        is String ->
+            buildString {
+                append('"')
+                append(this@toJson.replace("\"", "\\\""))
+                append('"')
+            }
+        is Number, is Boolean -> toString()
+        is Map<*, *> -> {
+            val filteredEntries = entries.filter { it.key is String }
+            filteredEntries.joinToString(
+                prefix = "{",
+                postfix = "}",
+            ) { entry ->
+                val key = entry.key as String
+                "\"$key\":${entry.value.toJson()}"
+            }
+        }
+        is Iterable<*> ->
+            joinToString(prefix = "[", postfix = "]") { it.toJson() }
+        else -> "\"${this@toJson}\""
+    }

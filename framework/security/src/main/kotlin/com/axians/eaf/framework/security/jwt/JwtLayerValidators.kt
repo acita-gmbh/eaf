@@ -108,6 +108,13 @@ class JwtClaimsValidator(
                 jwt.getClaimAsString("tenant_id")
                     ?: return SecurityError.MissingClaim("tenant_id").left()
 
+            val roles =
+                JwtClaimsExtractor
+                    .extractRoles(jwt)
+                    .takeIf { it.isNotEmpty() }
+                    ?.toList()
+                    ?: (jwt.getClaimAsStringList("roles") ?: emptyList())
+
             val claims =
                 JwtClaims(
                     sub = sub,
@@ -117,7 +124,7 @@ class JwtClaimsValidator(
                     iat = iat,
                     jti = jti,
                     tenantId = tenantId,
-                    roles = jwt.getClaimAsStringList("realm_access.roles") ?: emptyList(),
+                    roles = roles,
                     sessionId = jwt.getClaimAsString("session_state"),
                 )
 

@@ -7,7 +7,6 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -24,7 +23,6 @@ import org.springframework.web.filter.OncePerRequestFilter
  * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
-@Profile("!test") // Story 6.2: Requires JwtDecoder from SecurityConfiguration
 class JwtValidationFilter(
     private val tenLayerValidator: TenLayerJwtValidator,
     private val jwtDecoder: JwtDecoder,
@@ -86,6 +84,11 @@ class JwtValidationFilter(
             // Verify we didn't strip everything (pure prefix inputs like "ROLE_" or "ROLE_ROLE_")
             require(body.isNotEmpty()) { "Role name is only prefixes (e.g., \"ROLE_\", \"ROLE_ROLE_\")" }
 
+            // Permission-style authorities (e.g., widget:create) keep original body without ROLE_ prefix
+            if (body.contains(":")) {
+                return SimpleGrantedAuthority(body)
+            }
+
             // Enforce character whitelist: Unicode letters, digits, underscore, hyphen, dot only
             // Prevents injection attacks (SQL, LDAP, shell) and ensures predictable behavior
             require(ALLOWED_ROLE_PATTERN.matcher(body).matches()) {
@@ -99,7 +102,7 @@ class JwtValidationFilter(
                 "Role name too long (${body.length} > $MAX_ROLE_LENGTH). Received: '$role'"
             }
 
-            // Return canonical form: ROLE_ + validated body
+            // Return canonical role form: ROLE_ + validated body
             return SimpleGrantedAuthority("$ROLE_PREFIX$body")
         }
     }
@@ -110,17 +113,21 @@ class JwtValidationFilter(
         filterChain: FilterChain,
     ) {
         try {
+            log.debug("JwtValidationFilter processing request: {}", request.requestURI)
             val token = extractToken(request)
 
             if (token != null) {
+                log.debug("JwtValidationFilter extracted token")
                 // Apply 10-layer validation
                 tenLayerValidator.validateTenLayers(token).fold(
                     ifLeft = { error ->
+                        log.warn("JWT validation failed: {}", error)
                         handleValidationError(response, error)
                         return
                     },
                     ifRight = { validationResult ->
                         // Set authentication context for Spring Security
+                        log.debug("JWT validation succeeded for user {}", validationResult.user.id)
                         val jwt = jwtDecoder.decode(token)
                         val authorities =
                             validationResult.roles
