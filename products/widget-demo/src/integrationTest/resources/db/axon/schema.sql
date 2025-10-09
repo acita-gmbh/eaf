@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS association_value_entry (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_assoc_value_entry
-    ON association_value_entry (association_key, association_value, saga_type);
+    ON association_value_entry (association_key, association_value, saga_type, saga_id);
 
 CREATE INDEX IF NOT EXISTS idx_assoc_value_entry
     ON association_value_entry (association_value);
