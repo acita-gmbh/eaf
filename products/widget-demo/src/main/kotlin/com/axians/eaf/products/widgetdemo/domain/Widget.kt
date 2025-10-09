@@ -15,6 +15,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.spring.stereotype.Aggregate
+import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -51,7 +52,7 @@ class Widget {
         }
 
         validateCreateCommand(command).fold(
-            { error -> throw IllegalArgumentException("Validation failed: $error") },
+            { error -> throw WidgetValidationException(error) },
             {
                 AggregateLifecycle.apply(
                     WidgetCreatedEvent(
@@ -74,16 +75,26 @@ class Widget {
 
         val error =
             when {
-                command.tenantId != currentTenant ->
-                    WidgetError.TenantIsolationViolation(
-                        requestedTenant = command.tenantId,
-                        actualTenant = currentTenant,
+                command.tenantId != currentTenant -> {
+                    // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
+                    logger.warn(
+                        "Tenant isolation violation in UpdateWidgetCommand: widgetId={}, commandTenant={}, contextTenant={}",
+                        command.widgetId,
+                        command.tenantId,
+                        currentTenant,
                     )
-                this.tenantId != currentTenant ->
-                    WidgetError.TenantIsolationViolation(
-                        requestedTenant = currentTenant,
-                        actualTenant = this.tenantId,
+                    WidgetError.TenantIsolationViolation()
+                }
+                this.tenantId != currentTenant -> {
+                    // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
+                    logger.warn(
+                        "Tenant isolation violation in Widget aggregate: widgetId={}, aggregateTenant={}, contextTenant={}",
+                        this.widgetId,
+                        this.tenantId,
+                        currentTenant,
                     )
+                    WidgetError.TenantIsolationViolation()
+                }
                 status != WidgetStatus.ACTIVE ->
                     WidgetError.BusinessRuleViolation(
                         rule = "widget.must.be.active",
@@ -137,16 +148,26 @@ class Widget {
         // Tenant validation - both command and aggregate must match current context
         val error =
             when {
-                command.tenantId != currentTenant ->
-                    WidgetError.TenantIsolationViolation(
-                        requestedTenant = command.tenantId,
-                        actualTenant = currentTenant,
+                command.tenantId != currentTenant -> {
+                    // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
+                    logger.warn(
+                        "Tenant isolation violation in CancelWidgetCreationCommand: widgetId={}, commandTenant={}, contextTenant={}",
+                        command.widgetId,
+                        command.tenantId,
+                        currentTenant,
                     )
-                this.tenantId != currentTenant ->
-                    WidgetError.TenantIsolationViolation(
-                        requestedTenant = currentTenant,
-                        actualTenant = this.tenantId,
+                    WidgetError.TenantIsolationViolation()
+                }
+                this.tenantId != currentTenant -> {
+                    // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
+                    logger.warn(
+                        "Tenant isolation violation in Widget aggregate during cancellation: widgetId={}, aggregateTenant={}, contextTenant={}",
+                        this.widgetId,
+                        this.tenantId,
+                        currentTenant,
                     )
+                    WidgetError.TenantIsolationViolation()
+                }
                 else -> null
             }
 
@@ -213,6 +234,7 @@ class Widget {
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger(Widget::class.java)
         private val NAME_PATTERN = Regex("^[A-Za-z0-9](?:[A-Za-z0-9 _-]{0,98}[A-Za-z0-9])?$")
         private val CATEGORY_PATTERN = Regex("^[A-Z][A-Z_]{2,29}$")
         private val MIN_VALUE = BigDecimal.ZERO
