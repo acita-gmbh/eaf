@@ -81,12 +81,30 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 finalizedBy("jacocoTestReport")
             }
 
+            // Configure JaCoCo for ciTest task (used in CI/CD)
+            afterEvaluate {
+                tasks.findByName("ciTest")?.let { ciTestTask ->
+                    ciTestTask.finalizedBy("jacocoTestReport")
+                }
+            }
+
             tasks.named("jacocoTestReport", org.gradle.testing.jacoco.tasks.JacocoReport::class) {
-                dependsOn("test")
+                // Support both test and ciTest tasks
+                dependsOn.removeIf { it.toString() == "task ':test'" }
+                mustRunAfter("test", "ciTest")
+
                 reports {
                     xml.required.set(true)
                     html.required.set(true)
                 }
+
+                // Collect execution data from both test and ciTest
+                executionData.setFrom(
+                    project.files(
+                        layout.buildDirectory.file("jacoco/test.exec"),
+                        layout.buildDirectory.file("jacoco/ciTest.exec")
+                    ).filter { it.exists() }
+                )
             }
 
             // Configure Pitest
