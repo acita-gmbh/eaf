@@ -550,9 +550,86 @@ enum class {{aggregateName}}Status {
 # Note: jvmKotest uses native Kotest runner for main tests
 # integrationTest and konsistTest use JUnit Platform due to Kotest plugin limitation
 
-# Performance validation
-./gradlew pitest                          # Mutation testing (10-15 minutes)
+# Mutation testing (framework modules only)
+./gradlew pitest                          # Mutation testing (~7-10 minutes for all framework modules)
+./gradlew :framework:security:pitest      # Single module (~3 minutes)
 ```
+
+### Mutation Testing Workflow (Story 8.6)
+
+#### Fast Feedback Cycle (Recommended for TDD)
+
+```bash
+# Skip mutation testing for fast local feedback (~2.5 minutes)
+./gradlew check -x pitest
+
+# What runs:
+# - ktlint (formatting)
+# - detekt (static analysis)
+# - jvmKotest (unit tests)
+# - integrationTest
+# - konsistTest (architecture)
+# - jacoco (coverage)
+```
+
+**Rationale**: Preserve fast feedback loops during active development. Mutation testing runs in CI for comprehensive validation.
+
+#### Full Quality Gate (Before PR)
+
+```bash
+# Complete quality gate with mutation testing (~6-8 minutes)
+./gradlew check
+
+# Includes everything above PLUS:
+# - pitest (mutation testing)
+```
+
+**Rationale**: Validate mutation coverage before pushing to PR. Ensures local quality matches CI expectations.
+
+#### Mutation Coverage Maintenance
+
+**Monthly Review Process**:
+```bash
+# 1. Run mutation testing
+./gradlew pitest
+
+# 2. Review HTML reports
+open framework/security/build/reports/pitest/index.html
+open framework/cqrs/build/reports/pitest/index.html
+open framework/observability/build/reports/pitest/index.html
+
+# 3. Analyze trend
+# - Target: ≥80% mutation coverage
+# - Current: ~30% (baseline as of Story 8.6)
+# - Alert: <75% (drift from target)
+
+# 4. Action if <80%
+# - Priority 1: Add tests for NO_COVERAGE mutations (untested code paths)
+# - Priority 2: Address SURVIVED mutations (tests exist but don't kill mutants)
+# - Priority 3: Document equivalent mutants (unkillable mutations)
+```
+
+**Handling Surviving Mutants**:
+1. **Categorize**: Boundary/boolean/return/null/void-call
+2. **Test Addition**: Add tests to kill mutants
+3. **Equivalence Check**: If unkillable, verify semantic equivalence
+4. **Documentation**: Record in `framework/*/docs/mutation-coverage.md` with rationale
+
+**Example Equivalent Mutant Documentation**:
+```markdown
+## framework/security Accepted Equivalent Mutants
+
+### Metrics Recording (VoidMethodCallMutator)
+**Mutants**: 15 total
+**Lines**: 196, 198, 203, ...
+**Description**: Removed calls to `Timer::record`, `Counter::increment`
+**Rationale**: Observability infrastructure, not business logic.
+              Removing these calls doesn't affect correctness, only observability.
+**Security Impact**: None
+**Accepted**: Yes (all VoidMethodCall mutations to metrics/logging infrastructure)
+```
+
+**Troubleshooting**: See `docs/troubleshooting/pitest-failures.md` for common issues and solutions.
 
 ### Development Profiles
 

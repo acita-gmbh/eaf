@@ -19,6 +19,11 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.opentelemetry.sdk.testing)
 
+    // Exclude JUnit 4 to prevent pitest minion crash
+    configurations.named("testRuntimeClasspath") {
+        exclude(group = "junit", module = "junit")
+    }
+
     // Integration test dependencies
     integrationTestImplementation(libs.spring.boot.starter.test)
     integrationTestImplementation(project(":shared:testing"))
