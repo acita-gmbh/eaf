@@ -16,7 +16,7 @@ arrow = "1.2.4"            # Functional programming
 
 # Database and persistence
 postgresql = "42.7.8"      # PostgreSQL driver (security updates)
-jooq = "3.20.7"           # SQL DSL for read projections (updated)
+jooq = "3.20.8"           # SQL DSL for read projections (updated)
 jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 
 # Testing framework (MANDATORY)
