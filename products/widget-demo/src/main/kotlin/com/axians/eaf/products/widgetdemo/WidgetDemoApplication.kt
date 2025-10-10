@@ -1,6 +1,7 @@
 package com.axians.eaf.products.widgetdemo
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.runApplication
 
 /**
@@ -50,6 +51,14 @@ import org.springframework.boot.runApplication
     scanBasePackages = [
         "com.axians.eaf.products.widgetdemo",
         "com.axians.eaf.framework",
+    ],
+)
+@EntityScan(
+    basePackages = [
+        "com.axians.eaf.products.widgetdemo.entities",
+        "org.axonframework.eventsourcing.eventstore.jpa",
+        "org.axonframework.eventhandling.tokenstore.jpa",
+        "org.axonframework.modelling.saga.repository.jpa",
     ],
 )
 class WidgetDemoApplication
