@@ -9,7 +9,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
-import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+// import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification // Story 8.6: Removed, replaced with Kover
 import org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension
 import org.owasp.dependencycheck.reporting.ReportGenerator
 
@@ -24,7 +24,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
-                apply("jacoco")
+                apply("org.jetbrains.kotlinx.kover") // Story 8.6: Replaced JaCoCo with Kover
                 apply("info.solidsoft.pitest")
                 apply("org.owasp.dependencycheck")
             }
@@ -42,11 +42,6 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 ?.takeIf { it.isNotBlank() }
                 ?: group.toString().takeIf { it.isNotBlank() }
                 ?: "com.axians.eaf"
-
-            // Configure Jacoco
-            configure<org.gradle.testing.jacoco.plugins.JacocoPluginExtension> {
-                toolVersion = catalog.version("jacoco")
-            }
 
             configure<DependencyCheckExtension> {
                 failBuildOnCVSS = 7.0f
@@ -75,36 +70,6 @@ class QualityGatesConventionPlugin : Plugin<Project> {
 
                     apiKey?.let { this.apiKey = it }
                 }
-            }
-
-            tasks.named("test") {
-                finalizedBy("jacocoTestReport")
-            }
-
-            // Configure JaCoCo for ciTest task (used in CI/CD)
-            afterEvaluate {
-                tasks.findByName("ciTest")?.let { ciTestTask ->
-                    ciTestTask.finalizedBy("jacocoTestReport")
-                }
-            }
-
-            tasks.named("jacocoTestReport", org.gradle.testing.jacoco.tasks.JacocoReport::class) {
-                // Support both test and ciTest tasks
-                dependsOn.removeIf { it.toString() == "task ':test'" }
-                mustRunAfter("test", "ciTest")
-
-                reports {
-                    xml.required.set(true)
-                    html.required.set(true)
-                }
-
-                // Collect execution data from both test and ciTest
-                executionData.setFrom(
-                    project.files(
-                        layout.buildDirectory.file("jacoco/test.exec"),
-                        layout.buildDirectory.file("jacoco/ciTest.exec")
-                    ).filter { it.exists() }
-                )
             }
 
             // Configure Pitest
@@ -136,72 +101,16 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
             }
 
-            val sourceSets = extensions.findByType(SourceSetContainer::class.java)
-
-            val jacocoVerification = try {
-                tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java)
-            } catch (ignored: UnknownTaskException) {
-                tasks.register("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java)
-            }
-
-            jacocoVerification.configure {
-                dependsOn("test")
-                executionData.setFrom(
-                    layout.buildDirectory.dir("jacoco").map { dir ->
-                        dir.asFileTree.matching {
-                            include("test.exec", "test-*.exec")
-                        }
-                    }
-                )
-                onlyIf {
-                    val resolvedExec = executionData.files.filter { it.exists() }
-                    if (resolvedExec.isEmpty()) {
-                        logger.lifecycle("Skipping Jacoco coverage verification for ${'$'}path because no execution data was generated.")
-                    }
-                    resolvedExec.isNotEmpty()
-                }
-                sourceSets?.findByName("main")?.let { mainSourceSet ->
-                    sourceDirectories.setFrom(mainSourceSet.allSource.srcDirs)
-                    classDirectories.setFrom(
-                        mainSourceSet.output.classesDirs.asFileTree.matching {
-                            exclude("**/*Application*")
-                        }
-                    )
-                }
-
-                violationRules.apply {
-                    rule {
-                        limit {
-                            counter = "LINE"
-                            value = "COVEREDRATIO"
-                            minimum = "0.50".toBigDecimal() // Story 8.6: Current achievement (target: 0.66 by Epic 9)
-                        }
-                        limit {
-                            counter = "BRANCH"
-                            value = "COVEREDRATIO"
-                            minimum = "0.50".toBigDecimal() // Story 8.6: Current achievement (target: 0.66 by Epic 9)
-                        }
-                    }
-                }
-            }
-
-            this@with.tasks.findByName("compileIntegrationTestKotlin")?.let { task ->
-                jacocoVerification.configure { dependsOn(task) }
-            }
-            this@with.tasks.findByName("compileIntegrationTestJava")?.let { task ->
-                jacocoVerification.configure { dependsOn(task) }
-            }
-            this@with.tasks.findByName("integrationTest")?.let { task ->
-                jacocoVerification.configure { dependsOn(task) }
-            }
+            // Kover is applied via pluginManager above - configuration happens via kover { } DSL in build files
+            // Default Kover behavior: generates reports, no verification by default
 
             // Wire quality gates into check task
             tasks.named("check") {
                 dependsOn("test")
                 dependsOn("ktlintCheck")
                 dependsOn("detekt")
-                dependsOn("jacocoTestReport")
-                dependsOn(jacocoVerification)
+                dependsOn("koverXmlReport") // Story 8.6: Kover replaces jacocoTestReport
+                dependsOn("koverVerify")    // Story 8.6: Kover verification replaces jacocoTestCoverageVerification
                 // TODO(Epic 8 Pre-Production): Re-enable dependencyCheckAnalyze before production deployment
                 // TEMPORARILY DISABLED: CVE scanning disabled to improve build performance during development
                 // SECURITY IMPACT: High/critical CVEs (CVSS ≥7.0) won't fail builds until re-enabled
@@ -220,7 +129,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
 
                 doLast {
-                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → integrationTest → konsistTest → pitest).")
+                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest → pitest).")
                 }
             }
 

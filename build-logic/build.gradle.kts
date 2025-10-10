@@ -101,6 +101,7 @@ dependencies {
         "gradlePlugin-ktlint",
         "gradlePlugin-detekt",
         "gradlePlugin-pitest",
+        "gradlePlugin-kover",
         "gradlePlugin-dependencyCheck"
     ).forEach { alias ->
         val library = catalog.library(alias)

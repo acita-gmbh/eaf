@@ -19,7 +19,7 @@ val libs = extensions.getByType(VersionCatalogsExtension::class.java).named("lib
 extra["eaf.libs"] = libs
 extra["eaf.version.ktlint"] = libs.findVersion("ktlint").get().requiredVersion
 extra["eaf.version.detekt"] = libs.findVersion("detekt").get().requiredVersion
-extra["eaf.version.jacoco"] = libs.findVersion("jacoco").get().requiredVersion
+extra["eaf.version.kover"] = libs.findVersion("kover").get().requiredVersion // Story 8.6: Replaced jacoco
 
 val dependencyCheckAggregate = tasks.register("dependencyCheckAnalyze") {
     group = "verification"
