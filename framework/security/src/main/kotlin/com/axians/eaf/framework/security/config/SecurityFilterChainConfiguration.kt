@@ -5,7 +5,6 @@ import com.axians.eaf.framework.security.filters.TenantContextFilter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
@@ -18,7 +17,6 @@ import org.springframework.web.cors.CorsConfiguration
  * Research: 4 external AI sources recommend this as most idiomatic solution.
  */
 @Configuration
-@Profile("!test") // Story 6.2: Disable in test profile (requires JwtDecoder from SecurityConfiguration)
 open class SecurityFilterChainConfiguration(
     private val jwtValidationFilter: JwtValidationFilter,
     private val tenantContextFilter: TenantContextFilter,

@@ -6,7 +6,6 @@ import arrow.core.right
 import com.axians.eaf.framework.security.errors.SecurityError
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -20,10 +19,8 @@ import java.util.UUID
  * Enterprise-grade 10-layer JWT validation system.
  * Implements comprehensive security validation addressing all major attack vectors.
  *
- * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
  */
 @Component
-@Profile("!test") // Story 6.2: Requires JwtDecoder, RedisTemplate (live infrastructure)
 class TenLayerJwtValidator(
     private val formatValidator: JwtFormatValidator,
     private val claimsValidator: JwtClaimsValidator,

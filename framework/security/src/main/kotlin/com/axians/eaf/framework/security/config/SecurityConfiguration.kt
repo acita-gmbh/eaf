@@ -4,12 +4,13 @@ import com.axians.eaf.framework.security.filters.TenantContextFilter
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
@@ -25,7 +26,6 @@ import org.springframework.security.oauth2.jwt.JwtDecoders
 @Configuration
 @EnableWebSecurity
 @EnableAspectJAutoProxy
-@Profile("!test") // Story 6.2: Disable in test profile (requires Keycloak)
 @Import(SecurityFilterChainConfiguration::class)
 open class SecurityConfiguration {
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8180/realms/eaf}")
@@ -36,6 +36,8 @@ open class SecurityConfiguration {
      * Enhanced validation will be implemented in Story 3.3.
      */
     @Bean
+    @ConditionalOnMissingBean(JwtDecoder::class)
+    @ConditionalOnProperty(name = ["eaf.security.enable-oidc-decoder"], havingValue = "true", matchIfMissing = true)
     open fun jwtDecoder(): JwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri)
 
     @Bean

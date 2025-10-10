@@ -38,10 +38,16 @@ import java.util.concurrent.TimeUnit
         "otel.traces.exporter=none",
         "otel.metrics.exporter=none",
         "otel.logs.exporter=none",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.hibernate.ddl-auto=update",
+        "spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true",
         "otel.instrumentation.spring-boot-starter.enabled=false",
         "otel.instrumentation.common.enabled=false",
         "spring.main.allow-bean-definition-overriding=true",
+        "axon.axonserver.enabled=false",
+        "spring.sql.init.mode=always",
+        "spring.sql.init.schema-locations=classpath:/db/axon/schema.sql",
+        "hibernate.id.sequence.increment_size_mismatch_strategy=fix",
+        "eaf.security.enable-oidc-decoder=false",
     ],
 )
 class WidgetIntegrationTest : FunSpec() {
@@ -110,7 +116,7 @@ class WidgetIntegrationTest : FunSpec() {
                 // Should not reach here
                 false shouldBe true
             } catch (e: Exception) {
-                e.message?.contains("Validation failed") shouldBe true
+                e.message?.contains("validation failed", ignoreCase = true) shouldBe true
             }
         }
 

@@ -5,7 +5,6 @@ package com.axians.eaf.products.widgetdemo.projections
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.events.WidgetCreatedEvent
 import com.axians.eaf.products.widgetdemo.entities.WidgetProjection
-import com.axians.eaf.products.widgetdemo.projections.WidgetProjectionHandler
 import com.axians.eaf.products.widgetdemo.repositories.WidgetProjectionRepository
 import com.axians.eaf.testing.containers.TestContainers
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -32,6 +31,8 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+
+private const val CLEANUP_BATCH_SIZE = 1000
 
 /**
  * Integration tests for complete Widget event processing flow.
@@ -63,19 +64,19 @@ import java.util.concurrent.TimeUnit
         "otel.traces.exporter=none",
         "otel.metrics.exporter=none",
         "otel.logs.exporter=none",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.hibernate.ddl-auto=update",
+        "spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true",
         "otel.instrumentation.spring-boot-starter.enabled=false",
         "otel.instrumentation.common.enabled=false",
         "spring.main.allow-bean-definition-overriding=true",
         "axon.eventhandling.processors.widget-projection.mode=tracking",
         "axon.eventhandling.processors.widget-projection.source=eventStore",
+        "axon.axonserver.enabled=false",
+        "hibernate.id.sequence.increment_size_mismatch_strategy=fix",
+        "eaf.security.enable-oidc-decoder=false",
     ],
 )
 class WidgetEventProcessingIntegrationTest : FunSpec() {
-    companion object {
-        private const val CLEANUP_BATCH_SIZE = 1000
-    }
-
     @Autowired
     private lateinit var commandGateway: CommandGateway
 
@@ -106,7 +107,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
                     name = "Command Integration Widget",
                     description = "Widget created via command integration test",
                     value = BigDecimal("350.50"),
-                    category = "integration-test",
+                    category = "INTEGRATION_TEST",
                     metadata = metadata,
                 )
 
@@ -124,7 +125,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
             projection.name shouldBe "Command Integration Widget"
             projection.description shouldBe "Widget created via command integration test"
             projection.value shouldBe BigDecimal("350.50")
-            projection.category shouldBe "integration-test"
+            projection.category shouldBe "INTEGRATION_TEST"
 
             // Verify metadata serialization
             projection.metadata shouldNotBe null
@@ -145,7 +146,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
                         name = "Concurrent Widget 1-1",
                         description = "First widget for tenant 1",
                         value = BigDecimal("100.00"),
-                        category = "concurrent",
+                        category = "CONCURRENT",
                         metadata = mapOf("tenant" to "1", "sequence" to "1"),
                     ),
                     CreateWidgetCommand(
@@ -154,7 +155,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
                         name = "Concurrent Widget 1-2",
                         description = "Second widget for tenant 1",
                         value = BigDecimal("200.00"),
-                        category = "concurrent",
+                        category = "CONCURRENT",
                         metadata = mapOf("tenant" to "1", "sequence" to "2"),
                     ),
                     CreateWidgetCommand(
@@ -163,7 +164,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
                         name = "Concurrent Widget 2-1",
                         description = "First widget for tenant 2",
                         value = BigDecimal("300.00"),
-                        category = "concurrent",
+                        category = "CONCURRENT",
                         metadata = mapOf("tenant" to "2", "sequence" to "1"),
                     ),
                 )
@@ -208,7 +209,7 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
                     name = "Error Test Widget",
                     description = "Widget for error handling test",
                     value = BigDecimal("150.00"),
-                    category = "error-test",
+                    category = "ERROR_TEST",
                     metadata = emptyMap(),
                     createdAt = Instant.now(),
                 )

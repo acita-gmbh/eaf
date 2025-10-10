@@ -1,126 +1,47 @@
 package com.axians.eaf.framework.security.jwt
 
 import com.axians.eaf.framework.security.errors.SecurityError
+import com.axians.eaf.framework.security.test.JwtTestTokens
+import com.axians.eaf.framework.security.test.NullableJwtDecoder
+import com.axians.eaf.framework.security.test.NullableRedisTemplate
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import org.springframework.data.redis.core.RedisTemplate
-import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtException
-import java.time.Instant
-import java.util.Base64
 
 /**
  * Unit tests for 10-layer JWT validation system.
- * Tests each validation layer individually without Spring Boot context.
+ * Tests each validation layer individually using robust nullable dependencies.
  */
 class TenLayerJwtValidatorTest : BehaviorSpec() {
     private val meterRegistry = SimpleMeterRegistry()
-    private val mockJwtDecoder =
-        object : JwtDecoder {
-            override fun decode(token: String): Jwt {
-                // Parse the token to create a mock JWT
-                val parts = token.split(".")
-                if (parts.size != 3) throw JwtException("Invalid token format")
+    private val nullableJwtDecoder = NullableJwtDecoder.createNull()
+    private val nullableRedisTemplate = NullableRedisTemplate.createNull()
 
-                val payload =
-                    try {
-                        String(Base64.getUrlDecoder().decode(parts[1]))
-                    } catch (e: IllegalArgumentException) {
-                        throw JwtException("Invalid payload encoding: ${e.message}")
-                    }
-
-                // Simple JSON parsing for test purposes
-                val claims = mutableMapOf<String, Any>()
-                if (payload.contains("\"sub\":")) {
-                    val sub = payload.substringAfter("\"sub\":\"").substringBefore("\"")
-                    claims["sub"] = sub
-                }
-                if (payload.contains("\"tenant_id\":")) {
-                    val tenantId = payload.substringAfter("\"tenant_id\":\"").substringBefore("\"")
-                    claims["tenant_id"] = tenantId
-                }
-                if (payload.contains("\"iss\":")) {
-                    val iss = payload.substringAfter("\"iss\":\"").substringBefore("\"")
-                    claims["iss"] = iss
-                }
-                if (payload.contains("\"aud\":")) {
-                    val aud = payload.substringAfter("\"aud\":\"").substringBefore("\"")
-                    claims["aud"] = listOf(aud)
-                }
-                if (payload.contains("\"exp\":")) {
-                    val exp = payload.substringAfter("\"exp\":").substringBefore(",").substringBefore("}")
-                    claims["exp"] = Instant.ofEpochSecond(exp.toLong())
-                }
-                if (payload.contains("\"iat\":")) {
-                    val iat = payload.substringAfter("\"iat\":").substringBefore(",").substringBefore("}")
-                    claims["iat"] = Instant.ofEpochSecond(iat.toLong())
-                }
-                if (payload.contains("\"jti\":")) {
-                    val jti = payload.substringAfter("\"jti\":\"").substringBefore("\"")
-                    claims["jti"] = jti
-                }
-                if (payload.contains("\"realm_access\"")) {
-                    // Extract roles from realm_access.roles
-                    val rolesSection = payload.substringAfter("\"realm_access\":{\"roles\":[\"").substringBefore("]")
-                    val roles = rolesSection.split("\",\"").filter { it.isNotEmpty() }
-                    claims["realm_access.roles"] = roles
-                }
-
-                // Create mock headers
-                val headers = mutableMapOf<String, Any>()
-                val headerPayload =
-                    try {
-                        String(Base64.getUrlDecoder().decode(parts[0]))
-                    } catch (e: IllegalArgumentException) {
-                        throw JwtException("Invalid header encoding: ${e.message}")
-                    }
-                if (headerPayload.contains("\"alg\":")) {
-                    val alg = headerPayload.substringAfter("\"alg\":\"").substringBefore("\"")
-                    headers["alg"] = alg
-                }
-
-                return Jwt
-                    .withTokenValue(token)
-                    .headers { it.putAll(headers) }
-                    .claims { it.putAll(claims) }
-                    .build()
-            }
-        }
-
-    private val mockRedisTemplate =
-        object : RedisTemplate<String, String>() {
-            override fun hasKey(key: String): Boolean = false
-        }
-
-    private val formatValidator = JwtFormatValidator(mockJwtDecoder, meterRegistry)
-    private val claimsValidator = JwtClaimsValidator(meterRegistry)
-    private val securityValidator = JwtSecurityValidator(mockRedisTemplate, meterRegistry)
-    private val validator = TenLayerJwtValidator(formatValidator, claimsValidator, securityValidator, meterRegistry)
+    private val validator =
+        TenLayerJwtValidator(
+            formatValidator = JwtFormatValidator(nullableJwtDecoder, meterRegistry),
+            claimsValidator = JwtClaimsValidator(meterRegistry),
+            securityValidator = JwtSecurityValidator(nullableRedisTemplate, meterRegistry),
+            meterRegistry = meterRegistry,
+        )
 
     init {
+        beforeTest {
+            nullableRedisTemplate.clear()
+        }
+
         given("TenLayerJwtValidator") {
 
             `when`("validating token format (Layer 1)") {
-                then("should accept valid JWT structure") {
-                    val validToken = createValidTokenStructure()
-                    val result = validator.validateTenLayers(validToken)
-                    // Should pass Layer 1 but may fail later layers
-                    result.isLeft() shouldBe true // Will fail at signature validation since it's mock
-                }
-
                 then("should reject malformed tokens") {
-                    val malformedToken = "invalid.token"
-                    val result = validator.validateTenLayers(malformedToken)
-
+                    val result = validator.validateTenLayers("invalid.token.format.with.too.many.parts")
                     result.isLeft() shouldBe true
                     result.leftOrNull().shouldBeInstanceOf<SecurityError.InvalidTokenFormat>()
                 }
 
                 then("should reject oversized tokens") {
-                    val oversizedToken = "a".repeat(10000) + ".payload.signature"
+                    val oversizedToken = "a.b." + "c".repeat(9000)
                     val result = validator.validateTenLayers(oversizedToken)
 
                     result.isLeft() shouldBe true
@@ -129,72 +50,60 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
 
                 then("should reject empty tokens") {
                     val result = validator.validateTenLayers("")
-
                     result.isLeft() shouldBe true
                     result.leftOrNull().shouldBeInstanceOf<SecurityError.EmptyToken>()
                 }
             }
 
             `when`("validating algorithm (Layer 3)") {
-                then("should reject HS256 algorithm (SEC-001 critical vulnerability)") {
-                    val hs256Token = createTokenWithAlgorithm("HS256")
-                    val result = validator.validateTenLayers(hs256Token)
-
+                then("should reject HS256 algorithm") {
+                    val result = validator.validateTenLayers(JwtTestTokens.hs256)
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<SecurityError.UnsupportedAlgorithm>()
+                    val error = result.leftOrNull()
+                    error.shouldBeInstanceOf<SecurityError.UnsupportedAlgorithm>()
+                    error.algorithm shouldBe "HS256"
                 }
 
                 then("should reject 'none' algorithm") {
-                    val noneToken = createTokenWithAlgorithm("none")
-                    val result = validator.validateTenLayers(noneToken)
-
+                    val result = validator.validateTenLayers(JwtTestTokens.noneAlgorithm)
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<SecurityError.UnsupportedAlgorithm>()
+                    val error = result.leftOrNull()
+                    error.shouldBeInstanceOf<SecurityError.UnsupportedAlgorithm>()
+                    error.algorithm shouldBe "none"
                 }
             }
 
-            `when`("validating injection detection (Layer 10)") {
-                // NOTE: Full injection detection tests require complete token validation pipeline
-                // These tests are deferred to Story 3.4 product-level integration testing
-                // where full authentication context and role validation are available
+            `when`("validating token revocation (Layer 7)") {
+                then("should reject a token with a JTI present in the revocation list") {
+                    val tokenKey = JwtTestTokens.validRs256
+                    val jwt = nullableJwtDecoder.decode(tokenKey)
+                    val jti = jwt.getClaim<String>("jti")
 
-                then("injection detection architecture implemented") {
-                    // Verify injection detection patterns are configured
-                    val patterns =
-                        listOf(
-                            "(?i)(union|select|insert|update|delete|drop)\\s",
-                            "(?i)(script|javascript|onerror|onload)",
-                        )
-                    patterns.isNotEmpty() shouldBe true
+                    nullableRedisTemplate.addKey("revoked:$jti")
+
+                    val result = validator.validateTenLayers(tokenKey)
+
+                    result.isLeft() shouldBe true
+                    val error = result.leftOrNull()
+                    error.shouldBeInstanceOf<SecurityError.TokenRevoked>()
+                    error.jti shouldBe jti
+                }
+
+                then("should accept a token with a JTI that is not revoked") {
+                    val result = validator.validateTenLayers(JwtTestTokens.validRs256)
+                    result.isRight() shouldBe true
+                }
+            }
+
+            `when`("validating claim schema (Layer 4)") {
+                then("should reject a token without a JTI claim") {
+                    val result = validator.validateTenLayers(JwtTestTokens.missingJti)
+                    result.isLeft() shouldBe true
+                    val error = result.leftOrNull()
+                    error.shouldBeInstanceOf<SecurityError.MissingClaim>()
+                    error.claimName shouldBe "jti"
                 }
             }
         }
-    }
-
-    // Test helper functions
-    private fun createValidTokenStructure(): String {
-        val header = """{"alg":"RS256","typ":"JWT"}"""
-        val exp = System.currentTimeMillis() / 1000 + 3600
-        val iat = System.currentTimeMillis() / 1000
-        val payload =
-            """{"sub":"test-user","tenant_id":"test-tenant",""" +
-                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
-                """"exp":$exp,"iat":$iat,"jti":"test-jti"}"""
-        val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
-        val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-        return "$encodedHeader.$encodedPayload.validSignature"
-    }
-
-    private fun createTokenWithAlgorithm(algorithm: String): String {
-        val header = """{"alg":"$algorithm","typ":"JWT"}"""
-        val exp = System.currentTimeMillis() / 1000 + 3600
-        val iat = System.currentTimeMillis() / 1000
-        val payload =
-            """{"sub":"test-user","tenant_id":"test-tenant",""" +
-                """"iss":"http://localhost:8180/realms/eaf","aud":"eaf-backend",""" +
-                """"exp":$exp,"iat":$iat,"jti":"test-jti"}"""
-        val encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString(header.toByteArray())
-        val encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-        return "$encodedHeader.$encodedPayload.signature"
     }
 }

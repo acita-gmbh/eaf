@@ -4,9 +4,11 @@ package com.axians.eaf.products.widgetdemo.api
 
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.products.widgetdemo.WidgetDemoApplication
-import com.axians.eaf.testing.auth.KeycloakTestTokenProvider
+import com.axians.eaf.products.widgetdemo.test.NullableJwtDecoder
 import com.axians.eaf.testing.containers.TestContainers
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.kotest.assertions.nondeterministic.eventually
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
@@ -39,8 +41,15 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
 import java.util.UUID
+import kotlin.time.Duration.Companion.seconds
 
-@SpringBootTest(classes = [WidgetApiIntegrationTest.MinimalTestConfig::class])
+@SpringBootTest(
+    classes = [
+        WidgetDemoApplication::class,
+        WidgetApiIntegrationTest.MinimalTestConfig::class,
+        com.axians.eaf.products.widgetdemo.test.WidgetDemoTestApplication::class,
+    ],
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(
@@ -50,10 +59,12 @@ import java.util.UUID
         "otel.traces.exporter=none",
         "otel.metrics.exporter=none",
         "otel.logs.exporter=none",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.hibernate.ddl-auto=update",
         "otel.instrumentation.spring-boot-starter.enabled=false",
         "otel.instrumentation.common.enabled=false",
         "spring.main.allow-bean-definition-overriding=true",
+        "eaf.security.enable-oidc-decoder=false",
+        "logging.level.com.axians.eaf.framework.security=TRACE",
     ],
 )
 class WidgetApiIntegrationTest : FunSpec() {
@@ -91,7 +102,6 @@ class WidgetApiIntegrationTest : FunSpec() {
 
         context("Widget API Integration Tests") {
             test("8.4-INT-006: should create widget successfully via REST API with JWT authentication") {
-                val validToken = KeycloakTestTokenProvider.getAdminToken()
                 val request =
                     mapOf(
                         "name" to "Integration Test Widget",
@@ -106,7 +116,7 @@ class WidgetApiIntegrationTest : FunSpec() {
                         .perform(
                             post("/widgets")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .header("Authorization", "Bearer $validToken")
+                                .header("Authorization", "Bearer $VALID_TENANT_ADMIN_TOKEN")
                                 .content(objectMapper.writeValueAsString(request)),
                         ).andExpect(status().isCreated)
                         .andExpect(header().exists("Location"))
@@ -114,17 +124,14 @@ class WidgetApiIntegrationTest : FunSpec() {
                         .andExpect(jsonPath("$.status").value("created"))
                         .andReturn()
 
-                val responseBody = result.response.contentAsString
-                val response = objectMapper.readValue(responseBody, Map::class.java)
-                val widgetId = response["id"] as String
-
+                val responseBody = objectMapper.readValue(result.response.contentAsString, Map::class.java)
+                val widgetId = responseBody["id"] as String
                 widgetId shouldNotBe null
                 UUID.fromString(widgetId) shouldNotBe null // Validate UUID format
             }
 
             test("8.4-INT-007: should handle validation errors with RFC 7807 Problem Details") {
-                val validToken = KeycloakTestTokenProvider.getAdminToken()
-                val invalidRequest =
+                val requestBody =
                     mapOf(
                         "name" to "", // Invalid empty name
                         "description" to null,
@@ -133,17 +140,23 @@ class WidgetApiIntegrationTest : FunSpec() {
                         "metadata" to emptyMap<String, Any>(),
                     )
 
-                mockMvc
-                    .perform(
-                        post("/widgets")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .header("Authorization", "Bearer $validToken")
-                            .content(objectMapper.writeValueAsString(invalidRequest)),
-                    ).andExpect(status().isBadRequest)
-                    .andExpect(content().contentType("application/problem+json"))
-                    .andExpect(jsonPath("$.title").value("Widget Creation Failed"))
-                    .andExpect(jsonPath("$.type").value("/problems/validation-error"))
-                    .andExpect(jsonPath("$.detail").exists())
+                val result =
+                    mockMvc
+                        .perform(
+                            post("/widgets")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("Authorization", "Bearer $VALID_TENANT_ADMIN_TOKEN")
+                                .content(objectMapper.writeValueAsString(requestBody)),
+                        ).andReturn()
+
+                withClue(result.response.contentAsString) {
+                    result.response.status shouldBe 400
+                }
+                result.response.contentType shouldBe "application/problem+json"
+                val json = objectMapper.readTree(result.response.contentAsString)
+                json["title"].asText() shouldBe "Widget Creation Failed"
+                json["type"].asText() shouldBe "/problems/validation-error"
+                json.hasNonNull("detail") shouldBe true
             }
 
             test("8.4-INT-008: should return 401 for missing authorization header") {
@@ -155,16 +168,21 @@ class WidgetApiIntegrationTest : FunSpec() {
                         "category" to "TEST_CATEGORY",
                     )
 
-                mockMvc
-                    .perform(
-                        post("/widgets")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)),
-                    ).andExpect(status().isUnauthorized)
+                val result =
+                    mockMvc
+                        .perform(
+                            post("/widgets")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)),
+                        ).andReturn()
+
+                withClue(result.response.contentAsString) {
+                    result.response.status shouldBe 401
+                }
             }
 
             test("8.4-INT-009: should extract tenant context from JWT header") {
-                val validToken = KeycloakTestTokenProvider.getAdminToken()
+                val validToken = VALID_TENANT_ADMIN_TOKEN
                 val request =
                     mapOf(
                         "name" to "Tenant Test Widget",
@@ -192,17 +210,45 @@ class WidgetApiIntegrationTest : FunSpec() {
                         "category" to "TEST_CATEGORY",
                     )
 
-                mockMvc
-                    .perform(
-                        post("/widgets")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .header("Authorization", "Bearer invalid-jwt-token")
-                            .content(objectMapper.writeValueAsString(request)),
-                    ).andExpect(status().isUnauthorized)
+                val result =
+                    mockMvc
+                        .perform(
+                            post("/widgets")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("Authorization", "Bearer $INVALID_TOKEN")
+                                .content(objectMapper.writeValueAsString(request)),
+                        ).andReturn()
+
+                withClue(result.response.contentAsString) {
+                    result.response.status shouldBe 401
+                }
+            }
+
+            test("8.4-INT-010b: should return 401 when tenant claim missing") {
+                val request =
+                    mapOf(
+                        "name" to "No Tenant Widget",
+                        "description" to "Missing tenant claim",
+                        "value" to 80.0,
+                        "category" to "TENANT_TEST",
+                    )
+
+                val result =
+                    mockMvc
+                        .perform(
+                            post("/widgets")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("Authorization", "Bearer $NO_TENANT_TOKEN")
+                                .content(objectMapper.writeValueAsString(request)),
+                        ).andReturn()
+
+                withClue(result.response.contentAsString) {
+                    result.response.status shouldBe 401
+                }
             }
 
             test("8.4-INT-011: should retrieve widget with valid JWT authentication") {
-                val validToken = KeycloakTestTokenProvider.getAdminToken()
+                val validToken = VALID_TENANT_ADMIN_TOKEN
 
                 // First create a widget
                 val createRequest =
@@ -227,13 +273,15 @@ class WidgetApiIntegrationTest : FunSpec() {
                 val widgetId = createResponse["id"] as String
 
                 // Then retrieve the widget
-                mockMvc
-                    .perform(
-                        get("/widgets/$widgetId")
-                            .header("Authorization", "Bearer $validToken"),
-                    ).andExpect(status().isOk)
-                    .andExpect(jsonPath("$.id").value(widgetId))
-                    .andExpect(jsonPath("$.name").value("Retrieval Test Widget"))
+                eventually(5.seconds) {
+                    mockMvc
+                        .perform(
+                            get("/widgets/$widgetId")
+                                .header("Authorization", "Bearer $validToken"),
+                        ).andExpect(status().isOk)
+                        .andExpect(jsonPath("$.id").value(widgetId))
+                        .andExpect(jsonPath("$.name").value("Retrieval Test Widget"))
+                }
             }
 
             test("8.4-INT-012: should return 401 when retrieving widget without authentication") {
@@ -286,19 +334,19 @@ class WidgetApiIntegrationTest : FunSpec() {
     }
 
     companion object {
+        private val VALID_TENANT_ADMIN_TOKEN = NullableJwtDecoder.validTokenValue
+        private val INVALID_TOKEN = NullableJwtDecoder.invalidTokenValue
+        private val NO_TENANT_TOKEN = NullableJwtDecoder.noTenantTokenValue
+
         @JvmStatic
         @DynamicPropertySource
         fun configureProperties(registry: DynamicPropertyRegistry) {
             TestContainers.postgres.start()
             TestContainers.redis.start()
-            TestContainers.keycloak.start()
 
             registry.add("spring.datasource.url", TestContainers.postgres::getJdbcUrl)
             registry.add("spring.datasource.username", TestContainers.postgres::getUsername)
             registry.add("spring.datasource.password", TestContainers.postgres::getPassword)
-            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
-                "${TestContainers.keycloak.authServerUrl}/realms/eaf"
-            }
         }
     }
 }
