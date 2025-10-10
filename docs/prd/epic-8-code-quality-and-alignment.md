@@ -274,7 +274,25 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.6: Implement React-Admin Consumer Application
+### Story 8.6: Enable Mutation Testing (Pitest) for Framework Modules
+
+**As a** Developer, **I want** mutation testing enabled on framework modules, **so that** we validate test quality beyond line coverage.
+
+**Current State**: Pitest configured but not running anywhere due to plugin mismatch between framework (no quality-gates) and products (quality-gates but disabled).
+
+**Implementation:**
+- Apply `eaf.quality-gates` plugin to framework/security, framework/cqrs, framework/core
+- Run baseline pitest execution
+- Add tests to kill surviving mutants until ≥80% mutation coverage
+- Enable in CI mutation-testing job
+
+**Target**: 80% mutation coverage on framework modules (validates test quality)
+
+**Estimated Effort:** 2-3 days
+
+---
+
+### Story 8.7: Implement React-Admin Consumer Application
 
 **As an** Administrator, **I want** a functional React-Admin portal that integrates the framework shell with product UI modules, **so that** I can manage widgets through a modern web interface.
 
@@ -422,7 +440,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ## Definition of Done
 
-- [ ] All 6 stories completed with acceptance criteria met (8.1 ✅ DONE, 8.5 ✅ DONE, 8.2-8.6 pending)
+- [ ] All 7 stories completed with acceptance criteria met (8.1 ✅ DONE, 8.5 ✅ DONE, 8.2-8.4, 8.6-8.7 pending)
 - [ ] jOOQ projections outperform JPA baseline by ≥20%
 - [ ] All 7 integration tests passing in CI (<5 min execution)
 - [ ] React-Admin consumer app functional with Widget CRUD
@@ -472,8 +490,9 @@ The following were initially flagged but validated as **architecturally correct*
 | 8.3 - jOOQ Migration | High | 5-8 days |
 | 8.4 - Re-enable Tests | High | 5-7 days |
 | 8.5 - Architectural Patterns Alignment ✅ | Medium | 3-5 days (DONE) |
-| 8.6 - React-Admin Consumer | Medium | 5-7 days |
-| **Total Epic** | **High** | **30-42 days** |
+| 8.6 - Enable Mutation Testing | Medium | 2-3 days |
+| 8.7 - React-Admin Consumer | Medium | 5-7 days |
+| **Total Epic** | **High** | **32-45 days** |
 
 **Notes:**
 - Story 8.1 ✅ COMPLETE - 100% test naming compliance achieved
@@ -546,7 +565,8 @@ After completing Epic 8, validate:
 3. ✅ jOOQ not used (JPA instead) → **Story 8.3** (was 8.2)
 4. ✅ 7 tests disabled → **Story 8.4** (was 8.3)
 5. ✅ Architectural patterns alignment → **Story 8.5 DONE**
-6. ✅ Consumer app missing → **Story 8.6** (was 8.4)
+6. ✅ Mutation testing inactive → **Story 8.6 NEW** (pitest configured but not running)
+7. ✅ Consumer app missing → **Story 8.7** (was 8.4)
 
 **Invalidated Findings:**
 1. ❌ Test file naming (*Test.kt vs *Spec.kt) - Intentional architectural choice
