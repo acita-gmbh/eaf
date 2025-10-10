@@ -116,7 +116,7 @@ kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", vers
 kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.8.0" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.9.0" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
 
 # Static analysis
