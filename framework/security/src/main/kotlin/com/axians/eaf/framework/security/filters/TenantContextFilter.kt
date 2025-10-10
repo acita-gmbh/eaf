@@ -1,5 +1,7 @@
 package com.axians.eaf.framework.security.filters
 
+import com.axians.eaf.framework.security.services.SecurityErrorResponseFormatter
+import com.axians.eaf.framework.security.services.TenantExtractionService
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.micrometer.core.instrument.MeterRegistry
 import jakarta.servlet.FilterChain
@@ -8,8 +10,6 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.filter.OncePerRequestFilter
 
 /**
@@ -19,11 +19,12 @@ import org.springframework.web.filter.OncePerRequestFilter
  */
 class TenantContextFilter(
     private val tenantContext: TenantContext,
+    private val tenantExtractionService: TenantExtractionService,
+    private val errorFormatter: SecurityErrorResponseFormatter,
     private val meterRegistry: MeterRegistry? = null,
 ) : OncePerRequestFilter() {
     companion object {
         private val log = LoggerFactory.getLogger(TenantContextFilter::class.java)
-        private const val TENANT_CLAIM = "tenant_id"
 
         private val missingTenantDescriptor =
             TenantErrorDescriptor(
@@ -115,29 +116,15 @@ class TenantContextFilter(
 
     /**
      * Extracts tenant ID from validated JWT in SecurityContext.
-     * Implements fail-closed design for missing tenant claims.
+     * Delegates to TenantExtractionService for testability.
      *
      * @return The tenant ID from JWT claims
      * @throws IllegalStateException if no authentication context or missing tenant_id
      */
-    private fun extractTenantFromJwt(): String? {
-        val authentication =
-            SecurityContextHolder.getContext().authentication
-                ?: return null
-
-        check(authentication is JwtAuthenticationToken) {
-            "Authentication is not JWT-based"
-        }
-
-        val jwt: Jwt = authentication.token
-        val tenantId = jwt.getClaimAsString(TENANT_CLAIM)
-
-        if (tenantId.isNullOrBlank()) {
-            throw MissingTenantClaimException("Missing or invalid tenant_id claim")
-        }
-
-        return tenantId
-    }
+    private fun extractTenantFromJwt(): String? =
+        tenantExtractionService.extractTenantIdOrNull(
+            SecurityContextHolder.getContext().authentication,
+        )
 
     private fun handleTenantValidationError(
         request: HttpServletRequest,
@@ -163,10 +150,8 @@ class TenantContextFilter(
 
         meterRegistry?.counter(descriptor.metricName)?.increment()
 
-        response.status = descriptor.status.value()
-        response.contentType = "application/json"
-        val errorDetail = overrideErrorType ?: descriptor.errorType
-        response.writer.write("""{"error":"Tenant validation failed: $errorDetail"}""")
+        val errorJson = errorFormatter.formatTenantError(descriptor.errorType, overrideErrorType)
+        errorFormatter.writeErrorResponse(response, descriptor.status, errorJson)
     }
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.method == "OPTIONS"
