@@ -36,6 +36,11 @@ class NullableJwtDecoder : JwtDecoder {
                 buildJwt(now.minusSeconds(7200), now.minusSeconds(3600), "RS256", "test-jti-expired")
             JwtTestTokens.missingJti ->
                 buildJwt(now, inOneHour, "RS256", null)
+            JwtTestTokens.missingAlgorithm ->
+                buildJwt(now, inOneHour, null, "test-jti-missing-alg")
+            JwtTestTokens.es256 ->
+                buildJwt(now, inOneHour, "ES256", "test-jti-es256")
+            JwtTestTokens.invalidSignature -> throw JwtException("Invalid signature")
             else -> throw JwtException("Unhandled token type in NullableJwtDecoder: $token")
         }
     }
@@ -43,10 +48,12 @@ class NullableJwtDecoder : JwtDecoder {
     private fun buildJwt(
         issuedAt: Instant,
         expiresAt: Instant,
-        alg: String,
+        alg: String?,
         jti: String?,
     ): Jwt {
-        val headers = mapOf("alg" to alg, "typ" to "JWT")
+        val headers = mutableMapOf("typ" to "JWT")
+        alg?.let { headers["alg"] = it }
+
         val claims =
             mutableMapOf<String, Any>(
                 "sub" to UUID.randomUUID().toString(),
@@ -159,6 +166,19 @@ object JwtTestTokens {
                 ).apply {
                     remove("jti")
                 },
+        )
+
+    // Story 8.6: Additional test tokens for comprehensive validator testing
+    val invalidSignature: String = "invalid.signature.token"
+    val missingAlgorithm: String =
+        buildToken(
+            headerJson = """{"typ":"JWT"}""", // No "alg"
+            payload = baseClaims("test-jti", Instant.now().epochSecond, Instant.now().plusSeconds(3600).epochSecond),
+        )
+    val es256: String =
+        buildToken(
+            headerJson = """{"alg":"ES256","typ":"JWT"}""",
+            payload = baseClaims("test-jti-es256", Instant.now().epochSecond, Instant.now().plusSeconds(3600).epochSecond),
         )
 }
 
