@@ -120,8 +120,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 threads.set(Runtime.getRuntime().availableProcessors())
                 outputFormats.set(setOf("XML", "HTML"))
                 timestampedReports.set(false)
-                mutationThreshold.set(25) // Story 8.6: Initial threshold (target: 50% by Epic 9)
-                coverageThreshold.set(40) // Story 8.6: Initial threshold (target: 66% by Epic 9)
+                mutationThreshold.set(25) // Story 8.6: Baseline floor all modules meet (target: 50% by Epic 9)
+                coverageThreshold.set(50) // Story 8.6: Current achievement (target: 66% by Epic 9)
 
                 failWhenNoMutations.set(false)
 
@@ -174,12 +174,12 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                         limit {
                             counter = "LINE"
                             value = "COVEREDRATIO"
-                            minimum = "0.40".toBigDecimal() // Story 8.6: Initial threshold (target: 0.66 by Epic 9)
+                            minimum = "0.50".toBigDecimal() // Story 8.6: Current achievement (target: 0.66 by Epic 9)
                         }
                         limit {
                             counter = "BRANCH"
                             value = "COVEREDRATIO"
-                            minimum = "0.40".toBigDecimal() // Story 8.6: Initial threshold (target: 0.66 by Epic 9)
+                            minimum = "0.50".toBigDecimal() // Story 8.6: Current achievement (target: 0.66 by Epic 9)
                         }
                     }
                 }
