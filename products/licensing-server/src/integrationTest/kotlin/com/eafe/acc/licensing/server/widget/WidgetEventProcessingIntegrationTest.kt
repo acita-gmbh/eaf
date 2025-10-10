@@ -1,21 +1,17 @@
 @file:Suppress("DEPRECATION")
 
 package com.eafe.acc.licensing.server.widget
-import com.axians.eaf.licensing.LicensingServerApplication
+
 import com.axians.eaf.licensing.widget.WidgetEventProcessor
-import com.axians.eaf.testing.containers.TestContainers
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
 
 @SpringBootTest(classes = [WidgetEventProcessingIntegrationTest.MinimalTestConfig::class])
 @ActiveProfiles("test")
@@ -24,10 +20,8 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
     private lateinit var widgetEventProcessor: WidgetEventProcessor
 
     @TestConfiguration
-    @Import(
-        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration::class,
-    )
-    @ComponentScan(basePackageClasses = [com.axians.eaf.licensing.widget.WidgetEventProcessor::class])
+    @SpringBootConfiguration
+    @ComponentScan(basePackageClasses = [WidgetEventProcessor::class])
     open class MinimalTestConfig
 
     init {
@@ -70,23 +64,6 @@ class WidgetEventProcessingIntegrationTest : FunSpec() {
             // Test implementation
             val results = widgetEventProcessor.processOrderedEvents(listOf("event1", "event2", "event3"))
             results.size shouldBe 3
-        }
-    }
-
-    companion object {
-        @JvmStatic
-        @DynamicPropertySource
-        fun configureProperties(registry: DynamicPropertyRegistry) {
-            TestContainers.postgres.start()
-            TestContainers.redis.start()
-            TestContainers.keycloak.start()
-
-            registry.add("spring.datasource.url", TestContainers.postgres::getJdbcUrl)
-            registry.add("spring.datasource.username", TestContainers.postgres::getUsername)
-            registry.add("spring.datasource.password", TestContainers.postgres::getPassword)
-            registry.add("spring.redis.host", TestContainers.redis::getHost)
-            registry.add("spring.redis.port", TestContainers.redis::getFirstMappedPort)
-            registry.add("eaf.keycloak.url", TestContainers.keycloak::getAuthServerUrl)
         }
     }
 }

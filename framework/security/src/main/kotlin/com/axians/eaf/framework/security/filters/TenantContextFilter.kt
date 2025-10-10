@@ -24,6 +24,31 @@ class TenantContextFilter(
     companion object {
         private val log = LoggerFactory.getLogger(TenantContextFilter::class.java)
         private const val TENANT_CLAIM = "tenant_id"
+
+        private val missingTenantDescriptor =
+            TenantErrorDescriptor(
+                metricName = "tenant.filter.missing_tenant",
+                errorType = "missing_tenant_id",
+                status = HttpStatus.UNAUTHORIZED,
+            )
+        private val rejectedDescriptor =
+            TenantErrorDescriptor(
+                metricName = "tenant.filter.rejected",
+                errorType = "Rejected tenant context",
+                status = HttpStatus.UNAUTHORIZED,
+            )
+        private val securityDescriptor =
+            TenantErrorDescriptor(
+                metricName = "tenant.filter.security_error",
+                errorType = "Security error",
+                status = HttpStatus.FORBIDDEN,
+            )
+        private val typeDescriptor =
+            TenantErrorDescriptor(
+                metricName = "tenant.filter.type_error",
+                errorType = "Authentication type error",
+                status = HttpStatus.UNAUTHORIZED,
+            )
     }
 
     override fun doFilterInternal(
@@ -34,28 +59,21 @@ class TenantContextFilter(
         val startTime = System.nanoTime()
 
         try {
-            // Extract tenant ID from authenticated JWT
-            val tenantId = extractTenantFromJwt()
-
-            // Populate TenantContext
-            tenantContext.setCurrentTenantId(tenantId)
-
-            log.debug(
-                "Tenant context populated for request: {} (tenant: {})",
-                request.requestURI,
-                tenantId,
-            )
-
-            meterRegistry?.counter("tenant.filter.success")?.increment()
-
-            // Continue filter chain
-            filterChain.doFilter(request, response)
+            processTenantAwareRequest(request, response, filterChain)
+        } catch (e: MissingTenantClaimException) {
+            handleTenantValidationError(request, response, e, missingTenantDescriptor)
         } catch (e: IllegalStateException) {
-            handleTenantValidationError(request, response, e, "tenant.filter.rejected", e.message ?: "Unknown error")
+            handleTenantValidationError(
+                request = request,
+                response = response,
+                e = e,
+                descriptor = rejectedDescriptor,
+                overrideErrorType = e.message,
+            )
         } catch (e: SecurityException) {
-            handleTenantValidationError(request, response, e, "tenant.filter.security_error", "Security error")
+            handleTenantValidationError(request, response, e, securityDescriptor)
         } catch (e: ClassCastException) {
-            handleTenantValidationError(request, response, e, "tenant.filter.type_error", "Authentication type error")
+            handleTenantValidationError(request, response, e, typeDescriptor)
         } finally {
             // Guaranteed cleanup to prevent context leakage
             tenantContext.clearCurrentTenant()
@@ -69,6 +87,32 @@ class TenantContextFilter(
         }
     }
 
+    private fun processTenantAwareRequest(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain,
+    ) {
+        val tenantId =
+            extractTenantFromJwt()
+                ?: run {
+                    meterRegistry?.counter("tenant.filter.skipped.no_auth")?.increment()
+                    filterChain.doFilter(request, response)
+                    return
+                }
+
+        tenantContext.setCurrentTenantId(tenantId)
+
+        log.debug(
+            "Tenant context populated for request: {} (tenant: {})",
+            request.requestURI,
+            tenantId,
+        )
+
+        meterRegistry?.counter("tenant.filter.success")?.increment()
+
+        filterChain.doFilter(request, response)
+    }
+
     /**
      * Extracts tenant ID from validated JWT in SecurityContext.
      * Implements fail-closed design for missing tenant claims.
@@ -76,10 +120,10 @@ class TenantContextFilter(
      * @return The tenant ID from JWT claims
      * @throws IllegalStateException if no authentication context or missing tenant_id
      */
-    private fun extractTenantFromJwt(): String {
+    private fun extractTenantFromJwt(): String? {
         val authentication =
             SecurityContextHolder.getContext().authentication
-                ?: error("No authentication context found")
+                ?: return null
 
         check(authentication is JwtAuthenticationToken) {
             "Authentication is not JWT-based"
@@ -88,7 +132,9 @@ class TenantContextFilter(
         val jwt: Jwt = authentication.token
         val tenantId = jwt.getClaimAsString(TENANT_CLAIM)
 
-        require(!tenantId.isNullOrBlank()) { "Missing or invalid tenant_id claim" }
+        if (tenantId.isNullOrBlank()) {
+            throw MissingTenantClaimException("Missing or invalid tenant_id claim")
+        }
 
         return tenantId
     }
@@ -97,8 +143,8 @@ class TenantContextFilter(
         request: HttpServletRequest,
         response: HttpServletResponse,
         e: Exception,
-        metricName: String,
-        errorType: String,
+        descriptor: TenantErrorDescriptor,
+        overrideErrorType: String? = null,
     ) {
         when (e) {
             is IllegalStateException ->
@@ -115,12 +161,23 @@ class TenantContextFilter(
                 )
         }
 
-        meterRegistry?.counter(metricName)?.increment()
+        meterRegistry?.counter(descriptor.metricName)?.increment()
 
-        response.status = HttpStatus.FORBIDDEN.value()
+        response.status = descriptor.status.value()
         response.contentType = "application/json"
-        response.writer.write("""{"error":"Tenant validation failed: $errorType"}""")
+        val errorDetail = overrideErrorType ?: descriptor.errorType
+        response.writer.write("""{"error":"Tenant validation failed: $errorDetail"}""")
     }
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.method == "OPTIONS"
 }
+
+private class MissingTenantClaimException(
+    message: String,
+) : IllegalStateException(message)
+
+private data class TenantErrorDescriptor(
+    val metricName: String,
+    val errorType: String,
+    val status: HttpStatus,
+)

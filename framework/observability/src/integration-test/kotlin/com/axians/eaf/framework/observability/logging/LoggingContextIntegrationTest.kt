@@ -25,7 +25,7 @@ import org.springframework.test.context.ActiveProfiles
     classes = [ObservabilityTestApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     properties = [
-        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration",
         "otel.java.global-autoconfigure.enabled=false",
         "otel.sdk.disabled=true",
         "otel.traces.exporter=none",

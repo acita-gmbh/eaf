@@ -254,7 +254,27 @@ The following were initially flagged but validated as **architecturally correct*
 
 ---
 
-### Story 8.5: Implement React-Admin Consumer Application
+---
+
+### Story 8.5: Architectural Patterns Alignment ✅ DONE
+
+**Status:** Complete (100% compliance achieved)
+
+**As a** Developer, **I want** the codebase to consistently apply the Either and Nullable patterns, **so that** the framework adheres to functional programming principles and enables faster, more robust testing.
+
+**Implementation Summary:**
+- ✅ Consistent application of the Arrow `Either` type for domain operations and error handling.
+- ✅ Correct usage of the `Nullable` Design Pattern for test doubles (e.g., `NullableJwtDecoder`).
+- ✅ Elimination of generic exceptions in business logic, replaced by domain-specific `Either` error types.
+- ✅ All existing tests (unit and integration) continue to pass.
+- ✅ Codebase adheres to the "Zero-Mocks Policy" for business logic.
+- ✅ Documentation (`coding-standards-revision-2.md`, `test-strategy-and-standards-revision-3.md`) updated.
+
+**Estimated Effort:** 3-5 days | **Actual:** 3 days
+
+---
+
+### Story 8.6: Implement React-Admin Consumer Application
 
 **As an** Administrator, **I want** a functional React-Admin portal that integrates the framework shell with product UI modules, **so that** I can manage widgets through a modern web interface.
 
@@ -402,7 +422,7 @@ The following were initially flagged but validated as **architecturally correct*
 
 ## Definition of Done
 
-- [ ] All 5 stories completed with acceptance criteria met (8.1 ✅ DONE, 8.2-8.5 pending)
+- [ ] All 6 stories completed with acceptance criteria met (8.1 ✅ DONE, 8.5 ✅ DONE, 8.2-8.6 pending)
 - [ ] jOOQ projections outperform JPA baseline by ≥20%
 - [ ] All 7 integration tests passing in CI (<5 min execution)
 - [ ] React-Admin consumer app functional with Widget CRUD
@@ -451,8 +471,9 @@ The following were initially flagged but validated as **architecturally correct*
 | 8.2 - Pre-Commit Hooks | Medium-High | 9-10 days |
 | 8.3 - jOOQ Migration | High | 5-8 days |
 | 8.4 - Re-enable Tests | High | 5-7 days |
-| 8.5 - React-Admin Consumer | Medium | 5-7 days |
-| **Total Epic** | **High** | **27-37 days** |
+| 8.5 - Architectural Patterns Alignment ✅ | Medium | 3-5 days (DONE) |
+| 8.6 - React-Admin Consumer | Medium | 5-7 days |
+| **Total Epic** | **High** | **30-42 days** |
 
 **Notes:**
 - Story 8.1 ✅ COMPLETE - 100% test naming compliance achieved
@@ -524,7 +545,8 @@ After completing Epic 8, validate:
 2. ✅ Pre-commit infrastructure missing → **Story 8.2 NEW** (emerged from 8.1 AC 16)
 3. ✅ jOOQ not used (JPA instead) → **Story 8.3** (was 8.2)
 4. ✅ 7 tests disabled → **Story 8.4** (was 8.3)
-5. ✅ Consumer app missing → **Story 8.5** (was 8.4)
+5. ✅ Architectural patterns alignment → **Story 8.5 DONE**
+6. ✅ Consumer app missing → **Story 8.6** (was 8.4)
 
 **Invalidated Findings:**
 1. ❌ Test file naming (*Test.kt vs *Spec.kt) - Intentional architectural choice
