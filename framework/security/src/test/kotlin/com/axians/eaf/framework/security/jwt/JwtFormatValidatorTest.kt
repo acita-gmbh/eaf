@@ -83,7 +83,7 @@ class JwtFormatValidatorTest :
             }
 
             test("should fail for token with invalid signature") {
-                val token = JwtTestTokens.invalidSignature
+                val token = JwtTestTokens.INVALID_SIGNATURE
                 val result = validator.verifySignature(token)
                 result.shouldBeLeft()
                 result.leftOrNull().shouldBeInstanceOf<SecurityError.InvalidSignature>()
