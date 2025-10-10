@@ -1,5 +1,5 @@
 schema: 1
-story: "8.5"
+story: "8.6"
 story_title: "Implement React-Admin Consumer Application"
 gate: PASS
 status_reason: "Story is comprehensive with excellent micro-frontend architecture guidance, complete WCAG AA accessibility validation (Phase 7), and clear integration strategy. All prerequisites exist (framework shell, UI generator, REST API). Ready for implementation."
@@ -22,9 +22,9 @@ evidence:
     ac_gaps: []
 
 risk_summary:
-  totals: { critical: 0, high: 0, medium: 3, low: 0 }
+  totals: { critical: 0, high: 0, medium: 1, low: 2 }
   highest_risk:
-    id: "8.4-RISK-001"
+    id: "8.6-RISK-001"
     category: "Frontend-Backend Integration"
     probability: 3  # Medium
     impact: 2  # Low-Medium
@@ -32,20 +32,20 @@ risk_summary:
     description: "React-Admin consumer app may have authentication/CORS/data format issues when integrating with backend"
     mitigation: "Contract-first approach using existing OpenAPI spec; Vite proxy avoids CORS in development; manual testing workflow validates all integration points"
   all_risks:
-    - id: "8.4-RISK-001"
+    - id: "8.6-RISK-001"
       category: "Frontend-Backend Integration"
       probability: 3
       impact: 2
       score: 6
       mitigation: "Contract-first + Vite proxy + manual testing workflow"
-    - id: "8.4-RISK-002"
+    - id: "8.6-RISK-002"
       category: "Workspace Configuration"
       probability: 2  # Low
       impact: 2  # Low-Medium
       score: 4  # LOW RISK
       description: "npm/pnpm workspace dependencies may not resolve correctly across framework shell and product UI modules"
       mitigation: "Task 3 specifically validates workspace resolution; troubleshooting guide in Dev Notes"
-    - id: "8.4-RISK-003"
+    - id: "8.6-RISK-003"
       category: "Keycloak Integration"
       probability: 2  # Low
       impact: 2  # Low
@@ -121,7 +121,7 @@ test_design_summary:
   coverage_gaps: []
 
 requirements_trace:
-  story_reference: "docs/stories/8.4.implement-react-admin-consumer-application.story.md"
+  story_reference: "docs/stories/8.6.implement-react-admin-consumer-application.story.md"
   acceptance_criteria_summary: "41 ACs across 8 phases - all have clear validation approach in tasks"
   phase_mapping:
     phase_1_generate_ui_module:
@@ -153,14 +153,14 @@ recommendations:
   immediate: []
   future:
     - action: "Consider adding E2E testing framework (Playwright or Cypress) as mandatory rather than optional"
-      refs: ["docs/stories/8.4...story.md"]
+      refs: ["docs/stories/8.6.implement-react-admin-consumer-application.story.md"]
       rationale: "Automated E2E tests would validate CRUD flows more reliably than manual testing; currently only manual workflow provided"
     - action: "Consider adding visual regression testing for UI consistency"
       refs: ["Task 9 - Documentation"]
       rationale: "Would catch unintended UI changes, especially valuable for React-Admin which has complex Material UI theming"
 
 validation_notes: |
-  Story 8.4 is exceptionally comprehensive:
+  Story 8.6 is exceptionally comprehensive:
   - 9 tasks with detailed subtasks
   - 41 acceptance criteria across 8 phases
   - Complete code examples (App.tsx, vite.config.ts, package.json)

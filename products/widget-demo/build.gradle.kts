@@ -51,6 +51,7 @@ dependencies {
     integrationTestImplementation("org.springframework.boot:spring-boot-starter-test")
     integrationTestImplementation("org.springframework.security:spring-security-test")
     integrationTestImplementation(project(":framework:observability"))
+    integrationTestImplementation("org.springframework.data:spring-data-redis")
     integrationTestImplementation(libs.jakarta.json.bind.api)
     implementation(libs.jackson.module.kotlin)
 
