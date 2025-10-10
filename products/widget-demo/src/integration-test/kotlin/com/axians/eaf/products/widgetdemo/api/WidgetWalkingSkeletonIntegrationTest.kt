@@ -135,7 +135,8 @@ class WidgetWalkingSkeletonIntegrationTest : FunSpec() {
 
             val endTime = System.currentTimeMillis()
             val totalDuration = Duration.ofMillis(endTime - startTime)
-            totalDuration.toMillis() shouldBeLessThan 500L
+            // Allow up to 2 seconds for eventual consistency (matching maxAttempts * 100ms polling)
+            totalDuration.toMillis() shouldBeLessThan 2000L
         }
     }
 

@@ -81,3 +81,28 @@ CREATE INDEX IF NOT EXISTS idx_token_entry_processor_owner
 
 ALTER SEQUENCE domain_event_entry_seq OWNED BY domain_event_entry.global_index;
 ALTER TABLE domain_event_entry ALTER COLUMN global_index SET DEFAULT nextval('domain_event_entry_seq');
+
+-- Widget Projection Read Model Table (jOOQ-based)
+CREATE TABLE IF NOT EXISTS widget_projection (
+    widget_id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(1000),
+    value NUMERIC(19, 2) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_widget_projection_tenant_id
+    ON widget_projection (tenant_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_widget_projection_category
+    ON widget_projection (tenant_id, category, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_widget_projection_value_desc
+    ON widget_projection (tenant_id, value DESC);
+
+CREATE INDEX IF NOT EXISTS idx_widget_projection_created_at
+    ON widget_projection (tenant_id, created_at DESC);
