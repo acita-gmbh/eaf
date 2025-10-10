@@ -9,7 +9,7 @@
 ### Issue 1: "Mutation coverage below 80%"
 
 **Symptom**: Pitest fails with threshold violation
-```
+```text
 Exception in thread "main" java.lang.RuntimeException:
   Mutation coverage of 29 is below threshold of 80
 ```
@@ -43,7 +43,7 @@ Exception in thread "main" java.lang.RuntimeException:
 ### Issue 2: "No mutations found"
 
 **Symptom**: Pitest succeeds but shows 0 mutations
-```
+```text
 14:00:33 PIT >> INFO : Created 0 mutation test units in pre scan
 Exception in thread "main" org.pitest.help.PitHelpError:
   No mutations found. This probably means there is an issue with
@@ -70,7 +70,7 @@ configure<PitestPluginExtension> {
 ### Issue 3: "Coverage generator Minion exited abnormally"
 
 **Symptom**: Pitest crashes during coverage generation
-```
+```text
 14:00:54 PIT >> SEVERE : Coverage generator Minion exited abnormally
   due to UNKNOWN_ERROR
 java.lang.NoSuchMethodError: 'org.junit.runner.Description
@@ -371,9 +371,9 @@ pitest {
 
 ## Getting Help
 
-**Pitest Documentation**: https://pitest.org
-**Kotest Pitest Extension**: https://kotest.io/docs/extensions/pitest.html
-**Gradle Pitest Plugin**: https://gradle-pitest-plugin.solidsoft.info/
+**Pitest Documentation**: [https://pitest.org](https://pitest.org)
+**Kotest Pitest Extension**: [https://kotest.io/docs/extensions/pitest.html](https://kotest.io/docs/extensions/pitest.html)
+**Gradle Pitest Plugin**: [https://gradle-pitest-plugin.solidsoft.info/](https://gradle-pitest-plugin.solidsoft.info/)
 
 **Internal**:
 - Story 8.6: Enable Mutation Testing (this story)
