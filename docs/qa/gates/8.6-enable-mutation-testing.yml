@@ -1,0 +1,329 @@
+# Quality Gate: Story 8.6 - Enable Mutation Testing (Pitest) for Framework Modules
+
+schema: 1
+story: "8.6"
+story_title: "Enable Mutation Testing (Pitest) for Framework Modules"
+gate: CONCERNS
+status_reason: "High risk (TECH-002 CI timeout) requires baseline validation before full enablement. Story design is excellent but empirical testing needed."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-10-10T12:00:00Z"
+
+# Waiver status (not active - concerns must be addressed)
+waiver:
+  active: false
+
+# Critical issues requiring attention
+top_issues:
+  - id: "PERF-001"
+    severity: high
+    finding: "CI pipeline timeout risk (45-minute limit) unvalidated - no empirical execution time data"
+    suggested_action: "Execute Task 2 (baseline) FIRST to measure actual execution time before enabling in CI. If >35 minutes, implement incremental rollout."
+    suggested_owner: "dev"
+    refs:
+      - "AC6-8: Baseline Execution"
+      - "AC20: CI timeout validation"
+      - "docs/qa/assessments/8.6-risk-20251010.md#TECH-002"
+
+  - id: "PERF-002"
+    severity: medium
+    finding: "Local development workflow impact not documented - developers may skip quality gates due to 3-5 minute pitest execution"
+    suggested_action: "Document fast-feedback pattern in AC23/AC25: ./gradlew check -x pitest for local development, full check before PR"
+    suggested_owner: "dev"
+    refs:
+      - "AC23: Pre-commit hooks"
+      - "AC25: Process documentation"
+
+  - id: "NFR-001"
+    severity: medium
+    finding: "Performance baseline validation missing - targets are estimates without empirical evidence"
+    suggested_action: "Measure baseline metrics in AC8 and validate against 40-minute CI timeout threshold"
+    suggested_owner: "dev"
+    refs:
+      - "AC8: Baseline metrics documentation"
+      - "docs/qa/assessments/8.6-nfr-20251010.md#Performance"
+
+# Risk summary from risk-profile assessment
+risk_summary:
+  totals:
+    critical: 0  # score 9
+    high: 1      # score 6 (TECH-002 CI timeout)
+    medium: 2    # score 4 (TECH-003 equivalent mutants, PERF-001 local slowdown)
+    low: 4       # score 2-3
+  highest:
+    id: "TECH-002"
+    score: 6
+    title: "CI Pipeline Timeout Risk (45-minute limit)"
+    mitigation: "Baseline execution + incremental rollout + monitoring"
+  recommendations:
+    must_fix:
+      - "Execute Task 2 (baseline) BEFORE enabling in CI to measure actual execution time"
+      - "If baseline shows >35 minutes: Implement incremental rollout (security module only first)"
+      - "If baseline shows >40 minutes: Make CI mutation testing non-blocking until optimized"
+    monitor:
+      - "CI execution time (alert threshold: >35 minutes warning, >40 minutes critical)"
+      - "Mutation coverage trend (target: ≥80% or documented equivalents)"
+      - "Developer workflow impact (local check execution time)"
+
+# Quality score calculation
+quality_score: 78
+# Calculation: Base 100 - (10 × 1 CONCERNS NFR) = 90
+# Weighted for risk: 90 - (high_risk_weight × 12) = 78
+# Risk weight: 12 points for unmitigated HIGH risk
+
+expires: "2025-10-24T00:00:00Z"  # 2 weeks from review (re-assess after baseline)
+
+# Evidence from comprehensive assessment
+evidence:
+  assessments_completed: 4
+  tests_designed: 34
+  risks_identified: 7
+  trace:
+    ac_total: 25
+    ac_covered: 25
+    ac_gaps: []
+  review_artifacts:
+    - "docs/qa/assessments/8.6-risk-20251010.md"
+    - "docs/qa/assessments/8.6-test-design-20251010.md"
+    - "docs/qa/assessments/8.6-nfr-20251010.md"
+    - "docs/qa/assessments/8.6-trace-20251010.md"
+
+# NFR validation from nfr-assess task
+nfr_validation:
+  _assessed: [performance, reliability, maintainability, security]
+  performance:
+    status: CONCERNS
+    score: 60
+    notes: "CI timeout risk and local workflow impact require validation. Multi-threading configured but execution time unproven. Target: <40 minutes CI, <5 minutes local."
+  reliability:
+    status: PASS
+    score: 90
+    notes: "Excellent fail-closed quality gate design. Deterministic behavior. Comprehensive reporting (HTML + XML). Smart empty module handling."
+  maintainability:
+    status: PASS
+    score: 95
+    notes: "Gold standard documentation. Educational Dev Notes section is exceptional. Sustainable process defined. Centralized configuration."
+  security:
+    status: PASS
+    score: 85
+    notes: "Indirect but significant security benefits. Validates security test quality (JWT, tenant isolation). Enforces comprehensive testing of security boundaries."
+
+# Test design summary from test-design task
+test_design:
+  scenarios_total: 34
+  by_level:
+    unit: 0
+    integration: 15
+    e2e: 19
+  by_priority:
+    p0: 17
+    p1: 13
+    p2: 4
+  coverage_gaps: []
+  critical_tests:
+    - id: "8.6-E2E-001"
+      description: "First pitest execution (baseline)"
+      priority: "P0 - CRITICAL"
+      validates: "AC6 - Pitest functionality end-to-end"
+    - id: "8.6-E2E-017"
+      description: "CI timeout compliance (<40 minutes)"
+      priority: "P0 - CRITICAL (MITIGATES HIGH RISK)"
+      validates: "AC20 - TECH-002 risk mitigation"
+    - id: "8.6-E2E-009"
+      description: "Security module 80% threshold"
+      priority: "P0 - GATE CRITERION"
+      validates: "AC13 - Primary acceptance criterion"
+
+# Recommendations by priority
+recommendations:
+  immediate:  # Must address before implementation
+    - action: "Execute Task 2 (baseline execution) as FIRST implementation step"
+      rationale: "Baseline metrics gate all subsequent decisions (incremental rollout, CI enablement, threshold adjustments)"
+      refs:
+        - "AC6-10: Baseline Execution"
+        - "docs/qa/assessments/8.6-risk-20251010.md#TECH-002"
+      timeline: "Before Task 3 (test additions)"
+
+    - action: "Validate CI execution time <40 minutes (3 consecutive runs) before making pitest blocking in CI"
+      rationale: "Mitigates TECH-002 HIGH risk - prevents PR merge blockage from timeout failures"
+      refs:
+        - "AC20: CI timeout validation"
+        - "8.6-E2E-017: Critical timeout test"
+      timeline: "Task 5 (CI integration)"
+
+    - action: "Document fast-feedback pattern for local development (./gradlew check -x pitest)"
+      rationale: "Preserves TDD workflow, prevents developers from skipping quality gates entirely due to slowness"
+      refs:
+        - "AC23: Pre-commit hooks"
+        - "AC25: Process documentation"
+      timeline: "Task 6 (documentation)"
+
+  future:  # Can be addressed post-implementation
+    - action: "Monitor mutation coverage trend and document coverage drift process"
+      rationale: "Ensures sustainable quality maintenance beyond initial enablement"
+      refs:
+        - "AC25: Future mutant process"
+      timeline: "Post-implementation (ongoing)"
+
+    - action: "Re-enable detekt when detekt 2.0.0 stable releases"
+      rationale: "Temporary workaround for Kotlin 2.2.20 compatibility - should be reversed when possible"
+      refs:
+        - "TECH-001 risk"
+        - "Dev Notes: Detekt Compatibility"
+      timeline: "Q1 2025 (estimated detekt 2.0.0 release)"
+
+# Detailed gate decision rationale
+gate_decision:
+  deterministic_rule_application: |
+    Gate decision follows deterministic rules:
+    1. Risk thresholds: HIGH risk (TECH-002 score 6) → CONCERNS
+    2. NFR statuses: Performance CONCERNS → CONCERNS
+    3. Top issues: 1 HIGH severity → CONCERNS
+    4. Overall: CONCERNS (requires mitigation before full deployment)
+
+  gate_options_considered:
+    - option: PASS
+      rationale: "Story design is excellent, documentation is gold standard, test strategy comprehensive"
+      rejected_because: "HIGH risk TECH-002 unmitigated, Performance NFR has validation gaps"
+
+    - option: CONCERNS
+      rationale: "Story is well-designed but requires empirical validation before full CI enablement"
+      selected: true
+      conditions_for_pass:
+        - "Execute Task 2 (baseline) and document execution time <30 minutes locally"
+        - "Validate CI execution <40 minutes (3 consecutive runs)"
+        - "Document fast-feedback workflow in AC23/AC25"
+
+    - option: FAIL
+      rationale: "Would indicate blocking issues preventing implementation"
+      rejected_because: "All risks have mitigations, story is implementation-ready with precautions"
+
+    - option: WAIVED
+      rationale: "Would acknowledge issues but proceed anyway with approval"
+      rejected_because: "Not appropriate - issues can be addressed through standard workflow"
+
+  path_to_pass:
+    step_1:
+      action: "Execute Task 2 (baseline execution)"
+      validation: "Measure actual execution time, mutation count, coverage percentage"
+      decision_point: "If <30 minutes locally → proceed to full enablement. If >35 minutes → incremental rollout."
+
+    step_2:
+      action: "Execute Task 5 (CI integration) with monitoring"
+      validation: "3 consecutive CI runs <40 minutes"
+      decision_point: "If passes → full enablement. If fails → non-blocking CI or optimization needed."
+
+    step_3:
+      action: "Complete documentation (Task 6)"
+      validation: "Fast-feedback pattern documented, troubleshooting guide created"
+      decision_point: "Documentation complete → PASS conditions met"
+
+# Story strengths (positive findings)
+strengths:
+  architecture:
+    - "Comprehensive story structure - Dev Notes are exceptional educational content"
+    - "Clear implementation options (Option A vs B) with trade-offs analyzed"
+    - "Risk assessment section proactively identifies and mitigates risks"
+
+  testing:
+    - "100% AC coverage with 34 test scenarios designed"
+    - "Test design follows risk-based prioritization (P0 tests target HIGH risk)"
+    - "Critical path clearly identified (baseline → validation → deployment)"
+
+  maintainability:
+    - "Self-documenting educational content (What is Mutation Testing, Why Coverage Isn't Enough)"
+    - "Sustainable process defined for ongoing mutation coverage maintenance"
+    - "Centralized configuration (QualityGatesConventionPlugin) prevents drift"
+
+  quality:
+    - "Fail-closed quality gate design (deterministic thresholds, no false passes)"
+    - "Comprehensive reporting (HTML for humans, XML for tooling)"
+    - "Smart empty module handling (failWhenNoMutations.set(hasSources))"
+
+# Pre-implementation validation checklist
+pre_implementation_checklist:
+  story_quality:
+    - item: "Story has clear acceptance criteria"
+      status: "✅ PASS"
+      notes: "25 ACs across 5 phases, all specific and measurable"
+
+    - item: "Business context explains why this work matters"
+      status: "✅ PASS"
+      notes: "Excellent context: configured but inactive, hexagonal architecture mismatch, quality gate in name only"
+
+    - item: "Technical guidance sufficient for implementation"
+      status: "✅ PASS"
+      notes: "Implementation options, configuration examples, risk mitigations all documented"
+
+  risk_management:
+    - item: "Risks identified and assessed"
+      status: "✅ PASS"
+      notes: "7 risks identified, scored, mitigated. 1 HIGH risk requires active monitoring."
+
+    - item: "Mitigation strategies defined"
+      status: "✅ PASS"
+      notes: "All risks have mitigations. HIGH risk has multi-layer mitigation (baseline → incremental → fallback)."
+
+    - item: "Validation approach for high risks"
+      status: "✅ PASS"
+      notes: "8.6-E2E-001, 8.6-E2E-003, 8.6-E2E-017, 8.6-E2E-018 target TECH-002"
+
+  test_readiness:
+    - item: "Test scenarios designed for all ACs"
+      status: "✅ PASS"
+      notes: "34 scenarios cover all 25 ACs (100% coverage)"
+
+    - item: "Test levels appropriate for work type"
+      status: "✅ PASS"
+      notes: "Integration (build validation) + E2E (full workflow) - appropriate for infrastructure story"
+
+    - item: "Critical path tests identified"
+      status: "✅ PASS"
+      notes: "Baseline execution (E2E-001) and timeout validation (E2E-017) clearly marked critical"
+
+  documentation:
+    - item: "Dev Notes provide implementation guidance"
+      status: "✅ PASS (GOLD STANDARD)"
+      notes: "Educational content, common mutant patterns with fixes, configuration examples"
+
+    - item: "Process sustainability addressed"
+      status: "✅ PASS"
+      notes: "AC15, AC25 define ongoing mutation coverage maintenance process"
+
+    - item: "Troubleshooting guidance planned"
+      status: "⚠️ PENDING"
+      notes: "AC24 Task 6.4 plans creation - acceptable for pre-implementation"
+
+# Gate history (for tracking gate evolution)
+history:
+  - at: "2025-10-10T12:00:00Z"
+    gate: CONCERNS
+    note: "Initial pre-implementation review - HIGH risk TECH-002 requires baseline validation"
+    reviewer: "Quinn (Test Architect)"
+
+# Metadata
+metadata:
+  review_type: "pre-implementation"
+  story_status_at_review: "Draft"
+  review_depth: "comprehensive"
+  assessments_performed:
+    - risk_profile
+    - test_design
+    - nfr_assessment
+    - requirements_tracing
+  review_duration_hours: 4
+  story_quality_rating: "excellent"
+  implementation_readiness: "ready_with_precautions"
+
+# Additional context
+context:
+  epic: "Epic 8 - Code Quality and Alignment"
+  story_type: "Infrastructure - Quality Gates"
+  complexity: "medium-high"
+  estimated_effort_days: "2-3 days"
+  dependencies:
+    - "QualityGatesConventionPlugin.kt (already configured)"
+    - "Gradle 9.1.0 (already upgraded)"
+    - "Kotest 6.0.3 (already configured)"
+  related_stories:
+    - "PR #60 (18 new security tests - validate effectiveness)"
+    - "Epic 9 (Production MVP - quality validation before production)"
