@@ -1,122 +1,107 @@
 package com.axians.eaf.tools.cli.commands
 
+import arrow.core.Either
+import com.axians.eaf.tools.cli.generators.GeneratorError
+import com.axians.eaf.tools.cli.generators.ModuleGenerator
+import com.axians.eaf.tools.cli.templates.TemplateEngine
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import picocli.CommandLine
+import io.kotest.matchers.types.shouldBeInstanceOf
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 import java.nio.file.Files
+import java.util.Comparator
 
 /**
  * Security and validation tests for ModuleCommand.
  *
- * This test suite validates the module name input validation logic,
- * particularly focusing on SEC-002 (Template Injection) mitigation
- * through comprehensive attack scenario testing.
+ * These tests exercise the input validation logic directly via reflection
+ * to avoid side effects from the CLI entrypoint (which terminates the JVM).
+ * This keeps coverage on the actual validation methods while remaining
+ * faithful to the SEC-002 mitigation requirements.
  */
 class ModuleCommandTest :
     FunSpec({
-
         test("7.2-UNIT-006: SECURITY - Malicious module names should be rejected") {
-            // Given: Various attack scenarios attempting to exploit template injection,
-            //        path traversal, command injection, and other security vulnerabilities
-            // When: ModuleCommand validation logic is applied to malicious inputs
-            // Then: All attack attempts are rejected with security violation errors
-
             val command = ModuleCommand()
-            val cmd = CommandLine(command)
+            val validateModuleName = command.method("validateModuleName")
 
-            // Scenario 1: Path Traversal Attack
-            // Attempt to escape directory and access system files
-            val pathTraversalResult = cmd.execute("../../etc/passwd")
-            pathTraversalResult shouldBe 1 // Picocli validation error exit code
-            // Note: Validation should reject before any file system operations
+            shouldThrow<IllegalArgumentException> { validateModuleName.invokeWith(command, "../../etc/passwd") }
 
-            // Scenario 2: Template Injection Attack
-            // Attempt to inject HTML/JavaScript into templates
-            val templateInjectionResult = cmd.execute("<script>alert('xss')</script>")
-            templateInjectionResult shouldBe 1 // Picocli validation error exit code
+            shouldThrow<IllegalArgumentException> {
+                validateModuleName.invokeWith(command, "<script>alert('xss')</script>")
+            }
 
-            // Scenario 3: Command Injection Attack
-            // Attempt to execute shell commands via semicolon
-            val commandInjectionResult = cmd.execute("module; rm -rf /")
-            commandInjectionResult shouldBe 1 // Picocli validation error exit code
+            shouldThrow<IllegalArgumentException> { validateModuleName.invokeWith(command, "module; rm -rf /") }
 
-            // Scenario 4: Null Byte Attack
-            // Attempt to truncate filename with null byte
-            val nullByteResult = cmd.execute("module\u0000.txt")
-            nullByteResult shouldBe 1 // Picocli validation error exit code
+            shouldThrow<IllegalArgumentException> { validateModuleName.invokeWith(command, "module\u0000.txt") }
 
-            // Scenario 5: Unicode Normalization Attack
-            // Attempt to use right-to-left override character
-            val unicodeResult = cmd.execute("\u202Emodule")
-            unicodeResult shouldBe 1 // Picocli validation error exit code
+            shouldThrow<IllegalArgumentException> { validateModuleName.invokeWith(command, "\u202Emodule") }
         }
 
         test("7.2-UNIT-002: Invalid module name should produce validation error") {
-            // Given: An invalid module name with uppercase and special characters
-            // When: ModuleCommand validation is applied
-            // Then: Descriptive error message is displayed with format guidance
-
             val command = ModuleCommand()
-            val cmd = CommandLine(command)
+            val validateModuleName = command.method("validateModuleName")
 
-            val result = cmd.execute("Test_Module!")
-            result shouldBe 1 // Picocli validation error exit code
-
-            // Note: Error message should guide user to correct format (kebab-case, alphanumeric)
+            val exception =
+                shouldThrow<IllegalArgumentException> {
+                    validateModuleName.invokeWith(command, "Test_Module!")
+                }
+            val expectedMessage =
+                "Invalid module name: 'Test_Module!'. Must be lowercase alphanumeric with hyphens (kebab-case)."
+            exception.message shouldBe expectedMessage
         }
 
         test("7.2-UNIT-003: Existing module directory should produce error") {
-            // Given: A module directory already exists
-            // When: ModuleCommand attempts to create the same module
-            // Then: Error message indicates module already exists
-
-            val tempDir = Files.createTempDirectory("existing-dir-test")
+            val tempDir = Files.createTempDirectory("existing-module-test-")
+            val moduleName = "test-existing-module"
             try {
-                // Create a test module first
-                val existingModulePath = tempDir.resolve("existing-module")
+                val existingModulePath = tempDir.resolve(moduleName)
                 Files.createDirectories(existingModulePath)
 
-                // Attempt to create the same module via CLI
-                val command = ModuleCommand()
-                val cmd = CommandLine(command)
+                val generator = ModuleGenerator(TemplateEngine())
+                val result = generator.generateModule(moduleName, tempDir.toString(), updateSettings = false)
 
-                // Note: This will attempt to write to real file system in temp directory
-                // For true unit test, we'd need to mock file system operations
-                // Actual validation done in ModuleGeneratorTest.kt (7.2-UNIT-003)
+                val leftResult = result.shouldBeInstanceOf<Either.Left<GeneratorError.ModuleAlreadyExists>>()
+                val error = leftResult.value
+                error.name shouldBe moduleName
+                error.path shouldBe existingModulePath
             } finally {
-                tempDir.toFile().deleteRecursively()
+                Files.walk(tempDir).use { stream ->
+                    stream
+                        .sorted(Comparator.reverseOrder())
+                        .forEach { Files.deleteIfExists(it) }
+                }
             }
         }
 
         test("7.2-UNIT-010: SECURITY - Malicious directory parameters should be rejected") {
-            // Given: Various directory path attacks attempting path traversal or arbitrary writes
-            // When: ModuleCommand directory validation is applied
-            // Then: All attack attempts are rejected with security violation errors
-
             val command = ModuleCommand()
-            val cmd = CommandLine(command)
+            val validateDirectory = command.method("validateDirectory")
 
-            // Scenario 1: Absolute path attack
-            // Attempt to write to /tmp or /etc
-            val absolutePathResult = cmd.execute("test", "-d", "/tmp")
-            absolutePathResult shouldBe 1 // Validation error
+            shouldThrow<IllegalArgumentException> { validateDirectory.invokeWith(command, "/tmp") }
 
-            // Scenario 2: Path traversal attack
-            // Attempt to escape project directory
-            val traversalResult = cmd.execute("test", "-d", "../../etc")
-            traversalResult shouldBe 1 // Validation error
+            shouldThrow<IllegalArgumentException> { validateDirectory.invokeWith(command, "../../etc") }
 
-            // Scenario 3: Current directory attack
-            // Attempt to write to project root
-            val currentDirResult = cmd.execute("test", "-d", ".")
-            currentDirResult shouldBe 1 // Validation error
+            shouldThrow<IllegalArgumentException> { validateDirectory.invokeWith(command, ".") }
 
-            // Scenario 4: Non-whitelisted directory
-            // Attempt to use arbitrary directory
-            val arbitraryDirResult = cmd.execute("test", "-d", "malicious")
-            arbitraryDirResult shouldBe 1 // Validation error
-
-            // Note: Valid directories (products, apps) tested via integration tests
+            shouldThrow<IllegalArgumentException> { validateDirectory.invokeWith(command, "malicious") }
         }
     })
+
+private fun ModuleCommand.method(name: String): Method =
+    javaClass.getDeclaredMethod(name, String::class.java).apply {
+        isAccessible = true
+    }
+
+private fun Method.invokeWith(
+    target: Any,
+    argument: String,
+) {
+    try {
+        invoke(target, argument)
+    } catch (ex: InvocationTargetException) {
+        throw ex.targetException
+    }
+}
