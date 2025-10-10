@@ -84,26 +84,47 @@ class JwtValidationFilter(
             // Verify we didn't strip everything (pure prefix inputs like "ROLE_" or "ROLE_ROLE_")
             require(body.isNotEmpty()) { "Role name is only prefixes (e.g., \"ROLE_\", \"ROLE_ROLE_\")" }
 
-            // Permission-style authorities (e.g., widget:create) keep original body without ROLE_ prefix
-            if (body.contains(":")) {
-                return SimpleGrantedAuthority(body)
+            // Permission-style authorities (e.g., widget:create, resource:action)
+            // Support colon-delimited format but validate each segment for security
+            val containsPermissionSeparator = ':' in body
+
+            if (containsPermissionSeparator) {
+                // Validate permission-style authority segments
+                val segments = body.split(':')
+
+                // Prevent empty segments (e.g., "widget:", ":create", "widget::create")
+                require(segments.none(String::isBlank)) {
+                    "Permission-style authority has empty segment: '$role'"
+                }
+
+                // Each segment must pass character whitelist validation
+                require(segments.all { ALLOWED_ROLE_PATTERN.matcher(it).matches() }) {
+                    "Permission-style authority contains prohibited characters. " +
+                        "Only Unicode letters, digits, underscore (_), hyphen (-), and dot (.) allowed. " +
+                        "Received: '$role'"
+                }
+            } else {
+                // Enforce character whitelist: Unicode letters, digits, underscore, hyphen, dot only
+                // Prevents injection attacks (SQL, LDAP, shell) and ensures predictable behavior
+                require(ALLOWED_ROLE_PATTERN.matcher(body).matches()) {
+                    "Role contains prohibited characters. " +
+                        "Only Unicode letters, digits, underscore (_), hyphen (-), and dot (.) allowed. " +
+                        "Received: '$role' (normalized body: '$body')"
+                }
             }
 
-            // Enforce character whitelist: Unicode letters, digits, underscore, hyphen, dot only
-            // Prevents injection attacks (SQL, LDAP, shell) and ensures predictable behavior
-            require(ALLOWED_ROLE_PATTERN.matcher(body).matches()) {
-                "Role contains prohibited characters. " +
-                    "Only Unicode letters, digits, underscore (_), hyphen (-), and dot (.) allowed. " +
-                    "Received: '$role' (normalized body: '$body')"
-            }
-
-            // Prevent DoS via extremely long role names
+            // Prevent DoS via extremely long role/permission names (applies to both forms)
             require(body.length <= MAX_ROLE_LENGTH) {
                 "Role name too long (${body.length} > $MAX_ROLE_LENGTH). Received: '$role'"
             }
 
-            // Return canonical role form: ROLE_ + validated body
-            return SimpleGrantedAuthority("$ROLE_PREFIX$body")
+            return if (containsPermissionSeparator) {
+                // Permission-style: use as-is without ROLE_ prefix
+                SimpleGrantedAuthority(body)
+            } else {
+                // Traditional role: add ROLE_ prefix
+                SimpleGrantedAuthority("$ROLE_PREFIX$body")
+            }
         }
     }
 

@@ -320,7 +320,7 @@ class JwtSecurityValidator(
 
             val detectedPatterns =
                 INJECTION_PATTERNS.filter { pattern ->
-                    fullContent.matches(Regex(pattern))
+                    Regex(pattern).containsMatchIn(fullContent)
                 }
 
             if (detectedPatterns.isNotEmpty()) {
