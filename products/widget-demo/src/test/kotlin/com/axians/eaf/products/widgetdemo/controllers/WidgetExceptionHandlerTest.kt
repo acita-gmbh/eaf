@@ -95,7 +95,7 @@ class WidgetExceptionHandlerTest :
 
             test("8.5-UNIT-EH-004: should map TenantIsolationViolation to 403 Forbidden") {
                 // Given: TenantIsolationViolation (no tenant IDs exposed)
-                val error = WidgetError.TenantIsolationViolation()
+                val error = WidgetError.TenantIsolationViolation
                 val exception = WidgetValidationException(error)
 
                 // When: Handling the exception
@@ -237,7 +237,7 @@ class WidgetExceptionHandlerTest :
                     listOf(
                         WidgetError.ValidationError("field", "constraint", "value") to "/problems/validation-error",
                         WidgetError.BusinessRuleViolation("rule", "reason") to "/problems/business-rule-violation",
-                        WidgetError.TenantIsolationViolation() to "/problems/tenant-isolation",
+                        WidgetError.TenantIsolationViolation to "/problems/tenant-isolation",
                         WidgetError.NotFound("widget-id") to "/problems/widget-not-found",
                         WidgetError.Conflict("conflict reason") to "/problems/widget-conflict",
                     )
@@ -252,8 +252,8 @@ class WidgetExceptionHandlerTest :
 
         context("Security: Tenant ID protection (CWE-209)") {
             test("8.5-UNIT-EH-012: TenantIsolationViolation should never expose tenant IDs") {
-                // Given: TenantIsolationViolation error
-                val error = WidgetError.TenantIsolationViolation()
+                // Given: TenantIsolationViolation error (data object singleton)
+                val error = WidgetError.TenantIsolationViolation
                 val exception = WidgetValidationException(error)
 
                 // When: Mapping to problem response
@@ -267,11 +267,21 @@ class WidgetExceptionHandlerTest :
 
                 // Verify no properties contain "tenant" in key name (strict check)
                 problem.properties!!.keys.none { it.contains("tenant", ignoreCase = true) } shouldBe true
+
+                // DEFENSE-IN-DEPTH: Also check JSON serialization for UUID patterns (Copilot suggestion)
+                // This validates that serialization doesn't accidentally expose tenant IDs even if
+                // ProblemDetail's internal representation changes
+                val jsonString =
+                    com.fasterxml.jackson.databind
+                        .ObjectMapper()
+                        .writeValueAsString(problem)
+                val uuidPattern = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+                jsonString.contains(uuidPattern) shouldBe false
             }
 
             test("8.5-UNIT-EH-013: TenantIsolationViolation toString should return generic message") {
-                // Given: TenantIsolationViolation
-                val error = WidgetError.TenantIsolationViolation()
+                // Given: TenantIsolationViolation (data object singleton)
+                val error = WidgetError.TenantIsolationViolation
 
                 // When: Converting to string
                 val message = error.toString()
@@ -288,7 +298,7 @@ class WidgetExceptionHandlerTest :
                     listOf(
                         WidgetError.ValidationError("name", "length", "") to HttpStatus.BAD_REQUEST,
                         WidgetError.BusinessRuleViolation("rule", "reason") to HttpStatus.BAD_REQUEST,
-                        WidgetError.TenantIsolationViolation() to HttpStatus.FORBIDDEN,
+                        WidgetError.TenantIsolationViolation to HttpStatus.FORBIDDEN,
                         WidgetError.NotFound("id") to HttpStatus.NOT_FOUND,
                         WidgetError.Conflict("reason") to HttpStatus.CONFLICT,
                     )

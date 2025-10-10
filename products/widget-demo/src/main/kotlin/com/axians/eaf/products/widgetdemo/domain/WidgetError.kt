@@ -24,13 +24,12 @@ sealed class WidgetError {
      * even if the error object is accidentally serialized in logs or debugging output.
      *
      * Tenant IDs should only be recorded in secure audit logs, never in error objects.
+     *
+     * Implementation: Using data object (Kotlin 1.9+) provides singleton semantics with
+     * automatic equals/hashCode implementation. All instances are identical by definition.
      */
-    class TenantIsolationViolation : WidgetError() {
+    data object TenantIsolationViolation : WidgetError() {
         override fun toString(): String = "Access denied: tenant context mismatch"
-
-        override fun equals(other: Any?): Boolean = other is TenantIsolationViolation
-
-        override fun hashCode(): Int = javaClass.hashCode()
     }
 
     data class NotFound(

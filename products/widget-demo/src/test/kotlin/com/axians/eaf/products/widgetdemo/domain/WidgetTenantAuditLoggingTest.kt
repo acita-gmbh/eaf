@@ -29,45 +29,51 @@ class WidgetTenantAuditLoggingTest :
     FunSpec({
 
         context("TenantIsolationViolation utility methods") {
-            test("8.5-UNIT-AUDIT-005: equals should return true for same type") {
-                // Given: Two TenantIsolationViolation instances
-                val error1 = WidgetError.TenantIsolationViolation()
-                val error2 = WidgetError.TenantIsolationViolation()
+            test("8.5-UNIT-AUDIT-005: data object should be singleton (referential equality)") {
+                // Given: TenantIsolationViolation is a data object (singleton)
+                val error1 = WidgetError.TenantIsolationViolation
+                val error2 = WidgetError.TenantIsolationViolation
 
-                // When/Then: Should be equal (no properties to compare)
+                // When/Then: Should be the exact same instance (singleton)
+                (error1 === error2) shouldBe true
                 (error1 == error2) shouldBe true
-                (error1 == error1) shouldBe true
             }
 
             test("8.5-UNIT-AUDIT-006: equals should return false for different types") {
                 // Given: TenantIsolationViolation and other error type
-                val error1 = WidgetError.TenantIsolationViolation()
+                val error1 = WidgetError.TenantIsolationViolation
                 val error2 = WidgetError.NotFound("widget-id")
 
                 // When/Then: Should not be equal
                 (error1 == error2) shouldBe false
             }
 
-            test("8.5-UNIT-AUDIT-007: hashCode should be consistent") {
-                // Given: Two TenantIsolationViolation instances
-                val error1 = WidgetError.TenantIsolationViolation()
-                val error2 = WidgetError.TenantIsolationViolation()
+            test("8.5-UNIT-AUDIT-007: hashCode should be consistent (singleton)") {
+                // Given: TenantIsolationViolation is a data object
+                val error1 = WidgetError.TenantIsolationViolation
+                val error2 = WidgetError.TenantIsolationViolation
 
-                // When/Then: HashCodes should be equal
+                // When/Then: HashCodes should be identical (same instance)
                 error1.hashCode() shouldBe error2.hashCode()
             }
 
             test("8.5-UNIT-AUDIT-008: toString should never expose tenant IDs (CWE-209)") {
                 // Given: TenantIsolationViolation
-                val error = WidgetError.TenantIsolationViolation()
+                val error = WidgetError.TenantIsolationViolation
 
                 // When: Converting to string
                 val message = error.toString()
 
                 // Then: Should be completely generic
                 message shouldBe "Access denied: tenant context mismatch"
-                // Verify no UUID-like patterns (tenant IDs are UUIDs)
-                message.contains(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) shouldBe false
+                // Verify no UUID-like patterns (tenant IDs are UUIDs) - use compiled regex
+                message.contains(UUID_PATTERN) shouldBe false
             }
         }
-    })
+    }) {
+    companion object {
+        // Compile UUID regex once for performance (Copilot suggestion)
+        private val UUID_PATTERN =
+            Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+    }
+}

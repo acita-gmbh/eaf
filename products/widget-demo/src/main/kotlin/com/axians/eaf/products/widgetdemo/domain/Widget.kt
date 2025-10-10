@@ -83,7 +83,7 @@ class Widget {
                         command.tenantId,
                         currentTenant,
                     )
-                    WidgetError.TenantIsolationViolation()
+                    WidgetError.TenantIsolationViolation
                 }
                 this.tenantId != currentTenant -> {
                     // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
@@ -93,7 +93,7 @@ class Widget {
                         this.tenantId,
                         currentTenant,
                     )
-                    WidgetError.TenantIsolationViolation()
+                    WidgetError.TenantIsolationViolation
                 }
                 status != WidgetStatus.ACTIVE ->
                     WidgetError.BusinessRuleViolation(
@@ -156,7 +156,7 @@ class Widget {
                         command.tenantId,
                         currentTenant,
                     )
-                    WidgetError.TenantIsolationViolation()
+                    WidgetError.TenantIsolationViolation
                 }
                 this.tenantId != currentTenant -> {
                     // SECURITY: Log tenant mismatch for audit trail (secure logs only, never in error response)
@@ -166,7 +166,7 @@ class Widget {
                         this.tenantId,
                         currentTenant,
                     )
-                    WidgetError.TenantIsolationViolation()
+                    WidgetError.TenantIsolationViolation
                 }
                 else -> null
             }
