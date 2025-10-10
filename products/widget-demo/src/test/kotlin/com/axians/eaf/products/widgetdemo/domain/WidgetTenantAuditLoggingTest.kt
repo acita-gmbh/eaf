@@ -1,17 +1,7 @@
 package com.axians.eaf.products.widgetdemo.domain
 
-import com.axians.eaf.api.widget.commands.CancelWidgetCreationCommand
-import com.axians.eaf.api.widget.commands.UpdateWidgetCommand
-import com.axians.eaf.api.widget.events.WidgetCreatedEvent
-import com.axians.eaf.framework.security.tenant.TenantContext
-import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import org.axonframework.test.aggregate.AggregateTestFixture
-import java.math.BigDecimal
-import java.util.UUID
 
 /**
  * Tests for Widget aggregate tenant isolation with audit logging.
@@ -67,7 +57,7 @@ class WidgetTenantAuditLoggingTest :
                 // Then: Should be completely generic
                 message shouldBe "Access denied: tenant context mismatch"
                 // Verify no UUID-like patterns (tenant IDs are UUIDs) - use compiled regex
-                message.contains(UUID_PATTERN) shouldBe false
+                UUID_PATTERN.containsMatchIn(message) shouldBe false
             }
         }
     }) {

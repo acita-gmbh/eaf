@@ -276,7 +276,7 @@ class WidgetExceptionHandlerTest :
                         .ObjectMapper()
                         .writeValueAsString(problem)
                 val uuidPattern = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-                jsonString.contains(uuidPattern) shouldBe false
+                uuidPattern.containsMatchIn(jsonString) shouldBe false
             }
 
             test("8.5-UNIT-EH-013: TenantIsolationViolation toString should return generic message") {
