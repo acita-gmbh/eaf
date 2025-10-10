@@ -106,3 +106,8 @@ CREATE INDEX IF NOT EXISTS idx_widget_projection_value_desc
 
 CREATE INDEX IF NOT EXISTS idx_widget_projection_created_at
     ON widget_projection (tenant_id, created_at DESC);
+
+-- NOTE: Row-Level Security (RLS) intentionally OMITTED from test schema
+-- Production schema (scripts/sql/widget_projection_schema.sql) has proper RLS policies
+-- Test schema bypasses RLS to allow test infrastructure operations without tenant context
+-- This is a standard testing pattern - tests need flexibility for setup/teardown/validation
