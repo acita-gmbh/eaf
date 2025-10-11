@@ -31,7 +31,7 @@ dependencies {
     }
 
     // Integration test specific dependencies for security framework
-    integrationTestImplementation("org.springframework.security:spring-security-test:6.5.5")
+    integrationTestImplementation(libs.spring.security.test)
     integrationTestImplementation(libs.spring.boot.starter.test)
 }
 

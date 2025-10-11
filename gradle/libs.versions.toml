@@ -139,6 +139,7 @@ opentelemetry-instrumentation-spring-boot = { module = "io.opentelemetry.instrum
 
 # Security
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+spring-security-test = { module = "org.springframework.security:spring-security-test", version = "6.5.5" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 
