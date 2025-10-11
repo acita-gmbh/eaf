@@ -1368,7 +1368,23 @@ class ProductApiE2ETest : IntegrationTestBase() {
 }
 ```
 
-## Quality Gates and Coverage
+### CI/CD Pipeline Separation
+
+To balance fast feedback with comprehensive validation, the project utilizes a two-pipeline strategy:
+
+1.  **PR Pipeline (Fast Feedback)**: Runs on every pull request and is optimized for speed (<3 minutes). It includes:
+    *   Static Analysis (ktlint, detekt)
+    *   Architecture Tests (Konsist)
+    *   Unit Tests
+    *   Integration Tests
+
+2.  **Nightly Pipeline (Deep Validation)**: Runs daily at 2 AM UTC and performs more exhaustive checks. It includes:
+    *   All tests from the PR pipeline.
+    *   Property-Based Tests
+    *   Fuzz Tests
+    *   Mutation Testing
+
+This approach ensures that developers get rapid feedback on their changes, while the more time-consuming and resource-intensive tests are run on a less frequent basis.
 
 ### Coverage Requirements
 
