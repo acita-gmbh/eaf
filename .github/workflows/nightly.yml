@@ -6,8 +6,33 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
-jobs:
-  nightly-deep-validation:
+  create-failure-issue:
+    if: ${{ failure() }}
+    needs: [nightly-deep-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Issue on Failure
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `Nightly Validation Failed: ${{ github.workflow }} #${{ github.run_number }}`;
+            const body = `
+              ## Nightly Deep Validation Failure
+
+              **Date**: ${{ github.run_started_at }}
+              **Workflow**: [Link to run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+              Please investigate the failure.
+            `;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['nightly-failure', 'testing', 'bug']
+            });
+
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
