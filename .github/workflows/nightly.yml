@@ -1,4 +1,3 @@
-
 name: Nightly Deep Validation Pipeline
 
 on:
@@ -76,6 +75,8 @@ jobs:
     if: ${{ failure() }}
     needs: [nightly-deep-validation]
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Create GitHub Issue on Failure
         uses: actions/github-script@v6
