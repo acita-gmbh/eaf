@@ -569,7 +569,7 @@ enum class {{aggregateName}}Status {
 # - jvmKotest (unit tests)
 # - integrationTest
 # - konsistTest (architecture)
-# - jacoco (coverage)
+# - kover (coverage)
 ```
 
 **Rationale**: Preserve fast feedback loops during active development. Mutation testing runs in CI for comprehensive validation.
@@ -992,12 +992,12 @@ jobs:
           colima start --cpu 4 --memory 8 --disk 60 --vm-type qemu --mount-type sshfs || colima start --vm-type qemu --mount-type sshfs
           docker context use colima || true
           docker info
-      - run: ./gradlew jvmKotest integrationTest jacocoTestReport jacocoTestCoverageVerification
+      - run: ./gradlew jvmKotest integrationTest koverXmlReport koverVerify
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
         with:
-          files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          files: ./build/reports/kover/report.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 

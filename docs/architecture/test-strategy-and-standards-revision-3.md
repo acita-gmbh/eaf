@@ -1230,24 +1230,30 @@ class ProductApiE2ETest : IntegrationTestBase() {
 
 ### Quality Gate Configuration
 
+**Story 8.6**: Migrated from JaCoCo to Kover for better Kotlin support.
+
 ```kotlin
 // build.gradle.kts
-jacoco {
-    toolVersion = "0.8.11"
+plugins {
+    id("org.jetbrains.kotlinx.kover") version "0.9.2"
 }
 
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+// Kover auto-configures and generates reports
+// Reports: build/reports/kover/report.xml, build/reports/kover/html/
+
+kover {
     reports {
-        xml.required.set(true)
-        html.required.set(true)
+        verify {
+            rule {
+                minBound(50) // 50% line coverage minimum
+            }
+        }
     }
-
-    executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec"))
 }
 
-tasks.jacocoTestCoverageVerification {
-    dependsOn(tasks.jacocoTestReport)
+tasks.check {
+    dependsOn("koverXmlReport")
+    dependsOn("koverVerify")
 
     violationRules {
         rule {

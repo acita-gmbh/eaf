@@ -238,7 +238,7 @@ test("should calculate correct duration") {
 # - jvmKotest (unit tests)
 # - integrationTest
 # - konsistTest (architecture)
-# - jacoco (coverage)
+# - kover (coverage)
 ```
 
 **Rationale**: Preserve TDD fast feedback loops. Mutation testing runs in CI.
