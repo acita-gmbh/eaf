@@ -97,7 +97,7 @@ jobs:
           docker info
 
       - name: Run unit and integration tests with CI configuration
-        run: ./gradlew ciTest ciIntegrationTest ciPerfTest jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
+        run: ./gradlew ciTest ciIntegrationTest ciPerfTest koverXmlReport koverVerify --no-daemon --stacktrace
 
       # TODO: Re-enable when GitHub Actions permissions are fixed
       # - name: Publish Test Results
@@ -124,8 +124,8 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
         with:
-          # Multi-module Gradle project: find all JaCoCo XML reports
-          files: ./**/build/reports/jacoco/**/jacocoTestReport.xml
+          # Multi-module Gradle project: find all Kover XML reports (Story 8.6: migrated from JaCoCo)
+          files: ./**/build/reports/kover/report.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
