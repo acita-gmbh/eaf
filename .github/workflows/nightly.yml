@@ -79,18 +79,27 @@ jobs:
       issues: write
     steps:
       - name: Create GitHub Issue on Failure
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const title = `Nightly Validation Failed: ${{ github.workflow }} #${{ github.run_number }}`;
+            const runId = context.runId;
+            const runNumber = context.runNumber;
+            const workflow = context.workflow;
+            const repo = context.repo.owner + '/' + context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${repo}/actions/runs/${runId}`;
+            const now = new Date().toISOString();
+
+            const title = `Nightly Validation Failed: ${workflow} #${runNumber}`;
             const body = `
               ## Nightly Deep Validation Failure
 
-              **Date**: ${{ github.run_started_at }}
-              **Workflow**: [Link to run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              **Date**: ${now}
+              **Workflow**: [Link to run](${runUrl})
+              **Run ID**: ${runId}
+              **Run Number**: ${runNumber}
 
-              Please investigate the failure.
+              Please investigate the failure. Review the workflow run logs for details.
             `;
             await github.rest.issues.create({
               owner: context.repo.owner,
