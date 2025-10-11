@@ -4,7 +4,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 plugins {
     `kotlin-dsl`
-    id("io.kotest") version "6.0.3"
 }
 
 kotlin {
@@ -101,6 +100,7 @@ dependencies {
         "gradlePlugin-ktlint",
         "gradlePlugin-detekt",
         "gradlePlugin-pitest",
+        "gradlePlugin-kover",
         "gradlePlugin-dependencyCheck"
     ).forEach { alias ->
         val library = catalog.library(alias)

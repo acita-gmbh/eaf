@@ -12,4 +12,7 @@ dependencies {
 
     // Framework testing support
     implementation(project(":framework:core"))
+
+    // Story 8.6: Kotest tags for multi-stage testing pipeline
+    implementation(libs.kotest.framework.engine.jvm) // For Tag class
 }

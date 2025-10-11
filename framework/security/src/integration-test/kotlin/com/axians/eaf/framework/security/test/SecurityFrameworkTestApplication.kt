@@ -1,6 +1,9 @@
 package com.axians.eaf.framework.security.test
 
+import com.axians.eaf.framework.security.services.SecurityErrorResponseFormatter
+import com.axians.eaf.framework.security.services.TenantExtractionService
 import com.axians.eaf.framework.security.tenant.TenantContext
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -57,12 +60,27 @@ open class SecurityFrameworkTestApplication {
     open fun testController(tenantContext: TenantContext): TestController = TestController(tenantContext)
 
     @Bean
+    @Primary
+    open fun testTenantExtractionService(): TenantExtractionService = TenantExtractionService()
+
+    @Bean
+    @Primary
+    open fun testSecurityErrorResponseFormatter(): SecurityErrorResponseFormatter = SecurityErrorResponseFormatter(ObjectMapper())
+
+    @Bean
     open fun testTenantContextFilter(
         tenantContext: TenantContext,
+        tenantExtractionService: TenantExtractionService,
+        errorFormatter: SecurityErrorResponseFormatter,
         meterRegistry: MeterRegistry,
     ): com.axians.eaf.framework.security.filters.TenantContextFilter =
         com.axians.eaf.framework.security.filters
-            .TenantContextFilter(tenantContext, meterRegistry)
+            .TenantContextFilter(
+                tenantContext,
+                tenantExtractionService,
+                errorFormatter,
+                meterRegistry,
+            )
 
     @Bean
     open fun testSecurityFilterChain(
