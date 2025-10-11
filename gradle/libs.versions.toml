@@ -62,6 +62,9 @@ jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 pat
 picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
 mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 
+# Fuzz Testing (Story 8.6)
+jazzer = "0.24.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
+
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
 
@@ -156,6 +159,10 @@ jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }  # Maintained
 # Tools
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 mustache = { module = "com.github.spullara.mustache.java:compiler", version.ref = "mustache" }
+
+# Fuzz Testing
+jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
+jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
 
 # Jakarta JSON Bind
 jakarta-json-bind-api = { module = "jakarta.json.bind:jakarta.json.bind-api", version.ref = "jakarta-json-bind" }

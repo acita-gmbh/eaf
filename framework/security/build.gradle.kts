@@ -8,7 +8,7 @@ plugins {
 description = "EAF Security Framework - 10-layer JWT validation and tenant isolation"
 
 // ============================================================================
-// Story 8.6: Multi-Stage Testing - Property Test Source Set
+// Story 8.6: Multi-Stage Testing - Property Test and Fuzz Test Source Sets
 // ============================================================================
 sourceSets {
     create("propertyTest") {
@@ -18,6 +18,14 @@ sourceSets {
         kotlin.srcDir("src/propertyTest/kotlin")
         resources.srcDir("src/propertyTest/resources")
     }
+
+    create("fuzzTest") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+        java.srcDir("src/fuzzTest/java")
+        kotlin.srcDir("src/fuzzTest/kotlin")
+        resources.srcDir("src/fuzzTest/resources")
+    }
 }
 
 // Property test dependencies extend from test dependencies
@@ -25,6 +33,14 @@ val propertyTestImplementation by configurations.getting {
     extendsFrom(configurations.testImplementation.get())
 }
 val propertyTestRuntimeOnly by configurations.getting {
+    extendsFrom(configurations.testRuntimeOnly.get())
+}
+
+// Fuzz test dependencies
+val fuzzTestImplementation by configurations.getting {
+    extendsFrom(configurations.testImplementation.get())
+}
+val fuzzTestRuntimeOnly by configurations.getting {
     extendsFrom(configurations.testRuntimeOnly.get())
 }
 
@@ -54,10 +70,14 @@ dependencies {
     // Integration test specific dependencies for security framework
     integrationTestImplementation(libs.spring.security.test)
     integrationTestImplementation(libs.spring.boot.starter.test)
+
+    // Story 8.6: Fuzz testing with Jazzer (Google OSS-Fuzz standard)
+    fuzzTestImplementation(libs.jazzer.junit)
+    fuzzTestImplementation(libs.jazzer.api)
 }
 
 // ============================================================================
-// Story 8.6: Multi-Stage Testing - Property Test Task
+// Story 8.6: Multi-Stage Testing - Property Test and Fuzz Test Tasks
 // ============================================================================
 val propertyTest =
     tasks.register<Test>("propertyTest") {
@@ -69,6 +89,17 @@ val propertyTest =
             // Only run tests tagged with @PBT
             includeTags("PBT")
         }
+    }
+
+val fuzzTest =
+    tasks.register<Test>("fuzzTest") {
+        group = "verification"
+        description = "Runs Jazzer fuzz tests (nightly/security validation)"
+        testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
+        classpath = sourceSets["fuzzTest"].runtimeClasspath
+        useJUnitPlatform()
+        // Jazzer uses JUnit 5 engine for test execution
+        systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
     }
 
 // Exclude PBT from default test task (fast feedback loop)
