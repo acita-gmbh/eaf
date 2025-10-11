@@ -38,7 +38,10 @@ import io.kotest.core.Tag
  *
  * @see <a href="https://kotest.io/docs/framework/tags.html">Kotest Tags Documentation</a>
  */
-object PbtTag : Tag()
+object PbtTag : Tag() {
+    // CodeRabbit: Override name to match @PBT annotation tag
+    override val name = "PBT"
+}
 
 /**
  * Type-safe annotation for property-based tests.

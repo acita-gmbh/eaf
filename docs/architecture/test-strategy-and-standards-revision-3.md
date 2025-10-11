@@ -695,7 +695,7 @@ class JpaProductRepositoryContractTest : ProductRepositoryContract() {
 ### Property Test Organization
 
 **Source Set Structure**:
-```
+```text
 framework/security/src/
 ├── test/kotlin/              # Example-based tests (run on PRs)
 │   ├── filters/RoleNormalizationTest.kt (30 tests)

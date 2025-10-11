@@ -199,7 +199,9 @@ class RoleNormalizationTest :
                 val maxRole = "a".repeat(256)
                 val authority = JwtValidationFilter.normalizeRoleAuthority(maxRole)
                 authority shouldNotBe null
-                authority.authority.length shouldBe 261 // 256 + "ROLE_" (5 chars)
+                // Expected length calculation: 256 (max role body) + 5 (prefix "ROLE_") = 261
+                val expectedLength = 256 + "ROLE_".length
+                authority.authority.length shouldBe expectedLength
             }
 
             test("should reject role over max length (257)") {

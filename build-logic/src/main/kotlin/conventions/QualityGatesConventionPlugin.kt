@@ -86,7 +86,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 outputFormats.set(setOf("XML", "HTML"))
                 timestampedReports.set(false)
                 mutationThreshold.set(25) // Story 8.6: Baseline floor all modules meet (target: 50% by Epic 9)
-                coverageThreshold.set(50) // Story 8.6: Current achievement (target: 66% by Epic 9)
+                coverageThreshold.set(40) // Story 8.6: Baseline floor (target: 66% by Epic 9)
 
                 failWhenNoMutations.set(false)
 

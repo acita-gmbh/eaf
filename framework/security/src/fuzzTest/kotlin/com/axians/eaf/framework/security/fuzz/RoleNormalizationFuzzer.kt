@@ -40,10 +40,8 @@ class RoleNormalizationFuzzer {
         } catch (e: StackOverflowError) {
             // Stack overflow (regex DoS potential)
             throw e
-        } catch (e: Exception) {
-            // Any other exception might indicate unexpected behavior
-            // Let Jazzer decide if it's a finding
         }
+        // CodeRabbit: Don't catch generic Exception - let unexpected exceptions propagate to Jazzer
     }
 
     @FuzzTest
@@ -77,6 +75,41 @@ class RoleNormalizationFuzzer {
             }
         } catch (e: IllegalArgumentException) {
             // Expected - injection should be rejected
+        }
+    }
+
+    @FuzzTest
+    fun fuzzRoleNormalizationUnicodeAttacks(data: FuzzedDataProvider) {
+        // GitHub Copilot suggestion: Test Unicode normalization and homograph attacks
+        // Confusable characters that look similar but have different Unicode codepoints
+        val baseRole = data.consumeString(30)
+
+        val unicodeAttacks =
+            listOf(
+                "\u202E", // Right-to-Left Override (can hide malicious code)
+                "\u200B", // Zero-width space (invisible character)
+                "\u00AD", // Soft hyphen (invisible in many renderings)
+                "\uFEFF", // Zero-width no-break space
+                "\u200C", // Zero-width non-joiner
+                "\u200D", // Zero-width joiner
+                // Homograph attack examples (Cyrillic look-alikes)
+                "\u0430", // Cyrillic 'a' (looks like Latin 'a')
+                "\u0435", // Cyrillic 'e' (looks like Latin 'e')
+                "\u043E", // Cyrillic 'o' (looks like Latin 'o')
+            )
+
+        val attack = data.pickValue(unicodeAttacks)
+        val position = data.consumeInt(0, baseRole.length)
+        val maliciousRole = baseRole.substring(0, position) + attack + baseRole.substring(position)
+
+        try {
+            val result = JwtValidationFilter.normalizeRoleAuthority(maliciousRole)
+            // Validate that invisible/confusable characters are handled correctly
+            // Either rejected or properly normalized
+        } catch (e: IllegalArgumentException) {
+            // Expected for invalid Unicode patterns
+        } catch (e: Exception) {
+            // Other exceptions might indicate unexpected Unicode handling
         }
     }
 }

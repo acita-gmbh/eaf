@@ -50,6 +50,7 @@ commons-io = "2.17.0"     # IO utilities (security update)
 # Security
 keycloak = "25.0.6"       # Identity provider
 jose4j = "0.9.6"          # JWT processing
+spring-security = "6.5.5" # Spring Security test dependency
 
 # Cache and session storage
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
@@ -142,7 +143,7 @@ opentelemetry-instrumentation-spring-boot = { module = "io.opentelemetry.instrum
 
 # Security
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
-spring-security-test = { module = "org.springframework.security:spring-security-test", version = "6.5.5" }
+spring-security-test = { module = "org.springframework.security:spring-security-test", version.ref = "spring-security" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 
