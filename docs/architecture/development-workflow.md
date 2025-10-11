@@ -936,7 +936,15 @@ docker exec eaf-postgres psql -U eaf -c "DROP SCHEMA IF EXISTS eaf_test CASCADE;
 ./gradlew :products:licensing-server:bootRun -Dspring.profiles.active=dev,monitoring
 ```
 
-## Continuous Integration Integration
+### Nightly Deep Validation Pipeline
+
+A separate nightly workflow (`.github/workflows/nightly.yml`) runs a deep validation pipeline every day at 2 AM UTC. This pipeline includes:
+
+- **Property-Based Tests**: To find edge cases in business logic.
+- **Fuzz Tests**: To uncover security vulnerabilities and unexpected inputs.
+- **Mutation Testing**: To ensure the quality of the test suite.
+
+This separation of concerns allows the main PR pipeline to remain fast (<3 minutes) while still ensuring a deep level of quality validation on a daily basis. Failures in the nightly pipeline will automatically create a GitHub issue and notify the team.
 
 ### GitHub Actions Workflow
 
