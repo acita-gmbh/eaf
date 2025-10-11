@@ -1,5 +1,5 @@
 
-name: Nightly Deep Validation
+name: Nightly Deep Validation Pipeline
 
 on:
   schedule:
