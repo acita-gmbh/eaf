@@ -71,6 +71,15 @@ sealed class SecurityError(
         val expected: String,
     ) : SecurityError("Invalid audience: expected $expected, got $actual")
 
+    // Tenant Context Errors (Story 8.6)
+    object NoAuthentication : SecurityError("No authentication context present")
+
+    data class NonJwtAuthentication(
+        val actualType: String,
+    ) : SecurityError("Authentication is not JWT-based: $actualType")
+
+    object MissingTenantClaim : SecurityError("Missing or invalid tenant_id claim")
+
     // Layer 7: Revocation Check Errors
     data class TokenRevoked(
         val jti: String,

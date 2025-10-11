@@ -1,6 +1,8 @@
 package com.axians.eaf.framework.security.config
 
 import com.axians.eaf.framework.security.filters.TenantContextFilter
+import com.axians.eaf.framework.security.services.SecurityErrorResponseFormatter
+import com.axians.eaf.framework.security.services.TenantExtractionService
 import com.axians.eaf.framework.security.tenant.TenantContext
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
@@ -43,8 +45,16 @@ open class SecurityConfiguration {
     @Bean
     open fun tenantContextFilter(
         tenantContext: TenantContext,
+        tenantExtractionService: TenantExtractionService,
+        errorFormatter: SecurityErrorResponseFormatter,
         meterRegistry: MeterRegistry?,
-    ): TenantContextFilter = TenantContextFilter(tenantContext, meterRegistry)
+    ): TenantContextFilter =
+        TenantContextFilter(
+            tenantContext,
+            tenantExtractionService,
+            errorFormatter,
+            meterRegistry,
+        )
 
     @Bean
     open fun tenantContextFilterRegistration(filter: TenantContextFilter): FilterRegistrationBean<TenantContextFilter> =
