@@ -100,21 +100,25 @@ val fuzzTest =
         useJUnitPlatform()
 
         // Story 8.8: Fix corpus persistence for incremental fuzzing
+        val corpusDirPath = "${project.projectDir}/.jazzer/corpus"
+
         // Create corpus directory before execution to enable corpus caching
         doFirst {
-            val corpusDir = file("${project.projectDir}/.jazzer/corpus")
+            val corpusDir = file(corpusDirPath)
             corpusDir.mkdirs()
             logger.lifecycle("✅ Created Jazzer corpus directory: ${corpusDir.absolutePath}")
         }
 
         // Configure Jazzer for fuzzing mode (not just test mode)
         systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
-        systemProperty("jazzer.corpus_dir", "${project.projectDir}/.jazzer/corpus")
+        systemProperty("jazzer.corpus_dir", corpusDirPath)
         environment("JAZZER_FUZZ", "1")
 
-        // Note: Time limits should be configured per-test using @FuzzTest annotation
-        // or via environment variables. The GitHub Actions workflow uses -Djazzer.flags
-        // which is handled by the Jazzer agent directly.
+        // Propagate jazzer.flags from Gradle JVM to test execution JVM
+        // This enables GitHub Actions workflow to pass -max_total_time and other flags
+        System.getProperty("jazzer.flags")?.takeIf { it.isNotBlank() }?.let { flags ->
+            systemProperty("jazzer.flags", flags)
+        }
     }
 
 // Exclude PBT from default test task (fast feedback loop)
