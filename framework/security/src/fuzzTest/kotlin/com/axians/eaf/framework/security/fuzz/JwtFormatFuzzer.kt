@@ -23,6 +23,8 @@ class JwtFormatFuzzer {
     private val jwtPattern = Regex("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")
     private val maxTokenSize = 8192
 
+    // Story 8.8: Use @FuzzTest default maxDuration (5m per test)
+    // Empirical validation: Annotation-based limits work, system property overrides don't
     @FuzzTest
     fun fuzzJwtBasicFormatValidation(data: FuzzedDataProvider) {
         val jwtString = data.consumeRemainingAsString()

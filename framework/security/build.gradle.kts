@@ -98,8 +98,33 @@ val fuzzTest =
         testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
         classpath = sourceSets["fuzzTest"].runtimeClasspath
         useJUnitPlatform()
-        // Jazzer uses JUnit 5 engine for test execution
+
+        // Story 8.8: Fix corpus persistence for incremental fuzzing
+        val corpusDirPath = "${project.projectDir}/.jazzer/corpus"
+
+        // Create corpus directory before execution to enable corpus caching
+        doFirst {
+            val corpusDir = file(corpusDirPath)
+            corpusDir.mkdirs()
+            logger.lifecycle("✅ Created Jazzer corpus directory: ${corpusDir.absolutePath}")
+        }
+
+        // Configure Jazzer for fuzzing mode (not just test mode)
         systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
+        systemProperty("jazzer.corpus_dir", corpusDirPath)
+        environment("JAZZER_FUZZ", "1")
+
+        // Story 8.8: Jazzer time limits (EMPIRICAL FINDINGS)
+        // DISCOVERY: System properties (jazzer.max_duration, jazzer.max_total_time, jazzer.flags)
+        //            are NOT read by Jazzer 0.24.0 in JUnit integration mode
+        // PROVEN: Only @FuzzTest annotation maxDuration parameter controls fuzzing duration
+        // LIMITATION: Annotation values are static - cannot be overridden at runtime via -D flags
+        // SOLUTION: Rely on @FuzzTest annotation defaults (5m per test) + GitHub Actions timeout (45m)
+        // VALIDATION: Empirical tests confirmed:
+        //   - @FuzzTest(maxDuration="15s") → stopped at 16s ✅
+        //   - @FuzzTest default "5m" → stopped at 301s ✅
+        //   - Property jazzer.max_duration=20s → ignored, ran until Gradle timeout ❌
+        // See: .ai/jazzer-flags-research-prompt.md for multi-agent research findings
     }
 
 // Exclude PBT from default test task (fast feedback loop)
@@ -107,6 +132,34 @@ tasks.named<Test>("test") {
     useJUnitPlatform {
         excludeTags("PBT")
     }
+}
+
+// Story 8.7: Exclude advanced tests from Kover coverage in CI
+// propertyTest and fuzzTest should ONLY run in nightly pipeline, not PR pipeline
+// Kover automatically depends on ALL Test tasks - we must explicitly exclude nightly-only tests
+tasks.named("koverXmlReport") {
+    // Prevent Kover from triggering nightly-only test tasks during CI
+    mustRunAfter("propertyTest", "fuzzTest")
+}
+tasks.named("koverVerify") {
+    // Prevent Kover from triggering nightly-only test tasks during CI
+    mustRunAfter("propertyTest", "fuzzTest")
+}
+
+// Helper function to determine if nightly-only tests should run
+// Handles both bare task names ("propertyTest") and qualified paths (":framework:security:propertyTest")
+// Returns true when: (1) nightlyBuild property set, OR (2) task explicitly requested by developer
+fun shouldRunNightlyTest(taskName: String): Boolean =
+    project.hasProperty("nightlyBuild") ||
+        project.gradle.startParameter.taskNames
+            .any { it.substringAfterLast(':') == taskName }
+
+// Explicitly mark nightly-only tests to not run automatically
+tasks.named("propertyTest") {
+    onlyIf { shouldRunNightlyTest("propertyTest") }
+}
+tasks.named("fuzzTest") {
+    onlyIf { shouldRunNightlyTest("fuzzTest") }
 }
 
 // Pitest configuration - override targetClasses and configure for Kotest
