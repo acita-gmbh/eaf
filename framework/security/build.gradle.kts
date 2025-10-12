@@ -114,16 +114,17 @@ val fuzzTest =
         systemProperty("jazzer.corpus_dir", corpusDirPath)
         environment("JAZZER_FUZZ", "1")
 
-        // Story 8.8: Pass libFuzzer time limit to Jazzer
-        // RESEARCH RESULT: 4 external agents unanimously confirm systemProperty() is correct
-        // Evidence: GitHub Issue #668, Jazzer v0.20.0 release notes, community examples
-        // Individual properties recommended (consistent with working jazzer.* properties above)
-        val maxTotalTime = System.getProperty("jazzer.max_total_time") ?: "1800"
-        systemProperty("jazzer.max_total_time", maxTotalTime)
-
-        // Optional: Additional recommended libFuzzer flags for JVM fuzzing
-        systemProperty("jazzer.rss_limit_mb", "8192") // Prevent OOM kills
-        systemProperty("jazzer.timeout", "60") // Detect hangs
+        // Story 8.8: Jazzer time limits (EMPIRICAL FINDINGS)
+        // DISCOVERY: System properties (jazzer.max_duration, jazzer.max_total_time, jazzer.flags)
+        //            are NOT read by Jazzer 0.24.0 in JUnit integration mode
+        // PROVEN: Only @FuzzTest annotation maxDuration parameter controls fuzzing duration
+        // LIMITATION: Annotation values are static - cannot be overridden at runtime via -D flags
+        // SOLUTION: Rely on @FuzzTest annotation defaults (5m per test) + GitHub Actions timeout (45m)
+        // VALIDATION: Empirical tests confirmed:
+        //   - @FuzzTest(maxDuration="15s") → stopped at 16s ✅
+        //   - @FuzzTest default "5m" → stopped at 301s ✅
+        //   - Property jazzer.max_duration=20s → ignored, ran until Gradle timeout ❌
+        // See: .ai/jazzer-flags-research-prompt.md for multi-agent research findings
     }
 
 // Exclude PBT from default test task (fast feedback loop)

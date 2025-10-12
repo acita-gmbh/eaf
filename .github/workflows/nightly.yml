@@ -81,11 +81,13 @@ jobs:
             fuzz-corpus-
 
       - name: Run Fuzz Tests
-        # The timeout is hardcoded to 30 minutes (1800 seconds) as per Story 8.7 AC3.
-        # This can be made configurable in a future iteration if needed.
-        # Story 8.7: Set nightlyBuild property to enable nightly-only tests
-        # Story 8.8: Use jazzer.max_total_time property (research-validated approach)
-        run: ./gradlew fuzzTest -PnightlyBuild=true -Djazzer.max_total_time=1800
+        # Story 8.7 AC3: Fuzz testing with time limits
+        # Story 8.8: EMPIRICAL FINDING - Jazzer 0.24.0 JUnit integration does NOT read
+        #            system properties for time limits (jazzer.max_duration, jazzer.flags tested)
+        # SOLUTION: Rely on @FuzzTest annotation defaults (5m per test = 15m for 3 tests)
+        #           + GitHub Actions job timeout (45m) as safety limit
+        # VALIDATION: Empirical tests proved annotation-based limits work, property-based don't
+        run: ./gradlew fuzzTest -PnightlyBuild=true
 
       - name: Save fuzz corpus
         if: ${{ always() }}
