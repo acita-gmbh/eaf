@@ -116,8 +116,9 @@ val fuzzTest =
 
         // Propagate jazzer.flags from Gradle JVM to test execution JVM
         // This enables GitHub Actions workflow to pass -max_total_time and other flags
+        // Jazzer expects flags as JVM arguments, not system properties
         System.getProperty("jazzer.flags")?.takeIf { it.isNotBlank() }?.let { flags ->
-            systemProperty("jazzer.flags", flags)
+            jvmArgs(flags.split(" "))
         }
     }
 
@@ -140,20 +141,19 @@ tasks.named("koverVerify") {
     mustRunAfter("propertyTest", "fuzzTest")
 }
 
+// Helper function to determine if nightly-only tests should run
+// Handles both bare task names ("propertyTest") and qualified paths (":framework:security:propertyTest")
+fun isNightlyTestEnabled(taskName: String): Boolean =
+    project.hasProperty("nightlyBuild") ||
+        project.gradle.startParameter.taskNames
+            .any { it.substringAfterLast(':') == taskName }
+
 // Explicitly mark nightly-only tests to not run automatically
 tasks.named("propertyTest") {
-    onlyIf {
-        project.hasProperty("nightlyBuild") ||
-            project.gradle.startParameter.taskNames
-                .contains("propertyTest")
-    }
+    onlyIf { isNightlyTestEnabled("propertyTest") }
 }
 tasks.named("fuzzTest") {
-    onlyIf {
-        project.hasProperty("nightlyBuild") ||
-            project.gradle.startParameter.taskNames
-                .contains("fuzzTest")
-    }
+    onlyIf { isNightlyTestEnabled("fuzzTest") }
 }
 
 // Pitest configuration - override targetClasses and configure for Kotest
