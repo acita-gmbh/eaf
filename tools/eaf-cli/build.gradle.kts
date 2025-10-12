@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.application)
     alias(libs.plugins.kotest.plugin)
     id("eaf.kotlin-common")

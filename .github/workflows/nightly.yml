@@ -58,6 +58,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Build Admin Shell
+        run: npm run build:admin-shell
+
       - name: Run Baseline Tests
         run: ./gradlew test integrationTest
 
