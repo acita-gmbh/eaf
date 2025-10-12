@@ -68,7 +68,8 @@ jobs:
         run: ./gradlew test integrationTest
 
       - name: Run Property-Based Tests
-        run: ./gradlew propertyTest
+        # Story 8.7: Set nightlyBuild property to enable nightly-only tests
+        run: ./gradlew propertyTest -PnightlyBuild=true
 
       - name: Restore fuzz corpus
         uses: actions/cache/restore@v4
@@ -82,7 +83,8 @@ jobs:
       - name: Run Fuzz Tests
         # The timeout is hardcoded to 30 minutes (1800 seconds) as per Story 8.7 AC3.
         # This can be made configurable in a future iteration if needed.
-        run: ./gradlew fuzzTest -Djazzer.flags="-max_total_time=1800"
+        # Story 8.7: Set nightlyBuild property to enable nightly-only tests
+        run: ./gradlew fuzzTest -PnightlyBuild=true -Djazzer.flags="-max_total_time=1800"
 
       - name: Save fuzz corpus
         if: ${{ always() }}

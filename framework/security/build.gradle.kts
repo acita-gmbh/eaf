@@ -128,6 +128,34 @@ tasks.named<Test>("test") {
     }
 }
 
+// Story 8.7: Exclude advanced tests from Kover coverage in CI
+// propertyTest and fuzzTest should ONLY run in nightly pipeline, not PR pipeline
+// Kover automatically depends on ALL Test tasks - we must explicitly exclude nightly-only tests
+tasks.named("koverXmlReport") {
+    // Prevent Kover from triggering nightly-only test tasks during CI
+    mustRunAfter("propertyTest", "fuzzTest")
+}
+tasks.named("koverVerify") {
+    // Prevent Kover from triggering nightly-only test tasks during CI
+    mustRunAfter("propertyTest", "fuzzTest")
+}
+
+// Explicitly mark nightly-only tests to not run automatically
+tasks.named("propertyTest") {
+    onlyIf {
+        project.hasProperty("nightlyBuild") ||
+            project.gradle.startParameter.taskNames
+                .contains("propertyTest")
+    }
+}
+tasks.named("fuzzTest") {
+    onlyIf {
+        project.hasProperty("nightlyBuild") ||
+            project.gradle.startParameter.taskNames
+                .contains("fuzzTest")
+    }
+}
+
 // Pitest configuration - override targetClasses and configure for Kotest
 // Per Kotest docs: With PIT 1.6.7+, kotest-extensions-pitest on classpath is enough
 configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {

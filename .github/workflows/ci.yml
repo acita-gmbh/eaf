@@ -51,7 +51,8 @@ jobs:
           docker info
 
       - name: Run unit and integration tests with CI configuration
-        run: ./gradlew ciTest ciIntegrationTest ciPerfTest koverXmlReport koverVerify --no-daemon --stacktrace
+        # Story 8.7: ciPerfTest removed - performance tests are nightly-only for fast PR feedback
+        run: ./gradlew ciTest ciIntegrationTest koverXmlReport koverVerify --no-daemon --stacktrace
 
       # TODO: Re-enable when GitHub Actions permissions are fixed
       # - name: Publish Test Results
