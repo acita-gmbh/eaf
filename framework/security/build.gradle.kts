@@ -114,16 +114,16 @@ val fuzzTest =
         systemProperty("jazzer.corpus_dir", corpusDirPath)
         environment("JAZZER_FUZZ", "1")
 
-        // Propagate jazzer.flags from Gradle JVM to test execution JVM
-        // This enables GitHub Actions workflow to pass -max_total_time and other flags
-        // Jazzer expects flags as JVM arguments, not system properties
-        // Security: Only allow flags starting with "-" to prevent command injection
-        System.getProperty("jazzer.flags")?.takeIf { it.isNotBlank() }?.let { flags ->
-            val validatedFlags = flags.split(" ").filter { it.startsWith("-") }
-            if (validatedFlags.isNotEmpty()) {
-                jvmArgs(validatedFlags)
-            }
-        }
+        // Story 8.8: Pass libFuzzer time limit to Jazzer
+        // RESEARCH RESULT: 4 external agents unanimously confirm systemProperty() is correct
+        // Evidence: GitHub Issue #668, Jazzer v0.20.0 release notes, community examples
+        // Individual properties recommended (consistent with working jazzer.* properties above)
+        val maxTotalTime = System.getProperty("jazzer.max_total_time") ?: "1800"
+        systemProperty("jazzer.max_total_time", maxTotalTime)
+
+        // Optional: Additional recommended libFuzzer flags for JVM fuzzing
+        systemProperty("jazzer.rss_limit_mb", "8192") // Prevent OOM kills
+        systemProperty("jazzer.timeout", "60") // Detect hangs
     }
 
 // Exclude PBT from default test task (fast feedback loop)

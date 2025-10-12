@@ -84,7 +84,8 @@ jobs:
         # The timeout is hardcoded to 30 minutes (1800 seconds) as per Story 8.7 AC3.
         # This can be made configurable in a future iteration if needed.
         # Story 8.7: Set nightlyBuild property to enable nightly-only tests
-        run: ./gradlew fuzzTest -PnightlyBuild=true -Djazzer.flags="-max_total_time=1800"
+        # Story 8.8: Use jazzer.max_total_time property (research-validated approach)
+        run: ./gradlew fuzzTest -PnightlyBuild=true -Djazzer.max_total_time=1800
 
       - name: Save fuzz corpus
         if: ${{ always() }}
