@@ -98,8 +98,23 @@ val fuzzTest =
         testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
         classpath = sourceSets["fuzzTest"].runtimeClasspath
         useJUnitPlatform()
-        // Jazzer uses JUnit 5 engine for test execution
+
+        // Story 8.8: Fix corpus persistence for incremental fuzzing
+        // Create corpus directory before execution to enable corpus caching
+        doFirst {
+            val corpusDir = file("${project.projectDir}/.jazzer/corpus")
+            corpusDir.mkdirs()
+            logger.lifecycle("✅ Created Jazzer corpus directory: ${corpusDir.absolutePath}")
+        }
+
+        // Configure Jazzer for fuzzing mode (not just test mode)
         systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
+        systemProperty("jazzer.corpus_dir", "${project.projectDir}/.jazzer/corpus")
+        environment("JAZZER_FUZZ", "1")
+
+        // Note: Time limits should be configured per-test using @FuzzTest annotation
+        // or via environment variables. The GitHub Actions workflow uses -Djazzer.flags
+        // which is handled by the Jazzer agent directly.
     }
 
 // Exclude PBT from default test task (fast feedback loop)
