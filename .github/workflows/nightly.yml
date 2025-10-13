@@ -76,34 +76,49 @@ jobs:
         with:
           path: |
             framework/security/.cifuzz-corpus
-          key: fuzz-corpus-${{ github.sha }}
+          key: fuzz-corpus-${{ github.run_id }}
           restore-keys: |
             fuzz-corpus-
 
       - name: Run Fuzz Tests
         # Story 8.7 AC3: Fuzz testing with time limits
         # Story 8.8: EMPIRICAL FINDING - Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest per invocation
-        #            This is BY DESIGN (see https://github.com/CodeIntelligenceTesting/jazzer/issues/599)
-        # SOLUTION: Invoke fuzzTest task 3 times (once per fuzzer class)
-        #           - JwtFormatFuzzer: 1 test × 5min = 5min
-        #           - TokenExtractorFuzzer: 2 tests × 5min = 10min
-        #           - RoleNormalizationFuzzer: 4 tests × 5min = 20min
-        #           Total: 7 @FuzzTest methods, ~35-40 minutes with Gradle overhead
-        # VALIDATION: Each invocation runs all @FuzzTest methods in that class sequentially
+        #            This is EVEN MORE RESTRICTIVE than initially thought - filtering by class still runs only 1 method
+        #            Source: https://github.com/CodeIntelligenceTesting/jazzer/issues/599
+        # SOLUTION: Invoke fuzzTest task 7 times (once per @FuzzTest method)
+        #           Each invocation: ~5 minutes
+        #           Total: 7 methods × 5min = ~35-40 minutes with Gradle overhead
+        # CACHE: Uses github.run_id (not github.sha) to allow incremental fuzzing across runs
         run: |
-          echo "🔍 Starting fuzz testing (7 tests across 3 classes = ~35-40 minutes)"
+          echo "🔍 Starting fuzz testing (7 individual @FuzzTest methods = ~35-40 minutes)"
 
-          echo "▶️  Running JwtFormatFuzzer (1 test, ~5 min)..."
+          echo "▶️  [1/7] JwtFormatFuzzer.fuzzJwtBasicFormatValidation..."
           ./gradlew fuzzTest -PnightlyBuild=true \
-            --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer"
+            --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer.fuzzJwtBasicFormatValidation"
 
-          echo "▶️  Running TokenExtractorFuzzer (2 tests, ~10 min)..."
+          echo "▶️  [2/7] TokenExtractorFuzzer.fuzzTokenExtraction..."
           ./gradlew fuzzTest -PnightlyBuild=true \
-            --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer"
+            --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer.fuzzTokenExtraction"
 
-          echo "▶️  Running RoleNormalizationFuzzer (4 tests, ~20 min)..."
+          echo "▶️  [3/7] TokenExtractorFuzzer.fuzzTokenExtractionWithNull..."
           ./gradlew fuzzTest -PnightlyBuild=true \
-            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer"
+            --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer.fuzzTokenExtractionWithNull"
+
+          echo "▶️  [4/7] RoleNormalizationFuzzer.fuzzRoleNormalization..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer.fuzzRoleNormalization"
+
+          echo "▶️  [5/7] RoleNormalizationFuzzer.fuzzRoleNormalizationWithNull..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer.fuzzRoleNormalizationWithNull"
+
+          echo "▶️  [6/7] RoleNormalizationFuzzer.fuzzRoleNormalizationInjectionPatterns..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer.fuzzRoleNormalizationInjectionPatterns"
+
+          echo "▶️  [7/7] RoleNormalizationFuzzer.fuzzRoleNormalizationUnicodeAttacks..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer.fuzzRoleNormalizationUnicodeAttacks"
 
           echo "✅ All 7 fuzz tests completed successfully"
 
@@ -114,7 +129,7 @@ jobs:
           path: |
             framework/security/.cifuzz-corpus
             framework/security/.jazzer/crashes
-          key: fuzz-corpus-${{ github.sha }}
+          key: fuzz-corpus-${{ github.run_id }}
 
       - name: Run Mutation Testing
         run: ./gradlew pitest

@@ -101,13 +101,18 @@ val fuzzTest =
 
         // Story 8.8: Jazzer corpus and fuzzing configuration
         // CRITICAL LIMITATION: Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest per invocation
-        // WORKAROUND: GitHub Actions workflow invokes this task 3 times (once per fuzzer class)
-        //             - JwtFormatFuzzer (1 test × 5min = 5min)
-        //             - TokenExtractorFuzzer (2 tests × 5min = 10min)
-        //             - RoleNormalizationFuzzer (4 tests × 5min = 20min)
-        //             Total: 7 tests, ~35 minutes execution time
+        //                      Even filtering by class (--tests "...ClassName") runs only 1 method from that class!
+        // WORKAROUND: GitHub Actions workflow invokes this task 7 times (once per @FuzzTest method):
+        //             1. JwtFormatFuzzer.fuzzJwtBasicFormatValidation (5min)
+        //             2. TokenExtractorFuzzer.fuzzTokenExtraction (5min)
+        //             3. TokenExtractorFuzzer.fuzzTokenExtractionWithNull (5min)
+        //             4. RoleNormalizationFuzzer.fuzzRoleNormalization (5min)
+        //             5. RoleNormalizationFuzzer.fuzzRoleNormalizationWithNull (5min)
+        //             6. RoleNormalizationFuzzer.fuzzRoleNormalizationInjectionPatterns (5min)
+        //             7. RoleNormalizationFuzzer.fuzzRoleNormalizationUnicodeAttacks (5min)
+        //             Total: 7 methods × 5min = ~35-40 minutes with Gradle overhead
         // CORPUS DIRECTORY: Jazzer uses .cifuzz-corpus/<package>/<class>/<method>/ (cannot be overridden)
-        // CORPUS CACHING: GitHub Actions caches framework/security/.cifuzz-corpus between runs
+        // CORPUS CACHING: GitHub Actions caches with run_id-based keys for incremental fuzzing
 
         // Configure Jazzer for fuzzing mode (not just test mode)
         systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
@@ -123,9 +128,10 @@ val fuzzTest =
         //   - @FuzzTest(maxDuration="15s") → stopped at 16s ✅
         //   - @FuzzTest default "5m" → stopped at 301s ✅
         //   - Property jazzer.max_duration=20s → ignored, ran until Gradle timeout ❌
-        //   - JAZZER_FUZZ=1 → only first @FuzzTest executes per invocation ✅
+        //   - JAZZER_FUZZ=1 → only ONE @FuzzTest executes per invocation (even within same class) ✅
         // See: .ai/jazzer-flags-research-prompt.md for multi-agent research findings
         // See: https://github.com/CodeIntelligenceTesting/jazzer/issues/599 (Jazzer design limitation)
+        // See: Empirical validation from nightly runs #18453404174 (3/7 tests ran when filtering by class)
     }
 
 // Exclude PBT from default test task (fast feedback loop)
