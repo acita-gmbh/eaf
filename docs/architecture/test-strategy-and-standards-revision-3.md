@@ -817,12 +817,287 @@ jobs:
 
 1. **Model-Based Testing**: Perfect for CQRS aggregates (test command sequences)
 2. **Metamorphic Testing**: Test relationships (e.g., `normalize(role.toUpperCase()) == normalize(role)`)
-3. **Fuzz Testing with Jazzer**: Coverage-guided fuzzing for security boundaries (Google OSS-Fuzz standard)
+3. **Fuzz Testing with Jazzer**: ✅ **IMPLEMENTED** (Stories 8.6, 8.7, 8.8) - Coverage-guided fuzzing for security boundaries
 
-**Future Epic 9 Enhancements**:
+**Future Enhancements**:
 - Implement model-based testing for one aggregate (ROI: Very High)
-- Evaluate Jazzer fuzz testing for JWT validation (ROI: Extremely High for security)
 - Add metamorphic properties to existing property tests (ROI: High, Low effort)
+
+---
+
+## Fuzz Testing with Jazzer (Stories 8.6, 8.7, 8.8)
+
+### Overview
+
+**Status**: ✅ **Production** (Implemented October 2025)
+
+Coverage-guided fuzz testing using **Jazzer 0.24.0** (Google OSS-Fuzz standard) for security-critical code paths. Fuzzing runs in the nightly pipeline (2 AM UTC) to discover vulnerabilities through intelligent input generation.
+
+**Security Value**: Finds crashes, memory leaks, and injection vulnerabilities that example-based and property-based tests miss.
+
+### Fuzz Test Organization
+
+**Source Set Structure**:
+```text
+framework/security/src/
+├── test/kotlin/              # Example-based tests (PR pipeline)
+├── propertyTest/kotlin/      # Property-based tests (nightly)
+└── fuzzTest/kotlin/          # Fuzz tests (nightly only) ← NEW
+    ├── JwtFormatFuzzer.kt (1 @FuzzTest method)
+    ├── TokenExtractorFuzzer.kt (2 @FuzzTest methods)
+    └── RoleNormalizationFuzzer.kt (4 @FuzzTest methods)
+```
+
+**Total**: 7 @FuzzTest methods covering JWT validation, token extraction, and role normalization
+
+### Critical Jazzer Limitation (MUST UNDERSTAND)
+
+**EMPIRICAL DISCOVERY (Story 8.8):**
+
+Jazzer 0.24.0 with `JAZZER_FUZZ=1` has a **fundamental design limitation**:
+- **ONLY ONE** @FuzzTest method executes per JVM invocation
+- Filtering by class (e.g., `--tests "...RoleNormalizationFuzzer"`) still runs only 1 method from that class
+- Filtering by package, wildcard, or any other pattern: same result (1 method executes)
+
+**Source**: https://github.com/CodeIntelligenceTesting/jazzer/issues/599
+
+**Why This Exists**: Fuzzing runs are long (5+ minutes) and cannot cleanly share JVM state between tests.
+
+**Workaround**: Invoke `fuzzTest` task **once per @FuzzTest method** using explicit method filtering:
+
+```bash
+# Required pattern for all 7 tests
+./gradlew fuzzTest -PnightlyBuild=true --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer.fuzzJwtBasicFormatValidation"
+./gradlew fuzzTest -PnightlyBuild=true --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer.fuzzTokenExtraction"
+./gradlew fuzzTest -PnightlyBuild=true --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer.fuzzTokenExtractionWithNull"
+# ... (4 more for RoleNormalizationFuzzer)
+```
+
+**Nightly Pipeline Implementation**: `.github/workflows/nightly.yml` invokes `fuzzTest` 7 times sequentially.
+
+### Gradle Configuration
+
+```kotlin
+// framework/security/build.gradle.kts
+sourceSets {
+    create("fuzzTest") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+        kotlin.srcDir("src/fuzzTest/kotlin")
+    }
+}
+
+val fuzzTest = tasks.register<Test>("fuzzTest") {
+    group = "verification"
+    description = "Runs Jazzer fuzz tests (nightly/security validation)"
+    testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
+    classpath = sourceSets["fuzzTest"].runtimeClasspath
+    useJUnitPlatform()
+
+    // Enable Jazzer fuzzing mode
+    systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
+    environment("JAZZER_FUZZ", "1")
+
+    // IMPORTANT: corpus_dir system property is IGNORED by Jazzer
+    // Jazzer hardcodes: .cifuzz-corpus/<package>/<class>/<method>/
+    // Cannot be overridden
+}
+
+// Exclude from default test and mutation testing
+tasks.named<Test>("test") {
+    useJUnitPlatform { excludeTags("FUZZ") }
+}
+
+configure<PitestPluginExtension> {
+    excludedTestClasses.addAll("*Fuzzer", "*FuzzTest")
+}
+```
+
+### Fuzz Test Example
+
+```kotlin
+// framework/security/src/fuzzTest/kotlin/.../JwtFormatFuzzer.kt
+package com.axians.eaf.framework.security.fuzz
+
+import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import com.code_intelligence.jazzer.junit.FuzzTest
+
+/**
+ * Fuzzer for JWT format validation (Layers 1-3).
+ *
+ * PURPOSE: Find parsing errors, crashes, DoS vulnerabilities in JWT validation.
+ * EXECUTION: Nightly pipeline only (5 minutes per test).
+ */
+class JwtFormatFuzzer {
+    private val jwtPattern = Regex("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")
+    private val maxTokenSize = 8192
+
+    @FuzzTest  // Default: maxDuration = "5m"
+    fun fuzzJwtBasicFormatValidation(data: FuzzedDataProvider) {
+        val jwtString = data.consumeRemainingAsString()
+
+        try {
+            validateJwtFormat(jwtString)
+        } catch (e: OutOfMemoryError) {
+            throw e  // Report OOM as finding
+        } catch (e: StackOverflowError) {
+            throw e  // Report stack overflow (regex DoS)
+        } catch (e: Exception) {
+            // Expected for invalid input
+        }
+    }
+
+    private fun validateJwtFormat(token: String) {
+        when {
+            token.isBlank() -> error("Empty token")
+            !token.matches(jwtPattern) -> error("Invalid format")
+            token.length > maxTokenSize -> error("Token too large")
+            token.split(".").size != 3 -> error("Invalid structure")
+        }
+    }
+}
+```
+
+### Time Control (Annotation-Based Only)
+
+**CRITICAL**: Jazzer 0.24.0 JUnit integration **IGNORES** system properties for time limits.
+
+**What DOESN'T Work** (Empirically Proven - Story 8.8):
+```bash
+# ❌ These are all IGNORED by Jazzer
+./gradlew fuzzTest -Djazzer.max_duration=60
+./gradlew fuzzTest -Djazzer.flags="-max_total_time=1800"
+./gradlew fuzzTest -Djazzer.max_total_time=300
+```
+
+**What WORKS** (Only Solution):
+```kotlin
+@FuzzTest(maxDuration = "5m")  // ✅ Annotation parameter is the ONLY way
+fun fuzzMyCode(data: FuzzedDataProvider) {
+    // Will run for exactly 5 minutes
+}
+```
+
+**Limitations**:
+- Annotation values are **static** (cannot override at runtime)
+- Each test gets fixed duration (no dynamic time budgets)
+- Nightly pipeline timing: 7 tests × 5min = ~35-40 minutes total
+
+### Corpus Management
+
+**Corpus Directory** (Cannot Be Overridden):
+```
+framework/security/.cifuzz-corpus/
+└── com/axians/eaf/framework/security/fuzz/
+    ├── JwtFormatFuzzer/
+    │   └── fuzzJwtBasicFormatValidation/
+    │       ├── corpus_file_001
+    │       └── corpus_file_002
+    ├── TokenExtractorFuzzer/
+    │   ├── fuzzTokenExtraction/
+    │   └── fuzzTokenExtractionWithNull/
+    └── RoleNormalizationFuzzer/
+        ├── fuzzRoleNormalization/
+        ├── fuzzRoleNormalizationWithNull/
+        ├── fuzzRoleNormalizationInjectionPatterns/
+        └── fuzzRoleNormalizationUnicodeAttacks/
+```
+
+**GitHub Actions Caching** (Story 8.8):
+```yaml
+# Restore previous corpus for incremental fuzzing
+- name: Restore fuzz corpus
+  uses: actions/cache/restore@v4
+  with:
+    path: framework/security/.cifuzz-corpus
+    key: fuzz-corpus-${{ github.run_id }}     # Unique per workflow run
+    restore-keys: fuzz-corpus-                 # Falls back to most recent
+
+# Save corpus after fuzzing
+- name: Save fuzz corpus
+  if: ${{ always() }}
+  uses: actions/cache/save@v4
+  with:
+    path: framework/security/.cifuzz-corpus
+    key: fuzz-corpus-${{ github.run_id }}
+```
+
+**Cache Key Strategy**:
+- Use `github.run_id` (NOT `github.sha`) for incremental fuzzing
+- GitHub Actions caches are **immutable** (cannot update same key)
+- Each workflow run gets unique key
+- `restore-keys` finds most recent corpus from previous runs
+- **Corpus size**: ~6 KB for all 7 tests
+
+### Execution Commands
+
+**Nightly Pipeline (CI)**:
+```bash
+# Run all 7 fuzz tests (7 separate invocations required)
+echo "[1/7] JwtFormatFuzzer..."
+./gradlew fuzzTest -PnightlyBuild=true \
+  --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer.fuzzJwtBasicFormatValidation"
+
+echo "[2/7] TokenExtractorFuzzer.fuzzTokenExtraction..."
+./gradlew fuzzTest -PnightlyBuild=true \
+  --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer.fuzzTokenExtraction"
+
+# ... (5 more invocations)
+```
+
+**Local Development**:
+```bash
+# Quick fuzz test (single method, ~5 min)
+./gradlew fuzzTest -PnightlyBuild=true \
+  --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer.fuzzJwtBasicFormatValidation"
+
+# Check corpus generated
+find framework/security/.cifuzz-corpus -type f
+```
+
+### Corpus Quality Metrics
+
+**From Production Runs** (Story 8.8 Validation):
+
+| Fuzzer Method | Corpus Files | Coverage | Notable Findings |
+|---------------|--------------|----------|------------------|
+| fuzzJwtBasicFormatValidation | 3 | cov:11, ft:11 | JWT structure patterns |
+| fuzzTokenExtraction | 2 | cov:12, ft:12 | "Bearer " protocol discovered |
+| fuzzTokenExtractionWithNull | 1 | cov:7, ft:7 | Null handling |
+| fuzzRoleNormalization | **30** | cov:56, ft:103 | Complex role logic, ROLE_ patterns |
+| fuzzRoleNormalizationWithNull | 1 | cov:6, ft:6 | Null handling |
+| fuzzRoleNormalizationInjectionPatterns | **21** | cov:41, ft:72 | SQL/shell injection resistance |
+| fuzzRoleNormalizationUnicodeAttacks | **22** | cov:51, ft:82 | Homograph attacks (Cyrillic) |
+
+**Total**: ~80 corpus files across 7 methods, **zero crashes** (robust security validated)
+
+### Integration with Nightly Pipeline
+
+```yaml
+# .github/workflows/nightly.yml (excerpt)
+- name: Run Fuzz Tests
+  run: |
+    # 7 invocations required (Jazzer JAZZER_FUZZ=1 limitation)
+    echo "▶️  [1/7] JwtFormatFuzzer.fuzzJwtBasicFormatValidation..."
+    ./gradlew fuzzTest -PnightlyBuild=true \
+      --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer.fuzzJwtBasicFormatValidation"
+
+    # ... (6 more invocations)
+
+    echo "✅ All 7 fuzz tests completed successfully"
+```
+
+**Total Execution Time**: ~35-40 minutes (7 × 5min + Gradle overhead)
+**Pipeline Timeout**: 50 minutes (30% safety margin)
+
+### Key Empirical Findings (Story 8.8)
+
+1. **Per-Method Invocation Required**: Cannot run multiple @FuzzTest methods in one invocation
+2. **Corpus Directory Hardcoded**: `.cifuzz-corpus/` path cannot be overridden via system properties
+3. **Time Limits Annotation-Only**: Runtime flags (`-Djazzer.flags`) are completely ignored
+4. **Cache Keys Use run_id**: Required for incremental fuzzing (caches are immutable)
+
+**Reference**: See Story 8.8 QA Results for detailed validation metrics and empirical evidence
 
 ---
 
