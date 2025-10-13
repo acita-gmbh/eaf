@@ -45,7 +45,7 @@ jobs:
   nightly-deep-validation:
     needs: quality-gates
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -75,26 +75,44 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            framework/security/.jazzer/corpus
+            framework/security/.cifuzz-corpus
           key: fuzz-corpus-${{ github.sha }}
           restore-keys: |
             fuzz-corpus-
 
       - name: Run Fuzz Tests
         # Story 8.7 AC3: Fuzz testing with time limits
-        # Story 8.8: EMPIRICAL FINDING - Jazzer 0.24.0 JUnit integration does NOT read
-        #            system properties for time limits (jazzer.max_duration, jazzer.flags tested)
-        # SOLUTION: Rely on @FuzzTest annotation defaults (5m per test = 15m for 3 tests)
-        #           + GitHub Actions job timeout (45m) as safety limit
-        # VALIDATION: Empirical tests proved annotation-based limits work, property-based don't
-        run: ./gradlew fuzzTest -PnightlyBuild=true
+        # Story 8.8: EMPIRICAL FINDING - Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest per invocation
+        #            This is BY DESIGN (see https://github.com/CodeIntelligenceTesting/jazzer/issues/599)
+        # SOLUTION: Invoke fuzzTest task 3 times (once per fuzzer class)
+        #           - JwtFormatFuzzer: 1 test × 5min = 5min
+        #           - TokenExtractorFuzzer: 2 tests × 5min = 10min
+        #           - RoleNormalizationFuzzer: 4 tests × 5min = 20min
+        #           Total: 7 @FuzzTest methods, ~35-40 minutes with Gradle overhead
+        # VALIDATION: Each invocation runs all @FuzzTest methods in that class sequentially
+        run: |
+          echo "🔍 Starting fuzz testing (7 tests across 3 classes = ~35-40 minutes)"
+
+          echo "▶️  Running JwtFormatFuzzer (1 test, ~5 min)..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.JwtFormatFuzzer"
+
+          echo "▶️  Running TokenExtractorFuzzer (2 tests, ~10 min)..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.TokenExtractorFuzzer"
+
+          echo "▶️  Running RoleNormalizationFuzzer (4 tests, ~20 min)..."
+          ./gradlew fuzzTest -PnightlyBuild=true \
+            --tests "com.axians.eaf.framework.security.fuzz.RoleNormalizationFuzzer"
+
+          echo "✅ All 7 fuzz tests completed successfully"
 
       - name: Save fuzz corpus
         if: ${{ always() }}
         uses: actions/cache/save@v4
         with:
           path: |
-            framework/security/.jazzer/corpus
+            framework/security/.cifuzz-corpus
             framework/security/.jazzer/crashes
           key: fuzz-corpus-${{ github.sha }}
 

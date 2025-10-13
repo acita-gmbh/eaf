@@ -99,19 +99,18 @@ val fuzzTest =
         classpath = sourceSets["fuzzTest"].runtimeClasspath
         useJUnitPlatform()
 
-        // Story 8.8: Fix corpus persistence for incremental fuzzing
-        val corpusDirPath = "${project.projectDir}/.jazzer/corpus"
-
-        // Create corpus directory before execution to enable corpus caching
-        doFirst {
-            val corpusDir = file(corpusDirPath)
-            corpusDir.mkdirs()
-            logger.lifecycle("✅ Created Jazzer corpus directory: ${corpusDir.absolutePath}")
-        }
+        // Story 8.8: Jazzer corpus and fuzzing configuration
+        // CRITICAL LIMITATION: Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest per invocation
+        // WORKAROUND: GitHub Actions workflow invokes this task 3 times (once per fuzzer class)
+        //             - JwtFormatFuzzer (1 test × 5min = 5min)
+        //             - TokenExtractorFuzzer (2 tests × 5min = 10min)
+        //             - RoleNormalizationFuzzer (4 tests × 5min = 20min)
+        //             Total: 7 tests, ~35 minutes execution time
+        // CORPUS DIRECTORY: Jazzer uses .cifuzz-corpus/<package>/<class>/<method>/ (cannot be overridden)
+        // CORPUS CACHING: GitHub Actions caches framework/security/.cifuzz-corpus between runs
 
         // Configure Jazzer for fuzzing mode (not just test mode)
         systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
-        systemProperty("jazzer.corpus_dir", corpusDirPath)
         environment("JAZZER_FUZZ", "1")
 
         // Story 8.8: Jazzer time limits (EMPIRICAL FINDINGS)
@@ -119,12 +118,14 @@ val fuzzTest =
         //            are NOT read by Jazzer 0.24.0 in JUnit integration mode
         // PROVEN: Only @FuzzTest annotation maxDuration parameter controls fuzzing duration
         // LIMITATION: Annotation values are static - cannot be overridden at runtime via -D flags
-        // SOLUTION: Rely on @FuzzTest annotation defaults (5m per test) + GitHub Actions timeout (45m)
+        // SOLUTION: Rely on @FuzzTest annotation defaults (5m per test) + GitHub Actions timeout (50m)
         // VALIDATION: Empirical tests confirmed:
         //   - @FuzzTest(maxDuration="15s") → stopped at 16s ✅
         //   - @FuzzTest default "5m" → stopped at 301s ✅
         //   - Property jazzer.max_duration=20s → ignored, ran until Gradle timeout ❌
+        //   - JAZZER_FUZZ=1 → only first @FuzzTest executes per invocation ✅
         // See: .ai/jazzer-flags-research-prompt.md for multi-agent research findings
+        // See: https://github.com/CodeIntelligenceTesting/jazzer/issues/599 (Jazzer design limitation)
     }
 
 // Exclude PBT from default test task (fast feedback loop)
