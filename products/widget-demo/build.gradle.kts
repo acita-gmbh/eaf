@@ -39,7 +39,7 @@ dependencies {
     testImplementation(project(":shared:testing"))
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
-    testImplementation("org.hamcrest:hamcrest:2.2")
+    testImplementation("org.hamcrest:hamcrest:3.0")
     testImplementation(libs.bundles.testcontainers)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
