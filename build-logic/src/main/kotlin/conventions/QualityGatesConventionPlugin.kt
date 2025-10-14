@@ -44,31 +44,33 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 ?: "com.axians.eaf"
 
             configure<DependencyCheckExtension> {
-                failBuildOnCVSS = 7.0f
-                formats = mutableListOf(
-                    ReportGenerator.Format.HTML.name,
-                    ReportGenerator.Format.JSON.name
+                failBuildOnCVSS.set(7.0f)
+                formats.set(
+                    listOf(
+                        ReportGenerator.Format.HTML.name,
+                        ReportGenerator.Format.JSON.name
+                    )
                 )
                 analyzers.apply {
-                    assemblyEnabled = false
+                    assemblyEnabled.set(false)
                     // Disable OSS Index to avoid rate limiting issues
-                    ossIndexEnabled = false
+                    ossIndexEnabled.set(false)
                 }
                 data {
                     sequenceOf(
                         System.getenv("DEPENDENCY_CHECK_DATA_DIR"),
                         System.getenv("GRADLE_USER_HOME")?.let { "$it/dependency-check-data" }
                     ).firstOrNull { !it.isNullOrBlank() }
-                        ?.let { directory = it }
+                        ?.let { directory.set(it) }
                 }
                 nvd.apply {
-                    val apiKey = sequenceOf(
+                    val apiKeyValue = sequenceOf(
                         System.getenv("NVD_API_KEY"),
                         System.getenv("DEPENDENCY_CHECK_NVD_API_KEY"),
                         this@with.findProperty("nvd.apiKey") as? String
                     ).firstOrNull { !it.isNullOrBlank() }?.trim()
 
-                    apiKey?.let { this.apiKey = it }
+                    apiKeyValue?.let { apiKey.set(it) }
                 }
             }
 
