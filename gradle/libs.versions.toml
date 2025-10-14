@@ -28,7 +28,7 @@ testcontainers = "1.21.3" # Integration testing with real dependencies (stabilit
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
 detekt = "1.23.8"         # Static analysis (latest stable - Kotlin 2.0.x, incompatible with 2.2.x)
 konsist = "0.17.3"        # Architecture testing
-pitest = "1.19.0-rc.1"    # Gradle plugin version (Gradle 9 compatible)
+pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
 pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
 kover = "0.9.2"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
@@ -42,7 +42,7 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
 logback = "1.5.19"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
-opentelemetry-bom = "1.54.1"  # Latest stable OpenTelemetry for distributed tracing
+opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
 opentelemetry-instrumentation = "2.20.1"  # Spring Boot auto-instrumentation (latest stable)
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.17.0"     # IO utilities (security update)
@@ -64,7 +64,7 @@ picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
 mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 
 # Fuzz Testing (Story 8.6)
-jazzer = "0.24.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
+jazzer = "0.25.1"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
