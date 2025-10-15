@@ -80,8 +80,12 @@ class JwtClaimsValidator(
     companion object {
         private const val CLOCK_SKEW_TOLERANCE_SECONDS = 60L
         private const val MAX_TOKEN_AGE_HOURS = 24L
-        private const val EXPECTED_ISSUER = "http://localhost:8180/realms/eaf"
-        private const val EXPECTED_AUDIENCE = "eaf-backend"
+
+        // Story 9.1: Match deployed Keycloak realm
+        private const val EXPECTED_ISSUER = "http://localhost:8180/realms/eaf-test"
+
+        // Story 9.1: Keycloak default audience for password grant
+        private const val EXPECTED_AUDIENCE = "account"
     }
 
     fun validateClaimSchema(jwt: Jwt): Either<SecurityError, JwtClaims> {

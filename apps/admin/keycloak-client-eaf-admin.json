@@ -1,0 +1,26 @@
+{
+  "clientId": "eaf-admin",
+  "name": "EAF Admin Portal",
+  "description": "React-Admin portal for EAF administration",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": true,
+  "directAccessGrantsEnabled": true,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": false,
+  "authorizationServicesEnabled": false,
+  "redirectUris": [
+    "http://localhost:5174/*",
+    "http://localhost:5173/*",
+    "http://localhost:3000/*"
+  ],
+  "webOrigins": [
+    "http://localhost:5174",
+    "http://localhost:5173",
+    "http://localhost:3000"
+  ],
+  "attributes": {
+    "post.logout.redirect.uris": "http://localhost:5174/*##http://localhost:5173/*##http://localhost:3000/*"
+  }
+}

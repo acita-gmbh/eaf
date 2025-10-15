@@ -1,16 +1,31 @@
+# OpenTelemetry Configuration - Disable auto-configuration (Story 8.4 pattern)
+# Required to avoid ClassNotFoundException for missing OpenTelemetry dependencies
+otel:
+  java:
+    global-autoconfigure:
+      enabled: false
+  sdk:
+    disabled: true
+  traces:
+    exporter: none
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
 spring:
   application:
     name: eaf-widget-demo
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/eaf_widget_demo
-    username: eaf_user
-    password: eaf_pass
+    url: jdbc:postgresql://localhost:5432/eaf
+    username: eaf
+    password: eaf
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update  # Dev environment - auto-create Axon tables
     show-sql: false
     properties:
       hibernate:
@@ -20,7 +35,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/eaf
+          issuer-uri: http://localhost:8180/realms/eaf-test
 
 # Axon Framework
 axon:

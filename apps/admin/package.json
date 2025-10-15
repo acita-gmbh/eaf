@@ -1,0 +1,29 @@
+{
+  "name": "@eaf/admin-portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@axians/eaf-admin-shell": "workspace:*",
+    "@eaf/product-widget-demo-ui": "workspace:*",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "react": "^18.3.1",
+    "react-admin": "5.4.0",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.0",
+    "vite-plugin-externalize-deps": "^0.10.0"
+  }
+}
