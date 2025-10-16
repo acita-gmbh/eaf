@@ -25,8 +25,8 @@ eaf:
       # Test environment CORS configuration
       allowed-origin-patterns: http://localhost:3000,http://localhost:8080,http://localhost:*
     jwt:
-      expected-issuer: "http://localhost:8180/realms/eaf"
-      expected-audience: "eaf-backend"
+      expected-issuer: "http://localhost:8180/realms/eaf-test"
+      expected-audience: "account"
 
 axon:
   axonserver:
