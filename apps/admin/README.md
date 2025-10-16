@@ -83,9 +83,9 @@ Configuration is managed via `.env` files:
 
 ### `.env.development` (Local Development)
 ```env
-VITE_API_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8081
 VITE_KEYCLOAK_URL=http://localhost:8180
-VITE_KEYCLOAK_REALM=eaf
+VITE_KEYCLOAK_REALM=eaf-test
 VITE_KEYCLOAK_CLIENT=eaf-admin
 ```
 

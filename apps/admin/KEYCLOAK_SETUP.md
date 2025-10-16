@@ -172,7 +172,7 @@ Visit https://jwt.io and paste the access_token. Verify payload contains:
 For automated setup, use:
 
 ```bash
-/Users/michael/acci_eaf/scripts/configure-keycloak-story-9.1.sh
+./scripts/configure-keycloak-story-9.1.sh
 ```
 
 This script automates all configuration steps above using Keycloak Admin REST API.
