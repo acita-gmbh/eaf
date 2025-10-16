@@ -22,6 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
  * Requires JWT authentication and enables method-level @PreAuthorize annotations.
  *
  * Story 6.3: Product-specific security configuration pattern
+ * Story 9.1 Security Fix: Environment-aware CORS configuration via Spring properties
  */
 @Configuration
 @EnableMethodSecurity // Enable @PreAuthorize annotations
@@ -34,6 +35,8 @@ open class WidgetSecurityConfiguration(
         org.springframework.security.oauth2.jwt.Jwt,
         org.springframework.security.authentication.AbstractAuthenticationToken,
     >,
+    @param:org.springframework.beans.factory.annotation.Value("\${eaf.security.cors.allowed-origins:http://localhost:5173}")
+    private val allowedOrigins: String,
 ) {
     @Bean
     open fun widgetSecurityFilterChain(http: HttpSecurity): SecurityFilterChain =
@@ -77,20 +80,25 @@ open class WidgetSecurityConfiguration(
             }.build()
 
     /**
-     * CORS configuration for React-Admin frontend
-     * Story 9.1: Allow cross-origin requests from localhost development servers
+     * CORS configuration for React-Admin frontend.
+     * Story 9.1: Environment-aware CORS via configuration properties.
+     *
+     * Configuration:
+     * - Dev: eaf.security.cors.allowed-origins=http://localhost:5173,http://localhost:5174
+     * - Prod: EAF_SECURITY_CORS_ALLOWED_ORIGINS=https://admin.eaf.example.com
      */
     @Bean
     open fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins =
-            listOf(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:3000",
-            )
+        configuration.allowedOrigins = allowedOrigins.split(",").map { it.trim() }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-        configuration.allowedHeaders = listOf("*")
+        configuration.allowedHeaders =
+            listOf(
+                "Authorization", // JWT bearer tokens
+                "Content-Type", // Request body format
+                "Accept", // Response format
+                "Range", // Pagination support
+            )
         configuration.allowCredentials = true
         configuration.exposedHeaders = listOf("Content-Range", "X-Total-Count")
 

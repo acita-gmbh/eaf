@@ -1,7 +1,0 @@
-{
-  "extends": "../../../framework/admin-shell/tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
-  "include": ["src"]
-}

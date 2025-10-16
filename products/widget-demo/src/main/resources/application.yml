@@ -51,6 +51,8 @@ eaf:
     tenant-propagation:
       enabled: true  # Default, explicitly shown for documentation
   security:
+    cors:
+      allowed-origins: "${EAF_SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:3000}"
     jwt:
       expected-issuer: "${EAF_JWT_ISSUER:http://localhost:8180/realms/eaf-test}"
       expected-audience: "${EAF_JWT_AUDIENCE:account}"  # TODO: Use app-specific audience (e.g., 'widget-backend') in production
