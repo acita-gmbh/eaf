@@ -31,6 +31,9 @@ eaf:
       # Configure allowed origins for CORS requests (comma-separated)
       # For production, set via environment variable: EAF_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS
       allowed-origin-patterns: ${EAF_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:8080}
+    jwt:
+      expected-issuer: "${EAF_JWT_ISSUER:http://localhost:8180/realms/eaf}"
+      expected-audience: "${EAF_JWT_AUDIENCE:eaf-backend}"
 
 # Axon Framework configuration
 axon:

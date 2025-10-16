@@ -21,7 +21,12 @@ class TenLayerJwtValidatorTest : BehaviorSpec() {
     private val validator =
         TenLayerJwtValidator(
             formatValidator = JwtFormatValidator(nullableJwtDecoder, meterRegistry),
-            claimsValidator = JwtClaimsValidator(meterRegistry),
+            claimsValidator =
+                JwtClaimsValidator(
+                    meterRegistry,
+                    expectedIssuer = "http://localhost:8180/realms/eaf-test",
+                    expectedAudience = "account",
+                ),
             securityValidator = JwtSecurityValidator(nullableRedisTemplate, meterRegistry),
             meterRegistry = meterRegistry,
         )

@@ -3,6 +3,7 @@ package com.axians.eaf.products.widgetdemo
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.runApplication
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 
 /**
  * Widget Demo Application - Reference implementation for EAF framework.
@@ -61,6 +62,7 @@ import org.springframework.boot.runApplication
         "org.axonframework.modelling.saga.repository.jpa",
     ],
 )
+@EnableAspectJAutoProxy // Story 9.1: Enable AOP for TenantDatabaseSessionInterceptor (RLS session variable)
 class WidgetDemoApplication
 
 fun main(args: Array<String>) {

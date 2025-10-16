@@ -59,8 +59,8 @@ class NullableJwtDecoder private constructor(
         val resolvedRoles = roles ?: defaultRoles
         val resolvedTenant = tenantId ?: defaultClaims["tenant_id"] as? String ?: DEFAULT_TENANT_ID
         val resolvedSubject = defaultClaims["sub"] as? String ?: UUID.randomUUID().toString()
-        val resolvedIssuer = defaultClaims["iss"] as? String ?: "http://localhost:8180/realms/eaf"
-        val resolvedAudience = defaultClaims["aud"] ?: "eaf-backend"
+        val resolvedIssuer = defaultClaims["iss"] as? String ?: "http://localhost:8180/realms/eaf-test"
+        val resolvedAudience = defaultClaims["aud"] ?: "account"
         val resolvedJti = defaultClaims["jti"] as? String ?: UUID.randomUUID().toString()
         val resolvedSession = defaultClaims["session_state"] as? String ?: UUID.randomUUID().toString()
         val headers =

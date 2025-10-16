@@ -1,16 +1,31 @@
+# OpenTelemetry Configuration - Disable auto-configuration (Story 8.4 pattern)
+# Required to avoid ClassNotFoundException for missing OpenTelemetry dependencies
+otel:
+  java:
+    global-autoconfigure:
+      enabled: false
+  sdk:
+    disabled: true
+  traces:
+    exporter: none
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
 spring:
   application:
     name: eaf-widget-demo
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/eaf_widget_demo
-    username: eaf_user
-    password: eaf_pass
+    url: jdbc:postgresql://localhost:5432/eaf
+    username: eaf
+    password: eaf
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update  # Dev environment - auto-create Axon tables
     show-sql: false
     properties:
       hibernate:
@@ -20,7 +35,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/eaf
+          issuer-uri: http://localhost:8180/realms/eaf-test
 
 # Axon Framework
 axon:
@@ -35,6 +50,12 @@ eaf:
   cqrs:
     tenant-propagation:
       enabled: true  # Default, explicitly shown for documentation
+  security:
+    cors:
+      allowed-origins: "${EAF_SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:3000}"
+    jwt:
+      expected-issuer: "${EAF_JWT_ISSUER:http://localhost:8180/realms/eaf-test}"
+      expected-audience: "${EAF_JWT_AUDIENCE:account}"  # TODO: Use app-specific audience (e.g., 'widget-backend') in production
 
 # Server
 server:

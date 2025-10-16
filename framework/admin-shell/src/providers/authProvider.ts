@@ -181,6 +181,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
  * @param _clientId - Client ID
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error - Function reserved for future token refresh implementation
 async function refreshAccessToken(_tokenEndpoint: string, _clientId: string): Promise<void> {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
@@ -196,7 +197,7 @@ async function refreshAccessToken(_tokenEndpoint: string, _clientId: string): Pr
     body: new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: clientId,
+      client_id: _clientId,
     }),
   });
 

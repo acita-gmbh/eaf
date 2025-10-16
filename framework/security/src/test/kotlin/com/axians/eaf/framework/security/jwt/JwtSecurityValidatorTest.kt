@@ -43,9 +43,11 @@ class JwtSecurityValidatorTest :
                 meterRegistry.counter("jwt.validation.revoked").count() shouldBe 1.0
             }
 
-            test("should pass (fail-open) if Redis connection fails") {
-                // NullableRedisTemplate doesn't throw - testing actual implementation behavior
-                // In production, RedisConnectionFailureException is caught and token allowed
+            test("should succeed when Redis available and JTI not revoked (happy path)") {
+                // This validates the success case: Redis available, token not in revocation list
+                // NOTE: NullableRedisTemplate doesn't throw RedisConnectionFailureException
+                // TODO (Story 9.1 Security): Add integration test with real Redis to validate fail-closed
+                //      behavior when Redis connection fails (requires Testcontainers Redis + connection stop)
                 validator.ensureNotRevoked(jti).shouldBeRight()
             }
         }

@@ -31,6 +31,13 @@ security:
       jwt:
         issuer-uri: http://localhost:8080/test-realm
 
+# EAF Security Configuration (for JWT validation Layer 6)
+eaf:
+  security:
+    jwt:
+      expected-issuer: "http://localhost:8080/test-realm"
+      expected-audience: "test-audience"
+
 # Framework-specific test properties
 framework:
   security:

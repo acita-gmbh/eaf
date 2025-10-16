@@ -25,7 +25,12 @@ class JwtClaimsValidatorTest :
 
         beforeTest {
             meterRegistry = SimpleMeterRegistry()
-            validator = JwtClaimsValidator(meterRegistry)
+            validator =
+                JwtClaimsValidator(
+                    meterRegistry,
+                    expectedIssuer = "http://localhost:8180/realms/eaf-test",
+                    expectedAudience = "account",
+                )
             nullableJwtDecoder = NullableJwtDecoder.createNull()
         }
 
@@ -55,8 +60,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = now.plusSeconds(300).epochSecond,
                         iat = now.minusSeconds(100).epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -72,8 +77,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = expiryTime.epochSecond,
                         iat = now.minusSeconds(500).epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -92,8 +97,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = expiryTime.epochSecond,
                         iat = now.minusSeconds(500).epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -109,8 +114,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = issueTime.plusSeconds(300).epochSecond,
                         iat = issueTime.epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -129,8 +134,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = issueTime.plusSeconds(300).epochSecond,
                         iat = issueTime.epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -146,8 +151,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = now.plusSeconds(300).epochSecond,
                         iat = issueTime.epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -166,8 +171,8 @@ class JwtClaimsValidatorTest :
                 val claims =
                     JwtClaims(
                         sub = UUID.randomUUID().toString(),
-                        iss = "http://localhost:8180/realms/eaf",
-                        aud = "eaf-backend",
+                        iss = "http://localhost:8180/realms/eaf-test",
+                        aud = "account",
                         exp = now.plusSeconds(300).epochSecond,
                         iat = issueTime.epochSecond,
                         jti = UUID.randomUUID().toString(),
@@ -180,8 +185,8 @@ class JwtClaimsValidatorTest :
         }
 
         context("8.6-UNIT-JCV-003: validateIssuerAudience (Layer 6)") {
-            val expectedIssuer = "http://localhost:8180/realms/eaf"
-            val expectedAudience = "eaf-backend"
+            val expectedIssuer = "http://localhost:8180/realms/eaf-test" // Story 9.1: Match deployed realm
+            val expectedAudience = "account" // Story 9.1: Keycloak default audience
 
             test("should pass for correct issuer and audience") {
                 val claims =

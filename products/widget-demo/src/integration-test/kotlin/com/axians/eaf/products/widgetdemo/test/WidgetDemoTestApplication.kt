@@ -54,8 +54,8 @@ open class WidgetDemoTestApplication {
             defaultClaims =
                 mapOf(
                     "tenant_id" to "550e8400-e29b-41d4-a716-446655440000",
-                    "iss" to "http://localhost:8180/realms/eaf",
-                    "aud" to "eaf-backend",
+                    "iss" to "http://localhost:8180/realms/eaf-test",
+                    "aud" to "account",
                 ),
             defaultRoles = listOf("USER", "widget:create", "widget:read"),
         )
@@ -73,7 +73,12 @@ open class WidgetDemoTestApplication {
 
     @Bean
     @Primary
-    open fun testJwtClaimsValidator(meterRegistry: MeterRegistry): JwtClaimsValidator = JwtClaimsValidator(meterRegistry)
+    open fun testJwtClaimsValidator(meterRegistry: MeterRegistry): JwtClaimsValidator =
+        JwtClaimsValidator(
+            meterRegistry,
+            expectedIssuer = "http://localhost:8180/realms/eaf-test",
+            expectedAudience = "account",
+        )
 
     @Bean
     @Primary

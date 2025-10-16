@@ -71,17 +71,20 @@ class JwtFormatValidator(
  * JWT claims and timing validation (Layers 4-6).
  *
  * Story 6.2: Added @Profile("!test") to prevent loading in test environments.
+ * Story 9.1 Security Fix: Externalized issuer/audience for environment-specific configuration
  */
 @Component
 @Profile("!test") // Story 6.2: Requires live infrastructure validation
 class JwtClaimsValidator(
     private val meterRegistry: MeterRegistry,
+    @param:org.springframework.beans.factory.annotation.Value("\${eaf.security.jwt.expected-issuer}")
+    private val expectedIssuer: String,
+    @param:org.springframework.beans.factory.annotation.Value("\${eaf.security.jwt.expected-audience}")
+    private val expectedAudience: String,
 ) {
     companion object {
         private const val CLOCK_SKEW_TOLERANCE_SECONDS = 60L
         private const val MAX_TOKEN_AGE_HOURS = 24L
-        private const val EXPECTED_ISSUER = "http://localhost:8180/realms/eaf"
-        private const val EXPECTED_AUDIENCE = "eaf-backend"
     }
 
     fun validateClaimSchema(jwt: Jwt): Either<SecurityError, JwtClaims> {
@@ -172,23 +175,23 @@ class JwtClaimsValidator(
 
     fun validateIssuerAudience(claims: JwtClaims): Either<SecurityError, Unit> =
         when {
-            claims.iss != EXPECTED_ISSUER -> {
+            claims.iss != expectedIssuer -> {
                 meterRegistry
                     .counter(
                         "jwt.validation.invalid_issuer",
                         "issuer",
                         claims.iss,
                     ).increment()
-                SecurityError.InvalidIssuer(claims.iss, EXPECTED_ISSUER).left()
+                SecurityError.InvalidIssuer(claims.iss, expectedIssuer).left()
             }
-            claims.aud != EXPECTED_AUDIENCE -> {
+            claims.aud != expectedAudience -> {
                 meterRegistry
                     .counter(
                         "jwt.validation.invalid_audience",
                         "audience",
                         claims.aud,
                     ).increment()
-                SecurityError.InvalidAudience(claims.aud, EXPECTED_AUDIENCE).left()
+                SecurityError.InvalidAudience(claims.aud, expectedAudience).left()
             }
             else -> Unit.right()
         }
@@ -235,16 +238,21 @@ class JwtSecurityValidator(
                 Unit.right()
             }
         } catch (e: org.springframework.data.redis.RedisConnectionFailureException) {
-            // If Redis is unavailable, fail securely
+            // SECURITY: Fail-closed when Redis unavailable (emergency recovery requires revocation capability)
             meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
-            logger.warn("Redis connection failed, allowing token: ${e.message}")
-            // For stubbed implementation, allow token when Redis unavailable
-            Unit.right()
+            logger.error("Redis connection failed, BLOCKING token: ${e.message}")
+            SecurityError
+                .RevocationCheckFailed(
+                    "Token revocation verification unavailable",
+                ).left()
         } catch (e: org.springframework.dao.DataAccessException) {
-            // If Redis data access fails, fail securely
+            // SECURITY: Fail-closed when Redis data access fails
             meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
-            logger.warn("Redis data access failed, allowing token: ${e.message}")
-            Unit.right()
+            logger.error("Redis data access failed, BLOCKING token: ${e.message}")
+            SecurityError
+                .RevocationCheckFailed(
+                    "Token revocation verification unavailable",
+                ).left()
         }
 
     fun validateRoles(roleNames: List<String>): Either<SecurityError, Set<Role>> {

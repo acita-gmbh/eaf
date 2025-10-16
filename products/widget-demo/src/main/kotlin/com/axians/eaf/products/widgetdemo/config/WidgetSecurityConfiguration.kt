@@ -11,6 +11,9 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 /**
  * Product-specific security configuration for Widget API endpoints.
@@ -19,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain
  * Requires JWT authentication and enables method-level @PreAuthorize annotations.
  *
  * Story 6.3: Product-specific security configuration pattern
+ * Story 9.1 Security Fix: Environment-aware CORS configuration via Spring properties
  */
 @Configuration
 @EnableMethodSecurity // Enable @PreAuthorize annotations
@@ -27,16 +31,26 @@ open class WidgetSecurityConfiguration(
     private val jwtValidationFilter: JwtValidationFilter,
     private val tenantContextFilter: TenantContextFilter,
     private val jwtDecoder: JwtDecoder,
+    private val jwtAuthenticationConverter: org.springframework.core.convert.converter.Converter<
+        org.springframework.security.oauth2.jwt.Jwt,
+        org.springframework.security.authentication.AbstractAuthenticationToken,
+    >,
+    @param:org.springframework.beans.factory.annotation.Value("\${eaf.security.cors.allowed-origins:http://localhost:5173}")
+    private val allowedOrigins: String,
 ) {
     @Bean
     open fun widgetSecurityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
             .securityMatcher("/widgets/**")
-            .authorizeHttpRequests { authorize ->
+            .cors { cors ->
+                // Story 9.1: Enable CORS for React-Admin frontend development
+                cors.configurationSource(corsConfigurationSource())
+            }.authorizeHttpRequests { authorize ->
                 authorize.anyRequest().authenticated()
             }.oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->
                     jwt.decoder(jwtDecoder)
+                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter) // Story 9.1: Extract Keycloak roles
                 }
             }.addFilterAfter(jwtValidationFilter, BearerTokenAuthenticationFilter::class.java)
             .addFilterAfter(tenantContextFilter, JwtValidationFilter::class.java)
@@ -64,4 +78,32 @@ open class WidgetSecurityConfiguration(
             }.sessionManagement { session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }.build()
+
+    /**
+     * CORS configuration for React-Admin frontend.
+     * Story 9.1: Environment-aware CORS via configuration properties.
+     *
+     * Configuration:
+     * - Dev: eaf.security.cors.allowed-origins=http://localhost:5173,http://localhost:5174
+     * - Prod: EAF_SECURITY_CORS_ALLOWED_ORIGINS=https://admin.eaf.example.com
+     */
+    @Bean
+    open fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.allowedOrigins = allowedOrigins.split(",").map { it.trim() }
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+        configuration.allowedHeaders =
+            listOf(
+                "Authorization", // JWT bearer tokens
+                "Content-Type", // Request body format
+                "Accept", // Response format
+                "Range", // Pagination support
+            )
+        configuration.allowCredentials = true
+        configuration.exposedHeaders = listOf("Content-Range", "X-Total-Count")
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration)
+        return source
+    }
 }

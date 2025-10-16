@@ -57,8 +57,8 @@ class NullableJwtDecoder : JwtDecoder {
         val claims =
             mutableMapOf<String, Any>(
                 "sub" to UUID.randomUUID().toString(),
-                "iss" to "http://localhost:8180/realms/eaf",
-                "aud" to listOf("eaf-backend"),
+                "iss" to "http://localhost:8180/realms/eaf-test", // Story 9.1: Match deployed realm
+                "aud" to listOf("account"), // Story 9.1: Keycloak default audience
                 "iat" to issuedAt,
                 "exp" to expiresAt,
                 "tenant_id" to UUID.randomUUID().toString(),
@@ -77,8 +77,9 @@ class NullableJwtDecoder : JwtDecoder {
 object JwtTestTokens {
     private val encoder = Base64.getUrlEncoder().withoutPadding()
 
-    private const val ISSUER = "http://localhost:8180/realms/eaf"
-    private const val AUDIENCE = "eaf-backend"
+    // Story 9.1: Match deployed Keycloak realm for test tokens
+    private const val ISSUER = "http://localhost:8180/realms/eaf-test"
+    private const val AUDIENCE = "account"
     private const val SIGNATURE = "signature"
 
     private fun encodeSegment(json: String): String = encoder.encodeToString(json.toByteArray(StandardCharsets.UTF_8))
