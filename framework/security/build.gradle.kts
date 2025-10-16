@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.spring.boot.starter.aop)
     implementation(libs.jose4j)
+    implementation(libs.jooq.core) // Story 9.2: Required for TenantDatabaseSessionInterceptor transaction participation
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.spring.boot.starter.test) {

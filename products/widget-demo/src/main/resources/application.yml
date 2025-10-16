@@ -65,5 +65,8 @@ server:
 logging:
   level:
     com.axians.eaf: DEBUG
+    com.axians.eaf.framework.security.tenant: TRACE  # Story 9.2 - Tenant interceptor debugging
+    com.axians.eaf.products.widgetdemo.query: DEBUG  # Story 9.2 - QueryHandler debugging
     org.axonframework: INFO
+    org.axonframework.queryhandling: DEBUG  # Story 9.2 - QueryGateway debugging
     org.springframework.security: INFO
