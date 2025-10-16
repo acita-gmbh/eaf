@@ -50,6 +50,10 @@ eaf:
   cqrs:
     tenant-propagation:
       enabled: true  # Default, explicitly shown for documentation
+  security:
+    jwt:
+      expected-issuer: "${EAF_JWT_ISSUER:http://localhost:8180/realms/eaf-test}"
+      expected-audience: "${EAF_JWT_AUDIENCE:account}"  # TODO: Use app-specific audience (e.g., 'widget-backend') in production
 
 # Server
 server:

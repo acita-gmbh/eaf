@@ -73,7 +73,12 @@ open class WidgetDemoTestApplication {
 
     @Bean
     @Primary
-    open fun testJwtClaimsValidator(meterRegistry: MeterRegistry): JwtClaimsValidator = JwtClaimsValidator(meterRegistry)
+    open fun testJwtClaimsValidator(meterRegistry: MeterRegistry): JwtClaimsValidator =
+        JwtClaimsValidator(
+            meterRegistry,
+            expectedIssuer = "http://localhost:8180/realms/eaf-test",
+            expectedAudience = "account",
+        )
 
     @Bean
     @Primary

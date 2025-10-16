@@ -25,7 +25,12 @@ class JwtClaimsValidatorTest :
 
         beforeTest {
             meterRegistry = SimpleMeterRegistry()
-            validator = JwtClaimsValidator(meterRegistry)
+            validator =
+                JwtClaimsValidator(
+                    meterRegistry,
+                    expectedIssuer = "http://localhost:8180/realms/eaf-test",
+                    expectedAudience = "account",
+                )
             nullableJwtDecoder = NullableJwtDecoder.createNull()
         }
 
