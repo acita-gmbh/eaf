@@ -1,5 +1,5 @@
-import { Create, SimpleForm, TextInput, NumberInput, BooleanInput, DateTimeInput, required } from 'react-admin';
-import { Typography, Box } from '@mui/material';
+import { Create, SimpleForm, TextInput, NumberInput, required } from 'react-admin';
+import { Typography } from '@mui/material';
 
 /**
  * Widget Create Form
@@ -16,170 +16,49 @@ import { Typography, Box } from '@mui/material';
 export const WidgetCreate = () => (
   <Create>
     <SimpleForm>
-      <Typography variant="h6" sx=>
+      <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
         Basic Information
       </Typography>
 
       <TextInput
-        source="id"
-        label="Id"
+        source="name"
+        label="Name"
         validate={required()}
-        helperText="Enter Id"
+        helperText="Enter widget name"
         fullWidth
       />
-      <NumberInput
-        source="id"
-        label="Id"
-        validate={required()}
-        helperText="Numeric value for Id"
-      />
-      <BooleanInput
-        source="id"
-        label="Id"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="id"
-        label="Id"
-        validate={required()}
-      />
-      <TextInput
-        source="name"
-        label="Name"
-        validate={required()}
-        helperText="Enter Name"
-        fullWidth
-      />
-      <NumberInput
-        source="name"
-        label="Name"
-        validate={required()}
-        helperText="Numeric value for Name"
-      />
-      <BooleanInput
-        source="name"
-        label="Name"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="name"
-        label="Name"
-        validate={required()}
-      />
+
       <TextInput
         source="description"
         label="Description"
-        validate={required()}
-        helperText="Enter Description"
+        helperText="Optional description"
         fullWidth
+        multiline
+        rows={3}
       />
-      <NumberInput
-        source="description"
-        label="Description"
-        validate={required()}
-        helperText="Numeric value for Description"
-      />
-      <BooleanInput
-        source="description"
-        label="Description"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="description"
-        label="Description"
-        validate={required()}
-      />
-      <TextInput
-        source="value"
-        label="Value"
-        validate={required()}
-        helperText="Enter Value"
-        fullWidth
-      />
+
       <NumberInput
         source="value"
         label="Value"
         validate={required()}
-        helperText="Numeric value for Value"
+        helperText="Numeric value for the widget"
       />
-      <BooleanInput
-        source="value"
-        label="Value"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="value"
-        label="Value"
-        validate={required()}
-      />
+
       <TextInput
         source="category"
         label="Category"
         validate={required()}
-        helperText="Enter Category"
+        helperText="Widget category"
         fullWidth
       />
-      <NumberInput
-        source="category"
-        label="Category"
-        validate={required()}
-        helperText="Numeric value for Category"
-      />
-      <BooleanInput
-        source="category"
-        label="Category"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="category"
-        label="Category"
-        validate={required()}
-      />
+
       <TextInput
         source="metadata"
-        label="Metadata"
-        validate={required()}
-        helperText="Enter Metadata"
+        label="Metadata (JSON)"
+        helperText="Enter metadata as JSON object"
         fullWidth
-      />
-      <NumberInput
-        source="metadata"
-        label="Metadata"
-        validate={required()}
-        helperText="Numeric value for Metadata"
-      />
-      <BooleanInput
-        source="metadata"
-        label="Metadata"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="metadata"
-        label="Metadata"
-        validate={required()}
-      />
-      <TextInput
-        source="createdAt"
-        label="CreatedAt"
-        validate={required()}
-        helperText="Enter CreatedAt"
-        fullWidth
-      />
-      <NumberInput
-        source="createdAt"
-        label="CreatedAt"
-        validate={required()}
-        helperText="Numeric value for CreatedAt"
-      />
-      <BooleanInput
-        source="createdAt"
-        label="CreatedAt"
-        defaultValue={false}
-      />
-      <DateTimeInput
-        source="createdAt"
-        label="CreatedAt"
-        validate={required()}
+        multiline
+        rows={2}
       />
     </SimpleForm>
   </Create>

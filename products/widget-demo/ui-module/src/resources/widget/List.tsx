@@ -1,6 +1,5 @@
-import { List, Datagrid, TextField, NumberField, BooleanField, DateField, EditButton } from 'react-admin';
-import { EmptyState, LoadingSkeleton } from '@axians/eaf-admin-shell';
-import type { Widget } from './types';
+import { List, Datagrid, TextField, NumberField, DateField, EditButton } from 'react-admin';
+import { EmptyState } from '@axians/eaf-admin-shell';
 
 /**
  * Widget List View
@@ -16,40 +15,17 @@ import type { Widget } from './types';
  */
 export const WidgetList = () => (
   <List
-    empty={<EmptyState message="No widgets yet" ctaLabel="Create First Widget" ctaLink="/widget/create" />}
+    empty={<EmptyState message="No widgets yet" ctaLabel="Create First Widget" ctaLink="/widgets/create" />}
     perPage={25}
-    sort=
+    sort={{ field: 'createdAt', order: 'DESC' }}
   >
     <Datagrid>
       <TextField source="id" label="ID" sortable={false} />
-      <TextField source="id" label="Id" />
-      <NumberField source="id" label="Id" />
-      <BooleanField source="id" label="Id" />
-      <DateField source="id" label="Id" showTime />
       <TextField source="name" label="Name" />
-      <NumberField source="name" label="Name" />
-      <BooleanField source="name" label="Name" />
-      <DateField source="name" label="Name" showTime />
       <TextField source="description" label="Description" />
-      <NumberField source="description" label="Description" />
-      <BooleanField source="description" label="Description" />
-      <DateField source="description" label="Description" showTime />
-      <TextField source="value" label="Value" />
       <NumberField source="value" label="Value" />
-      <BooleanField source="value" label="Value" />
-      <DateField source="value" label="Value" showTime />
       <TextField source="category" label="Category" />
-      <NumberField source="category" label="Category" />
-      <BooleanField source="category" label="Category" />
-      <DateField source="category" label="Category" showTime />
-      <TextField source="metadata" label="Metadata" />
-      <NumberField source="metadata" label="Metadata" />
-      <BooleanField source="metadata" label="Metadata" />
-      <DateField source="metadata" label="Metadata" showTime />
-      <TextField source="createdAt" label="CreatedAt" />
-      <NumberField source="createdAt" label="CreatedAt" />
-      <BooleanField source="createdAt" label="CreatedAt" />
-      <DateField source="createdAt" label="CreatedAt" showTime />
+      <DateField source="createdAt" label="Created" showTime />
       <EditButton />
     </Datagrid>
   </List>

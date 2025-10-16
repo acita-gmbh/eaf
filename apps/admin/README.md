@@ -93,7 +93,7 @@ VITE_KEYCLOAK_CLIENT=eaf-admin
 ```env
 VITE_API_URL=https://api.eaf.example.com
 VITE_KEYCLOAK_URL=https://auth.eaf.example.com
-VITE_KEYCLOAK_REALM=eaf
+VITE_KEYCLOAK_REALM=eaf-test
 VITE_KEYCLOAK_CLIENT=eaf-admin
 ```
 
@@ -149,7 +149,7 @@ Changes to source files automatically trigger:
 - No full page reload (preserves state)
 
 ### Vite Proxy (AC 40-41)
-API calls to `/api/*` are automatically proxied to `http://localhost:8080`:
+API calls to `/api/*` are automatically proxied to `http://localhost:8081` (widget-demo backend):
 - No CORS configuration needed in development
 - Transparent API communication
 - Configured in `vite.config.ts`

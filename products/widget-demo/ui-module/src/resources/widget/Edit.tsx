@@ -1,4 +1,4 @@
-import { Edit, SimpleForm, TextInput, NumberInput, BooleanInput, DateTimeInput, required, Toolbar, SaveButton, DeleteButton } from 'react-admin';
+import { Edit, SimpleForm, TextInput, NumberInput, DateTimeInput, required, Toolbar, SaveButton } from 'react-admin';
 import { Typography, Box } from '@mui/material';
 import { TypeToConfirmDelete } from '@axians/eaf-admin-shell';
 
@@ -16,7 +16,7 @@ import { TypeToConfirmDelete } from '@axians/eaf-admin-shell';
  */
 
 const EditToolbar = () => (
-  <Toolbar sx=>
+  <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
     <TypeToConfirmDelete resource="widget" confirmField="name" />
     <Box>
       <SaveButton />
@@ -27,149 +27,59 @@ const EditToolbar = () => (
 export const WidgetEdit = () => (
   <Edit mutationMode="optimistic">
     <SimpleForm toolbar={<EditToolbar />}>
-      <Typography variant="h6" sx=>
+      <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
         Basic Information
       </Typography>
 
       <TextInput
         source="id"
-        label="Id"
-        validate={required()}
+        label="ID"
+        disabled
         fullWidth
+        helperText="Read-only identifier"
       />
-      <NumberInput
-        source="id"
-        label="Id"
-        validate={required()}
-      />
-      <BooleanInput
-        source="id"
-        label="Id"
-      />
-      <DateTimeInput
-        source="id"
-        label="Id"
-        validate={required()}
-      />
+
       <TextInput
         source="name"
         label="Name"
         validate={required()}
         fullWidth
       />
-      <NumberInput
-        source="name"
-        label="Name"
-        validate={required()}
-      />
-      <BooleanInput
-        source="name"
-        label="Name"
-      />
-      <DateTimeInput
-        source="name"
-        label="Name"
-        validate={required()}
-      />
+
       <TextInput
         source="description"
         label="Description"
-        validate={required()}
         fullWidth
+        multiline
+        rows={3}
       />
-      <NumberInput
-        source="description"
-        label="Description"
-        validate={required()}
-      />
-      <BooleanInput
-        source="description"
-        label="Description"
-      />
-      <DateTimeInput
-        source="description"
-        label="Description"
-        validate={required()}
-      />
-      <TextInput
-        source="value"
-        label="Value"
-        validate={required()}
-        fullWidth
-      />
+
       <NumberInput
         source="value"
         label="Value"
         validate={required()}
       />
-      <BooleanInput
-        source="value"
-        label="Value"
-      />
-      <DateTimeInput
-        source="value"
-        label="Value"
-        validate={required()}
-      />
+
       <TextInput
         source="category"
         label="Category"
         validate={required()}
         fullWidth
       />
-      <NumberInput
-        source="category"
-        label="Category"
-        validate={required()}
-      />
-      <BooleanInput
-        source="category"
-        label="Category"
-      />
-      <DateTimeInput
-        source="category"
-        label="Category"
-        validate={required()}
-      />
+
       <TextInput
         source="metadata"
-        label="Metadata"
-        validate={required()}
+        label="Metadata (JSON)"
         fullWidth
+        multiline
+        rows={2}
       />
-      <NumberInput
-        source="metadata"
-        label="Metadata"
-        validate={required()}
-      />
-      <BooleanInput
-        source="metadata"
-        label="Metadata"
-      />
-      <DateTimeInput
-        source="metadata"
-        label="Metadata"
-        validate={required()}
-      />
-      <TextInput
-        source="createdAt"
-        label="CreatedAt"
-        validate={required()}
-        fullWidth
-      />
-      <NumberInput
-        source="createdAt"
-        label="CreatedAt"
-        validate={required()}
-      />
-      <BooleanInput
-        source="createdAt"
-        label="CreatedAt"
-      />
+
       <DateTimeInput
         source="createdAt"
-        label="CreatedAt"
-        validate={required()}
+        label="Created At"
+        disabled
+        helperText="Read-only creation timestamp"
       />
     </SimpleForm>
   </Edit>

@@ -1,4 +1,4 @@
-import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, DateField } from 'react-admin';
+import { Show, SimpleShowLayout, TextField, NumberField, DateField } from 'react-admin';
 import { Typography } from '@mui/material';
 
 /**
@@ -15,43 +15,19 @@ import { Typography } from '@mui/material';
 export const WidgetShow = () => (
   <Show>
     <SimpleShowLayout>
-      <Typography variant="h6" sx=>
+      <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
         Basic Information
       </Typography>
 
       <TextField source="id" label="ID" />
-
-      <TextField source="id" label="Id" />
-      <NumberField source="id" label="Id" />
-      <BooleanField source="id" label="Id" />
-      <DateField source="id" label="Id" showTime />
       <TextField source="name" label="Name" />
-      <NumberField source="name" label="Name" />
-      <BooleanField source="name" label="Name" />
-      <DateField source="name" label="Name" showTime />
       <TextField source="description" label="Description" />
-      <NumberField source="description" label="Description" />
-      <BooleanField source="description" label="Description" />
-      <DateField source="description" label="Description" showTime />
-      <TextField source="value" label="Value" />
       <NumberField source="value" label="Value" />
-      <BooleanField source="value" label="Value" />
-      <DateField source="value" label="Value" showTime />
       <TextField source="category" label="Category" />
-      <NumberField source="category" label="Category" />
-      <BooleanField source="category" label="Category" />
-      <DateField source="category" label="Category" showTime />
       <TextField source="metadata" label="Metadata" />
-      <NumberField source="metadata" label="Metadata" />
-      <BooleanField source="metadata" label="Metadata" />
-      <DateField source="metadata" label="Metadata" showTime />
-      <TextField source="createdAt" label="CreatedAt" />
-      <NumberField source="createdAt" label="CreatedAt" />
-      <BooleanField source="createdAt" label="CreatedAt" />
-      <DateField source="createdAt" label="CreatedAt" showTime />
 
-      <Typography variant="h6" sx=>
-        Metadata
+      <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>
+        Timestamps
       </Typography>
 
       <DateField source="createdAt" label="Created At" showTime />
