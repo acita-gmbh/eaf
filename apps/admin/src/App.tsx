@@ -18,11 +18,11 @@ const App: React.FC = () => {
   return (
     <AdminShell
       resources={[widgetResource]}
-      apiBaseUrl={import.meta.env.VITE_API_URL || 'http://localhost:8080'}
+      apiBaseUrl={import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}
       keycloakConfig={{
-        realm: import.meta.env.VITE_KEYCLOAK_REALM || 'eaf',
-        clientId: import.meta.env.VITE_KEYCLOAK_CLIENT || 'eaf-admin',
-        serverUrl: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
+        realm: import.meta.env.VITE_KEYCLOAK_REALM ?? 'eaf',
+        clientId: import.meta.env.VITE_KEYCLOAK_CLIENT ?? 'eaf-admin',
+        serverUrl: import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8180',
       }}
     />
   );
