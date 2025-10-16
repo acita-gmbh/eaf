@@ -106,9 +106,9 @@ VITE_KEYCLOAK_CLIENT=eaf-admin
 4. Portal stores token and includes in all API requests (Authorization header)
 5. Token automatically refreshes before expiration
 
-**Test Credentials** (from init-dev.sh):
-- Username: `admin`
-- Password: `admin`
+**Test Credentials** (from configure-keycloak-story-9.1.sh):
+- Username: `testuser`
+- Password: `testuser`
 
 ## Project Structure
 
@@ -239,7 +239,7 @@ dist/
 cd apps/admin && pnpm run dev
 
 # Browser: http://localhost:5173
-# 1. Login with admin/admin
+# 1. Login with testuser/testuser
 # 2. Navigate to Widgets
 # 3. Test CRUD operations
 # 4. Verify tenant isolation

@@ -74,6 +74,11 @@ if [ -z "$CLIENT_UUID" ]; then
   # Get the newly created client UUID
   CLIENT_UUID=$(curl -s "http://localhost:8180/admin/realms/eaf-test/clients?clientId=eaf-admin" \
     -H "Authorization: Bearer $ADMIN_TOKEN" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+  if [ -z "$CLIENT_UUID" ]; then
+    echo -e "${RED}❌ Failed to create client or retrieve client UUID${NC}"
+    exit 1
+  fi
   echo -e "${GREEN}✅ Client created${NC}"
 else
   echo -e "${GREEN}✅ Client already exists${NC}"
@@ -135,6 +140,11 @@ if [ -z "$USER_ID" ]; then
   # Get newly created user ID
   USER_ID=$(curl -s "http://localhost:8180/admin/realms/eaf-test/users?username=testuser" \
     -H "Authorization: Bearer $ADMIN_TOKEN" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+  if [ -z "$USER_ID" ]; then
+    echo -e "${RED}❌ Failed to create user or retrieve user ID${NC}"
+    exit 1
+  fi
   echo -e "${GREEN}✅ User created${NC}"
 else
   echo -e "${GREEN}✅ User already exists${NC}"
