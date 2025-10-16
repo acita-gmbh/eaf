@@ -239,16 +239,21 @@ class JwtSecurityValidator(
                 Unit.right()
             }
         } catch (e: org.springframework.data.redis.RedisConnectionFailureException) {
-            // If Redis is unavailable, fail securely
+            // SECURITY: Fail-closed when Redis unavailable (emergency recovery requires revocation capability)
             meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
-            logger.warn("Redis connection failed, allowing token: ${e.message}")
-            // For stubbed implementation, allow token when Redis unavailable
-            Unit.right()
+            logger.error("Redis connection failed, BLOCKING token: ${e.message}")
+            SecurityError
+                .RevocationCheckFailed(
+                    "Token revocation verification unavailable",
+                ).left()
         } catch (e: org.springframework.dao.DataAccessException) {
-            // If Redis data access fails, fail securely
+            // SECURITY: Fail-closed when Redis data access fails
             meterRegistry.counter("jwt.validation.revocation_check_failed").increment()
-            logger.warn("Redis data access failed, allowing token: ${e.message}")
-            Unit.right()
+            logger.error("Redis data access failed, BLOCKING token: ${e.message}")
+            SecurityError
+                .RevocationCheckFailed(
+                    "Token revocation verification unavailable",
+                ).left()
         }
 
     fun validateRoles(roleNames: List<String>): Either<SecurityError, Set<Role>> {
