@@ -27,9 +27,8 @@ spring:
     hibernate:
       ddl-auto: update  # Dev environment - auto-create Axon tables
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false  # Disable OSIV - we use jOOQ for queries, not JPA lazy loading
+    # Removed explicit dialect - PostgreSQL auto-detected
 
   # Story 9.2: jOOQ configuration for DSLContext bean creation
   jooq:
@@ -48,10 +47,6 @@ axon:
   serializer:
     events: jackson
     messages: jackson
-  # Suppress AxonIQ Console marketing message
-  axoniq:
-    console:
-      suppress-download-message: true
 
 # EAF Framework Configuration
 eaf:
