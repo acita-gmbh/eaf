@@ -48,6 +48,10 @@ axon:
   serializer:
     events: jackson
     messages: jackson
+  # Suppress AxonIQ Console marketing message
+  axoniq:
+    console:
+      suppress-download-message: true
 
 # EAF Framework Configuration
 eaf:
