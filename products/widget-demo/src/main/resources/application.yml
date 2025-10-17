@@ -31,6 +31,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  # Story 9.2: jOOQ configuration for DSLContext bean creation
+  jooq:
+    sql-dialect: POSTGRES
+
   security:
     oauth2:
       resourceserver:
