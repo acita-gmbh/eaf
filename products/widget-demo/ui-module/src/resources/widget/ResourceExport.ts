@@ -16,7 +16,7 @@ import type { ResourceConfig } from '@axians/eaf-admin-shell';
  * ```
  */
 export const widgetResource: ResourceConfig = {
-  name: 'widget',
+  name: 'widgets', // Must match backend @RequestMapping("/widgets")
   list: WidgetList,
   create: WidgetCreate,
   edit: WidgetEdit,

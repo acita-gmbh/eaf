@@ -153,6 +153,16 @@ tasks.named("runKtlintCheckOverPerfTestSourceSet") {
 // Story 8.3: Use Spring Boot BOM versions for OpenTelemetry compatibility
 // Removed force rules to use Spring Boot managed versions
 
+// Suppress AxonIQ Console marketing message
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    systemProperty("disable-axoniq-console-message", "true")
+}
+
+// Suppress JPA open-in-view warning (we use jOOQ for queries, not JPA lazy loading)
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    systemProperty("spring.jpa.open-in-view", "false")
+}
+
 // Skip quality gates for minimal reference implementation
 // detekt: Version 1.23.8 incompatible with Kotlin 2.2.20 (compiled with 2.0.21)
 //         Upgrade to detekt 2.0.0 when it reaches stable release

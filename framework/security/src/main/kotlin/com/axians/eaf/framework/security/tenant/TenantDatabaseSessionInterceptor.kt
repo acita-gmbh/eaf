@@ -3,15 +3,23 @@ package com.axians.eaf.framework.security.tenant
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
+import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
-import javax.sql.DataSource
 
 /**
  * AOP aspect that sets PostgreSQL session variable before @Transactional methods,
  * enabling Row-Level Security (RLS) enforcement.
+ *
+ * ## Story 9.2 Fix: Use DSLContext for Transaction Participation
+ *
+ * **Previous Implementation**: Used DataSource.connection which created a NEW connection
+ * separate from the Spring transaction, causing SET LOCAL to execute on wrong connection.
+ *
+ * **Current Implementation**: Uses jOOQ DSLContext which participates in Spring transactions,
+ * ensuring SET LOCAL executes on the same connection as repository operations.
  *
  * ## Integration with Story 4.4
  *
@@ -29,7 +37,7 @@ import javax.sql.DataSource
  * **Lifecycle**:
  * - **Set**: Before @Transactional method execution (this aspect)
  * - **Used**: During repository operations (RLS policies reference it)
- * - **Reset**: After transaction completion (TenantSessionCleanupAspect)
+ * - **Reset**: Automatic on transaction commit/rollback (SET LOCAL scope)
  *
  * ## Thread Safety
  *
@@ -42,18 +50,17 @@ import javax.sql.DataSource
  * preventing database writes without tenant isolation.
  *
  * @param tenantContext ThreadLocal tenant context from Story 4.1
- * @param dataSource PostgreSQL datasource for session variable setting
+ * @param dsl jOOQ DSLContext participating in Spring transactions
  *
- * @see TenantSessionCleanupAspect Cleanup after transaction
  * @see com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor Async propagation
  */
 @Aspect
 @Component
-@ConditionalOnBean(DataSource::class)
+@ConditionalOnBean(DSLContext::class)
 @Order(0)
 class TenantDatabaseSessionInterceptor(
     private val tenantContext: TenantContext,
-    private val dataSource: DataSource,
+    private val dsl: DSLContext,
 ) {
     private val logger = LoggerFactory.getLogger(TenantDatabaseSessionInterceptor::class.java)
 
@@ -64,10 +71,13 @@ class TenantDatabaseSessionInterceptor(
     /**
      * Sets PostgreSQL session variable before @Transactional method execution.
      *
+     * **Story 9.2 Fix**: Uses jOOQ DSLContext.execute() which participates in the
+     * Spring transaction, ensuring the session variable is set on the correct connection.
+     *
      * **Execution Flow**:
      * 1. Read tenantId from TenantContext (fail-closed if missing)
-     * 2. Execute: `SET LOCAL app.current_tenant = 'tenant-id'`
-     * 3. Proceed with @Transactional method (repository operations)
+     * 2. Execute: `SET LOCAL app.current_tenant = 'tenant-id'` via DSLContext
+     * 3. Proceed with @Transactional method (repository operations use same connection)
      * 4. RLS policies filter by app.current_tenant
      *
      * **Fail-Closed Security**: TenantContext.getCurrentTenantId() throws exception if missing,
@@ -81,16 +91,14 @@ class TenantDatabaseSessionInterceptor(
     fun setSessionVariableBeforeTransaction(joinPoint: ProceedingJoinPoint): Any? {
         val tenantId = tenantContext.getCurrentTenantId()
 
-        dataSource.connection.use { connection ->
-            connection.createStatement().use { statement ->
-                statement.execute("SET LOCAL $SESSION_VAR_NAME = '$tenantId'")
-                logger.trace(
-                    "Tenant session variable set: {} for method: {}",
-                    tenantId,
-                    joinPoint.signature.toShortString(),
-                )
-            }
-        }
+        // Story 9.2: Use DSLContext to execute on transactional connection
+        dsl.execute("SET LOCAL $SESSION_VAR_NAME = '$tenantId'")
+
+        logger.trace(
+            "Tenant session variable set: {} for method: {}",
+            tenantId,
+            joinPoint.signature.toShortString(),
+        )
 
         return joinPoint.proceed()
     }
