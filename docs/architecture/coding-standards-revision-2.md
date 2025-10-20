@@ -338,6 +338,137 @@ class BadAggregate {
 }
 ```
 
+### Query Handlers with Generic Return Types
+
+**⚠️ Axon Framework 4.12 Limitation**: Generic wrapper types like `PagedResponse<T>`, `Page<T>`, or `Result<T>` require custom `ResponseType` implementation due to Java type erasure.
+
+**Supported Generic Types** (no custom code needed):
+- `Collection<T>` and subtypes (`List<T>`, `Set<T>`)
+- `Future<T>` / `CompletableFuture<T>`
+- `Optional<T>`
+- `Stream<T>`
+
+**For Custom Generic Wrappers** (Story 9.2 Pattern):
+
+```kotlin
+// ✅ CORRECT - Custom ResponseType for PagedResponse<T>
+// Location: shared/shared-api/.../responsetypes/PagedResponseType.kt
+class PagedResponseType<T> private constructor(
+    private val elementType: Class<T>,
+) : ResponseType<PagedResponse<T>> {
+    override fun matches(responseType: Type): Boolean =
+        when (responseType) {
+            is ParameterizedType -> matchesParameterizedType(responseType)
+            is Class<*> -> PagedResponse::class.java.isAssignableFrom(responseType)
+            else -> false
+        }
+
+    private fun matchesParameterizedType(responseType: ParameterizedType): Boolean {
+        val rawType = responseType.rawType
+        val isRawTypeValid =
+            rawType == PagedResponse::class.java ||
+                (rawType is Class<*> && PagedResponse::class.java.isAssignableFrom(rawType))
+
+        val typeArguments = responseType.actualTypeArguments
+        return isRawTypeValid && typeArguments.isNotEmpty() && matchesElementType(typeArguments[0])
+    }
+
+    private fun matchesElementType(argType: Type): Boolean =
+        when (argType) {
+            is Class<*> -> elementType.isAssignableFrom(argType)
+            is ParameterizedType -> elementType.isAssignableFrom(argType.rawType as Class<*>)
+            else -> false
+        }
+
+    override fun responseMessagePayloadType(): Class<PagedResponse<T>> {
+        @Suppress("UNCHECKED_CAST")
+        return PagedResponse::class.java as Class<PagedResponse<T>>
+    }
+
+    override fun getExpectedResponseType(): Class<*> = PagedResponse::class.java
+
+    @Suppress("UNCHECKED_CAST")
+    override fun convert(response: Any?): PagedResponse<T>? = response as PagedResponse<T>?
+
+    companion object {
+        @JvmStatic
+        fun <T> pagedInstanceOf(elementType: Class<T>): PagedResponseType<T> =
+            PagedResponseType(elementType)
+    }
+}
+
+// ✅ CORRECT - Query handler with generic return type
+@Component
+open class WidgetQueryHandler(
+    private val repository: WidgetProjectionRepository,
+) {
+    @QueryHandler
+    @Transactional(readOnly = true)
+    fun handle(query: FindWidgetsQuery): PagedResponse<WidgetResponse> {
+        // Handler implementation - auto-discovered by Axon
+    }
+}
+
+// ✅ CORRECT - Controller using custom ResponseType
+@RestController
+class WidgetController(private val queryGateway: QueryGateway) {
+    @GetMapping("/widgets")
+    fun getWidgets(): ResponseEntity<PagedResponse<WidgetResponse>> {
+        val query = FindWidgetsQuery(...)
+        val responseType = PagedResponseType.pagedInstanceOf(WidgetResponse::class.java)
+        val response = queryGateway.query(query, responseType).get()
+        return ResponseEntity.ok(response)
+    }
+}
+
+// ❌ INCORRECT - Using raw ResponseTypes.instanceOf with generics
+@GetMapping("/widgets")
+fun badExample(): ResponseEntity<PagedResponse<WidgetResponse>> {
+    val query = FindWidgetsQuery(...)
+    // Type erasure: loses <WidgetResponse> parameter → NoHandlerForQueryException
+    val responseType = ResponseTypes.instanceOf(PagedResponse::class.java)
+    val response = queryGateway.query(query, responseType).get()
+    return ResponseEntity.ok(response)
+}
+```
+
+**Alternative Solutions**:
+
+```kotlin
+// Option 1: Separate List + Count queries (simpler, no custom code)
+@QueryHandler
+fun handle(query: FindWidgetsQuery): List<WidgetResponse> { /* ... */ }
+
+@QueryHandler
+fun handle(query: CountWidgetsQuery): Long { /* ... */ }
+
+// Controller dispatches both queries and combines results
+val items = queryGateway.query(itemsQuery, ResponseTypes.multipleInstancesOf(WidgetResponse::class.java)).get()
+val total = queryGateway.query(countQuery, ResponseTypes.instanceOf(Long::class.java)).get()
+val response = PagedResponse(content = items, totalElements = total, ...)
+
+// Option 2: Domain-specific non-generic wrapper (simpler, less reusable)
+data class WidgetPagedResponse(  // No generic parameter!
+    val widgets: List<WidgetResponse>,
+    val totalElements: Long,
+    val page: Int,
+    val size: Int,
+    val totalPages: Int,
+)
+
+@QueryHandler
+fun handle(query: FindWidgetsQuery): WidgetPagedResponse { /* ... */ }
+
+// Works with standard ResponseTypes.instanceOf(WidgetPagedResponse::class.java)
+```
+
+**When to Use Each Approach**:
+- **Custom ResponseType**: Reusable solution for multiple paginated queries across domains
+- **Separate Queries**: Simplest for one-off pagination needs, avoids custom framework code
+- **Domain-Specific Wrapper**: Quick fix for single domain, simpler but less reusable
+
+**Reference**: Story 9.2 - Fix widget-demo QueryHandler ExecutionException
+
 ### Multi-Tenancy Patterns
 
 ```kotlin
