@@ -213,32 +213,16 @@ class AxonConfiguration {
     }
 
     /**
-     * Registers TenantQueryHandlerInterceptor for PostgreSQL session variable setup before query execution.
+     * **Axon 4.12 Auto-Registration**: TenantQueryHandlerInterceptor registration removed.
      *
-     * **Story 9.2 Fix**: Query handlers require Axon-specific interceptors instead of Spring AOP aspects
-     * because Axon Framework bypasses Spring AOP proxies when dispatching queries.
+     * Since Axon Framework 4.11+, MessageHandlerInterceptor beans are automatically registered
+     * by Axon's Spring Boot auto-configuration. Manual registration via configurer.onInitialize()
+     * would cause duplicate registration warnings.
      *
-     * **Execution Flow**:
-     * 1. Query received by QueryBus
-     * 2. **This interceptor executes**: Sets PostgreSQL `app.current_tenant` session variable via DSLContext
-     * 3. @QueryHandler method executes (repository queries use RLS with session variable)
-     * 4. Result returned with tenant isolation enforced
+     * The @Component-annotated TenantQueryHandlerInterceptor is now auto-discovered and registered
+     * by Axon without manual wiring.
      *
-     * **Integration**: Works with ManualDslContextConfiguration (Story 9.2) which provides DSLContext bean
-     * when Spring Boot's JooqAutoConfiguration is disabled due to JPA EntityManagerFactory presence.
-     *
-     * @param configurer Axon framework configurer
-     * @param tenantQueryInterceptor Query handler interceptor bean (conditionally created when DSLContext exists)
+     * **Reference**: CodeRabbit PR#75 review - Axon 4.11.0 introduced auto-registration support
+     * **Migration**: Removed manual configureTenantQueryInterceptor method (Story 9.2)
      */
-    @Autowired(required = false)
-    fun configureTenantQueryInterceptor(
-        configurer: Configurer,
-        tenantQueryInterceptor: TenantQueryHandlerInterceptor?,
-    ) {
-        tenantQueryInterceptor?.let { interceptor ->
-            configurer.onInitialize { config ->
-                config.queryBus().registerHandlerInterceptor(interceptor)
-            }
-        }
-    }
 }

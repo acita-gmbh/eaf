@@ -1,8 +1,6 @@
 package com.axians.eaf.framework.cqrs.interceptors
 
 import com.axians.eaf.framework.security.tenant.TenantContext
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Timer
 import org.axonframework.messaging.InterceptorChain
 import org.axonframework.messaging.MessageHandlerInterceptor
 import org.axonframework.messaging.unitofwork.UnitOfWork
@@ -101,6 +99,9 @@ class TenantQueryHandlerInterceptor(
     companion object {
         private val logger = LoggerFactory.getLogger(TenantQueryHandlerInterceptor::class.java)
         private const val SESSION_VAR_NAME = "app.current_tenant"
+
+        // Cache reflection metadata to avoid per-query field lookup cost
+        private val tenantFieldCache = java.util.concurrent.ConcurrentHashMap<Class<*>, java.lang.reflect.Field>()
     }
 
     /**
@@ -244,10 +245,12 @@ class TenantQueryHandlerInterceptor(
      */
     private fun extractTenantId(queryPayload: Any): String =
         try {
-            // Use reflection to get tenantId field from query payload
-            // Consider caching field metadata for better performance in high-throughput scenarios
-            val tenantIdField = queryPayload::class.java.getDeclaredField("tenantId")
-            tenantIdField.isAccessible = true
+            // Use cached reflection metadata for performance (ConcurrentHashMap)
+            val clazz = queryPayload::class.java
+            val tenantIdField =
+                tenantFieldCache.computeIfAbsent(clazz) {
+                    clazz.getDeclaredField("tenantId").apply { isAccessible = true }
+                }
             val tenantId = tenantIdField.get(queryPayload) as? String
 
             require(!tenantId.isNullOrBlank()) {

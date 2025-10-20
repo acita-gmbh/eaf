@@ -190,9 +190,9 @@ if grep -q "NoHandlerForQueryException" "$LOG_FILE"; then
     exit 1
 fi
 
-if grep -q "ExecutionException" "$LOG_FILE" | grep -q "NoHandler"; then
+if grep -qE 'ExecutionException.*NoHandler|NoHandler.*ExecutionException' "$LOG_FILE"; then
     echo -e "${RED}ExecutionException with NoHandler found in logs!${NC}"
-    grep -n "ExecutionException" "$LOG_FILE" | grep "NoHandler"
+    grep -nE 'ExecutionException.*NoHandler|NoHandler.*ExecutionException' "$LOG_FILE"
     kill $APP_PID 2>/dev/null || true
     exit 1
 fi
