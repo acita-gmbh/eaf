@@ -10,6 +10,7 @@ import org.axonframework.queryhandling.QueryMessage
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.stereotype.Component
 import java.time.Duration
 
@@ -87,11 +88,15 @@ import java.time.Duration
  * @see TenantEventMessageInterceptor Event handler tenant propagation
  */
 @Component
+@ConditionalOnClass(DSLContext::class)
 @ConditionalOnBean(DSLContext::class)
 class TenantQueryHandlerInterceptor(
     private val tenantContext: TenantContext,
     private val dsl: DSLContext,
-    private val meterRegistry: MeterRegistry?,
+    private val txManager: org.springframework.transaction.PlatformTransactionManager,
+    private val meterRegistry: org.springframework.beans.factory.ObjectProvider<
+        io.micrometer.core.instrument.MeterRegistry,
+    >,
 ) : MessageHandlerInterceptor<QueryMessage<*, *>> {
     companion object {
         private val logger = LoggerFactory.getLogger(TenantQueryHandlerInterceptor::class.java)
@@ -122,7 +127,12 @@ class TenantQueryHandlerInterceptor(
     ): Any? {
         val query = unitOfWork.message
         val queryPayload = query.payload
-        val timer = meterRegistry?.let { Timer.start(it) }
+        val registry = meterRegistry.ifAvailable
+        val timer =
+            registry?.let {
+                io.micrometer.core.instrument.Timer
+                    .start(it)
+            }
 
         return try {
             // SECURITY: Extract tenant ID from query payload using reflection
@@ -134,20 +144,11 @@ class TenantQueryHandlerInterceptor(
             // This makes tenantId available for query handler AND database operations
             tenantContext.setCurrentTenantId(tenantId)
 
-            // Story 9.2: Set PostgreSQL session variable for RLS enforcement
-            dsl.execute("SET LOCAL $SESSION_VAR_NAME = '$tenantId'")
-
-            logger.debug(
-                "Tenant context and session variable set for query: {} (tenant: {})",
-                query.queryName,
-                tenantId,
-            )
-
-            // Proceed with query handler execution
-            val result = interceptorChain.proceed()
+            // Execute query within transaction with tenant RLS
+            val result = executeQueryWithTenantSession(tenantId, query, interceptorChain)
 
             // Record success metrics
-            meterRegistry
+            registry
                 ?.counter(
                     "tenant.query.interceptor.success",
                     "query_type",
@@ -160,7 +161,7 @@ class TenantQueryHandlerInterceptor(
             ex: Exception,
         ) {
             // Record failure metrics
-            meterRegistry
+            registry
                 ?.counter(
                     "tenant.query.interceptor.failure",
                     "query_type",
@@ -183,9 +184,9 @@ class TenantQueryHandlerInterceptor(
             logger.debug("Tenant context cleared after query: {}", query.queryName)
 
             // Record performance metrics
-            meterRegistry?.let { registry ->
+            registry?.let { reg ->
                 timer?.stop(
-                    registry.timer(
+                    reg.timer(
                         "tenant.query.interceptor.duration",
                         "query_type",
                         query.queryName,
@@ -194,6 +195,38 @@ class TenantQueryHandlerInterceptor(
             }
         }
     }
+
+    /**
+     * Executes query handler within read-only transaction with tenant session variable set.
+     *
+     * @param tenantId The tenant ID to set in PostgreSQL session
+     * @param query The query message being executed
+     * @param interceptorChain The Axon interceptor chain
+     * @return Query result
+     */
+    private fun executeQueryWithTenantSession(
+        tenantId: String,
+        query: QueryMessage<*, *>,
+        interceptorChain: InterceptorChain,
+    ): Any? =
+        org.springframework.transaction.support
+            .TransactionTemplate(txManager)
+            .apply {
+                isReadOnly = true
+            }.execute {
+                // Use PostgreSQL set_config() with parameterization to prevent SQL injection
+                // set_config(setting_name, new_value, is_local) is equivalent to SET LOCAL but supports binding
+                dsl.query("SELECT set_config(?, ?, true)", SESSION_VAR_NAME, tenantId).execute()
+
+                logger.debug(
+                    "Tenant context and session variable set for query: {} (tenant: {})",
+                    query.queryName,
+                    tenantId,
+                )
+
+                // Proceed with query handler execution (within same transaction)
+                interceptorChain.proceed()
+            }
 
     /**
      * Extracts tenantId from query payload using reflection.

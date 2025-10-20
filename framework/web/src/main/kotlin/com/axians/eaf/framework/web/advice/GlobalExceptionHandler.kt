@@ -91,6 +91,12 @@ class GlobalExceptionHandler {
         ex: ExecutionException,
         request: WebRequest,
     ): ResponseEntity<ProblemDetail> {
+        // Generate correlation ID for tracking
+        val errorId =
+            java.util.UUID
+                .randomUUID()
+                .toString()
+
         // Unwrap the ExecutionException to get the actual root cause
         val rootCause = ex.cause ?: ex
         val causeChain =
@@ -103,25 +109,28 @@ class GlobalExceptionHandler {
                 }
             }
 
+        // Log full error details with correlation ID for debugging
         logger.error(
-            "ExecutionException caught in controller. Root cause: {} - {}. Full chain:\n{}",
+            "errorId={} ExecutionException caught in controller. Root cause: {} - {}. Full chain:\n{}",
+            errorId,
             rootCause.javaClass.simpleName,
             rootCause.message,
             causeChain,
             rootCause,
         )
 
+        // Return generic message to client with correlation ID (prevent information disclosure)
         val problemDetail =
             ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Query execution failed: ${rootCause.message ?: rootCause.javaClass.simpleName}",
+                "An internal error occurred. Please contact support with error ID: $errorId",
             )
         problemDetail.title = "Query Execution Error"
         problemDetail.type = URI.create("/problems/execution-error")
         problemDetail.setProperty("timestamp", Instant.now())
         problemDetail.setProperty("path", request.getDescription(false))
+        problemDetail.setProperty("errorId", errorId)
         problemDetail.setProperty("rootCauseType", rootCause.javaClass.simpleName)
-        problemDetail.setProperty("causeChain", causeChain)
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail)
     }

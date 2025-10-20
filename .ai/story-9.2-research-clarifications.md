@@ -9,12 +9,12 @@
 
 **Answer**: YES - We have a complete reproducible project.
 
-**Location**: `/Users/michael/acci_eaf/products/widget-demo` (part of monorepo)
+**Location**: `products/widget-demo` (within the monorepo)
 
 **How to Reproduce**:
 ```bash
-# Clone/navigate to project root
-cd /Users/michael/acci_eaf
+# Navigate to repository root
+cd $(git rev-parse --show-toplevel)
 
 # Start infrastructure (PostgreSQL, Keycloak)
 ./scripts/init-dev.sh  # Starts Docker Compose services

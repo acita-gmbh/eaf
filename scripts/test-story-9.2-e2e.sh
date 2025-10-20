@@ -39,7 +39,8 @@ print_result 0 "Cleanup complete"
 
 # Step 2: Start widget-demo application
 echo -e "${YELLOW}[2/8] Starting widget-demo application...${NC}"
-cd /Users/michael/acci_eaf
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
 ./gradlew :products:widget-demo:bootRun > "$LOG_FILE" 2>&1 &
 APP_PID=$!
 echo "Application PID: $APP_PID"

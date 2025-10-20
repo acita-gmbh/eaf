@@ -153,14 +153,10 @@ tasks.named("runKtlintCheckOverPerfTestSourceSet") {
 // Story 8.3: Use Spring Boot BOM versions for OpenTelemetry compatibility
 // Removed force rules to use Spring Boot managed versions
 
-// Suppress AxonIQ Console marketing message
+// Configure Spring Boot run: suppress AxonIQ Console marketing message and JPA open-in-view warning
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
     systemProperty("disable-axoniq-console-message", "true")
-}
-
-// Suppress JPA open-in-view warning (we use jOOQ for queries, not JPA lazy loading)
-tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-    systemProperty("spring.jpa.open-in-view", "false")
+    systemProperty("spring.jpa.open-in-view", "false") // We use jOOQ for queries, not JPA lazy loading
 }
 
 // Skip quality gates for minimal reference implementation
