@@ -104,7 +104,16 @@ class WidgetController(
             )
         val response = queryGateway.query(query, responseType).get(5, TimeUnit.SECONDS)
 
-        return ResponseEntity.ok(response)
+        // AC3: Set pagination headers for React-Admin compatibility
+        val rangeStart = page * size
+        val rangeEnd = rangeStart + response.content.size - 1
+        val contentRange = "widgets $rangeStart-$rangeEnd/${response.totalElements}"
+
+        return ResponseEntity
+            .ok()
+            .header("Content-Range", contentRange)
+            .header("X-Total-Count", response.totalElements.toString())
+            .body(response)
     }
 
     data class CreateWidgetRequest(
