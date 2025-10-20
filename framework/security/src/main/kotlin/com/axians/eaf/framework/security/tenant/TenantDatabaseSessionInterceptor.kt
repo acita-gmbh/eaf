@@ -83,11 +83,17 @@ class TenantDatabaseSessionInterceptor(
      * **Fail-Closed Security**: TenantContext.getCurrentTenantId() throws exception if missing,
      * preventing unfiltered database access.
      *
+     * **Pointcut Expression**: Matches both method-level and class-level @Transactional annotations.
+     * This is necessary because Axon Framework's QueryHandlers may bypass standard Spring AOP proxies.
+     *
      * @param joinPoint Transactional method being intercepted
      * @return Method result
      * @throws IllegalStateException if tenant context missing (fail-closed)
      */
-    @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
+    @Around(
+        "@annotation(org.springframework.transaction.annotation.Transactional) || " +
+            "@within(org.springframework.transaction.annotation.Transactional)",
+    )
     fun setSessionVariableBeforeTransaction(joinPoint: ProceedingJoinPoint): Any? {
         val tenantId = tenantContext.getCurrentTenantId()
 

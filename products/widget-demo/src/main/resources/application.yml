@@ -73,3 +73,7 @@ logging:
     org.axonframework: INFO
     org.axonframework.queryhandling: DEBUG  # Story 9.2 - QueryGateway debugging
     org.springframework.security: INFO
+    org.springframework.boot.autoconfigure: DEBUG  # Story 9.2 - Debug autoconfiguration
+    org.springframework.context: DEBUG  # Story 9.2 - Debug bean creation sequence
+    org.springframework.beans.factory: DEBUG  # Story 9.2 - Debug bean instantiation
+    org.jooq: DEBUG  # Story 9.2 - Debug jOOQ bean creation

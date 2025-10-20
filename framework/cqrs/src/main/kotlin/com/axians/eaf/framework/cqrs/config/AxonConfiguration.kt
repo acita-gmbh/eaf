@@ -4,6 +4,7 @@ import com.axians.eaf.framework.cqrs.interceptors.CommandMetricsInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCommandInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCorrelationDataProvider
 import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
+import com.axians.eaf.framework.cqrs.interceptors.TenantQueryHandlerInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TracingCommandInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TracingEventInterceptor
 import org.axonframework.config.Configurer
@@ -208,6 +209,36 @@ class AxonConfiguration {
     ) {
         configurer.onInitialize { config ->
             config.commandBus().registerHandlerInterceptor(tenantCommandInterceptor)
+        }
+    }
+
+    /**
+     * Registers TenantQueryHandlerInterceptor for PostgreSQL session variable setup before query execution.
+     *
+     * **Story 9.2 Fix**: Query handlers require Axon-specific interceptors instead of Spring AOP aspects
+     * because Axon Framework bypasses Spring AOP proxies when dispatching queries.
+     *
+     * **Execution Flow**:
+     * 1. Query received by QueryBus
+     * 2. **This interceptor executes**: Sets PostgreSQL `app.current_tenant` session variable via DSLContext
+     * 3. @QueryHandler method executes (repository queries use RLS with session variable)
+     * 4. Result returned with tenant isolation enforced
+     *
+     * **Integration**: Works with ManualDslContextConfiguration (Story 9.2) which provides DSLContext bean
+     * when Spring Boot's JooqAutoConfiguration is disabled due to JPA EntityManagerFactory presence.
+     *
+     * @param configurer Axon framework configurer
+     * @param tenantQueryInterceptor Query handler interceptor bean (conditionally created when DSLContext exists)
+     */
+    @Autowired(required = false)
+    fun configureTenantQueryInterceptor(
+        configurer: Configurer,
+        tenantQueryInterceptor: TenantQueryHandlerInterceptor?,
+    ) {
+        tenantQueryInterceptor?.let { interceptor ->
+            configurer.onInitialize { config ->
+                config.queryBus().registerHandlerInterceptor(interceptor)
+            }
         }
     }
 }

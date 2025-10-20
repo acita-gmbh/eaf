@@ -19,6 +19,9 @@ dependencies {
     implementation(libs.spring.modulith.starter.core)
     implementation(libs.micrometer.core)
 
+    // jOOQ for TenantQueryHandlerInterceptor (optional - conditionally loaded)
+    compileOnly(libs.bundles.jooq)
+
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
     testImplementation(libs.bundles.testcontainers)

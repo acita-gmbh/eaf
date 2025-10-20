@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.web.advice
 
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
@@ -8,9 +9,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
 import java.net.URI
 import java.time.Instant
+import java.util.concurrent.ExecutionException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    companion object {
+        private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
+    }
+
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleValidationError(
         ex: IllegalArgumentException,
@@ -78,6 +84,46 @@ class GlobalExceptionHandler {
         problemDetail.setProperty("path", request.getDescription(false))
 
         return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(problemDetail)
+    }
+
+    @ExceptionHandler(ExecutionException::class)
+    fun handleExecutionException(
+        ex: ExecutionException,
+        request: WebRequest,
+    ): ResponseEntity<ProblemDetail> {
+        // Unwrap the ExecutionException to get the actual root cause
+        val rootCause = ex.cause ?: ex
+        val causeChain =
+            buildString {
+                appendLine("ExecutionException wrapper -> ${rootCause.javaClass.simpleName}")
+                var current = rootCause
+                while (current.cause != null && current.cause != current) {
+                    current = current.cause!!
+                    appendLine("  -> ${current.javaClass.simpleName}: ${current.message}")
+                }
+            }
+
+        logger.error(
+            "ExecutionException caught in controller. Root cause: {} - {}. Full chain:\n{}",
+            rootCause.javaClass.simpleName,
+            rootCause.message,
+            causeChain,
+            rootCause,
+        )
+
+        val problemDetail =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Query execution failed: ${rootCause.message ?: rootCause.javaClass.simpleName}",
+            )
+        problemDetail.title = "Query Execution Error"
+        problemDetail.type = URI.create("/problems/execution-error")
+        problemDetail.setProperty("timestamp", Instant.now())
+        problemDetail.setProperty("path", request.getDescription(false))
+        problemDetail.setProperty("rootCauseType", rootCause.javaClass.simpleName)
+        problemDetail.setProperty("causeChain", causeChain)
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail)
     }
 
     @ExceptionHandler(Exception::class)
