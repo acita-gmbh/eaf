@@ -39,7 +39,7 @@ dokka = "1.9.10"          # API documentation
 springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
-micrometer = "1.15.4"     # Metrics (updated, avoiding milestone)
+micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
 logback = "1.5.19"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
 opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
