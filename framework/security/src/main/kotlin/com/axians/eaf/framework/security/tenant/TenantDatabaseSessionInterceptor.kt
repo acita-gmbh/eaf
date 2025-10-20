@@ -99,7 +99,7 @@ class TenantDatabaseSessionInterceptor(
 
         // Story 9.2: Use PostgreSQL set_config() with parameterization to prevent SQL injection
         // set_config(setting_name, new_value, is_local) is equivalent to SET LOCAL but supports binding
-        dsl.query("SELECT set_config(?, ?, true)", SESSION_VAR_NAME, tenantId).execute()
+        dsl.execute("SELECT set_config(?, ?, true)", SESSION_VAR_NAME, tenantId)
 
         logger.trace(
             "Tenant session variable set: {} for method: {}",
