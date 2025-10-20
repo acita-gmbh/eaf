@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widgetdemo.controllers
 
+import com.axians.eaf.api.responsetypes.PagedResponseType
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
 import com.axians.eaf.api.widget.dto.PagedResponse
 import com.axians.eaf.api.widget.dto.WidgetResponse
@@ -96,12 +97,9 @@ class WidgetController(
             )
 
         // Story 9.2 Fix: Use custom PagedResponseType to handle generic type matching
-        // Background: Axon 4.12 cannot match generic types like PagedResponse<T> due to type erasure.
+        // Background: Axon 4.x cannot match generic types like PagedResponse<T> due to type erasure.
         // The PagedResponseType provides the missing generic type information at runtime.
-        val responseType =
-            com.axians.eaf.api.responsetypes.PagedResponseType.pagedInstanceOf(
-                WidgetResponse::class.java,
-            )
+        val responseType = PagedResponseType.pagedInstanceOf(WidgetResponse::class.java)
         val response = queryGateway.query(query, responseType).get(5, TimeUnit.SECONDS)
 
         // AC3: Set pagination headers for React-Admin compatibility

@@ -55,6 +55,10 @@ class PagedResponseType<T> private constructor(
         }
 
     override fun responseMessagePayloadType(): Class<PagedResponse<T>> {
+        // The unchecked cast is necessary here due to type erasure: at runtime, the class is always PagedResponse,
+        // and the generic parameter T is only used for compile-time type checking. This cast is safe because
+        // the Axon Framework will only ever provide a PagedResponse instance here, and the generic type is not
+        // available at runtime due to JVM type erasure. See class-level documentation for more details.
         @Suppress("UNCHECKED_CAST")
         return PagedResponse::class.java as Class<PagedResponse<T>>
     }

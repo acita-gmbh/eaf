@@ -46,6 +46,7 @@
       "firstName": "Test",
       "lastName": "User",
       "email": "testuser@eaf.local",
+      "_credentials_comment": "WARNING: This password is intentionally hardcoded in plain text for testing purposes only. Do NOT use in production environments.",
       "credentials": [
         {
           "type": "password",

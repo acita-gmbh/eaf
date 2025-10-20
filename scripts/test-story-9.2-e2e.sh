@@ -7,14 +7,23 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Test configuration
-KEYCLOAK_URL="http://localhost:8180"
-REALM="eaf-test"
-CLIENT_ID="eaf-admin"
-USERNAME="testuser"
-PASSWORD="testuser"
-APP_URL="http://localhost:8081"
-LOG_FILE="/tmp/widget-demo-e2e.log"
+# Check for required dependencies
+for cmd in curl jq base64; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo -e "${RED}Error: Required command '$cmd' is not installed${NC}"
+        echo "Please install: curl, jq, base64"
+        exit 1
+    fi
+done
+
+# Test configuration (environment variables with sensible defaults)
+KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8180}"
+REALM="${REALM:-eaf-test}"
+CLIENT_ID="${CLIENT_ID:-eaf-admin}"
+USERNAME="${USERNAME:-testuser}"
+PASSWORD="${PASSWORD:-testuser}"
+APP_URL="${APP_URL:-http://localhost:8081}"
+LOG_FILE="${LOG_FILE:-/tmp/widget-demo-e2e.log}"
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${YELLOW}Story 9.2 E2E Test - Query Handler Fix${NC}"
@@ -109,6 +118,7 @@ if [ "$JWT_TOKEN" == "null" ] || [ -z "$JWT_TOKEN" ]; then
 fi
 
 print_result 0 "JWT token obtained successfully"
+# Note: base64 -d works on macOS/BSD and GNU coreutils. If decoding fails, fallback to "Unable to decode"
 echo "   Token has roles: $(echo $JWT_TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | jq -r '.realm_access.roles | join(", ")' 2>/dev/null || echo "Unable to decode")"
 
 # Step 6: Test GET /widgets WITH authentication (should return 200 OK with empty list)
