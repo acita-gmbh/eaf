@@ -4,6 +4,7 @@ import com.axians.eaf.framework.cqrs.interceptors.CommandMetricsInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCommandInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TenantCorrelationDataProvider
 import com.axians.eaf.framework.cqrs.interceptors.TenantEventMessageInterceptor
+import com.axians.eaf.framework.cqrs.interceptors.TenantQueryHandlerInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TracingCommandInterceptor
 import com.axians.eaf.framework.cqrs.interceptors.TracingEventInterceptor
 import org.axonframework.config.Configurer
@@ -210,4 +211,18 @@ class AxonConfiguration {
             config.commandBus().registerHandlerInterceptor(tenantCommandInterceptor)
         }
     }
+
+    /**
+     * **Axon 4.12 Auto-Registration**: TenantQueryHandlerInterceptor registration removed.
+     *
+     * Since Axon Framework 4.11+, MessageHandlerInterceptor beans are automatically registered
+     * by Axon's Spring Boot auto-configuration. Manual registration via configurer.onInitialize()
+     * would cause duplicate registration warnings.
+     *
+     * The @Component-annotated TenantQueryHandlerInterceptor is now auto-discovered and registered
+     * by Axon without manual wiring.
+     *
+     * **Reference**: CodeRabbit PR#75 review - Axon 4.11.0 introduced auto-registration support
+     * **Migration**: Removed manual configureTenantQueryInterceptor method (Story 9.2)
+     */
 }
