@@ -17,7 +17,7 @@ import { TypeToConfirmDelete } from '@axians/eaf-admin-shell';
 
 const EditToolbar = () => (
   <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-    <TypeToConfirmDelete resource="widget" confirmField="name" />
+    <TypeToConfirmDelete resource="widgets" confirmField="name" />
     <Box>
       <SaveButton />
     </Box>

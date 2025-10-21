@@ -1,9 +1,11 @@
 package com.axians.eaf.products.widgetdemo
 
+import com.axians.eaf.products.widgetdemo.config.ManualDslContextConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.EnableAspectJAutoProxy
+import org.springframework.context.annotation.Import
 
 /**
  * Widget Demo Application - Reference implementation for EAF framework.
@@ -63,6 +65,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy
     ],
 )
 @EnableAspectJAutoProxy // Story 9.1: Enable AOP for TenantDatabaseSessionInterceptor (RLS session variable)
+@Import(ManualDslContextConfiguration::class) // Story 9.2: Explicitly import DSLContext configuration to fix JPA/jOOQ conflict
 class WidgetDemoApplication
 
 fun main(args: Array<String>) {

@@ -1,13 +1,14 @@
 package com.axians.eaf.products.widgetdemo.controllers
 
+import com.axians.eaf.api.responsetypes.PagedResponseType
 import com.axians.eaf.api.widget.commands.CreateWidgetCommand
+import com.axians.eaf.api.widget.dto.PagedResponse
 import com.axians.eaf.api.widget.dto.WidgetResponse
 import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
 import com.axians.eaf.framework.security.tenant.TenantContext
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.queryhandling.QueryGateway
-import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -76,7 +77,7 @@ class WidgetController(
     @PreAuthorize("hasAuthority('widget:read')")
     fun getWidgets(
         @RequestParam params: Map<String, String>,
-    ): ResponseEntity<Page<WidgetResponse>> {
+    ): ResponseEntity<PagedResponse<WidgetResponse>> {
         val tenantId = tenantContext.getCurrentTenantId()
 
         val page = params["page"]?.toIntOrNull() ?: 0
@@ -95,13 +96,22 @@ class WidgetController(
                 search = search,
             )
 
-        @Suppress("UNCHECKED_CAST")
-        val response =
-            queryGateway
-                .query(query, Page::class.java)
-                .get(5, TimeUnit.SECONDS) as Page<WidgetResponse>
+        // Story 9.2 Fix: Use custom PagedResponseType to handle generic type matching
+        // Background: Axon 4.x cannot match generic types like PagedResponse<T> due to type erasure.
+        // The PagedResponseType provides the missing generic type information at runtime.
+        val responseType = PagedResponseType.pagedInstanceOf(WidgetResponse::class.java)
+        val response = queryGateway.query(query, responseType).get(5, TimeUnit.SECONDS)
 
-        return ResponseEntity.ok(response)
+        // AC3: Set pagination headers for React-Admin compatibility
+        val rangeStart = page * size
+        val rangeEnd = rangeStart + response.content.size - 1
+        val contentRange = "widgets $rangeStart-$rangeEnd/${response.totalElements}"
+
+        return ResponseEntity
+            .ok()
+            .header("Content-Range", contentRange)
+            .header("X-Total-Count", response.totalElements.toString())
+            .body(response)
     }
 
     data class CreateWidgetRequest(
