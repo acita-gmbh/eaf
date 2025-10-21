@@ -118,7 +118,7 @@ class WidgetQueryHandlerTest :
             result.content.size shouldBe 1
             result.totalElements shouldBe 2
             result.totalPages shouldBe 2
-            result.number shouldBe 0
+            result.page shouldBe 0
             result.size shouldBe 1
         }
 
