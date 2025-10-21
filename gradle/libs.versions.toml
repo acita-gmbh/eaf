@@ -36,7 +36,7 @@ kover = "0.9.2"           # Kotlin-native code coverage (Story 8.6: replaces JaC
 dependency-check = "12.1.8" # Supply chain scanning
 
 # Documentation
-dokka = "1.9.10"          # API documentation
+dokka = "2.1.0"          # API documentation
 springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
