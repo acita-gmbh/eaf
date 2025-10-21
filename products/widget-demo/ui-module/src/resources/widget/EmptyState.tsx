@@ -11,6 +11,6 @@ export const WidgetEmptyState = () => (
   <BaseEmptyState
     message="No widgets yet"
     ctaLabel="Create First Widget"
-    ctaLink="/widget/create"
+    ctaLink="/widgets/create"
   />
 );
