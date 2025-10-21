@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widgetdemo.query
 
+import com.axians.eaf.api.widget.dto.PagedResponse
 import com.axians.eaf.api.widget.dto.WidgetResponse
 import com.axians.eaf.api.widget.queries.FindWidgetByIdQuery
 import com.axians.eaf.api.widget.queries.FindWidgetsQuery
@@ -9,20 +10,22 @@ import com.axians.eaf.products.widgetdemo.repositories.WidgetSearchCriteria
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.axonframework.queryhandling.QueryHandler
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import kotlin.math.ceil
 
 /**
  * Query handler for Widget-related queries.
  * Implements QueryHandler methods for retrieving widget data from projections.
- * Ensures read model isolation by interacting only with WidgetProjectionRepository.
+ *
+ * **Story 9.2 Fix - Use Concrete Data Class**:
+ * Returns `PagedResponse<WidgetResponse>` (concrete data class) instead of Spring Data's
+ * `Page<WidgetResponse>` (interface) to avoid Axon's type matching issues with generic
+ * interfaces. Concrete classes work better with Axon's reflection-based handler discovery.
  */
 @Component
-class WidgetQueryHandler(
+open class WidgetQueryHandler(
     private val repository: WidgetProjectionRepository,
     private val objectMapper: ObjectMapper,
 ) {
@@ -62,11 +65,11 @@ class WidgetQueryHandler(
      * Supports category filtering, name search, and sorting with tenant isolation.
      *
      * @param query the query containing pagination and filter parameters
-     * @return Page of WidgetResponse with pagination metadata
+     * @return PagedResponse (concrete data class) with pagination metadata
      */
     @QueryHandler
     @Transactional(readOnly = true)
-    fun handle(query: FindWidgetsQuery): Page<WidgetResponse> {
+    fun handle(query: FindWidgetsQuery): PagedResponse<WidgetResponse> {
         // Validate pagination parameters
         require(query.page >= 0) { "Page number must be >= 0, got ${query.page}" }
         require(query.size > 0 && query.size <= MAX_PAGE_SIZE) {
@@ -74,7 +77,6 @@ class WidgetQueryHandler(
         }
 
         val sort = createSort(query.sort)
-        val pageable = PageRequest.of(query.page, query.size, sort)
 
         val criteria =
             WidgetSearchCriteria(
@@ -89,7 +91,15 @@ class WidgetQueryHandler(
         val result = repository.search(criteria)
         val responses = result.items.map { convertToResponse(it) }
 
-        return PageImpl(responses, pageable, result.total)
+        val totalPages = ceil(result.total.toDouble() / query.size).toInt()
+
+        return PagedResponse(
+            content = responses,
+            totalElements = result.total,
+            page = query.page,
+            size = query.size,
+            totalPages = totalPages,
+        )
     }
 
     /**
