@@ -295,7 +295,8 @@ class TenantEventMessageInterceptor(
             @Suppress("TooGenericExceptionCaught") e: Exception,
         ) {
             // Redis failure should not block event processing (graceful degradation)
-            logger.error("Rate limit check failed, proceeding without limit (tenant: {})", tenantId, e)
+            // Log at WARN level since this is expected when Redis is unavailable (e.g., during mutation testing)
+            logger.warn("Rate limit check failed, proceeding without limit (tenant: {}): {}", tenantId, e.message)
             meterRegistry?.counter("tenant.event.interceptor.rate_limit_error")?.increment()
         }
     }
