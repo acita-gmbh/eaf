@@ -30,6 +30,7 @@ detekt = "1.23.8"         # Static analysis (latest stable - Kotlin 2.0.x, incom
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
 pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
+pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
 kover = "0.9.2"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
 dependency-check = "12.1.8" # Supply chain scanning
