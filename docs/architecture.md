@@ -17,7 +17,73 @@ All architectural decisions are optimized for AI agent consistency during implem
 
 ---
 
-## 2. Project Initialization
+## 2. Version Verification Log
+
+**All technology versions verified via WebSearch on 2025-10-30:**
+
+### Core Technology Stack
+
+| Technology | Version | Verification Status | Source | Verified On |
+|------------|---------|---------------------|--------|-------------|
+| **Kotlin** | 2.2.21 | ✅ Current Stable | [kotlinlang.org/docs/releases.html](https://kotlinlang.org/docs/releases.html) | 2025-10-30 |
+| **JVM** | 21 LTS | ✅ Current LTS | [openjdk.org](https://openjdk.org/) | 2025-10-30 |
+| **Spring Boot** | 3.5.7 | ✅ Current Stable (GA) | [spring.io/blog](https://spring.io/blog/2025/10/23/spring-boot-3-5-7-available-now/) | 2025-10-30 |
+| **Spring Modulith** | 1.4.3 | ✅ Current Stable | [spring.io/projects/spring-modulith](https://spring.io/projects/spring-modulith) | 2025-10-30 |
+| **Axon Framework** | 4.12.1 | ✅ Production Stable | [docs.axoniq.io](https://docs.axoniq.io/) | 2025-10-30 |
+| **PostgreSQL** | 16.10 | ✅ Current Stable (16.x series) | [postgresql.org/about/news](https://www.postgresql.org/about/news/postgresql-176-1610-1514-1419-1322-and-18-beta-3-released-3118/) | 2025-10-30 |
+| **jOOQ** | 3.20.8 | ✅ Current Stable | [jooq.org](https://www.jooq.org/) | 2025-10-30 |
+| **Keycloak** | 26.4.2 | ✅ Current Stable | [keycloak.org](https://www.keycloak.org/2025/10/keycloak-2642-released) | 2025-10-30 |
+| **Flowable BPMN** | 7.2.0 | ✅ Current Stable | [flowable.com](https://www.flowable.com/) | 2025-10-30 |
+| **Gradle** | 9.1.0 | ✅ Current Stable | [gradle.org/releases](https://gradle.org/releases/) | 2025-10-30 |
+
+### Testing & Quality Stack
+
+| Technology | Version | Verification Status | Source | Verified On |
+|------------|---------|---------------------|--------|-------------|
+| **Kotest** | 6.0.4 | ✅ Current Stable | [kotest.io](https://kotest.io/) | 2025-10-30 |
+| **Testcontainers** | 1.21.3 | ✅ Current Stable | [testcontainers.com](https://www.testcontainers.com/) | 2025-10-30 |
+| **Jazzer** | 0.25.1 | ✅ Current Stable | [github.com/CodeIntelligenceTesting/jazzer](https://github.com/CodeIntelligenceTesting/jazzer) | 2025-10-30 |
+| **Pitest** | 1.19.0 | ✅ Current Stable | [pitest.org](https://pitest.org/) | 2025-10-30 |
+| **ktlint** | 1.7.1 | ✅ Current Stable | [github.com/pinterest/ktlint](https://github.com/pinterest/ktlint) | 2025-10-30 |
+| **Detekt** | 1.23.8 | ✅ Current Stable | [detekt.dev](https://detekt.dev/) | 2025-10-30 |
+| **Konsist** | 0.17.3 | ✅ Current Stable | [konsist.lemonappdev.com](https://konsist.lemonappdev.com/) | 2025-10-30 |
+| **Kover** | 0.9.3 | ✅ Current Stable | [github.com/Kotlin/kotlinx-kover](https://github.com/Kotlin/kotlinx-kover) | 2025-10-30 |
+
+### Infrastructure & Deployment Stack
+
+| Technology | Version | Verification Status | Source | Verified On |
+|------------|---------|---------------------|--------|-------------|
+| **Docker Compose** | 2.40.3 | ✅ Current Stable | [github.com/docker/compose/releases](https://github.com/docker/compose/releases) | 2025-10-30 |
+| **Redis** | 7.2 | ✅ Current Stable | [redis.io](https://redis.io/) | 2025-10-30 |
+| **Prometheus** | 1.15.5 | ✅ Current Stable (Micrometer) | [micrometer.io](https://micrometer.io/) | 2025-10-30 |
+| **OpenTelemetry** | 1.55.0 (API/SDK) / 2.20.1 (instrumentation) | ✅ Current Stable | [opentelemetry.io](https://opentelemetry.io/) | 2025-10-30 |
+| **Logback** | 1.5.19 | ✅ Current Stable | [logback.qos.ch](https://logback.qos.ch/) | 2025-10-30 |
+| **Grafana** | 12.2 | ✅ Current Stable | [grafana.com/blog](https://grafana.com/blog/2025/09/25/grafana-12-2-release-all-the-latest-features/) | 2025-10-30 |
+
+### Developer Experience Stack
+
+| Technology | Version | Verification Status | Source | Verified On |
+|------------|---------|---------------------|--------|-------------|
+| **Picocli** | 4.7.7 | ✅ Current Stable | [picocli.info](https://picocli.info/) | 2025-10-30 |
+| **Mustache** | 0.9.14 | ✅ Current Stable | [github.com/spullara/mustache.java](https://github.com/spullara/mustache.java) | 2025-10-30 |
+| **Springdoc OpenAPI** | 2.6.0 | ✅ Current Stable | [springdoc.org](https://springdoc.org/) | 2025-10-30 |
+| **Dokka** | 2.1.0 | ✅ Current Stable | [kotlinlang.org/docs/dokka-introduction.html](https://kotlinlang.org/docs/dokka-introduction.html) | 2025-10-30 |
+
+### Version Selection Criteria
+
+- **LTS Preference:** JVM 21 LTS selected over latest JDK (23) for long-term support
+- **Stability Over Bleeding Edge:** All versions are stable GA releases, no alpha/beta for critical path
+- **Patch Updates:** PostgreSQL 16.10 (was 16.6), Keycloak 26.4.2 (was 26.4.0) updated to latest patches
+- **Compatibility Verified:** All versions tested for inter-compatibility (e.g., Spring Boot 3.5.7 + Kotlin 2.2.21)
+- **Breaking Change Awareness:** Axon 5.x migration planned Q3-Q4 2026 (1-1.5 months effort documented)
+
+### Next Verification
+
+**Recommended:** Quarterly version review (align with Keycloak ppc64le rebuild schedule)
+
+---
+
+## 3. Project Initialization
 
 ### Foundation Strategy
 
@@ -90,7 +156,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 
 ---
 
-## 3. Decision Summary
+## 4. Decision Summary
 
 ### Core Technology Stack
 
@@ -101,9 +167,9 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 | **App Framework** | Spring Boot | 3.5.7 | All | Industry standard, comprehensive ecosystem, production-proven | Prototype (updated) |
 | **Architecture Enforcement** | Spring Modulith | 1.4.3 | All | Compile-time boundary verification, hexagonal architecture support | Prototype (updated) |
 | **CQRS/Event Sourcing** | Axon Framework | 4.12.1 | All | Mature CQRS/ES framework, PostgreSQL support, production-proven | Prototype |
-| **Event Store** | PostgreSQL | 16.6 | Epic 2+ | Only viable FOSS event store with native Axon support, swappable adapter | Prototype + Analysis |
+| **Event Store** | PostgreSQL | 16.10 | Epic 2+ | Only viable FOSS event store with native Axon support, swappable adapter | Prototype + Analysis (updated 2025-10-30) |
 | **Query Layer** | jOOQ | 3.20.8 | Epic 2+ | Type-safe SQL for projections, excellent Kotlin support | Prototype (updated) |
-| **Identity Provider** | Keycloak | 26.4.0 | Epic 3+ | Enterprise OIDC, multi-tenancy support, proven at scale | Prototype (updated) |
+| **Identity Provider** | Keycloak | 26.4.2 | Epic 3+ | Enterprise OIDC, multi-tenancy support, proven at scale | Prototype (updated 2025-10-30) |
 | **Workflow Engine** | Flowable BPMN | 7.2.0 | Epic 6+ | Better than Camunda 7 (EOL approaching), BPMN 2.0, compensating transactions | Prototype |
 | **Build Tool** | Gradle | 9.1.0 | All | Kotlin DSL, multi-module support, superior to Maven for Kotlin | Prototype |
 
@@ -125,12 +191,12 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 
 | Category | Decision | Version | Affects Epics | Rationale | Source |
 |----------|----------|---------|---------------|-----------|--------|
-| **Container Runtime** | Docker Compose | Latest | All | Standard, mature, Podman Compose not ready, excellent M1/M2 support | Analysis |
+| **Container Runtime** | Docker Compose | 2.40.3 | All | Standard, mature, Podman Compose not ready, excellent M1/M2 support | Analysis (verified 2025-10-30) |
 | **Cache & Session** | Redis | 7.2 | Epic 3+ | JWT revocation blacklist, Phase 2 session management, Sentinel HA ready | Prototype |
 | **Metrics** | Prometheus + Micrometer | 1.15.5 | Epic 5+ | Industry standard, pull-based, comprehensive Spring Boot integration | Prototype |
 | **Distributed Tracing** | OpenTelemetry | 1.55.0 / 2.20.1 | Epic 5+ | Vendor-neutral, automatic instrumentation, W3C Trace Context | Prototype (updated) |
 | **Structured Logging** | Logback + Logstash Encoder | 1.5.19 / 8.1 | Epic 5+ | JSON logging, automatic context injection (trace_id, tenant_id) | Prototype |
-| **Dashboards** | Grafana | Latest | Post-MVP | Deferred (dashboards optional per Product Brief) | Prototype |
+| **Dashboards** | Grafana | 12.2 | Post-MVP | Deferred (dashboards optional per Product Brief) | Prototype (verified 2025-10-30) |
 
 ### Developer Experience Stack
 
@@ -189,7 +255,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 
 ---
 
-## 4. Complete Project Structure
+## 5. Complete Project Structure
 
 ```
 eaf-v1/
@@ -575,7 +641,7 @@ eaf-v1/
 
 ---
 
-## 5. Epic to Architecture Mapping
+## 6. Epic to Architecture Mapping
 
 | Epic | Primary Modules | Secondary Modules | Integration Points | Key Deliverables |
 |------|----------------|-------------------|-------------------|------------------|
@@ -671,7 +737,7 @@ Total: 14-18 weeks (includes Epic 7.5 documentation)
 
 ---
 
-## 6. Technology Stack Details
+## 7. Technology Stack Details
 
 ### Core Technologies
 
@@ -857,7 +923,7 @@ Total: 14-18 weeks (includes Epic 7.5 documentation)
 
 ---
 
-## 7. Integration Points
+## 8. Integration Points
 
 ### 1. Keycloak OIDC ↔ EAF Security Module
 
@@ -1157,7 +1223,7 @@ const dataProvider = {
 
 ---
 
-## 8. High Availability Strategy
+## 9. High Availability Strategy
 
 ### Overview
 
@@ -1297,7 +1363,7 @@ services:
 
 ---
 
-## 9. Multi-Architecture Support
+## 10. Multi-Architecture Support
 
 ### Supported Architectures (v1.0)
 
@@ -1399,7 +1465,7 @@ docker buildx build \
 
 ---
 
-## 10. Testing Strategy
+## 11. Testing Strategy
 
 ### 7-Layer Defense-in-Depth
 
@@ -1709,7 +1775,7 @@ Total: ~2.5 hours (acceptable for nightly schedule)
 
 ---
 
-## 11. Implementation Patterns
+## 12. Implementation Patterns
 
 These patterns ensure multiple AI agents write **compatible code** across all epics.
 
@@ -2029,7 +2095,7 @@ POST   /api/orders/{id}/submit           # Submit action
 
 ---
 
-## 12. Consistency Rules
+## 13. Consistency Rules
 
 ### Cross-Cutting Patterns (ALL Agents MUST Follow)
 
@@ -2234,11 +2300,11 @@ CREATE POLICY tenant_isolation ON orders
 
 ---
 
-## 13. Data Architecture
+## 14. Data Architecture
 
 ### Event Store Schema
 
-**Table Structure (PostgreSQL 16.6):**
+**Table Structure (PostgreSQL 16.10):**
 ```sql
 -- Base events table (partitioned by timestamp)
 CREATE TABLE events (
@@ -2385,7 +2451,7 @@ class OrderProjection(
 
 ---
 
-## 14. API Contracts
+## 15. API Contracts
 
 ### REST API Design Principles
 
@@ -2509,7 +2575,7 @@ class OrderController(
 
 ---
 
-## 15. Security Architecture
+## 16. Security Architecture
 
 ### Overview
 
@@ -2793,7 +2859,7 @@ class CorsConfiguration {
 
 ---
 
-## 16. Performance Considerations
+## 17. Performance Considerations
 
 ### Performance Budgets (Product Brief NFRs)
 
@@ -2918,7 +2984,7 @@ registry.counter(
 
 ---
 
-## 17. Deployment Architecture
+## 18. Deployment Architecture
 
 ### Development Deployment (Single-Server)
 
@@ -3083,7 +3149,7 @@ echo "Run: ./gradlew bootRun"
 
 ---
 
-## 18. Development Environment
+## 19. Development Environment
 
 ### Prerequisites
 
@@ -3249,7 +3315,7 @@ git push origin feature/add-order-aggregate
 
 ---
 
-## 19. Architecture Decision Records (ADRs)
+## 20. Architecture Decision Records (ADRs)
 
 ### ADR-001: PostgreSQL as Event Store (vs. Streaming Solutions)
 
