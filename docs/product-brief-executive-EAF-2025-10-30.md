@@ -235,7 +235,7 @@ Mitigation: Comprehensive analysis complete, de-scoped full complexity from MVP,
 ## Appendix: Technology Stack Summary
 
 **Confirmed (Non-Negotiable):**
-Kotlin, JVM 21, Spring Boot 3.x, Axon Framework, PostgreSQL 16.1+, Keycloak OIDC, Docker Compose, ktlint, Detekt, Testcontainers, Multi-Arch (amd64/arm64/ppc64le)
+Kotlin, JVM 21, Spring Boot 3.x, Axon Framework, PostgreSQL 16.10, Keycloak OIDC, Docker Compose, ktlint, Detekt, Testcontainers, Multi-Arch (amd64/arm64/ppc64le)
 
 **Preferred (Under Evaluation):**
 Kotest, Spring Modulith, Flowable BPMN, Arrow, React-Admin, jOOQ, Prometheus/Grafana/Jaeger

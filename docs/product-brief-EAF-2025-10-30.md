@@ -15,7 +15,7 @@ The framework addresses critical business bottlenecks: the legacy DCA framework 
 
 EAF v1.0 targets internal Axians development teams and aims to reduce developer overhead to <5%, achieve developer productivity in <1 month, attain audit-ready security compliance (ASVS 100% L1 / 50% L2, ISO 27001/NIS2), and enable migration of flagship products (ZEWSSP, DPCM) to unlock new enterprise markets.
 
-The technical foundation includes Kotlin 2.2.20, Spring Boot 3.5.6, Axon Framework 4.12.1, PostgreSQL 16.1+ as a swappable event store adapter, Keycloak OIDC for authentication, and Flowable BPMN for workflow orchestration. The framework enforces Constitutional Test-Driven Development with Kotest and the innovative "Nullable Design Pattern" for 60%+ faster tests.
+The technical foundation includes Kotlin 2.2.21, Spring Boot 3.5.7, Axon Framework 4.12.1, PostgreSQL 16.10 as a swappable event store adapter, Keycloak OIDC for authentication, and Flowable BPMN for workflow orchestration. The framework enforces Constitutional Test-Driven Development with Kotest and the innovative "Nullable Design Pattern" for 60%+ faster tests.
 
 ---
 
@@ -60,11 +60,11 @@ The Enterprise Application Framework (EAF) v1.0 is a "batteries-included" develo
 ### Core Concept
 
 EAF implements a modern, industry-standard architecture stack:
-- **Hexagonal Architecture** (programmatically enforced via Spring Modulith 1.4.3)
+- **Hexagonal Architecture** (programmatically enforced via Spring Modulith 1.4.4)
 - **Domain-Driven Design (DDD)** for clear business logic modeling
 - **CQRS/Event Sourcing** via Axon Framework 4.12.1 for scalable, auditable systems
-- **Kotlin 2.2.20 / Spring Boot 3.5.6** for type-safe, maintainable code
-- **PostgreSQL 16.1+** as a swappable event store adapter
+- **Kotlin 2.2.21 / Spring Boot 3.5.7** for type-safe, maintainable code
+- **PostgreSQL 16.10** as a swappable event store adapter
 
 This architecture programmatically enforces boundaries and isolates business logic, directly solving the "inflexible" and "untestable" nature of the legacy DCA framework.
 
@@ -537,7 +537,7 @@ These technologies are confirmed and non-negotiable for EAF v1.0:
 - **Application Framework:** Spring Boot 3.x for enterprise application development
 - **CQRS/Event Sourcing:** Axon Framework with PostgreSQL event store (designed as swappable adapter)
 - **Identity & Access Management:** Keycloak OIDC for enterprise authentication and authorization
-- **Database:** PostgreSQL 16.1+ for event store, projections, and workflow engine
+- **Database:** PostgreSQL 16.10 for event store, projections, and workflow engine
 - **Deployment:** Docker Compose for local development and customer-hosted deployments
 - **Quality Enforcement:** ktlint and Detekt for automated code quality gates (zero-tolerance)
 - **Integration Testing:** Testcontainers for testing with real dependencies (in-memory databases forbidden)
@@ -575,7 +575,7 @@ These technologies are preferred based on prototype validation but remain subjec
 
 **Core Architectural Patterns:**
 - **Hexagonal Architecture:** Ports & Adapters pattern isolating domain logic from infrastructure
-- **Spring Modulith 1.4.3:** Programmatic enforcement of module boundaries with compile-time verification
+- **Spring Modulith 1.4.4:** Programmatic enforcement of module boundaries with compile-time verification
 - **Domain-Driven Design (DDD):** Bounded contexts, aggregates, entities, value objects
 - **CQRS/Event Sourcing:** Clear separation of write and read models, event-first persistence
 - **Event-Driven Architecture:** Asynchronous processing via Axon Event Processors
@@ -917,7 +917,7 @@ These requirements are incorporated into Epic 3 (Authentication) and overall arc
 **Technical Research:**
 - Event Store Comparative Analysis - Research validating PostgreSQL selection
 - Dockets Feature Deep-Dive Analysis - DPCM team analysis of orchestration complexity
-- Spring Modulith 1.4.3 Documentation - Boundary enforcement patterns
+- Spring Modulith 1.4.4 Documentation - Boundary enforcement patterns
 - Axon Framework 4.12.1 Reference Guide - CQRS/ES implementation patterns
 
 **Industry Standards:**
@@ -928,10 +928,10 @@ These requirements are incorporated into Epic 3 (Authentication) and overall arc
 - RFC 7807 - Problem Details for HTTP APIs
 
 **Technology Documentation:**
-- Kotlin 2.2.20 Language Reference
-- Spring Boot 3.5.6 Reference Documentation
+- Kotlin 2.2.21 Language Reference
+- Spring Boot 3.5.7 Reference Documentation
 - PostgreSQL 16 Documentation - Event Store Configuration
-- Keycloak 26.0.0 Server Administration Guide
+- Keycloak 26.4.2 Server Administration Guide
 - Flowable 7.1 User Guide - BPMN 2.0 Integration
 
 ---

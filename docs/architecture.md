@@ -9,11 +9,13 @@
 
 ## 1. Executive Summary
 
-EAF v1.0 implements a production-validated architecture combining **Hexagonal Architecture**, **CQRS/Event Sourcing** (Axon Framework 4.12.1), and **Spring Modulith 1.4.3** for programmatic boundary enforcement. Built on Kotlin 2.2.21 and Spring Boot 3.5.7 with PostgreSQL 16.6 as a swappable event store adapter, the framework delivers enterprise-grade multi-tenancy (3-layer isolation), comprehensive security (10-layer JWT validation, Keycloak OIDC), and industry-leading testing strategy (7-layer defense including Property-Based, Fuzz, and Concurrency testing).
+EAF v1.0 implements a production-validated architecture combining **Hexagonal Architecture**, **CQRS/Event Sourcing** (Axon Framework 4.12.1), and **Spring Modulith 1.4.4** for programmatic boundary enforcement. Built on Kotlin 2.2.21 and Spring Boot 3.5.7 with PostgreSQL 16.10 as a swappable event store adapter, the framework delivers enterprise-grade multi-tenancy (3-layer isolation), comprehensive security (10-layer JWT validation, Keycloak OIDC), and industry-leading testing strategy (7-layer defense including Property-Based, Fuzz, and Concurrency testing).
 
 The architecture supports **Active-Active HA readiness** through stateless design with phased deployment (Active-Passive MVP transitioning to Active-Active for enterprise customers), **multi-architecture support** (amd64/arm64/ppc64le with custom Keycloak builds), and exceptional developer experience via Scaffolding CLI (70-80% boilerplate elimination), Golden Path documentation, and 12-week tiered onboarding program.
 
 All architectural decisions are optimized for AI agent consistency during implementation, with comprehensive implementation patterns preventing conflicts in naming, structure, formatting, and cross-cutting concerns.
+
+**Constitutional TDD:** The framework mandates Test-Driven Development through the Red-Green-Refactor cycle, enforced by Git hooks, CI/CD pipelines, and code review requirements. All production code must be written test-first with ≥85% coverage and 60-70% mutation score validation.
 
 ---
 
@@ -28,8 +30,8 @@ All architectural decisions are optimized for AI agent consistency during implem
 | **Kotlin** | 2.2.21 | ✅ Current Stable | [kotlinlang.org/docs/releases.html](https://kotlinlang.org/docs/releases.html) | 2025-10-30 |
 | **JVM** | 21 LTS | ✅ Current LTS | [openjdk.org](https://openjdk.org/) | 2025-10-30 |
 | **Spring Boot** | 3.5.7 | ✅ Current Stable (GA) | [spring.io/blog](https://spring.io/blog/2025/10/23/spring-boot-3-5-7-available-now/) | 2025-10-30 |
-| **Spring Modulith** | 1.4.3 | ✅ Current Stable | [spring.io/projects/spring-modulith](https://spring.io/projects/spring-modulith) | 2025-10-30 |
-| **Axon Framework** | 4.12.1 | ✅ Production Stable | [docs.axoniq.io](https://docs.axoniq.io/) | 2025-10-30 |
+| **Spring Modulith** | 1.4.4 | ✅ Current Stable | [spring.io/blog](https://spring.io/blog/2025/10/27/spring-modulith-2-0-rc1-1-4-4-and-1-3-10-released/) | 2025-10-31 |
+| **Axon Framework** | 4.12.1 | ✅ Production Stable (Maven Central) | [central.sonatype.com](https://central.sonatype.com/artifact/org.axonframework/axon/4.12.1) | 2025-10-31 |
 | **PostgreSQL** | 16.10 | ✅ Current Stable (16.x series) | [postgresql.org/about/news](https://www.postgresql.org/about/news/postgresql-176-1610-1514-1419-1322-and-18-beta-3-released-3118/) | 2025-10-30 |
 | **jOOQ** | 3.20.8 | ✅ Current Stable | [jooq.org](https://www.jooq.org/) | 2025-10-30 |
 | **Keycloak** | 26.4.2 | ✅ Current Stable | [keycloak.org](https://www.keycloak.org/2025/10/keycloak-2642-released) | 2025-10-30 |
@@ -73,7 +75,7 @@ All architectural decisions are optimized for AI agent consistency during implem
 
 - **LTS Preference:** JVM 21 LTS selected over latest JDK (23) for long-term support
 - **Stability Over Bleeding Edge:** All versions are stable GA releases, no alpha/beta for critical path
-- **Patch Updates:** PostgreSQL 16.10 (was 16.6), Keycloak 26.4.2 (was 26.4.0) updated to latest patches
+- **Patch Updates:** PostgreSQL 16.10 (was 16.6), Keycloak 26.4.2 (was 26.4.0), Spring Modulith 1.4.4 (was 1.4.3) updated to latest patches
 - **Compatibility Verified:** All versions tested for inter-compatibility (e.g., Spring Boot 3.5.7 + Kotlin 2.2.21)
 - **Breaking Change Awareness:** Axon 5.x migration planned Q3-Q4 2026 (1-1.5 months effort documented)
 
@@ -87,7 +89,7 @@ All architectural decisions are optimized for AI agent consistency during implem
 
 ### Foundation Strategy
 
-EAF v1.0 **reuses validated prototype structure** from `/Users/michael/acci_eaf` rather than using standard starter templates (Spring Initializr, JHipster). Standard starters provide <30% coverage of EAF's requirements (Hexagonal Architecture, CQRS/ES, Spring Modulith, Multi-Tenancy, 7-layer testing).
+EAF v1.0 **reuses validated prototype structure** from a production-proven reference implementation rather than using standard starter templates (Spring Initializr, JHipster). Standard starters provide <30% coverage of EAF's requirements (Hexagonal Architecture, CQRS/ES, Spring Modulith, Multi-Tenancy, 7-layer testing).
 
 ### Initialization Command (Epic 1: Foundation)
 
@@ -165,7 +167,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 | **Language** | Kotlin | 2.2.21 | All | Type-safe, null-safe, JVM interop, excellent Spring Boot support | Prototype (updated) |
 | **Runtime** | JVM | 21 LTS | All | Long-term support, mature ecosystem, multi-arch support | Prototype |
 | **App Framework** | Spring Boot | 3.5.7 | All | Industry standard, comprehensive ecosystem, production-proven | Prototype (updated) |
-| **Architecture Enforcement** | Spring Modulith | 1.4.3 | All | Compile-time boundary verification, hexagonal architecture support | Prototype (updated) |
+| **Architecture Enforcement** | Spring Modulith | 1.4.4 | All | Compile-time boundary verification, hexagonal architecture support | Prototype (updated 2025-10-31) |
 | **CQRS/Event Sourcing** | Axon Framework | 4.12.1 | All | Mature CQRS/ES framework, PostgreSQL support, production-proven | Prototype |
 | **Event Store** | PostgreSQL | 16.10 | Epic 2+ | Only viable FOSS event store with native Axon support, swappable adapter | Prototype + Analysis (updated 2025-10-30) |
 | **Query Layer** | jOOQ | 3.20.8 | Epic 2+ | Type-safe SQL for projections, excellent Kotlin support | Prototype (updated) |
@@ -180,7 +182,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 | **Testing Framework** | Kotest | 6.0.4 | All | Kotlin-native, BDD syntax, property testing, better than JUnit 5 | Prototype |
 | **Integration Testing** | Testcontainers | 1.21.3 | All | Real dependencies (PostgreSQL, Keycloak, Redis), production-realistic | Prototype |
 | **Fuzz Testing** | Jazzer | 0.25.1 | Epic 8+ | Google OSS-Fuzz standard, coverage-guided, finds crashes/DoS | Prototype |
-| **Concurrency Testing** | LitmusKt | TBD | Epic 8 | JetBrains Research, race condition detection, memory model validation | Analysis (NEW) |
+| **Concurrency Testing** | LitmusKt | Latest | Epic 8 | JetBrains Research, race condition detection, memory model validation | Analysis (NEW) |
 | **Mutation Testing** | Pitest | 1.19.0 | Epic 8+ | Only FOSS option (deprecated Kotlin plugin), 60-70% target realistic | Prototype + Analysis |
 | **Code Formatting** | ktlint | 1.7.1 | All | Kotlin official style, automated, Git hook integration | Prototype |
 | **Static Analysis** | Detekt | 1.23.8 | All | Comprehensive rules, Spring Boot aware, zero violations enforced | Prototype |
@@ -204,7 +206,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 |----------|----------|---------|---------------|-----------|--------|
 | **CLI Framework** | Picocli | 4.7.7 | Epic 7 | Modern CLI library, annotation-based, excellent Kotlin support | Prototype |
 | **Template Engine** | Mustache | 0.9.14 | Epic 7 | Logic-less templates, simple, JHipster migration path | Prototype |
-| **Frontend Framework** | React-Admin | TBD | Epic 7 | Operator portal, Material-UI, Keycloak integration | Prototype |
+| **Frontend Framework** | shadcn-admin-kit | Latest (Oct 2025) | Epic 7 | ra-core (headless react-admin) + shadcn/ui, Keycloak integration | Analysis (NEW) |
 | **API Documentation** | Springdoc OpenAPI | 2.6.0 | Epic 2+ | OpenAPI 3.0 generation, Swagger UI, Spring Boot 3 support | Prototype |
 | **Code Documentation** | Dokka | 2.1.0 | Epic 7.5 | Kotlin-native documentation generator | Prototype |
 
@@ -230,7 +232,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 | **Date/Time Storage** | UTC everywhere, ISO-8601, Instant/TIMESTAMPTZ | All | Eliminates timezone bugs, international standard | Decision #6 |
 | **Projection Updates** | Real-time (TrackingEventProcessor) | Epic 2+ | <10s lag target, eventual consistency acceptable | Decision #7 |
 | **Flowable-Axon Bridge** | ServiceTask command dispatch, Event signal correlation | Epic 6 | Bidirectional integration, tenant-aware workflows | Decision #8 |
-| **React-Admin Provider** | Custom REST data provider, Keycloak auth provider | Epic 7 | Cursor pagination compatibility, OIDC integration | Decision #9 |
+| **shadcn-admin-kit Provider** | Custom REST data provider (ra-core), Keycloak auth provider | Epic 7 | Cursor pagination compatibility, OIDC integration, shadcn/ui components | Decision #9 |
 | **Performance Budgets** | API p95 <200ms, Event lag <10s, Query timeout 30s | All | Product Brief NFRs, monitoring triggers | Decision #10 |
 | **i18n** | English only (MVP), Spring MessageSource (Post-MVP) | Post-MVP | ZEWSSP German market, defer complexity | Decision #11 |
 | **Audit Trail** | Event Store IS audit log, dedicated table deferred | All | Event Sourcing provides audit by design | Decision #12 |
@@ -240,6 +242,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 
 | Decision | Value | Affects Epics | Rationale | Source |
 |----------|-------|---------------|-----------|--------|
+| **Development Methodology** | Constitutional TDD (Red-Green-Refactor mandatory) | All | Test-first enforced by Git hooks, CI/CD, code review; ensures quality, design, living documentation | Analysis (NEW) |
 | **Testing Philosophy** | 7-layer defense-in-depth | All | Static → Unit → Integration → Property → Fuzz → Concurrency → Mutation | Analysis (NEW) |
 | **Unit Testing** | Nullables Pattern (James Shore) | All | 100-1000x faster than mocking frameworks, production code with off-switch | Analysis (NEW) |
 | **Aggregate Testing** | Axon Test Fixtures | Epic 2+ | Framework-optimized, Given-When-Then DSL | Prototype |
@@ -250,7 +253,7 @@ This foundation eliminates 4-6 weeks of setup time and ensures architectural con
 | **Integration Testing** | Testcontainers (PostgreSQL, Keycloak, Redis) | All | 40-50% of test suite, production-realistic, real dependencies mandatory | Prototype |
 | **Coverage Target** | 85%+ line coverage | All | Measured by Kover, enforced in CI/CD | Product Brief |
 
-**Total Decisions Documented:** 88 (75 from prototype + 13 new)
+**Total Decisions Documented:** 89 (75 from prototype + 14 new)
 **Decision Coverage:** 100% of architectural requirements
 
 ---
@@ -512,7 +515,7 @@ eaf-v1/
 │               └── TestContainersConfiguration.kt
 │
 ├── apps/                                   # Frontend Applications
-│   └── admin/                              # Epic 7: React-Admin Operator Portal
+│   └── admin/                              # Epic 7: shadcn-admin-kit Operator Portal
 │       ├── package.json
 │       ├── pnpm-lock.yaml
 │       ├── vite.config.ts
@@ -755,7 +758,7 @@ Total: 14-18 weeks (includes Epic 7.5 documentation)
 - OAuth2 Resource Server for Keycloak integration
 - WebMVC for REST API (not reactive - simplicity over async complexity)
 
-**Spring Modulith 1.4.3**
+**Spring Modulith 1.4.4**
 - Compile-time module boundary verification (Konsist integration)
 - Hexagonal architecture enforcement
 - Event publication registry
@@ -769,7 +772,7 @@ Total: 14-18 weeks (includes Epic 7.5 documentation)
 - Test fixtures for aggregate testing
 - Migration to Axon 5.x planned Q3-Q4 2026 (1-1.5 months effort)
 
-**PostgreSQL 16.6**
+**PostgreSQL 16.10**
 - Event store (time-based partitioning, BRIN indexes)
 - Projection tables (jOOQ type-safe queries)
 - Flowable BPMN persistence
@@ -916,7 +919,7 @@ Total: 14-18 weeks (includes Epic 7.5 documentation)
 - **Critical:** Must complete BEFORE Epic 9 (Majlinda validation dependency)
 
 **Frontend:**
-- React-Admin: Operator portal framework (version TBD in Epic 7)
+- shadcn-admin-kit: Operator portal (ra-core + shadcn/ui, latest Oct 2025)
 - Material-UI v5: Component library
 - Vite: Build tool (fast, modern)
 - pnpm: Package manager
@@ -1034,7 +1037,7 @@ eaf:
          │
          ↓
 ┌──────────────────────────────────┐
-│ PostgreSQL 16.6                  │
+│ PostgreSQL 16.10                 │
 │                                  │
 │ events_2025_10 (partition)       │
 │  - event_id (PK)                 │
@@ -1148,11 +1151,11 @@ class FlowableEventListener(
 
 ---
 
-### 4. React-Admin ↔ EAF REST API
+### 4. shadcn-admin-kit ↔ EAF REST API
 
 ```
 ┌─────────────────────────────────┐
-│ apps/admin (React-Admin)        │
+│ apps/admin (shadcn-admin-kit)   │
 │                                 │
 │ dataProvider.getList(resource)  │
 └────────┬────────────────────────┘
@@ -1282,12 +1285,12 @@ EAF v1.0 implements a **phased HA approach** supporting multiple customer deploy
 # docker-compose.prod.yml
 services:
   postgres-primary:
-    image: postgres:16.6
+    image: postgres:16.10
     environment:
       - POSTGRES_REPLICATION_MODE=master
 
   postgres-replica:
-    image: postgres:16.6
+    image: postgres:16.10
     environment:
       - POSTGRES_REPLICATION_MODE=slave
       - POSTGRES_MASTER_HOST=postgres-primary
@@ -1591,7 +1594,7 @@ class MoneyTest : FunSpec({
 @Testcontainers
 class OrderApiIntegrationTest : FunSpec({
     @Container
-    val postgres = PostgreSQLContainer<Nothing>("postgres:16.6")
+    val postgres = PostgreSQLContainer<Nothing>("postgres:16.10")
 
     @Container
     val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.4.0")
@@ -1772,6 +1775,331 @@ Total: ~2.5 hours (acceptable for nightly schedule)
 **Reference:**
 - Nullables Pattern: https://www.jamesshore.com/v2/projects/nullables
 - Testing Without Mocks: https://www.jamesshore.com/v2/projects/nullables/testing-without-mocks
+
+---
+
+## 11.5. Constitutional TDD & Red-Green-Refactor Mandate
+
+### TDD is Law (Non-Negotiable)
+
+EAF enforces **Constitutional Test-Driven Development** as a fundamental development principle. TDD is not optional, not a "best practice," but a **constitutional requirement** for all code contributions.
+
+**Constitutional Mandate:**
+- ALL production code MUST be written using the Red-Green-Refactor cycle
+- Tests MUST be written BEFORE implementation code
+- Commits without corresponding tests are REJECTED by Git hooks
+- Code reviews MUST verify TDD compliance
+
+### The Red-Green-Refactor Cycle (Mandatory)
+
+**Every feature, every bug fix, every change follows this cycle:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ 🔴 RED: Write Failing Test First                        │
+│                                                          │
+│ 1. Write test that describes desired behavior          │
+│ 2. Test MUST fail (prove test actually tests something)│
+│ 3. Verify failure message is correct                   │
+│ 4. Commit: "RED: Add test for [feature]"               │
+│                                                          │
+│ Duration: 5-15 minutes per test                         │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+┌──────────────────────────────────────────────────────────┐
+│ 🟢 GREEN: Make Test Pass (Simplest Solution)            │
+│                                                          │
+│ 1. Write MINIMAL code to make test pass                │
+│ 2. Run tests - verify ALL tests pass                   │
+│ 3. No refactoring yet - just make it work              │
+│ 4. Commit: "GREEN: Implement [feature]"                │
+│                                                          │
+│ Duration: 10-30 minutes per implementation              │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+┌──────────────────────────────────────────────────────────┐
+│ 🔵 REFACTOR: Improve Code Quality                       │
+│                                                          │
+│ 1. Clean up code (remove duplication, improve naming)  │
+│ 2. Extract methods/classes where appropriate           │
+│ 3. Run tests after EACH refactoring step               │
+│ 4. Commit: "REFACTOR: Clean up [component]"            │
+│                                                          │
+│ Duration: 5-20 minutes per refactoring                  │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+                  Repeat for next feature
+```
+
+### Test-First Enforcement Mechanisms
+
+**1. Git Hooks (Pre-Commit):**
+```bash
+#!/bin/bash
+# .git-hooks/pre-commit
+
+# Run static analysis
+./gradlew ktlintCheck detekt konsist
+
+# Check for production code without tests
+NEW_FILES=$(git diff --cached --name-only --diff-filter=A | grep 'src/main/kotlin')
+for file in $NEW_FILES; do
+    TEST_FILE=$(echo $file | sed 's/src\/main/src\/test/')
+    if [ ! -f "$TEST_FILE" ]; then
+        echo "❌ REJECTED: Production code without test: $file"
+        echo "   Expected test: $TEST_FILE"
+        echo "   TDD Mandate: Write test FIRST"
+        exit 1
+    fi
+done
+
+# Check test modifications timestamp > production code
+# (Ensures test was written/modified first)
+```
+
+**2. CI/CD Pipeline:**
+```yaml
+# .github/workflows/ci.yml
+- name: Verify TDD Compliance
+  run: |
+    ./scripts/verify-tdd-compliance.sh
+    # Checks:
+    # - Every production file has corresponding test
+    # - Test coverage meets 85% minimum
+    # - No @Disabled or @Ignore tags (must fix or delete)
+```
+
+**3. Code Review Checklist:**
+```markdown
+## TDD Compliance Review
+
+- [ ] RED commit present (failing test)
+- [ ] GREEN commit present (implementation)
+- [ ] REFACTOR commit present (if applicable)
+- [ ] Test coverage ≥85% for changed code
+- [ ] No production code commits without tests
+- [ ] Tests follow Given-When-Then structure
+```
+
+### TDD Workflow Patterns (By Component Type)
+
+**Aggregate Development (Axon Test Fixtures):**
+```kotlin
+// 🔴 RED: Write failing test first
+class OrderAggregateTest : FunSpec({
+    test("should create order when command valid") {
+        fixture<OrderAggregate>()
+            .given()  // No prior events
+            .`when`(CreateOrderCommand(orderId, customerId, items))
+            .expectEvents(OrderCreatedEvent(orderId, customerId, items))
+            // ❌ FAILS - aggregate doesn't exist yet
+    }
+})
+
+// COMMIT: "🔴 RED: Add test for order creation"
+
+// 🟢 GREEN: Implement aggregate
+@Aggregate
+class OrderAggregate {
+    @CommandHandler
+    constructor(command: CreateOrderCommand) {
+        AggregateLifecycle.apply(OrderCreatedEvent(...))
+    }
+    // ✅ PASSES - minimal implementation
+}
+
+// COMMIT: "🟢 GREEN: Implement order creation"
+
+// 🔵 REFACTOR: Add validation
+@CommandHandler
+constructor(command: CreateOrderCommand) {
+    require(command.items.isNotEmpty()) { "Items required" }
+    require(command.total > Money.ZERO) { "Positive total required" }
+
+    AggregateLifecycle.apply(OrderCreatedEvent(...))
+}
+
+// COMMIT: "🔵 REFACTOR: Add order validation"
+```
+
+**Service Development (Nullables Pattern):**
+```kotlin
+// 🔴 RED: Test first
+class OrderServiceTest : FunSpec({
+    test("should send notification after order created") {
+        val emailClient = EmailClient.createNull()
+        val sentEmails = emailClient.trackOutput()
+
+        val service = OrderService(emailClient)
+        service.handleOrderCreated(OrderCreatedEvent(...))
+
+        sentEmails.data shouldContain Email(...)
+        // ❌ FAILS - service doesn't exist
+    }
+})
+
+// 🟢 GREEN: Minimal implementation
+class OrderService(private val emailClient: EmailClient) {
+    fun handleOrderCreated(event: OrderCreatedEvent) {
+        emailClient.send(Email(...))
+    }
+}
+
+// 🔵 REFACTOR: Extract template
+class OrderService(
+    private val emailClient: EmailClient,
+    private val templateEngine: TemplateEngine
+) {
+    fun handleOrderCreated(event: OrderCreatedEvent) {
+        val body = templateEngine.render("order-created", event)
+        emailClient.send(Email(body = body))
+    }
+}
+```
+
+**API Development (Integration Tests):**
+```kotlin
+// 🔴 RED: Integration test first
+@SpringBootTest
+@Testcontainers
+class OrderApiTest : FunSpec({
+    test("POST /api/orders should create order") {
+        val response = restTemplate.postForEntity(
+            "/api/orders",
+            CreateOrderRequest(...),
+            AcceptedResponse::class.java
+        )
+
+        response.statusCode shouldBe HttpStatus.ACCEPTED
+        // ❌ FAILS - endpoint doesn't exist
+    }
+})
+
+// 🟢 GREEN: Create endpoint
+@RestController
+@RequestMapping("/api/orders")
+class OrderController(private val commandGateway: CommandGateway) {
+    @PostMapping
+    fun createOrder(@RequestBody request: CreateOrderRequest) =
+        ResponseEntity.accepted().build()
+}
+
+// 🔵 REFACTOR: Add full implementation
+@PostMapping
+fun createOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<AcceptedResponse> {
+    val orderId = commandGateway.send<OrderId>(
+        CreateOrderCommand.from(request)
+    ).join()
+
+    return ResponseEntity
+        .status(HttpStatus.ACCEPTED)
+        .body(AcceptedResponse(id = orderId.value))
+}
+```
+
+### TDD Anti-Patterns (FORBIDDEN)
+
+**❌ Test-Last Development:**
+```kotlin
+// WRONG: Implementation first, test later
+class OrderAggregate { /* implementation */ }
+class OrderAggregateTest { /* tests added after */ }
+// REJECTED by Git hooks
+```
+
+**❌ Skipping RED Phase:**
+```kotlin
+// WRONG: Writing test that immediately passes
+test("should do nothing") {
+    val result = doNothing()  // Already works
+    result shouldBe Unit
+}
+// VIOLATES: Test must fail first to prove it tests something
+```
+
+**❌ Large Implementation Commits:**
+```kotlin
+// WRONG: 500 lines of code in single GREEN commit
+git commit -m "GREEN: Implement entire order system"
+// VIOLATES: Small incremental steps required
+```
+
+**❌ Disabled/Ignored Tests:**
+```kotlin
+@Disabled("Will fix later")
+test("should validate tenant isolation") { }
+// FORBIDDEN: Tests must pass or be deleted
+// Code review REJECTS @Disabled/@Ignore
+```
+
+### TDD Metrics & Enforcement
+
+**Commit Message Conventions:**
+```
+🔴 RED: Add test for {feature}
+🟢 GREEN: Implement {feature}
+🔵 REFACTOR: {improvement description}
+
+Examples:
+🔴 RED: Add test for order cancellation
+🟢 GREEN: Implement order cancellation command
+🔵 REFACTOR: Extract order validation logic
+```
+
+**Automated Tracking:**
+```bash
+# CI/CD analysis of commit messages:
+$ ./scripts/analyze-tdd-compliance.sh
+
+Compliance Report:
+- RED commits: 127
+- GREEN commits: 134
+- REFACTOR commits: 89
+- Ratio: 1:1.06:0.7 ✅ HEALTHY
+
+Violations:
+- 3 commits without TDD prefix ⚠️
+- 0 production code without tests ✅
+```
+
+**Quality Metrics:**
+- **TDD Compliance Rate:** >95% of commits follow Red-Green-Refactor
+- **Test-First Ratio:** ≥1:1 (test commits : implementation commits)
+- **Coverage Gate:** 85%+ line coverage (enforced by Kover)
+- **Mutation Score:** 60-70% (validates test effectiveness)
+
+### Benefits Realized Through Constitutional TDD
+
+**Design Benefits:**
+- Forces thinking about interfaces before implementation
+- Produces testable, decoupled code naturally
+- Prevents over-engineering (YAGNI enforced)
+- Clear specifications through tests
+
+**Quality Benefits:**
+- Regression prevention (comprehensive test suite)
+- Continuous refactoring safety net
+- Living documentation through tests
+- High confidence in changes
+
+**Velocity Benefits:**
+- Faster debugging (tests pinpoint failures)
+- Fearless refactoring (tests catch regressions)
+- Reduced rework (early defect detection)
+- <5 minute feedback loop (Nullables Pattern)
+
+**Team Benefits:**
+- Consistent development approach
+- Self-documenting code through tests
+- Knowledge transfer through test examples
+- Reduced code review burden (tests prove correctness)
+
+### References
+
+- Kent Beck: "Test-Driven Development: By Example"
+- Robert C. Martin: "Clean Code" (TDD chapters)
+- James Shore: "Testing Without Mocks" (Nullables Pattern)
+- Growing Object-Oriented Software, Guided by Tests (GOOS)
 
 ---
 
@@ -2837,7 +3165,7 @@ class CorsConfiguration {
     fun corsFilter(): CorsFilter {
         val config = CorsConfiguration().apply {
             // Development: Allow localhost
-            allowedOrigins = listOf("http://localhost:5173")  # React-Admin dev
+            allowedOrigins = listOf("http://localhost:5173")  # shadcn-admin-kit dev
 
             // Production: Specific domains only
             // allowedOrigins = listOf("https://admin.eaf.axians.com")
@@ -2994,7 +3322,7 @@ version: '3.9'
 
 services:
   postgres:
-    image: postgres:16.6
+    image: postgres:16.10
     ports:
       - "5432:5432"
     environment:
@@ -3159,7 +3487,7 @@ echo "Run: ./gradlew bootRun"
 - **Docker 24.0+** and Docker Compose 2.20+
 - **Gradle 9.1.0** (via wrapper - `./gradlew`)
 - **Git 2.40+**
-- **pnpm 10+** (for React-Admin frontend)
+- **pnpm 10+** (for shadcn-admin-kit frontend)
 
 **Recommended IDE:**
 - **IntelliJ IDEA 2024.3+** (Ultimate or Community)
@@ -3226,30 +3554,70 @@ LOG_LEVEL=DEBUG
 # REDIS_PORT=6380
 ```
 
-### Development Workflow
+### Development Workflow (TDD-First Mandate)
+
+**CRITICAL:** All development MUST follow the Red-Green-Refactor cycle. Test-Last development is FORBIDDEN and REJECTED by Git hooks.
 
 **1. Create Feature Branch:**
 ```bash
 git checkout -b feature/add-order-aggregate
 ```
 
-**2. Use Scaffolding CLI:**
+**2. Use Scaffolding CLI (Generates Test Stubs):**
 ```bash
-# Generate aggregate structure:
+# Generate aggregate structure with test stubs:
 ./gradlew :tools:eaf-cli:installDist
 ./tools/eaf-cli/build/install/eaf-cli/bin/eaf scaffold aggregate order
 
-# Generated:
-#   - OrderAggregate.kt
+# Generated files include:
+#   - OrderAggregateTest.kt (RED - failing test stub)
+#   - OrderAggregate.kt (empty implementation)
 #   - CreateOrderCommand.kt
 #   - OrderCreatedEvent.kt
-#   - OrderAggregateTest.kt
-#   (All passing quality gates immediately)
 ```
 
-**3. Implement Business Logic:**
+**3. 🔴 RED Phase: Write Failing Test First**
 ```kotlin
-// Customize generated aggregate:
+// OrderAggregateTest.kt (expand generated stub)
+class OrderAggregateTest : FunSpec({
+    test("should create order when command has valid items") {
+        fixture<OrderAggregate>()
+            .given()  // No prior events
+            .`when`(CreateOrderCommand(
+                orderId = OrderId("order-123"),
+                customerId = CustomerId("customer-456"),
+                items = listOf(OrderItem(...))
+            ))
+            .expectEvents(OrderCreatedEvent(
+                orderId = OrderId("order-123"),
+                customerId = CustomerId("customer-456"),
+                items = listOf(OrderItem(...))
+            ))
+    }
+
+    test("should reject order when items empty") {
+        fixture<OrderAggregate>()
+            .given()
+            .`when`(CreateOrderCommand(..., items = emptyList()))
+            .expectException(IllegalArgumentException::class.java)
+    }
+})
+
+// Run test - MUST FAIL:
+./gradlew test
+# ❌ OrderAggregate handler not implemented
+```
+
+**Commit RED:**
+```bash
+git add OrderAggregateTest.kt
+git commit -m "🔴 RED: Add test for order creation with validation"
+# Git hook: Allows test-only commits
+```
+
+**4. 🟢 GREEN Phase: Minimal Implementation**
+```kotlin
+// OrderAggregate.kt - MINIMAL code to pass test
 @Aggregate
 class OrderAggregate {
     @AggregateIdentifier
@@ -3257,51 +3625,128 @@ class OrderAggregate {
 
     @CommandHandler
     constructor(command: CreateOrderCommand) {
-        // Add validation logic
         require(command.items.isNotEmpty()) { "Items required" }
+
+        AggregateLifecycle.apply(OrderCreatedEvent(
+            orderId = command.orderId,
+            customerId = command.customerId,
+            items = command.items
+        ))
+    }
+}
+
+// Run test - MUST PASS:
+./gradlew test
+# ✅ All tests pass
+```
+
+**Commit GREEN:**
+```bash
+git add OrderAggregate.kt
+git commit -m "🟢 GREEN: Implement order creation command handler"
+# Git hook: Verifies test file exists, tests pass
+```
+
+**5. 🔵 REFACTOR Phase: Improve Code Quality**
+```kotlin
+// Extract validation logic:
+@Aggregate
+class OrderAggregate {
+    @CommandHandler
+    constructor(command: CreateOrderCommand) {
+        validateCommand(command)
 
         AggregateLifecycle.apply(OrderCreatedEvent(...))
     }
 
-    // Add more command handlers...
+    private fun validateCommand(command: CreateOrderCommand) {
+        require(command.items.isNotEmpty()) { "Items required" }
+        require(command.total > Money.ZERO) { "Positive total required" }
+        require(command.customerId.isValid()) { "Invalid customer" }
+    }
 }
+
+// Run test after each refactoring:
+./gradlew test
+# ✅ Still passes
 ```
 
-**4. Run Tests Locally:**
+**Commit REFACTOR:**
+```bash
+git add OrderAggregate.kt
+git commit -m "🔵 REFACTOR: Extract order validation logic"
+# Git hook: Verifies tests still pass
+```
+
+**6. Integration Tests (Same TDD Cycle):**
+```kotlin
+// 🔴 RED: Integration test
+@SpringBootTest
+@Testcontainers
+class OrderApiIntegrationTest : FunSpec({
+    test("POST /api/orders should create order end-to-end") {
+        val response = restTemplate.exchange(
+            "/api/orders",
+            HttpMethod.POST,
+            HttpEntity(CreateOrderRequest(...), headers),
+            AcceptedResponse::class.java
+        )
+
+        response.statusCode shouldBe HttpStatus.ACCEPTED
+    }
+})
+
+# Commit RED
+git commit -m "🔴 RED: Add integration test for order creation API"
+
+// 🟢 GREEN: Create controller
+@RestController
+class OrderController(private val commandGateway: CommandGateway) {
+    @PostMapping("/api/orders")
+    fun createOrder(@RequestBody request: CreateOrderRequest) =
+        ResponseEntity.accepted().build()
+}
+
+# Commit GREEN
+git commit -m "🟢 GREEN: Implement order creation API endpoint"
+
+// 🔵 REFACTOR: Add full logic
+# Commit REFACTOR
+git commit -m "🔵 REFACTOR: Add command gateway integration"
+```
+
+**7. Verify Quality Gates:**
 ```bash
 # Fast feedback (Unit + Integration):
 ./gradlew test integrationTest
 # <15 minutes (Nullables + Testcontainers)
 
-# Quality gates:
-./gradlew ktlintCheck detekt
+# Static analysis:
+./gradlew ktlintCheck detekt konsist
 # <30 seconds
 ```
 
-**5. Commit (Git Hooks Auto-Run):**
+**8. Push (Git Hooks Auto-Run):**
 ```bash
-git add .
-git commit -m "[EPIC-2] Add Order aggregate with create command"
-
-# Git hooks execute automatically:
-# → pre-commit: ktlint check (<5s)
-# → If ktlint fails, commit blocked
-
 git push origin feature/add-order-aggregate
 
-# → pre-push: Detekt + fast tests (<30s)
+# → pre-push: Detekt + all tests (<30s)
 # → If failures, push blocked
+# → Enforces: All code has tests, all tests pass
 ```
 
-**6. Create PR:**
+**9. Create PR (TDD Compliance Review):**
 ```bash
 # CI/CD runs automatically:
+# - Verify RED-GREEN-REFACTOR commit sequence
 # - ktlint, Detekt, Konsist
 # - test, integrationTest
-# - Blocks merge if failures
+# - Coverage check (≥85%)
+# - TDD compliance analysis
+# - Blocks merge if violations
 ```
 
-**7. Nightly Validation:**
+**10. Nightly Validation (Deep Testing):**
 ```bash
 # Runs automatically at 2 AM CEST:
 # - Property-Based Tests (30-45 min)
@@ -3321,7 +3766,7 @@ git push origin feature/add-order-aggregate
 
 **Status:** Accepted
 **Date:** 2025-10-30
-**Decision:** Use PostgreSQL 16.6 as event store via Axon `JdbcEventStorageEngine`
+**Decision:** Use PostgreSQL 16.10 as event store via Axon `JdbcEventStorageEngine`
 
 **Context:**
 - Need FOSS event store for CQRS/Event Sourcing
@@ -3578,7 +4023,7 @@ git push origin feature/add-order-aggregate
 **Context:**
 - Evaluated: Spring Initializr (~15% coverage), JHipster Kotlin (~30%), Axon Starter (~25%)
 - EAF is **framework project** with highly specific requirements
-- Prototype at `/Users/michael/acci_eaf` has 100% coverage
+- Validated prototype repository has 100% coverage
 
 **Decision:**
 - Use prototype structure as foundation
@@ -3600,12 +4045,48 @@ git push origin feature/add-order-aggregate
 
 ---
 
-_Generated by BMAD Decision Architecture Workflow v1.3.2_
-_Date: 2025-10-30_
-_For: Wall-E_
+### ADR-010: Constitutional TDD with Red-Green-Refactor Cycle
+
+**Status:** Accepted
+**Date:** 2025-10-31
+**Decision:** Mandate Test-Driven Development as constitutional requirement for all code
+
+**Context:**
+- Legacy DCA framework had zero tests, causing fear of refactoring and 25% overhead
+- Need to ensure EAF maintains high quality and testability from inception
+- Risk of "test-later" culture leading to poor test coverage and untestable code
+
+**Decision:**
+- **Mandate Test-Driven Development (TDD)** as non-negotiable requirement
+- **Enforce Red-Green-Refactor cycle** through automation:
+  - Git hooks reject production code without corresponding tests
+  - CI/CD analyzes commit message sequences (RED → GREEN → REFACTOR)
+  - Code reviews verify TDD compliance checklist
+- **Commit message conventions:** 🔴 RED, 🟢 GREEN, 🔵 REFACTOR prefixes mandatory
+- **Quality gates:** 85%+ coverage, 60-70% mutation score, zero @Disabled tests
+
+**Rationale:**
+- ✅ Prevents legacy DCA mistakes (untestable monolith)
+- ✅ Forces good design (testable interfaces, decoupled components)
+- ✅ Creates living documentation (tests as specifications)
+- ✅ Enables fearless refactoring (comprehensive safety net)
+- ✅ Consistency across team (same development approach)
+
+**Consequences:**
+- Learning curve for developers unfamiliar with TDD
+- Initial velocity may feel slower (15-20% first month)
+- Velocity accelerates after 2-4 weeks (fearless refactoring, fewer bugs)
+- Git hooks and CI/CD require TDD compliance automation
+- Code review burden reduced (tests prove correctness)
+
+**References:**
+- Kent Beck: "Test-Driven Development: By Example"
+- Robert C. Martin: "Clean Coder" (TDD discipline)
+- James Shore: "Testing Without Mocks" (Nullables Pattern integration)
 
 ---
 
 _Generated by BMAD Decision Architecture Workflow v1.3.2_
 _Date: 2025-10-30_
+_Updated: 2025-10-31 (Constitutional TDD added, versions updated, shadcn-admin-kit integration)_
 _For: Wall-E_
