@@ -1,9 +1,10 @@
 # Story 1.3: Implement Convention Plugins in build-logic/
 
 **Epic:** Epic 1 - Foundation & Project Infrastructure
-**Status:** TODO
+**Status:** ready-for-dev
 **Story Points:** TBD
 **Related Requirements:** FR001, FR008 (Quality Gates)
+**Context File:** docs/stories/epic-1/1-3-implement-convention-plugins.context.xml
 
 ---
 
@@ -119,3 +120,16 @@ build-logic/
 - PRD: FR001, FR008
 - Architecture: Section 2 (Version Verification Log)
 - Tech Spec: Section 2.1 (Core Technology Stack)
+
+---
+
+## Dev Agent Record
+
+### Context Reference
+- Story Context: `docs/stories/epic-1/1-3-implement-convention-plugins.context.xml` (generated 2025-11-01)
+
+### Debug Log
+(To be filled during implementation)
+
+### Completion Notes
+(To be filled after implementation)
