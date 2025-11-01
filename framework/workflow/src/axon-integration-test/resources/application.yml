@@ -1,0 +1,63 @@
+# Axon Integration Test Configuration (Story 6.2)
+#
+# Framework Test Independence: Uses framework-local test types (TestEntity) with in-memory handlers.
+# NO database projections (in-memory TestEntityProjectionHandler), NO products dependency.
+
+# Axon Framework - Lightweight in-memory mode (Research: All 4 sources recommend this)
+axon:
+  axonserver:
+    enabled: false  # CRITICAL: Triggers in-memory Axon (SimpleCommandBus, InMemoryEventStorageEngine)
+  eventhandling:
+    processors:
+      flowable-signaling:
+        mode: subscribing  # Story 6.3: Event signaling processor (in-memory, no token store)
+
+spring:
+  # Flowable configuration
+  flowable:
+    database-schema-update: true
+    database-schema: flowable
+    async-executor-activate: false  # Story 6.3: Disable async executor for synchronous message event testing
+    check-process-definitions: true
+    use-spring-bean-factory: true  # Use Spring to instantiate delegates (enables @Component injection)
+
+  # JPA configuration (available for framework dependencies, not used for projections)
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Auto-create schema (no entities will be found - framework uses in-memory handlers)
+    show-sql: false
+
+  # Allow test beans to override production beans
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Spring Modulith event publication registry (not needed for this test)
+  modulith:
+    events:
+      jdbc-schema-initialization:
+        enabled: false
+
+  # Exclude additional auto-configurations
+  autoconfigure:
+    exclude:
+      - org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration  # Use InMemoryEventStorageEngine instead
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+      - org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor
+
+# EAF Workflow Configuration (Test Profile Overrides)
+eaf:
+  workflow:
+    metrics:
+      # TEST PROFILE: Faster intervals for rapid feedback during integration tests
+      process-instance-interval-ms: 5000   # 5 seconds (vs 30s in prod)
+      dead-letter-queue-interval-ms: 10000 # 10 seconds (vs 60s in prod)
+
+# Logging
+logging:
+  level:
+    org.flowable: INFO
+    com.axians.eaf: DEBUG
+    com.axians.eaf.framework.workflow.handlers: DEBUG
+    org.axonframework: DEBUG
+    org.axonframework.eventhandling: DEBUG
+    org.axonframework.config: DEBUG

@@ -1,0 +1,189 @@
+# generated: 2025-11-01
+# project: EAF
+# project_key: EAF
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-01
+project: EAF
+project_key: EAF
+tracking_system: file-system
+story_location: {project-root}/docs/stories
+
+development_status:
+  # Epic 1: Foundation & Project Infrastructure (11 stories)
+  epic-1: backlog
+  1-1-initialize-repository: review
+  1-2-create-multi-module-structure: drafted
+  1-3-implement-convention-plugins: drafted
+  1-4-create-version-catalog: drafted
+  1-5-docker-compose-stack: drafted
+  1-6-one-command-init: drafted
+  1-7-ddd-base-classes: drafted
+  1-8-spring-modulith-enforcement: drafted
+  1-9-cicd-pipeline: drafted
+  1-10-git-hooks: drafted
+  1-11-foundation-documentation: drafted
+  epic-1-retrospective: optional
+
+  # Epic 2: Walking Skeleton - CQRS/Event Sourcing Core (13 stories)
+  epic-2: backlog
+  2-1-axon-core-configuration: drafted
+  2-2-postgresql-event-store: drafted
+  2-3-event-store-partitioning: drafted
+  2-4-snapshot-support: drafted
+  2-5-widget-aggregate: drafted
+  2-6-jooq-configuration: drafted
+  2-7-widget-projection-handler: drafted
+  2-8-widget-query-handler: drafted
+  2-9-rest-api-foundation: drafted
+  2-10-widget-rest-controller: drafted
+  2-11-end-to-end-integration-test: drafted
+  2-12-openapi-swagger: drafted
+  2-13-performance-baseline: drafted
+  epic-2-retrospective: optional
+
+  # Epic 3: Authentication & Authorization (12 stories)
+  epic-3: backlog
+  3-1-spring-security-oauth2: drafted
+  3-2-keycloak-oidc-jwks: drafted
+  3-3-jwt-format-signature: drafted
+  3-4-jwt-claims-time-validation: drafted
+  3-5-issuer-audience-role: drafted
+  3-6-redis-revocation-cache: drafted
+  3-7-user-injection-detection: drafted
+  3-8-complete-jwt-integration: drafted
+  3-9-rbac-api-endpoints: drafted
+  3-10-testcontainers-keycloak: drafted
+  3-11-keycloak-ppc64le: drafted
+  3-12-security-fuzz-testing: drafted
+  epic-3-retrospective: optional
+
+  # Epic 4: Multi-Tenancy & Data Isolation (10 stories)
+  epic-4: backlog
+  4-1-tenant-context-threadlocal: drafted
+  4-2-tenant-context-filter: drafted
+  4-3-axon-tenant-interceptor: drafted
+  4-4-postgresql-rls: drafted
+  4-5-async-context-propagation: drafted
+  4-6-multi-tenant-widget-demo: drafted
+  4-7-tenant-isolation-tests: drafted
+  4-8-tenant-leak-detection: drafted
+  4-9-per-tenant-quotas: drafted
+  4-10-litmuskt-concurrency-testing: drafted
+  epic-4-retrospective: optional
+
+  # Epic 5: Observability & Monitoring (8 stories)
+  epic-5: backlog
+  5-1-structured-json-logging: drafted
+  5-2-context-injection: drafted
+  5-3-pii-masking: drafted
+  5-4-prometheus-metrics: drafted
+  5-5-opentelemetry-tracing: drafted
+  5-6-performance-limits-backpressure: drafted
+  5-7-widget-observability: drafted
+  5-8-observability-integration-tests: drafted
+  epic-5-retrospective: optional
+
+  # Epic 6: Workflow Orchestration (10 stories)
+  epic-6: backlog
+  6-1-flowable-bpmn-config: drafted
+  6-2-tenant-aware-process-engine: drafted
+  6-3-axon-command-delegate: drafted
+  6-4-flowable-event-listener: drafted
+  6-5-widget-approval-workflow: drafted
+  6-6-ansible-adapter: drafted
+  6-7-dockets-pattern-template: drafted
+  6-8-compensating-transactions: drafted
+  6-9-workflow-dlq: drafted
+  6-10-workflow-debugging: drafted
+  epic-6-retrospective: optional
+
+  # Epic 7: Scaffolding CLI & Developer Tooling (12 stories)
+  epic-7: backlog
+  7-1-cli-framework-picocli: drafted
+  7-2-mustache-templates: drafted
+  7-3-scaffold-module-command: drafted
+  7-4-aggregate-templates: drafted
+  7-5-scaffold-aggregate-command: drafted
+  7-6-scaffold-api-resource: drafted
+  7-7-scaffold-projection: drafted
+  7-8-scaffold-ra-resource: drafted
+  7-9-template-validation: drafted
+  7-10-cli-testing: drafted
+  7-11-cli-installation: drafted
+  7-12-cli-documentation: drafted
+  epic-7-retrospective: optional
+
+  # Epic 8: Code Quality & Architectural Alignment (10 stories)
+  epic-8: backlog
+  8-1-architecture-deviation-audit: drafted
+  8-2-critical-deviation-resolution: drafted
+  8-3-high-priority-resolution: drafted
+  8-4-litmuskt-framework: drafted
+  8-5-concurrency-tests: drafted
+  8-6-pitest-mutation-testing: drafted
+  8-7-mutation-score-improvement: drafted
+  8-8-tdd-compliance-validation: drafted
+  8-9-git-hooks-enhancement: drafted
+  8-10-quality-metrics-dashboard: drafted
+  epic-8-retrospective: optional
+
+  # Epic 9: Golden Path Documentation (14 stories)
+  epic-9: backlog
+  9-1-prerequisites-setup: drafted
+  9-2-first-aggregate-tutorial: drafted
+  9-3-understanding-cqrs: drafted
+  9-4-understanding-event-sourcing: drafted
+  9-5-axon-framework-basics: drafted
+  9-6-tutorial-simple-aggregate: drafted
+  9-7-tutorial-standard-aggregate: drafted
+  9-8-tutorial-production-aggregate: drafted
+  9-9-how-to-guides: drafted
+  9-10-reference-documentation: drafted
+  9-11-working-code-examples: drafted
+  9-12-documentation-testing: drafted
+  9-13-documentation-navigation: drafted
+  9-14-majlinda-onboarding-prep: drafted
+  epic-9-retrospective: optional
+
+  # Epic 10: Reference Application for MVP Validation (12 stories)
+  epic-10: backlog
+  10-1-widget-domain-model: drafted
+  10-2-widget-advanced-queries: drafted
+  10-3-widget-full-crud-api: drafted
+  10-4-widget-approval-workflow: drafted
+  10-5-multi-tenant-test-data: drafted
+  10-6-shadcn-admin-kit-ui: drafted
+  10-7-majlinda-onboarding: drafted
+  10-8-nullable-benchmarks: drafted
+  10-9-complete-integration-tests: drafted
+  10-10-performance-validation: drafted
+  10-11-security-review-asvs: drafted
+  10-12-mvp-success-validation: drafted
+  epic-10-retrospective: optional

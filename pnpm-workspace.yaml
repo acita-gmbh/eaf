@@ -1,0 +1,4 @@
+packages:
+  - 'framework/admin-shell'
+  - 'products/*/ui-module'
+  - 'apps/admin'

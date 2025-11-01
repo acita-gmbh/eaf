@@ -1,0 +1,226 @@
+[versions]
+# Core language and runtime (PINNED/LOCKED)
+kotlin = "2.2.21"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
+kotlinx-serialization = "1.9.0"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
+java = "21"                # LTS requirement
+gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
+
+# Framework stack (UPDATED for compatibility)
+spring-boot = "3.5.7"     # 3.5.7 not yet published; pinned to latest GA
+spring-modulith = "1.4.3" # Updated from 1.3.0 (tested compatible)
+spring-dependency-management = "1.1.7"
+
+# CQRS and Event Sourcing
+axon = "4.12.1"            # Latest stable, v5 migration planned
+arrow = "2.1.2"            # Functional programming
+
+# Database and persistence
+postgresql = "42.7.8"      # PostgreSQL driver (security updates)
+jooq = "3.20.8"           # SQL DSL for read projections (updated)
+jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
+
+# Testing framework (MANDATORY)
+kotest = "6.0.4"          # Primary testing framework (JUnit forbidden)
+kotest-plugin = "6.0.4"   # Kotest Gradle plugin for hybrid test execution (native + JUnit Platform)
+testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
+
+# Quality gates and static analysis
+ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
+detekt = "1.23.8"         # Static analysis (latest stable - Kotlin 2.0.x, incompatible with 2.2.x)
+konsist = "0.17.3"        # Architecture testing
+pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
+pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
+pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
+kover = "0.9.3"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
+# jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
+dependency-check = "12.1.8" # Supply chain scanning
+
+# Documentation
+dokka = "2.1.0"          # API documentation
+springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
+
+# Observability
+micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
+logback = "1.5.19"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
+logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
+opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
+opentelemetry-instrumentation = "2.20.1"  # Spring Boot auto-instrumentation (latest stable)
+snakeyaml = "2.3"         # YAML parsing (security update)
+commons-io = "2.20.0"     # IO utilities (security update)
+
+# Security
+keycloak = "25.0.6"       # Identity provider
+jose4j = "0.9.6"          # JWT processing
+spring-security = "6.5.5" # Spring Security test dependency
+
+# Cache and session storage
+redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
+
+# Workflow
+flowable = "7.2.0"        # BPMN workflow engine (Story 6.1)
+jsch = "0.2.18"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
+
+# Tools
+picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
+mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
+
+# Fuzz Testing (Story 8.6)
+jazzer = "0.25.1"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
+
+# Jakarta JSON Bind
+jakarta-json-bind = "3.0.1"
+
+[libraries]
+# Kotlin and JVM
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
+kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+
+# Spring Boot starters
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "spring-boot" }
+spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "spring-boot" }
+
+# Spring Modulith
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
+spring-modulith-starter-jpa = { module = "org.springframework.modulith:spring-modulith-starter-jpa", version.ref = "spring-modulith" }
+
+# Axon Framework
+axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }
+axon-test = { module = "org.axonframework:axon-test", version.ref = "axon" }
+
+# Arrow functional programming
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+jooq-core = { module = "org.jooq:jooq", version.ref = "jooq" }
+jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
+jooq-meta-extensions = { module = "org.jooq:jooq-meta-extensions", version.ref = "jooq" }
+jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
+
+# JSON processing
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+
+# Testing
+kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
+kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
+kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
+kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "1.4.0" }
+kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" } # Updated to Kotest 6.0.3 unified versioning
+kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }
+kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.9.0" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+
+# Static analysis
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+
+# Observability
+micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry-bom" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry-bom" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry-bom" }
+opentelemetry-sdk-testing = { module = "io.opentelemetry:opentelemetry-sdk-testing", version.ref = "opentelemetry-bom" }
+opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version = "1.28.0-alpha" }
+opentelemetry-instrumentation-spring-boot = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "opentelemetry-instrumentation" }
+# Restored with correct Spring Boot 3.5.6 BOM version (1.5.18)
+
+# Security
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+spring-security-test = { module = "org.springframework.security:spring-security-test", version.ref = "spring-security" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+
+# Cache and session storage
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
+
+# Documentation
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Workflow
+flowable-spring-boot-starter = { module = "org.flowable:flowable-spring-boot-starter", version.ref = "flowable" }
+jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }  # Maintained fork (not com.jcraft)
+
+# Tools
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+mustache = { module = "com.github.spullara.mustache.java:compiler", version.ref = "mustache" }
+
+# Fuzz Testing
+jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
+jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
+
+# Jakarta JSON Bind
+jakarta-json-bind-api = { module = "jakarta.json.bind:jakarta.json.bind-api", version.ref = "jakarta-json-bind" }
+
+# Gradle plugins for build-logic
+gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+gradlePlugin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+gradlePlugin-kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
+gradlePlugin-spring-boot = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
+gradlePlugin-spring-dependencyManagement = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "spring-dependency-management" }
+gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "13.1.0" }
+gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
+gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version.ref = "pitest" }
+gradlePlugin-kover = { module = "org.jetbrains.kotlinx.kover:org.jetbrains.kotlinx.kover.gradle.plugin", version.ref = "kover" }
+gradlePlugin-dependencyCheck = { module = "org.owasp:dependency-check-gradle", version.ref = "dependency-check" }
+
+[bundles]
+kotlin = ["kotlin-stdlib", "kotlin-reflect", "kotlin-coroutines-core"]
+spring-boot-web = ["spring-boot-starter-web", "spring-boot-starter-actuator", "spring-boot-starter-validation"]
+spring-boot-security = ["spring-boot-starter-security", "spring-boot-starter-oauth2-resource-server"]
+spring-modulith = ["spring-modulith-starter-core", "spring-modulith-starter-jpa"]
+axon-framework = ["axon-spring-boot-starter"]
+arrow = ["arrow-core", "arrow-fx-coroutines"]
+database = ["postgresql", "spring-boot-starter-data-jpa"]
+jooq = ["jooq-core", "jooq-kotlin"]
+kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-assertions-arrow", "kotest-property-jvm", "kotest-extensions-spring"]
+testcontainers = ["testcontainers-postgresql", "testcontainers-keycloak"]
+observability = ["micrometer-core", "micrometer-registry-prometheus"]
+opentelemetry = ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp", "opentelemetry-semconv", "opentelemetry-instrumentation-spring-boot"]
+
+[plugins]
+# Core Kotlin and JVM
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# Spring
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+
+# Quality gates
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "13.1.0" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
+kotest-plugin = { id = "io.kotest", version.ref = "kotest-plugin" }
+
+# Documentation
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+
+# Database
+jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+
+# Application
+application = { id = "application" }

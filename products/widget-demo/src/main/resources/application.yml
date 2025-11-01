@@ -1,0 +1,79 @@
+# OpenTelemetry Configuration - Disable auto-configuration (Story 8.4 pattern)
+# Required to avoid ClassNotFoundException for missing OpenTelemetry dependencies
+otel:
+  java:
+    global-autoconfigure:
+      enabled: false
+  sdk:
+    disabled: true
+  traces:
+    exporter: none
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
+spring:
+  application:
+    name: eaf-widget-demo
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eaf
+    username: eaf
+    password: eaf
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Dev environment - auto-create Axon tables
+    show-sql: false
+    open-in-view: false  # Disable OSIV - we use jOOQ for queries, not JPA lazy loading
+    # Removed explicit dialect - PostgreSQL auto-detected
+
+  # Story 9.2: jOOQ configuration for DSLContext bean creation
+  jooq:
+    sql-dialect: POSTGRES
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/eaf-test
+
+# Axon Framework
+axon:
+  axonserver:
+    enabled: false
+  serializer:
+    events: jackson
+    messages: jackson
+
+# EAF Framework Configuration
+eaf:
+  cqrs:
+    tenant-propagation:
+      enabled: true  # Default, explicitly shown for documentation
+  security:
+    cors:
+      allowed-origins: "${EAF_SECURITY_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:3000}"
+    jwt:
+      expected-issuer: "${EAF_JWT_ISSUER:http://localhost:8180/realms/eaf-test}"
+      expected-audience: "${EAF_JWT_AUDIENCE:account}"  # TODO: Use app-specific audience (e.g., 'widget-backend') in production
+
+# Server
+server:
+  port: 8081
+
+# Logging
+logging:
+  level:
+    com.axians.eaf: DEBUG
+    com.axians.eaf.framework.security.tenant: TRACE  # Story 9.2 - Tenant interceptor debugging
+    com.axians.eaf.products.widgetdemo.query: DEBUG  # Story 9.2 - QueryHandler debugging
+    org.axonframework: INFO
+    org.axonframework.queryhandling: DEBUG  # Story 9.2 - QueryGateway debugging
+    org.springframework.security: INFO
+    org.springframework.boot.autoconfigure: DEBUG  # Story 9.2 - Debug autoconfiguration
+    org.springframework.context: DEBUG  # Story 9.2 - Debug bean creation sequence
+    org.springframework.beans.factory: DEBUG  # Story 9.2 - Debug bean instantiation
+    org.jooq: DEBUG  # Story 9.2 - Debug jOOQ bean creation

@@ -1,0 +1,22 @@
+{
+  "name": "eaf-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise Application Framework - Monorepo",
+  "workspaces": [
+    "framework/admin-shell",
+    "products/*/ui-module",
+    "apps/admin"
+  ],
+  "scripts": {
+    "build:admin-shell": "npm run build --workspace=framework/admin-shell",
+    "build:ui-modules": "npm run build --workspaces --if-present",
+    "build:admin": "npm run build --workspace=apps/admin",
+    "test:frontend": "npm test --workspace=framework/admin-shell",
+    "lint:frontend": "npm run lint --workspace=framework/admin-shell"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

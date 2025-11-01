@@ -1,0 +1,124 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Initialize Repository and Root Build System</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-01</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-1/story-1.1-initialize-repository.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>initialize the EAF repository with Gradle 9.1.0 and Kotlin DSL configuration</iWant>
+    <soThat>I have a working build system foundation for multi-module development</soThat>
+    <tasks>
+      - Clone prototype repository
+      - Clean prototype implementations (keep structure)
+      - Verify Gradle wrapper 9.1.0
+      - Update project name to "eaf-v1" in settings.gradle.kts
+      - Update README.md with EAF v1.0 overview
+      - Configure .gitignore
+      - Run `./gradlew build` - verify success
+      - Commit: "Initial repository setup with prototype structure"
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Git repository initialized with main branch
+    2. Gradle wrapper 9.1.0 configured (gradlew, gradlew.bat)
+    3. Root build.gradle.kts with Kotlin plugin and basic configuration
+    4. settings.gradle.kts with project name "eaf-v1"
+    5. .gitignore configured for Gradle, IDE, and build artifacts
+    6. ./gradlew build executes successfully (even with no modules yet)
+    7. README.md with project overview and setup instructions
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR001">
+        "The system shall provide one-command initialization of complete local development stack (PostgreSQL, Keycloak, Redis, Prometheus, Grafana) with automatic migrations and seed data, plus Gradle multi-module monorepo structure with Spring Modulith boundary enforcement and Docker Compose templates."
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="Section 3: Project Initialization">
+        "EAF v1.0 reuses validated prototype structure from a production-proven reference implementation rather than using standard starter templates (Spring Initializr, JHipster). Standard starters provide less than 30% coverage of EAF's requirements (Hexagonal Architecture, CQRS/ES, Spring Modulith, Multi-Tenancy, 7-layer testing)."
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="ADR-009: Prototype Structure Reuse">
+        "Decision: Reuse validated prototype structure (vs. Spring Initializr, JHipster) to save 4-6 weeks of setup time and ensure architectural patterns are established from inception."
+      </doc>
+      <doc path="docs/tech-spec.md" title="Technical Specification" section="Section 3: FR001 Implementation">
+        "FR001 maps to Epic 1 stories, establishing the Gradle build foundation with Version Catalog, convention plugins, and multi-module structure."
+      </doc>
+    </docs>
+    <code>
+      <artifact path="gradlew" kind="script" reason="Gradle wrapper script already present - Story 1.1 partially complete" />
+      <artifact path="gradlew.bat" kind="script" reason="Gradle wrapper Windows script already present" />
+      <artifact path="build.gradle.kts" kind="build" reason="Root build file exists - verify configuration matches EAF requirements" />
+      <artifact path="settings.gradle.kts" kind="build" reason="Settings file exists - verify project name is 'eaf-v1'" />
+      <artifact path="gradle/libs.versions.toml" kind="config" reason="Version catalog with all dependency versions - validates Gradle 9.1.0, Kotlin 2.2.21, Spring Boot 3.5.7" />
+      <artifact path=".gitignore" kind="config" reason="Git ignore configuration exists - verify completeness" />
+      <artifact path=".editorconfig" kind="config" reason="Editor configuration exists for consistent code style" />
+      <artifact path="README.md" kind="documentation" reason="Project README - needs update with EAF v1.0 overview" />
+    </code>
+    <dependencies>
+      <gradle>
+        <dependency name="gradle" version="9.1.0" />
+        <dependency name="kotlin" version="2.2.21" />
+        <dependency name="spring-boot" version="3.5.7" />
+        <dependency name="spring-modulith" version="1.4.4" />
+        <dependency name="axon" version="4.12.1" />
+        <dependency name="kotest" version="6.0.4" />
+        <dependency name="testcontainers" version="1.21.3" />
+        <dependency name="ktlint" version="1.7.1" />
+        <dependency name="detekt" version="1.23.8" />
+        <dependency name="konsist" version="0.17.3" />
+        <dependency name="pitest" version="1.19.0-rc.2" />
+      </gradle>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - CRITICAL: Do NOT use Spring Initializr or JHipster starters
+    - CRITICAL: Reuse validated prototype structure from /Users/michael/acci_eaf (local prototype location)
+    - Prototype reuse saves 4-6 weeks setup time
+    - Keep: build config, module structure, Docker setup, CI/CD pipelines from prototype
+    - Clean: Remove prototype code implementations (keep test structure as examples)
+    - Update: Project name to "eaf-v1", Spring Modulith version to 1.4.4
+    - Zero-violations policy: All quality gates must pass from inception
+  </constraints>
+
+  <interfaces>
+    <interface name="Gradle Wrapper" kind="CLI" signature="./gradlew [task]" path="gradlew">
+      Primary build interface - executes Gradle tasks (build, test, check, etc.)
+    </interface>
+    <interface name="Version Catalog" kind="Configuration" signature="libs.versions.toml" path="gradle/libs.versions.toml">
+      Centralized dependency version management - all versions MUST be defined here
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Constitutional TDD: Test-first mandatory for all production code. Use Kotest 6.0.4 (JUnit forbidden).
+      Integration tests with Testcontainers for stateful dependencies.
+      Nullable Design Pattern for fast business logic tests.
+      Quality gates: ktlint, Detekt, Konsist, Pitest (60-70% mutation coverage target).
+      Coverage: 85%+ line coverage via Kover 0.9.3.
+    </standards>
+    <locations>
+      - src/test/kotlin (unit tests with Kotest)
+      - src/integrationTest/kotlin (integration tests with Testcontainers)
+      - src/propertyTest/kotlin (property-based tests)
+      - src/fuzzTest/kotlin (fuzz tests with Jazzer)
+      - build-logic/src/test/kotlin (convention plugin tests)
+    </locations>
+    <ideas>
+      AC1: Integration test verifying Git repository structure (main branch exists)
+      AC2: Verification test that gradlew wrapper version matches 9.1.0
+      AC3: Build smoke test parsing build.gradle.kts for Kotlin plugin
+      AC4: Settings verification test reading settings.gradle.kts for "eaf-v1" project name
+      AC5: File existence test for .gitignore with required patterns
+      AC6: Build execution test: `./gradlew build` completes successfully
+      AC7: README validation test checking required sections exist
+    </ideas>
+  </tests>
+</story-context>

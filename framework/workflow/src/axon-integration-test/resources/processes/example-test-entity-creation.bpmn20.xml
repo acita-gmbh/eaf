@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://axians.com/eaf/workflow">
+
+  <!-- Error Definitions (BPMN Spec Compliance) -->
+  <error id="COMMAND_DISPATCH_FAILED" errorCode="COMMAND_DISPATCH_FAILED" name="Command Dispatch Failed"/>
+  <error id="MISSING_VARIABLE" errorCode="MISSING_VARIABLE" name="Missing Required Variable"/>
+  <error id="TENANT_ISOLATION_VIOLATION" errorCode="TENANT_ISOLATION_VIOLATION" name="Tenant Isolation Violation"/>
+
+  <process id="example-test-entity-creation" name="Example Test Entity Creation" isExecutable="true">
+
+    <documentation>
+      Example BPMN process demonstrating DispatchAxonCommandTask usage with framework test types.
+
+      Required process variables:
+      - commandType (String): "CreateTestEntityCommand" (required for generic delegate)
+      - entityId (String): UUID for test entity aggregate identifier
+      - tenantId (String): Tenant identifier for multi-tenancy isolation
+      - name (String): Test entity name
+      - description (String, optional): Test entity description
+      - value (BigDecimal): Test entity value
+      - category (String): Test entity category
+    </documentation>
+
+    <startEvent id="startEvent" name="Start"/>
+
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="dispatchCommand"/>
+
+    <serviceTask id="dispatchCommand" name="Create TestEntity via Axon"
+                 flowable:delegateExpression="${dispatchAxonCommandTask}">
+      <documentation>
+        Dispatches CreateTestEntityCommand to Axon CommandGateway.
+        Uses delegateExpression to enable Spring bean injection (CommandGateway, TenantContext).
+        Uses process variables to build the command via reflection (no direct dependency on test types).
+      </documentation>
+    </serviceTask>
+
+    <boundaryEvent id="commandError" attachedToRef="dispatchCommand">
+      <errorEventDefinition errorRef="COMMAND_DISPATCH_FAILED"/>
+    </boundaryEvent>
+
+    <boundaryEvent id="missingVariableError" attachedToRef="dispatchCommand">
+      <errorEventDefinition errorRef="MISSING_VARIABLE"/>
+    </boundaryEvent>
+
+    <boundaryEvent id="tenantIsolationError" attachedToRef="dispatchCommand">
+      <errorEventDefinition errorRef="TENANT_ISOLATION_VIOLATION"/>
+    </boundaryEvent>
+
+    <sequenceFlow id="flow2" sourceRef="dispatchCommand" targetRef="endEvent"/>
+    <sequenceFlow id="errorFlow" sourceRef="commandError" targetRef="errorEndEvent"/>
+    <sequenceFlow id="missingVarFlow" sourceRef="missingVariableError" targetRef="errorEndEvent"/>
+    <sequenceFlow id="tenantErrorFlow" sourceRef="tenantIsolationError" targetRef="errorEndEvent"/>
+
+    <endEvent id="endEvent" name="Success"/>
+    <endEvent id="errorEndEvent" name="Error"/>
+
+  </process>
+
+</definitions>
