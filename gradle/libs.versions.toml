@@ -2,6 +2,7 @@
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.21"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
 kotlinx-serialization = "1.9.0"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
+kotlinx-coroutines = "1.9.0"  # Kotlin coroutines library
 java = "21"                # LTS requirement
 gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
@@ -23,10 +24,13 @@ jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 # Testing framework (MANDATORY)
 kotest = "6.0.4"          # Primary testing framework (JUnit forbidden)
 kotest-plugin = "6.0.4"   # Kotest Gradle plugin for hybrid test execution (native + JUnit Platform)
+kotest-assertions-arrow = "1.4.0"  # Kotest Arrow assertions extension
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
+testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
+ktlint-gradle-plugin = "13.1.0"  # ktlint Gradle plugin version
 detekt = "1.23.8"         # Static analysis (latest stable - targets Kotlin 2.0.21, works with 2.2.21)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
@@ -42,10 +46,11 @@ springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
-logback = "1.5.19"        # Spring Boot 3.5.6 actual BOM version (matches spring-boot-starter-logging dependency)
+logback = "1.5.19"        # Spring Boot 3.5.7 actual BOM version (matches spring-boot-starter-logging dependency)
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
 opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
 opentelemetry-instrumentation = "2.20.1"  # Spring Boot auto-instrumentation (latest stable)
+opentelemetry-semconv = "1.28.0-alpha"  # OpenTelemetry semantic conventions
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.20.0"     # IO utilities (security update)
 
@@ -75,8 +80,8 @@ jakarta-json-bind = "3.0.1"
 # Kotlin and JVM
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
-kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
-kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
+kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
@@ -121,14 +126,14 @@ jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
 kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
-kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version = "1.4.0" }
+kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-assertions-arrow" }
 kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
-kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" } # Updated to Kotest 6.0.3 unified versioning
+kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" }
 kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }
 kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.9.0" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "testcontainers-keycloak" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
 
 # Static analysis
@@ -144,7 +149,7 @@ opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref
 opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry-bom" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry-bom" }
 opentelemetry-sdk-testing = { module = "io.opentelemetry:opentelemetry-sdk-testing", version.ref = "opentelemetry-bom" }
-opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version = "1.28.0-alpha" }
+opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "opentelemetry-semconv" }
 opentelemetry-instrumentation-spring-boot = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "opentelemetry-instrumentation" }
 # Restored with correct Spring Boot 3.5.6 BOM version (1.5.18)
 
@@ -181,7 +186,7 @@ gradlePlugin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", 
 gradlePlugin-kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
 gradlePlugin-spring-boot = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
 gradlePlugin-spring-dependencyManagement = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "spring-dependency-management" }
-gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version = "13.1.0" }
+gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle-plugin" }
 gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", version.ref = "konsist" }
 gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version.ref = "pitest" }
@@ -214,7 +219,7 @@ spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 
 # Quality gates
-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "13.1.0" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle-plugin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
