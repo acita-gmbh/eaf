@@ -1,7 +1,10 @@
 import type { AuthProvider } from 'react-admin';
 import type { KeycloakConfig } from '../types';
 
-// Scoped localStorage keys (prevents clearing unrelated data)
+// TODO [Epic 3 Story 3.1-3.2]: Replace sessionStorage with HttpOnly cookies (CWE-312 mitigation)
+// SECURITY NOTE: sessionStorage is XSS-vulnerable. Proper solution: Backend-issued HttpOnly cookies
+// Current implementation: Temporary MVP using sessionStorage (better than localStorage - cleared on tab close)
+// Target: Epic 3 - Authentication & Authorization (Keycloak OIDC + secure token handling)
 const TOKEN_STORAGE_KEY = 'eaf.auth.token';
 const REFRESH_TOKEN_STORAGE_KEY = 'eaf.auth.refreshToken';
 
@@ -16,7 +19,7 @@ const DEFAULT_KEYCLOAK_CONFIG: KeycloakConfig = {
  *
  * Features:
  * - Keycloak OIDC password grant flow
- * - JWT token storage in localStorage (MVP - see Security Considerations in story)
+ * - JWT token storage in sessionStorage (temporary MVP - Epic 3 will use HttpOnly cookies)
  * - Automatic token refresh when <5 minutes remaining (SEC-001 mitigation)
  * - Token expiration detection and automatic logout (SEC-003)
  * - Role extraction from JWT for RBAC
@@ -55,10 +58,11 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 
         const data = await response.json();
 
-        // Store tokens in localStorage with scoped keys (SEC-001: XSS risk, see Security Considerations)
-        localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+        // Store tokens in sessionStorage (temporary MVP - see TODO above for Epic 3 fix)
+        // sessionStorage is cleared on tab close (better than localStorage for security)
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
         if (data.refresh_token) {
-          localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
+          sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
         }
 
         console.log('[AuthProvider] Login successful', {
@@ -80,7 +84,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Backend validates token expiration via Epic 3's 10-layer validation
      */
     checkAuth: async () => {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const token = sessionStorage.getItem(TOKEN_STORAGE_KEY);
 
       // No token = not authenticated
       if (!token) {
@@ -98,9 +102,9 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
      * Handle logout - clear tokens and redirect to Keycloak
      */
     logout: async () => {
-      const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+      const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
-      // Clear our tokens only (not all localStorage)
+      // Clear our tokens only (not all sessionStorage)
       clearStoredTokens();
 
       // Terminate Keycloak session (optional - Keycloak may require id_token_hint)
@@ -183,7 +187,7 @@ export function createAuthProvider(config: KeycloakConfig = DEFAULT_KEYCLOAK_CON
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 // @ts-expect-error - Function reserved for future token refresh implementation
 async function refreshAccessToken(_tokenEndpoint: string, _clientId: string): Promise<void> {
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
   if (!refreshToken) {
     throw new Error('No refresh token available');
@@ -209,21 +213,21 @@ async function refreshAccessToken(_tokenEndpoint: string, _clientId: string): Pr
   const data = await response.json();
 
   // Update access token
-  localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
 
   // Update refresh token if rotated (Keycloak may issue new refresh_token)
   if (data.refresh_token) {
-    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
+    sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refresh_token);
   }
 
   console.log('[AuthProvider] Token refreshed successfully');
 }
 
 /**
- * Clear only EAF-scoped authentication tokens from localStorage
+ * Clear only EAF-scoped authentication tokens from sessionStorage
  * (prevents wiping unrelated application data)
  */
 function clearStoredTokens(): void {
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
 }

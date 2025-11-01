@@ -4,7 +4,13 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
-internal data class CatalogLibrary(val module: String, val version: String)
+internal data class CatalogLibrary(val module: String, val version: String) {
+    /**
+     * Get Gradle dependency notation string
+     * Usage: add("implementation", library.toDependencyNotation())
+     */
+    fun toDependencyNotation(): String = "$module:$version"
+}
 
 internal class Catalog(private val versions: Map<String, String>, private val libraries: Map<String, CatalogLibrary>) {
     fun version(alias: String): String = versions[alias]

@@ -7,6 +7,7 @@ gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.prope
 
 # Framework stack (UPDATED for compatibility)
 spring-boot = "3.5.7"     # 3.5.7 not yet published; pinned to latest GA
+spring-framework = "6.2.7" # Spring Framework core - CVE-2025-24928 fix
 spring-modulith = "1.4.4" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.7"
 
@@ -88,6 +89,11 @@ spring-boot-starter-validation = { module = "org.springframework.boot:spring-boo
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "spring-boot" }
 spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "spring-boot" }
+
+# Spring Testing (granular dependencies without JUnit)
+spring-boot-test = { module = "org.springframework.boot:spring-boot-test", version.ref = "spring-boot" }
+spring-boot-test-autoconfigure = { module = "org.springframework.boot:spring-boot-test-autoconfigure", version.ref = "spring-boot" }
+spring-test = { module = "org.springframework:spring-test", version.ref = "spring-framework" }
 
 # Spring Modulith
 spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
