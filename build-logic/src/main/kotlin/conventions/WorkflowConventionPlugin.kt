@@ -20,7 +20,7 @@ class WorkflowConventionPlugin : Plugin<Project> {
             dependencies {
                 // Flowable Spring Boot Starter (Story 6.1)
                 val library = catalog.library("flowable-spring-boot-starter")
-                add("implementation", "${library.module}:${library.version}")
+                add("implementation", library.toDependencyNotation())
             }
         }
     }

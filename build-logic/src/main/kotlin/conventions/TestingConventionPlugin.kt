@@ -37,8 +37,9 @@ class TestingConventionPlugin : Plugin<Project> {
                 dependsOn("jvmKotest")
             }
 
-            // Disable standard test task since we use native Kotest
+            // Delegate standard test task to Kotest (keeps IDE/Gradle compatibility)
             tasks.named("test").configure {
+                dependsOn("jvmKotest")
                 onlyIf { false }
             }
 

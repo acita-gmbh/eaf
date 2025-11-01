@@ -86,7 +86,7 @@ class PreCommitHooksConventionPlugin : Plugin<Project> {
 
             doLast {
                 logger.lifecycle("🔍 EAF Pre-Commit Validation")
-                logger.lifecycle("=" .repeat(50))
+                logger.lifecycle("=".repeat(50))
                 logger.lifecycle("⏱️  Target: <30 seconds total")
                 logger.lifecycle("")
 

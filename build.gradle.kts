@@ -65,7 +65,7 @@ subprojects {
                 }
 
                 "org.springframework" to "spring-core" -> {
-                    useVersion("6.2.7")
+                    useVersion(catalog.findVersion("spring-framework").get().requiredVersion)
                     because("Ensure Spring Framework annotation security fix CVE-2025-24928")
                 }
             }
@@ -122,7 +122,7 @@ tasks.register<Exec>("preCommitCheck") {
     description = "Run pre-commit validation (Story 8.2)"
 
     workingDir = rootDir
-    commandLine("scripts/git/pre-commit-validate.sh")
+    commandLine("sh", "scripts/git/pre-commit-validate.sh")
 }
 
 tasks.register("uninstallGitHooks") {

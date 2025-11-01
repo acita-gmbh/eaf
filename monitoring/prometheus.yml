@@ -6,10 +6,10 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['prometheus:9090']
-  - job_name: 'licensing-server'
+  - job_name: 'widget-demo'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['localhost:8080']
+      - targets: ['host.docker.internal:8080']
   - job_name: 'keycloak'
     metrics_path: '/metrics'
     static_configs:

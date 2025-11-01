@@ -28,6 +28,7 @@ dependencyResolutionManagement {
 // Framework modules
 include(":framework:core")
 include(":framework:security")
+include(":framework:multi-tenancy")
 include(":framework:cqrs")
 include(":framework:observability")
 include(":framework:workflow")

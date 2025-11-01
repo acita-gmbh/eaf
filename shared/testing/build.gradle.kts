@@ -9,8 +9,8 @@ dependencies {
     api(libs.kotest.assertions.core.jvm)
     api(libs.testcontainers.postgresql)
 
-    // Spring Test support
-    api(libs.spring.boot.starter.test) {
-        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-    }
+    // Spring Test support (granular dependencies - no JUnit leak)
+    api(libs.spring.boot.test)
+    api(libs.spring.boot.test.autoconfigure)
+    api(libs.spring.test)
 }
