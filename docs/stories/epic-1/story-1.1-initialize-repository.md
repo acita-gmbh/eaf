@@ -40,14 +40,21 @@ So that I have a working build system foundation for multi-module development.
 Per architecture.md Section 3, this story should implement the prototype cloning approach:
 
 ```bash
-# Clone validated prototype structure:
-git clone <prototype-repo> eaf-v1
-cd eaf-v1
+# Clone validated prototype structure from local repository:
+# Prototype Location: /Users/michael/acci_eaf (validated 2025-11-01)
+cp -r /Users/michael/acci_eaf /Users/michael/eaf-v1
+cd /Users/michael/eaf-v1
 
 # Clean prototype implementations (keep structure):
-rm -rf framework/*/src/     # Remove prototype code
-rm -rf products/*/src/      # Remove prototype products
+rm -rf framework/*/src/main/    # Remove prototype code (keep tests as examples)
+rm -rf products/*/src/          # Remove prototype products
 # Keep: Build config, module structure, Docker setup, CI/CD pipelines
+
+# Update project name:
+sed -i '' 's/eaf-monorepo/eaf-v1/g' settings.gradle.kts
+
+# Update Spring Modulith version (1.4.3 → 1.4.4):
+sed -i '' 's/spring-modulith = "1.4.3"/spring-modulith = "1.4.4"/g' gradle/libs.versions.toml
 
 # Verify structure compiles:
 ./gradlew build
