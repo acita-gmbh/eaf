@@ -1,14 +1,14 @@
-# 🏗️ Enterprise Application Framework (EAF)
+# 🏗️ Enterprise Application Framework (EAF) v1.0
 
 **A batteries-included framework for building robust, secure, and scalable enterprise applications at Axians.**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Kotlin-2.2.20-blue.svg?logo=kotlin" alt="Kotlin">
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen.svg?logo=spring" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/Axon%20Framework-4.9.4-blueviolet.svg" alt="Axon Framework">
-  <img src="https://img.shields.io/badge/PostgreSQL-16.1-important.svg?logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Flowable-7.1-orange.svg" alt="Flowable">
-  <img src="https://img.shields.io/badge/Kotest-6.0.3-yellow.svg" alt="Kotest">
+  <img src="https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.5.7-brightgreen.svg?logo=spring" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Axon%20Framework-4.12.1-blueviolet.svg" alt="Axon Framework">
+  <img src="https://img.shields.io/badge/PostgreSQL-16.10-important.svg?logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Gradle-9.1.0-02303A.svg?logo=gradle" alt="Gradle">
+  <img src="https://img.shields.io/badge/Kotest-6.0.4-yellow.svg" alt="Kotest">
 </p>
 
 ---

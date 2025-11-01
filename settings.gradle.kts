@@ -1,4 +1,4 @@
-rootProject.name = "eaf-monorepo"
+rootProject.name = "eaf-v1"
 
 // Plugin management
 pluginManagement {
@@ -35,7 +35,6 @@ include(":framework:persistence")
 include(":framework:web")
 
 // Product modules
-include(":products:licensing-server")
 include(":products:widget-demo")  // Reference implementation for framework validation
 
 // Shared modules
