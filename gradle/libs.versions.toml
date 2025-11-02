@@ -103,6 +103,9 @@ spring-test = { module = "org.springframework:spring-test", version.ref = "sprin
 # Spring Modulith
 spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
 spring-modulith-starter-jpa = { module = "org.springframework.modulith:spring-modulith-starter-jpa", version.ref = "spring-modulith" }
+spring-modulith-api = { module = "org.springframework.modulith:spring-modulith-api", version.ref = "spring-modulith" }
+spring-modulith-test = { module = "org.springframework.modulith:spring-modulith-test", version.ref = "spring-modulith" }
+spring-modulith-docs = { module = "org.springframework.modulith:spring-modulith-docs", version.ref = "spring-modulith" }
 
 # Axon Framework
 axon-spring-boot-starter = { module = "org.axonframework:axon-spring-boot-starter", version.ref = "axon" }

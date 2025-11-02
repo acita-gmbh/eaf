@@ -702,6 +702,21 @@ shared/testing
   ↑ depends on: core (optional)
 ```
 
+**Boundary Enforcement (Story 1.8):**
+
+Module boundaries are programmatically enforced through:
+- **Spring Modulith 1.4.4**: Compile-time module verification via `@ApplicationModule` annotations
+- **Konsist 0.17.3**: Architecture tests verify module dependencies, hexagonal compliance, and coding standards
+- **Zero Violations Policy**: Build fails on any boundary violation (enforced via `./gradlew check`)
+
+**Architecture Tests** (`shared/testing/src/test/kotlin/com/axians/eaf/testing/architecture/ArchitectureTest.kt`):
+- Module Dependencies: framework ↛ products (no reverse dependency)
+- Hexagonal Architecture: domain ↛ infrastructure/adapter
+- Coding Standards: No wildcard imports, Kotest-only tests
+- Layer Architecture: domain.dependsOnNothing(), application.dependsOn(domain)
+
+**Execution**: `./gradlew :shared:testing:test` (target: <5s)
+
 ### Epic Implementation Sequence
 
 ```
