@@ -9,6 +9,11 @@ dependencies {
     implementation(project(":framework:security"))
     implementation(project(":shared:shared-api"))
     implementation(libs.bundles.kotlin)
+
+    // Spring Modulith for module boundary enforcement
+    implementation(libs.spring.modulith.api)
+    testImplementation(libs.spring.modulith.test)
+
     implementation(libs.bundles.spring.boot.web)
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.data.jpa)
