@@ -113,10 +113,10 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3000}
+      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3100}
       GF_USERS_ALLOW_SIGN_UP: false
     ports:
-      - "${GRAFANA_PORT:-3000}:3000"
+      - "${GRAFANA_PORT:-3100}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
     healthcheck:
