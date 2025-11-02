@@ -42,6 +42,11 @@ tasks.named("check") {
 
 dependencies {
     implementation(project(":framework:core"))
+
+    // Spring Modulith for module boundary enforcement
+    implementation(libs.spring.modulith.api)
+    testImplementation(libs.spring.modulith.test)
+
     implementation(libs.bundles.axon.framework) // Story 6.2: Axon CommandGateway
     implementation(libs.arrow.core) // Story 6.2: Arrow Either for error handling
     implementation(project(":framework:security")) // Story 6.2: TenantContext

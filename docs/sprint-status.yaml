@@ -44,8 +44,8 @@ development_status:
   1-4-create-version-catalog: done
   1-5-docker-compose-stack: done
   1-6-one-command-init: done
-  1-7-ddd-base-classes: review
-  1-8-spring-modulith-enforcement: ready-for-dev
+  1-7-ddd-base-classes: done
+  1-8-spring-modulith-enforcement: done
   1-9-cicd-pipeline: drafted
   1-10-git-hooks: drafted
   1-11-foundation-documentation: drafted

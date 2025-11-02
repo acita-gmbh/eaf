@@ -17,6 +17,10 @@ dependencies {
     implementation(libs.bundles.database)
     implementation(libs.bundles.jooq)
 
+    // Spring Modulith for module boundary enforcement
+    implementation(libs.spring.modulith.api)
+    testImplementation(libs.spring.modulith.test)
+
     testImplementation(project(":framework:security"))
     testImplementation(project(":shared:testing"))
     testImplementation(libs.bundles.kotest)

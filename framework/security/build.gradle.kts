@@ -48,6 +48,11 @@ dependencies {
     implementation(project(":framework:core"))
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.arrow)
+
+    // Spring Modulith for module boundary enforcement
+    implementation(libs.spring.modulith.api)
+    testImplementation(libs.spring.modulith.test)
+
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)
