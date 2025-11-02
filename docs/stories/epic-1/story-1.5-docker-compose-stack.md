@@ -118,16 +118,16 @@ So that I have all infrastructure services for local development.
 - [x] Configure health checks for all services
 - [x] Add .env.example with default ports
 - [x] Test: `docker-compose up -d` - all services start
-- [x] Test: Access Keycloak at http://localhost:8080
-- [x] Test: Access Prometheus at http://localhost:9090
-- [x] Test: Access Grafana at http://localhost:3000
+- [x] Test: Access Keycloak at <http://localhost:8080>
+- [x] Test: Access Prometheus at <http://localhost:9090>
+- [x] Test: Access Grafana at <http://localhost:3000>
 - [x] Commit: "Add Docker Compose development stack with all services"
 
 ### Review Follow-ups (AI)
 
-- [x] [AI-Review][Med] Add security warning comment to .env.example header about production secrets management
-- [x] [AI-Review][Low] Pin Prometheus to specific version instead of "latest" (recommend: prom/prometheus:v2.55.1)
-- [x] [AI-Review][Low] Add .gitignore documentation comment for realm-export.json security (create docker/keycloak/README.md)
+- [x] **[AI-Review Medium]** Add security warning comment to .env.example header about production secrets management
+- [x] **[AI-Review Low]** Pin Prometheus to specific version instead of "latest" (recommend: prom/prometheus:v2.55.1)
+- [x] **[AI-Review Low]** Add .gitignore documentation comment for realm-export.json security (create docker/keycloak/README.md)
 
 ---
 
@@ -138,12 +138,12 @@ So that I have all infrastructure services for local development.
 - [x] PostgreSQL connectable: `psql -h localhost -U eaf_user -d eaf` - Version 16.10 confirmed
 - [x] PostgreSQL extensions verified: uuid-ossp (1.1), pg_trgm (1.6)
 - [x] PostgreSQL EAF schema created with Axon tables: domain_event_entry, snapshot_event_entry, saga_entry, token_entry, dead_letter_entry
-- [x] Keycloak accessible: http://localhost:8080 (HTTP 302 redirect)
+- [x] Keycloak accessible: <http://localhost:8080> (HTTP 302 redirect)
 - [x] Keycloak realm 'eaf' imported successfully
 - [x] Redis responding: `docker exec eaf-redis redis-cli ping` → PONG
-- [x] Prometheus accessible: http://localhost:9090/-/ready (HTTP 200)
+- [x] Prometheus accessible: <http://localhost:9090/-/ready> (HTTP 200)
 - [x] Prometheus config validated: `promtool check config` → SUCCESS
-- [x] Grafana accessible: http://localhost:3000/api/health (HTTP 200)
+- [x] Grafana accessible: <http://localhost:3000/api/health> (HTTP 200)
 
 ---
 
@@ -333,16 +333,16 @@ All findings are minor improvements that don't block functionality. Implementati
 - ⚠️ **RECOMMENDATION**: Consider adding pg_stat_statements extension for query performance monitoring (Epic 5+)
 
 **References:**
-- Docker Compose Health Checks: https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck
-- Keycloak Container Guide: https://www.keycloak.org/server/containers
-- Prometheus Configuration: https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+- Docker Compose Health Checks: <https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck>
+- Keycloak Container Guide: <https://www.keycloak.org/server/containers>
+- Prometheus Configuration: <https://prometheus.io/docs/prometheus/latest/configuration/configuration/>
 
 ### Action Items
 
 **Code Changes Required:**
-- [x] [Med] Add security warning comment to .env.example header about production secrets management [file: .env.example:1] - **RESOLVED**
-- [x] [Low] Pin Prometheus to specific version instead of "latest" (recommend: prom/prometheus:v2.55.1) [file: docker-compose.yml:84] - **RESOLVED**
-- [x] [Low] Add .gitignore documentation comment for realm-export.json security [file: docker/keycloak/README.md (create)] - **RESOLVED**
+- [x] **[Medium]** Add security warning comment to .env.example header about production secrets management [file: .env.example:1] - **RESOLVED**
+- [x] **[Low]** Pin Prometheus to specific version instead of "latest" (recommend: prom/prometheus:v2.55.1) [file: docker-compose.yml:84] - **RESOLVED**
+- [x] **[Low]** Add .gitignore documentation comment for realm-export.json security [file: docker/keycloak/README.md (create)] - **RESOLVED**
 
 **Advisory Notes:**
 - Note: Consider adding pg_stat_statements extension in future for query performance monitoring (Epic 5+)

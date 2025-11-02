@@ -62,9 +62,9 @@ The `realm-export.json` file is pre-configured for local development with:
 
 ### Resources:
 
-- **Keycloak Security Guide:** https://www.keycloak.org/docs/latest/server_admin/#_hardening
-- **Production Deployment:** https://www.keycloak.org/server/configuration-production
-- **Container Security:** https://www.keycloak.org/server/containers
+- **Keycloak Security Guide:** <https://www.keycloak.org/docs/latest/server_admin/#_hardening>
+- **Production Deployment:** <https://www.keycloak.org/server/configuration-production>
+- **Container Security:** <https://www.keycloak.org/server/containers>
 
 ## Exporting Realm Configuration
 
@@ -106,7 +106,7 @@ After modifying `realm-export.json`:
    ```
 
 3. Access Keycloak Admin Console to verify:
-   - URL: http://localhost:8080
+   - URL: <http://localhost:8080>
    - Username: admin
    - Password: admin
 
