@@ -42,7 +42,7 @@ development_status:
   1-2-create-multi-module-structure: done
   1-3-implement-convention-plugins: done
   1-4-create-version-catalog: done
-  1-5-docker-compose-stack: review
+  1-5-docker-compose-stack: in-progress
   1-6-one-command-init: drafted
   1-7-ddd-base-classes: drafted
   1-8-spring-modulith-enforcement: drafted
