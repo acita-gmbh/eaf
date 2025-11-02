@@ -92,17 +92,39 @@ Ensure the following tools are installed on your system:
 
 ### One-Command Setup
 
-The entire local development environment can be provisioned with a single command. This script starts all required backing services (PostgreSQL, Keycloak, Redis, Prometheus, Grafana), runs database migrations, and launches the core application.
+The entire local development environment can be provisioned with a single command:
 
 ```bash
 ./scripts/init-dev.sh
 ```
 
-The script supports overriding the default Grafana port via the `GRAFANA_PORT` environment variable. Upon first run, you will be prompted to set a secure password for the Keycloak administrator. The script provides a summary of all running services and their access URLs, including manual health check commands.
+**What it does:**
+1. ✅ Validates Docker and Docker Compose are installed and running
+2. ✅ Starts all backing services (PostgreSQL, Keycloak, Redis, Prometheus, Grafana)
+3. ✅ Waits for services to be healthy with automatic retry logic (max 2 minutes)
+4. ✅ Validates test data (Keycloak users, PostgreSQL schema)
+5. ✅ Installs Git hooks (pre-commit: ktlint, pre-push: Detekt + tests)
+6. ✅ Downloads all Gradle dependencies
 
-To stop all services, use:
+**Typical execution time:** ~22 seconds (first run may take longer for Docker image downloads)
+
+**Services Available After Init:**
+- **PostgreSQL:** localhost:5432 (user: eaf_user, password: eaf_password, database: eaf)
+- **Keycloak:** http://localhost:8080 (admin/admin, realm: eaf)
+- **Redis:** localhost:6379
+- **Prometheus:** http://localhost:9090
+- **Grafana:** http://localhost:3100 (admin/admin)
+
+**Test Users** (automatically imported via Keycloak realm):
+- `admin@eaf.local` / `password` (tenant: tenant-a, roles: admin, user)
+- `viewer@eaf.local` / `password` (tenant: tenant-a, roles: user)
+- `tenant-b-admin@eaf.local` / `password` (tenant: tenant-b, roles: admin, user)
+
+**Port Configuration:** All ports can be customized via `.env` file (copy from `.env.example`). Grafana uses port 3100 by default to avoid conflicts with other development stacks.
+
+To stop all services:
 ```bash
-./scripts/stop-dev.sh
+docker compose down
 ```
 
 ## 🧪 Testing
