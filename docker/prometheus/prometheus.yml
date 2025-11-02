@@ -1,0 +1,76 @@
+# Prometheus Configuration for EAF Development Environment
+# Scrapes metrics from Spring Boot Actuator endpoints
+
+global:
+  scrape_interval: 15s # Default scrape interval
+  evaluation_interval: 15s # Evaluate rules every 15 seconds
+  external_labels:
+    environment: 'development'
+    project: 'eaf'
+
+# Alertmanager configuration (optional, for future use)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - 'alertmanager:9093'
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # EAF Spring Boot Application
+  # Note: host.docker.internal allows Prometheus container to reach host machine
+  # Adjust to 'eaf-app:8081' once application runs in Docker
+  - job_name: 'eaf-application'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          application: 'eaf'
+          service: 'eaf-api'
+          environment: 'development'
+    relabel_configs:
+      # Add instance label with hostname
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'eaf-application'
+
+  # Keycloak metrics (if enabled)
+  - job_name: 'keycloak'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['keycloak:8080']
+        labels:
+          service: 'keycloak'
+          environment: 'development'
+
+  # PostgreSQL Exporter (optional, requires postgres_exporter sidecar)
+  # Uncomment when adding postgres_exporter to docker-compose.yml
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgresql'
+  #         environment: 'development'
+
+  # Redis Exporter (optional, requires redis_exporter sidecar)
+  # Uncomment when adding redis_exporter to docker-compose.yml
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         environment: 'development'
