@@ -81,7 +81,7 @@ services:
         condition: service_healthy
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.55.1
     container_name: eaf-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
