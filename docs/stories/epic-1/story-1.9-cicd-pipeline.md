@@ -36,6 +36,19 @@ So that all commits and PRs are automatically tested.
 
 ## Technical Notes
 
+**📝 Note from Story 1.6 Code Review (2025-11-02):**
+Consider adding shellcheck static analysis for shell script quality enforcement. EAF now includes 4 bash scripts (init-dev.sh, health-check.sh, seed-data.sh, install-git-hooks.sh) that should be validated in CI/CD pipeline.
+
+**Recommended addition to ci.yml:**
+```yaml
+- name: Shell Script Analysis (shellcheck)
+  run: |
+    # Install shellcheck
+    sudo apt-get update && sudo apt-get install -y shellcheck
+    # Run shellcheck on all bash scripts
+    find scripts/ -name "*.sh" -exec shellcheck {} \;
+```
+
 ### CI Pipeline (Fast Feedback - <15min)
 
 **.github/workflows/ci.yml:**
