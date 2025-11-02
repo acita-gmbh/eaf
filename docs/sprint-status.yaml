@@ -33,7 +33,7 @@ generated: 2025-11-02
 project: EAF
 project_key: EAF
 tracking_system: file-system
-story_location: {project-root}/docs/stories
+story_location: "{project-root}/docs/stories"
 
 development_status:
   # Epic 1: Foundation & Project Infrastructure (11 stories)
