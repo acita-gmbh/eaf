@@ -41,7 +41,7 @@ development_status:
   1-1-initialize-repository: done
   1-2-create-multi-module-structure: done
   1-3-implement-convention-plugins: done
-  1-4-create-version-catalog: in-progress
+  1-4-create-version-catalog: review
   1-5-docker-compose-stack: drafted
   1-6-one-command-init: drafted
   1-7-ddd-base-classes: drafted
