@@ -1,9 +1,14 @@
 # Story 1.7: DDD Base Classes in framework/core
 
 **Epic:** Epic 1 - Foundation & Project Infrastructure
-**Status:** TODO
+**Status:** ready-for-dev
 **Story Points:** TBD
 **Related Requirements:** FR010 (Hexagonal Architecture)
+
+## Dev Agent Record
+
+**Context Reference:**
+- [Story Context XML](../1-7-ddd-base-classes.context.xml) - Generated 2025-11-02
 
 ---
 
