@@ -120,7 +120,7 @@ Validates:
 ### Review Follow-ups (AI)
 
 - [x] [AI-Review][Low] Update README.md with init-dev.sh usage instructions (DoD item) [file: README.md] - Completed 2025-11-02
-- [ ] [AI-Review][Advisory] Consider adding shellcheck static analysis to Story 1.9 CI/CD pipeline
+- [x] [AI-Review][Advisory] Consider adding shellcheck static analysis to Story 1.9 CI/CD pipeline - Forwarded to Story 1.9 Technical Notes (2025-11-02)
 
 ---
 
