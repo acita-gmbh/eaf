@@ -1,4 +1,5 @@
 plugins {
+    id("eaf.testing")
     id("eaf.kotlin-common")
 }
 
