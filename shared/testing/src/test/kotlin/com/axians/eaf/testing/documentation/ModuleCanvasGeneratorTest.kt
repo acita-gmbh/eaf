@@ -1,9 +1,6 @@
 package com.axians.eaf.testing.documentation
 
 import io.kotest.core.spec.style.FunSpec
-import org.springframework.modulith.core.ApplicationModules
-import org.springframework.modulith.docs.Documenter
-import java.nio.file.Paths
 
 /**
  * Spring Modulith Module Canvas Generator
@@ -33,8 +30,7 @@ class ModuleCanvasGeneratorTest :
 
         test("verify module canvas can be generated (documentation test)") {
             // This test documents the expected approach for future module canvas generation
-            val outputPath = Paths.get("build/spring-modulith-docs")
-            println("Module Canvas documentation will be generated to: $outputPath")
+            println("Module Canvas documentation will be generated to: build/spring-modulith-docs")
 
             // Future implementation (Epic 10):
             // val modules = ApplicationModules.of(WidgetDemoApplication::class.java)

@@ -80,6 +80,8 @@ class ArchitectureTest :
         }
 
         "Coding Standards" - {
+            val testScope = Konsist.scopeFromTest()
+
             "no wildcard imports allowed" {
                 scope
                     .imports
@@ -89,9 +91,8 @@ class ArchitectureTest :
             }
 
             "test classes must use Kotest (NOT JUnit)" {
-                scope
+                testScope
                     .files
-                    .withPackage("..test..")
                     .assertFalse {
                         it.hasImport { import ->
                             import.name == "org.junit.Test" ||
