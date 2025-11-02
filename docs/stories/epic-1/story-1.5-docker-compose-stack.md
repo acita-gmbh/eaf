@@ -1,7 +1,7 @@
 # Story 1.5: Docker Compose Development Stack
 
 **Epic:** Epic 1 - Foundation & Project Infrastructure
-**Status:** review
+**Status:** done
 **Story Points:** TBD
 **Related Requirements:** FR001
 
@@ -154,7 +154,7 @@ So that I have all infrastructure services for local development.
 - [x] Health checks pass
 - [x] Test users exist in Keycloak (admin, viewer, tenant-b-admin)
 - [x] PostgreSQL schemas created (eaf schema with Axon tables)
-- [ ] Story marked as DONE in workflow status
+- [x] Story marked as DONE in workflow status
 
 ---
 
