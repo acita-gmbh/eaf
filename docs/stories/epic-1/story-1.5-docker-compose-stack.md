@@ -1,7 +1,7 @@
 # Story 1.5: Docker Compose Development Stack
 
 **Epic:** Epic 1 - Foundation & Project Infrastructure
-**Status:** ready-for-dev
+**Status:** review
 **Story Points:** TBD
 **Related Requirements:** FR001
 
