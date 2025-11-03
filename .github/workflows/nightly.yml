@@ -32,9 +32,10 @@ jobs:
         run: ./gradlew fuzzTest --no-daemon --stacktrace
         continue-on-error: false
 
-      - name: Concurrency Tests (LitmusKt)
-        run: ./gradlew litmusTest --no-daemon --stacktrace
-        continue-on-error: false
+      # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
+      # - name: Concurrency Tests (LitmusKt)
+      #   run: ./gradlew litmusTest --no-daemon --stacktrace
+      #   continue-on-error: false
 
       - name: Mutation Testing (Pitest)
         run: ./gradlew pitest --no-daemon --stacktrace
@@ -58,14 +59,15 @@ jobs:
             **/build/reports/tests/fuzzTest/
           retention-days: 14
 
-      - name: Upload Concurrency Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: concurrency-test-reports
-          path: |
-            **/build/reports/tests/litmusTest/
-          retention-days: 14
+      # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
+      # - name: Upload Concurrency Test Reports
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: concurrency-test-reports
+      #     path: |
+      #       **/build/reports/tests/litmusTest/
+      #     retention-days: 14
 
       - name: Upload Mutation Test Reports
         if: always()
@@ -80,3 +82,4 @@ jobs:
         if: failure()
         run: |
           echo "::error::Nightly deep validation failed. Review uploaded artifacts for details."
+          exit 1

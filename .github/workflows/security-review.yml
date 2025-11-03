@@ -37,9 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: owasp-dependency-check-report
-          path: |
-            build/reports/dependency-check-report.html
-            **/build/reports/dependency-check-report.html
+          path: '**/build/reports/dependency-check-report.html'
           retention-days: 30
 
       - name: Fail on Critical Vulnerabilities
