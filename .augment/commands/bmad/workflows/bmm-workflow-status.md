@@ -1,14 +1,14 @@
 # workflow-status Workflow
 
 ## Description
-Lightweight status checker - answers "what should I do now?" for any agent. Reads simple key-value status file for instant parsing. Use workflow-init for new projects.
+Lightweight status checker - answers "what should I do now?" for any agent. Reads YAML status file for workflow tracking. Use workflow-init for new projects.
 
 ## Activation
 Type `@workflow-workflow-status` to execute this workflow.
 
 # Workflow Status - Master Router and Status Tracker
 name: workflow-status
-description: 'Lightweight status checker - answers "what should I do now?" for any agent. Reads simple key-value status file for instant parsing. Use workflow-init for new projects.'
+description: 'Lightweight status checker - answers "what should I do now?" for any agent. Reads YAML status file for workflow tracking. Use workflow-init for new projects.'
 author: "BMad"
 
 # Critical variables from config
@@ -25,13 +25,13 @@ installed_path: "{project-root}/bmad/bmm/workflows/workflow-status"
 instructions: "{installed_path}/instructions.md"
 
 # Template for status file creation (used by workflow-init)
-template: "{installed_path}/workflow-status-template.md"
+template: "{installed_path}/workflow-status-template.yaml"
 
 # Path definitions for project types
 path_files: "{installed_path}/paths/"
 
 # Output configuration - reads existing status
-default_output_file: "{output_folder}/bmm-workflow-status.md"
+default_output_file: "{output_folder}/bmm-workflow-status.yaml"
 
 standalone: true
 

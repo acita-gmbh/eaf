@@ -22,6 +22,10 @@
 - Path: `bmad/bmm/workflows/2-plan-workflows/narrative/workflow.yaml`
 - Narrative design workflow for story-driven games and applications. Creates comprehensive narrative documentation including story structure, character arcs, dialogue systems, and narrative implementation guidance.
 
+**create-epics-and-stories**
+- Path: `bmad/bmm/workflows/2-plan-workflows/prd/create-epics-and-stories/workflow.yaml`
+- Transform PRD requirements into bite-sized stories organized in epics for 200k context dev agents
+
 **prd**
 - Path: `bmad/bmm/workflows/2-plan-workflows/prd/workflow.yaml`
 - Unified PRD workflow for project levels 2-4. Produces strategic PRD and tactical epic breakdown. Hands off to architecture workflow for technical design. Note: Level 0-1 use tech-spec workflow.
@@ -88,7 +92,7 @@
 
 **workflow-status**
 - Path: `bmad/bmm/workflows/workflow-status/workflow.yaml`
-- Lightweight status checker - answers "what should I do now?" for any agent. Reads simple key-value status file for instant parsing. Use workflow-init for new projects.
+- Lightweight status checker - answers "what should I do now?" for any agent. Reads YAML status file for workflow tracking. Use workflow-init for new projects.
 
 
 ## Execution
