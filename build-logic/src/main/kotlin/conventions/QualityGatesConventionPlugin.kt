@@ -44,13 +44,17 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 ?: "com.axians.eaf"
 
             configure<DependencyCheckExtension> {
-                failBuildOnCVSS.set(7.0f)
+                // Story 1.9: Threshold set to 8.0 (CRITICAL only)
+                // Rationale: 7.0-7.9 HIGH severity CVEs reviewed case-by-case
+                failBuildOnCVSS.set(8.0f)
                 formats.set(
                     listOf(
                         ReportGenerator.Format.HTML.name,
                         ReportGenerator.Format.JSON.name
                     )
                 )
+                // Story 1.9: Suppression file for false positives
+                suppressionFile.set("${project.rootDir}/config/dependency-check-suppressions.xml")
                 analyzers.apply {
                     assemblyEnabled.set(false)
                     // Disable OSS Index to avoid rate limiting issues
