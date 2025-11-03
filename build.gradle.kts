@@ -54,6 +54,11 @@ subprojects {
                     because("Mitigate Apache Commons IO XML DoS CVE-2024-47554")
                 }
 
+                "org.apache.commons" to "commons-lang3" -> {
+                    useVersion(catalog.findVersion("commons-lang3").get().requiredVersion)
+                    because("Story 1.9: Fix CVE-2025-48924 uncontrolled recursion")
+                }
+
                 "ch.qos.logback" to "logback-core" -> {
                     useVersion(catalog.findVersion("logback").get().requiredVersion)
                     because("Align with Logback serialization fix CVE-2024-9636/9637")
@@ -67,6 +72,17 @@ subprojects {
                 "org.springframework" to "spring-core" -> {
                     useVersion(catalog.findVersion("spring-framework").get().requiredVersion)
                     because("Ensure Spring Framework annotation security fix CVE-2025-24928")
+                }
+
+                "io.netty" to "netty-buffer",
+                "io.netty" to "netty-codec",
+                "io.netty" to "netty-common",
+                "io.netty" to "netty-handler",
+                "io.netty" to "netty-resolver",
+                "io.netty" to "netty-transport",
+                "io.netty" to "netty-transport-native-unix-common" -> {
+                    useVersion(catalog.findVersion("netty").get().requiredVersion)
+                    because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
                 }
             }
         }

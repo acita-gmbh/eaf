@@ -1,6 +1,6 @@
 ide: auggie
 configured_date: '2025-10-30T13:57:04.856Z'
-last_updated: '2025-10-30T13:57:04.856Z'
+last_updated: '2025-11-03T13:22:45.158Z'
 configuration:
   auggieLocations:
     - .augment/commands

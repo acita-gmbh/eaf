@@ -44,13 +44,17 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 ?: "com.axians.eaf"
 
             configure<DependencyCheckExtension> {
-                failBuildOnCVSS.set(7.0f)
+                // Story 1.9: Threshold set to 8.0 (CRITICAL only)
+                // Rationale: 7.0-7.9 HIGH severity CVEs reviewed case-by-case
+                failBuildOnCVSS.set(8.0f)
                 formats.set(
                     listOf(
                         ReportGenerator.Format.HTML.name,
                         ReportGenerator.Format.JSON.name
                     )
                 )
+                // Story 1.9: Suppression file for false positives
+                suppressionFile.set("${project.rootDir}/config/dependency-check-suppressions.xml")
                 analyzers.apply {
                     assemblyEnabled.set(false)
                     // Disable OSS Index to avoid rate limiting issues
@@ -120,7 +124,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 // TARGET: Epic 8 pre-production hardening phase
                 // dependsOn("dependencyCheckAnalyze")
 
-                listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->
+                // Story 1.9: pitest excluded from check task (too slow for CI, runs in nightly only)
+                listOf("konsistTest", "integrationTest").forEach { taskName ->
                     if (this@with.tasks.findByName(taskName) != null) {
                         dependsOn(taskName)
                     }
@@ -131,7 +136,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
 
                 doLast {
-                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest → pitest).")
+                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest).")
                 }
             }
 

@@ -1,0 +1,81 @@
+name: Nightly - Deep Validation
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deep-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hours max (target ~2.5h)
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Property-Based Tests
+        run: ./gradlew propertyTest --no-daemon --stacktrace
+
+      - name: Fuzz Tests (Jazzer)
+        run: ./gradlew fuzzTest --no-daemon --stacktrace
+
+      # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
+      # - name: Concurrency Tests (LitmusKt)
+      #   run: ./gradlew litmusTest --no-daemon --stacktrace
+
+      - name: Mutation Testing (Pitest)
+        run: ./gradlew pitest --no-daemon --stacktrace
+
+      - name: Upload Property Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-test-reports
+          path: |
+            **/build/reports/tests/propertyTest/
+          retention-days: 14
+
+      - name: Upload Fuzz Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-test-reports
+          path: |
+            **/build/reports/tests/fuzzTest/
+          retention-days: 14
+
+      # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
+      # - name: Upload Concurrency Test Reports
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: concurrency-test-reports
+      #     path: |
+      #       **/build/reports/tests/litmusTest/
+      #     retention-days: 14
+
+      - name: Upload Mutation Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-test-reports
+          path: |
+            **/build/reports/pitest/
+          retention-days: 30
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "::error::Nightly deep validation failed. Review uploaded artifacts for details."
+          exit 1
