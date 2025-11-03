@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v tput >/dev/null 2>&1; then
+  BLUE="$(tput setaf 4)"
+  GREEN="$(tput setaf 2)"
+  RED="$(tput setaf 1)"
+  YELLOW="$(tput setaf 3)"
+  RESET="$(tput sgr0)"
+else
+  BLUE=""
+  GREEN=""
+  RED=""
+  YELLOW=""
+  RESET=""
+fi
+
+info()  { printf "%s▶%s %s\n" "$BLUE" "$RESET" "$1"; }
+success(){ printf "%s✅%s %s\n" "$GREEN" "$RESET" "$1"; }
+warn()  { printf "%s⚠️ %s %s\n" "$YELLOW" "$RESET" "$1"; }
+fail()  { printf "%s❌%s %s\n" "$RED" "$RESET" "$1"; }
+
+echo ""
+info "Running pre-commit quality gate (ktlint)"
+
+STAGED_KOTLIN=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.kts?$' || true)
+
+if [[ -z "${STAGED_KOTLIN}" ]]; then
+  success "No Kotlin files staged – skipping ktlint"
+  exit 0
+fi
+
+info "Checking Kotlin formatting via ./gradlew ktlintCheck --quiet"
+if ./gradlew ktlintCheck --quiet; then
+  success "ktlint passed"
+  exit 0
+fi
+
+echo ""
+fail "ktlint violations detected"
+warn "Fix with: ./gradlew ktlintFormat"
+warn "Bypass (not recommended): git commit --no-verify"
+exit 1

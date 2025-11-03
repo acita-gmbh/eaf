@@ -1,0 +1,52 @@
+name: Validate Git Hooks
+
+on:
+  push:
+    paths:
+      - '.git-hooks/**'
+      - 'scripts/install-git-hooks.sh'
+      - 'build-logic/src/main/kotlin/conventions/PreCommitHooksConventionPlugin.kt'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/validate-hooks.yml'
+  pull_request:
+    paths:
+      - '.git-hooks/**'
+      - 'scripts/install-git-hooks.sh'
+      - 'build-logic/src/main/kotlin/conventions/PreCommitHooksConventionPlugin.kt'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/validate-hooks.yml'
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Lint hook templates
+        run: |
+          shellcheck .git-hooks/pre-commit
+          shellcheck .git-hooks/pre-push
+          shellcheck scripts/install-git-hooks.sh
+
+      - name: Verify command parity
+        run: |
+          grep -q './gradlew ktlintCheck --quiet' .git-hooks/pre-commit
+          grep -q './gradlew detekt --quiet' .git-hooks/pre-push
+          grep -q './gradlew test --quiet' .git-hooks/pre-push
+          grep -q '.git-hooks' scripts/install-git-hooks.sh
+
+      - name: Ensure Gradle task copies templates
+        run: |
+          grep -q '.git-hooks' build-logic/src/main/kotlin/conventions/PreCommitHooksConventionPlugin.kt
+
+      - name: Validate CI pipeline contains quality gates
+        run: |
+          grep -q 'ktlintCheck' .github/workflows/ci.yml
+          grep -q 'detekt' .github/workflows/ci.yml
+          if ! grep -q 'test --quiet' .github/workflows/ci.yml && ! grep -q 'test --no-daemon' .github/workflows/ci.yml; then
+            echo "Gradle test command not found in CI workflow"
+            exit 1
+          fi
