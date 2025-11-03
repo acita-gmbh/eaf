@@ -11,6 +11,12 @@
   <img src="https://img.shields.io/badge/Kotest-6.0.4-yellow.svg" alt="Kotest">
 </p>
 
+<p align="center">
+  <a href="https://github.com/acita-gmbh/eaf/actions/workflows/ci.yml"><img src="https://github.com/acita-gmbh/eaf/actions/workflows/ci.yml/badge.svg" alt="CI - Fast Feedback"></a>
+  <a href="https://github.com/acita-gmbh/eaf/actions/workflows/nightly.yml"><img src="https://github.com/acita-gmbh/eaf/actions/workflows/nightly.yml/badge.svg" alt="Nightly - Deep Validation"></a>
+  <a href="https://github.com/acita-gmbh/eaf/actions/workflows/security-review.yml"><img src="https://github.com/acita-gmbh/eaf/actions/workflows/security-review.yml/badge.svg" alt="Security Review"></a>
+</p>
+
 ---
 
 ## ✨ Overview

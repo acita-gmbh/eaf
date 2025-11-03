@@ -261,36 +261,129 @@ Here's the complexity scale for reference:
 <template-output>workflow_path_file</template-output>
 </step>
 
-<step n="5" goal="Generate workflow summary">
-<action>Build workflow from loaded path file</action>
-<action>Display phases and workflows</action>
-<action>Set initial values for status file</action>
+<step n="5" goal="Build workflow status YAML structure">
+<action>Parse the loaded workflow path file and extract all workflows</action>
 
-<template-output>current_phase</template-output>
-<template-output>current_workflow</template-output>
-<template-output>current_agent</template-output>
-<template-output>next_action</template-output>
-<template-output>next_command</template-output>
-<template-output>next_agent</template-output>
+<action>For each phase in the path file:
+
+- Extract phase number and name
+- Extract all workflows in that phase
+- For each workflow, determine its status type:
+  - required: true → status = "required"
+  - recommended: true → status = "recommended"
+  - conditional: "if_has_ui" → status = "conditional"
+  - optional: true → status = "optional"
+  - Default if not specified → status = "required"
+    </action>
+
+<action>Build the workflow_items list in this format:
+
+For each phase:
+
+1. Add comment header: `  # Phase {n}: {Phase Name}`
+2. For each workflow in phase:
+   - Add entry: `  {workflow-id}: {status}`
+3. Add blank line between phases
+
+Example structure:
+
+```
+  # Phase 1: Analysis
+  brainstorm-project: optional
+  research: optional
+  product-brief: recommended
+
+  # Phase 2: Planning
+  prd: required
+  validate-prd: optional
+  create-design: conditional
+```
+
+</action>
+
+<action>Scan for existing workflow output files to auto-detect completion:
+
+For each workflow in the list, check common output locations:
+
+- {output_folder}/brainstorm-\*.md for brainstorm-project
+- {output_folder}/research-\*.md for research
+- {output_folder}/product-brief.md for product-brief
+- {output_folder}/prd.md for prd
+- {output_folder}/ux-design.md for create-design
+- {output_folder}/architecture.md for create-architecture
+- {output_folder}/tech-spec.md for tech-spec
+- {output_folder}/sprint-status.yaml for sprint-planning
+
+CRITICAL: If file exists, replace status with ONLY the file path - nothing else.
+Example: product-brief: docs/product-brief.md
+NOT: product-brief: "completed - docs/product-brief.md" or any other text.
+</action>
+
+<template-output>workflow_items</template-output>
 </step>
 
-<step n="6" goal="Create status file">
-<action>Initialize all status values</action>
-<template-output>start_date</template-output>
-<template-output>last_updated</template-output>
-<template-output>phase_1_complete</template-output>
-<template-output>phase_2_complete</template-output>
-<template-output>phase_3_complete</template-output>
-<template-output>phase_4_complete</template-output>
+<step n="6" goal="Create workflow status file">
+<action>Set generated date to current date</action>
+<template-output>generated</template-output>
+
+<action>Prepare all template variables for workflow-status-template.yaml:
+
+- generated: {current_date}
+- project_name: {project_name}
+- project_type: {project_type}
+- project_level: {project_level}
+- field_type: {field_type}
+- workflow_path_file: {workflow_path_file}
+- workflow_items: {workflow_items from step 5}
+  </action>
+
+<action>Display a preview of what will be created:
+
+Show the first workflow in each phase and total count:
+
+"Ready to create workflow status tracking:
+
+- Phase 1 ({phase_1_workflow_count} workflows): Starting with {first_workflow_phase_1}
+- Phase 2 ({phase_2_workflow_count} workflows): Starting with {first_workflow_phase_2}
+- Phase 3 ({phase_3_workflow_count} workflows): Starting with {first_workflow_phase_3}
+- Phase 4 (Implementation tracked separately in sprint-status.yaml)
+
+{{#if detected_completed_workflows}}
+Found existing work:
+{{#each detected_files}}
+
+- {{workflow_name}}: {{file_path}}
+  {{/each}}
+  {{/if}}"
+  </action>
 
 <ask>Ready to create your workflow status file? (y/n)</ask>
 
 <check if="answer == y">
-  <action>Save status file to {output_folder}/bmm-workflow-status.md</action>
-  <output>✅ Status file created! Next up: {{next_agent}} agent, run `{{next_command}}`</output>
-  <check if="next_agent !== current_agent">
-    <output>It is strongly recommended to clear the context or start a new chat and load the next agent to execute the next command from that agents help menu, unless there is something else I can do for you first.</output>
-  </check>
+  <action>Generate YAML from workflow-status-template.yaml with all variables</action>
+  <action>Save status file to {output_folder}/bmm-workflow-status.yaml</action>
+
+<action>Identify the first non-completed workflow in the list</action>
+<action>Look up that workflow's agent and command from the path file</action>
+
+<output>✅ Workflow status file created at {output_folder}/bmm-workflow-status.yaml
+
+**Next Steps:**
+
+{{#if detected_completed_workflows}}
+You have {{detected_count}} workflow(s) already completed. Great progress!
+{{/if}}
+
+**Next Workflow:** {{next_workflow_name}}
+
+**Agent:** {{next_agent}}
+
+**Command:** /bmad:bmm:workflows:{{next_workflow_id}}
+
+{{#if next_agent !== 'pm'}}
+It is recommended to start a new chat and load the {{next_agent}} agent before running the next workflow.
+{{/if}}
+</output>
 </check>
 </step>
 

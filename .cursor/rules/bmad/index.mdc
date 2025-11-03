@@ -46,6 +46,7 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/bmm/agents/analyst - analyst
 - @bmad/bmm/agents/architect - architect
 - @bmad/bmm/agents/dev - dev
+- @bmad/bmm/agents/paige - paige
 - @bmad/bmm/agents/pm - pm
 - @bmad/bmm/agents/sm - sm
 - @bmad/bmm/agents/tea - tea
@@ -57,6 +58,7 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/bmm/workflows/research - research
 - @bmad/bmm/workflows/create-ux-design - create-ux-design
 - @bmad/bmm/workflows/narrative - narrative
+- @bmad/bmm/workflows/create-epics-and-stories - create-epics-and-stories
 - @bmad/bmm/workflows/prd - prd
 - @bmad/bmm/workflows/tech-spec-sm - tech-spec-sm
 - @bmad/bmm/workflows/architecture - architecture
