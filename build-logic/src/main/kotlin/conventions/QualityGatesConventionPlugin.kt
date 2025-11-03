@@ -120,7 +120,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 // TARGET: Epic 8 pre-production hardening phase
                 // dependsOn("dependencyCheckAnalyze")
 
-                listOf("konsistTest", "integrationTest", "pitest").forEach { taskName ->
+                // Story 1.9: pitest excluded from check task (too slow for CI, runs in nightly only)
+                listOf("konsistTest", "integrationTest").forEach { taskName ->
                     if (this@with.tasks.findByName(taskName) != null) {
                         dependsOn(taskName)
                     }
@@ -131,7 +132,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
 
                 doLast {
-                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest → pitest).")
+                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest).")
                 }
             }
 
