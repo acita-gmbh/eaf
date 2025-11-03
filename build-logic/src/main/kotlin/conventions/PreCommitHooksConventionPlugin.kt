@@ -117,7 +117,7 @@ class PreCommitHooksConventionPlugin : Plugin<Project> {
         val target = hooksDir.resolve(hookName)
         target.writeBytes(template.readBytes())
         target.setExecutable(true)
-        logger.lifecycle("✓ ${hookName.replaceFirstChar { it.lowercase() }} hook installed: ${target.absolutePath}")
+        logger.lifecycle("✓ $hookName hook installed: ${target.absolutePath}")
     }
 
     private fun generateCommitMsgScript(): String {
