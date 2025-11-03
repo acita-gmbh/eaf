@@ -23,7 +23,7 @@ fail()  { printf "%s❌%s %s\n" "$RED" "$RESET" "$1"; }
 echo ""
 info "Running pre-commit quality gate (ktlint)"
 
-STAGED_KOTLIN=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.kts?$' || true)
+STAGED_KOTLIN=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(kt|kts)$' || true)
 
 if [[ -z "${STAGED_KOTLIN}" ]]; then
   success "No Kotlin files staged – skipping ktlint"
