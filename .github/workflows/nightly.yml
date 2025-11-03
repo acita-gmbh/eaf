@@ -26,20 +26,16 @@ jobs:
 
       - name: Property-Based Tests
         run: ./gradlew propertyTest --no-daemon --stacktrace
-        continue-on-error: false
 
       - name: Fuzz Tests (Jazzer)
         run: ./gradlew fuzzTest --no-daemon --stacktrace
-        continue-on-error: false
 
       # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
       # - name: Concurrency Tests (LitmusKt)
       #   run: ./gradlew litmusTest --no-daemon --stacktrace
-      #   continue-on-error: false
 
       - name: Mutation Testing (Pitest)
         run: ./gradlew pitest --no-daemon --stacktrace
-        continue-on-error: false
 
       - name: Upload Property Test Reports
         if: always()

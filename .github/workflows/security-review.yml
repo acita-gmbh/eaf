@@ -32,7 +32,6 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: ./gradlew dependencyCheckAnalyze --no-daemon --stacktrace
-        continue-on-error: false
 
       - name: Upload OWASP Dependency Check Report
         if: always()

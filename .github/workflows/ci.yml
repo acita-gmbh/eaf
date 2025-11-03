@@ -39,7 +39,6 @@ jobs:
 
       - name: Integration Tests
         run: ./gradlew integrationTest --no-daemon --stacktrace
-        continue-on-error: false
 
       - name: Architecture Tests (Konsist)
         run: ./gradlew :shared:testing:test --no-daemon
