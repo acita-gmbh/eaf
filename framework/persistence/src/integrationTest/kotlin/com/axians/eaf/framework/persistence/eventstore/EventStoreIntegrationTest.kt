@@ -10,6 +10,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
 import org.axonframework.messaging.MetaData
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.MigrationVersion
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -65,7 +66,7 @@ class EventStoreIntegrationTest : FunSpec() {
             val appliedMigrations = info.all().filter { it.state.isApplied }
 
             appliedMigrations shouldNotBe emptyList<Any>()
-            appliedMigrations.any { it.version.version == "001" } shouldBe true
+            appliedMigrations.any { it.version == MigrationVersion.fromVersion("1") } shouldBe true
         }
 
         test("EventStorageEngine should store and retrieve domain events") {
