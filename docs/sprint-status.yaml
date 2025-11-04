@@ -52,7 +52,7 @@ development_status:
 
   # Epic 2: Walking Skeleton - CQRS/Event Sourcing Core (13 stories)
   epic-2: contexted
-  2-1-axon-core-configuration: ready-for-dev
+  2-1-axon-core-configuration: review
   2-2-postgresql-event-store: ready-for-dev
   2-3-event-store-partitioning: ready-for-dev
   2-4-snapshot-support: ready-for-dev

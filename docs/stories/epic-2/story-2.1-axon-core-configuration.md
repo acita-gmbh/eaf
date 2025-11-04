@@ -3,8 +3,8 @@
 **Story Context:** [2-1-axon-core-configuration.context.xml](2-1-axon-core-configuration.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
-**Story Points:** TBD
+**Status:** Review
+**Story Points:** 2
 **Related Requirements:** FR003 (Event Store), FR014 (Data Consistency)
 
 ---
@@ -83,32 +83,32 @@ dependencies {
 
 ## Implementation Checklist
 
-- [ ] Create framework/cqrs module structure
-- [ ] Add Axon Framework 4.12.1 to version catalog
-- [ ] Create AxonConfiguration.kt with CommandGateway and QueryGateway beans
-- [ ] Enable Axon auto-configuration in application.yml
-- [ ] Write unit tests for gateway injection
-- [ ] Run `./gradlew :framework:cqrs:test` - verify <10s
-- [ ] Document module in framework/cqrs/README.md
-- [ ] Commit: "Add Axon Framework core configuration with gateways"
+- [x] Create framework/cqrs module structure
+- [x] Add Axon Framework 4.12.1 to version catalog
+- [x] Create AxonConfiguration.kt with CommandGateway and QueryGateway beans
+- [x] Enable Axon auto-configuration in application.yml
+- [x] Write unit tests for gateway injection
+- [x] Run `./gradlew :framework:cqrs:test` - verify <10s (executed in 1s)
+- [x] Document module in framework/cqrs/README.md
+- [x] Commit: "Add Axon Framework core configuration with gateways"
 
 ---
 
 ## Test Evidence
 
-- [ ] CommandGateway and QueryGateway beans injectable
-- [ ] Unit tests pass in <10 seconds
-- [ ] Axon auto-configuration successful
-- [ ] No dependency conflicts
+- [x] CommandGateway and QueryGateway beans injectable
+- [x] Unit tests pass in <10 seconds (1s actual)
+- [x] Axon auto-configuration successful
+- [x] No dependency conflicts
 
 ---
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
-- [ ] All tests pass
-- [ ] Module documented
-- [ ] Gateways functional
+- [x] All acceptance criteria met
+- [x] All tests pass
+- [x] Module documented
+- [x] Gateways functional
 - [ ] Story marked as DONE in workflow status
 
 ---
@@ -125,3 +125,50 @@ dependencies {
 - PRD: FR003 (Event Store), FR014 (Data Consistency)
 - Architecture: Section 7 (Axon Framework details)
 - Tech Spec: Section 6.2 (Axon ↔ PostgreSQL Integration)
+
+---
+
+## File List
+
+**Created:**
+- `framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt`
+- `framework/cqrs/src/test/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfigurationTest.kt`
+- `framework/cqrs/README.md`
+
+**Modified:**
+- `docs/sprint-status.yaml` (story status: ready-for-dev → in-progress → review)
+- `docs/stories/epic-2/story-2.1-axon-core-configuration.md` (checkboxes, status)
+
+---
+
+## Change Log
+
+**2025-11-04** - Initial Implementation
+- Created AxonConfiguration with CommandGateway and QueryGateway beans
+- Implemented unit tests (4 tests, 1s execution time)
+- Documented module in README.md
+- All acceptance criteria met
+- Story ready for code review
+
+---
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**Approach:**
+- Leveraged existing framework/cqrs module structure (build.gradle.kts already present)
+- Axon Framework 4.12.1 already in version catalog (libs.bundles.axon.framework)
+- Created minimal configuration class with CommandGateway and QueryGateway beans
+- Axon auto-configuration handles CommandBus, EventBus, QueryBus setup automatically
+
+**Test Strategy:**
+- Unit tests verify bean creation and gateway initialization
+- Tests execute in 1s (well under 10s requirement)
+- No integration tests needed at this stage (covered in later stories)
+
+**Completion Notes:**
+- All 7 acceptance criteria verified
+- Test execution time: 1s (< 10s ✅)
+- Module fully documented with usage examples
+- Ready for code review
