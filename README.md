@@ -45,6 +45,19 @@ EAF is built on a foundation of proven architectural patterns to ensure scalabil
     - **One-Command Setup:** A single script to provision the entire local development environment.
     - **Scaffolding CLI:** A command-line tool to instantly generate new modules and domain aggregates that automatically adhere to all architectural patterns.
 
+### Core Module Map
+
+| Module | Path | Primary Responsibility |
+| --- | --- | --- |
+| Core Domain Services | `framework/core` | Encapsulates domain logic, aggregates, and application services enforced by Hexagonal boundaries. |
+| CQRS & Event Handling | `framework/cqrs` | Provides Axon-based command, event, and query infrastructure plus Event Sourcing configuration. |
+| Persistence Layer | `framework/persistence` | Supplies PostgreSQL integrations, jOOQ projections, and repository adapters. |
+| Security Controls | `framework/security` | Hosts authentication/authorization policies, tenant isolation, and JWT validation pipeline. |
+| Workflow Orchestration | `framework/workflow` | Contains Flowable BPMN definitions and supporting process utilities. |
+| Observability Stack | `framework/observability` | Delivers metrics, tracing, and logging instrumentation for platform services. |
+| Web Adapters | `framework/web` | Exposes REST controllers and API gateways aligned with Hexagonal interface contracts. |
+| Admin Shell | `framework/admin-shell` | Provides CLI administration tools, scaffolding commands, and operational scripts. |
+
 ## 🏛️ Architecture at a Glance
 
 The EAF is a "Modular Monolith" implemented in Kotlin on Spring Boot, built using Hexagonal Architecture with boundaries programmatically enforced by Spring Modulith.
@@ -133,6 +146,30 @@ To stop all services:
 docker compose down
 ```
 
+## 🧭 Usage
+
+Once the environment is provisioned, developers typically rotate through three high-frequency workflows:
+
+- **Run the platform locally:**
+
+    ```bash
+    ./gradlew :apps:admin:bootRun
+    ```
+  Starts the Spring Boot admin interface with hot reload support. Use `CTRL+C` to stop when finished.
+- **Generate a new bounded context or aggregate:**
+
+    ```bash
+    ./framework/admin-shell/bin/eaf-cli scaffold aggregate --name Invoice --module billing
+    ```
+  Produces fully wired ports, adapters, and test harnesses that comply with Hexagonal Architecture expectations.
+- **Smoke test a REST capability:**
+
+    ```bash
+    curl -H "Authorization: Bearer $(./scripts/dev-token.sh admin@eaf.local)" \
+      http://localhost:8080/api/health
+    ```
+  Validates the service, JWT pipeline, and tenant isolation against the running stack.
+
 ## 🧪 Testing
 
 The framework is built on a philosophy of **Constitutional TDD**. All quality gates (linting, static analysis, unit tests, and integration tests) can be executed with a single Gradle command:
@@ -160,6 +197,23 @@ The framework is built on a philosophy of **Constitutional TDD**. All quality ga
 
 - **Schema Isolation**: Flowable tables are currently created in the `public` schema. This is a known technical debt (ARCH-001) with a documented remediation plan.
 - **Event Correlation**: A two-step query pattern is required to correlate events to Flowable process instances due to a limitation in how Flowable handles business keys.
+
+## 🛠️ Troubleshooting & Support
+
+- **Docker compose fails health checks:** Run `docker compose ps` and inspect container logs with `docker compose logs <service>`; ensure ports in `.env` are not occupied by other stacks.
+- **Gradle cache issues:** Clear the local cache via `./gradlew --stop && ./gradlew clean` and remove `~/.gradle/caches` when dependencies become inconsistent after upgrades.
+- **Keycloak users missing:** Re-run `./scripts/init-dev.sh --force` to trigger realm import and verify Keycloak readiness at http://localhost:8080/health.
+- **Slow integration suite:** Enable the Smart Test subset with `./gradlew check -Pprofile=smart` during iterative development; reserve full runs for CI or nightly builds.
+
+If issues persist, open a discussion on the internal Axians developer forum or contact the EAF platform guild via Slack channel `#eaf-core`.
+
+## 🤝 Contributing
+
+We welcome improvements that uphold the framework's architectural guardrails. Review the [contribution guidelines](CONTRIBUTING.md) before opening a pull request. The guide outlines mandatory Git hooks, commit message conventions (`[JIRA-XXX] type: description`), and required test scopes for each change type.
+
+## 📄 License
+
+EAF is distributed under the Apache License 2.0. Refer to `framework/admin-shell/LICENSE` for the complete terms while the root license file is being finalized.
 
 ## 📚 Documentation
 

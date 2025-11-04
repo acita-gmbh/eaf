@@ -3,8 +3,8 @@ package conventions
 import java.nio.file.Path
 import kotlin.io.path.Path
 
-internal val repositoryRoot: Path = Path("..").normalize().toAbsolutePath()
-internal val buildLogicRoot: Path = Path(System.getProperty("user.dir")).normalize().toAbsolutePath()
+internal val repositoryRoot: Path by lazy { Path("..").normalize().toAbsolutePath() }
+internal val buildLogicRoot: Path by lazy { Path(System.getProperty("user.dir")).normalize().toAbsolutePath() }
 
 internal fun bootstrapSampleProject(project: TestProject, includeAppModule: Boolean = true) {
     project.write("settings.gradle.kts", """

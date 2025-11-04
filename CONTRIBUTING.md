@@ -104,6 +104,8 @@ ls -la .git/hooks/pre-commit
 
 **Local** (pre-commit):
 - Format, test naming, commit message (<30s)
+- Install hooks via `./scripts/install-git-hooks.sh` (or `./gradlew installGitHooks`) so `.git/hooks/` always matches the templates in `.git-hooks/`.
+- On failures, run `./gradlew ktlintFormat`, `./gradlew detekt --auto-correct` (if enabled), or fix the failing tests; `--no-verify` is for emergencies only and must be followed by a clean run.
 
 **CI** (full validation):
 - All quality gates (ktlint, Detekt, Konsist, tests, coverage)
