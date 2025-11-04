@@ -65,7 +65,7 @@ class EventStoreIntegrationTest : FunSpec() {
             val appliedMigrations = info.all().filter { it.state.isApplied }
 
             appliedMigrations shouldNotBe emptyList<Any>()
-            appliedMigrations.any { it.version.version == "1" } shouldBe true
+            appliedMigrations.any { it.version.version == "001" } shouldBe true
         }
 
         test("EventStorageEngine should store and retrieve domain events") {

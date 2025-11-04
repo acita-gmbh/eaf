@@ -25,6 +25,9 @@ dependencies {
     implementation(libs.flyway.core)
     implementation(libs.flyway.database.postgresql)
 
+    // Jackson for Kotlin serialization support
+    implementation(libs.jackson.module.kotlin)
+
     // Spring Boot for @Configuration support
     compileOnly(libs.spring.boot.starter.web)
 

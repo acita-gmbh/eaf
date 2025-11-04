@@ -3,40 +3,41 @@
 -- ============================================================================
 -- Creates the standard Axon Framework event store tables for PostgreSQL.
 -- This schema supports:
--- - Event Sourcing: domain_event_entry stores all domain events
--- - Snapshots: snapshot_entry stores aggregate snapshots (Story 2.4)
--- - Sagas: saga_entry and association_value_entry support saga orchestration
+-- - Event Sourcing: DomainEventEntry stores all domain events
+-- - Snapshots: SnapshotEventEntry stores aggregate snapshots (Story 2.4)
+-- - Sagas: SagaEntry and AssociationValueEntry support saga orchestration
 --
 -- Reference: Axon Framework 4.12.1 JDBC Event Store Schema
 -- Migration Strategy: Framework migrations use V001-V099 range
+-- Table Names: Uses Axon standard camelCase names (PostgreSQL converts to lowercase)
 -- ============================================================================
 
 -- ============================================================================
 -- Domain Events Table (Time-Series Data)
 -- ============================================================================
 -- Stores all domain events for event-sourced aggregates.
--- global_index provides total ordering across all events.
--- (aggregate_identifier, sequence_number) ensures event ordering per aggregate.
-CREATE TABLE domain_event_entry (
-    global_index BIGSERIAL PRIMARY KEY,
-    aggregate_identifier VARCHAR(255) NOT NULL,
-    sequence_number BIGINT NOT NULL,
+-- globalIndex provides total ordering across all events.
+-- (aggregateIdentifier, sequenceNumber) ensures event ordering per aggregate.
+CREATE TABLE DomainEventEntry (
+    globalIndex BIGSERIAL PRIMARY KEY,
+    aggregateIdentifier VARCHAR(255) NOT NULL,
+    sequenceNumber BIGINT NOT NULL,
     type VARCHAR(255) NOT NULL,
-    event_identifier VARCHAR(255) NOT NULL UNIQUE,
-    meta_data BYTEA,
+    eventIdentifier VARCHAR(255) NOT NULL UNIQUE,
+    metaData BYTEA,
     payload BYTEA NOT NULL,
-    payload_revision VARCHAR(255),
-    payload_type VARCHAR(255) NOT NULL,
-    time_stamp VARCHAR(255) NOT NULL,
-    UNIQUE (aggregate_identifier, sequence_number)
+    payloadRevision VARCHAR(255),
+    payloadType VARCHAR(255) NOT NULL,
+    timeStamp VARCHAR(255) NOT NULL,
+    UNIQUE (aggregateIdentifier, sequenceNumber)
 );
 
 -- ============================================================================
 -- Index Strategy (Story 2.3 will add BRIN indexes and partitioning)
 -- ============================================================================
 -- Standard B-tree indexes for aggregate event retrieval
-CREATE INDEX idx_domain_event_aggregate ON domain_event_entry(aggregate_identifier, sequence_number);
-CREATE INDEX idx_domain_event_timestamp ON domain_event_entry(time_stamp);
+CREATE INDEX idx_domain_event_aggregate ON DomainEventEntry(aggregateIdentifier, sequenceNumber);
+CREATE INDEX idx_domain_event_timestamp ON DomainEventEntry(timeStamp);
 
 -- ============================================================================
 -- Snapshots Table
@@ -44,63 +45,63 @@ CREATE INDEX idx_domain_event_timestamp ON domain_event_entry(time_stamp);
 -- Stores aggregate snapshots for performance optimization (Story 2.4).
 -- Snapshots allow aggregates to be reconstructed from a known state rather
 -- than replaying all events from the beginning.
-CREATE TABLE snapshot_entry (
-    aggregate_identifier VARCHAR(255) NOT NULL,
-    sequence_number BIGINT NOT NULL,
+CREATE TABLE SnapshotEventEntry (
+    aggregateIdentifier VARCHAR(255) NOT NULL,
+    sequenceNumber BIGINT NOT NULL,
     type VARCHAR(255) NOT NULL,
-    event_identifier VARCHAR(255) NOT NULL UNIQUE,
-    meta_data BYTEA,
+    eventIdentifier VARCHAR(255) NOT NULL UNIQUE,
+    metaData BYTEA,
     payload BYTEA NOT NULL,
-    payload_revision VARCHAR(255),
-    payload_type VARCHAR(255) NOT NULL,
-    time_stamp VARCHAR(255) NOT NULL,
-    PRIMARY KEY (aggregate_identifier, sequence_number)
+    payloadRevision VARCHAR(255),
+    payloadType VARCHAR(255) NOT NULL,
+    timeStamp VARCHAR(255) NOT NULL,
+    PRIMARY KEY (aggregateIdentifier, sequenceNumber)
 );
 
 -- ============================================================================
 -- Saga Tables (Workflow Orchestration - Epic 6)
 -- ============================================================================
 -- Saga Entry: Stores saga instance state for long-running business processes
-CREATE TABLE saga_entry (
-    saga_id VARCHAR(255) NOT NULL,
+CREATE TABLE SagaEntry (
+    sagaId VARCHAR(255) NOT NULL,
     revision VARCHAR(255),
-    saga_type VARCHAR(255) NOT NULL,
-    serialized_saga BYTEA NOT NULL,
-    PRIMARY KEY (saga_id, saga_type)
+    sagaType VARCHAR(255) NOT NULL,
+    serializedSaga BYTEA NOT NULL,
+    PRIMARY KEY (sagaId, sagaType)
 );
 
 -- Association Value Entry: Maps correlation identifiers to saga instances
-CREATE TABLE association_value_entry (
+CREATE TABLE AssociationValueEntry (
     id BIGSERIAL PRIMARY KEY,
-    association_key VARCHAR(255) NOT NULL,
-    association_value VARCHAR(255),
-    saga_id VARCHAR(255) NOT NULL,
-    saga_type VARCHAR(255) NOT NULL
+    associationKey VARCHAR(255) NOT NULL,
+    associationValue VARCHAR(255),
+    sagaId VARCHAR(255) NOT NULL,
+    sagaType VARCHAR(255) NOT NULL
 );
 
 -- Index for efficient saga lookup by association
-CREATE INDEX idx_saga_association ON association_value_entry(saga_id, saga_type);
-CREATE INDEX idx_saga_association_value ON association_value_entry(association_key, association_value);
+CREATE INDEX idx_saga_association ON AssociationValueEntry(sagaId, sagaType);
+CREATE INDEX idx_saga_association_value ON AssociationValueEntry(associationKey, associationValue);
 
 -- ============================================================================
 -- Token Store Table (Event Processor Tracking)
 -- ============================================================================
 -- Stores tracking tokens for event processors to track their processing position
-CREATE TABLE token_entry (
-    processor_name VARCHAR(255) NOT NULL,
+CREATE TABLE TokenEntry (
+    processorName VARCHAR(255) NOT NULL,
     segment INTEGER NOT NULL,
     token BYTEA,
-    token_type VARCHAR(255),
+    tokenType VARCHAR(255),
     timestamp VARCHAR(255),
     owner VARCHAR(255),
-    PRIMARY KEY (processor_name, segment)
+    PRIMARY KEY (processorName, segment)
 );
 
 -- ============================================================================
 -- Future Optimizations (Planned in Story 2.3)
 -- ============================================================================
 -- Story 2.3 will add:
--- - Monthly time-based partitioning on domain_event_entry
+-- - Monthly time-based partitioning on DomainEventEntry
 -- - BRIN indexes for time-range queries (more efficient for time-series data)
 -- - Performance tuning for 100K+ events
 -- ============================================================================
