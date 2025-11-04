@@ -13,9 +13,20 @@ sourceSets {
 
 dependencies {
     implementation(project(":framework:core"))
+    implementation(project(":framework:cqrs"))
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.database)
     implementation(libs.bundles.jooq)
+
+    // Axon Framework JDBC Event Store
+    implementation(libs.axon.spring.boot.starter)
+
+    // Flyway Database Migrations
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
+
+    // Spring Boot for @Configuration support
+    compileOnly(libs.spring.boot.starter.web)
 
     // Spring Modulith for module boundary enforcement
     implementation(libs.spring.modulith.api)

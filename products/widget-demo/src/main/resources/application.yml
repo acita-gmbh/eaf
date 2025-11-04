@@ -1,0 +1,112 @@
+# ============================================================================
+# EAF Widget Demo Application Configuration
+# ============================================================================
+# Spring Boot application configuration for the Widget Demo reference application.
+# This configuration demonstrates EAF framework integration with PostgreSQL event store.
+#
+# Environment: Development (local)
+# Database: PostgreSQL 16.10 (docker-compose)
+# Event Store: Axon Framework JDBC
+# ============================================================================
+
+spring:
+  application:
+    name: eaf-widget-demo
+
+  # ============================================================================
+  # DataSource Configuration (Story 2.2)
+  # ============================================================================
+  # PostgreSQL connection for Axon event store and application data.
+  # Credentials match docker-compose PostgreSQL service (Story 1.5).
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eaf
+    username: eaf_user
+    password: eaf_pass
+    driver-class-name: org.postgresql.Driver
+
+    # HikariCP connection pool settings (optimal for event store)
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ============================================================================
+  # Flyway Migration Configuration (Story 2.2)
+  # ============================================================================
+  # Enables automatic database migration on application startup.
+  # Migrations in framework/persistence/src/main/resources/db/migration/
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+
+  # ============================================================================
+  # JPA Configuration (Required by Spring Boot Data JPA)
+  # ============================================================================
+  # While EAF uses CQRS/Event Sourcing, JPA is used for read model projections.
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: validate  # Schema managed by Flyway, not Hibernate
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+# ============================================================================
+# Axon Framework Configuration
+# ============================================================================
+# Axon event store and CQRS settings (Story 2.1-2.2)
+axon:
+  eventhandling:
+    processors:
+      # Default event processor configuration
+      __default__:
+        mode: tracking
+        source: eventStore
+
+  # Serialization settings
+  serializer:
+    general: jackson
+    events: jackson
+    messages: jackson
+
+# ============================================================================
+# Logging Configuration (Development)
+# ============================================================================
+logging:
+  level:
+    root: INFO
+    com.axians.eaf: DEBUG
+    org.axonframework: DEBUG
+    org.flywaydb: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# ============================================================================
+# Management & Actuator (Story 5.x - Observability)
+# ============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ============================================================================
+# Server Configuration
+# ============================================================================
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always

@@ -18,6 +18,7 @@ arrow = "2.1.2"            # Functional programming
 
 # Database and persistence
 postgresql = "42.7.8"      # PostgreSQL driver (security updates)
+flyway = "10.21.0"         # Database migration framework
 jooq = "3.20.8"           # SQL DSL for read projections (updated)
 jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025-58057 fixes
@@ -119,6 +120,8 @@ arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref 
 
 # Database
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 jooq-core = { module = "org.jooq:jooq", version.ref = "jooq" }
 jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
 jooq-meta-extensions = { module = "org.jooq:jooq-meta-extensions", version.ref = "jooq" }
