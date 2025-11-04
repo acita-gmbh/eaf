@@ -118,6 +118,11 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core-jvm:${catalog.version("kotest")}")
     testImplementation("io.kotest:kotest-property-jvm:${catalog.version("kotest")}")
     testImplementation(gradleTestKit())
+    testRuntimeOnly("io.kotest:kotest-runner-junit5-jvm:${catalog.version("kotest")}")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 gradlePlugin {
@@ -157,5 +162,4 @@ gradlePlugin {
     }
 }
 
-// Native Kotest runner configured via io.kotest plugin
-// No need for useJUnitPlatform() when using native runner
+// Kotest tests executed via JUnit Platform (kotest-runner-junit5)
