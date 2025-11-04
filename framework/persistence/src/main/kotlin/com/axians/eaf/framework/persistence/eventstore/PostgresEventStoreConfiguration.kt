@@ -1,14 +1,15 @@
 package com.axians.eaf.framework.persistence.eventstore
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.axonframework.common.transaction.NoTransactionManager
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
 import org.axonframework.serialization.Serializer
 import org.axonframework.serialization.json.JacksonSerializer
+import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.transaction.PlatformTransactionManager
 import javax.sql.DataSource
 
 /**
@@ -50,25 +51,31 @@ open class PostgresEventStoreConfiguration {
      * Creates the Axon EventStorageEngine using PostgreSQL JDBC.
      *
      * The JdbcEventStorageEngine provides low-level access to the event store tables:
-     * - domain_event_entry: All domain events
-     * - snapshot_entry: Aggregate snapshots (configured in Story 2.4)
+     * - DomainEventEntry: All domain events
+     * - SnapshotEventEntry: Aggregate snapshots (configured in Story 2.4)
      *
-     * Transaction management is delegated to Spring via NoTransactionManager.
-     * Event serialization uses the configured JacksonSerializer for JSON storage.
+     * Transaction management explicitly integrates with Spring's PlatformTransactionManager
+     * via SpringTransactionManager. This ensures event persistence participates in the
+     * surrounding @Transactional context, providing atomicity for command handling operations.
+     *
+     * If command handler logic fails after event application, the Spring transaction rollback
+     * will also rollback the event persistence, preventing inconsistent aggregate state.
      *
      * @param dataSource PostgreSQL DataSource configured by Spring Boot
      * @param serializer Jackson-based serializer for event payload and metadata
+     * @param platformTransactionManager Spring's transaction manager for ACID guarantees
      * @return EventStorageEngine for event persistence
      */
     @Bean
     open fun eventStorageEngine(
         dataSource: DataSource,
         serializer: Serializer,
+        platformTransactionManager: PlatformTransactionManager,
     ): EventStorageEngine =
         JdbcEventStorageEngine
             .builder()
             .connectionProvider(dataSource::getConnection)
-            .transactionManager(NoTransactionManager.INSTANCE)
+            .transactionManager(SpringTransactionManager(platformTransactionManager))
             .snapshotSerializer(serializer)
             .eventSerializer(serializer)
             .build()
