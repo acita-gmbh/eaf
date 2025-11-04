@@ -47,7 +47,7 @@ class MyService(
 
 No additional configuration is required. The module uses Axon Spring Boot Starter auto-configuration to set up:
 
-- CommandBus (default: AsynchronousCommandBus)
+- CommandBus (default: AxonServerCommandBus; fallback: SimpleCommandBus when Axon Server unavailable)
 - EventBus (default: SimpleEventBus)
 - QueryBus (default: SimpleQueryBus)
 
