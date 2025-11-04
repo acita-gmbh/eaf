@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-12-openapi-swagger" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>12</storyId>
+    <title>OpenAPI Documentation and Swagger UI</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.12-openapi-swagger.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>automatic OpenAPI 3.0 documentation generation</iWant>
+    <soThat>API consumers have up-to-date, interactive API documentation</soThat>
+    <tasks>
+      <task>Add Springdoc OpenAPI 2.6.0 dependency</task>
+      <task>Create OpenApiConfiguration.kt with API metadata</task>
+      <task>Configure Bearer JWT security scheme</task>
+      <task>Add @Tag annotations to controllers</task>
+      <task>Add @Operation annotations to endpoints</task>
+      <task>Add @ApiResponse annotations for status codes</task>
+      <task>Verify Swagger UI at /swagger-ui.html</task>
+      <task>Verify Widget API fully documented</task>
+      <task>Test "Try it out" functionality</task>
+      <task>Verify OpenAPI JSON at /v3/api-docs</task>
+      <task>Add examples and descriptions</task>
+      <task>Commit: "Add OpenAPI 3.0 documentation with Swagger UI"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Springdoc OpenAPI 2.6.0 dependency added</criterion>
+    <criterion id="2">OpenApiConfiguration.kt with API metadata (title, version, description)</criterion>
+    <criterion id="3">Security scheme configured (Bearer JWT)</criterion>
+    <criterion id="4">Swagger UI accessible at /swagger-ui.html</criterion>
+    <criterion id="5">Widget API fully documented with request/response schemas</criterion>
+    <criterion id="6">"Try it out" functionality works in Swagger UI (with test JWT)</criterion>
+    <criterion id="7">OpenAPI JSON spec available at /v3/api-docs</criterion>
+    <criterion id="8">API documentation includes examples and descriptions</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR015: Documentation</section>
+        <snippet>Automatic API documentation generation. OpenAPI 3.0 specification. Swagger UI for interactive exploration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 9.3: API Docs</section>
+        <snippet>Springdoc OpenAPI 2.6.0. OpenApiConfiguration with metadata. Security scheme (Bearer JWT). @Tag, @Operation, @ApiResponse annotations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>OpenAPI (Story 2.12)</section>
+        <snippet>Springdoc OpenAPI 2.6.0. OpenApiConfiguration with metadata. Bearer JWT security scheme (placeholder). Swagger UI at /swagger-ui.html. Widget API documented with examples.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>framework/web</name>
+        <purpose>OpenAPI configuration and Swagger UI</purpose>
+        <path>framework/web/src/main/kotlin/com/axians/eaf/framework/web/openapi</path>
+        <dependencies>springdoc-openapi-starter-webmvc-ui</dependencies>
+      </module>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>springdoc-openapi-starter-webmvc-ui</name>
+        <version>2.6.0</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>OpenAPI 3.0 documentation + Swagger UI</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">Springdoc OpenAPI 2.6.0 (verified current stable)</constraint>
+    <constraint priority="high">All REST endpoints must have @Operation annotations</constraint>
+    <constraint priority="high">Security scheme configured (Bearer JWT) even if not yet enforced</constraint>
+    <constraint priority="medium">Examples and descriptions for all DTOs</constraint>
+  </constraints>
+
+  <interfaces>
+    <pattern>
+      <name>OpenAPI Configuration Pattern</name>
+      <code>
+@Configuration
+class OpenApiConfiguration {
+    @Bean
+    fun openAPI(): OpenAPI {
+        return OpenAPI()
+            .info(Info()
+                .title("EAF v1.0 API")
+                .version("1.0.0")
+                .description("Enterprise Application Framework REST API"))
+            .components(Components()
+                .addSecuritySchemes("bearer-jwt",
+                    SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")))
+    }
+}
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Manual testing + automated validation</framework>
+      <approach>Swagger UI functional testing</approach>
+      <validation>OpenAPI spec completeness</validation>
+    </standards>
+    <locations>
+      <manualTests>Manual: Access /swagger-ui.html and /v3/api-docs</manualTests>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify springdoc-openapi-starter-webmvc-ui 2.6.0 in build.gradle.kts</idea>
+      <idea ac="2">Test OpenApiConfiguration bean creates OpenAPI instance</idea>
+      <idea ac="2">Test API metadata: title="EAF v1.0 API", version="1.0.0"</idea>
+      <idea ac="3">Test Bearer JWT security scheme configured</idea>
+      <idea ac="3">Verify security scheme type=HTTP, scheme=bearer, bearerFormat=JWT</idea>
+      <idea ac="4">Manual: Access /swagger-ui.html, verify page loads</idea>
+      <idea ac="5">Manual: Verify Widget API endpoints visible in Swagger UI</idea>
+      <idea ac="5">Manual: Verify request/response schemas documented</idea>
+      <idea ac="6">Manual: Test "Try it out" for POST /widgets</idea>
+      <idea ac="6">Manual: Verify successful request execution</idea>
+      <idea ac="7">Manual: Access /v3/api-docs, verify JSON spec</idea>
+      <idea ac="7">Automated: Parse /v3/api-docs and validate structure</idea>
+      <idea ac="8">Manual: Verify examples in request/response schemas</idea>
+      <idea ac="8">Manual: Verify operation descriptions present</idea>
+    </ideas>
+  </tests>
+</story-context>

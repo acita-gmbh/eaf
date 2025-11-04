@@ -1,5 +1,7 @@
 # Story 2.6: jOOQ Configuration and Projection Tables
 
+**Story Context:** [2-6-jooq-configuration.context.xml](2-6-jooq-configuration.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

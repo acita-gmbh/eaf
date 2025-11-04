@@ -1,5 +1,7 @@
 # Story 2.10: Widget REST API Controller
 
+**Story Context:** [2-10-widget-rest-controller.context.xml](2-10-widget-rest-controller.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

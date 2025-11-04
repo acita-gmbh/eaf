@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-2-postgresql-event-store" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2</storyId>
+    <title>PostgreSQL Event Store Setup with Flyway</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.2-postgresql-event-store.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>PostgreSQL configured as the Axon event store using JdbcEventStorageEngine</iWant>
+    <soThat>events are persisted durably in PostgreSQL</soThat>
+    <tasks>
+      <task>Create framework/persistence module</task>
+      <task>Add Axon JDBC, Flyway, PostgreSQL driver to dependencies</task>
+      <task>Create PostgresEventStoreConfiguration.kt</task>
+      <task>Create V001__event_store_schema.sql in src/main/resources/db/migration/</task>
+      <task>Configure DataSource in application.yml</task>
+      <task>Write integration test: EventStoreIntegrationTest.kt</task>
+      <task>Use Testcontainers PostgreSQL for tests</task>
+      <task>Run migration on Docker Compose PostgreSQL</task>
+      <task>Verify tables created: psql -h localhost -U eaf_user -d eaf -c "\dt"</task>
+      <task>Commit: "Add PostgreSQL event store with Flyway migrations"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">framework/persistence module created with Axon JDBC and Flyway dependencies</criterion>
+    <criterion id="2">PostgresEventStoreConfiguration.kt configures JdbcEventStorageEngine</criterion>
+    <criterion id="3">Flyway migration V001__event_store_schema.sql creates Axon tables (domain_event_entry, snapshot_entry, saga tables)</criterion>
+    <criterion id="4">DataSource configuration for PostgreSQL in application.yml</criterion>
+    <criterion id="5">Integration test verifies events can be stored and retrieved</criterion>
+    <criterion id="6">Testcontainers PostgreSQL used for integration tests</criterion>
+    <criterion id="7">Migration executes successfully on docker-compose PostgreSQL</criterion>
+    <criterion id="8">Event store tables visible in database</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR003: Event Store with Integrity and Performance</section>
+        <snippet>The system shall provide PostgreSQL-based event store with partitioning, BRIN indexes, snapshots, jOOQ projections, automatic data integrity validation, performance monitoring with forecasting and early warnings, and hot migration capabilities for zero-downtime migration to alternative stores.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 7: Event Store Optimizations</section>
+        <snippet>PostgreSQL 16.10 with mandatory optimizations. JdbcEventStorageEngine for event persistence. Monthly time-based partitioning on domain_event_entry. BRIN indexes for time-range queries. Snapshot strategy (every 100 events). HikariCP connection pooling with optimal settings.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>PostgreSQL Event Store (Stories 2.2-2.4)</section>
+        <snippet>JdbcEventStorageEngine configuration. Flyway migrations for Axon tables (domain_event_entry, snapshot_entry, saga tables). Monthly time-based partitioning on domain_event_entry. BRIN indexes on timestamp and aggregate_identifier. Snapshot strategy (every 100 events) with Jackson serialization. Performance optimization for 100K+ events.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/test-strategy.md</path>
+        <title>Test Strategy</title>
+        <section>Testcontainers PostgreSQL Pattern</section>
+        <snippet>Singleton pattern (start once per test class). @DynamicPropertySource for connection config. Real database queries. PostgreSQL Testcontainers for stateful dependencies (H2 explicitly forbidden).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/coding-standards.md</path>
+        <title>Coding Standards</title>
+        <section>Flyway Migration Standards</section>
+        <snippet>Migration naming: V{version}__{description}.sql. Location: src/main/resources/db/migration/. Validation: Checksum verification prevents tampering. Framework migrations: V001-V099. Product migrations: V100+. Never modify existing migrations after deployment.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>framework/persistence</name>
+        <purpose>Event Store + Projections infrastructure - PostgreSQL, Flyway, jOOQ</purpose>
+        <path>framework/persistence/src/main/kotlin/com/axians/eaf/framework/persistence</path>
+        <dependencies>framework/core, framework/cqrs, axon-jdbc, flyway, postgresql, jooq</dependencies>
+      </module>
+      <file>
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/AxonConfiguration.kt</path>
+        <purpose>CommandGateway and QueryGateway configuration (from Story 2.1)</purpose>
+        <snippet>@Configuration class AxonConfiguration { @Bean fun commandGateway(commandBus: CommandBus): CommandGateway }</snippet>
+      </file>
+      <file>
+        <path>framework/core/src/main/kotlin/com/axians/eaf/framework/core/domain/DomainEvent.kt</path>
+        <purpose>Base class for all domain events (from Epic 1.7)</purpose>
+        <snippet>abstract class DomainEvent(open val eventId: UUID, open val occurredAt: Instant)</snippet>
+      </file>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>axon-spring-boot-starter</name>
+        <version>4.12.1</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Axon Framework Spring Boot auto-configuration (includes axon-jdbc)</usage>
+      </dependency>
+      <dependency>
+        <name>postgresql</name>
+        <version>42.7.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>PostgreSQL JDBC driver</usage>
+      </dependency>
+      <dependency>
+        <name>flyway-core</name>
+        <version>10.23.3</version>
+        <source>gradle/libs.versions.toml (inferred from architecture.md)</source>
+        <usage>Database migration framework</usage>
+      </dependency>
+      <dependency>
+        <name>flyway-database-postgresql</name>
+        <version>10.23.3</version>
+        <source>gradle/libs.versions.toml (inferred from architecture.md)</source>
+        <usage>Flyway PostgreSQL dialect support</usage>
+      </dependency>
+      <dependency>
+        <name>testcontainers-postgresql</name>
+        <version>1.21.3</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>PostgreSQL Testcontainers for integration tests</usage>
+      </dependency>
+      <dependency>
+        <name>kotest-runner-junit5-jvm</name>
+        <version>6.0.4</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Primary testing framework for integration tests</usage>
+      </dependency>
+      <dependency>
+        <name>spring-boot-test</name>
+        <version>3.5.7</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Spring Boot test infrastructure (granular dependency)</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">NO wildcard imports - Every import must be explicit</constraint>
+    <constraint priority="critical">NO generic exceptions - Always use specific exception types</constraint>
+    <constraint priority="critical">Use Kotest ONLY - JUnit is explicitly forbidden</constraint>
+    <constraint priority="critical">Version Catalog REQUIRED - All dependency versions in gradle/libs.versions.toml</constraint>
+    <constraint priority="critical">Testcontainers PostgreSQL REQUIRED - H2 is explicitly forbidden for event store</constraint>
+    <constraint priority="high">Constitutional TDD - Write tests FIRST (Red-Green-Refactor cycle)</constraint>
+    <constraint priority="high">Flyway migrations immutable - Never modify existing migrations after deployment</constraint>
+    <constraint priority="high">Use Axon standard schema - domain_event_entry, snapshot_entry, saga tables</constraint>
+    <constraint priority="medium">Use @Autowired field injection + init block for @SpringBootTest (NOT constructor injection)</constraint>
+    <constraint priority="medium">Framework migrations: V001-V099, Product migrations: V100+</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>JdbcEventStorageEngine</name>
+      <signature>class JdbcEventStorageEngine { builder(): Builder { dataSource(DataSource): Builder, transactionManager(TransactionManager): Builder } }</signature>
+      <purpose>Axon Framework JDBC-based event storage implementation</purpose>
+      <usage>Configured as @Bean in PostgresEventStoreConfiguration</usage>
+    </interface>
+    <interface>
+      <name>Flyway</name>
+      <signature>interface Flyway { migrate(): Int, info(): MigrationInfoService }</signature>
+      <purpose>Database migration framework for schema versioning</purpose>
+      <usage>Auto-configured by Spring Boot, migrations in src/main/resources/db/migration/</usage>
+    </interface>
+    <pattern>
+      <name>Event Store Configuration Bean Pattern</name>
+      <code>
+@Configuration
+class PostgresEventStoreConfiguration {
+    @Bean
+    fun eventStorageEngine(dataSource: DataSource): EventStorageEngine {
+        return JdbcEventStorageEngine.builder()
+            .dataSource(dataSource)
+            .transactionManager(NoTransactionManager.INSTANCE)
+            .build()
+    }
+}
+      </code>
+    </pattern>
+    <pattern>
+      <name>Flyway Migration Naming Pattern</name>
+      <code>
+-- Framework migrations: V001__event_store_schema.sql
+-- Product migrations: V100__widget_projections.sql
+-- Naming: V{version}__{description}.sql
+-- Location: src/main/resources/db/migration/
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Kotest 6.0.4 (FunSpec, BehaviorSpec)</framework>
+      <approach>Constitutional TDD - Red-Green-Refactor</approach>
+      <coverage>85%+ line coverage target (Kover)</coverage>
+      <performance>Integration tests &lt;3min execution time</performance>
+      <containers>Testcontainers PostgreSQL 1.21.3 for real database</containers>
+    </standards>
+    <locations>
+      <integrationTests>framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence</integrationTests>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify framework/persistence module structure exists with correct dependencies in build.gradle.kts</idea>
+      <idea ac="1">Verify axon-spring-boot-starter, flyway-core, postgresql dependencies in build file</idea>
+      <idea ac="2">Test that PostgresEventStoreConfiguration creates EventStorageEngine bean successfully</idea>
+      <idea ac="2">Test EventStorageEngine is JdbcEventStorageEngine instance</idea>
+      <idea ac="3">Test Flyway migration V001__event_store_schema.sql creates domain_event_entry table</idea>
+      <idea ac="3">Test Flyway migration creates snapshot_entry table</idea>
+      <idea ac="3">Test Flyway migration creates saga_entry and association_value_entry tables</idea>
+      <idea ac="3">Verify table schemas match Axon standard (columns: global_index, aggregate_identifier, sequence_number, etc.)</idea>
+      <idea ac="4">Test DataSource bean configured with PostgreSQL JDBC URL</idea>
+      <idea ac="4">Test DataSource connection is valid (can execute simple query)</idea>
+      <idea ac="5">Integration test: persist event via JdbcEventStorageEngine</idea>
+      <idea ac="5">Integration test: retrieve persisted event and verify payload</idea>
+      <idea ac="5">Integration test: verify event sequence numbers are correct</idea>
+      <idea ac="6">Test Testcontainers PostgreSQL starts successfully</idea>
+      <idea ac="6">Test @DynamicPropertySource configures DataSource URL from Testcontainer</idea>
+      <idea ac="7">Manual verification: docker-compose up, Flyway migration executes</idea>
+      <idea ac="7">Manual verification: Check Flyway schema_history table for V001 entry</idea>
+      <idea ac="8">Manual verification: psql \dt shows domain_event_entry, snapshot_entry, saga tables</idea>
+      <idea ac="8">Manual verification: \d domain_event_entry shows correct columns</idea>
+    </ideas>
+  </tests>
+</story-context>

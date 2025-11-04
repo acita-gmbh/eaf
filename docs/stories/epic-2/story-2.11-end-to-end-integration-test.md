@@ -1,5 +1,7 @@
 # Story 2.11: End-to-End Integration Test
 
+**Story Context:** [2-11-end-to-end-integration-test.context.xml](2-11-end-to-end-integration-test.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

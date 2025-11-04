@@ -1,5 +1,7 @@
 # Story 2.4: Snapshot Support for Aggregate Optimization
 
+**Story Context:** [2-4-snapshot-support.context.xml](2-4-snapshot-support.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

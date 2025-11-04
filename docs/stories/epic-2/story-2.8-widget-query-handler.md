@@ -1,5 +1,7 @@
 # Story 2.8: Widget Query Handler
 
+**Story Context:** [2-8-widget-query-handler.context.xml](2-8-widget-query-handler.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

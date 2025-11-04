@@ -1,5 +1,7 @@
 # Story 2.9: REST API Foundation with RFC 7807 Error Handling
 
+**Story Context:** [2-9-rest-api-foundation.context.xml](2-9-rest-api-foundation.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

@@ -48,23 +48,23 @@ development_status:
   1-9-cicd-pipeline: done
   1-10-git-hooks: done
   1-11-foundation-documentation: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: Walking Skeleton - CQRS/Event Sourcing Core (13 stories)
-  epic-2: backlog
-  2-1-axon-core-configuration: drafted
-  2-2-postgresql-event-store: drafted
-  2-3-event-store-partitioning: drafted
-  2-4-snapshot-support: drafted
-  2-5-widget-aggregate: drafted
-  2-6-jooq-configuration: drafted
-  2-7-widget-projection-handler: drafted
-  2-8-widget-query-handler: drafted
-  2-9-rest-api-foundation: drafted
-  2-10-widget-rest-controller: drafted
-  2-11-end-to-end-integration-test: drafted
-  2-12-openapi-swagger: drafted
-  2-13-performance-baseline: drafted
+  epic-2: contexted
+  2-1-axon-core-configuration: ready-for-dev
+  2-2-postgresql-event-store: ready-for-dev
+  2-3-event-store-partitioning: ready-for-dev
+  2-4-snapshot-support: ready-for-dev
+  2-5-widget-aggregate: ready-for-dev
+  2-6-jooq-configuration: ready-for-dev
+  2-7-widget-projection-handler: ready-for-dev
+  2-8-widget-query-handler: ready-for-dev
+  2-9-rest-api-foundation: ready-for-dev
+  2-10-widget-rest-controller: ready-for-dev
+  2-11-end-to-end-integration-test: ready-for-dev
+  2-12-openapi-swagger: ready-for-dev
+  2-13-performance-baseline: ready-for-dev
   epic-2-retrospective: optional
 
   # Epic 3: Authentication & Authorization (12 stories)

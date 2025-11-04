@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-4-snapshot-support" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>Snapshot Support for Aggregate Optimization</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.4-snapshot-support.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>automatic snapshot creation every 100 events for aggregates</iWant>
+    <soThat>aggregate loading performance remains fast even with long event histories</soThat>
+    <tasks>
+      <task>Add SnapshotTriggerDefinition bean (threshold: 100 events)</task>
+      <task>Configure Snapshotter bean</task>
+      <task>Verify snapshot_entry table from V001 migration</task>
+      <task>Configure Jackson for snapshot serialization</task>
+      <task>Write integration test: 250 events → 2 snapshots</task>
+      <task>Write performance test: 1000 events → load time</task>
+      <task>Measure performance improvement (&gt;10x)</task>
+      <task>Document snapshot strategy in docs/reference/event-store-optimization.md</task>
+      <task>Commit: "Add automatic snapshot creation every 100 events"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">SnapshotTriggerDefinition configured in Axon (every 100 events)</criterion>
+    <criterion id="2">Snapshot serialization using Jackson configured</criterion>
+    <criterion id="3">snapshot_entry table schema validated</criterion>
+    <criterion id="4">Integration test creates aggregate with 250+ events and verifies snapshots created</criterion>
+    <criterion id="5">Aggregate loading test validates snapshot usage (loads from snapshot, not full history)</criterion>
+    <criterion id="6">Performance improvement measured and documented (&gt;10x faster for 1000+ events)</criterion>
+    <criterion id="7">Snapshot management documented</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR003: Event Store Performance</section>
+        <snippet>Snapshot strategy (every 100 events, configurable). Performance improvement &gt;10x faster for 1000+ events.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 7.3: Snapshot Strategy</section>
+        <snippet>Snapshot strategy (every 100 events, configurable). Jackson serialization for snapshot payload. Performance target: &gt;10x improvement for aggregates with 1000+ events.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>Snapshot Support (Story 2.4)</section>
+        <snippet>SnapshotTriggerDefinition (every 100 events). Jackson serialization configured. snapshot_entry schema validated. Performance &gt;10x improvement measured.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>framework/cqrs</name>
+        <purpose>Snapshot configuration with Axon Framework</purpose>
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs</path>
+        <dependencies>axon-spring-boot-starter, jackson-module-kotlin</dependencies>
+      </module>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>axon-spring-boot-starter</name>
+        <version>4.12.1</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Axon Framework with snapshot support</usage>
+      </dependency>
+      <dependency>
+        <name>jackson-module-kotlin</name>
+        <version>2.18.2</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Jackson Kotlin module for snapshot serialization</usage>
+      </dependency>
+      <dependency>
+        <name>kotest-runner-junit5-jvm</name>
+        <version>6.0.4</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Performance and integration testing</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">Snapshot every 100 events (EventCountSnapshotTriggerDefinition threshold)</constraint>
+    <constraint priority="high">Performance improvement &gt;10x for 1000+ events required</constraint>
+    <constraint priority="high">Jackson serialization for snapshot payload (no custom serializers)</constraint>
+    <constraint priority="medium">Snapshot loading must be transparent (aggregate doesn't know about snapshots)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>SnapshotTriggerDefinition</name>
+      <signature>interface SnapshotTriggerDefinition { snapshotThreshold(EventMessage&lt;?&gt;): Trigger }</signature>
+      <purpose>Defines when snapshots should be created</purpose>
+      <usage>EventCountSnapshotTriggerDefinition with threshold 100</usage>
+    </interface>
+    <pattern>
+      <name>Snapshot Configuration Pattern</name>
+      <code>
+@Bean
+fun snapshotTriggerDefinition(): SnapshotTriggerDefinition {
+    return EventCountSnapshotTriggerDefinition
+        .builder()
+        .threshold(100)  // Snapshot every 100 events
+        .build()
+}
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Kotest 6.0.4 (FunSpec)</framework>
+      <approach>Integration testing + Performance benchmarking</approach>
+      <performance>Snapshot loading &gt;10x faster than full event replay</performance>
+    </standards>
+    <locations>
+      <integrationTests>framework/cqrs/src/integrationTest/kotlin/com/axians/eaf/framework/cqrs/snapshot</integrationTests>
+      <performanceTests>framework/cqrs/src/integrationTest/kotlin/com/axians/eaf/framework/cqrs/performance</performanceTests>
+    </locations>
+    <ideas>
+      <idea ac="1">Test SnapshotTriggerDefinition bean is configured with threshold 100</idea>
+      <idea ac="2">Test Jackson serializer is configured for snapshot payload</idea>
+      <idea ac="3">Test snapshot_entry table exists with correct schema (from V001 migration)</idea>
+      <idea ac="4">Integration test: create aggregate, apply 250 events, verify 2 snapshots created (at 100, 200)</idea>
+      <idea ac="4">Integration test: verify snapshot sequence numbers are correct (100, 200)</idea>
+      <idea ac="5">Integration test: load aggregate, verify it uses snapshot (not full replay)</idea>
+      <idea ac="5">Integration test: verify aggregate state matches after snapshot load</idea>
+      <idea ac="6">Performance test: measure aggregate loading time with 1000 events (without snapshot)</idea>
+      <idea ac="6">Performance test: measure aggregate loading time with 1000 events (with snapshot at 1000)</idea>
+      <idea ac="6">Performance test: assert snapshot loading is &gt;10x faster</idea>
+      <idea ac="7">Manual: Document snapshot strategy in docs/reference/event-store-optimization.md</idea>
+    </ideas>
+  </tests>
+</story-context>

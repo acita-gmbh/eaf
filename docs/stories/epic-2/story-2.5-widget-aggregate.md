@@ -1,5 +1,7 @@
 # Story 2.5: Demo Widget Aggregate with Commands and Events
 
+**Story Context:** [2-5-widget-aggregate.context.xml](2-5-widget-aggregate.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

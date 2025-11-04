@@ -1,5 +1,7 @@
 # Story 2.7: Widget Projection Event Handler
 
+**Story Context:** [2-7-widget-projection-handler.context.xml](2-7-widget-projection-handler.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

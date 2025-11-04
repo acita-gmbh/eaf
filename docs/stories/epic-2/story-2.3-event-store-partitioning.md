@@ -1,5 +1,7 @@
 # Story 2.3: Event Store Partitioning and Optimization
 
+**Story Context:** [2-3-event-store-partitioning.context.xml](2-3-event-store-partitioning.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

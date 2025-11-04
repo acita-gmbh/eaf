@@ -1,5 +1,7 @@
 # Story 2.1: Axon Framework Core Configuration
 
+**Story Context:** [2-1-axon-core-configuration.context.xml](2-1-axon-core-configuration.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD
