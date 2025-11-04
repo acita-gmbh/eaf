@@ -61,7 +61,8 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator) // Includes Prometheus support
 
     // Story 6.4 Remediation: Jakarta Validation for @ConfigurationProperties validation
-    implementation(libs.spring.boot.starter.validation) // Provides jakarta.validation annotations (@Min, @Validated, etc.)
+    // Provides jakarta.validation annotations (@Min, @Validated, etc.)
+    implementation(libs.spring.boot.starter.validation)
 
     // Story 6.4: Ansible execution via SSH (Task 4)
     implementation(libs.jsch) // Java SSH client
@@ -79,10 +80,13 @@ dependencies {
     // Story 6.2: Axon integration test dependencies (separate source set)
     // Framework tests use framework-local test types (TestEntity) - NO products dependency
     "axonIntegrationTestImplementation"(libs.spring.boot.starter.test)
-    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa) // Needed for framework dependencies (not for projections)
-    "axonIntegrationTestImplementation"(libs.micrometer.core) // For SimpleMeterRegistry in TenantContext
+    // Needed for framework dependencies (not for projections)
+    "axonIntegrationTestImplementation"(libs.spring.boot.starter.data.jpa)
+    // For SimpleMeterRegistry in TenantContext
+    "axonIntegrationTestImplementation"(libs.micrometer.core)
     "axonIntegrationTestImplementation"(project(":shared:testing"))
-    "axonIntegrationTestImplementation"(project(":framework:observability")) // Story 6.3: For CustomMetrics (tenant propagation)
+    // Story 6.3: For CustomMetrics (tenant propagation)
+    "axonIntegrationTestImplementation"(project(":framework:observability"))
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
     "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)
