@@ -3,11 +3,8 @@ package com.axians.eaf.framework.cqrs.config
 import org.axonframework.commandhandling.CommandBus
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway
-import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryBus
 import org.axonframework.queryhandling.QueryGateway
-import org.axonframework.queryhandling.QueryUpdateEmitter
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
