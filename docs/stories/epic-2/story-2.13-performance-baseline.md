@@ -1,5 +1,7 @@
 # Story 2.13: Performance Baseline and Monitoring
 
+**Story Context:** [2-13-performance-baseline.context.xml](2-13-performance-baseline.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

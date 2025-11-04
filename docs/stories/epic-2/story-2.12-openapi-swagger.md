@@ -1,5 +1,7 @@
 # Story 2.12: OpenAPI Documentation and Swagger UI
 
+**Story Context:** [2-12-openapi-swagger.context.xml](2-12-openapi-swagger.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD

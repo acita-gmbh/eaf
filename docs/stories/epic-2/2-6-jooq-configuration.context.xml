@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-6-jooq-configuration" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>6</storyId>
+    <title>jOOQ Configuration and Projection Tables</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.6-jooq-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>jOOQ configured for type-safe SQL queries on projection tables</iWant>
+    <soThat>read models are queryable with compile-time safety</soThat>
+    <tasks>
+      <task>Add jOOQ 3.20.8 to version catalog</task>
+      <task>Add nu.studer.jooq plugin to framework/persistence</task>
+      <task>Configure jOOQ code generation in build.gradle.kts</task>
+      <task>Create JooqConfiguration.kt with DSLContext bean</task>
+      <task>Create V100__widget_projections.sql migration</task>
+      <task>Run migration: ./gradlew flywayMigrate</task>
+      <task>Generate jOOQ code: ./gradlew generateJooq</task>
+      <task>Verify generated classes in build/generated-src/jooq/</task>
+      <task>Write integration test with type-safe queries</task>
+      <task>Document jOOQ usage in README</task>
+      <task>Commit: "Add jOOQ configuration and Widget projection table"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">jOOQ 3.20.8 dependency added to framework/persistence</criterion>
+    <criterion id="2">JooqConfiguration.kt configures DSLContext bean</criterion>
+    <criterion id="3">jOOQ code generation configured in Gradle (generates classes from DB schema)</criterion>
+    <criterion id="4">Flyway migration V100__widget_projections.sql creates widget_view table</criterion>
+    <criterion id="5">jOOQ generated classes available for widget_view table</criterion>
+    <criterion id="6">Type-safe query example documented</criterion>
+    <criterion id="7">Integration test validates jOOQ query execution</criterion>
+    <criterion id="8">./gradlew generateJooq generates code successfully</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR003: Event Store - jOOQ projections</section>
+        <snippet>jOOQ 3.20.8 for type-safe projection queries. Code generation from DB schema. Compile-time safety for read models.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 8: jOOQ Integration</section>
+        <snippet>jOOQ 3.20.8 with KotlinGenerator. DSLContext bean for type-safe queries. Gradle code generation from PostgreSQL schema. Generated classes in build/generated-src/jooq/.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>jOOQ Configuration (Story 2.6)</section>
+        <snippet>jOOQ 3.20.8 configuration with DSLContext bean. Gradle code generation configured. V100__widget_projections.sql creates widget_view table. Generated WIDGET_VIEW table class available for type-safe queries.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>framework/persistence</name>
+        <purpose>jOOQ configuration and projection infrastructure</purpose>
+        <path>framework/persistence/src/main/kotlin/com/axians/eaf/framework/persistence/projection</path>
+        <dependencies>jooq-core, jooq-kotlin, postgresql, flyway-core</dependencies>
+      </module>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>jooq-core</name>
+        <version>3.20.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>jOOQ core library for type-safe SQL</usage>
+      </dependency>
+      <dependency>
+        <name>jooq-kotlin</name>
+        <version>3.20.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>jOOQ Kotlin extensions</usage>
+      </dependency>
+      <dependency>
+        <name>jooq-codegen</name>
+        <version>3.20.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>jOOQ code generation from DB schema</usage>
+      </dependency>
+      <dependency>
+        <name>postgresql</name>
+        <version>42.7.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>PostgreSQL JDBC for jOOQ code generation</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">jOOQ code generation from database schema (not manual classes)</constraint>
+    <constraint priority="high">Use KotlinGenerator for jOOQ code generation</constraint>
+    <constraint priority="high">Product migrations V100+, Framework migrations V001-V099</constraint>
+    <constraint priority="medium">Include only projection tables in code generation (.*_view pattern)</constraint>
+    <constraint priority="medium">Generated code in build/ directory (not src/)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>DSLContext</name>
+      <signature>interface DSLContext { selectFrom(Table&lt;T&gt;): SelectWhereStep&lt;T&gt;, insertInto(Table&lt;T&gt;): InsertSetStep&lt;T&gt; }</signature>
+      <purpose>jOOQ fluent API for type-safe SQL queries</purpose>
+      <usage>Configured as Spring @Bean in JooqConfiguration</usage>
+    </interface>
+    <pattern>
+      <name>jOOQ Configuration Pattern</name>
+      <code>
+@Configuration
+class JooqConfiguration {
+    @Bean
+    fun dslContext(dataSource: DataSource): DSLContext {
+        return DSL.using(dataSource, SQLDialect.POSTGRES)
+    }
+}
+      </code>
+    </pattern>
+    <pattern>
+      <name>jOOQ Gradle Code Generation Pattern</name>
+      <code>
+jooq {
+    configurations {
+        create("main") {
+            generator.apply {
+                name = "org.jooq.codegen.KotlinGenerator"
+                database.apply {
+                    includes = ".*_view"  // Only projection tables
+                }
+            }
+        }
+    }
+}
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Kotest 6.0.4</framework>
+      <approach>Integration testing with real PostgreSQL</approach>
+      <validation>Type-safe queries compile and execute</validation>
+    </standards>
+    <locations>
+      <integrationTests>framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/jooq</integrationTests>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify jOOQ 3.20.8 dependency in framework/persistence build.gradle.kts</idea>
+      <idea ac="2">Test DSLContext bean is available in Spring context</idea>
+      <idea ac="2">Test DSLContext is configured with PostgreSQL dialect</idea>
+      <idea ac="3">Verify jOOQ Gradle plugin configured in build.gradle.kts</idea>
+      <idea ac="3">Verify KotlinGenerator configured for code generation</idea>
+      <idea ac="4">Test V100__widget_projections.sql creates widget_view table</idea>
+      <idea ac="4">Verify widget_view schema: id, name, published, created_at, updated_at</idea>
+      <idea ac="5">Verify generated WIDGET_VIEW class exists in build/generated-src/jooq/</idea>
+      <idea ac="5">Verify WIDGET_VIEW has column accessors (ID, NAME, PUBLISHED, etc.)</idea>
+      <idea ac="6">Manual: Document type-safe query example in README</idea>
+      <idea ac="7">Integration test: insert row via jOOQ DSLContext</idea>
+      <idea ac="7">Integration test: select row via jOOQ DSLContext with type-safe API</idea>
+      <idea ac="7">Integration test: verify compile-time safety (wrong column name fails compilation)</idea>
+      <idea ac="8">Verify ./gradlew generateJooq task exists and runs successfully</idea>
+    </ideas>
+  </tests>
+</story-context>

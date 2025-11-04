@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-3-event-store-partitioning" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>3</storyId>
+    <title>Event Store Partitioning and Optimization</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.3-event-store-partitioning.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>time-based partitioning and BRIN indexes on the event store</iWant>
+    <soThat>query performance remains acceptable as event volume grows</soThat>
+    <tasks>
+      <task>Create V002__partitioning_setup.sql migration</task>
+      <task>Create V003__brin_indexes.sql migration</task>
+      <task>Create scripts/create-event-store-partition.sh</task>
+      <task>Run migrations on docker-compose PostgreSQL</task>
+      <task>Verify partitions created: \d+ domain_event_entry</task>
+      <task>Write performance test with 100K+ events</task>
+      <task>Measure query performance: aggregate event retrieval</task>
+      <task>Validate &lt;200ms target met</task>
+      <task>Document optimization in docs/reference/event-store-optimization.md</task>
+      <task>Commit: "Add event store partitioning and BRIN indexes"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Flyway migration V002__partitioning_setup.sql implements monthly partitioning on domain_event_entry</criterion>
+    <criterion id="2">Flyway migration V003__brin_indexes.sql creates BRIN indexes on timestamp and aggregate_identifier</criterion>
+    <criterion id="3">Partition creation script for automatic monthly partition generation</criterion>
+    <criterion id="4">Performance test validates query performance with 100K+ events</criterion>
+    <criterion id="5">Partitioning documented in docs/reference/event-store-optimization.md</criterion>
+    <criterion id="6">Integration test validates events are correctly partitioned by timestamp</criterion>
+    <criterion id="7">Query performance meets &lt;200ms target for aggregate event retrieval</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR003: Event Store - Performance Optimization</section>
+        <snippet>The system shall provide PostgreSQL-based event store with partitioning, BRIN indexes, snapshots for performance at 100K+ events scale. API p95 latency &lt;200ms, event processing lag &lt;10s.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 7.2: Partitioning Strategy</section>
+        <snippet>Monthly time-based partitioning on domain_event_entry reduces query time from O(n) to O(partition_size). Partition by RANGE on timestamp column. BRIN indexes optimized for time-range queries (timestamp-based event retrieval). HikariCP connection pooling with optimal settings to minimize latency.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>Event Store Optimizations</section>
+        <snippet>Monthly time-based partitioning on domain_event_entry. BRIN indexes on timestamp and aggregate_identifier. Performance target: &lt;200ms for aggregate event retrieval with 100K+ events. Partition creation script for automatic monthly partition generation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/test-strategy.md</path>
+        <title>Test Strategy</title>
+        <section>Performance Testing</section>
+        <snippet>Load Test Scenarios (Story 2.13): 100 concurrent users, 1000 requests/second sustained, 10K+ widgets in projection. Performance regression tests in nightly CI/CD. Baseline measurements documented for regression detection.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>framework/persistence</name>
+        <purpose>Event Store partitioning and BRIN index optimizations</purpose>
+        <path>framework/persistence/src/main/resources/db/migration</path>
+        <dependencies>postgresql, flyway-core</dependencies>
+      </module>
+      <file>
+        <path>framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql</path>
+        <purpose>Base event store schema (from Story 2.2)</purpose>
+        <snippet>CREATE TABLE domain_event_entry (global_index BIGSERIAL PRIMARY KEY, aggregate_identifier VARCHAR(255), sequence_number BIGINT, timestamp VARCHAR(255) NOT NULL)</snippet>
+      </file>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>postgresql</name>
+        <version>42.7.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>PostgreSQL JDBC driver for partitioning features</usage>
+      </dependency>
+      <dependency>
+        <name>flyway-database-postgresql</name>
+        <version>10.23.3</version>
+        <source>gradle/libs.versions.toml (inferred)</source>
+        <usage>Flyway PostgreSQL dialect for partition DDL</usage>
+      </dependency>
+      <dependency>
+        <name>kotest-runner-junit5-jvm</name>
+        <version>6.0.4</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Performance testing framework</usage>
+      </dependency>
+      <dependency>
+        <name>testcontainers-postgresql</name>
+        <version>1.21.3</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Real PostgreSQL for integration and performance tests</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">NO wildcard imports - Every import must be explicit</constraint>
+    <constraint priority="critical">Flyway migrations immutable - Never modify V002/V003 after deployment</constraint>
+    <constraint priority="critical">Use PostgreSQL 16.10 partitioning features - PARTITION BY RANGE</constraint>
+    <constraint priority="high">Performance target: &lt;200ms for aggregate event retrieval (100K+ events)</constraint>
+    <constraint priority="high">BRIN indexes only (not B-tree) - optimized for sequential time-series inserts</constraint>
+    <constraint priority="high">Monthly partitioning strategy - partition key is timestamp column</constraint>
+    <constraint priority="medium">Partition maintenance script must be idempotent (CREATE TABLE IF NOT EXISTS)</constraint>
+    <constraint priority="medium">ANALYZE table after index creation for accurate statistics</constraint>
+  </constraints>
+
+  <interfaces>
+    <pattern>
+      <name>PostgreSQL Monthly Partitioning Pattern</name>
+      <code>
+ALTER TABLE domain_event_entry
+    PARTITION BY RANGE (time_stamp);
+
+CREATE TABLE domain_event_entry_2025_11 PARTITION OF domain_event_entry
+    FOR VALUES FROM ('2025-11-01') TO ('2025-12-01');
+      </code>
+    </pattern>
+    <pattern>
+      <name>BRIN Index Pattern</name>
+      <code>
+-- BRIN (Block Range Index) for time-series data
+-- Much smaller than B-tree, ideal for sequential inserts
+CREATE INDEX idx_domain_event_timestamp
+    ON domain_event_entry USING BRIN (time_stamp);
+
+ANALYZE domain_event_entry;  -- Update statistics
+      </code>
+    </pattern>
+    <pattern>
+      <name>Partition Maintenance Script Pattern</name>
+      <code>
+#!/bin/bash
+NEXT_MONTH=$(date -d "next month" +%Y-%m)
+MONTH_AFTER=$(date -d "2 months" +%Y-%m)
+
+psql -h localhost -U eaf_user -d eaf &lt;&lt;EOF
+CREATE TABLE IF NOT EXISTS domain_event_entry_${NEXT_MONTH//-/_}
+    PARTITION OF domain_event_entry
+    FOR VALUES FROM ('${NEXT_MONTH}-01') TO ('${MONTH_AFTER}-01');
+EOF
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Kotest 6.0.4 (FunSpec for performance tests)</framework>
+      <approach>Performance testing with 100K+ events</approach>
+      <performance>Query performance &lt;200ms for aggregate retrieval</performance>
+      <containers>Testcontainers PostgreSQL for real partitioning behavior</containers>
+    </standards>
+    <locations>
+      <integrationTests>framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/performance</integrationTests>
+      <documentation>docs/reference/event-store-optimization.md</documentation>
+    </locations>
+    <ideas>
+      <idea ac="1">Test V002 migration creates partitioned table (ALTER TABLE ... PARTITION BY RANGE)</idea>
+      <idea ac="1">Test V002 creates initial 4 monthly partitions (current + next 3 months)</idea>
+      <idea ac="1">Verify partition boundaries: FROM inclusive, TO exclusive</idea>
+      <idea ac="2">Test V003 migration creates BRIN index on timestamp column</idea>
+      <idea ac="2">Test V003 creates BRIN index on aggregate_identifier column</idea>
+      <idea ac="2">Verify index type is BRIN (not B-tree): SELECT indexname, indexdef FROM pg_indexes</idea>
+      <idea ac="3">Test partition creation script is idempotent (CREATE TABLE IF NOT EXISTS)</idea>
+      <idea ac="3">Test script creates partition for next month</idea>
+      <idea ac="3">Test script handles date arithmetic correctly</idea>
+      <idea ac="4">Performance test: insert 100K events across multiple aggregates</idea>
+      <idea ac="4">Performance test: measure aggregate event retrieval time (SELECT WHERE aggregate_identifier)</idea>
+      <idea ac="4">Performance test: verify query uses partition pruning (EXPLAIN output)</idea>
+      <idea ac="5">Manual: Create docs/reference/event-store-optimization.md with partitioning strategy</idea>
+      <idea ac="5">Document BRIN index benefits (smaller size, sequential insert performance)</idea>
+      <idea ac="6">Integration test: insert events with different timestamps</idea>
+      <idea ac="6">Integration test: verify events distributed across correct partitions (pg_stat_user_tables)</idea>
+      <idea ac="7">Performance test: assert query time &lt;200ms for 100K events</idea>
+      <idea ac="7">Performance test: compare partitioned vs non-partitioned performance (baseline)</idea>
+    </ideas>
+  </tests>
+</story-context>

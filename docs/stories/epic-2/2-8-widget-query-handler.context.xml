@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="2-8-widget-query-handler" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>8</storyId>
+    <title>Widget Query Handler</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/epic-2/story-2.8-widget-query-handler.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>query handlers that retrieve Widget data from projections</iWant>
+    <soThat>read operations are fast and don't load full event history</soThat>
+    <tasks>
+      <task>Create FindWidgetQuery and ListWidgetsQuery DTOs</task>
+      <task>Create WidgetProjection response DTO</task>
+      <task>Create PaginatedWidgetResponse DTO</task>
+      <task>Create WidgetQueryHandler.kt with @QueryHandler methods</task>
+      <task>Implement cursor encoding/decoding (Base64)</task>
+      <task>Implement jOOQ queries (type-safe)</task>
+      <task>Write unit tests with Nullable Pattern</task>
+      <task>Write integration test: command → projection → query</task>
+      <task>Measure query performance (&lt;50ms single, &lt;200ms list)</task>
+      <task>Commit: "Add Widget query handlers with cursor pagination"</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Queries implemented: FindWidgetQuery (by ID), ListWidgetsQuery (with cursor pagination)</criterion>
+    <criterion id="2">WidgetQueryHandler.kt with @QueryHandler methods</criterion>
+    <criterion id="3">Query handlers use jOOQ for type-safe SQL queries on widget_view</criterion>
+    <criterion id="4">Cursor-based pagination implemented (no offset-limit)</criterion>
+    <criterion id="5">Unit tests with Nullable Pattern for query logic</criterion>
+    <criterion id="6">Integration test validates: store events → query returns projected data</criterion>
+    <criterion id="7">Query performance &lt;50ms for single widget, &lt;200ms for paginated list</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR003: Projections, FR011: Performance targets</section>
+        <snippet>Query handlers retrieve data from projections (not event history). Query performance &lt;50ms single, &lt;200ms paginated list. Cursor-based pagination (no offset).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Section 8.3: Query Pattern</section>
+        <snippet>@QueryHandler methods on @Component classes. jOOQ for type-safe projection queries. Cursor-based pagination (created_at + limit + hasMore). Response DTOs separate from domain.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>Widget Query Handler (Story 2.8)</section>
+        <snippet>FindWidgetQuery and ListWidgetsQuery. WidgetQueryHandler with @QueryHandler. jOOQ type-safe queries. Cursor pagination. Nullable Pattern unit tests. Performance &lt;50ms / &lt;200ms.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/test-strategy.md</path>
+        <title>Test Strategy</title>
+        <section>Nullable Design Pattern</section>
+        <snippet>Fast query handler unit tests. Stub dependencies (no database). Focus on business logic validation. 100-1000x performance improvement over integration baseline.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <module>
+        <name>products/widget-demo</name>
+        <purpose>Widget query handlers and DTOs</purpose>
+        <path>products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/query</path>
+        <dependencies>framework/cqrs, jooq-core</dependencies>
+      </module>
+    </code>
+    <dependencies>
+      <dependency>
+        <name>axon-spring-boot-starter</name>
+        <version>4.12.1</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Axon Framework for @QueryHandler</usage>
+      </dependency>
+      <dependency>
+        <name>jooq-core</name>
+        <version>3.20.8</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>jOOQ DSLContext for type-safe queries</usage>
+      </dependency>
+      <dependency>
+        <name>kotest-runner-junit5-jvm</name>
+        <version>6.0.4</version>
+        <source>gradle/libs.versions.toml</source>
+        <usage>Unit and integration testing</usage>
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">Cursor-based pagination ONLY (offset-limit forbidden)</constraint>
+    <constraint priority="high">Query performance &lt;50ms single, &lt;200ms paginated list</constraint>
+    <constraint priority="high">Use Nullable Pattern for unit tests (not Testcontainers)</constraint>
+    <constraint priority="medium">Cursor encoding: Base64(timestamp + id)</constraint>
+    <constraint priority="medium">Fetch limit+1 to determine hasMore flag</constraint>
+  </constraints>
+
+  <interfaces>
+    <pattern>
+      <name>Query Handler Pattern</name>
+      <code>
+@Component
+class WidgetQueryHandler(private val dsl: DSLContext) {
+    @QueryHandler
+    fun handle(query: FindWidgetQuery): WidgetProjection? {
+        return dsl.selectFrom(WIDGET_VIEW)
+            .where(WIDGET_VIEW.ID.eq(UUID.fromString(query.widgetId.value)))
+            .fetchOneInto(WidgetProjection::class.java)
+    }
+}
+      </code>
+    </pattern>
+    <pattern>
+      <name>Cursor Pagination Pattern</name>
+      <code>
+val widgets = dsl.selectFrom(WIDGET_VIEW)
+    .where(cursor?.let { WIDGET_VIEW.CREATED_AT.lt(it.timestamp) } ?: noCondition())
+    .orderBy(WIDGET_VIEW.CREATED_AT.desc())
+    .limit(query.limit + 1)  // Fetch one extra to check hasMore
+    .fetchInto(WidgetProjection::class.java)
+
+val hasMore = widgets.size > query.limit
+val items = if (hasMore) widgets.take(query.limit) else widgets
+      </code>
+    </pattern>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <framework>Kotest 6.0.4</framework>
+      <unitApproach>Nullable Pattern for fast query logic tests</unitApproach>
+      <integrationApproach>Testcontainers for real query execution</integrationApproach>
+      <performance>Single query &lt;50ms, List query &lt;200ms</performance>
+    </standards>
+    <locations>
+      <unitTests>products/widget-demo/src/test/kotlin/com/axians/eaf/products/widget/query</unitTests>
+      <integrationTests>products/widget-demo/src/integrationTest/kotlin/com/axians/eaf/products/widget/query</integrationTests>
+    </locations>
+    <ideas>
+      <idea ac="1">Test FindWidgetQuery DTO exists with widgetId field</idea>
+      <idea ac="1">Test ListWidgetsQuery DTO exists with limit and cursor fields</idea>
+      <idea ac="2">Test WidgetQueryHandler has @QueryHandler methods</idea>
+      <idea ac="2">Test @QueryHandler for FindWidgetQuery exists</idea>
+      <idea ac="2">Test @QueryHandler for ListWidgetsQuery exists</idea>
+      <idea ac="3">Integration test: FindWidgetQuery uses jOOQ selectFrom(WIDGET_VIEW)</idea>
+      <idea ac="3">Integration test: ListWidgetsQuery uses jOOQ with orderBy and limit</idea>
+      <idea ac="4">Test cursor encoding/decoding (Base64 timestamp)</idea>
+      <idea ac="4">Test pagination fetches limit+1 rows</idea>
+      <idea ac="4">Test hasMore flag is true when results exceed limit</idea>
+      <idea ac="5">Unit test: FindWidgetQuery with Nullable DSLContext</idea>
+      <idea ac="5">Unit test: ListWidgetsQuery with Nullable DSLContext</idea>
+      <idea ac="5">Unit test: cursor pagination logic (no database)</idea>
+      <idea ac="6">Integration test: dispatch CreateWidgetCommand → query returns projection</idea>
+      <idea ac="6">Integration test: verify projected data matches command data</idea>
+      <idea ac="7">Performance test: measure FindWidgetQuery execution time (&lt;50ms)</idea>
+      <idea ac="7">Performance test: measure ListWidgetsQuery execution time (&lt;200ms)</idea>
+    </ideas>
+  </tests>
+</story-context>

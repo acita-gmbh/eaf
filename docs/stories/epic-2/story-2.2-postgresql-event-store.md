@@ -1,5 +1,7 @@
 # Story 2.2: PostgreSQL Event Store Setup with Flyway
 
+**Story Context:** [2-2-postgresql-event-store.context.xml](2-2-postgresql-event-store.context.xml)
+
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
 **Status:** TODO
 **Story Points:** TBD
