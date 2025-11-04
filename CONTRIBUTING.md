@@ -1,150 +1,362 @@
-# Contributing to EAF
+# Contributing to EAF v1.0
 
-**Enterprise Application Framework (v0.1)** - Contribution Guide
+Thank you for your interest in contributing to the Enterprise Application Framework! This guide will help you understand our development workflow and quality standards.
 
 ---
 
-## Pre-Commit Hooks (Story 8.2)
+## Development Setup
 
-### Overview
+### 1. One-Command Initialization
 
-Pre-commit hooks automatically validate code quality **before** commits (<30s target), catching issues locally instead of in CI (15min wait).
+The fastest way to get started:
 
-### What Runs Pre-Commit?
-
-**Current Implementation** (Tasks 1-4):
-1. ✅ **Format validation** (ktlint) - Staged files only
-2. ✅ **Test naming** (Konsist) - Story 8.1 standard enforcement
-3. ⏳ **Static analysis** (Detekt) - Fast profile (Task 2.3 pending)
-4. ⏳ **Unit tests** (smart) - Changed modules only (Task 3 pending integration)
-5. ✅ **Commit message** - [JIRA-XXX] type: description format
-
-**Target**: <30 seconds total execution time
-
-### Installation
-
-**Automatic** (recommended):
 ```bash
 ./scripts/init-dev.sh
-# Hooks install during onboarding
 ```
 
-**Manual**:
+This script will:
+- Start all Docker services (PostgreSQL, Keycloak, Redis, Prometheus, Grafana)
+- Install Git hooks for quality enforcement
+- Download project dependencies
+- Verify environment health
+
+**Execution time:** ~22 seconds
+
+### 2. Verify Setup
+
 ```bash
-./gradlew installGitHooks
+./gradlew build
 ```
 
-### Commit Message Format
-
-**Required Pattern**:
-```
-[JIRA-XXX] type: description
-[Epic X] type: description
-```
-
-**Types**: feat, fix, docs, style, refactor, test, chore
-
-**Examples**:
-```bash
-git commit -m "[DPCMSG-1234] feat: add tenant isolation to Widget"
-git commit -m "[Epic 8] fix: resolve test naming violations"
-git commit -m "[DPCMSG-5678] docs: update API documentation"
-```
-
-### Bypassing Hooks (Emergency Only)
-
-**When to bypass**:
-- Emergency production hotfix
-- WIP commits for collaboration
-- Merge conflict resolution
-- Generated code commits
-
-**How to bypass**:
-```bash
-git commit --no-verify -m "..."
-# Or short form:
-git commit -n -m "..."
-```
-
-**WIP commits** auto-bypass:
-```bash
-git commit -m "WIP: experimenting with feature"
-# Validation skipped automatically
-```
-
-### Troubleshooting
-
-**Hook not running?**
-```bash
-# Reinstall
-./gradlew installGitHooks
-
-# Verify installation
-ls -la .git/hooks/pre-commit
-```
-
-**Hook too slow?**
-- Check metrics: `cat .git/hooks/metrics.log`
-- Report if p95 >30s
-
-**Hook blocks valid commit?**
-- Use `--no-verify` temporarily
-- Report issue to team for rule adjustment
-
-**Uninstall hooks**:
-```bash
-./gradlew uninstallGitHooks
-```
+If this completes successfully, your environment is ready for development!
 
 ---
 
 ## Development Workflow
 
-### Quality Gates
+### Test-Driven Development (Mandatory)
 
-**Local** (pre-commit):
-- Format, test naming, commit message (<30s)
-- Install hooks via `./scripts/install-git-hooks.sh` (or `./gradlew installGitHooks`) so `.git/hooks/` always matches the templates in `.git-hooks/`.
-- On failures, run `./gradlew ktlintFormat`, `./gradlew detekt --auto-correct` (if enabled), or fix the failing tests; `--no-verify` is for emergencies only and must be followed by a clean run.
+EAF follows **Constitutional TDD** (Red-Green-Refactor cycle). This is non-negotiable and enforced by Git hooks.
 
-**CI** (full validation):
-- All quality gates (ktlint, Detekt, Konsist, tests, coverage)
-- Integration tests with Testcontainers
-- Mutation testing (Pitest)
+**The TDD Cycle:**
 
-### Test Naming Standard (Story 8.1)
+1. **RED:** Write a failing test first
+   ```kotlin
+   test("should create widget with valid name") {
+       // Test implementation (fails initially)
+   }
+   ```
 
-**Format**: `{EPIC}.{STORY}-{TYPE}-{SEQ}: {Description}`
+2. **GREEN:** Write minimal code to make the test pass
+   ```kotlin
+   fun createWidget(name: String): Widget {
+       return Widget(name)
+   }
+   ```
 
-**Example**:
-```kotlin
-test("8.2-UNIT-001: installGitHooks creates hook files") {
-    // Test logic
-}
-```
+3. **REFACTOR:** Improve code quality while keeping tests green
+   ```kotlin
+   fun createWidget(name: String): Either<DomainError, Widget> {
+       return Widget.create(name).bind()
+   }
+   ```
 
-See: docs/architecture/test-strategy-and-standards-revision-3.md
+**Why TDD?**
+- Catches bugs early (before they reach production)
+- Ensures code is testable by design
+- Provides living documentation of expected behavior
+- Reduces debugging time significantly
+
+**Enforcement:** Git hooks will reject commits that add production code without corresponding tests.
 
 ---
 
-## Code Standards
+### Quality Gates
 
-- **NO wildcard imports** - Explicit only
-- **Kotest ONLY** - JUnit forbidden
-- **Version Catalog** - All deps from gradle/libs.versions.toml
-- **Zero violations** - ktlint, Detekt, Konsist must pass
+EAF enforces quality at multiple stages to catch issues as early as possible:
 
-See: docs/architecture/coding-standards-revision-2.md
+#### Pre-Commit Hooks (<5s)
+
+Runs automatically when you commit:
+
+- **ktlint:** Code formatting check
+- **Commit message validation:** Ensures proper format
+
+```bash
+# Typical commit flow
+git add .
+git commit -m "[DPCMSG-1234] feat: add widget aggregate"
+# Hooks run automatically
+```
+
+#### Pre-Push Hooks (<30s)
+
+Runs automatically when you push:
+
+- **Detekt:** Static analysis for code quality
+- **Fast unit tests:** Quick validation of business logic
+
+```bash
+git push origin feature/my-feature
+# Pre-push hooks validate before pushing
+```
+
+#### CI/CD Pipeline (<15min)
+
+Runs on all pull requests and commits to main:
+
+- Full build
+- All unit tests
+- Integration tests with Testcontainers
+- Architecture tests (Konsist validates module boundaries)
+- Code coverage check (Kover, 85%+ target)
+
+#### Nightly Pipeline (~2.5h)
+
+Deep validation runs every night:
+
+- Property-based tests (Kotest)
+- Fuzz testing (Jazzer)
+- Concurrency tests (LitmusKt)
+- Mutation testing (Pitest, 60-70% target)
+
+---
+
+### Code Standards
+
+#### Mandatory Rules (Zero-Tolerance)
+
+1. **NO wildcard imports**
+   ```kotlin
+   // ✅ CORRECT
+   import com.axians.eaf.framework.core.domain.AggregateRoot
+   import arrow.core.Either
+
+   // ❌ FORBIDDEN
+   import com.axians.eaf.framework.core.domain.*
+   import arrow.core.*
+   ```
+
+2. **Kotest ONLY** - JUnit is explicitly forbidden
+   ```kotlin
+   // ✅ CORRECT
+   class WidgetTest : FunSpec({
+       test("should create widget") { }
+   })
+
+   // ❌ FORBIDDEN
+   @Test
+   fun shouldCreateWidget() { }
+   ```
+
+3. **Version Catalog Required** - All versions in `gradle/libs.versions.toml`
+   ```kotlin
+   // ✅ CORRECT
+   dependencies {
+       implementation(libs.spring.boot.starter.web)
+   }
+
+   // ❌ FORBIDDEN
+   dependencies {
+       implementation("org.springframework.boot:spring-boot-starter-web:3.5.7")
+   }
+   ```
+
+4. **Zero violations** - ktlint, Detekt, and Konsist must pass without warnings
+
+#### Coverage Targets
+
+- **Line Coverage:** 85%+ (Kover)
+- **Mutation Score:** 60-70% (Pitest)
+- **Architecture:** All module boundaries validated (Konsist)
+
+#### Kotlin Style
+
+- **Indentation:** 4 spaces
+- **Max line length:** 120 characters
+- **Formatting:** ktlint (official Kotlin style guide)
+
+For complete coding standards, see: [docs/architecture/coding-standards.md](docs/architecture/coding-standards.md)
+
+---
+
+## Pull Request Process
+
+### 1. Fork and Branch
+
+```bash
+# Fork the repository on GitHub
+git clone <your-fork-url>
+cd eaf-v1
+
+# Create feature branch
+git checkout -b feature/my-feature
+```
+
+### 2. Develop with TDD
+
+```bash
+# RED: Write failing test
+# GREEN: Make it pass
+# REFACTOR: Improve code
+
+# Run tests frequently
+./gradlew test
+```
+
+### 3. Ensure Quality Gates Pass
+
+Before pushing, ensure all quality gates pass locally:
+
+```bash
+# Run all checks
+./gradlew check
+
+# Format code automatically
+./gradlew ktlintFormat
+
+# Run static analysis
+./gradlew detekt
+```
+
+### 4. Commit Changes
+
+```bash
+# Hooks run automatically
+git commit -m "[DPCMSG-1234] feat: add new aggregate"
+```
+
+**Commit Message Format:**
+- Prefix: `[JIRA-XXX]` or `[Epic X]`
+- Type: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Description: Clear, concise summary of changes
+
+### 5. Push and Create PR
+
+```bash
+# Push to your fork
+git push origin feature/my-feature
+```
+
+Create a pull request on GitHub with:
+- **Title:** Clear summary of changes
+- **Description:** Explain what, why, and how
+- **Linked Issues:** Reference related Jira tickets or GitHub issues
+- **Test Evidence:** Describe how you tested the changes
+
+### 6. Address Review Feedback
+
+- Respond to all review comments
+- Make requested changes
+- Push updates to the same branch
+- Request re-review when ready
+
+### 7. Merge
+
+Once approved:
+- Squash commits if requested
+- Ensure CI/CD passes
+- Merge via GitHub UI
+
+---
+
+## Testing Requirements
+
+### Test Framework
+
+- **Primary:** Kotest 6.0.4
+- **Integration:** Testcontainers for real dependencies
+- **Never mock:** Business logic (use Nullable Pattern instead)
+
+### Test Types
+
+1. **Unit Tests:** Fast business logic tests (<30s total)
+2. **Integration Tests:** Real dependencies via Testcontainers (<3min)
+3. **Property Tests:** Invariant validation (nightly)
+4. **Fuzz Tests:** Security vulnerability detection (nightly)
+5. **Concurrency Tests:** Race condition detection (nightly)
+6. **Mutation Tests:** Test effectiveness validation (nightly)
+
+### Spring Boot Integration Test Pattern
+
+```kotlin
+@SpringBootTest
+@ActiveProfiles("test")
+class WidgetIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+
+        test("should create widget via REST API") {
+            mockMvc.perform(post("/api/widgets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Test Widget"}"""))
+                .andExpect(status().isCreated())
+        }
+    }
+}
+```
+
+**Critical:** Use `@Autowired` field injection + `init` block (NOT constructor injection)
 
 ---
 
 ## Getting Help
 
-- Architecture questions: docs/architecture/
-- Development workflow: docs/architecture/development-workflow.md
-- Pre-commit hooks: docs/development/pre-commit-hooks-guide.md
+### Documentation
+
+- **Getting Started:** [docs/getting-started/00-prerequisites.md](docs/getting-started/00-prerequisites.md)
+- **Architecture:** [docs/architecture.md](docs/architecture.md)
+- **PRD:** [docs/PRD.md](docs/PRD.md)
+- **Tech Spec:** [docs/tech-spec.md](docs/tech-spec.md)
+
+### Communication Channels
+
+- **Slack:** #eaf-development
+- **Email:** eaf-team@axians.com
+- **Issues:** GitHub Issues for bug reports and feature requests
+
+### Common Questions
+
+**Q: Why is JUnit forbidden?**
+A: Kotest provides better Kotlin integration, more expressive DSL, and native support for property-based testing.
+
+**Q: Can I use MockK for mocking?**
+A: Only for infrastructure. Never mock business logic - use the Nullable Design Pattern instead.
+
+**Q: How do I run just one test?**
+```bash
+./gradlew test --tests "WidgetTest"
+```
+
+**Q: How do I skip hooks temporarily?**
+```bash
+git commit --no-verify -m "WIP: work in progress"
+```
+
+**Q: Where do I put new features?**
+- Framework modules: `framework/` (libraries only)
+- Product modules: `products/` (applications with domain logic)
+- See [Architecture Guide](docs/architecture.md) for details
 
 ---
 
-**Version**: 0.1.0 (Story 8.2 - Pre-Commit Hooks)
-**Last Updated**: 2025-10-05
+## Code of Conduct
+
+- Be respectful and professional
+- Provide constructive feedback
+- Help others learn and grow
+- Follow architectural decisions (see ADRs)
+- Maintain code quality standards
+
+---
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).
+
+---
+
+**Thank you for contributing to EAF!** 🎉

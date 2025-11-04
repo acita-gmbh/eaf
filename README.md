@@ -213,8 +213,16 @@ We welcome improvements that uphold the framework's architectural guardrails. Re
 
 ## 📄 License
 
-EAF is distributed under the Apache License 2.0. Refer to `framework/admin-shell/LICENSE` for the complete terms while the root license file is being finalized.
+EAF is distributed under the [Apache License 2.0](LICENSE). See the LICENSE file in the root directory for complete terms and conditions.
 
 ## 📚 Documentation
 
-For more detailed information, please refer to the architecture documents in the `docs/architecture/` directory.
+Comprehensive documentation is available to help you get started and understand the framework:
+
+- **[Getting Started - Prerequisites](docs/getting-started/00-prerequisites.md)**: Platform-specific setup instructions for JDK, Docker, and Git
+- **[Architecture Decisions](docs/architecture.md)**: Complete architectural decision records and design rationale
+- **[Product Requirements](docs/PRD.md)**: Functional and non-functional requirements
+- **[Technical Specification](docs/tech-spec.md)**: Detailed technical implementation guidance
+- **[Contributing Guidelines](CONTRIBUTING.md)**: Development workflow, quality standards, and PR process
+
+For architecture-specific details, refer to the `docs/architecture/` directory.
