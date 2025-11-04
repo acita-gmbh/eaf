@@ -47,7 +47,7 @@ development_status:
   1-8-spring-modulith-enforcement: done
   1-9-cicd-pipeline: done
   1-10-git-hooks: done
-  1-11-foundation-documentation: review
+  1-11-foundation-documentation: done
   epic-1-retrospective: optional
 
   # Epic 2: Walking Skeleton - CQRS/Event Sourcing Core (13 stories)
