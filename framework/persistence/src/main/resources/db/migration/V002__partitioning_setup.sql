@@ -137,6 +137,60 @@ SELECT
     END
 FROM seq_info;
 
+-- Enforce original Axon uniqueness guarantees via triggers
+CREATE OR REPLACE FUNCTION domainevententry_enforce_eventidentifier_unique()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM DomainEventEntry
+        WHERE eventIdentifier = NEW.eventIdentifier
+          AND NOT (timeStamp = NEW.timeStamp AND globalIndex = NEW.globalIndex)
+        LIMIT 1
+    ) THEN
+        RAISE EXCEPTION 'Duplicate eventIdentifier detected: %', NEW.eventIdentifier
+            USING ERRCODE = '23505', COLUMN = 'eventIdentifier', TABLE = 'DomainEventEntry';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION domainevententry_enforce_sequence_unique()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM DomainEventEntry
+        WHERE aggregateIdentifier = NEW.aggregateIdentifier
+          AND sequenceNumber = NEW.sequenceNumber
+          AND NOT (timeStamp = NEW.timeStamp AND globalIndex = NEW.globalIndex)
+        LIMIT 1
+    ) THEN
+        RAISE EXCEPTION 'Duplicate aggregate sequence detected for % at sequence %', NEW.aggregateIdentifier, NEW.sequenceNumber
+            USING ERRCODE = '23505', COLUMN = 'sequenceNumber', TABLE = 'DomainEventEntry';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_domain_event_identifier_unique ON DomainEventEntry;
+CREATE TRIGGER trg_domain_event_identifier_unique
+    BEFORE INSERT OR UPDATE OF eventIdentifier
+    ON DomainEventEntry
+    FOR EACH ROW
+    EXECUTE FUNCTION domainevententry_enforce_eventidentifier_unique();
+
+DROP TRIGGER IF EXISTS trg_domain_event_sequence_unique ON DomainEventEntry;
+CREATE TRIGGER trg_domain_event_sequence_unique
+    BEFORE INSERT OR UPDATE OF aggregateIdentifier, sequenceNumber
+    ON DomainEventEntry
+    FOR EACH ROW
+    EXECUTE FUNCTION domainevententry_enforce_sequence_unique();
+
 -- Drop the legacy table and sequence remnants
 DROP TABLE IF EXISTS DomainEventEntry_legacy;
 DROP SEQUENCE IF EXISTS domainevententry_globalindex_seq_legacy;
