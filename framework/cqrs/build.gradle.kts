@@ -33,6 +33,7 @@ dependencies {
     }
 
     integrationTestImplementation(project(":framework:security"))
+    integrationTestImplementation(project(":framework:persistence"))
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.bundles.testcontainers)
     integrationTestImplementation(libs.spring.boot.starter.test)
