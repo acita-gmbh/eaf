@@ -906,6 +906,13 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 
 **Epic 2 Estimated Duration:** 13 stories (2-3 sprints)
 
+## Post-Review Follow-ups
+
+- ✅ Restored event store uniqueness invariants while keeping monthly partitioning (`framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:120-179`).
+- ✅ Reintroduced an ordered B-tree index for `(aggregateIdentifier, sequenceNumber)` alongside BRIN on timestamps (`framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:9-15`).
+- ✅ Story metadata and optimization reference updated to reflect the corrected constraints and active status (`docs/stories/epic-2/story-2.3-event-store-partitioning.md:1-184`; `docs/reference/event-store-optimization.md:1-38`).
+- ✅ Partition maintenance script now validates schema/table arguments before executing SQL (`scripts/create-event-store-partition.sh:10-74`).
+
 ---
 
 *Generated: 2025-11-04*

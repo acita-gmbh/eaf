@@ -54,7 +54,7 @@ development_status:
   epic-2: contexted
   2-1-axon-core-configuration: done
   2-2-postgresql-event-store: done
-  2-3-event-store-partitioning: ready-for-dev
+  2-3-event-store-partitioning: done
   2-4-snapshot-support: ready-for-dev
   2-5-widget-aggregate: ready-for-dev
   2-6-jooq-configuration: ready-for-dev
