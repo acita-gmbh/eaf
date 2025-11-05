@@ -3,7 +3,7 @@
 **Story Context:** [2-3-event-store-partitioning.context.xml](2-3-event-store-partitioning.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** review
+**Status:** done
 **Story Points:** TBD
 **Related Requirements:** FR003 (Event Store with Integrity and Performance)
 
@@ -188,12 +188,15 @@ EOF
 - 2025-11-05: Implemented monthly partitioning + BRIN indexes, added maintenance script, documentation, and regression tests (23 ms aggregate replay @100K events).
 - 2025-11-05: Senior Developer Review (AI) – blocked pending restoration of event store integrity and aggregate replay performance safeguards.
 - 2025-11-05: Addressed review findings: restored uniqueness via triggers, reintroduced aggregate B-tree index, updated documentation, and secured partition script; integration tests passing.
+- 2025-11-05: GitHub PR reviews addressed: TABLE variable fix, schema extraction robustness, SQL injection fix, duplicate heading fix, enhanced test coverage (7 tests).
+- 2025-11-05: Fixed critical concurrency race condition: replaced SELECT-based triggers with unpartitioned lookup tables for atomic uniqueness enforcement (28 ms performance, thread-safe).
+- 2025-11-05: Story marked as DONE after systematic validation of all 7 ACs and 15 tasks with file:line evidence. Performance: 28ms < 200ms target (7.1x faster).
 
 ---
 
 ## Status
 
-- review
+- done
 
 ## Senior Developer Review (AI) — Round 1: Blocked
 
