@@ -10,26 +10,8 @@
 <critical>Level 0: tech-spec + single user story | Level 1: tech-spec + epic/stories</critical>
 <critical>LIVING DOCUMENT: Write to tech-spec.md continuously as you discover - never wait until the end</critical>
 <critical>CONTEXT IS KING: Gather ALL available context before generating specs</critical>
-
 <critical>DOCUMENT OUTPUT: Technical, precise, definitive. Specific versions only. User skill level ({user_skill_level}) affects conversation style ONLY, not document content.</critical>
-
-## 📚 Input Document Discovery
-
-This workflow intelligently discovers and loads all available context including: product brief, research documents, brownfield project documentation, and project setup files.
-
-**Discovery Process** (execute for each referenced document):
-
-1. **Search for whole document first** - Use fuzzy file matching to find the complete document
-2. **Check for sharded version** - If whole document not found, look for `{doc-name}/index.md`
-3. **If sharded version found**:
-   - Read `index.md` to understand the document structure
-   - Read ALL section files listed in the index
-   - Treat the combined content as if it were a single document
-4. **Brownfield projects**: The `document-project` workflow always creates `{output_folder}/docs/index.md`
-
-**Priority**: If both whole and sharded versions exist, use the whole document.
-
-**Fuzzy matching**: Be flexible with document names - users may use variations in naming conventions.
+<critical>Input documents specified in workflow.yaml input_file_patterns - workflow engine handles fuzzy matching, whole vs sharded document discovery automatically</critical>
 
 <step n="0" goal="Validate workflow readiness and detect project level" tag="workflow-status">
 <action>Check if {output_folder}/bmm-workflow-status.yaml exists</action>

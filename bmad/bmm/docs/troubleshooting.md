@@ -30,18 +30,18 @@ flowchart TD
 
 ## Table of Contents
 
-- [Setup & Installation Issues](#setup--installation-issues)
+- [Setup and Installation Issues](#setup-and-installation-issues)
 - [Level Detection Problems](#level-detection-problems)
 - [Workflow Issues](#workflow-issues)
-- [Context & Documentation Issues](#context--documentation-issues)
+- [Context and Documentation Issues](#context-and-documentation-issues)
 - [Implementation Issues](#implementation-issues)
-- [File & Path Issues](#file--path-issues)
+- [File and Path Issues](#file-and-path-issues)
 - [Agent Behavior Issues](#agent-behavior-issues)
 - [Integration Issues (Brownfield)](#integration-issues-brownfield)
 
 ---
 
-## Setup & Installation Issues
+## Setup and Installation Issues
 
 ### Problem: BMM not found after installation
 
@@ -238,7 +238,7 @@ workflow-init asks: "Is this work in progress or previous effort?"
 
 ---
 
-## Context & Documentation Issues
+## Context and Documentation Issues
 
 ### Problem: AI agents lack codebase understanding (Brownfield)
 
@@ -393,7 +393,7 @@ For most brownfield projects, **Deep scan is sufficient**.
 
 ---
 
-## File & Path Issues
+## File and Path Issues
 
 ### Problem: Output files in wrong location
 
@@ -545,7 +545,7 @@ To change locations, edit config.yaml then re-run workflows.
    - Read docs/architecture.md (from document-project)
    - Understand current system design
 3. **For Level 3-4**:
-   - Run architecture-review workflow before planning
+   - Run validate-architecture workflow before planning
    - Use integration-planning workflow
 4. **Explicitly document integration strategy** in architecture:
    - How new components fit existing structure

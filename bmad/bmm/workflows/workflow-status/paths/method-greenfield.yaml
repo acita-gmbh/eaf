@@ -1,31 +1,38 @@
-# Greenfield Level 3 - Complex System
-# Subsystems, integrations, architectural decisions required
+# BMad Method - Greenfield
+# Full product + architecture planning for greenfield projects (10-50+ stories typically)
 
-project_type: "software"
-level: 3
+method_name: "BMad Method"
+track: "method"
 field_type: "greenfield"
-description: "Complex system - subsystems, integrations, architectural decisions"
+description: "Complete product and system design methodology for greenfield projects"
 
 phases:
-  - phase: 1
-    name: "Analysis"
+  - phase: 0
+    name: "Discovery (Optional)"
     optional: true
+    note: "User-selected during workflow-init"
     workflows:
       - id: "brainstorm-project"
         optional: true
         agent: "analyst"
         command: "brainstorm-project"
+        included_by: "user_choice"
+
       - id: "research"
         optional: true
         agent: "analyst"
         command: "research"
-        note: "Multiple research areas likely"
+        included_by: "user_choice"
+        note: "Can have multiple research workflows"
+
       - id: "product-brief"
-        recommended: true
+        optional: true
         agent: "analyst"
         command: "product-brief"
+        included_by: "user_choice"
+        note: "Recommended for greenfield Method projects"
 
-  - phase: 2
+  - phase: 1
     name: "Planning"
     required: true
     workflows:
@@ -33,17 +40,21 @@ phases:
         required: true
         agent: "pm"
         command: "prd"
-        output: "High-level requirements and epic definitions"
+        output: "Product Requirements Document with epics and stories"
+
       - id: "validate-prd"
         optional: true
         agent: "pm"
         command: "validate-prd"
+        note: "Quality check for PRD completeness"
+
       - id: "create-design"
         conditional: "if_has_ui"
         agent: "ux-designer"
         command: "create-design"
+        note: "Determined after PRD - user/agent decides if needed"
 
-  - phase: 3
+  - phase: 2
     name: "Solutioning"
     required: true
     workflows:
@@ -51,18 +62,22 @@ phases:
         required: true
         agent: "architect"
         command: "create-architecture"
-        output: "System-wide architecture document"
+        output: "System architecture document"
+        note: "Complete system design for greenfield projects"
+
       - id: "validate-architecture"
         optional: true
         agent: "architect"
         command: "validate-architecture"
+        note: "Quality check for architecture completeness"
+
       - id: "solutioning-gate-check"
-        recommended: true
+        required: true
         agent: "architect"
         command: "solutioning-gate-check"
-        note: "Validate PRD + UX + architecture cohesion before implementation"
+        note: "Validates PRD + UX + Architecture cohesion before implementation"
 
-  - phase: 4
+  - phase: 3
     name: "Implementation"
     required: true
     workflows:
@@ -70,4 +85,4 @@ phases:
         required: true
         agent: "sm"
         command: "sprint-planning"
-        note: "Creates sprint plan with all stories - subsequent work tracked in sprint plan output, not workflow-status"
+        note: "Creates sprint plan - subsequent work tracked there"

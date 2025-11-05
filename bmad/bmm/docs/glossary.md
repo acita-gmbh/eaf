@@ -7,11 +7,11 @@ Comprehensive terminology reference for the BMad Method Module.
 ## Navigation
 
 - [Core Concepts](#core-concepts)
-- [Scale & Complexity](#scale--complexity)
+- [Scale and Complexity](#scale-and-complexity)
 - [Planning Documents](#planning-documents)
-- [Workflow & Phases](#workflow--phases)
-- [Agents & Roles](#agents--roles)
-- [Status & Tracking](#status--tracking)
+- [Workflow and Phases](#workflow-and-phases)
+- [Agents and Roles](#agents-and-roles)
+- [Status and Tracking](#status-and-tracking)
 - [Project Types](#project-types)
 - [Implementation Terms](#implementation-terms)
 
@@ -29,7 +29,7 @@ The complete methodology for AI-assisted software development, encompassing plan
 
 ### Scale-Adaptive System
 
-BMad Method's intelligent workflow orchestration that automatically adjusts planning depth, documentation requirements, and implementation processes based on project size and complexity (Levels 0-4).
+BMad Method's intelligent workflow orchestration that automatically adjusts planning depth, documentation requirements, and implementation processes based on project needs through three distinct planning tracks (Quick Flow, BMad Method, Enterprise Method).
 
 ### Agent
 
@@ -41,31 +41,25 @@ A multi-step guided process that orchestrates AI agent activities to produce spe
 
 ---
 
-## Scale & Complexity
+## Scale and Complexity
 
-### Level 0 (Single Atomic Change)
+### Quick Flow Track
 
-Single-story projects like bug fixes, typos, or small patches. Uses tech-spec only, no architecture needed. Estimated completion: hours.
+Fast implementation track using tech-spec planning only. Best for bug fixes, small features, and changes with clear scope. Typical range: 1-15 stories. No architecture phase needed. Examples: bug fixes, OAuth login, search features.
 
-### Level 1 (Small Feature)
+### BMad Method Track
 
-Projects with 1-10 stories, typically 2-3 related changes. Examples: OAuth login, search feature, user profile page. Uses tech-spec with epic breakdown.
+Full product planning track using PRD + Architecture + UX. Best for products, platforms, and complex features requiring system design. Typical range: 10-50+ stories. Examples: admin dashboards, e-commerce platforms, SaaS products.
 
-### Level 2 (Medium Project)
+### Enterprise Method Track
 
-Projects with 5-15 stories across multiple epics. Examples: admin dashboard, customer portal, reporting system. Uses PRD + optional architecture.
+Extended enterprise planning track adding Security Architecture, DevOps Strategy, and Test Strategy to BMad Method. Best for enterprise requirements, compliance needs, and multi-tenant systems. Typical range: 30+ stories. Examples: multi-tenant platforms, compliance-driven systems, mission-critical applications.
 
-### Level 3 (Complex Integration)
+### Planning Track
 
-Projects with 12-40 stories involving subsystems and integrations. Examples: e-commerce platform, SaaS product, multi-module system. Requires PRD + comprehensive architecture.
+The methodology path (Quick Flow, BMad Method, or Enterprise Method) chosen for a project based on planning needs, complexity, and requirements rather than story count alone.
 
-### Level 4 (Enterprise Scale)
-
-Projects with 40+ stories across products. Examples: multi-tenant systems, product ecosystems, platform expansions. Requires full methodology with strategic planning.
-
-### Complexity Level
-
-The scale rating (0-4) assigned to a project based on story count, integration requirements, team size, and architectural complexity.
+**Note:** Story counts are guidance, not definitions. Tracks are determined by what planning the project needs, not story math.
 
 ---
 
@@ -73,23 +67,23 @@ The scale rating (0-4) assigned to a project based on story count, integration r
 
 ### Tech-Spec (Technical Specification)
 
-**Level 0-1 only.** Comprehensive technical plan created upfront that serves as the primary planning document for small changes or features. Contains problem statement, solution approach, file-level changes, stack detection (brownfield), testing strategy, and developer resources.
+**Quick Flow track only.** Comprehensive technical plan created upfront that serves as the primary planning document for small changes or features. Contains problem statement, solution approach, file-level changes, stack detection (brownfield), testing strategy, and developer resources.
 
-### Epic-Tech-Spec (Epic Technical Specification)
+### Epic-Tech-Context (Epic Technical Context)
 
-**Level 2-4 only.** Detailed technical planning document created during implementation (just-in-time) for each epic. Supplements PRD + Architecture with epic-specific implementation details, code-level design decisions, and integration points.
+**BMad Method/Enterprise tracks only.** Detailed technical planning document created during implementation (just-in-time) for each epic. Supplements PRD + Architecture with epic-specific implementation details, code-level design decisions, and integration points.
 
-**Key Difference:** Tech-spec (Level 0-1) is created upfront and is the only planning doc. Epic-tech-spec (Level 2-4) is created per epic during implementation and supplements PRD + Architecture.
+**Key Difference:** Tech-spec (Quick Flow) is created upfront and is the only planning doc. Epic-tech-context (BMad Method/Enterprise) is created per epic during implementation and supplements PRD + Architecture.
 
 ### PRD (Product Requirements Document)
 
-**Level 2-4.** Product-level planning document containing vision, goals, feature requirements, epic breakdown, success criteria, and UX considerations. Replaces tech-spec for larger projects that need product planning.
+**BMad Method/Enterprise tracks.** Product-level planning document containing vision, goals, feature requirements, epic breakdown, success criteria, and UX considerations. Replaces tech-spec for larger projects that need product planning.
 
 ### Architecture Document
 
-**Level 2-4.** System-wide design document defining structure, components, interactions, data models, integration patterns, security, performance, and deployment. Optional for Level 2, required for Level 3-4.
+**BMad Method/Enterprise tracks.** System-wide design document defining structure, components, interactions, data models, integration patterns, security, performance, and deployment.
 
-**Scale-Adaptive:** Architecture complexity scales with level - Level 2 is lightweight, Level 4 is enterprise-grade.
+**Scale-Adaptive:** Architecture complexity scales with track - BMad Method is lightweight to moderate, Enterprise Method is comprehensive with security/devops/test strategies.
 
 ### Epics
 
@@ -105,7 +99,7 @@ Game development equivalent of PRD, created by Game Designer agent for game proj
 
 ---
 
-## Workflow & Phases
+## Workflow and Phases
 
 ### Phase 0: Documentation (Prerequisite)
 
@@ -113,15 +107,15 @@ Game development equivalent of PRD, created by Game Designer agent for game proj
 
 ### Phase 1: Analysis (Optional)
 
-Discovery and research phase including brainstorming, research workflows, and product brief creation. Optional for small projects (Level 0-1), recommended for Level 2, required for Level 3-4.
+Discovery and research phase including brainstorming, research workflows, and product brief creation. Optional for Quick Flow, recommended for BMad Method, required for Enterprise Method.
 
 ### Phase 2: Planning (Required)
 
-**Always required.** Creates formal requirements and work breakdown. Routes to tech-spec (Level 0-1) or PRD (Level 2-4) based on detected complexity level.
+**Always required.** Creates formal requirements and work breakdown. Routes to tech-spec (Quick Flow) or PRD (BMad Method/Enterprise) based on selected track.
 
-### Phase 3: Solutioning (Conditional)
+### Phase 3: Solutioning (Track-Dependent)
 
-Architecture design phase. Optional for Level 2, required for Level 3-4. Includes architecture creation, validation, and gate checks.
+Architecture design phase. Required for BMad Method and Enterprise Method tracks. Includes architecture creation, validation, and gate checks.
 
 ### Phase 4: Implementation (Required)
 
@@ -129,11 +123,11 @@ Sprint-based development through story-by-story iteration. Uses sprint-planning,
 
 ### Quick Spec Flow
 
-Fast-track workflow system for Level 0-1 projects that goes straight from idea to tech-spec to implementation, bypassing heavy planning. Designed for bug fixes, small features, and rapid prototyping.
+Fast-track workflow system for Quick Flow track projects that goes straight from idea to tech-spec to implementation, bypassing heavy planning. Designed for bug fixes, small features, and rapid prototyping.
 
 ### Just-In-Time Design
 
-Pattern where epic-tech-specs are created during implementation (Phase 4) right before working on each epic, rather than all upfront. Enables learning and adaptation.
+Pattern where epic-tech-context is created during implementation (Phase 4) right before working on each epic, rather than all upfront. Enables learning and adaptation.
 
 ### Context Injection
 
@@ -141,7 +135,7 @@ Dynamic technical guidance generated for each story via epic-tech-context and st
 
 ---
 
-## Agents & Roles
+## Agents and Roles
 
 ### PM (Product Manager)
 
@@ -153,11 +147,11 @@ Agent that initializes workflows, conducts research, creates product briefs, and
 
 ### Architect
 
-Agent that designs system architecture, creates architecture documents, performs technical reviews, and validates designs. Primary agent for Phase 3.
+Agent that designs system architecture, creates architecture documents, performs technical reviews, and validates designs. Primary agent for Phase 3 solutioning.
 
 ### SM (Scrum Master)
 
-Agent that manages sprints, creates stories, generates contexts, and coordinates implementation. Primary orchestrator for Phase 4.
+Agent that manages sprints, creates stories, generates contexts, and coordinates implementation. Primary orchestrator for Phase 4 implementation.
 
 ### DEV (Developer)
 
@@ -167,9 +161,9 @@ Agent that implements stories, writes code, runs tests, and performs code review
 
 Agent responsible for test strategy, quality gates, NFR assessment, and comprehensive quality assurance. Integrates throughout all phases.
 
-### Paige (Documentation Guide)
+### Technical Writer
 
-Agent specialized in creating and maintaining high-quality technical documentation. Expert in documentation standards, information architecture, and professional technical writing.
+Agent specialized in creating and maintaining high-quality technical documentation. Expert in documentation standards, information architecture, and professional technical writing. The agent's internal name is "paige" but is presented as "Technical Writer" to users.
 
 ### UX Designer
 
@@ -189,11 +183,11 @@ Multi-agent collaboration feature where all installed agents (19+ from BMM, CIS,
 
 ---
 
-## Status & Tracking
+## Status and Tracking
 
-### bmm-workflow-status.md
+### bmm-workflow-status.yaml
 
-**Phases 0-3.** Tracking file that shows current phase, completed workflows, progress, and next recommended actions. Created by workflow-init, updated automatically.
+**Phases 1-3.** Tracking file that shows current phase, completed workflows, progress, and next recommended actions. Created by workflow-init, updated automatically.
 
 ### sprint-status.yaml
 
@@ -269,7 +263,7 @@ Workflow that initializes Phase 4 implementation by creating sprint-status.yaml,
 
 ### Gate Check
 
-Validation workflow (solutioning-gate-check) run before Phase 4 to ensure PRD, architecture, and UX documents are cohesive with no gaps or contradictions. Required for Level 3-4.
+Validation workflow (solutioning-gate-check) run before Phase 4 to ensure PRD, architecture, and UX documents are cohesive with no gaps or contradictions. Required for BMad Method and Enterprise Method tracks.
 
 ### DoD (Definition of Done)
 
@@ -289,11 +283,11 @@ Universal entry point workflow that checks for existing status file, displays cu
 
 ### Workflow Init
 
-Initialization workflow that creates bmm-workflow-status.md, detects greenfield vs brownfield, determines complexity level, and sets up appropriate workflow path.
+Initialization workflow that creates bmm-workflow-status.yaml, detects greenfield vs brownfield, determines planning track, and sets up appropriate workflow path.
 
-### Level Detection
+### Track Selection
 
-Automatic analysis by workflow-init that uses keyword analysis, story count estimation, and complexity indicators to suggest appropriate level (0-4). User can override suggested level.
+Automatic analysis by workflow-init that uses keyword analysis, complexity indicators, and project requirements to suggest appropriate track (Quick Flow, BMad Method, or Enterprise Method). User can override suggested track.
 
 ### Correct Course
 
@@ -305,7 +299,7 @@ Plan for handling changes to existing data, schemas, APIs, or patterns during br
 
 ### Feature Flags
 
-Implementation technique for brownfield projects that allows gradual rollout of new functionality, easy rollback, and A/B testing. Recommended for Level 2+ brownfield changes.
+Implementation technique for brownfield projects that allows gradual rollout of new functionality, easy rollback, and A/B testing. Recommended for BMad Method and Enterprise brownfield changes.
 
 ### Integration Points
 
@@ -320,8 +314,8 @@ Quick Spec Flow feature that automatically detects existing code style, naming c
 ## Related Documentation
 
 - [Quick Start Guide](./quick-start.md) - Learn BMM basics
-- [Scale Adaptive System](./scale-adaptive-system.md) - Deep dive on levels and complexity
+- [Scale Adaptive System](./scale-adaptive-system.md) - Deep dive on tracks and complexity
 - [Brownfield Guide](./brownfield-guide.md) - Working with existing codebases
-- [Quick Spec Flow](./quick-spec-flow.md) - Fast-track for Level 0-1
+- [Quick Spec Flow](./quick-spec-flow.md) - Fast-track for Quick Flow track
 - [FAQ](./faq.md) - Common questions
 - [Troubleshooting](./troubleshooting.md) - Problem resolution

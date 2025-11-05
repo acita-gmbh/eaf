@@ -1,5 +1,5 @@
-# Technical Specification Workflow (Level 0)
-name: tech-spec-sm
+# Technical Specification
+name: tech-spec
 description: "Technical specification workflow for Level 0 projects (single atomic changes). Creates focused tech spec for bug fixes, single endpoint additions, or small isolated changes. Tech-spec only - no PRD needed."
 author: "BMad"
 

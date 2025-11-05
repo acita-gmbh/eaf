@@ -8,11 +8,11 @@ Quick answers to common questions about the BMad Method Module.
 
 - [Getting Started](#getting-started)
 - [Choosing the Right Level](#choosing-the-right-level)
-- [Workflows & Phases](#workflows--phases)
+- [Workflows and Phases](#workflows-and-phases)
 - [Planning Documents](#planning-documents)
 - [Implementation](#implementation)
 - [Brownfield Development](#brownfield-development)
-- [Tools & Technical](#tools--technical)
+- [Tools and Technical](#tools-and-technical)
 
 ---
 
@@ -26,7 +26,7 @@ Quick answers to common questions about the BMad Method Module.
 - Creates the tracking status file
 - Routes you to the correct starting workflow
 
-For experienced users: use the [Quick Reference](./quick-start.md#quick-reference-agent--document-mapping) to go directly to the right agent/workflow.
+For experienced users: use the [Quick Reference](./quick-start.md#quick-reference-agent-document-mapping) to go directly to the right agent/workflow.
 
 ### Q: Why do I need fresh chats for each workflow?
 
@@ -90,7 +90,7 @@ When in doubt, start smaller. You can always run create-prd later if needed.
 
 ### Q: Do I always need architecture for Level 2?
 
-**A:** No, architecture is **optional** for Level 2. Only create architecture if you need system-level design. Many Level 2 projects work fine with just PRD + epic-tech-specs created during implementation.
+**A:** No, architecture is **optional** for Level 2. Only create architecture if you need system-level design. Many Level 2 projects work fine with just PRD + epic-tech-context created during implementation.
 
 ### Q: What's the difference between Level 1 and Level 2?
 
@@ -108,7 +108,7 @@ The overlap (5-10 stories) is intentional. Choose based on:
 
 ---
 
-## Workflows & Phases
+## Workflows and Phases
 
 ### Q: What's the difference between workflow-status and workflow-init?
 
@@ -162,14 +162,14 @@ If status file exists, use workflow-status. If not, use workflow-init.
 
 ## Planning Documents
 
-### Q: What's the difference between tech-spec and epic-tech-spec?
+### Q: What's the difference between tech-spec and epic-tech-context?
 
 **A:**
 
 - **Tech-spec (Level 0-1):** Created upfront in Planning Phase, serves as primary/only planning document, a combination of enough technical and planning information to drive a single or multiple files
-- **Epic-tech-spec (Level 2-4):** Created during Implementation Phase per epic, supplements PRD + Architecture
+- **Epic-tech-context (Level 2-4):** Created during Implementation Phase per epic, supplements PRD + Architecture
 
-Think of it as: tech-spec is for small projects (replaces PRD and architecture), epic-tech-spec is for large projects (supplements PRD).
+Think of it as: tech-spec is for small projects (replaces PRD and architecture), epic-tech-context is for large projects (supplements PRD).
 
 ### Q: Why no tech-spec at Level 2+?
 
@@ -177,13 +177,13 @@ Think of it as: tech-spec is for small projects (replaces PRD and architecture),
 
 - PRD (product vision, requirements, epics)
 - Architecture (system design)
-- Epic-tech-specs (detailed implementation per epic, created just-in-time)
+- Epic-tech-context (detailed implementation per epic, created just-in-time)
 
-### Q: When do I create epic-tech-specs?
+### Q: When do I create epic-tech-context?
 
-**A:** In Phase 4, right before implementing each epic. Don't create all epic-tech-specs upfront - that's over-planning. Create them just-in-time using the epic-tech-context workflow as you're about to start working on that epic.
+**A:** In Phase 4, right before implementing each epic. Don't create all epic-tech-context upfront - that's over-planning. Create them just-in-time using the epic-tech-context workflow as you're about to start working on that epic.
 
-**Why just-in-time?** You'll learn from earlier epics, and those learnings improve later epic-tech-specs.
+**Why just-in-time?** You'll learn from earlier epics, and those learnings improve later epic-tech-context.
 
 ### Q: Do I need a PRD for a bug fix?
 
@@ -270,7 +270,7 @@ The story-done workflow is faster and ensures proper status file updates.
 - What went well
 - What could improve
 - Technical insights
-- Input for next epic-tech-spec
+- Input for next epic-tech-context
 
 Don't wait until project end - run after each epic for continuous improvement.
 
@@ -339,7 +339,7 @@ BMM respects your choice - it won't force modernization, but it will offer it.
 
 ---
 
-## Tools & Technical
+## Tools and Technical
 
 ### Q: Why are my Mermaid diagrams not rendering?
 
@@ -399,7 +399,7 @@ Use them together for best results.
 
 **Why model quality matters:** BMM workflows require LLMs that can follow multi-step processes, maintain context across phases, and implement code that adheres to specifications. Tools with weaker models will struggle with workflow adherence and code quality.
 
-See [IDE Setup Guides](../../../docs/ide-info/) for configuration specifics.
+See [IDE Setup Guides](https://github.com/bmad-code-org/BMAD-METHOD/tree/main/docs/ide-info) for configuration specifics.
 
 ### Q: Can I customize agents?
 
@@ -520,7 +520,7 @@ Trust your expertise - BMM supports your decisions.
 
 **How it works:**
 
-1. Load BMad Master → `*party-mode`
+1. Run `/bmad:core:workflows:party-mode` (or `*party-mode` from any agent)
 2. Introduce your topic
 3. BMad Master selects 2-3 most relevant agents per message
 4. Agents cross-talk, debate, and build on each other's ideas

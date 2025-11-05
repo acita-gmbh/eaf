@@ -234,20 +234,21 @@
 - [ ] Dependencies on external systems documented
 - [ ] Data requirements specified
 
-### Level-Appropriate Detail
+### Track-Appropriate Detail
 
-**If Level 2:**
-
-- [ ] PRD supports lightweight tech-spec workflow
-- [ ] 5-15 story scope reasonable for project size
-- [ ] Complexity appropriate for small team/solo dev
-
-**If Level 3-4:**
+**If BMad Method:**
 
 - [ ] PRD supports full architecture workflow
 - [ ] Epic structure supports phased delivery
-- [ ] Scope appropriate for team-based development
+- [ ] Scope appropriate for product/platform development
 - [ ] Clear value delivery through epic sequence
+
+**If Enterprise Method:**
+
+- [ ] PRD addresses enterprise requirements (security, compliance, multi-tenancy)
+- [ ] Epic structure supports extended planning phases
+- [ ] Scope includes security, devops, and test strategy considerations
+- [ ] Clear value delivery with enterprise gates
 
 ---
 

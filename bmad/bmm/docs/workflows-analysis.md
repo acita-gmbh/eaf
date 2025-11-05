@@ -1,7 +1,5 @@
 # BMM Analysis Workflows (Phase 1)
 
-**Reading Time:** ~12 minutes
-
 ## Overview
 
 Phase 1 (Analysis) workflows are **optional** exploration and discovery tools that help you understand your project space before committing to detailed planning. These workflows facilitate creative thinking, market validation, and strategic alignment.
@@ -17,17 +15,61 @@ Phase 1 (Analysis) workflows are **optional** exploration and discovery tools th
 
 - Continuing an existing project with clear requirements
 - Working on well-defined features with known solutions
-- Operating under strict time constraints where discovery is complete
+- Working under strict constraints where discovery is complete
+
+---
+
+## Phase 1 Workflow Map
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','fontSize':'16px','fontFamily':'arial'}}}%%
+graph TB
+    subgraph Creative["<b>CREATIVE EXPLORATION</b>"]
+        direction TB
+        BrainstormProject["<b>Analyst: brainstorm-project</b><br/>Multi-track solution exploration"]
+        BrainstormGame["<b>Analyst: brainstorm-game</b><br/>Game concept generation"]
+    end
+
+    subgraph Strategic["<b>STRATEGIC PLANNING</b>"]
+        direction TB
+        ProductBrief["<b>Analyst: product-brief</b><br/>Product vision and strategy"]
+        GameBrief["<b>Game Designer: game-brief</b><br/>Game vision capture"]
+    end
+
+    subgraph Research["<b>RESEARCH AND INVESTIGATION</b>"]
+        direction TB
+        ResearchWF["<b>Analyst: research</b><br/>Market, technical, competitive analysis"]
+    end
+
+    Creative -.->|Software projects| ProductBrief
+    Creative -.->|Game projects| GameBrief
+    BrainstormProject -.->|May inform| ResearchWF
+    BrainstormGame -.->|May inform| ResearchWF
+    ResearchWF -.->|Feeds into| ProductBrief
+    ResearchWF -.->|Feeds into| GameBrief
+
+    style Creative fill:#e1f5fe,stroke:#01579b,stroke-width:3px,color:#000
+    style Strategic fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#000
+    style Research fill:#fff9c4,stroke:#f57f17,stroke-width:3px,color:#000
+
+    style BrainstormProject fill:#81d4fa,stroke:#0277bd,stroke-width:2px,color:#000
+    style BrainstormGame fill:#81d4fa,stroke:#0277bd,stroke-width:2px,color:#000
+    style ProductBrief fill:#ce93d8,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style GameBrief fill:#ce93d8,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style ResearchWF fill:#fff59d,stroke:#f57f17,stroke-width:2px,color:#000
+```
+
+---
 
 ## Quick Reference
 
-| Workflow           | Agent   | Duration  | Required    | Purpose                                                     |
-| ------------------ | ------- | --------- | ----------- | ----------------------------------------------------------- |
-| brainstorm-project | Analyst | 30-60 min | No          | Explore solution approaches and architectures               |
-| brainstorm-game    | Analyst | 45-90 min | No          | Generate game concepts using creative techniques            |
-| product-brief      | PM      | 60-90 min | Recommended | Define product vision and strategy                          |
-| game-brief         | PM      | 60-90 min | Recommended | Capture game vision before GDD                              |
-| research           | Analyst | Varies    | No          | Multi-type research system (market, technical, competitive) |
+| Workflow           | Agent         | Required    | Purpose                                                     |
+| ------------------ | ------------- | ----------- | ----------------------------------------------------------- |
+| brainstorm-project | Analyst       | No          | Explore solution approaches and architectures               |
+| brainstorm-game    | Analyst       | No          | Generate game concepts using creative techniques            |
+| product-brief      | Analyst       | Recommended | Define product vision and strategy                          |
+| game-brief         | Game Designer | Recommended | Capture game vision before GDD                              |
+| research           | Analyst       | No          | Multi-type research system (market, technical, competitive) |
 
 ---
 
@@ -40,7 +82,6 @@ Generate multiple solution approaches for software projects through parallel ide
 **Agent:** Analyst
 **Phase:** 1 (Analysis)
 **Required:** No
-**Typical Duration:** 30-60 minutes
 
 ### When to Use
 
@@ -125,7 +166,6 @@ Generate and refine game concepts through systematic creative exploration using 
 **Agent:** Analyst
 **Phase:** 1 (Analysis)
 **Required:** No
-**Typical Duration:** 45-90 minutes
 
 ### When to Use
 
@@ -196,10 +236,9 @@ Each method generates distinct artifacts that are then evaluated against design 
 
 Interactive product brief creation that guides users through defining their product vision with multiple input sources and conversational collaboration.
 
-**Agent:** PM
+**Agent:** Analyst
 **Phase:** 1 (Analysis)
 **Required:** Recommended (skip only if PRD already exists)
-**Typical Duration:** 60-90 minutes (Interactive), 20-30 minutes (YOLO)
 
 ### When to Use
 
@@ -222,13 +261,13 @@ Interactive product brief creation that guides users through defining their prod
 - Step-by-step collaborative development
 - Probing questions to refine thinking
 - Deep exploration of problem/solution fit
-- 60-90 minutes with high-quality output
+- High-quality output with thorough exploration
 
 **YOLO Mode**:
 
 - AI generates complete draft from initial context
 - User reviews and refines sections iteratively
-- 20-30 minutes for rapid draft
+- Faster for rapid draft generation
 - Best for time-constrained situations or when you have clear vision
 
 ### Process Overview
@@ -317,10 +356,9 @@ Interactive product brief creation that guides users through defining their prod
 
 Lightweight, interactive brainstorming and planning session that captures game vision before diving into detailed Game Design Documents.
 
-**Agent:** PM
+**Agent:** Game Designer
 **Phase:** 1 (Analysis)
 **Required:** Recommended for game projects
-**Typical Duration:** 60-90 minutes
 
 ### When to Use
 
@@ -338,15 +376,14 @@ Lightweight, interactive brainstorming and planning session that captures game v
 
 ### Comparison: Game Brief vs GDD
 
-| Aspect          | Game Brief                  | GDD                       |
-| --------------- | --------------------------- | ------------------------- |
-| Purpose         | Validate concept            | Design for implementation |
-| Detail Level    | High-level vision           | Detailed specifications   |
-| Time Investment | 1-2 hours                   | 4-10 hours                |
-| Audience        | Self, team, stakeholders    | Development team          |
-| Scope           | Concept validation          | Implementation roadmap    |
-| Format          | Conversational, exploratory | Structured, comprehensive |
-| Output          | 3-5 pages                   | 10-30+ pages              |
+| Aspect       | Game Brief                  | GDD                       |
+| ------------ | --------------------------- | ------------------------- |
+| Purpose      | Validate concept            | Design for implementation |
+| Detail Level | High-level vision           | Detailed specifications   |
+| Audience     | Self, team, stakeholders    | Development team          |
+| Scope        | Concept validation          | Implementation roadmap    |
+| Format       | Conversational, exploratory | Structured, comprehensive |
+| Output       | Concise vision document     | Comprehensive design doc  |
 
 ### Comparison: Game Brief vs Product Brief
 
@@ -441,7 +478,6 @@ Comprehensive, adaptive multi-type research system that consolidates various res
 **Agent:** Analyst
 **Phase:** 1 (Analysis)
 **Required:** No
-**Typical Duration:** Varies by type (Quick: 30-60 min, Standard: 2-4 hours, Comprehensive: 4-8 hours)
 
 ### Research Types
 

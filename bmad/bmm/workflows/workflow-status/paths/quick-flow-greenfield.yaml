@@ -1,30 +1,31 @@
-# Greenfield Level 1 - Small Feature
-# Coherent feature with 2-3 stories in a single epic
+# BMad Quick Flow - Greenfield
+# Fast implementation path with tech-spec planning (1-15 stories typically)
 
-project_type: "software"
-level: 1
+method_name: "BMad Quick Flow"
+track: "quick-flow"
 field_type: "greenfield"
-description: "Small coherent feature - 2-3 stories, single epic"
+description: "Fast tech-spec based implementation for greenfield projects"
 
 phases:
-  - phase: 1
-    name: "Analysis"
+  - phase: 0
+    name: "Discovery (Optional)"
     optional: true
+    note: "User-selected during workflow-init"
     workflows:
       - id: "brainstorm-project"
         optional: true
         agent: "analyst"
         command: "brainstorm-project"
+        included_by: "user_choice"
+
       - id: "research"
         optional: true
         agent: "analyst"
         command: "research"
-      - id: "product-brief"
-        optional: true
-        agent: "analyst"
-        command: "product-brief"
+        included_by: "user_choice"
+        note: "Can have multiple research workflows"
 
-  - phase: 2
+  - phase: 1
     name: "Planning"
     required: true
     workflows:
@@ -32,13 +33,10 @@ phases:
         required: true
         agent: "pm"
         command: "tech-spec"
-        output: "Creates Technical Specification with an epic and 2-3 story files"
+        output: "Technical Specification with stories (auto-detects epic if 2+ stories)"
+        note: "Quick Spec Flow - implementation-focused planning"
 
-  - phase: 3
-    name: "Solutioning"
-    skip: true
-
-  - phase: 4
+  - phase: 2
     name: "Implementation"
     required: true
     workflows:

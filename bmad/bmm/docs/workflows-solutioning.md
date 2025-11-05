@@ -1,19 +1,56 @@
 # BMM Solutioning Workflows (Phase 3)
 
-**Reading Time:** ~8 minutes
-
 ## Overview
 
 Phase 3 (Solutioning) workflows translate **what** to build (from Planning) into **how** to build it (technical design). This phase is **required for Levels 3-4** and **optional for Level 2** projects.
 
 **Key principle:** Prevent agent conflicts by making architectural decisions explicit and documented before implementation begins.
 
+---
+
+## Phase 3 Solutioning Flow
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','fontSize':'16px','fontFamily':'arial'}}}%%
+graph TB
+    FromPRD["<b>FROM Phase 2</b><br/>PRD/GDD/Narrative/UX complete"]
+
+    subgraph Solutioning["<b>PHASE 3: SOLUTIONING</b>"]
+        direction TB
+        Architecture["<b>Architect: architecture</b><br/>Technical design and decisions"]
+        GateCheck["<b>Architect: solutioning-gate-check</b><br/>Validation before implementation"]
+    end
+
+    subgraph Optional["<b>OPTIONAL PATHS</b>"]
+        direction LR
+        Level2Skip["<b>Level 2:</b><br/>Skip if straightforward"]
+    end
+
+    FromPRD --> Architecture
+    Architecture --> GateCheck
+    GateCheck -->|PASS| Phase4["<b>Phase 4: Implementation</b>"]
+    GateCheck -->|CONCERNS/FAIL| Architecture
+    FromPRD -.->|Level 2 only| Level2Skip
+    Level2Skip -.-> Phase4
+
+    style FromPRD fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style Solutioning fill:#90caf9,stroke:#0d47a1,stroke-width:3px,color:#000
+    style Optional fill:#fff9c4,stroke:#f57f17,stroke-width:3px,color:#000
+    style Phase4 fill:#ffcc80,stroke:#e65100,stroke-width:2px,color:#000
+
+    style Architecture fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style GateCheck fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style Level2Skip fill:#fff59d,stroke:#f57f17,stroke-width:2px,color:#000
+```
+
+---
+
 ## Quick Reference
 
-| Workflow                   | Project Levels | Duration  | Purpose                                     |
-| -------------------------- | -------------- | --------- | ------------------------------------------- |
-| **architecture**           | 2-4            | 2-6 hours | Technical architecture and design decisions |
-| **solutioning-gate-check** | 3-4            | 15-30 min | Validate planning/solutioning completeness  |
+| Workflow                   | Project Levels | Purpose                                     |
+| -------------------------- | -------------- | ------------------------------------------- |
+| **architecture**           | 2-4            | Technical architecture and design decisions |
+| **solutioning-gate-check** | 3-4            | Validate planning/solutioning completeness  |
 
 **When to Skip Solutioning:**
 
@@ -70,7 +107,7 @@ Phase 3 (Solutioning) workflows translate **what** to build (from Planning) into
 **Level 3-4 (Required Solutioning):**
 
 - Planning: Standard/Comprehensive PRD
-- Solutioning: **Required** architecture + epic tech-spec
+- Solutioning: **Required** architecture + epic-tech-context
 - Gate Check: **Required** solutioning-gate-check
 - Implementation: dev-story guided by architecture
 
@@ -86,11 +123,6 @@ Collaborative architectural decision facilitation that produces a decision-focus
 **Phase:** 3 (Solutioning)
 **Project Levels:** 2-4
 **Required:** Level 3-4, Optional Level 2
-**Typical Duration:**
-
-- Level 2: 1-2 hours (Simple architecture)
-- Level 3: 2-4 hours (Standard architecture)
-- Level 4: 4-8 hours (Complex architecture with ADRs)
 
 ### When to Use
 
@@ -341,7 +373,6 @@ Systematically validate that all planning and solutioning phases are complete an
 **Phase:** 3 (Solutioning)
 **Project Levels:** 3-4
 **Required:** Level 3-4 only
-**Typical Duration:** 15-30 minutes
 
 ### When to Use
 
@@ -544,21 +575,20 @@ Optional:
 
 1. **Critical**: Architecture missing security architecture section
    - **Impact**: Epic 1 (Auth) and Epic 4 (Checkout) lack security guidance
-   - **Recommendation**: Complete security architecture (2 hours)
+   - **Recommendation**: Complete security architecture
 
 2. **High**: Payment gateway not selected
    - **Impact**: Epic 4 (Checkout) cannot proceed
-   - **Recommendation**: Add ADR for payment gateway selection (1 hour)
+   - **Recommendation**: Add ADR for payment gateway selection
 
 3. **Medium**: Epic 2, Story 3 too large
    - **Impact**: Risk of story scope creep
-   - **Recommendation**: Split into 2 stories (30 min)
+   - **Recommendation**: Split into 2 stories
 
 **Gate Decision:** CONCERNS ⚠️
 
 - **Rationale**: Critical and high gaps block Epic 1 and Epic 4
 - **Action**: Resolve gaps #1 and #2 before starting implementation
-- **Timeline**: Address in 3 hours, then re-run gate check
 
 **Next Steps:**
 

@@ -34,7 +34,7 @@ bmm/
 
 ### Agent Roster
 
-**Core Development:** PM, Analyst, Architect, SM, DEV, TEA, UX Designer, Paige
+**Core Development:** PM, Analyst, Architect, SM, DEV, TEA, UX Designer, Technical Writer
 **Game Development:** Game Designer, Game Developer, Game Architect
 **Orchestration:** BMad Master (from Core)
 
