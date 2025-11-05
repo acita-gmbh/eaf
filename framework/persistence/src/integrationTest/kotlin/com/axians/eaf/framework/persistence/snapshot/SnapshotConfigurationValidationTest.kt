@@ -46,12 +46,10 @@ class SnapshotConfigurationValidationTest : FunSpec() {
         extension(SpringExtension())
 
         test("AC1: SnapshotTriggerDefinition bean is configured") {
-            snapshotTriggerDefinition shouldNotBe null
             snapshotTriggerDefinition.shouldBeInstanceOf<SnapshotTriggerDefinition>()
         }
 
         test("AC2: Snapshotter bean is configured") {
-            snapshotter shouldNotBe null
             snapshotter.shouldBeInstanceOf<Snapshotter>()
         }
 
@@ -86,8 +84,8 @@ class SnapshotConfigurationValidationTest : FunSpec() {
         test("Configuration: Snapshotter and SnapshotTriggerDefinition can work together") {
             // Smoke test: Verify beans are wired correctly
             // Full functional testing with 250+ events will be done in Story 2.5 (Widget Aggregate)
-            snapshotTriggerDefinition shouldNotBe null
-            snapshotter shouldNotBe null
+            snapshotTriggerDefinition.shouldBeInstanceOf<SnapshotTriggerDefinition>()
+            snapshotter.shouldBeInstanceOf<Snapshotter>()
         }
     }
 
@@ -97,6 +95,7 @@ class SnapshotConfigurationValidationTest : FunSpec() {
     class TestConfiguration
 
     companion object {
+        // Testcontainers automatically handles cleanup on JVM shutdown
         private val postgresContainer =
             PostgreSQLContainer(
                 DockerImageName.parse("postgres:16.10"),

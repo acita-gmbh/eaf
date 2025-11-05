@@ -110,7 +110,7 @@ Snapshot functionality is validated through:
 - **Architecture:** Section 7.3 (Snapshot Strategy)
 - **PRD:** FR003 (Event Store Performance)
 - **Tech Spec:** Epic 2 - Story 2.4
-- **Axon Docs:** https://docs.axoniq.io/axon-framework-reference/4.11/tuning/event-snapshots/
+- **Axon Docs:** [Event Snapshots](https://docs.axoniq.io/axon-framework-reference/4.11/tuning/event-snapshots/)
 
 ---
 
