@@ -1,0 +1,63 @@
+# Event Store Partitioning & Optimization
+
+Story 2.3 introduces time-based partitioning, BRIN indexing, and performance validation for the Axon event store. This document captures the implementation details, operational guidance, and test evidence for the optimization work delivered on 2025‑11‑05.
+
+## Migration Summary
+
+- **V002__partitioning_setup.sql**
+  - Converts `DomainEventEntry` into a declaratively partitioned table using monthly range partitions keyed on the ISO‑8601 `timeStamp` column.
+  - Creates a default catch-all partition plus rolling partitions for the current month and next three months (e.g., `DomainEventEntry_2025_11`).
+  - Preserves existing data by migrating from the legacy table and realigning the identity sequence.
+- **V003__brin_indexes.sql**
+  - Adds BRIN indexes on `timeStamp` and `aggregateIdentifier` to shrink index size while supporting range scans and aggregate lookups after partitioning.
+
+## Runtime Partitioning Strategy
+
+- Partition names follow the pattern `DomainEventEntry_YYYY_MM`.
+- Range boundaries are stored as ISO strings (`YYYY-MM-01T00:00:00Z`) to maintain lexical ordering without changing Axon’s schema.
+- Constraints now include the partition key to satisfy PostgreSQL requirements:
+  - `PRIMARY KEY (timeStamp, globalIndex)`
+  - `UNIQUE (eventIdentifier, timeStamp)`
+  - `UNIQUE (aggregateIdentifier, sequenceNumber, timeStamp)`
+
+## Maintenance Script
+
+`scripts/create-event-store-partition.sh` provisions future partitions.
+
+```
+Usage: create-event-store-partition.sh [options]
+  --month YYYY-MM      Target month (default: next month UTC)
+  --host HOST          Defaults to localhost
+  --port PORT          Defaults to 5432
+  --user USER          Defaults to eaf_user
+  --dbname NAME        Defaults to eaf
+  --schema SCHEMA      Defaults to public
+  --table NAME         Defaults to domainevententry
+```
+
+The script calculates the next month’s range (`YYYY-MM-01T00:00:00Z` → next month) and issues a `CREATE TABLE IF NOT EXISTS … PARTITION OF …` command. Environment variables (`DB_HOST`, `DB_NAME`, etc.) can be used for CI/CD automation.
+
+## Performance Validation
+
+`EventStorePartitioningPerformanceTest` seeds 100 000 events (100 aggregates × 1 000 events) and measures aggregate replay time through `JdbcEventStorageEngine`.
+
+- Latest run: **23 ms** aggregate replay for 1 000 events (`framework/persistence/build/test-results/integrationTest/…EventStorePartitioningPerformanceTest.xml`).
+- The test enforces `<200 ms` and fails if the threshold is breached, providing continuous regression protection.
+
+## Partition Routing Test
+
+`Events route to correct monthly partition` verifies that inserts targeting consecutive months land in:
+
+```
+SELECT tableoid::regclass::text
+FROM domainevententry
+WHERE aggregateidentifier = ?
+```
+
+The test normalizes the identifier casing and asserts that rows reside in `DomainEventEntry_YYYY_MM`.
+
+## Operational Notes
+
+- BRIN indexes should be re-analyzed after large backfills: `ANALYZE DomainEventEntry;`.
+- If historical partitions are required, rerun the maintenance script with `--month` to generate the needed range.
+- Axon Server connectivity warnings are expected in local integration tests; the persistence module operates fully with PostgreSQL/Testcontainers.
