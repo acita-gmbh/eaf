@@ -93,11 +93,12 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 read -r PARTITION_NAME START_DATE END_DATE <<EOF
-$(python3 - <<'PY' "$MONTH_SPEC"
+$(python3 - <<'PY' "$MONTH_SPEC" "$TABLE"
 from datetime import datetime, timezone
 import sys
 
 month_spec = sys.argv[1]
+table_name = sys.argv[2]
 now = datetime.now(timezone.utc)
 
 if month_spec:
@@ -123,7 +124,7 @@ end = datetime(end_year, end_month, 1, tzinfo=timezone.utc)
 
 partition_suffix = start.strftime("%Y_%m")
 
-print(f"domainevententry_{partition_suffix} {start.strftime('%Y-%m-%d')}T00:00:00Z {end.strftime('%Y-%m-%d')}T00:00:00Z")
+print(f"{table_name}_{partition_suffix} {start.strftime('%Y-%m-%d')}T00:00:00Z {end.strftime('%Y-%m-%d')}T00:00:00Z")
 PY)
 EOF
 

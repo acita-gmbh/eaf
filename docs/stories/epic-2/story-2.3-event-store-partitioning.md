@@ -195,10 +195,10 @@ EOF
 
 - review
 
-## Senior Developer Review (AI)
+## Senior Developer Review (AI) — Round 1: Blocked
 
-**Reviewer:** Wall-E  
-**Date:** 2025-11-05  
+**Reviewer:** Wall-E
+**Date:** 2025-11-05
 **Outcome:** **Blocked** – partition migration drops mandatory uniqueness guarantees and removes the per-aggregate replay index, so the story cannot proceed until data integrity and performance safeguards are restored.
 
 ### Summary
@@ -264,10 +264,10 @@ Completed claims with ❌ require correction.
 
 ---
 
-## Senior Developer Review (AI)
+## Senior Developer Review (AI) — Round 2: Approved
 
-**Reviewer:** Wall-E  
-**Date:** 2025-11-05  
+**Reviewer:** Wall-E
+**Date:** 2025-11-05
 **Outcome:** **Approve** – Partitionierung, Integritätssicherung und Tooling erfüllen jetzt die Vorgaben.
 
 ### Summary

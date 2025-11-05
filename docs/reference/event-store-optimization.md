@@ -1,11 +1,11 @@
 # Event Store Partitioning & Optimization
 
-Story 2.3 introduces time-based partitioning, BRIN indexing, and performance validation for the Axon event store. This document captures the implementation details, operational guidance, and test evidence for the optimization work delivered on 2025‑11‑05.
+Story 2.3 introduces time-based partitioning, BRIN indexing, and performance validation for the Axon event store. This document captures the implementation details, operational guidance, and test evidence for the optimization work delivered on 2025-11-05.
 
 ## Migration Summary
 
 - **V002__partitioning_setup.sql**
-  - Converts `DomainEventEntry` into a declaratively partitioned table using monthly range partitions keyed on the ISO‑8601 `timeStamp` column.
+  - Converts `DomainEventEntry` into a declaratively partitioned table using monthly range partitions keyed on the ISO-8601 `timeStamp` column.
   - Creates a default catch-all partition plus rolling partitions for the current month and next three months (e.g., `DomainEventEntry_2025_11`).
   - Preserves existing data by migrating from the legacy table and realigning the identity sequence.
   - Reintroduces Axon’s original integrity guarantees via lightweight lookup indexes plus triggers that reject duplicate `eventIdentifier` or `(aggregateIdentifier, sequenceNumber)` pairs across all partitions.

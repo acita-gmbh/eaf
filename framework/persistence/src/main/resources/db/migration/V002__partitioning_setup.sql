@@ -32,8 +32,8 @@ BEGIN
     INTO seq_name;
 
     IF seq_name IS NOT NULL THEN
-        seq_schema := split_part(seq_name, '.', 1);
-        seq_local_name := split_part(seq_name, '.', 2);
+        seq_schema := COALESCE(NULLIF(split_part(seq_name, '.', 1), seq_name), 'public');
+        seq_local_name := COALESCE(NULLIF(split_part(seq_name, '.', 2), ''), seq_name);
 
         EXECUTE format(
             'ALTER SEQUENCE %I.%I RENAME TO %I',

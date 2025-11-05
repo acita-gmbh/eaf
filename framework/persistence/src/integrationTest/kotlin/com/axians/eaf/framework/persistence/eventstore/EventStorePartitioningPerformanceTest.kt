@@ -5,6 +5,7 @@ import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.axonframework.eventhandling.DomainEventMessage
 import org.axonframework.eventhandling.GenericDomainEventMessage
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
@@ -69,6 +70,104 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
 
             partitions.isEmpty() shouldBe false
             partitions.count { it.startsWith("domainevententry_") } shouldBeGreaterThan 0
+        }
+
+        test("BRIN indexes exist on DomainEventEntry") {
+            val indexes =
+                jdbcTemplate.queryForList(
+                    """
+                    SELECT indexname, indexdef
+                    FROM pg_indexes
+                    WHERE tablename = 'domainevententry'
+                    AND indexdef LIKE '%USING brin%'
+                    ORDER BY indexname
+                    """.trimIndent(),
+                )
+
+            // Verify BRIN indexes exist
+            indexes.size shouldBeGreaterThan 0
+
+            val indexNames = indexes.map { (it["indexname"] as String).lowercase() }
+            indexNames.any { it.contains("timestamp") && it.contains("brin") } shouldBe true
+            indexNames.any { it.contains("aggregate") && it.contains("brin") } shouldBe true
+        }
+
+        test("B-tree index exists for aggregate replay") {
+            val indexes =
+                jdbcTemplate.queryForList(
+                    """
+                    SELECT indexname, indexdef
+                    FROM pg_indexes
+                    WHERE tablename = 'domainevententry'
+                    AND indexdef LIKE '%aggregateidentifier%'
+                    AND indexdef LIKE '%sequencenumber%'
+                    AND indexdef NOT LIKE '%USING brin%'
+                    ORDER BY indexname
+                    """.trimIndent(),
+                )
+
+            // Verify B-tree index for (aggregateIdentifier, sequenceNumber) exists
+            indexes.size shouldBeGreaterThan 0
+        }
+
+        test("Uniqueness constraint prevents duplicate eventIdentifier") {
+            truncateEvents()
+
+            val aggregateId = "uniqueness-test-event"
+            val eventId = UUID.randomUUID().toString()
+            val timestamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
+
+            // Insert first event
+            insertEventDirect(
+                aggregateId = aggregateId,
+                sequence = 0L,
+                timestamp = Instant.parse(timestamp),
+                eventIdentifier = eventId,
+            )
+
+            // Attempt to insert duplicate eventIdentifier (should fail)
+            val exception =
+                kotlin
+                    .runCatching {
+                        insertEventDirect(
+                            aggregateId = "different-aggregate",
+                            sequence = 0L,
+                            timestamp = Instant.parse(timestamp),
+                            eventIdentifier = eventId, // Same eventId
+                        )
+                    }.exceptionOrNull()
+
+            exception shouldNotBe null
+            (exception is org.springframework.dao.DataIntegrityViolationException) shouldBe true
+        }
+
+        test("Uniqueness constraint prevents duplicate (aggregateIdentifier, sequenceNumber)") {
+            truncateEvents()
+
+            val aggregateId = "uniqueness-test-sequence"
+            val timestamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
+
+            // Insert first event
+            insertEventDirect(
+                aggregateId = aggregateId,
+                sequence = 0L,
+                timestamp = Instant.parse(timestamp),
+            )
+
+            // Attempt to insert duplicate (aggregateId, sequence) (should fail)
+            val exception =
+                kotlin
+                    .runCatching {
+                        insertEventDirect(
+                            aggregateId = aggregateId,
+                            sequence = 0L, // Same aggregateId + sequence
+                            timestamp = Instant.parse(timestamp),
+                            eventIdentifier = UUID.randomUUID().toString(), // Different eventId
+                        )
+                    }.exceptionOrNull()
+
+            exception shouldNotBe null
+            (exception is org.springframework.dao.DataIntegrityViolationException) shouldBe true
         }
 
         test("Events route to correct monthly partition") {
@@ -182,6 +281,72 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
 
                 durationMillis shouldBeLessThan 200L
             }
+
+        test("Partition creation script creates new monthly partition") {
+            val futureMonth = LocalDate.now(ZoneOffset.UTC).plusMonths(6)
+            val monthSpec = futureMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+            val partitionSuffix = futureMonth.format(DateTimeFormatter.ofPattern("yyyy_MM"))
+
+            // Execute partition creation script
+            val scriptPath = "../../scripts/create-event-store-partition.sh"
+            val result =
+                ProcessBuilder(
+                    "bash",
+                    scriptPath,
+                    "--month",
+                    monthSpec,
+                    "--host",
+                    postgresContainer.host,
+                    "--port",
+                    postgresContainer.getMappedPort(5432).toString(),
+                    "--user",
+                    postgresContainer.username,
+                    "--dbname",
+                    postgresContainer.databaseName,
+                ).apply {
+                    environment()["PGPASSWORD"] = postgresContainer.password
+                    redirectErrorStream(true)
+                }.start()
+                    .also { it.waitFor(30, java.util.concurrent.TimeUnit.SECONDS) }
+
+            result.exitValue() shouldBe 0
+
+            // Verify partition was created
+            val partitionName = "domainevententry_$partitionSuffix"
+            val partitionExists =
+                jdbcTemplate.queryForObject(
+                    """
+                    SELECT EXISTS(
+                        SELECT 1 FROM pg_class
+                        WHERE relname = ? AND relkind = 'r'
+                    )
+                    """.trimIndent(),
+                    Boolean::class.java,
+                    partitionName,
+                )
+
+            partitionExists shouldBe true
+
+            // Verify events can be inserted into new partition
+            val futureTimestamp = futureMonth.atStartOfDay().toInstant(ZoneOffset.UTC)
+            insertEventDirect(
+                aggregateId = "future-partition-test",
+                sequence = 0L,
+                timestamp = futureTimestamp,
+            )
+
+            val routedPartition =
+                jdbcTemplate.queryForObject(
+                    """
+                    SELECT tableoid::regclass::text
+                    FROM domainevententry
+                    WHERE aggregateidentifier = 'future-partition-test'
+                    """.trimIndent(),
+                    String::class.java,
+                )
+
+            requireNotNull(routedPartition).trim('"').lowercase() shouldBe partitionName
+        }
     }
 
     private fun truncateEvents() {
@@ -192,6 +357,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
         aggregateId: String,
         sequence: Long,
         timestamp: Instant,
+        eventIdentifier: String = UUID.randomUUID().toString(),
     ) {
         val sql =
             """
@@ -211,7 +377,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             ps.setString(1, aggregateId)
             ps.setLong(2, sequence)
             ps.setString(3, "PerformanceAggregate")
-            ps.setString(4, UUID.randomUUID().toString())
+            ps.setString(4, eventIdentifier)
             ps.setBytes(5, """{"sequence":$sequence}""".toByteArray())
             ps.setString(6, PerformanceEvent::class.qualifiedName)
             ps.setString(7, timestamp.atOffset(ZoneOffset.UTC).toString())
