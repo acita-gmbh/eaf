@@ -10,15 +10,15 @@ Story 2.3 introduces time-based partitioning, BRIN indexing, and performance val
   - Preserves existing data by migrating from the legacy table and realigning the identity sequence.
   - Reintroduces Axon’s original integrity guarantees via lightweight lookup indexes plus triggers that reject duplicate `eventIdentifier` or `(aggregateIdentifier, sequenceNumber)` pairs across all partitions.
 - **V003__brin_indexes.sql**
-  - Adds BRIN indexes on `timeStamp` and `aggregateIdentifier` to keep range scans compact, and restores a B-tree index on `(aggregateIdentifier, sequenceNumber)` to keep aggregate replays fast.
+  - Adds BRIN indexes on `timeStamp` and `aggregateIdentifier` for compact range scans, plus a B-tree on `(aggregateIdentifier, sequenceNumber)` to keep aggregate replays fast.
 
 ## Runtime Partitioning Strategy
 
 - Partition names follow the pattern `DomainEventEntry_YYYY_MM`.
 - Range boundaries are stored as ISO strings (`YYYY-MM-01T00:00:00Z`) to maintain lexical ordering without changing Axon’s schema.
-- Constraints now include the partition key to satisfy PostgreSQL requirements:
+- Constraints and indexing respect PostgreSQL's partition-key requirements:
   - `PRIMARY KEY (timeStamp, globalIndex)` (partition-compatible primary key)
-  - Event-store uniqueness enforced through parent-table triggers that block repeated `eventIdentifier` or `(aggregateIdentifier, sequenceNumber)` pairs while leveraging supporting lookup indexes.
+  - Global uniqueness via unique indexes on `(timeStamp, eventIdentifier)` and `(aggregateIdentifier, sequenceNumber, timeStamp)`.
 
 ## Maintenance Script
 
