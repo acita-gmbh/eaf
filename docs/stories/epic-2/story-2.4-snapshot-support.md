@@ -3,7 +3,7 @@
 **Story Context:** [2-4-snapshot-support.context.xml](2-4-snapshot-support.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** IN PROGRESS
+**Status:** REVIEW
 **Story Points:** TBD
 **Related Requirements:** FR003 (Event Store), FR014 (Data Consistency - Optimistic Locking)
 
