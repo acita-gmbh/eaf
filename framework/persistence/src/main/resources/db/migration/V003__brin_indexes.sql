@@ -16,4 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_domain_event_aggregate_brin
     USING BRIN (aggregateIdentifier)
     WITH (pages_per_range = 16);
 
+CREATE INDEX IF NOT EXISTS idx_domain_event_aggregate_seq
+    ON DomainEventEntry (aggregateIdentifier, sequenceNumber);
+
 ANALYZE DomainEventEntry;

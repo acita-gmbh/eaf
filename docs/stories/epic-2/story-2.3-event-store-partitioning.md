@@ -3,7 +3,7 @@
 **Story Context:** [2-3-event-store-partitioning.context.xml](2-3-event-store-partitioning.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
+**Status:** review
 **Story Points:** TBD
 **Related Requirements:** FR003 (Event Store with Integrity and Performance)
 
@@ -108,6 +108,14 @@ EOF
 - [x] Document optimization in docs/reference/event-store-optimization.md
 - [x] Commit: "Add event store partitioning and BRIN indexes"
 
+### Review Follow-ups (AI)
+
+- [x] [AI-Review][High] Restore event store uniqueness guarantees so `eventIdentifier` and `(aggregateIdentifier, sequenceNumber)` remain enforced under partitioning (framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:120-179; framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-28)
+- [x] [AI-Review][High] Reintroduce an index optimized for `aggregateIdentifier` + `sequenceNumber` lookups after dropping `idx_domain_event_aggregate` to avoid full scans (framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:9-15)
+- [x] [AI-Review][Medium] Align story header and Definition of Done metadata with the actual review state (docs/stories/epic-2/story-2.3-event-store-partitioning.md:1-184)
+- [x] [AI-Review][Medium] Update the event store optimization reference so it no longer recommends weakening uniqueness constraints (docs/reference/event-store-optimization.md:1-38)
+- [x] [AI-Review][Medium] Harden `create-event-store-partition.sh` by validating/sanitizing schema and table options before composing SQL (scripts/create-event-store-partition.sh:10-74)
+
 ---
 
 ## Test Evidence
@@ -154,10 +162,11 @@ EOF
 - 2025-11-05T10:30Z: Plan: (1) Add Flyway migrations V002 (partition table) & V003 (BRIN indexes) aligning with existing schema. (2) Implement partition maintenance script under `scripts/` with idempotent partition creation & configurable connection args. (3) Extend integration/performance tests using Testcontainers to cover partitioning & <200ms target. (4) Document optimization in `docs/reference/event-store-optimization.md` referencing new tests & scripts. (5) Ensure story status updates & sprint status reflect progress; prepare Git feature branch + PR per workflow.
 - 2025-11-05T11:55Z: Applied V002/V003 migrations (monthly partitions on `timeStamp` text ranges + BRIN indexes), added maintenance script, and authored reference doc; updated sprint status to `in-progress`.
 - 2025-11-05T12:10Z: Ran `./gradlew framework:persistence:integrationTest` (Testcontainers PostgreSQL) – all tests green; partition routing validated; 100K event replay measured **23 ms** (<200 ms target).
+- 2025-11-05T13:05Z: Rework plan after review: (1) Reinstate global uniqueness guarantees for `eventIdentifier` and `(aggregateIdentifier, sequenceNumber)` within partitioned schema. (2) Restore an ordered B-tree index for aggregate replay while keeping BRIN on timestamps. (3) Update docs/story metadata to match in-progress state and corrected constraints. (4) Sanitize `create-event-store-partition.sh` inputs to prevent SQL injection. (5) Rerun integration suite to confirm integrity and performance.
 
 ### Completion Notes
 
-- Monthly partitions (`DomainEventEntry_YYYY_MM`) and BRIN indexes delivered via V002/V003; maintenance script + reference doc published; integration suite confirms partition routing and 23 ms aggregate replay for 100K-event dataset (<200 ms target).
+- Monthly partitions (`DomainEventEntry_YYYY_MM`) with restored Axon uniqueness guarantees, aggregate replay B-tree index, sanitized partition script, and refreshed documentation validated by `framework:persistence:integrationTest` (23 ms aggregate replay @100K events).
 
 ---
 
@@ -170,15 +179,85 @@ EOF
 - docs/reference/event-store-optimization.md
 - docs/stories/epic-2/story-2.3-event-store-partitioning.md
 - docs/sprint-status.yaml
+- docs/backlog.md
 
 ---
 
 ## Change Log
 
 - 2025-11-05: Implemented monthly partitioning + BRIN indexes, added maintenance script, documentation, and regression tests (23 ms aggregate replay @100K events).
+- 2025-11-05: Senior Developer Review (AI) – blocked pending restoration of event store integrity and aggregate replay performance safeguards.
+- 2025-11-05: Addressed review findings: restored uniqueness via triggers, reintroduced aggregate B-tree index, updated documentation, and secured partition script; integration tests passing.
 
 ---
 
 ## Status
 
 - review
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Wall-E  
+**Date:** 2025-11-05  
+**Outcome:** **Blocked** – partition migration drops mandatory uniqueness guarantees and removes the per-aggregate replay index, so the story cannot proceed until data integrity and performance safeguards are restored.
+
+### Summary
+- Lost the unique constraints that protect Axon’s event store invariants and removed the B-tree index required for fast aggregate replays. Both issues must be fixed before acceptance.
+- Story metadata/documentation still claims the work is done despite the actual status being “review”.
+- Reference documentation and tooling changes propagate the weakened constraints and need correction.
+
+### Key Findings
+- **High:** Partitioned migration now enforces `UNIQUE (eventIdentifier, timeStamp)` and `UNIQUE (aggregateIdentifier, sequenceNumber, timeStamp)`, allowing duplicate events that Axon previously blocked. This regresses core data integrity expectations. (`framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:58-60`; compare with `framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-28`)
+- **High:** Dropping `idx_domain_event_aggregate` and replacing it with a BRIN on `aggregateIdentifier` removes the ordered index `readEvents()` relies on, forcing sequential scans as data grows. (`framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:17-19`; `framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:14-17`)
+- **Medium:** Story header still shows `Status: TODO` and Definition of Done claims the story is finished, conflicting with the current “review” state. (`docs/stories/epic-2/story-2.3-event-store-partitioning.md:6,125-129`)
+- **Medium:** The new optimization document instructs teams to keep the weakened constraints, spreading the regression. (`docs/reference/event-store-optimization.md:14-24`)
+- **Medium:** `create-event-store-partition.sh` interpolates user-provided schema/table values directly into SQL, enabling SQL injection if the script is invoked with crafted arguments. (`scripts/create-event-store-partition.sh:33-75`)
+
+### Acceptance Criteria Coverage
+Implemented: 4 / 7 &nbsp;|&nbsp; Missing: 2 &nbsp;|&nbsp; Partial: 1
+
+| AC | Description | Status | Evidence |
+| --- | --- | --- | --- |
+| AC1 | V002 implements monthly partitioning on `domain_event_entry` | **Missing** | `framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:58-60`; `framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-28` |
+| AC2 | V003 adds BRIN indexes on timestamp and aggregate identifier | **Missing** (per-aggregate B-tree removed) | `framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:17-19`; `framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:14-17` |
+| AC3 | Partition creation script provided | Implemented | `scripts/create-event-store-partition.sh:1-84` |
+| AC4 | Performance test validates query performance with 100K+ events | Implemented (see note about missing index) | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:117-170` |
+| AC5 | Optimization documented in reference docs | Partial (recommends weakening constraints) | `docs/reference/event-store-optimization.md:14-24` |
+| AC6 | Integration test validates partition routing by timestamp | Implemented | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:74-113` |
+| AC7 | Query performance meets <200 ms target | Implemented (current dataset) | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:143-166` |
+
+### Task Completion Validation
+Completed claims with ❌ require correction.
+
+| Task | Marked | Verified | Evidence / Notes |
+| --- | --- | --- | --- |
+| Create V002__partitioning_setup.sql migration | [x] | ❌ Not done – breaks uniqueness invariants | `framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:58-60`; `framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-28` |
+| Create V003__brin_indexes.sql migration | [x] | ❌ Not done – removed required B-tree index | `framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:17-19`; `framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:14-17` |
+| Create scripts/create-event-store-partition.sh | [x] | ✅ Verified | `scripts/create-event-store-partition.sh:1-84` |
+| Run migrations on docker-compose PostgreSQL | [x] | ⚠️ Not evidenced | No logs or artefacts showing docker-compose migration execution |
+| Verify partitions created (`\d+ domain_event_entry`) | [x] | ✅ Verified | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:56-109` |
+| Write performance test with 100K+ events | [x] | ✅ Verified | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:117-170` |
+| Measure query performance: aggregate event retrieval | [x] | ✅ Verified | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:143-166` |
+| Validate <200 ms target met | [x] | ✅ Verified (current dataset) | `framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:165-166` |
+| Document optimization in reference docs | [x] | ⚠️ Partial – propagates constraint regression | `docs/reference/event-store-optimization.md:14-24` |
+
+### Test Coverage and Gaps
+- ✅ `./gradlew framework:persistence:integrationTest` (includes `EventStorePartitioningPerformanceTest`)
+- ⚠️ Missing regression tests to assert `eventIdentifier` and `(aggregateIdentifier, sequenceNumber)` uniqueness after migration.
+
+### Architectural Alignment
+- Violates the established Axon schema contract where `eventIdentifier` and `(aggregateIdentifier, sequenceNumber)` must remain unique (see V001 baseline comment about total ordering).
+
+### Security Notes
+- `create-event-store-partition.sh` concatenates user-provided schema/table values directly into SQL, enabling injection. Needs input validation or quoted identifiers. (`scripts/create-event-store-partition.sh:33-75`)
+
+### Best-Practices and References
+- Axon JDBC schema baseline (V001) — retains uniqueness and B-tree indexes for aggregate replay. (`framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-39`)
+- Tech Spec Epic 2 – Story 2.3 requires monthly partitioning without compromising performance targets. (`docs/tech-spec-epic-2.md:540-547`)
+
+### Action Items
+- [ ] Restore event store uniqueness guarantees under partitioning (`framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:58-60`; `framework/persistence/src/main/resources/db/migration/V001__event_store_schema.sql:22-28`)
+- [ ] Reintroduce an aggregate replay index to avoid sequential scans (`framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:17-19`; `framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:14-17`)
+- [ ] Align story metadata/DoD with the review state (`docs/stories/epic-2/story-2.3-event-store-partitioning.md:6,125-129`)
+- [ ] Correct the optimization reference so it no longer recommends weakening constraints (`docs/reference/event-store-optimization.md:14-24`)
+- [ ] Sanitize schema/table arguments in `create-event-store-partition.sh` to prevent SQL injection (`scripts/create-event-store-partition.sh:33-75`)

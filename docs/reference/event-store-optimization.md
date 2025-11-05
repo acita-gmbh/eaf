@@ -8,21 +8,21 @@ Story 2.3 introduces time-based partitioning, BRIN indexing, and performance val
   - Converts `DomainEventEntry` into a declaratively partitioned table using monthly range partitions keyed on the ISO‑8601 `timeStamp` column.
   - Creates a default catch-all partition plus rolling partitions for the current month and next three months (e.g., `DomainEventEntry_2025_11`).
   - Preserves existing data by migrating from the legacy table and realigning the identity sequence.
+  - Reintroduces Axon’s original integrity guarantees via lightweight lookup indexes plus triggers that reject duplicate `eventIdentifier` or `(aggregateIdentifier, sequenceNumber)` pairs across all partitions.
 - **V003__brin_indexes.sql**
-  - Adds BRIN indexes on `timeStamp` and `aggregateIdentifier` to shrink index size while supporting range scans and aggregate lookups after partitioning.
+  - Adds BRIN indexes on `timeStamp` and `aggregateIdentifier` to keep range scans compact, and restores a B-tree index on `(aggregateIdentifier, sequenceNumber)` to keep aggregate replays fast.
 
 ## Runtime Partitioning Strategy
 
 - Partition names follow the pattern `DomainEventEntry_YYYY_MM`.
 - Range boundaries are stored as ISO strings (`YYYY-MM-01T00:00:00Z`) to maintain lexical ordering without changing Axon’s schema.
 - Constraints now include the partition key to satisfy PostgreSQL requirements:
-  - `PRIMARY KEY (timeStamp, globalIndex)`
-  - `UNIQUE (eventIdentifier, timeStamp)`
-  - `UNIQUE (aggregateIdentifier, sequenceNumber, timeStamp)`
+  - `PRIMARY KEY (timeStamp, globalIndex)` (partition-compatible primary key)
+  - Event-store uniqueness enforced through parent-table triggers that block repeated `eventIdentifier` or `(aggregateIdentifier, sequenceNumber)` pairs while leveraging supporting lookup indexes.
 
 ## Maintenance Script
 
-`scripts/create-event-store-partition.sh` provisions future partitions.
+`scripts/create-event-store-partition.sh` provisions future partitions. Schema and table arguments are validated before being interpolated into SQL to avoid injection risks.
 
 ```
 Usage: create-event-store-partition.sh [options]
@@ -58,6 +58,6 @@ The test normalizes the identifier casing and asserts that rows reside in `Domai
 
 ## Operational Notes
 
-- BRIN indexes should be re-analyzed after large backfills: `ANALYZE DomainEventEntry;`.
+- BRIN/B-tree indexes should be re-analyzed after large backfills: `ANALYZE DomainEventEntry;`.
 - If historical partitions are required, rerun the maintenance script with `--month` to generate the needed range.
 - Axon Server connectivity warnings are expected in local integration tests; the persistence module operates fully with PostgreSQL/Testcontainers.

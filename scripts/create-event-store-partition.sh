@@ -34,6 +34,14 @@ SCHEMA="${DB_SCHEMA:-public}"
 TABLE="${EVENT_TABLE:-domainevententry}"
 MONTH_SPEC=""
 
+validate_identifier() {
+    local identifier="$1"
+    if [[ ! "$identifier" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+        echo "Invalid identifier: $identifier" >&2
+        exit 1
+    fi
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --month)
@@ -75,6 +83,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+validate_identifier "$SCHEMA"
+validate_identifier "$TABLE"
 
 if ! command -v python3 >/dev/null 2>&1; then
     echo "python3 is required to compute partition boundaries" >&2
