@@ -63,19 +63,22 @@ CREATE TABLE IF NOT EXISTS DomainEventEntry_default
     PARTITION OF DomainEventEntry
     DEFAULT;
 
--- Enforce Axon uniqueness invariants with partition-compatible unique indexes
-CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_event_identifier_unique
-    ON DomainEventEntry (timeStamp, eventIdentifier);
+-- Unpartitioned lookup tables for concurrency-safe uniqueness enforcement
+-- These tables ensure atomicity via database-level UNIQUE constraints
+CREATE TABLE IF NOT EXISTS event_identifier_lookup (
+    eventIdentifier VARCHAR(255) NOT NULL,
+    timeStamp VARCHAR(255) NOT NULL,
+    globalIndex BIGINT NOT NULL,
+    CONSTRAINT pk_event_identifier_lookup PRIMARY KEY (eventIdentifier)
+);
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_event_sequence_unique
-    ON DomainEventEntry (aggregateIdentifier, sequenceNumber, timeStamp);
-
--- Non-unique lookup indexes for trigger performance (enable index scans instead of full table scans)
-CREATE INDEX IF NOT EXISTS idx_domain_event_identifier_lookup
-    ON DomainEventEntry (eventIdentifier);
-
-CREATE INDEX IF NOT EXISTS idx_domain_event_aggregate_seq_lookup
-    ON DomainEventEntry (aggregateIdentifier, sequenceNumber);
+CREATE TABLE IF NOT EXISTS aggregate_sequence_lookup (
+    aggregateIdentifier VARCHAR(255) NOT NULL,
+    sequenceNumber BIGINT NOT NULL,
+    timeStamp VARCHAR(255) NOT NULL,
+    globalIndex BIGINT NOT NULL,
+    CONSTRAINT pk_aggregate_sequence_lookup PRIMARY KEY (aggregateIdentifier, sequenceNumber)
+);
 
 -- Create current month + next 3 monthly partitions
 DO $$
@@ -144,22 +147,31 @@ SELECT
     END
 FROM seq_info;
 
--- Enforce original Axon uniqueness guarantees via triggers
+-- Concurrency-safe uniqueness enforcement via unpartitioned lookup tables
+-- Uses database UNIQUE constraints instead of SELECT checks to prevent TOCTOU race conditions
 CREATE OR REPLACE FUNCTION domainevententry_enforce_eventidentifier_unique()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM DomainEventEntry
-        WHERE eventIdentifier = NEW.eventIdentifier
-          AND NOT (timeStamp = NEW.timeStamp AND globalIndex = NEW.globalIndex)
-        LIMIT 1
-    ) THEN
-        RAISE EXCEPTION 'Duplicate eventIdentifier detected: %', NEW.eventIdentifier
-            USING ERRCODE = '23505', COLUMN = 'eventIdentifier', TABLE = 'DomainEventEntry';
+    -- INSERT path: Add to lookup table (UNIQUE constraint enforces atomically)
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO event_identifier_lookup (eventIdentifier, timeStamp, globalIndex)
+        VALUES (NEW.eventIdentifier, NEW.timeStamp, NEW.globalIndex);
+        -- If duplicate exists, database throws 23505 error automatically
     END IF;
+
+    -- UPDATE path: Remove old entry, add new entry
+    IF (TG_OP = 'UPDATE') AND (OLD.eventIdentifier != NEW.eventIdentifier) THEN
+        DELETE FROM event_identifier_lookup
+        WHERE eventIdentifier = OLD.eventIdentifier
+          AND timeStamp = OLD.timeStamp
+          AND globalIndex = OLD.globalIndex;
+
+        INSERT INTO event_identifier_lookup (eventIdentifier, timeStamp, globalIndex)
+        VALUES (NEW.eventIdentifier, NEW.timeStamp, NEW.globalIndex);
+    END IF;
+
     RETURN NEW;
 END;
 $$;
@@ -169,17 +181,25 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM DomainEventEntry
-        WHERE aggregateIdentifier = NEW.aggregateIdentifier
-          AND sequenceNumber = NEW.sequenceNumber
-          AND NOT (timeStamp = NEW.timeStamp AND globalIndex = NEW.globalIndex)
-        LIMIT 1
-    ) THEN
-        RAISE EXCEPTION 'Duplicate aggregate sequence detected for % at sequence %', NEW.aggregateIdentifier, NEW.sequenceNumber
-            USING ERRCODE = '23505', COLUMN = 'sequenceNumber', TABLE = 'DomainEventEntry';
+    -- INSERT path: Add to lookup table (UNIQUE constraint enforces atomically)
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO aggregate_sequence_lookup (aggregateIdentifier, sequenceNumber, timeStamp, globalIndex)
+        VALUES (NEW.aggregateIdentifier, NEW.sequenceNumber, NEW.timeStamp, NEW.globalIndex);
+        -- If duplicate exists, database throws 23505 error automatically
     END IF;
+
+    -- UPDATE path: Remove old entry, add new entry
+    IF (TG_OP = 'UPDATE') AND (OLD.aggregateIdentifier != NEW.aggregateIdentifier OR OLD.sequenceNumber != NEW.sequenceNumber) THEN
+        DELETE FROM aggregate_sequence_lookup
+        WHERE aggregateIdentifier = OLD.aggregateIdentifier
+          AND sequenceNumber = OLD.sequenceNumber
+          AND timeStamp = OLD.timeStamp
+          AND globalIndex = OLD.globalIndex;
+
+        INSERT INTO aggregate_sequence_lookup (aggregateIdentifier, sequenceNumber, timeStamp, globalIndex)
+        VALUES (NEW.aggregateIdentifier, NEW.sequenceNumber, NEW.timeStamp, NEW.globalIndex);
+    END IF;
+
     RETURN NEW;
 END;
 $$;
@@ -197,6 +217,34 @@ CREATE TRIGGER trg_domain_event_sequence_unique
     ON DomainEventEntry
     FOR EACH ROW
     EXECUTE FUNCTION domainevententry_enforce_sequence_unique();
+
+-- Cleanup trigger to remove lookup entries on DELETE
+CREATE OR REPLACE FUNCTION domainevententry_cleanup_lookups()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM event_identifier_lookup
+    WHERE eventIdentifier = OLD.eventIdentifier
+      AND timeStamp = OLD.timeStamp
+      AND globalIndex = OLD.globalIndex;
+
+    DELETE FROM aggregate_sequence_lookup
+    WHERE aggregateIdentifier = OLD.aggregateIdentifier
+      AND sequenceNumber = OLD.sequenceNumber
+      AND timeStamp = OLD.timeStamp
+      AND globalIndex = OLD.globalIndex;
+
+    RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_domain_event_cleanup ON DomainEventEntry;
+CREATE TRIGGER trg_domain_event_cleanup
+    BEFORE DELETE
+    ON DomainEventEntry
+    FOR EACH ROW
+    EXECUTE FUNCTION domainevententry_cleanup_lookups();
 
 -- Drop the legacy table and sequence remnants
 DROP TABLE IF EXISTS DomainEventEntry_legacy;
