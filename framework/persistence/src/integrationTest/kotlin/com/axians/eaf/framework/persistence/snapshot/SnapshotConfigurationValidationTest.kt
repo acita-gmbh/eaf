@@ -94,7 +94,7 @@ class SnapshotConfigurationValidationTest : FunSpec() {
     @Configuration
     @EnableAutoConfiguration
     @Import(AxonConfiguration::class, PostgresEventStoreConfiguration::class)
-    open class TestConfiguration
+    class TestConfiguration
 
     companion object {
         private val postgresContainer =

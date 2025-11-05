@@ -1,6 +1,24 @@
 # Event Store Optimization
 
-This document describes the optimization strategies implemented in the EAF Event Store to ensure high performance even with large event histories.
+This document describes the optimization strategies implemented in the EAF Event Store to ensure high performance and scalability even with large event histories.
+
+## Optimization Strategies
+
+The EAF Event Store implements two complementary optimization strategies:
+
+1. **[Partitioning Strategy](partitioning-strategy.md)** (Story 2.3)
+   - Time-based monthly partitioning
+   - BRIN indexes for efficient time-range queries
+   - Partition maintenance automation
+   - Performance: <200ms aggregate replay for 1,000 events
+
+2. **[Snapshot Strategy](#snapshot-strategy)** (Story 2.4)
+   - Automatic snapshots every 100 events
+   - Jackson serialization
+   - >10x performance improvement
+   - Performance: <100ms aggregate loading for 1,000+ events
+
+---
 
 ## Snapshot Strategy
 
