@@ -70,6 +70,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_event_identifier_unique
 CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_event_sequence_unique
     ON DomainEventEntry (aggregateIdentifier, sequenceNumber, timeStamp);
 
+-- Non-unique lookup indexes for trigger performance (enable index scans instead of full table scans)
+CREATE INDEX IF NOT EXISTS idx_domain_event_identifier_lookup
+    ON DomainEventEntry (eventIdentifier);
+
+CREATE INDEX IF NOT EXISTS idx_domain_event_aggregate_seq_lookup
+    ON DomainEventEntry (aggregateIdentifier, sequenceNumber);
+
 -- Create current month + next 3 monthly partitions
 DO $$
 DECLARE

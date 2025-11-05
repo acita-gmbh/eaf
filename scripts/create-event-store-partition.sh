@@ -155,13 +155,20 @@ PSQL_OPTS=(
     "--no-psqlrc"
 )
 
-SQL=$(cat <<SQL
-CREATE TABLE IF NOT EXISTS ${SCHEMA}.${PARTITION_NAME}
-    PARTITION OF ${SCHEMA}.${TABLE}
-    FOR VALUES FROM ('${START_DATE}') TO ('${END_DATE}');
-SQL
-)
-
 echo "Creating partition ${SCHEMA}.${PARTITION_NAME} for range ${START_DATE} -> ${END_DATE}"
-psql "${PSQL_OPTS[@]}" --command "$SQL"
+
+# Use PostgreSQL format() for proper identifier/literal quoting
+psql "${PSQL_OPTS[@]}" \
+    -v schema="$SCHEMA" \
+    -v partition_name="$PARTITION_NAME" \
+    -v table_name="$TABLE" \
+    -v start_date="$START_DATE" \
+    -v end_date="$END_DATE" \
+    <<'SQL'
+SELECT format(
+    'CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF %I.%I FOR VALUES FROM (%L) TO (%L);',
+    :'schema', :'partition_name', :'schema', :'table_name', :'start_date', :'end_date'
+);
+\gexec
+SQL
 echo "Partition ensured successfully."

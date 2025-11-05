@@ -268,30 +268,30 @@ Completed claims with ❌ require correction.
 
 **Reviewer:** Wall-E
 **Date:** 2025-11-05
-**Outcome:** **Approve** – Partitionierung, Integritätssicherung und Tooling erfüllen jetzt die Vorgaben.
+**Outcome:** **Approve** – Partitioning, integrity assurance, and tooling now meet the requirements.
 
 ### Summary
-- Trigger + Lookup-Index erzwingen eindeutige `eventIdentifier` sowie `(aggregateIdentifier, sequenceNumber)` über alle Partitionen.  
-- BRIN-Indices bedienen Zeit- und Aggregat-Scans; zusätzlicher B-Tree auf `(aggregateIdentifier, sequenceNumber)` hält Replays performant.  
-- Dokumentation und Skript sind aktualisiert und validieren Eingaben.  
-- `./gradlew framework:persistence:integrationTest` bestätigt Schema-Migration, Partitionierung und das <200 ms Replay-Ziel (~23 ms bei 100K Events).
+- Trigger and lookup index enforce unique `eventIdentifier` as well as `(aggregateIdentifier, sequenceNumber)` across all partitions.
+- BRIN indexes support time-based and aggregate scans; an additional B-Tree on `(aggregateIdentifier, sequenceNumber)` keeps replays performant.
+- Documentation and scripts are updated and validate inputs.
+- `./gradlew framework:persistence:integrationTest` confirms schema migration, partitioning, and the <200 ms replay target (~23 ms for 100K events).
 
 ### Key Findings
-- Keine – sämtliche Punkte aus der vorherigen Review sind geschlossen.
+- None – all issues from the previous review are resolved.
 
 ### Acceptance Criteria Coverage
-| AC | Beschreibung | Status | Evidenz |
+| AC | Description | Status | Evidence |
 | --- | --- | --- | --- |
-| AC1 | Monatliche Partitionierung (V002) | Implementiert | framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:47-189 |
-| AC2 | BRIN auf timestamp & aggregate_identifier (V003) | Implementiert | framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:9-15 |
-| AC3 | Partition-Skript erstellt Partitionen automatisch | Implementiert | scripts/create-event-store-partition.sh:1-148 |
-| AC4 | Performance-Test mit 100K Events | Implementiert | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:117-170 |
-| AC5 | Optimierung dokumentiert | Implementiert | docs/reference/event-store-optimization.md:1-38 |
-| AC6 | Partition-Routing validiert | Implementiert | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:74-113 |
-| AC7 | <200 ms Ziel erreicht | Implementiert | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:143-170 |
+| AC1 | Monthly partitioning (V002) | Implemented | framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:47-189 |
+| AC2 | BRIN on timestamp & aggregate_identifier (V003) | Implemented | framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:9-15 |
+| AC3 | Partition script creates partitions automatically | Implemented | scripts/create-event-store-partition.sh:1-148 |
+| AC4 | Performance test with 100K events | Implemented | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:117-170 |
+| AC5 | Optimization documented | Implemented | docs/reference/event-store-optimization.md:1-38 |
+| AC6 | Partition routing validated | Implemented | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:74-113 |
+| AC7 | <200 ms Ziel erreicht | Implemented | framework/persistence/src/integrationTest/kotlin/com/axians/eaf/framework/persistence/eventstore/EventStorePartitioningPerformanceTest.kt:143-170 |
 
 ### Task Completion Validation
-| Task | Markiert | Verifiziert | Evidenz |
+| Task | Marked | Verified | Evidence |
 | --- | --- | --- | --- |
 | Create V002__partitioning_setup.sql migration | [x] | ✅ | framework/persistence/src/main/resources/db/migration/V002__partitioning_setup.sql:47-189 |
 | Create V003__brin_indexes.sql migration | [x] | ✅ | framework/persistence/src/main/resources/db/migration/V003__brin_indexes.sql:9-15 |

@@ -223,7 +223,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
         }
 
         test("Aggregate retrieval stays below 200ms with 100K events")
-            .config(timeout = 180.seconds) {
+            .config(timeout = 60.seconds) {
                 truncateEvents()
 
                 val totalAggregates = 100
