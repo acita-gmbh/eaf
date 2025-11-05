@@ -26,6 +26,7 @@ So that I can validate performance targets and detect regressions.
 5. ✅ Performance meets targets: API p95 <200ms, event lag <10s
 6. ✅ Performance regression test added to nightly CI/CD
 7. ✅ Performance baseline documented in docs/reference/performance-baselines.md
+8. ✅ Snapshot functional tests (deferred from Story 2.4): 250+ events creating 2 snapshots, aggregate loading performance test, >10x improvement benchmark
 
 ---
 
@@ -36,6 +37,13 @@ So that I can validate performance targets and detect regressions.
 ---
 
 ## Technical Notes
+
+**Note from Story 2.4 & 2.5:** Comprehensive snapshot functional tests (250+ events creating 2 snapshots, aggregate loading performance tests, >10x improvement benchmarks) were deferred from Stories 2.4 and 2.5 to this story. These tests align naturally with the performance validation objectives of Story 2.13.
+
+**Prerequisites for Snapshot Tests:**
+- Widget aggregate available (Story 2.5) ✅
+- Serializable support implemented (Story 2.5) ✅
+- Snapshot infrastructure configured (Story 2.4) ✅
 
 ### Gatling Load Test
 
@@ -162,6 +170,9 @@ class MetricsConfiguration {
 - [ ] Configure Prometheus metrics (Micrometer)
 - [ ] Create performance baseline document
 - [ ] Add performance regression test to nightly CI/CD
+- [ ] **[From Story 2.4]** Create snapshot functional test with 250+ events → verify 2 snapshots created
+- [ ] **[From Story 2.4]** Create aggregate loading performance test → verify snapshot usage
+- [ ] **[From Story 2.4]** Benchmark snapshot performance → verify >10x improvement (target: <100ms for 1000 events)
 - [ ] Commit: "Add performance baseline and load testing"
 
 ---
@@ -175,6 +186,9 @@ class MetricsConfiguration {
 - [ ] 1000 rps sustained
 - [ ] Prometheus metrics accessible at /actuator/prometheus
 - [ ] Performance baseline documented
+- [ ] **[From Story 2.4]** Snapshot created at 100 and 200 event sequence (250+ event test)
+- [ ] **[From Story 2.4]** Aggregate loading uses snapshots (verified via performance test)
+- [ ] **[From Story 2.4]** Snapshot performance >10x improvement documented (baseline: 2-5s without snapshots, target: <100ms with snapshots for 1000 events)
 
 ---
 
