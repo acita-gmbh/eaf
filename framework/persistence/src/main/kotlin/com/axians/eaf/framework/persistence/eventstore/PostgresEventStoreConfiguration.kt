@@ -24,10 +24,18 @@ import javax.sql.DataSource
  *
  * **Architecture Notes:**
  * - Uses JdbcEventStorageEngine for direct JDBC access to event store tables
- * - NoTransactionManager delegates transaction management to Spring's @Transactional
+ * - Transaction management delegated to Spring's PlatformTransactionManager via SpringTransactionManager
+ * - Connection management uses SpringDataSourceConnectionProvider for transaction-bound connections
+ * - UnitOfWorkAwareConnectionProviderWrapper ensures connection reuse within Unit of Work
  * - Event store schema created and managed via Flyway migrations
  *
+ * **Transactional Consistency:**
+ * Event persistence participates in Spring-managed transactions. If a command handler
+ * throws an exception after event application, the Spring transaction rollback will
+ * also rollback the event persistence, maintaining aggregate consistency.
+ *
  * @see org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
+ * @see org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider
  * @see com.axians.eaf.framework.persistence.migration.V001__event_store_schema
  */
 @Configuration
