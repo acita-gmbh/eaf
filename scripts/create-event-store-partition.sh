@@ -128,6 +128,24 @@ print(f"{table_name}_{partition_suffix} {start.strftime('%Y-%m-%d')}T00:00:00Z {
 PY)
 EOF
 
+# Validate partition name follows expected pattern: {TABLE}_{YYYY_MM}
+if [[ ! "$PARTITION_NAME" =~ ^${TABLE}_[0-9]{4}_[0-9]{2}$ ]]; then
+    echo "Invalid PARTITION_NAME format: $PARTITION_NAME" >&2
+    exit 1
+fi
+
+# Validate START_DATE follows strict ISO 8601 format
+if [[ ! "$START_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T00:00:00Z$ ]]; then
+    echo "Invalid START_DATE format: $START_DATE" >&2
+    exit 1
+fi
+
+# Validate END_DATE follows strict ISO 8601 format
+if [[ ! "$END_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T00:00:00Z$ ]]; then
+    echo "Invalid END_DATE format: $END_DATE" >&2
+    exit 1
+fi
+
 PSQL_OPTS=(
     "--host=$HOST"
     "--port=$PORT"
