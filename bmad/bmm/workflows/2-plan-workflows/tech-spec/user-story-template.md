@@ -1,32 +1,53 @@
-# Story: {{story_title}}
+# Story {{N}}.{{M}}: {{story_title}}
 
-Status: Draft
+**Status:** Draft
 
-## Story
+---
 
-As a {{role}},
+## User Story
+
+As a {{user_type}},
 I want {{capability}},
-so that {{benefit}}.
+So that {{value_benefit}}.
+
+---
 
 ## Acceptance Criteria
 
-{{acceptance_criteria}}
+**Given** {{precondition}}
+**When** {{action}}
+**Then** {{expected_outcome}}
 
-## Tasks / Subtasks
+**And** {{additional_criteria}}
+
+---
+
+## Implementation Details
+
+### Tasks / Subtasks
 
 {{tasks_subtasks}}
-
-## Dev Notes
 
 ### Technical Summary
 
 {{technical_summary}}
 
-### Tech-Spec Reference
+### Project Structure Notes
 
-**Full details:** See [tech-spec.md](../tech-spec.md)
+- **Files to modify:** {{files_to_modify}}
+- **Expected test locations:** {{test_locations}}
+- **Estimated effort:** {{story_points}} story points ({{time_estimate}})
+- **Prerequisites:** {{dependencies}}
 
-The tech-spec contains comprehensive context including:
+### Key Code References
+
+{{existing_code_references}}
+
+---
+
+## Context References
+
+**Tech-Spec:** [tech-spec.md](../tech-spec.md) - Primary context document containing:
 
 - Brownfield codebase analysis (if applicable)
 - Framework and library details with versions
@@ -34,31 +55,13 @@ The tech-spec contains comprehensive context including:
 - Integration points and dependencies
 - Complete implementation guidance
 
-### Project Structure Notes
+**Architecture:** {{architecture_references}}
 
-- **Files to modify:** {{files_to_modify}}
-- **Expected test locations:** {{test_locations}}
-- **Estimated effort:** {{story_points}} story points ({{time_estimate}})
-- **Dependencies:** {{dependencies}}
-
-### Key Code References
-
-{{existing_code_references}}
-
-### References
-
-- **Tech Spec:** [tech-spec.md](../tech-spec.md) - Primary context document
-- **Architecture:** {{architecture_references}}
+<!-- Additional context XML paths will be added here if story-context workflow is run -->
 
 ---
 
 ## Dev Agent Record
-
-### Context Reference
-
-**Primary Context:** [tech-spec.md](../tech-spec.md) - Contains all brownfield analysis, framework details, and implementation guidance
-
-<!-- Additional context XML paths will be added here if story-context workflow is run -->
 
 ### Agent Model Used
 
@@ -68,11 +71,11 @@ The tech-spec contains comprehensive context including:
 
 <!-- Will be populated during dev-story execution -->
 
-### Completion Notes List
+### Completion Notes
 
 <!-- Will be populated during dev-story execution -->
 
-### File List
+### Files Modified
 
 <!-- Will be populated during dev-story execution -->
 

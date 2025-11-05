@@ -7,24 +7,7 @@
 <critical>Generate all documents in {document_output_language}</critical>
 <critical>LIVING DOCUMENT: Write to PRD.md continuously as you discover - never wait until the end</critical>
 <critical>GUIDING PRINCIPLE: Find and weave the product's magic throughout - what makes it special should inspire every section</critical>
-
-## 📚 Input Document Discovery
-
-This workflow requires: product brief, and may reference market research or brownfield project documentation.
-
-**Discovery Process** (execute for each referenced document):
-
-1. **Search for whole document first** - Use fuzzy file matching to find the complete document
-2. **Check for sharded version** - If whole document not found, look for `{doc-name}/index.md`
-3. **If sharded version found**:
-   - Read `index.md` to understand the document structure
-   - Read ALL section files listed in the index
-   - Treat the combined content as if it were a single document
-4. **Brownfield projects**: The `document-project` workflow always creates `{output_folder}/docs/index.md`
-
-**Priority**: If both whole and sharded versions exist, use the whole document.
-
-**Fuzzy matching**: Be flexible with document names - users may use variations in naming conventions.
+<critical>Input documents specified in workflow.yaml input_file_patterns - workflow engine handles fuzzy matching, whole vs sharded document discovery automatically</critical>
 
 <workflow>
 
@@ -37,14 +20,14 @@ This workflow requires: product brief, and may reference market research or brow
   <action>Load the FULL file: {status_file}</action>
   <action>Parse workflow_status section</action>
   <action>Check status of "prd" workflow</action>
-  <action>Get project_level from YAML metadata</action>
+  <action>Get project_track from YAML metadata</action>
   <action>Find first non-completed workflow (next expected workflow)</action>
 
-  <check if="project_level < 2">
-    <output>**Level {{project_level}} Project - Redirecting**
+  <check if="project_track is Quick Flow">
+    <output>**Quick Flow Track - Redirecting**
 
-Level 0-1 projects use tech-spec workflow for simpler planning.
-PRD is for Level 2-4 projects that need comprehensive requirements.</output>
+Quick Flow projects use tech-spec workflow for implementation-focused planning.
+PRD is for BMad Method and Enterprise Method tracks that need comprehensive requirements.</output>
 <action>Exit and suggest tech-spec workflow</action>
 </check>
 
@@ -132,6 +115,7 @@ Weave in the magic:
 <check if="business focus">
 <template-output>business_metrics</template-output>
 </check>
+<invoke-task halt="true">{project-root}/bmad/core/tasks/adv-elicit.xml</invoke-task>
 </step>
 
 <step n="3" goal="Scope Definition">
@@ -156,6 +140,7 @@ For complex domains:
 <template-output>mvp_scope</template-output>
 <template-output>growth_features</template-output>
 <template-output>vision_features</template-output>
+<invoke-task halt="true">{project-root}/bmad/core/tasks/adv-elicit.xml</invoke-task>
 </step>
 
 <step n="4" goal="Domain-Specific Exploration" optional="true">
@@ -256,8 +241,8 @@ Always relate back to the product magic:
 </check>
 </step>
 
-<step n="7" goal="UX Principles" optional="true">
-<action>Only if product has a UI
+<step n="7" goal="UX Principles" if="project has UI or UX">
+  <action>Only if product has a UI
 
 Light touch on UX - not full design:
 
@@ -271,10 +256,10 @@ Light touch on UX - not full design:
 Connect to the magic:
 "The UI should reinforce [the special moment] through [design approach]"</action>
 
-<check if="has UI">
-  <template-output>ux_principles</template-output>
-  <template-output>key_interactions</template-output>
-</check>
+  <check if="has UI">
+    <template-output>ux_principles</template-output>
+    <template-output>key_interactions</template-output>
+  </check>
 </step>
 
 <step n="8" goal="Functional Requirements Synthesis">
@@ -304,6 +289,7 @@ The magic thread:
 Highlight which requirements deliver the special experience</action>
 
 <template-output>functional_requirements_complete</template-output>
+<invoke-task halt="true">{project-root}/bmad/core/tasks/adv-elicit.xml</invoke-task>
 </step>
 
 <step n="9" goal="Non-Functional Requirements Discovery">
@@ -339,9 +325,6 @@ Skip categories that don't apply!</action>
 <check if="integration matters">
   <template-output>integration_requirements</template-output>
 </check>
-<check if="no NFRs discussed">
-  <template-output>no_nfrs</template-output>
-</check>
 </step>
 
 <step n="10" goal="Review PRD and transition to epics">
@@ -355,9 +338,13 @@ Skip categories that don't apply!</action>
 - Requirements: [count] functional, [count] non-functional
 - Special considerations: [domain/innovation]
 
-Does this capture your product vision?"
+Does this capture your product vision?"</action>
 
-After confirmation:
+<template-output>prd_summary</template-output>
+<invoke-task halt="true">{project-root}/bmad/core/tasks/adv-elicit.xml</invoke-task>
+
+<action>After PRD review and refinement complete:
+
 "Excellent! Now we need to break these requirements into implementable epics and stories.
 
 For the epic breakdown, you have two options:
@@ -379,12 +366,10 @@ This keeps each session focused and manageable."
 If continue:
 "Let's continue with epic breakdown here..."
 [Proceed with epics-stories subworkflow]
-Set project_level and target_scale based on project analysis
+Set project_track based on workflow status (BMad Method or Enterprise Method)
 Generate epic_details for the epics breakdown document</action>
 
-<template-output>prd_summary</template-output>
-<template-output>project_level</template-output>
-<template-output>target_scale</template-output>
+<template-output>project_track</template-output>
 <template-output>epic_details</template-output>
 </step>
 

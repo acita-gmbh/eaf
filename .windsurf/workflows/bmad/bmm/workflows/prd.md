@@ -5,7 +5,7 @@ auto_execution_mode: 1
 
 # Product Requirements Document (PRD) Workflow
 name: prd
-description: "Unified PRD workflow for project levels 2-4. Produces strategic PRD and tactical epic breakdown. Hands off to architecture workflow for technical design. Note: Level 0-1 use tech-spec workflow."
+description: "Unified PRD workflow for BMad Method and Enterprise Method tracks. Produces strategic PRD and tactical epic breakdown. Hands off to architecture workflow for technical design. Note: Quick Flow track uses tech-spec workflow."
 author: "BMad"
 
 # Critical variables from config

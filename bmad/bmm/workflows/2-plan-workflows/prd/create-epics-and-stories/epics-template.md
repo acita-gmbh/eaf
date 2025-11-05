@@ -9,55 +9,44 @@
 
 ## Overview
 
-This document provides the detailed epic breakdown for {{project_name}}, expanding on the high-level epic list in the [PRD](./PRD.md).
+This document provides the complete epic and story breakdown for {{project_name}}, decomposing the requirements from the [PRD](./PRD.md) into implementable stories.
 
-Each epic includes:
-
-- Expanded goal and value proposition
-- Complete story breakdown with user stories
-- Acceptance criteria for each story
-- Story sequencing and dependencies
-
-**Epic Sequencing Principles:**
-
-- Epic 1 establishes foundational infrastructure and initial functionality
-- Subsequent epics build progressively, each delivering significant end-to-end value
-- Stories within epics are vertically sliced and sequentially ordered
-- No forward dependencies - each story builds only on previous work
+{{epics_summary}}
 
 ---
 
-{{epic_details}}
+<!-- Repeat for each epic (N = 1, 2, 3...) -->
 
----
+## Epic {{N}}: {{epic_title_N}}
 
-## Story Guidelines Reference
+{{epic_goal_N}}
 
-**Story Format:**
+<!-- Repeat for each story (M = 1, 2, 3...) within epic N -->
 
-```
-**Story [EPIC.N]: [Story Title]**
+### Story {{N}}.{{M}}: {{story_title_N_M}}
 
-As a [user type],
-I want [goal/desire],
-So that [benefit/value].
+As a {{user_type}},
+I want {{capability}},
+So that {{value_benefit}}.
 
 **Acceptance Criteria:**
-1. [Specific testable criterion]
-2. [Another specific criterion]
-3. [etc.]
 
-**Prerequisites:** [Dependencies on previous stories, if any]
-```
+**Given** {{precondition}}
+**When** {{action}}
+**Then** {{expected_outcome}}
 
-**Story Requirements:**
+**And** {{additional_criteria}}
 
-- **Vertical slices** - Complete, testable functionality delivery
-- **Sequential ordering** - Logical progression within epic
-- **No forward dependencies** - Only depend on previous work
-- **AI-agent sized** - Completable in 2-4 hour focused session
-- **Value-focused** - Integrate technical enablers into value-delivering stories
+**Prerequisites:** {{dependencies_on_previous_stories}}
+
+**Technical Notes:** {{implementation_guidance}}
+
+<!-- End story repeat -->
 
 ---
 
-**For implementation:** Use the `create-story` workflow to generate individual story implementation plans from this epic breakdown.
+<!-- End epic repeat -->
+
+---
+
+_For implementation: Use the `create-story` workflow to generate individual story implementation plans from this epic breakdown._

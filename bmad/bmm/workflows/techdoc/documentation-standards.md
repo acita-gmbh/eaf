@@ -1,13 +1,35 @@
 # Technical Documentation Standards for BMAD
 
-**For Agent: Paige (Documentation Guide)**
+**For Agent: Technical Writer**
 **Purpose: Concise reference for documentation creation and review**
 
 ---
 
-## CRITICAL RULE: CommonMark Strict Compliance
+## CRITICAL RULES
+
+### Rule 1: CommonMark Strict Compliance
 
 ALL documentation MUST follow CommonMark specification exactly. No exceptions.
+
+### Rule 2: NO TIME ESTIMATES
+
+NEVER document time estimates, durations, or completion times for any workflow, task, or activity. This includes:
+
+- Workflow execution time (e.g., "30-60 min", "2-8 hours")
+- Task duration estimates
+- Reading time estimates
+- Implementation time ranges
+- Any temporal measurements
+
+Time varies dramatically based on:
+
+- Project complexity
+- Team experience
+- Tooling and environment
+- Context switching
+- Unforeseen blockers
+
+**Instead:** Focus on workflow steps, dependencies, and outputs. Let users determine their own timelines.
 
 ### CommonMark Essentials
 
@@ -194,6 +216,7 @@ Apply in this hierarchy:
 Before finalizing ANY documentation:
 
 - [ ] CommonMark compliant (no violations)
+- [ ] NO time estimates anywhere (Critical Rule 2)
 - [ ] Headers in proper hierarchy
 - [ ] All code blocks have language tags
 - [ ] Links work and have descriptive text

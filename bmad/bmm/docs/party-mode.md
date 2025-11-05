@@ -1,1235 +1,223 @@
 # Party Mode: Multi-Agent Collaboration
 
-**Orchestrate group discussions with all your AI agents**
-
-**Reading Time:** ~20 minutes
-
----
-
-## Table of Contents
-
-- [What is Party Mode?](#what-is-party-mode)
-- [How It Works](#how-it-works)
-- [When to Use Party Mode](#when-to-use-party-mode)
-- [Getting Started](#getting-started)
-- [Agent Selection & Dynamics](#agent-selection--dynamics)
-- [Multi-Module Integration](#multi-module-integration)
-- [Example Party Compositions](#example-party-compositions)
-- [Agent Customization in Party Mode](#agent-customization-in-party-mode)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
+**Get all your AI agents in one conversation**
 
 ---
 
 ## What is Party Mode?
 
-Party mode is a unique workflow that brings **all your installed agents together** for group discussions. Instead of working with one agent at a time, you engage with a dynamic team that collaborates in real-time.
+Ever wanted to gather your entire AI team in one room and see what happens? That's party mode.
 
-**Key Concept:** Multiple AI agents with different expertise discuss your challenges together, providing diverse perspectives, healthy debate, and emergent insights.
+Type `/bmad:core:workflows:party-mode` (or `*party-mode` from any agent), and suddenly you've got **all your AI agents** in one conversation. PM, Architect, DEV, UX Designer, the CIS creative agents - everyone shows up.
 
-### Quick Facts
+**Why it's useful:**
 
-- **Trigger:** Load BMad Master and run `*party-mode`
-- **Agents Included:** ALL installed agents from ALL modules (BMM, CIS, BMB, custom)
-- **Selection:** 2-3 most relevant agents respond per message
-- **Customization:** Respects all agent customizations
-- **Moderator:** BMad Master orchestrates and moderates
+- **After complex workflows** - Debrief with the whole team about what worked, what didn't
+- **Big decisions with tradeoffs** - Get technical, creative, and strategic perspectives simultaneously
+- **Brainstorming sessions** - Watch ideas evolve through cross-pollination
+- **When things go wrong** - Call out failures, watch agents defend their decisions, let them debate whose fault it was (oddly therapeutic)
+- **Sprint retrospectives** - Party mode powers the retrospective workflow
+- **Sprint planning** - Multi-agent collaboration for planning sessions
+
+**Future use:** Advanced elicitation workflows will leverage party mode for sophisticated requirement gathering.
 
 ---
 
 ## How It Works
 
-### The Party Mode Process
+**The basics:**
 
-```mermaid
-flowchart TD
-    START([User triggers party-mode])
-    LOAD[Load agent manifest]
-    CUSTOM[Apply customizations]
-    ROSTER[Build complete agent roster]
-    ACTIVATE[Announce party activation]
-    TOPIC[User provides topic]
-    SELECT[BMad Master selects 2-3 relevant agents]
-    RESPOND[Agents respond in character]
-    CROSS[Agents cross-talk and collaborate]
-    MOD{Discussion<br/>productive?}
-    CONTINUE{More to<br/>discuss?}
-    EXIT[Agents provide farewells]
-    END([Party mode ends])
+1. Party mode reads `bmad/_cfg/agent-manifest.csv`
+2. Loads ALL installed agents (already includes your customizations from install)
+3. BMad Master orchestrates - picks 2-3 relevant agents per message based on topic
+4. Agents respond in character, can agree/disagree/build on each other's ideas
+5. Discussion continues until you type "exit" or reach natural conclusion
 
-    START --> LOAD
-    LOAD --> CUSTOM
-    CUSTOM --> ROSTER
-    ROSTER --> ACTIVATE
-    ACTIVATE --> TOPIC
-    TOPIC --> SELECT
-    SELECT --> RESPOND
-    RESPOND --> CROSS
-    CROSS --> MOD
-    MOD -->|Yes| CONTINUE
-    MOD -->|Circular| SELECT
-    CONTINUE -->|Yes| SELECT
-    CONTINUE -->|No| EXIT
-    EXIT --> END
+**That's it.** No complex merging, no runtime magic. Just agents talking.
 
-    style START fill:#bfb,stroke:#333,stroke-width:2px
-    style ACTIVATE fill:#bbf,stroke:#333,stroke-width:2px
-    style CROSS fill:#fbf,stroke:#333,stroke-width:2px
-    style END fill:#fbb,stroke:#333,stroke-width:2px
-```
+---
 
-### Step-by-Step Breakdown
+## Quick Start
 
-#### 1. Agent Loading
+```bash
+# Trigger party mode
+/bmad:core:workflows:party-mode
 
-**Process:**
+# OR from any agent context
+*party-mode
 
-- Reads `{project-root}/bmad/_cfg/agent-manifest.csv`
-- Loads ALL installed agents with their complete personalities:
-  - name (identifier: "pm", "analyst", "storyteller")
-  - displayName (persona name: "John", "Mary")
-  - title (formal position)
-  - icon (emoji representation)
-  - role (one-line capability summary)
-  - identity (background paragraph)
-  - communicationStyle (how they speak)
-  - principles (decision-making philosophy)
-  - module (bmm, cis, bmb, core, custom)
-  - path (file location)
+# During party
+Ask questions, respond to agents, direct the conversation
 
-**Result:** Complete roster of all available agents with their default personalities.
-
-#### 2. Customization Application
-
-**Process:**
-
-- For each agent, checks for customization file:
-  - Path: `{project-root}/bmad/_cfg/agents/{module}-{agent-name}.customize.yaml`
-  - Example: `bmm-pm.customize.yaml`, `cis-storyteller.customize.yaml`
-- Merges customization with manifest data
-- **Override precedence:** Customization > Manifest
-
-**Examples:**
-
-```yaml
-# bmad/_cfg/agents/bmm-pm.customize.yaml
-agent:
-  persona:
-    communicationStyle: 'Formal and corporate-focused'
-    principles:
-      - 'HIPAA compliance is non-negotiable'
-```
-
-**Result:** All agents loaded with their final, customized personalities.
-
-#### 3. Party Activation
-
-**Process:**
-
-- BMad Master announces party mode activation
-- Lists all participating agents by name and role
-- Welcomes user to the conversation
-- Waits for user to introduce topic
-
-**Example Announcement:**
-
-```
-🧙 BMad Master has activated Party Mode!
-
-Participating Agents:
-📋 PM (John) - Product Strategy
-📊 Analyst (Mary) - Research & Requirements
-🏗️ Architect (Winston) - System Design
-🎨 UX Designer (Sally) - User Experience
-🎲 Game Designer (Samus Shepard) - Creative Vision
-💡 Innovation Strategist - Disruption & Strategy
-📖 Storyteller - Narrative & Communication
-
-What would you like to discuss?
-```
-
-#### 4. Dynamic Agent Selection
-
-**For each user message, BMad Master:**
-
-1. Analyzes the message topic and context
-2. Reviews all agent roles and expertise
-3. Selects 2-3 most relevant agents
-4. Considers conversation history (which agents spoke recently)
-5. Ensures diverse perspectives
-
-**Selection Criteria:**
-
-- **Expertise Match:** Agent's role aligns with topic
-- **Principle Alignment:** Agent's principles are relevant
-- **Context Awareness:** Previous discussion flow
-- **Diversity:** Mix of perspectives (technical + creative, strategic + tactical)
-
-**Example Selection:**
-
-```
-User: "How should we handle user authentication for our healthcare app?"
-
-BMad Master selects:
-- Architect (technical security expertise)
-- PM (compliance and requirements)
-- UX Designer (user experience balance)
-```
-
-#### 5. Agent Responses
-
-**Each selected agent:**
-
-- Responds **in character** using their merged personality
-- Applies their communication style
-- References their expertise and principles
-- Can ask clarifying questions
-- Can reference other agents' points
-
-**Example Exchange:**
-
-```
-Architect (Winston): "Healthcare authentication requires HIPAA compliance.
-I recommend OAuth 2.0 with MFA and audit logging. We should also consider..."
-
-PM (John): "Building on Winston's point, we need to document compliance
-in the PRD. Mary, have we researched HIPAA requirements yet?"
-
-UX Designer (Sally): "From a user perspective, MFA can't add friction
-for clinicians in emergency scenarios. We need conditional requirements..."
-```
-
-#### 6. Natural Cross-Talk
-
-**Agents can:**
-
-- **Build on each other's points:** "Expanding on what Architect said..."
-- **Respectfully disagree:** "I see Sally's concern, but I think..."
-- **Ask each other questions:** "Winston, how would that affect performance?"
-- **Reference user input:** "As you mentioned earlier..."
-- **Synthesize perspectives:** "Both approaches have merit. The trade-off is..."
-
-**Key Feature:** Agents debate naturally, creating **emergent insights** from their interaction.
-
-#### 7. Active Moderation
-
-**BMad Master monitors:**
-
-- Discussion productivity
-- Circular arguments
-- Completion signals
-
-**Moderator Actions:**
-
-- **If circular:** Summarizes discussion, redirects to new aspect
-- **If stuck:** Suggests specific angles to explore
-- **If questions:** Ensures user input is sought
-- **If complete:** Recognizes natural conclusion
-
-**Example Moderation:**
-
-```
-BMad Master: "The discussion has circled back to authentication methods.
-Let me summarize the three approaches proposed:
-1. OAuth 2.0 + MFA (Architect)
-2. SSO with conditional MFA (UX Designer)
-3. Biometric + PIN fallback (PM)
-
-Which aspects would you like the team to explore deeper?
-Or are you ready to make a decision?"
-```
-
-#### 8. Graceful Exit
-
-**Party mode ends when:**
-
-- User triggers exit command ("exit", "end party", "done")
-- Natural conclusion reached
-- User stops responding
-
-**Exit Process:**
-
-1. BMad Master signals party conclusion
-2. 2-3 agents provide characteristic farewells
-3. Party mode cleanly exits
-
-**Example Farewell:**
-
-```
-PM (John): "Great session. I'll document these decisions in the PRD."
-
-UX Designer (Sally): "Excited to design the auth flow. Let's keep
-the user at the center!"
-
-BMad Master: "Party mode concluded. The agents stand ready for
-individual consultation when needed."
+# Exit
+Type: exit
 ```
 
 ---
 
-## When to Use Party Mode
+## Fun Examples
 
-### Strategic Discussions
+### Example 1: Calling Out Bad Architecture
 
-**Best for decisions with:**
+**You:** "Okay team, our last sprint was a disaster. The authentication service went down three times. Who screwed this up?"
 
-- Multiple stakeholders (technical, business, user)
-- Trade-offs to balance (cost, time, quality, UX)
-- Long-term implications
-- Cross-functional impact
+**Architect (Winston):** "The design was sound - distributed authentication with proper fallbacks. If implementation deviated from the spec..."
 
-**Examples:**
+**DEV (Amelia):** "I followed the architecture doc exactly. The spec didn't account for concurrent session invalidation race conditions."
 
-- Product vision and market positioning
-- Architecture approach selection
-- Technology stack decisions
-- Scope and priority negotiations
-- Phase transition planning
+**PM (John):** "Both of you missed the bigger issue - we didn't validate session management requirements in the PRD. This is on me for not catching it."
 
-**Why party mode helps:**
+**TEA (Murat):** "And I should've caught this in integration tests. The test scenarios didn't cover concurrent invalidation."
 
-- Technical agents ground creative ideas in reality
-- Strategic agents ensure market fit
-- UX agents advocate for user needs
-- Multiple perspectives reveal blind spots
+_(Watch them debate whose fault it really was - it's therapeutic)_
 
 ---
 
-### Creative Sessions
+### Example 2: Creative Brainstorming
 
-**Best for:**
+**You:** "How do we make onboarding feel magical instead of boring?"
 
-- Ideation without constraints
-- Exploring multiple solution approaches
-- Narrative and storytelling development
-- Innovation and novel ideas
-- Design thinking exercises
+**UX Designer (Sally):** "Start with progressive disclosure - reveal features as users need them, not all at once in a tutorial."
 
-**Examples:**
+**Storyteller (CIS):** "What if onboarding was a story? Each step reveals a character's journey - the user IS the hero."
 
-- Game design concept exploration
-- Narrative worldbuilding
-- UX ideation and flows
-- Problem-solving brainstorms
-- Feature innovation
+**Innovation Strategist (CIS):** "Take it further - gamify with unlockable achievements. But make them meaningful, not arbitrary badges."
 
-**Why party mode helps:**
+**Game Designer:** "Building on that - what if the first 'quest' is actually solving a real user problem? They learn by doing something valuable."
 
-- CIS agents bring creative frameworks
-- BMM agents ensure implementability
-- Cross-pollination of ideas across domains
-- "Yes, and..." collaborative building
+_(Ideas cross-pollinate and evolve)_
 
 ---
 
-### Cross-Functional Alignment
+### Example 3: Technical Decision
 
-**Best for:**
+**You:** "Monolith or microservices for MVP?"
 
-- Getting entire team on same page
-- Phase transitions
-- Epic kickoffs
-- Retrospectives with multiple perspectives
-- Quality gate reviews
+**Architect:** "Start monolith. Microservices add complexity you don't need at 1000 users."
 
-**Examples:**
+**PM:** "Agree. Time to market matters more than theoretical scalability."
 
-- Analysis → Planning transition
-- Planning → Solutioning alignment
-- Solutioning → Implementation readiness
-- Sprint retrospectives
-- Course correction decisions
+**DEV:** "Monolith with clear module boundaries. We can extract services later if needed."
 
-**Why party mode helps:**
+**Innovation Strategist:** "Contrarian take - if your differentiator IS scalability, build for it now. Otherwise Architect's right."
 
-- Everyone hears same information
-- Concerns raised immediately
-- Consensus built through discussion
-- Handoffs are clear
+_(Multiple perspectives reveal the right answer)_
 
 ---
 
-### Complex Problem Solving
+## When NOT to Use Party Mode
 
-**Best for:**
+**Skip party mode for:**
 
-- Multi-faceted challenges
-- No obvious solution
-- High risk or uncertainty
-- Novel situations
-- Constraint optimization
+- Simple implementation questions → Use DEV agent
+- Document review → Use Technical Writer
+- Workflow status checks → Use any agent + `*workflow-status`
+- Single-domain questions → Use specialist agent
 
-**Examples:**
+**Use party mode for:**
 
-- Performance + scalability + cost optimization
-- Technical debt vs. feature velocity
-- Legacy system migration strategy
-- Multi-platform architecture
-- Real-time collaboration architecture
-
-**Why party mode helps:**
-
-- Diverse expertise identifies constraints
-- Trade-offs made explicit
-- Creative + pragmatic balance
-- Risk assessment from multiple angles
+- Multi-perspective decisions
+- Creative collaboration
+- Post-mortems and retrospectives
+- Sprint planning sessions
+- Complex problem-solving
 
 ---
 
-## Getting Started
+## Agent Customization
 
-### Quick Start Guide
+Party mode uses agents from `bmad/[module]/agents/*.md` - these already include any customizations you applied during install.
 
-**1. Load BMad Master**
+**To customize agents for party mode:**
 
-```
-In your IDE (Claude Code, Cursor, Windsurf):
-Type: @bmad-master
-Wait for menu to appear
-```
+1. Create customization file: `bmad/_cfg/agents/bmm-pm.customize.yaml`
+2. Run `npx bmad-method install` to rebuild agents
+3. Customizations now active in party mode
 
-**2. Trigger Party Mode**
-
-```
-Type: *party-mode
-Press enter
-```
-
-**3. Review Agent Roster**
-
-```
-BMad Master lists all participating agents
-Includes agents from BMM, CIS, BMB, and custom modules
-```
-
-**4. Introduce Your Topic**
-
-```
-State your challenge, question, or goal
-Be specific: "We need to decide..." vs "I want to talk about..."
-Context helps: Mention project type, constraints, goals
-```
-
-**5. Engage with Agents**
-
-```
-2-3 agents will respond to your topic
-Answer their questions
-Respond to their suggestions
-Ask follow-up questions
-```
-
-**6. Direct the Discussion**
-
-```
-Guide focus: "Let's explore X in more detail"
-Seek specific perspectives: "Architect, what about performance?"
-Make decisions: "I'm leaning toward approach B because..."
-```
-
-**7. Conclude**
-
-```
-Type: "exit" or "end party" or "done"
-Or let conversation reach natural conclusion
-Agents will provide farewells
-```
-
-### Your First Party Mode Session
-
-**Recommended first topic:**
-
-```
-"I'm starting a [project type] and need help deciding between
-[option A] and [option B] for [specific aspect]."
-
-Example:
-"I'm starting a SaaS web app and need help deciding between
-monolith and microservices for our initial MVP."
-```
-
-**What to expect:**
-
-- Architect discusses technical implications
-- PM discusses business and timeline implications
-- DEV discusses implementation complexity
-- Possibly Innovation Strategist on competitive differentiation
-
-**Duration:** 10-20 minutes typically
-
----
-
-## Agent Selection & Dynamics
-
-### How Agents Are Selected
-
-**Per message, BMad Master considers:**
-
-1. **Topic Keywords:**
-   - "authentication" → Architect, DEV
-   - "user experience" → UX Designer
-   - "market positioning" → PM, Innovation Strategist
-   - "narrative" → Game Designer, Storyteller
-
-2. **Agent Roles:**
-   - Match expertise to topic
-   - Balance technical and creative
-   - Include strategic when appropriate
-
-3. **Conversation Context:**
-   - What was just discussed
-   - Which agents spoke recently
-   - What perspectives are missing
-
-4. **Diversity:**
-   - Avoid same 2 agents every time
-   - Rotate in different perspectives
-   - Ensure cross-functional views
-
-### Response Dynamics
-
-**Typical Pattern:**
-
-```
-User Message
-  ↓
-Agent 1 (Primary perspective)
-  ↓
-Agent 2 (Complementary perspective)
-  ↓
-Agent 3 (Optional: Third angle or synthesis)
-  ↓
-User Response (clarification, decision, new question)
-```
-
-**Cross-Talk Examples:**
-
-**Building Agreement:**
-
-```
-Architect: "We should use PostgreSQL for transactional data."
-DEV: "Agreed. I've worked with Postgres extensively, and it's
-excellent for this use case."
-```
-
-**Respectful Disagreement:**
-
-```
-UX Designer: "Users will find that flow confusing."
-PM: "I hear Sally's concern, but our user research shows
-power users prefer efficiency over simplicity."
-UX Designer: "That's fair. Could we offer both modes?"
-```
-
-**Cross-Pollination:**
-
-```
-Innovation Strategist: "What if we made this social?"
-Game Designer: "Building on that - gamification could drive engagement."
-UX Designer: "I can design for both. Leaderboards with privacy controls."
-```
-
-### Emergent Insights
-
-**What makes party mode powerful:**
-
-1. **Perspective Collision:**
-   - Technical meets creative
-   - Strategic meets tactical
-   - Ideal meets pragmatic
-
-2. **Healthy Debate:**
-   - Agents challenge assumptions
-   - Trade-offs made explicit
-   - Better decisions through conflict
-
-3. **Synthesis:**
-   - Agents combine ideas
-   - Novel solutions emerge
-   - "Best of both" approaches
-
-4. **Blind Spot Detection:**
-   - Each agent sees different risks
-   - Missing considerations surface
-   - Comprehensive coverage
-
----
-
-## Multi-Module Integration
-
-### Available Agent Pool
-
-Party mode loads agents from **all installed modules:**
-
-#### BMad Core (1 agent)
-
-- **BMad Master** - Orchestrator and facilitator
-
-#### BMM - BMad Method (12 agents)
-
-**Core Development:**
-
-- PM (Product Manager)
-- Analyst (Business Analyst)
-- Architect (System Architect)
-- SM (Scrum Master)
-- DEV (Developer)
-- TEA (Test Architect)
-- UX Designer
-- Paige (Documentation Guide)
-
-**Game Development:**
-
-- Game Designer
-- Game Developer
-- Game Architect
-
-#### CIS - Creative Intelligence Suite (5 agents)
-
-- Brainstorming Coach
-- Creative Problem Solver
-- Design Thinking Coach
-- Innovation Strategist
-- Storyteller
-
-#### BMB - BMad Builder (1 agent)
-
-- BMad Builder
-
-#### Custom Modules
-
-- Any custom agents you've created
-
-**Total Potential:** 19+ agents available for party mode
-
-### Cross-Module Collaboration
-
-**The Power of Mixing Modules:**
-
-**Example 1: Product Innovation**
-
-```
-Agents: PM (BMM) + Innovation Strategist (CIS) + Storyteller (CIS)
-Topic: Market positioning and product narrative
-Outcome: Strategic positioning with compelling story
-```
-
-**Example 2: Complex Architecture**
-
-```
-Agents: Architect (BMM) + Creative Problem Solver (CIS) + Game Architect (BMM)
-Topic: Novel pattern design for real-time collaboration
-Outcome: Innovative solution balancing creativity and pragmatism
-```
-
-**Example 3: User-Centered Design**
-
-```
-Agents: UX Designer (BMM) + Design Thinking Coach (CIS) + Storyteller (CIS)
-Topic: Empathy-driven UX with narrative flow
-Outcome: User journey that tells a story
-```
-
-**Example 4: Testing Strategy**
-
-```
-Agents: TEA (BMM) + Architect (BMM) + Problem Solver (CIS)
-Topic: Comprehensive quality approach
-Outcome: Risk-based testing with creative coverage strategies
-```
-
-### Module Discovery
-
-**How party mode finds agents:**
-
-1. **Manifest Read:** Parses `agent-manifest.csv`
-2. **Module Column:** Each agent tagged with source module
-3. **Path Validation:** Checks agent file exists
-4. **Personality Load:** Loads complete agent data
-5. **All Modules:** No filtering - all agents included
-
-**Result:** Seamless cross-module teams without manual configuration.
-
----
-
-## Example Party Compositions
-
-### 1. Strategic Product Planning
-
-**Participants:**
-
-- PM (John) - Product requirements
-- Innovation Strategist - Market disruption
-- Storyteller - Product narrative
-
-**Best For:**
-
-- Product vision definition
-- Market positioning
-- Value proposition design
-- Competitive differentiation
-
-**Example Topic:**
-"We're launching a project management tool. How do we differentiate in a crowded market?"
-
-**Expected Dynamics:**
-
-- Innovation Strategist identifies disruption opportunities
-- PM grounds in market realities and user needs
-- Storyteller crafts compelling narrative positioning
-
----
-
-### 2. Technical Architecture Deep-Dive
-
-**Participants:**
-
-- Architect (Winston) - System design
-- Game Architect (Cloud Dragonborn) - Complex systems
-- Creative Problem Solver - Novel approaches
-
-**Best For:**
-
-- Complex system design
-- Novel pattern invention
-- Performance optimization
-- Scalability challenges
-
-**Example Topic:**
-"We need real-time collaboration with 10,000 concurrent users. What's the architecture approach?"
-
-**Expected Dynamics:**
-
-- Architects debate technical approaches (WebSocket, WebRTC, CRDT)
-- Creative Problem Solver suggests novel patterns
-- Synthesis of proven + innovative solutions
-
----
-
-### 3. User Experience Innovation
-
-**Participants:**
-
-- UX Designer (Sally) - Interaction design
-- Design Thinking Coach - Empathy-driven process
-- Storyteller - User journey narrative
-
-**Best For:**
-
-- UX-heavy feature design
-- User journey mapping
-- Accessibility considerations
-- Interaction innovation
-
-**Example Topic:**
-"Design an onboarding experience that feels magical, not overwhelming."
-
-**Expected Dynamics:**
-
-- Design Thinking Coach facilitates empathy exploration
-- UX Designer translates to concrete interactions
-- Storyteller ensures narrative flow
-
----
-
-### 4. Game Design Session
-
-**Participants:**
-
-- Game Designer (Samus Shepard) - Core gameplay
-- Storyteller - Narrative design
-- Brainstorming Coach - Creative ideation
-
-**Best For:**
-
-- Game concept development
-- Narrative worldbuilding
-- Mechanic innovation
-- Player experience design
-
-**Example Topic:**
-"Create a puzzle game where players feel clever, not frustrated."
-
-**Expected Dynamics:**
-
-- Game Designer focuses on core loop and progression
-- Storyteller layers narrative meaning
-- Brainstorming Coach generates mechanic variations
-
----
-
-### 5. Quality & Testing Strategy
-
-**Participants:**
-
-- TEA (Murat) - Testing expertise
-- Architect (Winston) - System testability
-- Problem Solver - Creative coverage
-
-**Best For:**
-
-- Test strategy planning
-- Quality gate definition
-- Risk assessment
-- Coverage optimization
-
-**Example Topic:**
-"Define testing strategy for a microservices architecture."
-
-**Expected Dynamics:**
-
-- TEA defines comprehensive approach
-- Architect ensures architectural testability
-- Problem Solver identifies creative coverage strategies
-
----
-
-### 6. Epic Kickoff
-
-**Participants:**
-
-- PM (John) - Requirements clarity
-- Architect (Winston) - Technical approach
-- SM (Bob) - Story breakdown
-- DEV (Amelia) - Implementation feasibility
-
-**Best For:**
-
-- Epic planning sessions
-- Technical feasibility assessment
-- Story scope validation
-- Implementation approach alignment
-
-**Example Topic:**
-"Epic kickoff: Real-time notifications system"
-
-**Expected Dynamics:**
-
-- PM clarifies requirements and success criteria
-- Architect proposes technical approach
-- DEV validates implementation feasibility
-- SM plans story breakdown
-
----
-
-### 7. Documentation & Knowledge
-
-**Participants:**
-
-- Paige - Documentation standards
-- Analyst (Mary) - Information architecture
-- PM (John) - Requirements documentation
-
-**Best For:**
-
-- Documentation strategy
-- Knowledge transfer planning
-- API documentation approach
-- Architectural decision records
-
-**Example Topic:**
-"Document this brownfield codebase for AI-assisted development."
-
-**Expected Dynamics:**
-
-- Paige defines documentation standards
-- Analyst structures information architecture
-- PM ensures requirements traceability
-
----
-
-### 8. Creative Brainstorming (Pure CIS)
-
-**Participants:**
-
-- Brainstorming Coach
-- Creative Problem Solver
-- Innovation Strategist
-- Storyteller
-
-**Best For:**
-
-- Pure ideation
-- Innovation exploration
-- Creative problem solving
-- Strategic thinking
-
-**Example Topic:**
-"How can we disrupt the email newsletter industry?"
-
-**Expected Dynamics:**
-
-- Multiple creative frameworks applied
-- Diverse ideation techniques
-- Strategic + creative synthesis
-- Narrative framing of ideas
-
----
-
-## Agent Customization in Party Mode
-
-### How Customization Works
-
-**Customization Files:**
-
-- Location: `{project-root}/bmad/_cfg/agents/`
-- Naming: `{module}-{agent-name}.customize.yaml`
-- Format: YAML with persona overrides
-
-**Example Structure:**
+Example customization:
 
 ```yaml
 agent:
   persona:
-    displayName: 'Custom Name' # Optional
-    communicationStyle: 'Custom style' # Optional
-    principles: # Optional
-      - 'Project-specific principle'
-```
-
-### Override Precedence
-
-**Loading Order:**
-
-1. Read agent from manifest (default personality)
-2. Check for customization file
-3. If exists, merge with manifest
-4. **Customization values override manifest values**
-5. Unspecified fields use manifest defaults
-
-**Result:** Agents use customized personalities in party mode.
-
-### Common Customization Use Cases
-
-#### 1. Domain-Specific Expertise
-
-**Add healthcare expertise to PM:**
-
-```yaml
-# bmad/_cfg/agents/bmm-pm.customize.yaml
-agent:
-  persona:
-    identity: |
-      Product Manager with 15 years in healthcare SaaS.
-      Expert in HIPAA compliance, EHR integrations, and clinical workflows.
-      Balances regulatory requirements with user experience.
     principles:
       - 'HIPAA compliance is non-negotiable'
       - 'Patient safety over feature velocity'
-      - 'Clinical validation for every feature'
 ```
 
-**In Party Mode:**
-
-```
-PM now brings healthcare expertise to all discussions.
-Architect and PM can debate HIPAA-compliant architecture.
-UX Designer and PM can discuss clinical usability.
-```
-
-#### 2. Communication Style
-
-**Make Architect more casual:**
-
-```yaml
-# bmad/_cfg/agents/bmm-architect.customize.yaml
-agent:
-  persona:
-    communicationStyle: |
-      Friendly and approachable. Uses analogies and real-world examples.
-      Avoids jargon. Explains complex concepts simply.
-```
-
-**In Party Mode:**
-Architect's responses are more accessible to non-technical stakeholders.
-
-#### 3. Project-Specific Principles
-
-**Add startup constraints:**
-
-```yaml
-# bmad/_cfg/agents/bmm-pm.customize.yaml
-agent:
-  persona:
-    principles:
-      - 'MVP > perfect - ship fast, iterate'
-      - 'Technical debt is acceptable for validation'
-      - 'Focus on one metric that matters'
-```
-
-**In Party Mode:**
-PM pushes for rapid iteration, affecting all strategic discussions.
-
-#### 4. Cross-Project Consistency
-
-**Add company standards:**
-
-```yaml
-# bmad/_cfg/agents/bmm-architect.customize.yaml
-agent:
-  persona:
-    principles:
-      - 'AWS-only for all services (company policy)'
-      - 'TypeScript required for all projects'
-      - 'Microservices for all new systems'
-```
-
-**In Party Mode:**
-Architect enforces company standards, reducing technology debates.
-
-### Testing Customizations
-
-**Best way to see customizations in action:**
-
-1. Create customization file
-2. Load BMad Master
-3. Run `*party-mode`
-4. Introduce topic relevant to customized agent
-5. See agent respond with customized personality
-
-**Example Test:**
-
-```
-Customize PM with healthcare expertise
-↓
-Run party mode
-↓
-Topic: "User authentication approach"
-↓
-PM discusses HIPAA-compliant auth (customization active)
-```
+See [Agents Guide](./agents-guide.md#agent-customization) for details.
 
 ---
 
-## Best Practices
+## BMM Workflows That Use Party Mode
 
-### Effective Party Mode Usage
+**Current:**
 
-**1. Start with Clear Topics**
+- `epic-retrospective` - Post-epic team retrospective powered by party mode
+- Sprint planning discussions (informal party mode usage)
 
-```
-❌ "I want to talk about my app"
-✅ "I need to decide between REST and GraphQL for our mobile API"
+**Future:**
 
-❌ "Architecture stuff"
-✅ "What's the best caching strategy for read-heavy microservices?"
-```
+- Advanced elicitation workflows will officially integrate party mode
+- Multi-agent requirement validation
+- Collaborative technical reviews
 
-**2. Provide Context**
+---
 
-```
-Good Opening:
-"We're building a SaaS CRM for SMBs. Current tech stack: Next.js, Postgres.
-We need to add real-time notifications. What approach should we use?"
+## Available Agents
 
-Includes: Project type, constraints, specific question
-```
+Party mode can include **19+ agents** from all installed modules:
 
-**3. Engage Actively**
+**BMM (12 agents):** PM, Analyst, Architect, SM, DEV, TEA, UX Designer, Technical Writer, Game Designer, Game Developer, Game Architect
 
-```
-When agents respond:
-- Answer their questions
-- React to their suggestions
-- Ask follow-up questions
-- Make decisions when ready
-- Challenge assumptions
-```
+**CIS (5 agents):** Brainstorming Coach, Creative Problem Solver, Design Thinking Coach, Innovation Strategist, Storyteller
 
-**4. Direct When Needed**
+**BMB (1 agent):** BMad Builder
 
-```
-Useful phrases:
-- "Let's focus on X aspect first"
-- "Architect, how would that affect performance?"
-- "I'm concerned about Y - what do you think?"
-- "Can we explore option B in more detail?"
-```
+**Core (1 agent):** BMad Master (orchestrator)
 
-**5. Use for Right Scenarios**
+**Custom:** Any agents you've created
 
-```
-Great for party mode:
-✅ Strategic decisions
-✅ Trade-off discussions
-✅ Creative brainstorming
-✅ Cross-functional alignment
+---
 
-Not ideal for party mode:
-❌ Simple questions (use single agent)
-❌ Implementation details (use DEV)
-❌ Document review (use specific agent)
-```
+## Tips
 
-### Getting the Most Value
+**Get better results:**
 
-**1. Embrace Debate**
+- Be specific with your topic/question
+- Provide context (project type, constraints, goals)
+- Direct specific agents when you want their expertise
+- Make decisions - party mode informs, you decide
+- Time box discussions (15-30 minutes is usually plenty)
 
-- Healthy disagreement leads to better decisions
-- Different perspectives reveal blind spots
-- Synthesis often better than any single view
+**Examples of good opening questions:**
 
-**2. Make Decisions**
-
-- Party mode informs, you decide
-- Don't wait for consensus (rarely happens)
-- Choose approach and move forward
-- Document decision rationale
-
-**3. Time Box**
-
-- Most productive discussions: 15-30 minutes
-- If longer, consider breaking into focused sessions
-- Circular discussions signal completion
-
-**4. Customize Strategically**
-
-- Add domain expertise when relevant
-- Keep project constraints in mind
-- Don't over-customize (agents have good defaults)
-
-**5. Follow Up**
-
-- Use decisions in single-agent workflows
-- Document outcomes in planning docs
-- Reference party mode insights in architecture
+- "We need to decide between REST and GraphQL for our mobile API. Project is a B2B SaaS with 50 enterprise clients."
+- "Our last sprint failed spectacularly. Let's discuss what went wrong with authentication implementation."
+- "Brainstorm: how can we make our game's tutorial feel rewarding instead of tedious?"
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+**Same agents responding every time?**
+Vary your questions or explicitly request other perspectives: "Game Designer, your thoughts?"
 
-**Issue: Same agents responding every time**
+**Discussion going in circles?**
+BMad Master will summarize and redirect, or you can make a decision and move on.
 
-**Cause:** Topic consistently matches same expertise areas
+**Too many agents talking?**
+Make your topic more specific - BMad Master picks 2-3 agents based on relevance.
 
-**Solution:**
-
-- Vary your questions to engage different agents
-- Explicitly request perspectives: "Game Designer, your thoughts?"
-- Ask about different aspects of same topic
-
----
-
-**Issue: Discussion becomes circular**
-
-**Cause:** Fundamental disagreement or insufficient information
-
-**Solution:**
-
-- BMad Master will summarize and redirect
-- You can decide between options
-- Acknowledge need for more research/data
-- Table decision for later
-
----
-
-**Issue: Agents not using customizations**
-
-**Cause:** Customization file not found or malformed YAML
-
-**Solution:**
-
-1. Check file location: `bmad/_cfg/agents/{module}-{agent-name}.customize.yaml`
-2. Validate YAML syntax (no tabs, proper indentation)
-3. Verify module prefix matches (bmm-, cis-, bmb-)
-4. Reload party mode
-
----
-
-**Issue: Too many agents responding**
-
-**Cause:** Topic is broad or matches many expertise areas
-
-**Solution:**
-
-- Make topic more specific
-- Focus on one aspect at a time
-- BMad Master limits to 2-3 agents per message
-
----
-
-**Issue: Party mode feels overwhelming**
-
-**Cause:** First time, unfamiliar with agent personalities
-
-**Solution:**
-
-- Start with focused topics
-- Read [Agents Guide](./agents-guide.md) first
-- Try 1-2 party sessions before complex topics
-- Remember: You control the direction
+**Agents not using customizations?**
+Make sure you ran `npx bmad-method install` after creating customization files.
 
 ---
 
 ## Related Documentation
 
-**Agent Information:**
-
-- [Agents Guide](./agents-guide.md) - Complete agent reference with all 12 BMM agents + BMad Master
-- [Glossary](./glossary.md) - Key terminology including agent roles
-
-**Getting Started:**
-
-- [Quick Start Guide](./quick-start.md) - Introduction to BMM
-- [FAQ](./faq.md) - Common questions about agents and workflows
-
-**Team Collaboration:**
-
-- [Enterprise Agentic Development](./enterprise-agentic-development.md) - Multi-developer teams and coordination
-
-**Workflow Guides:**
-
-- [Phase 1: Analysis Workflows](./workflows-analysis.md)
-- [Phase 2: Planning Workflows](./workflows-planning.md)
-- [Phase 3: Solutioning Workflows](./workflows-solutioning.md)
-- [Phase 4: Implementation Workflows](./workflows-implementation.md)
-- [Testing & QA Workflows](./workflows-testing.md)
-
----
-
-## Quick Reference
-
-### Party Mode Commands
-
-```bash
-# Start party mode
-Load BMad Master → *party-mode
-
-# During party mode
-Type your topic/question
-Respond to agents
-Direct specific agents
-
-# Exit party mode
-"exit"
-"end party"
-"done"
-```
-
-### When to Use
-
-| Scenario                           | Use Party Mode? | Alternative                              |
-| ---------------------------------- | --------------- | ---------------------------------------- |
-| Strategic decision with trade-offs | ✅ Yes          | Single agent (PM, Architect)             |
-| Creative brainstorming             | ✅ Yes          | Single agent (Game Designer, CIS agents) |
-| Epic kickoff meeting               | ✅ Yes          | Sequential agent workflows               |
-| Simple implementation question     | ❌ No           | DEV agent                                |
-| Document review                    | ❌ No           | Paige agent                              |
-| Workflow status check              | ❌ No           | Any agent + \*workflow-status            |
-
-### Agent Selection by Topic
-
-| Topic              | Expected Agents                                 |
-| ------------------ | ----------------------------------------------- |
-| Architecture       | Architect, Game Architect, DEV                  |
-| Product Strategy   | PM, Innovation Strategist, Analyst              |
-| User Experience    | UX Designer, Design Thinking Coach              |
-| Testing            | TEA, Architect, DEV                             |
-| Creative/Narrative | Game Designer, Storyteller, Brainstorming Coach |
-| Documentation      | Paige, Analyst, PM                              |
-| Implementation     | DEV, Architect, SM                              |
+- [Agents Guide](./agents-guide.md) - Complete agent reference
+- [Quick Start Guide](./quick-start.md) - Getting started with BMM
+- [FAQ](./faq.md) - Common questions
 
 ---
 

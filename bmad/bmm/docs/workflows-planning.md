@@ -1,24 +1,89 @@
 # BMM Planning Workflows (Phase 2)
 
-**Reading Time:** ~15 minutes
-
 ## Overview
 
 Phase 2 (Planning) workflows are **required** for all projects. They transform strategic vision into actionable requirements that guide implementation. BMM uses a **scale-adaptive planning system** where the workflow automatically selects the right level of detail based on project complexity.
 
 **Key principle:** One workflow to rule them all - `plan-project` intelligently routes to the appropriate planning flow based on project characteristics.
 
+---
+
+## Phase 2 Planning Flow
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','fontSize':'16px','fontFamily':'arial'}}}%%
+graph TB
+    Entry["<b>START: plan-project</b><br/>Discovery and routing"]
+
+    subgraph QuickFlow["<b>QUICK FLOW (Levels 0-1)</b>"]
+        TechSpec["<b>PM: tech-spec</b><br/>Lightweight spec for simple changes"]
+    end
+
+    subgraph StandardFlow["<b>STANDARD PLANNING (Levels 2-4)</b>"]
+        PRD["<b>PM: prd</b><br/>Strategic PRD"]
+        GDD["<b>Game Designer: gdd</b><br/>Game design document"]
+        Narrative["<b>Game Designer: narrative</b><br/>Story-driven design"]
+        UXDesign["<b>UX Designer: ux</b><br/>UX-first specification"]
+
+        Epics["<b>PM: create-epics-and-stories</b><br/>Break requirements into epics and stories"]
+    end
+
+    subgraph Updates["<b>STORY UPDATES (Anytime After Epics Created)</b>"]
+        CorrectCourse["<b>PM/SM: correct-course</b><br/>Update epics/stories mid-stream"]
+    end
+
+    Entry -->|Level 0-1<br/>Simple| QuickFlow
+    Entry -->|Level 2-4<br/>Software| PRD
+    Entry -->|Level 2-4<br/>Game| GDD
+    Entry -->|Level 2-4<br/>Story-driven| Narrative
+    Entry -->|Level 2-4<br/>UX-first| UXDesign
+
+    PRD --> Epics
+    GDD --> Epics
+    Narrative --> Epics
+    UXDesign -.->|May update| Epics
+
+    Epics --> Phase3["<b>Phase 3: Architecture</b>"]
+    Phase3 -.->|May update| Epics
+
+    QuickFlow --> Phase4["<b>Phase 4: Implementation</b>"]
+    Phase3 --> Phase4
+
+    Phase4 -.->|Significant changes| CorrectCourse
+    CorrectCourse -.->|Updates| Epics
+
+    style Entry fill:#fff9c4,stroke:#f57f17,stroke-width:3px,color:#000
+    style QuickFlow fill:#c5e1a5,stroke:#33691e,stroke-width:3px,color:#000
+    style StandardFlow fill:#e1bee7,stroke:#6a1b9a,stroke-width:3px,color:#000
+    style Updates fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#000
+    style Phase3 fill:#90caf9,stroke:#0d47a1,stroke-width:2px,color:#000
+    style Phase4 fill:#ffcc80,stroke:#e65100,stroke-width:2px,color:#000
+
+    style TechSpec fill:#aed581,stroke:#1b5e20,stroke-width:2px,color:#000
+    style PRD fill:#ce93d8,stroke:#4a148c,stroke-width:2px,color:#000
+    style GDD fill:#ce93d8,stroke:#4a148c,stroke-width:2px,color:#000
+    style Narrative fill:#ce93d8,stroke:#4a148c,stroke-width:2px,color:#000
+    style UXDesign fill:#ce93d8,stroke:#4a148c,stroke-width:2px,color:#000
+    style Epics fill:#ba68c8,stroke:#6a1b9a,stroke-width:3px,color:#000
+    style CorrectCourse fill:#ef5350,stroke:#c62828,stroke-width:2px,color:#000
+```
+
+---
+
 ## Quick Reference
 
-| Workflow      | Project Levels | Duration   | Purpose                                 |
-| ------------- | -------------- | ---------- | --------------------------------------- |
-| **prd**       | 2-4            | 2-6 hours  | Strategic PRD + tactical epic breakdown |
-| **tech-spec** | 0-1            | 30-90 min  | Lightweight technical specification     |
-| **gdd**       | 2-4 (games)    | 4-10 hours | Complete game design document           |
-| **narrative** | 2-4 (story)    | 3-8 hours  | Story-driven game/experience design     |
-| **ux**        | 2-4 (UX-heavy) | 3-6 hours  | UX-first design specification           |
+| Workflow                     | Agent         | Project Levels | Purpose                                              |
+| ---------------------------- | ------------- | -------------- | ---------------------------------------------------- |
+| **prd**                      | PM            | 2-4            | Strategic PRD                                        |
+| **create-epics-and-stories** | PM            | 2-4            | Break PRD/GDD into epics and stories (standalone OK) |
+| **tech-spec**                | PM            | 0-1            | Lightweight technical specification                  |
+| **gdd**                      | Game Designer | 2-4 (games)    | Complete game design document                        |
+| **narrative**                | Game Designer | 2-4 (story)    | Story-driven game/experience design                  |
+| **ux**                       | UX Designer   | 2-4 (UX-heavy) | UX-first design specification                        |
 
 **Note:** The `plan-project` workflow is your single entry point. It automatically routes to the right planning workflow based on your answers to discovery questions.
+
+**Critical:** After PRD/GDD/Narrative complete, you must run `create-epics-and-stories` to generate user stories (can be done in same chat or separate chat later). These stories can be updated anytime via UX-Design, Architecture decisions, or `correct-course` during implementation.
 
 ---
 
@@ -73,7 +138,6 @@ Single unified entry point for all planning workflows. Uses conversational disco
 **Agent:** PM (orchestrates other agents as needed)
 **Phase:** 2 (Planning)
 **Required:** Yes (for all projects)
-**Typical Duration:** Varies by target workflow
 
 ### When to Use
 
@@ -161,28 +225,24 @@ ELSE:
 - **Input**: "Fix null pointer exception in user service"
 - **Discovery**: Level 0 (single atomic change)
 - **Route**: tech-spec (Quick Spec Flow)
-- **Duration**: 20 minutes
 
 **Scenario 2: E-commerce Checkout**
 
 - **Input**: "Build complete checkout flow with payment processing"
 - **Discovery**: Level 3 (large feature set), feature-focused
 - **Route**: prd (Standard depth)
-- **Duration**: 4 hours
 
 **Scenario 3: Roguelike Card Game**
 
 - **Input**: "Roguelike card battler with emotional narrative"
 - **Discovery**: Level 3 (large feature set), game project
 - **Route**: gdd
-- **Duration**: 6 hours
 
 **Scenario 4: Story-Driven Adventure**
 
 - **Input**: "Narrative adventure game with branching story"
 - **Discovery**: Level 3, story-central
 - **Route**: narrative (then gdd for mechanics)
-- **Duration**: 8 hours total
 
 ---
 
@@ -195,7 +255,6 @@ Lightweight technical specification for Levels 0-1 projects (single changes, sim
 **Agent:** Architect
 **Phase:** 2 (Planning)
 **Project Levels:** 0-1
-**Typical Duration:** 30-90 minutes
 
 ### When to Use
 
@@ -322,11 +381,6 @@ Strategic PRD with tactical epic breakdown for Levels 2-4 projects. Unified work
 **Agent:** PM (with Architect and Analyst support)
 **Phase:** 2 (Planning)
 **Project Levels:** 2-4
-**Typical Duration:**
-
-- Level 2: 2-3 hours (Lightweight)
-- Level 3: 3-5 hours (Standard)
-- Level 4: 5-8 hours (Comprehensive)
 
 ### When to Use
 
@@ -488,11 +542,6 @@ Complete game design document for Levels 2-4 game projects, adapted from industr
 **Agent:** PM (Game Designer persona)
 **Phase:** 2 (Planning)
 **Project Levels:** 2-4 (games)
-**Typical Duration:**
-
-- Level 2: 3-4 hours (Small indie game)
-- Level 3: 5-7 hours (Medium game)
-- Level 4: 8-12 hours (Large/commercial game)
 
 ### When to Use
 
@@ -666,11 +715,6 @@ Story-driven design workflow for games and experiences where narrative is centra
 **Agent:** PM (Narrative Designer persona) + Creative Problem Solver (CIS)
 **Phase:** 2 (Planning)
 **Project Levels:** 2-4 (story-driven projects)
-**Typical Duration:**
-
-- Level 2: 2-4 hours (Linear narrative)
-- Level 3: 4-6 hours (Branching narrative)
-- Level 4: 6-10 hours (Complex branching with multiple arcs)
 
 ### When to Use
 
@@ -825,11 +869,6 @@ UX specification workflow for projects where user experience is the primary diff
 **Agent:** UX Designer
 **Phase:** 2 (Planning)
 **Project Levels:** 2-4 (UX-heavy projects)
-**Typical Duration:**
-
-- Level 2: 2-3 hours (Single feature UX)
-- Level 3: 4-5 hours (Multi-screen experience)
-- Level 4: 6-8 hours (Platform-wide UX system)
 
 ### When to Use
 

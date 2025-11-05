@@ -1,44 +1,49 @@
-# Brownfield Level 4 - Enterprise Scale Changes to Existing System
-# 40+ stories, major expansion of existing enterprise system
+# BMad Method - Brownfield
+# Full product + architecture planning for complex brownfield additions (10-50+ stories typically)
 
-project_type: "software"
-level: 4
+method_name: "BMad Method"
+track: "method"
 field_type: "brownfield"
-description: "Enterprise scale expansion of existing system"
+description: "Complete product and system design for complex brownfield work"
 
 phases:
   - prerequisite: true
     name: "Documentation"
     conditional: "if_undocumented"
-    note: "NOT a phase - prerequisite for brownfield without docs OR post-completion cleanup. Critical for enterprise-scale changes"
+    note: "NOT a phase - prerequisite for brownfield without docs"
     workflows:
       - id: "document-project"
         required: true
         agent: "analyst"
         command: "document-project"
         output: "Comprehensive project documentation"
-        purpose: "Understand existing codebase before planning OR create superior final docs after Phase 4"
+        purpose: "Understand existing codebase before planning"
 
-  - phase: 1
-    name: "Analysis"
-    required: true
+  - phase: 0
+    name: "Discovery (Optional)"
+    optional: true
+    note: "User-selected during workflow-init"
     workflows:
       - id: "brainstorm-project"
-        recommended: true
+        optional: true
         agent: "analyst"
         command: "brainstorm-project"
+        included_by: "user_choice"
+
       - id: "research"
-        required: true
+        optional: true
         agent: "analyst"
         command: "research"
-        note: "Research existing system architecture deeply"
+        included_by: "user_choice"
+
       - id: "product-brief"
-        required: true
+        optional: true
         agent: "analyst"
         command: "product-brief"
-        note: "Strategic brief for major expansion"
+        included_by: "user_choice"
+        note: "Optional for brownfield, less common than greenfield"
 
-  - phase: 2
+  - phase: 1
     name: "Planning"
     required: true
     workflows:
@@ -46,38 +51,42 @@ phases:
         required: true
         agent: "pm"
         command: "prd"
-        output: "Comprehensive PRD considering existing system"
+        output: "PRD focused on new features/changes"
+        note: "Must consider existing system constraints"
+
       - id: "validate-prd"
         optional: true
         agent: "pm"
         command: "validate-prd"
+
       - id: "create-design"
-        required: true
+        conditional: "if_has_ui"
         agent: "ux-designer"
         command: "create-design"
-        note: "Multiple UI/UX specifications"
 
-  - phase: 3
+  - phase: 2
     name: "Solutioning"
     required: true
     workflows:
       - id: "create-architecture"
-        required: true
+        recommended: true
         agent: "architect"
         command: "create-architecture"
-        output: "Architecture for system expansion"
-        note: "Must maintain backward compatibility"
+        output: "Integration architecture - solution design for THIS project"
+        note: "HIGHLY RECOMMENDED: Distills massive brownfield context into focused solution design. Prevents agent confusion."
+
       - id: "validate-architecture"
         optional: true
         agent: "architect"
         command: "validate-architecture"
+
       - id: "solutioning-gate-check"
         required: true
         agent: "architect"
         command: "solutioning-gate-check"
-        note: "Critical validation before major changes"
+        note: "Validates PRD + UX + Architecture (if created) cohesion"
 
-  - phase: 4
+  - phase: 3
     name: "Implementation"
     required: true
     workflows:
@@ -85,4 +94,4 @@ phases:
         required: true
         agent: "sm"
         command: "sprint-planning"
-        note: "Creates sprint plan with all stories - subsequent work tracked in sprint plan output, not workflow-status"
+        note: "Creates sprint plan with stories"
