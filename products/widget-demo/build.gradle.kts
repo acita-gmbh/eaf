@@ -9,6 +9,13 @@ plugins {
 group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
+// Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
+// See: https://github.com/detekt/detekt/issues/6198
+// TODO: Remove when Detekt 2.x stable is released with Kotlin 2.2.x support
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    enabled = false
+}
+
 dependencies {
     // Framework modules
     implementation(project(":framework:core"))
