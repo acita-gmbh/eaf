@@ -160,12 +160,132 @@ CREATE INDEX idx_widget_published ON widget_view (published);
 ./gradlew :framework:persistence:build
 ```
 
+## Schema Change Workflow
+
+When you add or modify projection tables (`*_view` tables), follow this workflow to regenerate jOOQ classes:
+
+### 1. Create or Update Migration
+
+Create a new Flyway migration in the appropriate module:
+
+**Framework migrations (V001-V099):**
+```bash
+# Example: V050__add_audit_view.sql
+framework/persistence/src/main/resources/db/migration/V050__add_audit_view.sql
+```
+
+**Product migrations (V100+):**
+```bash
+# Example: V101__add_order_view.sql
+products/widget-demo/src/main/resources/db/migration/V101__add_order_view.sql
+```
+
+### 2. Apply Migration
+
+Run the migration to create/update the table in your local database:
+
+```bash
+# Ensure PostgreSQL is running
+./scripts/init-dev.sh
+
+# Apply migrations (automatic on app startup, or manually via Spring Boot)
+./gradlew :products:widget-demo:bootRun
+```
+
+### 3. Regenerate jOOQ Classes
+
+Generate updated Kotlin classes from the new schema:
+
+```bash
+# Set database connection (or use defaults)
+export JOOQ_DB_URL=jdbc:postgresql://localhost:5432/eaf
+export JOOQ_DB_USER=eaf_user
+export JOOQ_DB_PASSWORD=eaf_password
+
+# Regenerate jOOQ classes
+./gradlew :framework:persistence:jooqCodegen
+```
+
+**What happens:**
+- jOOQ scans the `eaf` schema for tables matching `.*_view` pattern
+- Generates Kotlin classes to `src/main/generated-kotlin/jooq/`
+- Updates table classes (e.g., `AuditView.kt`, `OrderView.kt`)
+- Preserves existing classes (e.g., `WidgetView.kt`)
+
+### 4. Verify Generated Classes
+
+Check that new classes were created:
+
+```bash
+# List generated table classes
+ls src/main/generated-kotlin/jooq/com/axians/eaf/framework/persistence/jooq/tables/
+
+# Expected output: AuditView.kt, OrderView.kt, WidgetView.kt, etc.
+```
+
+### 5. Commit Generated Sources
+
+jOOQ-generated sources are committed to enable CI builds (no database at build time):
+
+```bash
+git add src/main/generated-kotlin/jooq/
+git commit -m "feat: Regenerate jOOQ classes for new projection tables"
+```
+
+**Note:** Generated sources have `@file:Suppress("ktlint")` and are excluded from code style checks.
+
+### 6. Update Tests
+
+Add integration tests for the new projection table:
+
+```kotlin
+test("New projection table should support type-safe queries") {
+    dslContext.selectFrom(AUDIT_VIEW)
+        .where(AUDIT_VIEW.USER_ID.eq(userId))
+        .fetch()
+}
+```
+
+### Common Issues
+
+**Problem:** `relation "eaf.my_view" does not exist`
+- **Cause:** Migration not applied, or table created in wrong schema
+- **Fix:** Ensure migration has `CREATE SCHEMA IF NOT EXISTS eaf; SET search_path TO eaf;`
+
+**Problem:** `Unresolved reference: MY_VIEW`
+- **Cause:** jOOQ classes not generated
+- **Fix:** Run `./gradlew :framework:persistence:jooqCodegen`
+
+**Problem:** jOOQ generates classes for wrong tables
+- **Cause:** `includes` pattern too broad
+- **Fix:** Verify `includes = ".*_view"` in build.gradle.kts (line 79)
+
 ## Dependencies
 
-- **jOOQ 3.20.8** - Type-safe SQL DSL
+- **jOOQ 3.20.8** - Type-safe SQL DSL (see Version Monitoring below)
 - **PostgreSQL 42.7.8** - JDBC driver
 - **Flyway 11.15.0** - Database migrations
 - **Spring Boot 3.5.7** - Framework integration
+
+### Version Monitoring
+
+**Current Version:** jOOQ 3.20.8 (verified via integration test)
+
+**Monitoring Strategy:**
+- Monitor [jOOQ Release Notes](https://www.jooq.org/notes) for version 3.21+ releases
+- Focus areas for future upgrades:
+  - Kotlin DSL improvements (better type inference, coroutine support)
+  - Performance optimizations for code generation
+  - PostgreSQL 17+ compatibility
+  - Breaking changes in query API
+
+**Upgrade Checklist (for jOOQ 3.21+):**
+1. Review release notes for breaking changes
+2. Update version in `gradle/libs.versions.toml`
+3. Regenerate jOOQ classes: `./gradlew :framework:persistence:jooqCodegen`
+4. Run full test suite: `./gradlew :framework:persistence:integrationTest`
+5. Verify version test passes (JooqCodegenValidationTest)
+6. Update this README with version-specific notes
 
 ## Architecture
 

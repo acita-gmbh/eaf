@@ -196,4 +196,12 @@ class JooqCodegenValidationTest :
 
             updated!!.published shouldBe true
         }
+
+        test("AC1: jOOQ dependency version should be 3.20.8") {
+            // Verify jOOQ runtime version matches expected version catalog entry
+            val jooqVersion = org.jooq.Constants.VERSION
+
+            // Then: Should be version 3.20.8
+            jooqVersion shouldBe "3.20.8"
+        }
     })
