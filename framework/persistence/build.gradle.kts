@@ -1,6 +1,7 @@
 plugins {
     id("eaf.kotlin-common")
     id("eaf.testing")
+    alias(libs.plugins.jooq.codegen)
 }
 
 description = "EAF Persistence Framework - jOOQ adapters and projections"
@@ -40,4 +41,35 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.spring.boot.starter.test)
+
+    // jOOQ code generation dependencies
+    jooqCodegen(libs.postgresql)
+    jooqCodegen(libs.jooq.codegen)
+}
+
+// jOOQ Code Generation Configuration
+jooq {
+    configuration {
+        jdbc {
+            driver = "org.postgresql.Driver"
+            url = System.getenv("JOOQ_DB_URL") ?: "jdbc:postgresql://localhost:5432/eaf"
+            user = System.getenv("JOOQ_DB_USER") ?: "eaf_user"
+            password = System.getenv("JOOQ_DB_PASSWORD") ?: "eaf_pass"
+        }
+
+        generator {
+            name = "org.jooq.codegen.KotlinGenerator"
+
+            database {
+                name = "org.jooq.meta.postgres.PostgresDatabase"
+                inputSchema = "eaf"
+                includes = ".*_view" // Only projection tables
+            }
+
+            target {
+                packageName = "com.axians.eaf.framework.persistence.jooq"
+                directory = "build/generated-src/jooq/main"
+            }
+        }
+    }
 }
