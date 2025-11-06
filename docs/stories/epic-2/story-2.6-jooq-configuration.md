@@ -3,8 +3,8 @@
 **Story Context:** [2-6-jooq-configuration.context.xml](2-6-jooq-configuration.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** REVIEW
-**Story Points:** TBD
+**Status:** DONE
+**Story Points:** 5
 **Related Requirements:** FR003 (Event Store - jOOQ projections)
 
 ---
@@ -166,7 +166,7 @@ class WidgetQueryService(private val dsl: DSLContext) {
 - [x] Integration test passes
 - [x] Type-safe queries validated
 - [x] Migration successful
-- [x] Story marked as REVIEW in workflow status
+- [x] Story marked as DONE in workflow status
 
 ---
 
