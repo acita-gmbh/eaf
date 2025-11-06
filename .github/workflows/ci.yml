@@ -26,7 +26,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Project
-        run: ./gradlew build --no-daemon --stacktrace
+        run: ./gradlew assemble --no-daemon --stacktrace
 
       - name: Code Formatting Check (ktlint)
         run: ./gradlew ktlintCheck --no-daemon
@@ -34,11 +34,11 @@ jobs:
       - name: Static Analysis (Detekt)
         run: ./gradlew detekt --no-daemon
 
-      - name: Unit Tests
-        run: ./gradlew test --no-daemon
+      - name: Unit Tests (JUnit Platform for XML reports)
+        run: ./gradlew ciTests --no-daemon
 
       - name: Integration Tests
-        run: ./gradlew integrationTest --no-daemon --stacktrace
+        run: ./gradlew integrationTests --no-daemon --stacktrace
 
       - name: Architecture Tests (Konsist)
         run: ./gradlew :shared:testing:test --no-daemon
