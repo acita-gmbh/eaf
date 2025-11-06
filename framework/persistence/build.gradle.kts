@@ -6,13 +6,21 @@ plugins {
 
 description = "EAF Persistence Framework - jOOQ adapters and projections"
 
+// Exclude generated jOOQ sources from ktlint checks
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    filter {
+        exclude("**/kotlin-generated/**")
+    }
+}
+
 sourceSets {
     named("integrationTest") {
         resources.srcDir("src/integration-test/resources")
     }
     named("main") {
         // Committed generated jOOQ sources (available in CI without DB)
-        java.srcDir("src/main/kotlin-generated/jooq")
+        // Path contains 'generated' to match ktlint exclude pattern
+        java.srcDir("src/main/generated-kotlin/jooq")
     }
 }
 
@@ -77,4 +85,3 @@ jooq {
         }
     }
 }
-

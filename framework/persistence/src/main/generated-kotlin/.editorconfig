@@ -1,0 +1,9 @@
+# jOOQ Generated Sources - Disable ktlint
+# Generated code does not comply with project coding standards
+# Uppercase constants (WIDGET_VIEW.ID) are jOOQ conventions
+
+root = true
+
+[*.kt]
+disabled_rules = standard:property-naming
+ktlint_disabled_rules = standard:property-naming
