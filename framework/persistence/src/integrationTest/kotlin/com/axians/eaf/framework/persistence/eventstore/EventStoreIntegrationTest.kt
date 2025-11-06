@@ -1,6 +1,5 @@
 package com.axians.eaf.framework.persistence.eventstore
 
-import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.collections.shouldHaveSize
@@ -43,7 +42,6 @@ import javax.sql.DataSource
  * @see PostgresEventStoreConfiguration
  * @see com.axians.eaf.framework.persistence.migration.V001__event_store_schema
  */
-@Ignored // TODO: Fix Spring Boot context initialization issue (separate from Story 2.6)
 @SpringBootTest(classes = [EventStoreIntegrationTest.TestConfiguration::class])
 class EventStoreIntegrationTest : FunSpec() {
     @Autowired
