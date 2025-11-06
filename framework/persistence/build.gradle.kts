@@ -10,6 +10,9 @@ sourceSets {
     named("integrationTest") {
         resources.srcDir("src/integration-test/resources")
     }
+    named("main") {
+        java.srcDir("build/generated-src/jooq/main")
+    }
 }
 
 dependencies {

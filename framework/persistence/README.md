@@ -62,6 +62,7 @@ CREATE TABLE widget_view (
 
 ```kotlin
 import com.axians.eaf.framework.persistence.jooq.tables.WidgetView.Companion.WIDGET_VIEW
+import com.axians.eaf.framework.persistence.jooq.tables.records.WidgetViewRecord
 import org.jooq.DSLContext
 import java.util.UUID
 

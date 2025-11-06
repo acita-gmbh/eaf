@@ -3,6 +3,10 @@
 --
 -- Purpose: Create widget_view projection table for jOOQ type-safe queries
 -- Architecture: CQRS read model materialized from WidgetCreatedEvent, WidgetPublishedEvent
+-- CRITICAL: jOOQ code generation expects 'eaf' schema, not 'public'
+
+CREATE SCHEMA IF NOT EXISTS eaf;
+SET search_path TO eaf;
 
 CREATE TABLE widget_view (
     id UUID PRIMARY KEY,

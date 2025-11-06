@@ -60,6 +60,11 @@ class JooqCodegenValidationTest :
             postgres.stop()
         }
 
+        beforeEach {
+            // Clean table before each test to avoid data pollution
+            dslContext.deleteFrom(WIDGET_VIEW).execute()
+        }
+
         test("AC5: Generated WIDGET_VIEW table class should have all column accessors") {
             // Verify generated jOOQ class structure
             WIDGET_VIEW shouldNotBe null
@@ -150,8 +155,8 @@ class JooqCodegenValidationTest :
                     .where(WIDGET_VIEW.PUBLISHED.eq(true))
                     .fetchOne(0, Int::class.java)
 
-            // Then: Should return only published widgets count
-            (publishedCount!! >= 1) shouldBe true
+            // Then: Should return exactly 1 published widget
+            publishedCount shouldBe 1
         }
 
         test("AC7: Type-safe jOOQ UPDATE should modify records") {

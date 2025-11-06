@@ -1,5 +1,9 @@
 -- Test schema for jOOQ integration tests
 -- Creates widget_view projection table for Testcontainers PostgreSQL
+-- CRITICAL: jOOQ code generation expects 'eaf' schema, not 'public'
+
+CREATE SCHEMA IF NOT EXISTS eaf;
+SET search_path TO eaf;
 
 CREATE TABLE widget_view (
     id UUID PRIMARY KEY,
