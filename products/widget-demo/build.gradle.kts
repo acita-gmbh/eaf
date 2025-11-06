@@ -25,6 +25,12 @@ dependencies {
     // Axon Framework for CQRS/ES
     implementation(libs.bundles.axon.framework)
 
+    // jOOQ for type-safe SQL (Story 2.6-2.7)
+    implementation(libs.bundles.jooq)
+
+    // Metrics for projection monitoring (Story 2.7)
+    implementation(libs.micrometer.core)
+
     // Testing
     testImplementation(libs.axon.test)
 }

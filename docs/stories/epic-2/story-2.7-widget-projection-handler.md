@@ -3,7 +3,7 @@
 **Story Context:** [2-7-widget-projection-handler.context.xml](2-7-widget-projection-handler.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
+**Status:** REVIEW
 **Story Points:** TBD
 **Related Requirements:** FR003 (Event Store - Projections), FR011 (Performance - Event lag <10s)
 
@@ -129,39 +129,39 @@ class ProjectionLagMonitor(
 
 ## Implementation Checklist
 
-- [ ] Create WidgetProjectionEventHandler.kt with @Component
-- [ ] Implement @EventHandler for WidgetCreatedEvent (INSERT)
-- [ ] Implement @EventHandler for WidgetUpdatedEvent (UPDATE)
-- [ ] Implement @EventHandler for WidgetPublishedEvent (UPDATE)
-- [ ] Use jOOQ DSLContext for all database operations
-- [ ] Configure TrackingEventProcessor in application.yml
-- [ ] Add error handling (log + metrics)
-- [ ] Add projection lag monitoring
-- [ ] Write integration test: dispatch command → verify projection updated
-- [ ] Measure projection lag (<10s target)
-- [ ] Commit: "Add Widget projection event handler with jOOQ"
+- [x] Create WidgetProjectionEventHandler.kt with @Component
+- [x] Implement @EventHandler for WidgetCreatedEvent (INSERT)
+- [x] Implement @EventHandler for WidgetUpdatedEvent (UPDATE)
+- [x] Implement @EventHandler for WidgetPublishedEvent (UPDATE)
+- [x] Use jOOQ DSLContext for all database operations
+- [x] Configure TrackingEventProcessor in application.yml
+- [x] Add error handling (log + metrics)
+- [x] Add projection lag monitoring
+- [x] Write integration test: dispatch command → verify projection updated
+- [x] Measure projection lag (<10s target)
+- [x] Commit: "Add Widget projection event handler with jOOQ"
 
 ---
 
 ## Test Evidence
 
-- [ ] Integration test: CreateWidgetCommand → widget_view row inserted
-- [ ] Integration test: UpdateWidgetCommand → widget_view row updated
-- [ ] Integration test: PublishWidgetCommand → published flag set to true
-- [ ] Projection lag <10 seconds validated
-- [ ] Error metrics emitted on failure
-- [ ] TrackingEventProcessor processes events
+- [x] Integration test: CreateWidgetCommand → widget_projection row inserted
+- [x] Integration test: UpdateWidgetCommand → widget_projection row updated
+- [x] Integration test: PublishWidgetCommand → published flag set to true
+- [x] Projection lag <10 seconds validated
+- [x] Error metrics emitted on failure
+- [x] TrackingEventProcessor processes events
 
 ---
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
-- [ ] Integration test passes
-- [ ] Projection lag <10s validated
-- [ ] Error handling tested
-- [ ] Metrics emitted
-- [ ] Story marked as DONE in workflow status
+- [x] All acceptance criteria met
+- [x] Integration test passes
+- [x] Projection lag <10s validated
+- [x] Error handling tested
+- [x] Metrics emitted
+- [x] Story marked as DONE in workflow status
 
 ---
 
