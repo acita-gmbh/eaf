@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -12,10 +13,12 @@ import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.UUID
@@ -27,8 +30,19 @@ import java.util.UUID
  * - Command dispatched → Event published → Projection updated
  * - Uses Testcontainers PostgreSQL for real database
  * - Tests TrackingEventProcessor with projection lag <10s target (FR011)
+ *
+ * **Pattern:** Spring Boot 3.1+ @Testcontainers + @Container + @DynamicPropertySource
  */
-@SpringBootTest
+@Testcontainers
+@SpringBootTest(
+    classes = [WidgetDemoApplication::class],
+    properties = [
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.defer-datasource-initialization=true",
+    ],
+)
+@Sql("/schema.sql")
 @ActiveProfiles("test")
 class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
     @org.springframework.beans.factory.annotation.Autowired
@@ -143,22 +157,14 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
     }
 
     companion object {
-        private val postgres =
-            PostgreSQLContainer(DockerImageName.parse("postgres:16.10-alpine"))
-                .apply {
-                    withDatabaseName("eaf_test")
-                    withUsername("test")
-                    withPassword("test")
-                    start()
-                }
-
-        @DynamicPropertySource
+        @Container
+        @ServiceConnection
         @JvmStatic
-        fun configureProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url") { postgres.jdbcUrl }
-            registry.add("spring.datasource.username") { postgres.username }
-            registry.add("spring.datasource.password") { postgres.password }
-        }
+        val postgres: PostgreSQLContainer<*> =
+            PostgreSQLContainer(DockerImageName.parse("postgres:16.10-alpine"))
+                .withDatabaseName("eaf_test")
+                .withUsername("test")
+                .withPassword("test")
     }
 }
 

@@ -1,0 +1,56 @@
+# ============================================================================
+# Test Profile Configuration (Story 2.7)
+# ============================================================================
+# Override configuration for integration tests with Testcontainers.
+# Disables features that require external services or unnecessary auto-configuration.
+# ============================================================================
+
+spring:
+  # Disable JMX for tests (not needed)
+  jmx:
+    enabled: false
+
+  # Allow bean overriding for test flexibility
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Flyway for tests (Testcontainers handles schema)
+  flyway:
+    enabled: false
+
+  # Disable Spring Modulith Events (using Axon events exclusively)
+  modulith:
+    events:
+      jdbc:
+        enabled: false
+
+# Disable Management/Actuator for tests (avoids OpenTelemetry issues)
+management:
+  endpoints:
+    enabled-by-default: false
+  metrics:
+    enable:
+      all: false
+  tracing:
+    enabled: false
+
+# Disable Axon Server (using JDBC event store)
+axon:
+  axonserver:
+    enabled: false
+
+  eventhandling:
+    processors:
+      # Default event processor configuration
+      __default__:
+        mode: tracking
+        source: eventStore
+
+# Logging level for tests
+logging:
+  level:
+    root: WARN
+    com.axians.eaf: INFO
+    org.axonframework: WARN
+    org.springframework: WARN
+    org.testcontainers: INFO
