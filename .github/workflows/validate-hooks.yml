@@ -35,7 +35,7 @@ jobs:
         run: |
           grep -q './gradlew ktlintCheck --quiet' .git-hooks/pre-commit
           grep -q './gradlew detekt --quiet' .git-hooks/pre-push
-          grep -q './gradlew test --quiet' .git-hooks/pre-push
+          grep -q './gradlew ciTests --quiet' .git-hooks/pre-push
           grep -q '.git-hooks' scripts/install-git-hooks.sh
 
       - name: Ensure Gradle task copies templates
@@ -46,7 +46,7 @@ jobs:
         run: |
           grep -q 'ktlintCheck' .github/workflows/ci.yml
           grep -q 'detekt' .github/workflows/ci.yml
-          if ! grep -q 'test --quiet' .github/workflows/ci.yml && ! grep -q 'test --no-daemon' .github/workflows/ci.yml; then
-            echo "Gradle test command not found in CI workflow"
+          if ! grep -q 'ciTests' .github/workflows/ci.yml; then
+            echo "Gradle ciTests command not found in CI workflow"
             exit 1
           fi

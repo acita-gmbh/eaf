@@ -1,7 +1,7 @@
 [versions]
 # Core language and runtime (PINNED/LOCKED)
 kotlin = "2.2.21"          # Testing Kotlin 2.2.x with detekt 2.0.0-alpha.0
-kotlinx-serialization = "1.9.0"  # Kotest 6.0.3 XML reporting has known serialization incompatibility (non-blocking)
+kotlinx-serialization = "1.9.0"  # Kotest 6.0.4 XML reporter has known incompatibility (use ciTest for CI - see ci.yml)
 kotlinx-coroutines = "1.9.0"  # Kotlin coroutines library
 java = "21"                # LTS requirement
 gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
