@@ -76,6 +76,19 @@ axon:
     events: jackson
     messages: jackson
 
+  # Disable Axon Server (using JDBC event store)
+  axonserver:
+    enabled: false
+
+# ============================================================================
+# Spring Modulith Configuration
+# ============================================================================
+# Disable Spring Modulith Events (using Axon events exclusively)
+spring.modulith:
+  events:
+    jdbc:
+      enabled: false
+
 # ============================================================================
 # Logging Configuration (Development)
 # ============================================================================

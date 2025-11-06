@@ -1,5 +1,7 @@
 package com.axians.eaf.framework.core.domain
 
+import java.io.Serializable
+
 /**
  * Base class for DDD value objects.
  *
@@ -10,6 +12,7 @@ package com.axians.eaf.framework.core.domain
  * - **Immutability**: All properties should be `val` (read-only)
  * - **Structural Equality**: Two value objects are equal if all their attributes are equal
  * - **No Identity**: Unlike entities, value objects have no identifier
+ * - **Serializable**: Supports Axon snapshot serialization for event-sourced aggregates
  *
  * Implementation guideline:
  * Use Kotlin `data class` for automatic equals/hashCode based on all properties.
@@ -25,4 +28,8 @@ package com.axians.eaf.framework.core.domain
  * @see Entity
  * @see AggregateRoot
  */
-abstract class ValueObject
+abstract class ValueObject : Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
