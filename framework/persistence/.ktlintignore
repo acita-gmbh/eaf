@@ -1,0 +1,3 @@
+# Ignore jOOQ generated sources (code generation produces non-compliant naming)
+build/generated-src/**
+src/main/generated-kotlin/**

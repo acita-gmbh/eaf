@@ -1,0 +1,11 @@
+# jOOQ Generated Sources - Disable ktlint completely
+# Generated code does not comply with project coding standards
+# Uppercase constants (WIDGET_VIEW.ID) are jOOQ conventions
+# Formatting is managed by jOOQ code generator
+
+root = true
+
+[*.kt]
+# Disable ktlint completely for generated sources
+ktlint = disabled
+disabled_rules = *

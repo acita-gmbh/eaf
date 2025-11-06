@@ -57,7 +57,7 @@ development_status:
   2-3-event-store-partitioning: done
   2-4-snapshot-support: done
   2-5-widget-aggregate: done
-  2-6-jooq-configuration: ready-for-dev
+  2-6-jooq-configuration: done
   2-7-widget-projection-handler: ready-for-dev
   2-8-widget-query-handler: ready-for-dev
   2-9-rest-api-foundation: ready-for-dev
