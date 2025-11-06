@@ -5,17 +5,22 @@
  */
 package com.axians.eaf.framework.persistence.jooq.tables.records
 
+
 import com.axians.eaf.framework.persistence.jooq.tables.WidgetView
-import org.jooq.Record1
-import org.jooq.impl.UpdatableRecordImpl
+
 import java.time.OffsetDateTime
 import java.util.UUID
+
+import org.jooq.Record1
+import org.jooq.impl.UpdatableRecordImpl
+
 
 /**
  * Widget projection table for read queries (CQRS read model)
  */
 @Suppress("warnings")
 open class WidgetViewRecord() : UpdatableRecordImpl<WidgetViewRecord>(WidgetView.WIDGET_VIEW) {
+
     open var id: UUID?
         set(value): Unit = set(0, value)
         get(): UUID? = get(0) as UUID?
@@ -45,13 +50,7 @@ open class WidgetViewRecord() : UpdatableRecordImpl<WidgetViewRecord>(WidgetView
     /**
      * Create a detached, initialised WidgetViewRecord
      */
-    constructor(
-        id: UUID? = null,
-        name: String? = null,
-        published: Boolean? = null,
-        createdAt: OffsetDateTime? = null,
-        updatedAt: OffsetDateTime? = null,
-    ) : this() {
+    constructor(id: UUID? = null, name: String? = null, published: Boolean? = null, createdAt: OffsetDateTime? = null, updatedAt: OffsetDateTime? = null): this() {
         this.id = id
         this.name = name
         this.published = published

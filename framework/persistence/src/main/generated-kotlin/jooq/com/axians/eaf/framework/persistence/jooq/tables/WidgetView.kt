@@ -5,11 +5,19 @@
  */
 package com.axians.eaf.framework.persistence.jooq.tables
 
+
 import com.axians.eaf.framework.persistence.jooq.Eaf
 import com.axians.eaf.framework.persistence.jooq.indexes.IDX_WIDGET_CREATED
 import com.axians.eaf.framework.persistence.jooq.indexes.IDX_WIDGET_PUBLISHED
 import com.axians.eaf.framework.persistence.jooq.keys.WIDGET_VIEW_PKEY
 import com.axians.eaf.framework.persistence.jooq.tables.records.WidgetViewRecord
+
+import java.time.OffsetDateTime
+import java.util.UUID
+
+import kotlin.collections.Collection
+import kotlin.collections.List
+
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.ForeignKey
@@ -30,10 +38,7 @@ import org.jooq.UniqueKey
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
 import org.jooq.impl.TableImpl
-import java.time.OffsetDateTime
-import java.util.UUID
-import kotlin.collections.Collection
-import kotlin.collections.List
+
 
 /**
  * Widget projection table for read queries (CQRS read model)
@@ -46,20 +51,21 @@ open class WidgetView(
     parentPath: InverseForeignKey<out Record, WidgetViewRecord>?,
     aliased: Table<WidgetViewRecord>?,
     parameters: Array<Field<*>?>?,
-    where: Condition?,
-) : TableImpl<WidgetViewRecord>(
-        alias,
-        Eaf.EAF,
-        path,
-        childPath,
-        parentPath,
-        aliased,
-        parameters,
-        DSL.comment("Widget projection table for read queries (CQRS read model)"),
-        TableOptions.table(),
-        where,
-    ) {
+    where: Condition?
+): TableImpl<WidgetViewRecord>(
+    alias,
+    Eaf.EAF,
+    path,
+    childPath,
+    parentPath,
+    aliased,
+    parameters,
+    DSL.comment("Widget projection table for read queries (CQRS read model)"),
+    TableOptions.table(),
+    where,
+) {
     companion object {
+
         /**
          * The reference instance of <code>eaf.widget_view</code>
          */
@@ -75,103 +81,53 @@ open class WidgetView(
      * The column <code>eaf.widget_view.id</code>. Widget aggregate identifier
      * (UUID)
      */
-    val ID: TableField<WidgetViewRecord, UUID?> =
-        createField(DSL.name("id"), SQLDataType.UUID.nullable(false), this, "Widget aggregate identifier (UUID)")
+    val ID: TableField<WidgetViewRecord, UUID?> = createField(DSL.name("id"), SQLDataType.UUID.nullable(false), this, "Widget aggregate identifier (UUID)")
 
     /**
      * The column <code>eaf.widget_view.name</code>. Widget display name
      */
-    val NAME: TableField<WidgetViewRecord, String?> =
-        createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "Widget display name")
+    val NAME: TableField<WidgetViewRecord, String?> = createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "Widget display name")
 
     /**
      * The column <code>eaf.widget_view.published</code>. Publication status
      * (true = publicly visible)
      */
-    val PUBLISHED: TableField<WidgetViewRecord, Boolean?> =
-        createField(
-            DSL.name("published"),
-            SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)),
-            this,
-            "Publication status (true = publicly visible)",
-        )
+    val PUBLISHED: TableField<WidgetViewRecord, Boolean?> = createField(DSL.name("published"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "Publication status (true = publicly visible)")
 
     /**
      * The column <code>eaf.widget_view.created_at</code>. Widget creation
      * timestamp
      */
-    val CREATED_AT: TableField<WidgetViewRecord, OffsetDateTime?> =
-        createField(
-            DSL.name("created_at"),
-            SQLDataType
-                .TIMESTAMPWITHTIMEZONE(
-                    6,
-                ).nullable(false)
-                .defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)),
-            this,
-            "Widget creation timestamp",
-        )
+    val CREATED_AT: TableField<WidgetViewRecord, OffsetDateTime?> = createField(DSL.name("created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "Widget creation timestamp")
 
     /**
      * The column <code>eaf.widget_view.updated_at</code>. Last update timestamp
      */
-    val UPDATED_AT: TableField<WidgetViewRecord, OffsetDateTime?> =
-        createField(
-            DSL.name("updated_at"),
-            SQLDataType
-                .TIMESTAMPWITHTIMEZONE(
-                    6,
-                ).nullable(false)
-                .defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)),
-            this,
-            "Last update timestamp",
-        )
+    val UPDATED_AT: TableField<WidgetViewRecord, OffsetDateTime?> = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "Last update timestamp")
 
-    private constructor(alias: Name, aliased: Table<WidgetViewRecord>?) : this(
-        alias,
-        null,
-        null,
-        null,
-        aliased,
-        null,
-        null,
-    )
-    private constructor(
-        alias: Name,
-        aliased: Table<WidgetViewRecord>?,
-        parameters: Array<Field<*>?>?,
-    ) : this(alias, null, null, null, aliased, parameters, null)
-    private constructor(
-        alias: Name,
-        aliased: Table<WidgetViewRecord>?,
-        where: Condition?,
-    ) : this(alias, null, null, null, aliased, null, where)
+    private constructor(alias: Name, aliased: Table<WidgetViewRecord>?): this(alias, null, null, null, aliased, null, null)
+    private constructor(alias: Name, aliased: Table<WidgetViewRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)
+    private constructor(alias: Name, aliased: Table<WidgetViewRecord>?, where: Condition?): this(alias, null, null, null, aliased, null, where)
 
     /**
      * Create an aliased <code>eaf.widget_view</code> table reference
      */
-    constructor(alias: String) : this(DSL.name(alias))
+    constructor(alias: String): this(DSL.name(alias))
 
     /**
      * Create an aliased <code>eaf.widget_view</code> table reference
      */
-    constructor(alias: Name) : this(alias, null)
+    constructor(alias: Name): this(alias, null)
 
     /**
      * Create a <code>eaf.widget_view</code> table reference
      */
-    constructor() : this(DSL.name("widget_view"), null)
-
+    constructor(): this(DSL.name("widget_view"), null)
     override fun getSchema(): Schema? = if (aliased()) null else Eaf.EAF
-
     override fun getIndexes(): List<Index> = listOf(IDX_WIDGET_CREATED, IDX_WIDGET_PUBLISHED)
-
     override fun getPrimaryKey(): UniqueKey<WidgetViewRecord> = WIDGET_VIEW_PKEY
-
     override fun `as`(alias: String): WidgetView = WidgetView(DSL.name(alias), this)
-
     override fun `as`(alias: Name): WidgetView = WidgetView(alias, this)
-
     override fun `as`(alias: Table<*>): WidgetView = WidgetView(alias.qualifiedName, this)
 
     /**
@@ -192,8 +148,7 @@ open class WidgetView(
     /**
      * Create an inline derived table from this table
      */
-    override fun where(condition: Condition?): WidgetView =
-        WidgetView(qualifiedName, if (aliased()) this else null, condition)
+    override fun where(condition: Condition?): WidgetView = WidgetView(qualifiedName, if (aliased()) this else null, condition)
 
     /**
      * Create an inline derived table from this table
@@ -218,25 +173,17 @@ open class WidgetView(
     /**
      * Create an inline derived table from this table
      */
-    @PlainSQL override fun where(
-        @Stringly.SQL condition: String,
-    ): WidgetView = where(DSL.condition(condition))
+    @PlainSQL override fun where(@Stringly.SQL condition: String): WidgetView = where(DSL.condition(condition))
 
     /**
      * Create an inline derived table from this table
      */
-    @PlainSQL override fun where(
-        @Stringly.SQL condition: String,
-        vararg binds: Any?,
-    ): WidgetView = where(DSL.condition(condition, *binds))
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg binds: Any?): WidgetView = where(DSL.condition(condition, *binds))
 
     /**
      * Create an inline derived table from this table
      */
-    @PlainSQL override fun where(
-        @Stringly.SQL condition: String,
-        vararg parts: QueryPart,
-    ): WidgetView = where(DSL.condition(condition, *parts))
+    @PlainSQL override fun where(@Stringly.SQL condition: String, vararg parts: QueryPart): WidgetView = where(DSL.condition(condition, *parts))
 
     /**
      * Create an inline derived table from this table
