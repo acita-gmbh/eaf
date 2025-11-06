@@ -38,6 +38,10 @@ class Widget : Serializable {
      */
     constructor()
 
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     /**
      * Command handler for widget creation.
      *
