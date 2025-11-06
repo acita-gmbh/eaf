@@ -11,7 +11,8 @@ sourceSets {
         resources.srcDir("src/integration-test/resources")
     }
     named("main") {
-        java.srcDir("build/generated-src/jooq/main")
+        // Committed generated jOOQ sources (available in CI without DB)
+        java.srcDir("src/main/kotlin-generated/jooq")
     }
 }
 
@@ -76,3 +77,4 @@ jooq {
         }
     }
 }
+
