@@ -144,6 +144,64 @@ eaf-v1/
 - **Plugin Order**: `id("eaf.testing")` BEFORE `id("eaf.spring-boot")` in product modules
 - **Async Testing**: Use `eventually` polling pattern for asynchronous tests
 
+### Known Issue: Kotest XML Reporter Bug (Spring Boot Modules Only)
+
+**Symptom:**
+```bash
+./gradlew :products:widget-demo:test
+  Tests:   15 passed, 0 failed, 0 ignored ✅
+  Time:    1s
+  BUILD FAILED ❌ (AbstractMethodError in XML reporter)
+```
+
+**When It Occurs:**
+- **ONLY** in `products/*` modules with Spring Boot (`id("eaf.spring-boot")`)
+- **NEVER** in `framework/*` modules (no Spring Boot)
+- Happens **AFTER** all tests complete successfully
+- Root cause: kotlinx-serialization-bom:1.6.3 conflict via Spring Boot dependencies
+
+**How to Recognize:**
+1. Test output shows "X passed, 0 failed" ✅
+2. Immediately followed by "BUILD FAILED" ❌
+3. Error mentions: `AbstractMethodError: typeParametersSerializers()` or `kotlinx.serialization`
+4. Error occurs in `io.kotest.engine.reports.JUnitXmlReportGenerator`
+
+**Correct Interpretation:**
+- ✅ **Tests are SUCCESSFUL** - All assertions passed
+- ✅ **Code is CORRECT** - No test failures
+- ❌ **XML Reporter crashed** - Non-functional issue, not a test problem
+- **DO NOT** attempt to fix tests - they are already passing!
+
+**Workarounds:**
+
+**Option 1: Use ciTest Task (Recommended for Verification)**
+```bash
+./gradlew :products:widget-demo:ciTest
+# → BUILD SUCCESSFUL ✅ (Uses JUnit Platform XML - no bug)
+```
+
+**Option 2: Ignore BUILD FAILED (Acceptable for Development)**
+```bash
+./gradlew :products:widget-demo:test
+# Tests passed ✅ → Story complete
+# BUILD FAILED ❌ → Ignore (XML reporter bug)
+```
+
+**When to Be Concerned:**
+- ❌ **Concern:** "Tests: X passed, **Y failed**" - Real test failures!
+- ❌ **Concern:** Tests throw exceptions during execution
+- ✅ **Not a concern:** "Tests: X passed, 0 failed" + BUILD FAILED (XML reporter)
+
+**CI/CD Behavior:**
+- GitHub Actions uses `ciTests` task (JUnit Platform) - **always succeeds** ✅
+- Local `./gradlew test` may show BUILD FAILED - **this is expected and safe**
+- Story is complete when: Tests pass ✅, even if BUILD FAILED due to XML reporter
+
+**References:**
+- Issue tracked in `gradle/libs.versions.toml:4`
+- CI workaround in `.github/workflows/ci.yml` (uses `ciTests` instead of `test`)
+- Root cause: https://github.com/Kotlin/kotlinx.serialization/issues/2968
+
 ### Nullable Design Pattern
 - **Factory Pattern**: `createNull()` convention for all nullable implementations
 - **Purpose**: Fast domain testing with real business logic, stubbed infrastructure
