@@ -235,10 +235,13 @@ Implementation completed successfully following architectural patterns:
 - products/widget-demo/src/test/kotlin/com/axians/eaf/products/widget/query/WidgetQueryHandlerTest.kt
 - products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/query/WidgetQueryHandlerIntegrationTest.kt
 - shared/testing/src/main/kotlin/com/axians/eaf/testing/nullable/NullableDSLContext.kt (Nullable Pattern implementation)
+- framework/web/src/main/kotlin/com/axians/eaf/framework/web/pagination/CursorPaginationSupport.kt (Cursor utility)
 
 **Modified:**
 - docs/stories/epic-2/story-2.8-widget-query-handler.md (story status, checklist, review follow-ups, Technical Notes)
 - docs/sprint-status.yaml (story status: ready-for-dev → in-progress → review → in-progress)
+- docs/architecture.md (ADR-004: Added NullableDSLContext implementation details and usage example)
+- products/widget-demo/build.gradle.kts (added framework:web dependency)
 - shared/testing/build.gradle.kts (added jOOQ and H2 dependencies for Nullable Pattern)
 - gradle/libs.versions.toml (added h2 version and library definition)
 
@@ -272,6 +275,15 @@ Implementation completed successfully following architectural patterns:
   - Added 6 new edge-case tests (invalid cursor format, limit boundaries)
   - All 4 review follow-up items resolved
   - Tests: 15 unit tests passing (including new edge cases)
+
+- 2025-11-07: Optional improvements implemented (Dev Agent)
+  - Added safety comment for widgets.last() explaining coerceIn guarantee
+  - Extracted cursor encoding/decoding to CursorPaginationSupport utility (framework/web)
+  - Refactored WidgetQueryHandler to use CursorPaginationSupport (code reuse)
+  - Updated unit tests to test CursorPaginationSupport directly
+  - Documented Nullable Pattern in architecture.md ADR-004 with implementation details
+  - Added framework:web dependency to products/widget-demo
+  - Tests: All unit and integration tests passing
 
 ---
 

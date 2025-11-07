@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.products.widget.domain.WidgetId
 import org.axonframework.queryhandling.QueryHandler
 import org.jooq.Condition
@@ -7,10 +8,8 @@ import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.util.Base64
 import java.util.UUID
 
 /**
@@ -92,11 +91,11 @@ class WidgetQueryHandler(
         val safeLimit = query.limit.coerceIn(1, 100)
 
         // Decode cursor to get timestamp filter
-        val cursor = query.cursor?.let { decodeCursor(it) }
+        val cursorTimestamp = query.cursor?.let { CursorPaginationSupport.decodeCursor(it) }
 
         // Build WHERE condition for cursor-based pagination
         val whereCondition: Condition =
-            cursor?.let { CREATED_AT_FIELD.lt(it.timestamp.atOffset(ZoneOffset.UTC)) }
+            cursorTimestamp?.let { CREATED_AT_FIELD.lt(it.atOffset(ZoneOffset.UTC)) }
                 ?: DSL.noCondition()
 
         // Fetch limit+1 to detect hasMore
@@ -127,9 +126,11 @@ class WidgetQueryHandler(
         val widgets = if (hasMore) records.take(safeLimit) else records
 
         // Generate nextCursor from last item's created_at
+        // Safe: safeLimit >= 1 (via coerceIn), so widgets.size >= 1 when hasMore=true
+        // When hasMore=false, widgets.last() is never called (nextCursor = null)
         val nextCursor =
             if (hasMore) {
-                encodeCursor(widgets.last().createdAt)
+                CursorPaginationSupport.encodeCursor(widgets.last().createdAt)
             } else {
                 null
             }
@@ -142,38 +143,4 @@ class WidgetQueryHandler(
             hasMore = hasMore,
         )
     }
-
-    /**
-     * Encodes a timestamp into a Base64 cursor string.
-     *
-     * @param timestamp Instant to encode as cursor position
-     * @return Base64-encoded cursor string
-     */
-    private fun encodeCursor(timestamp: Instant): String =
-        Base64.getEncoder().encodeToString(timestamp.toString().toByteArray())
-
-    /**
-     * Decodes a Base64 cursor string into a Cursor object.
-     *
-     * @param cursor Base64-encoded cursor string
-     * @return Decoded Cursor containing timestamp
-     * @throws IllegalArgumentException if cursor format is invalid
-     */
-    private fun decodeCursor(cursor: String): Cursor =
-        try {
-            val timestamp = String(Base64.getDecoder().decode(cursor))
-            Cursor(Instant.parse(timestamp))
-        } catch (e: Exception) {
-            logger.warn("Invalid cursor format: {}", cursor, e)
-            throw IllegalArgumentException("Invalid cursor format", e)
-        }
-
-    /**
-     * Internal data class for cursor-based pagination.
-     *
-     * @property timestamp Instant representing the pagination boundary
-     */
-    private data class Cursor(
-        val timestamp: Instant,
-    )
 }

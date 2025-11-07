@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.testing.nullable.createNullableDSLContext
 import io.kotest.assertions.throwables.shouldThrow
@@ -7,7 +8,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Instant
-import java.util.Base64
 import java.util.UUID
 
 /**
@@ -63,32 +63,30 @@ class WidgetQueryHandlerTest :
             }
         }
 
-        context("Cursor Encoding/Decoding") {
+        context("Cursor Encoding/Decoding via CursorPaginationSupport") {
 
             test("encodes timestamp to Base64 cursor") {
-                // Given: Create handler instance for reflection (DSL not used in this test)
-                val dummyDsl = null // Not needed for cursor encoding test
+                // Given: Timestamp
                 val timestamp = Instant.parse("2025-01-01T12:00:00Z")
 
-                // When: Encode cursor (via direct Base64 encoding - mirrors handler logic)
-                val encoded = Base64.getEncoder().encodeToString(timestamp.toString().toByteArray())
+                // When: Encode cursor using utility
+                val encoded = CursorPaginationSupport.encodeCursor(timestamp)
 
-                // Then: Encoded cursor is valid Base64
-                val decoded = String(Base64.getDecoder().decode(encoded))
-                decoded shouldBe timestamp.toString()
+                // Then: Can decode back to original
+                val decoded = CursorPaginationSupport.decodeCursor(encoded)
+                decoded shouldBe timestamp
             }
 
             test("decodes Base64 cursor to timestamp") {
-                // Given: Valid Base64 cursor
+                // Given: Timestamp and encoded cursor
                 val timestamp = Instant.parse("2025-01-01T12:00:00Z")
-                val cursor = Base64.getEncoder().encodeToString(timestamp.toString().toByteArray())
+                val cursor = CursorPaginationSupport.encodeCursor(timestamp)
 
                 // When: Decode cursor
-                val decodedTimestamp = String(Base64.getDecoder().decode(cursor))
-                val parsed = Instant.parse(decodedTimestamp)
+                val decoded = CursorPaginationSupport.decodeCursor(cursor)
 
                 // Then: Timestamp matches original
-                parsed shouldBe timestamp
+                decoded shouldBe timestamp
             }
 
             test("encodes and decodes cursor round-trip correctly") {
@@ -102,8 +100,8 @@ class WidgetQueryHandlerTest :
 
                 timestamps.forEach { original ->
                     // When: Encode then decode
-                    val encoded = Base64.getEncoder().encodeToString(original.toString().toByteArray())
-                    val decoded = Instant.parse(String(Base64.getDecoder().decode(encoded)))
+                    val encoded = CursorPaginationSupport.encodeCursor(original)
+                    val decoded = CursorPaginationSupport.decodeCursor(encoded)
 
                     // Then: Timestamp preserved
                     decoded shouldBe original
@@ -117,7 +115,7 @@ class WidgetQueryHandlerTest :
                 // When/Then: Decoding should fail gracefully
                 val exception =
                     shouldThrow<IllegalArgumentException> {
-                        String(Base64.getDecoder().decode(invalidCursor))
+                        CursorPaginationSupport.decodeCursor(invalidCursor)
                     }
 
                 exception.message.shouldNotBeNull()
@@ -125,12 +123,12 @@ class WidgetQueryHandlerTest :
 
             test("decoding malformed timestamp throws exception") {
                 // Given: Valid Base64 but invalid timestamp format
-                val malformedCursor = Base64.getEncoder().encodeToString("not-a-timestamp".toByteArray())
+                val malformedCursor = "bm90LWEtdGltZXN0YW1w" // Base64("not-a-timestamp")
 
                 // When/Then: Parsing should fail
                 val exception =
-                    shouldThrow<java.time.format.DateTimeParseException> {
-                        Instant.parse(String(Base64.getDecoder().decode(malformedCursor)))
+                    shouldThrow<IllegalArgumentException> {
+                        CursorPaginationSupport.decodeCursor(malformedCursor)
                     }
 
                 exception.message.shouldNotBeNull()

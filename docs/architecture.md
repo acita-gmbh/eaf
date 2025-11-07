@@ -3868,8 +3868,8 @@ git push origin feature/add-order-aggregate
 
 ### ADR-004: Nullables Pattern for Testing (vs. Mockk)
 
-**Status:** Accepted
-**Date:** 2025-10-30
+**Status:** Accepted (Production-Ready as of Story 2.8)
+**Date:** 2025-10-30 (Updated: 2025-11-07)
 **Decision:** Hybrid testing strategy with Nullables Pattern (James Shore)
 
 **Context:**
@@ -3895,9 +3895,39 @@ git push origin feature/add-order-aggregate
 - Hand-written stubs for third-party dependencies
 - Team training on Nullables Pattern required
 
+**Implementation (Story 2.8):**
+
+**NullableDSLContext** - First production-grade Nullable infrastructure in EAF:
+- **Location:** `shared/testing/src/main/kotlin/com/axians/eaf/testing/nullable/NullableDSLContext.kt`
+- **Factory:** `createNullableDSLContext()` returns in-memory H2-backed DSLContext
+- **Performance:** Sub-millisecond query execution (validated 100-1000x improvement)
+- **H2 Exception:** This is the ONLY approved use of H2 in EAF (integration tests MUST use Testcontainers PostgreSQL)
+- **Contract Testing:** Integration tests with Testcontainers validate behavioral parity
+
+**Example Usage:**
+```kotlin
+class WidgetQueryHandlerTest : FunSpec({
+    test("query handler returns projection") {
+        val dsl = createNullableDSLContext()  // Nullable Pattern
+        val handler = WidgetQueryHandler(dsl)
+
+        val result = handler.handle(FindWidgetQuery(widgetId))
+
+        result.shouldNotBeNull()
+    }
+})
+```
+
+**Future Nullable Implementations (Epic 8+):**
+- NullableCommandGateway (for workflow testing)
+- NullableQueryGateway (for API layer testing)
+- NullableEventBus (for saga testing)
+- NullableMeterRegistry (for metrics testing)
+
 **References:**
 - https://www.jamesshore.com/v2/projects/nullables
 - https://www.jamesshore.com/v2/projects/nullables/testing-without-mocks
+- Story 2.8: NullableDSLContext implementation and validation
 
 ---
 
