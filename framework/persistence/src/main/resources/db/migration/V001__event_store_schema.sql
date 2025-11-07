@@ -115,7 +115,7 @@ CREATE TABLE dead_letter_entry (
     payload_revision VARCHAR(255),
     payload_type VARCHAR(255) NOT NULL,
     processing_group VARCHAR(255) NOT NULL,
-    processing_started TIMESTAMP,
+    processing_started VARCHAR(255),
     sequence_number BIGINT,
     time_stamp VARCHAR(255) NOT NULL,
     token BYTEA,

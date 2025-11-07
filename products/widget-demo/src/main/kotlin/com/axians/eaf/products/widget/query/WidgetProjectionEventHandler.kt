@@ -29,6 +29,10 @@ class WidgetProjectionEventHandler(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    companion object {
+        private val WIDGET_PROJECTION_TABLE = DSL.table("widget_projection")
+    }
+
     /**
      * Projects WidgetCreatedEvent into widget_projection table.
      *
@@ -37,24 +41,28 @@ class WidgetProjectionEventHandler(
     @EventHandler
     fun on(event: WidgetCreatedEvent) {
         try {
-            val table = DSL.table("widget_projection")
-            dsl
-                .insertInto(table)
-                .columns(
-                    DSL.field("id"),
-                    DSL.field("name"),
-                    DSL.field("published"),
-                    DSL.field("created_at"),
-                    DSL.field("updated_at"),
-                ).values(
-                    UUID.fromString(event.widgetId.value),
-                    event.name,
-                    false,
-                    event.occurredAt.atOffset(ZoneOffset.UTC),
-                    event.occurredAt.atOffset(ZoneOffset.UTC),
-                ).execute()
+            val insertedRows =
+                dsl
+                    .insertInto(WIDGET_PROJECTION_TABLE)
+                    .columns(
+                        DSL.field("id"),
+                        DSL.field("name"),
+                        DSL.field("published"),
+                        DSL.field("created_at"),
+                        DSL.field("updated_at"),
+                    ).values(
+                        UUID.fromString(event.widgetId.value),
+                        event.name,
+                        false,
+                        event.occurredAt.atOffset(ZoneOffset.UTC),
+                        event.occurredAt.atOffset(ZoneOffset.UTC),
+                    ).onConflictDoNothing()
+                    .execute()
 
-            meterRegistry.counter("projection.widget.created").increment()
+            // Only increment metric if row was actually inserted (idempotency support)
+            if (insertedRows > 0) {
+                meterRegistry.counter("projection.widget.created").increment()
+            }
         } catch (e: Exception) {
             logger.error("Failed to project WidgetCreatedEvent for widgetId=${event.widgetId.value}", e)
             meterRegistry.counter("projection.widget.errors").increment()
@@ -70,10 +78,9 @@ class WidgetProjectionEventHandler(
     @EventHandler
     fun on(event: WidgetUpdatedEvent) {
         try {
-            val table = DSL.table("widget_projection")
             val updatedRows =
                 dsl
-                    .update(table)
+                    .update(WIDGET_PROJECTION_TABLE)
                     .set(DSL.field("name", String::class.java), event.name)
                     .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
                     .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
@@ -101,10 +108,9 @@ class WidgetProjectionEventHandler(
     @EventHandler
     fun on(event: WidgetPublishedEvent) {
         try {
-            val table = DSL.table("widget_projection")
             val publishedRows =
                 dsl
-                    .update(table)
+                    .update(WIDGET_PROJECTION_TABLE)
                     .set(DSL.field("published", Boolean::class.java), true)
                     .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
                     .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
