@@ -33,6 +33,61 @@ So that I can trace requests across REST API and async Axon event processing.
 
 ---
 
+## Technical Notes
+
+### OpenTelemetry Version Alignment (from Story 2.7)
+
+**Current State (Story 2.7):**
+
+OpenTelemetry dependencies are **temporarily excluded** from `products/widget-demo` to avoid version conflict:
+
+```kotlin
+// products/widget-demo/build.gradle.kts
+configurations.all {
+    exclude(group = "io.opentelemetry")
+    exclude(group = "io.opentelemetry.instrumentation")
+    exclude(group = "io.opentelemetry.semconv")
+}
+```
+
+**Reason for Exclusion:**
+- **Spring Boot 3.5.7** manages OpenTelemetry **1.49.0** (via dependency management BOM)
+- **Framework modules** (via ObservabilityConventionPlugin) bring OpenTelemetry **1.55.0**
+- **API Incompatibility:** `AutoConfiguredOpenTelemetrySdkBuilder.setComponentLoader()` method signature changed between versions
+- **Result:** NoSuchMethodError in Spring Boot OpenTelemetryAutoConfiguration
+
+**Version Catalog:**
+```toml
+opentelemetry-bom = "1.55.0"  # Framework version
+opentelemetry-instrumentation = "2.21.0"
+```
+
+**Resolution Strategy for Story 5.5:**
+
+**Option A (Recommended):** Align framework to Spring Boot BOM version
+- Change `opentelemetry-bom = "1.55.0"` → `"1.49.0"`
+- Verify all framework/observability, framework/cqrs, framework/security modules compatible
+- Remove exclusions from widget-demo
+
+**Option B:** Wait for Spring Boot 3.6+ which may support OpenTelemetry 1.55.0
+- Continue with exclusion strategy
+- Re-evaluate when Spring Boot BOM updates
+
+**Implementation Checklist Addition:**
+- [ ] Resolve OpenTelemetry version conflict (choose Option A or B)
+- [ ] Remove temporary exclusions from products/widget-demo/build.gradle.kts
+- [ ] Verify Spring Boot OpenTelemetryAutoConfiguration initializes successfully
+- [ ] Test auto-instrumentation with both versions aligned
+
+**Context:** Story 2.7 successfully uses Micrometer (via Actuator) for metrics without OpenTelemetry. This story activates full distributed tracing which requires OpenTelemetry dependencies.
+
+**References:**
+- Spring Boot 3.5.7 Dependency Coordinates: https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html
+- Story 2.7 analysis: OpenTelemetry version mismatch investigation
+- ObservabilityConventionPlugin: Lines 22-32 add OpenTelemetry 1.55.0 to all modules
+
+---
+
 ## References
 
 - PRD: FR005
