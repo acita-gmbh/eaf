@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":framework:web"))
 
     // Spring Boot starters
+    // Bean validation for API DTOs (Story 2.10)
     implementation(libs.spring.boot.starter.validation)
 
     // Axon Framework for CQRS/ES

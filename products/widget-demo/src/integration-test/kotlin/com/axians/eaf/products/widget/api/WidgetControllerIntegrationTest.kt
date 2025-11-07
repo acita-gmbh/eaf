@@ -298,31 +298,28 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         WidgetResponse::class.java,
                     )
 
-                // Wait for initial projection before update
-                eventually(Duration.ofSeconds(5)) {
-                    // When - PUT update widget
-                    val updateRequest = UpdateWidgetRequest(name = "Updated Name")
-                    val updateBody = objectMapper.writeValueAsString(updateRequest)
+                // When - PUT update widget (controller handles retry internally)
+                val updateRequest = UpdateWidgetRequest(name = "Updated Name")
+                val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                    val updateResult =
-                        mockMvc
-                            .put("/api/v1/widgets/${createdWidget.id}") {
-                                contentType = MediaType.APPLICATION_JSON
-                                content = updateBody
-                            }.andExpect {
-                                status { isOk() }
-                                content { contentType(MediaType.APPLICATION_JSON) }
-                            }.andReturn()
+                val updateResult =
+                    mockMvc
+                        .put("/api/v1/widgets/${createdWidget.id}") {
+                            contentType = MediaType.APPLICATION_JSON
+                            content = updateBody
+                        }.andExpect {
+                            status { isOk() }
+                            content { contentType(MediaType.APPLICATION_JSON) }
+                        }.andReturn()
 
-                    // Then - Response contains updated widget
-                    val response =
-                        objectMapper.readValue(
-                            updateResult.response.contentAsString,
-                            WidgetResponse::class.java,
-                        )
-                    response.id shouldBe createdWidget.id
-                    response.name shouldBe "Updated Name"
-                }
+                // Then - Response contains updated widget (not stale data)
+                val response =
+                    objectMapper.readValue(
+                        updateResult.response.contentAsString,
+                        WidgetResponse::class.java,
+                    )
+                response.id shouldBe createdWidget.id
+                response.name shouldBe "Updated Name"
             }
 
             test("should return 404 Not Found for non-existent widget") {
@@ -416,28 +413,27 @@ class WidgetControllerIntegrationTest : FunSpec() {
                 readWidget.id shouldBe createdWidget.id
                 readWidget.name shouldBe "CRUD Flow Widget"
 
-                // Step 3 & 4: Update and verify (with eventually for projection sync)
-                eventually(Duration.ofSeconds(10)) {
-                    val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
-                    val updateBody = objectMapper.writeValueAsString(updateRequest)
+                // Step 3: Update widget
+                val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
+                val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                    val updateResult =
-                        mockMvc
-                            .put("/api/v1/widgets/${createdWidget.id}") {
-                                contentType = MediaType.APPLICATION_JSON
-                                content = updateBody
-                            }.andExpect {
-                                status { isOk() }
-                            }.andReturn()
+                val updateResult =
+                    mockMvc
+                        .put("/api/v1/widgets/${createdWidget.id}") {
+                            contentType = MediaType.APPLICATION_JSON
+                            content = updateBody
+                        }.andExpect {
+                            status { isOk() }
+                        }.andReturn()
 
-                    val verifiedWidget =
-                        objectMapper.readValue(
-                            updateResult.response.contentAsString,
-                            WidgetResponse::class.java,
-                        )
-                    verifiedWidget.name shouldBe "Updated CRUD Widget"
-                    verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
-                }
+                // Step 4: Verify updated widget (updateWidget now waits for consistent projection)
+                val verifiedWidget =
+                    objectMapper.readValue(
+                        updateResult.response.contentAsString,
+                        WidgetResponse::class.java,
+                    )
+                verifiedWidget.name shouldBe "Updated CRUD Widget"
+                verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
             }
         }
     }

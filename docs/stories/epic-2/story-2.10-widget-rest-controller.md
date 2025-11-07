@@ -249,8 +249,9 @@ data class PaginatedResponse<T>(
 - `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestSecurityConfig.kt`
 
 **Modified:**
-- `products/widget-demo/build.gradle.kts` - Added springdoc-openapi dependency
-- `framework/web/src/main/kotlin/com/axians/eaf/framework/web/rest/ProblemDetailExceptionHandler.kt` - Added IllegalArgumentException handler
+- `products/widget-demo/build.gradle.kts` - Added springdoc-openapi, validation dependencies
+- `framework/web/src/main/kotlin/com/axians/eaf/framework/web/rest/ProblemDetailExceptionHandler.kt` - Extended with 7 exception handlers
+- `build-logic/src/main/kotlin/conventions/KotlinCommonConventionPlugin.kt` - Added -Xannotation-default-target=param-property compiler flag
 
 ---
 

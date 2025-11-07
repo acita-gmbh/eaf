@@ -15,6 +15,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
@@ -95,31 +97,15 @@ class WidgetController(
             TimeUnit.SECONDS,
         )
 
-        // Query created widget (CQRS read path)
-        // Retry logic to handle eventual consistency of projection
-        val query = FindWidgetQuery(widgetId)
-        var widget: WidgetProjection? = null
-        var retries = 0
-        while (widget == null && retries < MAX_RETRIES) {
-            widget =
-                queryGateway
-                    .query(
-                        query,
-                        ResponseTypes.optionalInstanceOf(WidgetProjection::class.java),
-                    ).get()
-                    .orElse(null)
-
-            if (widget == null) {
-                retries++
-                Thread.sleep(RETRY_DELAY_MS)
-            }
-        }
-
-        return widget?.toResponse()
-            ?: throw ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Widget created but projection not yet available after ${MAX_RETRIES * RETRY_DELAY_MS}ms",
+        // Query created widget with retry for eventual consistency
+        val projection =
+            waitForProjection(
+                query = FindWidgetQuery(widgetId),
+                condition = { true }, // Accept any non-null projection
+                errorMessage = "Widget created but projection not available after ${MAX_RETRIES * RETRY_DELAY_MS}ms",
             )
+
+        return projection.toResponse()
     }
 
     /**
@@ -157,35 +143,23 @@ class WidgetController(
         @Parameter(description = "UUID of the widget to retrieve")
         @PathVariable id: UUID,
     ): WidgetResponse {
-        val query = FindWidgetQuery(WidgetId(id))
-
-        // Query read model with retry for eventual consistency
-        var widget: WidgetProjection? = null
-        var retries = 0
-        while (widget == null && retries < MAX_RETRIES) {
-            widget =
-                queryGateway
-                    .query(
-                        query,
-                        ResponseTypes.optionalInstanceOf(WidgetProjection::class.java),
-                    ).get()
-                    .orElse(null)
-
-            if (widget == null) {
-                if (retries < MAX_RETRIES - 1) {
-                    retries++
-                    Thread.sleep(RETRY_DELAY_MS)
-                } else {
-                    // Final retry failed - widget not found
-                    throw ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Widget with id '$id' not found",
-                    )
-                }
+        // Query with retry for eventual consistency
+        val projection =
+            try {
+                waitForProjection(
+                    query = FindWidgetQuery(WidgetId(id)),
+                    condition = { true }, // Accept any non-null projection
+                    errorMessage = "Widget with id '$id' not found after ${MAX_RETRIES * RETRY_DELAY_MS}ms",
+                )
+            } catch (ex: ResponseStatusException) {
+                // Convert INTERNAL_SERVER_ERROR to NOT_FOUND for missing widgets
+                throw ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Widget with id '$id' not found",
+                )
             }
-        }
 
-        return widget!!.toResponse()
+        return projection.toResponse()
     }
 
     /**
@@ -212,8 +186,11 @@ class WidgetController(
         ],
     )
     fun listWidgets(
-        @Parameter(description = "Maximum number of widgets to return")
-        @RequestParam(defaultValue = "50") limit: Int,
+        @Parameter(description = "Maximum number of widgets to return (1-100)")
+        @RequestParam(defaultValue = "50")
+        @Min(1)
+        @Max(100)
+        limit: Int,
         @Parameter(description = "Cursor for pagination (from previous response)")
         @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<WidgetResponse> {
@@ -285,23 +262,87 @@ class WidgetController(
             TimeUnit.SECONDS,
         )
 
-        // Query updated widget (CQRS read path)
-        return getWidget(id)
+        // Query updated widget with retry until projection reflects the update
+        val projection =
+            waitForProjection(
+                query = FindWidgetQuery(WidgetId(id)),
+                condition = { it.name == request.name }, // Wait for updated name
+                errorMessage = "Widget updated but projection not consistent after ${MAX_RETRIES * RETRY_DELAY_MS}ms",
+            )
+
+        return projection.toResponse()
+    }
+
+    /**
+     * Polls projection until condition is met or timeout is reached.
+     *
+     * **Performance Note:** This uses blocking Thread.sleep() which impacts throughput.
+     * For MVP phase, this is acceptable as retry duration is typically <200ms.
+     * Epic 5 (Observability) or Epic 8 (Performance) should migrate to non-blocking
+     * approach (CompletableFuture, Reactor, or Spring @Async).
+     *
+     * @param query Query to execute
+     * @param condition Predicate to test projection (return true when satisfied)
+     * @param errorMessage Message for ResponseStatusException if timeout occurs
+     * @return Projection when condition is met
+     * @throws ResponseStatusException if condition not met within timeout
+     */
+    private fun waitForProjection(
+        query: FindWidgetQuery,
+        condition: (WidgetProjection) -> Boolean,
+        errorMessage: String,
+    ): WidgetProjection {
+        var retries = 0
+        while (retries < MAX_RETRIES) {
+            val projection =
+                queryGateway
+                    .query(
+                        query,
+                        ResponseTypes.optionalInstanceOf(WidgetProjection::class.java),
+                    ).get()
+                    .orElse(null)
+
+            if (projection != null && condition(projection)) {
+                return projection
+            }
+
+            if (retries < MAX_RETRIES - 1) {
+                retries++
+                Thread.sleep(RETRY_DELAY_MS)
+            } else {
+                throw ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    errorMessage,
+                )
+            }
+        }
+
+        // Unreachable but required for compiler
+        throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, errorMessage)
     }
 
     companion object {
         /**
-         * Command timeout in seconds (FR011: API p95 <200ms target).
+         * Command timeout in seconds.
+         *
+         * NOTE: FR011 specifies API p95 <200ms as the performance target.
+         * This 10s timeout is a safety net for exceptional cases, not the expected latency.
+         * Normal operations complete in <200ms.
          */
         private const val COMMAND_TIMEOUT_SECONDS = 10L
 
         /**
          * Maximum retries for projection query (eventual consistency).
+         *
+         * Total timeout: 50 × 100ms = 5 seconds maximum.
+         * Typical projection lag: <200ms (well within FR011 target).
          */
         private const val MAX_RETRIES = 50
 
         /**
          * Delay between retries in milliseconds.
+         *
+         * NOTE: Uses blocking Thread.sleep() - acceptable for MVP, optimize in Epic 5/8.
          */
         private const val RETRY_DELAY_MS = 100L
     }
