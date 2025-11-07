@@ -59,7 +59,7 @@ development_status:
   2-5-widget-aggregate: done
   2-6-jooq-configuration: done
   2-7-widget-projection-handler: done
-  2-8-widget-query-handler: review
+  2-8-widget-query-handler: done
   2-9-rest-api-foundation: ready-for-dev
   2-10-widget-rest-controller: ready-for-dev
   2-11-end-to-end-integration-test: ready-for-dev
