@@ -34,7 +34,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  * Validates that:
  *  - Monthly partitions are created and used for inserts
- *  - Events route to the correct partition based on timestamp
+ *  - Events route to the correct partition based on time_stamp
  *  - Query performance for aggregate retrieval stays below 200ms with 100K events
  */
 @SpringBootTest(classes = [EventStorePartitioningPerformanceTest.TestConfiguration::class])
@@ -62,14 +62,14 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                     FROM pg_inherits
                     JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
                     JOIN pg_class child ON child.oid = pg_inherits.inhrelid
-                    WHERE parent.relname = 'domainevententry'
+                    WHERE parent.relname = 'domain_event_entry'
                     ORDER BY child.relname
                     """.trimIndent(),
                     String::class.java,
                 )
 
             partitions.isEmpty() shouldBe false
-            partitions.count { it.startsWith("domainevententry_") } shouldBeGreaterThan 0
+            partitions.count { it.startsWith("domain_event_entry_") } shouldBeGreaterThan 0
         }
 
         test("BRIN indexes exist on DomainEventEntry") {
@@ -78,7 +78,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                     """
                     SELECT indexname, indexdef
                     FROM pg_indexes
-                    WHERE tablename = 'domainevententry'
+                    WHERE tablename = 'domain_event_entry'
                     AND indexdef LIKE '%USING brin%'
                     ORDER BY indexname
                     """.trimIndent(),
@@ -88,7 +88,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             indexes.size shouldBeGreaterThan 0
 
             val indexNames = indexes.map { (it["indexname"] as String).lowercase() }
-            indexNames.any { it.contains("timestamp") && it.contains("brin") } shouldBe true
+            indexNames.any { it.contains("time_stamp") && it.contains("brin") } shouldBe true
             indexNames.any { it.contains("aggregate") && it.contains("brin") } shouldBe true
         }
 
@@ -98,9 +98,9 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                     """
                     SELECT indexname, indexdef
                     FROM pg_indexes
-                    WHERE tablename = 'domainevententry'
-                    AND indexdef LIKE '%aggregateidentifier%'
-                    AND indexdef LIKE '%sequencenumber%'
+                    WHERE tablename = 'domain_event_entry'
+                    AND indexdef LIKE '%aggregate_identifier%'
+                    AND indexdef LIKE '%sequence_number%'
                     AND indexdef NOT LIKE '%USING brin%'
                     ORDER BY indexname
                     """.trimIndent(),
@@ -115,13 +115,13 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
 
             val aggregateId = "uniqueness-test-event"
             val eventId = UUID.randomUUID().toString()
-            val timestamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
+            val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
 
             // Insert first event
             insertEventDirect(
                 aggregateId = aggregateId,
                 sequence = 0L,
-                timestamp = Instant.parse(timestamp),
+                time_stamp = Instant.parse(timeStamp),
                 eventIdentifier = eventId,
             )
 
@@ -132,7 +132,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                         insertEventDirect(
                             aggregateId = "different-aggregate",
                             sequence = 0L,
-                            timestamp = Instant.parse(timestamp),
+                            time_stamp = Instant.parse(timeStamp),
                             eventIdentifier = eventId, // Same eventId
                         )
                     }.exceptionOrNull()
@@ -145,13 +145,13 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             truncateEvents()
 
             val aggregateId = "uniqueness-test-sequence"
-            val timestamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
+            val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
 
             // Insert first event
             insertEventDirect(
                 aggregateId = aggregateId,
                 sequence = 0L,
-                timestamp = Instant.parse(timestamp),
+                time_stamp = Instant.parse(timeStamp),
             )
 
             // Attempt to insert duplicate (aggregateId, sequence) (should fail)
@@ -161,7 +161,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                         insertEventDirect(
                             aggregateId = aggregateId,
                             sequence = 0L, // Same aggregateId + sequence
-                            timestamp = Instant.parse(timestamp),
+                            time_stamp = Instant.parse(timeStamp),
                             eventIdentifier = UUID.randomUUID().toString(), // Different eventId
                         )
                     }.exceptionOrNull()
@@ -182,13 +182,13 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             insertEventDirect(
                 aggregateId = currentAggregate,
                 sequence = 0L,
-                timestamp = currentMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
+                time_stamp = currentMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
             )
 
             insertEventDirect(
                 aggregateId = nextAggregate,
                 sequence = 0L,
-                timestamp = nextMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
+                time_stamp = nextMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
             )
 
             val format = DateTimeFormatter.ofPattern("yyyy_MM")
@@ -197,8 +197,8 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                 jdbcTemplate.queryForObject(
                     """
                     SELECT tableoid::regclass::text
-                    FROM domainevententry
-                    WHERE aggregateidentifier = ? AND sequencenumber = 0
+                    FROM domain_event_entry
+                    WHERE aggregate_identifier = ? AND sequence_number = 0
                     """.trimIndent(),
                     String::class.java,
                     currentAggregate,
@@ -208,8 +208,8 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                 jdbcTemplate.queryForObject(
                     """
                     SELECT tableoid::regclass::text
-                    FROM domainevententry
-                    WHERE aggregateidentifier = ? AND sequencenumber = 0
+                    FROM domain_event_entry
+                    WHERE aggregate_identifier = ? AND sequence_number = 0
                     """.trimIndent(),
                     String::class.java,
                     nextAggregate,
@@ -218,8 +218,8 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             val normalizedCurrent = requireNotNull(currentPartition).trim('"').lowercase()
             val normalizedNext = requireNotNull(nextPartition).trim('"').lowercase()
 
-            normalizedCurrent shouldBe "domainevententry_${currentMonth.format(format)}"
-            normalizedNext shouldBe "domainevententry_${nextMonth.format(format)}"
+            normalizedCurrent shouldBe "domain_event_entry_${currentMonth.format(format)}"
+            normalizedNext shouldBe "domain_event_entry_${nextMonth.format(format)}"
         }
 
         test("Aggregate retrieval stays below 200ms with 100K events")
@@ -248,7 +248,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
                     eventStorageEngine.appendEvents(*events.toTypedArray())
                 }
 
-                jdbcTemplate.execute("ANALYZE domainevententry")
+                jdbcTemplate.execute("ANALYZE domain_event_entry")
 
                 val targetAggregate = "perf-target"
                 val targetEvents =
@@ -289,25 +289,25 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
     }
 
     private fun truncateEvents() {
-        jdbcTemplate.execute("TRUNCATE TABLE domainevententry RESTART IDENTITY CASCADE")
+        jdbcTemplate.execute("TRUNCATE TABLE domain_event_entry RESTART IDENTITY CASCADE")
     }
 
     private fun insertEventDirect(
         aggregateId: String,
         sequence: Long,
-        timestamp: Instant,
+        time_stamp: Instant,
         eventIdentifier: String = UUID.randomUUID().toString(),
     ) {
         val sql =
             """
-            INSERT INTO domainevententry (
-                aggregateidentifier,
-                sequencenumber,
+            INSERT INTO domain_event_entry (
+                aggregate_identifier,
+                sequence_number,
                 type,
-                eventidentifier,
+                event_identifier,
                 payload,
-                payloadtype,
-                "timestamp"
+                payload_type,
+                "time_stamp"
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """.trimIndent()
@@ -319,7 +319,7 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
             ps.setString(4, eventIdentifier)
             ps.setBytes(5, """{"sequence":$sequence}""".toByteArray())
             ps.setString(6, PerformanceEvent::class.qualifiedName)
-            ps.setString(7, timestamp.atOffset(ZoneOffset.UTC).toString())
+            ps.setString(7, time_stamp.atOffset(ZoneOffset.UTC).toString())
         }
     }
 

@@ -3,6 +3,9 @@ package com.axians.eaf.framework.persistence.eventstore
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.axonframework.common.jdbc.ConnectionProvider
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper
+import org.axonframework.eventhandling.tokenstore.TokenStore
+import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore
+import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
 import org.axonframework.serialization.Serializer
@@ -107,15 +110,70 @@ open class PostgresEventStoreConfiguration {
         connectionProvider: ConnectionProvider,
         serializer: Serializer,
         platformTransactionManager: PlatformTransactionManager,
-    ): EventStorageEngine =
-        JdbcEventStorageEngine
+    ): EventStorageEngine {
+        // Custom EventSchema for snake_case table/column names (PostgreSQL convention)
+        val eventSchema =
+            org.axonframework.eventsourcing.eventstore.jdbc.EventSchema
+                .builder()
+                .eventTable("domain_event_entry")
+                .snapshotTable("snapshot_event_entry")
+                .globalIndexColumn("global_index")
+                .timestampColumn("time_stamp")
+                .eventIdentifierColumn("event_identifier")
+                .aggregateIdentifierColumn("aggregate_identifier")
+                .sequenceNumberColumn("sequence_number")
+                .typeColumn("type")
+                .payloadTypeColumn("payload_type")
+                .payloadRevisionColumn("payload_revision")
+                .payloadColumn("payload")
+                .metaDataColumn("meta_data")
+                .build()
+
+        return JdbcEventStorageEngine
             .builder()
             .connectionProvider(connectionProvider)
             .transactionManager(SpringTransactionManager(platformTransactionManager))
             .snapshotSerializer(serializer)
             .eventSerializer(serializer)
+            .schema(eventSchema)
             .build()
+    }
 
-    // Note: TokenStore configuration will be added in a future story
-    // when event processors are implemented.
+    /**
+     * Creates the Axon TokenStore for Tracking Event Processors.
+     *
+     * The TokenStore tracks processing positions for event processors, enabling
+     * reliable event replay and catch-up after application restart.
+     *
+     * **Story 2.7:** Required for WidgetProjectionEventHandler (TrackingEventProcessor)
+     *
+     * @param connectionProvider Spring-aware connection provider for transaction participation
+     * @param serializer Jackson-based serializer for token serialization
+     * @return TokenStore for tracking event processor positions
+     */
+    @Bean
+    open fun tokenStore(
+        connectionProvider: ConnectionProvider,
+        serializer: Serializer,
+    ): TokenStore {
+        // Custom TokenSchema for snake_case table/column names
+        val tokenSchema =
+            TokenSchema
+                .builder()
+                .setTokenTable("token_entry")
+                .setProcessorNameColumn("processor_name")
+                .setSegmentColumn("segment")
+                .setTokenColumn("token")
+                .setTokenTypeColumn("token_type")
+                .setTimestampColumn("timestamp")
+                .setOwnerColumn("owner")
+                .build()
+
+        return JdbcTokenStore
+            .builder()
+            .connectionProvider(connectionProvider)
+            .serializer(serializer)
+            .schema(tokenSchema)
+            .build()
+    }
 }

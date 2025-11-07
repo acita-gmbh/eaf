@@ -54,14 +54,14 @@ class SnapshotConfigurationValidationTest : FunSpec() {
         }
 
         test("AC3: snapshot_entry table exists with correct Axon schema") {
-            // Verify SnapshotEventEntry table created by V001 migration
+            // Verify snapshot_event_entry table created by V001 migration
             dataSource.connection.use { conn ->
                 val stmt =
                     conn.prepareStatement(
                         """
                         SELECT column_name
                         FROM information_schema.columns
-                        WHERE table_name = 'snapshotevententry'
+                        WHERE table_name = 'snapshot_event_entry'
                         ORDER BY ordinal_position
                         """.trimIndent(),
                     )
@@ -72,12 +72,12 @@ class SnapshotConfigurationValidationTest : FunSpec() {
                     columnNames.add(rs.getString("column_name"))
                 }
 
-                // Verify essential Axon snapshot columns exist
-                columnNames.any { it == "aggregateidentifier" } shouldBe true
-                columnNames.any { it == "sequencenumber" } shouldBe true
+                // Verify essential Axon snapshot columns exist (snake_case)
+                columnNames.any { it == "aggregate_identifier" } shouldBe true
+                columnNames.any { it == "sequence_number" } shouldBe true
                 columnNames.any { it == "payload" } shouldBe true
-                columnNames.any { it == "payloadtype" } shouldBe true
-                columnNames.any { it == "timestamp" } shouldBe true
+                columnNames.any { it == "payload_type" } shouldBe true
+                columnNames.any { it == "time_stamp" } shouldBe true
             }
         }
 

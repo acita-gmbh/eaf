@@ -16,6 +16,13 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
     enabled = false
 }
 
+// Story 2.7: Add integration-test resources to classpath (missing from convention plugin)
+sourceSets {
+    named("integrationTest") {
+        resources.srcDir("src/integration-test/resources")
+    }
+}
+
 dependencies {
     // Framework modules
     implementation(project(":framework:core"))
@@ -25,6 +32,29 @@ dependencies {
     // Axon Framework for CQRS/ES
     implementation(libs.bundles.axon.framework)
 
+    // jOOQ for type-safe SQL (Story 2.6-2.7)
+    implementation(libs.bundles.jooq)
+
+    // Metrics for projection monitoring (Story 2.7)
+    implementation(libs.micrometer.core)
+
+    // Exclude OpenTelemetry dependencies only (Story 5.x - Observability Epic)
+    // Prevents version conflict: Spring Boot 3.5.7 expects OpenTelemetry 1.49.0, framework has 1.55.0
+    // Keeps Actuator + MeterRegistry (needed for Story 2.7 metrics)
+    configurations.all {
+        exclude(group = "io.opentelemetry")
+        exclude(group = "io.opentelemetry.instrumentation")
+        exclude(group = "io.opentelemetry.semconv")
+    }
+
     // Testing
     testImplementation(libs.axon.test)
+
+    // Integration Testing (Story 2.7)
+    integrationTestImplementation(libs.bundles.testcontainers)
+    integrationTestImplementation(libs.testcontainers.junit.jupiter)
+    integrationTestImplementation(libs.spring.boot.starter.test)
+    integrationTestImplementation(libs.bundles.kotest)
+    integrationTestImplementation(libs.kotest.extensions.spring)
+    integrationTestImplementation(libs.spring.boot.testcontainers)
 }
