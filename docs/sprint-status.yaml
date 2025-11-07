@@ -63,7 +63,7 @@ development_status:
   2-9-rest-api-foundation: done
   2-10-widget-rest-controller: done
   2-11-end-to-end-integration-test: done
-  2-12-openapi-swagger: ready-for-dev
+  2-12-openapi-swagger: done
   2-13-performance-baseline: ready-for-dev
   epic-2-retrospective: optional
 
