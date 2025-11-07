@@ -3,8 +3,8 @@
 **Story Context:** [2-13-performance-baseline.context.xml](2-13-performance-baseline.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
-**Story Points:** TBD
+**Status:** review
+**Story Points:** 5
 **Related Requirements:** FR011 (Fast Feedback and Performance Monitoring), NFR001 (Performance)
 
 ---
@@ -160,20 +160,20 @@ class MetricsConfiguration {
 
 ## Implementation Checklist
 
-- [ ] Add Gatling dependencies to version catalog
-- [ ] Create Gatling load test in src/gatling/kotlin/
-- [ ] Configure load test scenarios (100 concurrent users, 1000 rps)
-- [ ] Run load test: `./gradlew gatlingRun`
-- [ ] Measure API p95 latency (<200ms target)
-- [ ] Measure event processing lag (<10s target)
-- [ ] Measure throughput (requests/second)
-- [ ] Configure Prometheus metrics (Micrometer)
-- [ ] Create performance baseline document
-- [ ] Add performance regression test to nightly CI/CD
-- [ ] **[From Story 2.4]** Create snapshot functional test with 250+ events → verify 2 snapshots created
-- [ ] **[From Story 2.4]** Create aggregate loading performance test → verify snapshot usage
-- [ ] **[From Story 2.4]** Benchmark snapshot performance → verify >10x improvement (target: <100ms for 1000 events)
-- [ ] Commit: "Add performance baseline and load testing"
+- [x] Add Gatling dependencies to version catalog
+- [x] Create Gatling load test in src/gatling/kotlin/
+- [x] Configure load test scenarios (100 concurrent users, 1000 rps)
+- [x] Run load test: `./gradlew gatlingRun`
+- [x] Measure API p95 latency (<200ms target)
+- [x] Measure event processing lag (<10s target)
+- [x] Measure throughput (requests/second)
+- [x] Configure Prometheus metrics (Micrometer)
+- [x] Create performance baseline document
+- [x] Add performance regression test to nightly CI/CD
+- [x] **[From Story 2.4]** Create snapshot functional test with 250+ events → verify 2 snapshots created
+- [x] **[From Story 2.4]** Create aggregate loading performance test → verify snapshot usage
+- [x] **[From Story 2.4]** Benchmark snapshot performance → verify >10x improvement (target: <100ms for 1000 events)
+- [x] Commit: "Add performance baseline and load testing"
 
 ---
 

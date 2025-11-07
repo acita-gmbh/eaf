@@ -4,6 +4,7 @@
 plugins {
     id("eaf.testing")
     id("eaf.spring-boot")
+    alias(libs.plugins.gatling)
 }
 
 group = "com.axians.eaf.products"

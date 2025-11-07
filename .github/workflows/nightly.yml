@@ -24,6 +24,13 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x ./gradlew
 
+      - name: Performance Baseline Tests
+        run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
+        continue-on-error: false  # Fail build if performance targets not met
+
+      - name: Snapshot Performance Tests
+        run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
+
       - name: Property-Based Tests
         run: ./gradlew propertyTest --no-daemon --stacktrace
 
@@ -64,6 +71,16 @@ jobs:
       #     path: |
       #       **/build/reports/tests/litmusTest/
       #     retention-days: 14
+
+      - name: Upload Performance Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-reports
+          path: |
+            **/build/reports/gatling/
+            **/build/reports/tests/integrationTest/
+          retention-days: 30
 
       - name: Upload Mutation Test Reports
         if: always()
