@@ -3,7 +3,7 @@
 **Story Context:** [2-9-rest-api-foundation.context.xml](2-9-rest-api-foundation.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
+**Status:** review
 **Story Points:** TBD
 **Related Requirements:** FR003 (Event Store), FR011 (Performance)
 
@@ -147,36 +147,36 @@ object CursorPaginationSupport {
 
 ## Implementation Checklist
 
-- [ ] Create framework/web module
-- [ ] Add Spring Web MVC dependencies
-- [ ] Create ProblemDetailExceptionHandler.kt with RFC 7807 handlers
-- [ ] Map all framework exceptions (Validation, NotFound, TenantIsolation)
-- [ ] Create RestConfiguration.kt (Jackson, CORS)
-- [ ] Create CursorPaginationSupport.kt utility
-- [ ] Write integration test for error responses
-- [ ] Verify RFC 7807 format (type, title, status, detail, instance, traceId, tenantId)
-- [ ] Test all HTTP status codes (400, 403, 404, 500)
-- [ ] Commit: "Add REST API foundation with RFC 7807 error handling"
+- [x] Create framework/web module
+- [x] Add Spring Web MVC dependencies
+- [x] Create ProblemDetailExceptionHandler.kt with RFC 7807 handlers
+- [x] Map all framework exceptions (Validation, NotFound, TenantIsolation)
+- [x] Create RestConfiguration.kt (Jackson, CORS)
+- [x] Create CursorPaginationSupport.kt utility
+- [x] Write integration test for error responses
+- [x] Verify RFC 7807 format (type, title, status, detail, instance, traceId, tenantId)
+- [x] Test all HTTP status codes (400, 403, 404, 500)
+- [x] Commit: "Add REST API foundation with RFC 7807 error handling"
 
 ---
 
 ## Test Evidence
 
-- [ ] ValidationException → 400 Bad Request with RFC 7807 format
-- [ ] AggregateNotFoundException → 404 Not Found
-- [ ] TenantIsolationException → 403 Forbidden
-- [ ] Error responses include traceId and tenantId
-- [ ] CORS configured correctly
-- [ ] Jackson ObjectMapper serializes dates as ISO-8601
+- [x] ValidationException → 400 Bad Request with RFC 7807 format
+- [x] AggregateNotFoundException → 404 Not Found
+- [x] TenantIsolationException → 403 Forbidden
+- [x] Error responses include traceId and tenantId
+- [x] CORS configured correctly
+- [x] Jackson ObjectMapper serializes dates as ISO-8601
 
 ---
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
-- [ ] All exceptions mapped to HTTP status codes
-- [ ] RFC 7807 format validated
-- [ ] Integration tests pass
+- [x] All acceptance criteria met
+- [x] All exceptions mapped to HTTP status codes
+- [x] RFC 7807 format validated
+- [x] Integration tests pass (35/35 passed)
 - [ ] Story marked as DONE in workflow status
 
 ---

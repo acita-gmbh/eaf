@@ -1,5 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
+    id("eaf.testing")
 }
 
 description = "EAF Web Framework - REST controllers and global advice"
@@ -20,6 +21,9 @@ dependencies {
     implementation(libs.bundles.axon.framework)
     implementation(libs.bundles.arrow)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
+
+    // Jackson Kotlin Module for Kotlin data class support
+    implementation(libs.jackson.module.kotlin)
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
