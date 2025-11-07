@@ -314,6 +314,16 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
  * Repeatedly executes assertion block until it succeeds or timeout is reached.
  * This pattern ensures deterministic behavior with eventual consistency.
  *
+ * **Design Decision:**
+ * Custom implementation is used instead of Kotest's built-in eventually because:
+ * - Kotest 6.0.4 `io.kotest.assertions.timing.eventually` not available in current dependencies
+ * - Adding kotest-assertions-timing would require additional dependency
+ * - Current implementation is lightweight, well-tested, and project-specific
+ * - 100ms polling interval is optimized for our projection lag requirements
+ *
+ * **Note:** CodeRabbit suggested using Kotest's built-in eventually. This is a valid
+ * future enhancement when upgrading Kotest or adding the assertions-timing module.
+ *
  * @param timeout Maximum time to wait for condition to be true
  * @param block Assertion block to execute repeatedly
  * @throws AssertionError if block does not succeed within timeout
