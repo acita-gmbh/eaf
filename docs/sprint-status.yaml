@@ -61,7 +61,7 @@ development_status:
   2-7-widget-projection-handler: done
   2-8-widget-query-handler: done
   2-9-rest-api-foundation: done
-  2-10-widget-rest-controller: ready-for-dev
+  2-10-widget-rest-controller: in-progress
   2-11-end-to-end-integration-test: ready-for-dev
   2-12-openapi-swagger: ready-for-dev
   2-13-performance-baseline: ready-for-dev
