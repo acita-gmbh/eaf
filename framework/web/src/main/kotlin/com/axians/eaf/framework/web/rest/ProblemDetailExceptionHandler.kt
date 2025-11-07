@@ -203,6 +203,47 @@ class ProblemDetailExceptionHandler {
     }
 
     /**
+     * Handles IllegalArgumentException → 400 Bad Request.
+     *
+     * Triggered by domain validation (require() statements in aggregates).
+     * Maps domain precondition failures to client errors.
+     *
+     * **Story 2.10:** Added to handle Widget aggregate validation exceptions.
+     *
+     * **Example Response:**
+     * ```json
+     * {
+     *   "type": "https://eaf.axians.com/errors/validation-error",
+     *   "title": "Validation Error",
+     *   "status": 400,
+     *   "detail": "Widget name cannot be blank",
+     *   "instance": "/api/widgets",
+     *   "traceId": "abc123",
+     *   "timestamp": "2025-11-07T10:30:00Z"
+     * }
+     * ```
+     */
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgument(
+        ex: IllegalArgumentException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.warn("Illegal argument: ${ex.message}", ex)
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.message ?: "Invalid argument",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/validation-error")
+        problem.title = "Validation Error"
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.badRequest().body(problem)
+    }
+
+    /**
      * Handles all other exceptions → 500 Internal Server Error.
      *
      * Final catch-all for unexpected errors. Logs full exception but returns
