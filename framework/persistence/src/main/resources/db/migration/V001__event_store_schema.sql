@@ -9,7 +9,8 @@
 --
 -- Reference: Axon Framework 4.12.1 JDBC Event Store Schema
 -- Migration Strategy: Framework migrations use V001-V099 range
--- Table Names: Uses Axon standard camelCase names (PostgreSQL converts to lowercase)
+-- Table Names: Uses PostgreSQL snake_case conventions (aggregate_identifier, sequence_number, etc.)
+-- Column Names: Configured via EventSchema and TokenSchema in PostgresEventStoreConfiguration
 -- ============================================================================
 
 -- ============================================================================

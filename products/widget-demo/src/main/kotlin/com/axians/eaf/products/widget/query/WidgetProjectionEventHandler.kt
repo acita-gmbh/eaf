@@ -71,12 +71,19 @@ class WidgetProjectionEventHandler(
     fun on(event: WidgetUpdatedEvent) {
         try {
             val table = DSL.table("widget_projection")
-            dsl
-                .update(table)
-                .set(DSL.field("name"), event.name)
-                .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
-                .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
-                .execute()
+            val updatedRows =
+                dsl
+                    .update(table)
+                    .set(DSL.field("name", String::class.java), event.name)
+                    .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
+                    .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
+                    .execute()
+
+            // Fail fast if projection row is missing (event ordering issue or data loss)
+            require(updatedRows == 1) {
+                "Projection row missing for widgetId=${event.widgetId.value}. " +
+                    "Expected 1 row updated, got $updatedRows. Possible event ordering issue or missing WidgetCreatedEvent."
+            }
 
             meterRegistry.counter("projection.widget.updated").increment()
         } catch (e: Exception) {
@@ -95,12 +102,19 @@ class WidgetProjectionEventHandler(
     fun on(event: WidgetPublishedEvent) {
         try {
             val table = DSL.table("widget_projection")
-            dsl
-                .update(table)
-                .set(DSL.field("published"), true)
-                .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
-                .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
-                .execute()
+            val publishedRows =
+                dsl
+                    .update(table)
+                    .set(DSL.field("published", Boolean::class.java), true)
+                    .set(DSL.field("updated_at"), event.occurredAt.atOffset(ZoneOffset.UTC))
+                    .where(DSL.field("id").eq(UUID.fromString(event.widgetId.value)))
+                    .execute()
+
+            // Fail fast if projection row is missing (event ordering issue or data loss)
+            require(publishedRows == 1) {
+                "Projection row missing for widgetId=${event.widgetId.value}. " +
+                    "Expected 1 row updated, got $publishedRows. Possible event ordering issue or missing WidgetCreatedEvent."
+            }
 
             meterRegistry.counter("projection.widget.published").increment()
         } catch (e: Exception) {

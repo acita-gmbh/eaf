@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS dead_letter_entry (
 CREATE TABLE IF NOT EXISTS widget_projection (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    published BOOLEAN NOT NULL DEFAULT FALSE,
+    published BOOLEAN NOT NULL DEFAULT false,
     category VARCHAR(100),
     description TEXT,
     value DECIMAL(10,2),
