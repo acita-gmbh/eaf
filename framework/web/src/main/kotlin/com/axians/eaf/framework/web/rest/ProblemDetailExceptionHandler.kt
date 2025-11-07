@@ -250,6 +250,10 @@ class ProblemDetailExceptionHandler {
      * - tenantId: Tenant context (custom property, placeholder for Story 4.1)
      * - timestamp: When error occurred (custom property, ISO-8601)
      *
+     * **Defensive URI Handling:**
+     * If request.requestURI contains malformed URI syntax, falls back to "/unknown"
+     * to prevent IllegalArgumentException from masking the original exception.
+     *
      * @param problem ProblemDetail to enrich
      * @param request HttpServletRequest for request URI
      */
@@ -258,7 +262,13 @@ class ProblemDetailExceptionHandler {
         request: HttpServletRequest,
     ) {
         // RFC 7807 standard field - use direct assignment (not setProperty)
-        problem.instance = URI.create(request.requestURI)
+        // Defensive handling: malformed URIs fallback to /unknown
+        problem.instance =
+            runCatching { URI.create(request.requestURI) }
+                .getOrElse {
+                    logger.debug("Malformed request URI, using fallback: ${request.requestURI}", it)
+                    URI.create("/unknown")
+                }
 
         // Custom properties - use setProperty
         problem.setProperty("traceId", getTraceId())

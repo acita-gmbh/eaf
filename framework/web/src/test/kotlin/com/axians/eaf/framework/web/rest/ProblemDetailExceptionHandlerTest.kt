@@ -307,4 +307,42 @@ class ProblemDetailExceptionHandlerTest :
                 problem.properties!!.keys shouldContain "timestamp"
             }
         }
+
+        context("Defensive URI handling") {
+            test("should handle malformed request URI gracefully") {
+                // Given - Mock request with malformed URI (contains spaces, invalid for URI.create)
+                val exception = ValidationException("Test error")
+                val request =
+                    MockHttpServletRequest().apply {
+                        // Simulate malformed URI that would cause URI.create to throw
+                        // Note: HttpServletRequest.getRequestURI() typically returns valid URIs,
+                        // but this tests defensive handling for edge cases
+                        requestURI = "/api/widgets/malformed uri with spaces"
+                    }
+
+                // When - Should NOT throw exception during error handling
+                val response = handler.handleValidation(exception, request)
+                val problem = response.body!!
+
+                // Then - Should fallback to /unknown instead of throwing
+                problem.instance.toString() shouldBe "/unknown"
+
+                // Original error response should still be valid
+                problem.status shouldBe 400
+                problem.type.toString() shouldBe "https://eaf.axians.com/errors/validation-error"
+            }
+
+            test("should use valid URI when request URI is properly formatted") {
+                // Given - Normal request with valid URI
+                val exception = ValidationException("Test error")
+                val request = createMockRequest("/api/widgets/123")
+
+                // When
+                val response = handler.handleValidation(exception, request)
+                val problem = response.body!!
+
+                // Then - Should use actual URI (not fallback)
+                problem.instance.toString() shouldBe "/api/widgets/123"
+            }
+        }
     })
