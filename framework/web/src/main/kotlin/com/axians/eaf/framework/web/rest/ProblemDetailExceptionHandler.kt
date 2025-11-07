@@ -242,13 +242,13 @@ class ProblemDetailExceptionHandler {
     }
 
     /**
-     * Enriches ProblemDetail with standard fields (Story 2.9).
+     * Enriches ProblemDetail with standard and custom fields (Story 2.9).
      *
-     * Adds:
-     * - instance: Request URI
-     * - traceId: Correlation ID from MDC (if available)
-     * - tenantId: Tenant context (placeholder for Story 4.1)
-     * - timestamp: When error occurred (ISO-8601)
+     * Sets:
+     * - instance: Request URI (RFC 7807 standard field)
+     * - traceId: Correlation ID from MDC (custom property)
+     * - tenantId: Tenant context (custom property, placeholder for Story 4.1)
+     * - timestamp: When error occurred (custom property, ISO-8601)
      *
      * @param problem ProblemDetail to enrich
      * @param request HttpServletRequest for request URI
@@ -257,7 +257,10 @@ class ProblemDetailExceptionHandler {
         problem: ProblemDetail,
         request: HttpServletRequest,
     ) {
-        problem.setProperty("instance", request.requestURI)
+        // RFC 7807 standard field - use direct assignment (not setProperty)
+        problem.instance = URI.create(request.requestURI)
+
+        // Custom properties - use setProperty
         problem.setProperty("traceId", getTraceId())
         problem.setProperty("tenantId", getTenantId())
         problem.setProperty("timestamp", Instant.now())

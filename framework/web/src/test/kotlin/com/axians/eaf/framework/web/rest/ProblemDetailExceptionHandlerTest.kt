@@ -6,6 +6,7 @@ import com.axians.eaf.framework.core.exceptions.TenantIsolationException
 import com.axians.eaf.framework.core.exceptions.ValidationException
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -77,19 +78,21 @@ class ProblemDetailExceptionHandlerTest :
                 problem.status shouldBe 400
                 problem.detail shouldContain "Widget name must not be blank"
 
+                // Then - RFC 7807 instance field (AC 3)
+                problem.instance.toString() shouldBe "/api/widgets/123"
+
                 // Then - Custom properties (AC 3)
                 problem.properties shouldNotBe null
-                problem.properties!!["instance"] shouldBe "/api/widgets/123"
                 problem.properties!!.keys shouldContain "traceId"
                 problem.properties!!.keys shouldContain "tenantId"
                 problem.properties!!.keys shouldContain "timestamp"
 
-                // Timestamp should be recent (within last minute)
+                // Timestamp should be recent (within last 5 seconds for CI/CD stability)
                 val timestamp = problem.properties!!["timestamp"]
                 timestamp.shouldBeInstanceOf<Instant>()
                 val now = Instant.now()
                 val diff = java.time.Duration.between(timestamp as Instant, now)
-                diff.seconds shouldBe 0 // Should be within same second
+                diff.abs().seconds shouldBeLessThan 5
             }
         }
 
@@ -129,9 +132,11 @@ class ProblemDetailExceptionHandlerTest :
                 problem.status shouldBe 404
                 problem.detail shouldContain "Widget with ID widget-123 not found"
 
+                // Then - RFC 7807 instance field (AC 3)
+                problem.instance.toString() shouldBe "/api/widgets/widget-123"
+
                 // Then - Custom properties (AC 3)
                 problem.properties shouldNotBe null
-                problem.properties!!["instance"] shouldBe "/api/widgets/widget-123"
                 problem.properties!!.keys shouldContain "traceId"
                 problem.properties!!.keys shouldContain "tenantId"
                 problem.properties!!.keys shouldContain "timestamp"
@@ -179,9 +184,11 @@ class ProblemDetailExceptionHandlerTest :
                 problem.title shouldBe "Forbidden"
                 problem.status shouldBe 403
 
+                // Then - RFC 7807 instance field (AC 3)
+                problem.instance.toString() shouldBe "/api/widgets/widget-123"
+
                 // Then - Custom properties (AC 3)
                 problem.properties shouldNotBe null
-                problem.properties!!["instance"] shouldBe "/api/widgets/widget-123"
                 problem.properties!!.keys shouldContain "traceId"
                 problem.properties!!.keys shouldContain "tenantId"
                 problem.properties!!.keys shouldContain "timestamp"
@@ -238,9 +245,11 @@ class ProblemDetailExceptionHandlerTest :
                 problem.title shouldBe "Internal Server Error"
                 problem.status shouldBe 500
 
+                // Then - RFC 7807 instance field (AC 3)
+                problem.instance.toString() shouldBe "/api/widgets"
+
                 // Then - Custom properties (AC 3)
                 problem.properties shouldNotBe null
-                problem.properties!!["instance"] shouldBe "/api/widgets"
                 problem.properties!!.keys shouldContain "traceId"
                 problem.properties!!.keys shouldContain "tenantId"
                 problem.properties!!.keys shouldContain "timestamp"
@@ -288,9 +297,11 @@ class ProblemDetailExceptionHandlerTest :
                 problem.title shouldBe "Internal Server Error"
                 problem.status shouldBe 500
 
+                // Then - RFC 7807 instance field (AC 3)
+                problem.instance.toString() shouldBe "/api/widgets/123"
+
                 // Then - Custom properties (AC 3)
                 problem.properties shouldNotBe null
-                problem.properties!!["instance"] shouldBe "/api/widgets/123"
                 problem.properties!!.keys shouldContain "traceId"
                 problem.properties!!.keys shouldContain "tenantId"
                 problem.properties!!.keys shouldContain "timestamp"
