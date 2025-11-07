@@ -14,9 +14,9 @@ import java.time.Instant
  */
 @Schema(description = "Request to create a new widget")
 data class CreateWidgetRequest(
-    @param:NotBlank(message = "Name cannot be blank")
-    @param:Size(min = 1, max = 255, message = "Name must be between 1 and 255 characters")
-    @param:Schema(
+    @field:NotBlank(message = "Name cannot be blank")
+    @field:Size(min = 1, max = 255, message = "Name must be between 1 and 255 characters")
+    @Schema(
         description = "Display name of the widget",
         example = "My Widget",
         minLength = 1,
@@ -32,9 +32,9 @@ data class CreateWidgetRequest(
  */
 @Schema(description = "Request to update a widget's name")
 data class UpdateWidgetRequest(
-    @param:NotBlank(message = "Name cannot be blank")
-    @param:Size(min = 1, max = 255, message = "Name must be between 1 and 255 characters")
-    @param:Schema(
+    @field:NotBlank(message = "Name cannot be blank")
+    @field:Size(min = 1, max = 255, message = "Name must be between 1 and 255 characters")
+    @Schema(
         description = "New display name of the widget",
         example = "Updated Widget Name",
         minLength = 1,

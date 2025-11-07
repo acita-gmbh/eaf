@@ -3,8 +3,8 @@
 **Story Context:** [2-10-widget-rest-controller.context.xml](2-10-widget-rest-controller.context.xml)
 
 **Epic:** Epic 2 - Walking Skeleton - CQRS/Event Sourcing Core
-**Status:** TODO
-**Story Points:** TBD
+**Status:** in-progress
+**Story Points:** 3
 **Related Requirements:** FR003 (Event Store), FR011 (Performance - API p95 <200ms)
 
 ---
@@ -139,17 +139,17 @@ data class PaginatedResponse<T>(
 
 ## Implementation Checklist
 
-- [ ] Create WidgetController.kt with @RestController
-- [ ] Implement POST /api/v1/widgets (create)
-- [ ] Implement GET /api/v1/widgets/:id (find)
-- [ ] Implement GET /api/v1/widgets (list with cursor pagination)
-- [ ] Implement PUT /api/v1/widgets/:id (update)
-- [ ] Create Request/Response DTOs with validation
-- [ ] Add OpenAPI @Operation annotations
-- [ ] Write integration test for full CRUD flow
-- [ ] Verify Swagger UI at /swagger-ui.html
-- [ ] Test all HTTP status codes (201, 200, 400, 404)
-- [ ] Commit: "Add Widget REST API controller with CRUD endpoints"
+- [x] Create WidgetController.kt with @RestController
+- [x] Implement POST /api/v1/widgets (create)
+- [x] Implement GET /api/v1/widgets/:id (find)
+- [x] Implement GET /api/v1/widgets (list with cursor pagination)
+- [x] Implement PUT /api/v1/widgets/:id (update)
+- [x] Create Request/Response DTOs with validation
+- [x] Add OpenAPI @Operation annotations
+- [x] Write integration test for full CRUD flow
+- [ ] Verify Swagger UI at /swagger-ui.html (requires running app)
+- [ ] Test all HTTP status codes (201, 200, 400, 404) - 16/23 tests passing, 7 failing
+- [x] Commit: "Add Widget REST API controller with CRUD endpoints"
 
 ---
 
@@ -188,3 +188,69 @@ data class PaginatedResponse<T>(
 - PRD: FR003, FR011 (API p95 <200ms)
 - Architecture: Section 15 (REST API Design Principles)
 - Tech Spec: Section 5 (API Specifications)
+
+---
+
+## Dev Agent Record
+
+### Debug Log
+
+**Implementation Plan:**
+1. Create WidgetController with CQRS pattern (CommandGateway/QueryGateway)
+2. Implement all 4 CRUD endpoints with OpenAPI annotations
+3. Create Request/Response DTOs with Jakarta validation
+4. Write comprehensive integration tests
+5. Handle Spring Security for tests (Epic 3 not yet implemented)
+6. Add retry logic for eventual consistency
+
+**Challenges Encountered:**
+1. **Spring Security 403**: framework/security module includes spring-boot-starter-security transitively
+   - **Solution:** `@AutoConfigureMockMvc(addFilters = false)` + TestSecurityConfig
+2. **Eventual Consistency NPE**: QueryGateway returned null before projection completed
+   - **Solution:** Added retry logic in createWidget (max 20 retries × 50ms = 1s timeout)
+3. **Validation 500 → 400**: IllegalArgumentException from domain require() mapped to 500
+   - **Solution:** Added @ExceptionHandler(IllegalArgumentException::class) → 400 Bad Request
+4. **RFC 7807 MethodArgumentNotValidException**: Bean validation not returning ProblemDetail
+   - **Solution:** Enabled spring.mvc.problemdetails.enabled=true
+
+**Test Status:**
+- 16/23 tests passing (70% pass rate)
+- Main CRUD operations functional
+- 7 tests failing (validation edge cases, pagination, timing issues)
+- Will be resolved in continued debugging session
+
+### Completion Notes
+
+**Phase 1 Complete (Commit 0200133):**
+- ✅ WidgetController implemented with all CRUD endpoints
+- ✅ DTOs with Jakarta validation (@NotBlank, @Size)
+- ✅ OpenAPI annotations for Swagger documentation
+- ✅ Integration tests written (11 tests)
+- ✅ Spring Security handling for tests
+- ✅ Retry logic for eventual consistency
+- ✅ IllegalArgumentException handler for domain validation
+
+**Next Phase:**
+- Continue debugging remaining 7 test failures
+- Verify Swagger UI accessibility
+- Complete Definition of Done
+
+---
+
+## File List
+
+**Created:**
+- `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/api/WidgetController.kt`
+- `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/api/WidgetDtos.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/api/WidgetControllerIntegrationTest.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestSecurityConfig.kt`
+
+**Modified:**
+- `products/widget-demo/build.gradle.kts` - Added springdoc-openapi dependency
+- `framework/web/src/main/kotlin/com/axians/eaf/framework/web/rest/ProblemDetailExceptionHandler.kt` - Added IllegalArgumentException handler
+
+---
+
+## Change Log
+
+- **2025-11-07 (Commit 0200133):** Initial implementation of Widget REST API controller with CRUD endpoints, DTOs, OpenAPI annotations, and integration tests. 16/23 tests passing. Added IllegalArgumentException handler to framework/web.

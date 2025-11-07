@@ -159,20 +159,33 @@ class WidgetController(
     ): WidgetResponse {
         val query = FindWidgetQuery(WidgetId(id))
 
-        // Query read model (CQRS read path)
-        val widget =
-            queryGateway
-                .query(
-                    query,
-                    ResponseTypes.optionalInstanceOf(WidgetProjection::class.java),
-                ).get()
-                .orElse(null)
-                ?: throw ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Widget with id '$id' not found",
-                )
+        // Query read model with retry for eventual consistency
+        var widget: WidgetProjection? = null
+        var retries = 0
+        while (widget == null && retries < MAX_RETRIES) {
+            widget =
+                queryGateway
+                    .query(
+                        query,
+                        ResponseTypes.optionalInstanceOf(WidgetProjection::class.java),
+                    ).get()
+                    .orElse(null)
 
-        return widget.toResponse()
+            if (widget == null) {
+                if (retries < MAX_RETRIES - 1) {
+                    retries++
+                    Thread.sleep(RETRY_DELAY_MS)
+                } else {
+                    // Final retry failed - widget not found
+                    throw ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Widget with id '$id' not found",
+                    )
+                }
+            }
+        }
+
+        return widget!!.toResponse()
     }
 
     /**
@@ -264,12 +277,23 @@ class WidgetController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateWidgetRequest,
     ): WidgetResponse {
-        // Synchronous command execution (CQRS write path)
-        commandGateway.sendAndWait<Any>(
-            UpdateWidgetCommand(WidgetId(id), request.name),
-            COMMAND_TIMEOUT_SECONDS,
-            TimeUnit.SECONDS,
-        )
+        try {
+            // Synchronous command execution (CQRS write path)
+            commandGateway.sendAndWait<Any>(
+                UpdateWidgetCommand(WidgetId(id), request.name),
+                COMMAND_TIMEOUT_SECONDS,
+                TimeUnit.SECONDS,
+            )
+        } catch (ex: org.axonframework.commandhandling.CommandExecutionException) {
+            // Unwrap and handle Axon's AggregateNotFoundException
+            if (ex.cause is org.axonframework.modelling.command.AggregateNotFoundException) {
+                throw ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Widget with id '$id' not found",
+                )
+            }
+            throw ex // Re-throw other exceptions
+        }
 
         // Query updated widget (CQRS read path)
         return getWidget(id)

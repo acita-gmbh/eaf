@@ -36,7 +36,8 @@ class KotlinCommonConventionPlugin : Plugin<Project> {
                     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
                     freeCompilerArgs.addAll(listOf(
                         "-Xjsr305=strict",
-                        "-opt-in=kotlin.RequiresOptIn"
+                        "-opt-in=kotlin.RequiresOptIn",
+                        "-Xannotation-default-target=param-property"
                     ))
                     allWarningsAsErrors.set(true)
                 }

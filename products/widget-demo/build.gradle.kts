@@ -30,6 +30,9 @@ dependencies {
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
 
+    // Spring Boot starters
+    implementation(libs.spring.boot.starter.validation)
+
     // Axon Framework for CQRS/ES
     implementation(libs.bundles.axon.framework)
 
