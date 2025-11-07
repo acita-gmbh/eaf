@@ -261,7 +261,9 @@ data class PaginatedResponse<T>(
 - **2025-11-07 (Commit 75bcc02):** Fixed Bean Validation (@field: targets), added MethodArgumentNotValidException handler, ResponseStatusException handler, Axon exception handlers, retry logic improvements. 21/23 tests passing.
 - **2025-11-07 (Commit 3263a27):** Resolved final test failures by explicitly loading ProblemDetailExceptionHandler in test context, increased retry timeouts, wrapped CRUD flow with eventually(). All 23 tests passing.
 - **2025-11-07 (Commit 4f7540e):** Fixed Detekt violations (TooManyFunctions suppressed, ReturnCount refactored, MaxLineLength fixed). GitHub PR #32 created.
-- **2025-11-07:** Senior Developer Review (AI) completed - APPROVED with advisory notes.
+- **2025-11-07 (Commit 577135d):** Senior Developer Review (AI) completed - APPROVED with advisory notes.
+- **2025-11-07 (Commit 2552cd0):** Clarified explicit Bean loading is correct Spring Modulith pattern.
+- **2025-11-07 (Commit 6124222):** Addressed all 6 CodeRabbit AI review findings: updateWidget stale data fix, extracted waitForProjection() method, added pagination validation (@Min/@Max), clarified timeout comments, updated file list.
 
 ---
 
@@ -479,12 +481,23 @@ The exception handling implementation is particularly well-designed - correctly 
 
 **Recommendation:** Approve and merge. Address advisory notes in future epics as planned.
 
+### CodeRabbit AI Review Follow-ups (Commit 6124222)
+
+**All 6 CodeRabbit findings addressed:**
+
+- [x] **[CRITICAL]** Fixed updateWidget stale data - now waits for projection.name == request.name
+- [x] **[HIGH]** Documented Thread.sleep() blocking with Epic 5/8 optimization plan
+- [x] **[MEDIUM]** Extracted waitForProjection() - consistent retry logic across all endpoints
+- [x] **[MEDIUM]** Added @Min(1) @Max(100) pagination validation on limit parameter
+- [x] **[MINOR]** Clarified timeout comment - 10s is safety net, not expected latency
+- [x] **[MINOR]** Updated File List with KotlinCommonConventionPlugin.kt
+
 ### Review Follow-up Tasks
 
 The following improvements are recommended for future iterations (not blocking):
 
-- [ ] [Low] Externalize retry configuration to application.yml (file: WidgetController.kt:301-306)
-- [ ] [Low] Consider non-blocking retry with Spring @Async or Reactor (file: WidgetController.kt:114, 177)
+- [ ] [Low] Externalize retry configuration to application.yml (file: WidgetController.kt:380-390)
+- [ ] [Epic 5] Migrate to non-blocking retry with Spring @Async or Reactor (file: WidgetController.kt:334)
 - [ ] [Low] Add Jackson custom serializer for WidgetId value class for better type safety (file: WidgetDtos.kt:93)
 - [ ] [Info] Manually verify Swagger UI at /swagger-ui.html (AC7) - requires running application
 - [ ] [Epic 5] Add metrics/tracing to WidgetController endpoints (request duration, retry counts, error rates)
