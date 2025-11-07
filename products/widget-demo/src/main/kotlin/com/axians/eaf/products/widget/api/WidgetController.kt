@@ -277,23 +277,13 @@ class WidgetController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateWidgetRequest,
     ): WidgetResponse {
-        try {
-            // Synchronous command execution (CQRS write path)
-            commandGateway.sendAndWait<Any>(
-                UpdateWidgetCommand(WidgetId(id), request.name),
-                COMMAND_TIMEOUT_SECONDS,
-                TimeUnit.SECONDS,
-            )
-        } catch (ex: org.axonframework.commandhandling.CommandExecutionException) {
-            // Unwrap and handle Axon's AggregateNotFoundException
-            if (ex.cause is org.axonframework.modelling.command.AggregateNotFoundException) {
-                throw ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Widget with id '$id' not found",
-                )
-            }
-            throw ex // Re-throw other exceptions
-        }
+        // Synchronous command execution (CQRS write path)
+        // Let exceptions propagate to ProblemDetailExceptionHandler
+        commandGateway.sendAndWait<Any>(
+            UpdateWidgetCommand(WidgetId(id), request.name),
+            COMMAND_TIMEOUT_SECONDS,
+            TimeUnit.SECONDS,
+        )
 
         // Query updated widget (CQRS read path)
         return getWidget(id)
@@ -308,11 +298,11 @@ class WidgetController(
         /**
          * Maximum retries for projection query (eventual consistency).
          */
-        private const val MAX_RETRIES = 20
+        private const val MAX_RETRIES = 50
 
         /**
          * Delay between retries in milliseconds.
          */
-        private const val RETRY_DELAY_MS = 50L
+        private const val RETRY_DELAY_MS = 100L
     }
 }

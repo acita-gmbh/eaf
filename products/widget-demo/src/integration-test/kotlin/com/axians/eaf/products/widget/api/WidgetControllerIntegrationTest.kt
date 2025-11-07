@@ -1,6 +1,8 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
+import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -48,7 +50,11 @@ import java.time.Duration
  */
 @Testcontainers
 @SpringBootTest(
-    classes = [WidgetDemoApplication::class],
+    classes = [
+        WidgetDemoApplication::class,
+        TestSecurityConfig::class,
+        ProblemDetailExceptionHandler::class,
+    ],
     properties = [
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
@@ -325,24 +331,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
                 val updateRequest = UpdateWidgetRequest(name = "Cannot Update")
                 val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                // When - PUT to non-existent widget
-                try {
-                    val result =
-                        mockMvc
-                            .put("/api/v1/widgets/$nonExistentId") {
-                                contentType = MediaType.APPLICATION_JSON
-                                content = updateBody
-                            }.andReturn()
-
-                    // Then - Should return 404
-                    println(
-                        "Update 404 Test - Status: ${result.response.status}, Body: ${result.response.contentAsString}",
-                    )
-                    result.response.status shouldBe 404
-                } catch (ex: Exception) {
-                    println("Update 404 Test - Exception: ${ex.javaClass.simpleName}: ${ex.message}")
-                    throw ex
-                }
+                // When/Then - PUT returns 404 (Axon AggregateNotFoundException → handler → 404)
+                // CRITICAL: Must use andExpect(), not andReturn() for error responses
+                mockMvc
+                    .put("/api/v1/widgets/$nonExistentId") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = updateBody
+                    }.andExpect {
+                        status { isNotFound() }
+                    }
             }
 
             test("should return 400 Bad Request for invalid update") {
@@ -419,42 +416,28 @@ class WidgetControllerIntegrationTest : FunSpec() {
                 readWidget.id shouldBe createdWidget.id
                 readWidget.name shouldBe "CRUD Flow Widget"
 
-                // Step 3: Update widget (with retry for eventual consistency)
-                val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
+                // Step 3 & 4: Update and verify (with eventually for projection sync)
+                eventually(Duration.ofSeconds(10)) {
+                    val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
+                    val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                val updateResult =
-                    mockMvc
-                        .put("/api/v1/widgets/${createdWidget.id}") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = updateBody
-                        }.andExpect {
-                            status { isOk() }
-                        }.andReturn()
+                    val updateResult =
+                        mockMvc
+                            .put("/api/v1/widgets/${createdWidget.id}") {
+                                contentType = MediaType.APPLICATION_JSON
+                                content = updateBody
+                            }.andExpect {
+                                status { isOk() }
+                            }.andReturn()
 
-                val updatedWidget =
-                    objectMapper.readValue(
-                        updateResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                updatedWidget.name shouldBe "Updated CRUD Widget"
-
-                // Step 4: Read updated widget (with retry for eventual consistency)
-                val verifyResult =
-                    mockMvc
-                        .get("/api/v1/widgets/${createdWidget.id}") {
-                            accept = MediaType.APPLICATION_JSON
-                        }.andExpect {
-                            status { isOk() }
-                        }.andReturn()
-
-                val verifiedWidget =
-                    objectMapper.readValue(
-                        verifyResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                verifiedWidget.name shouldBe "Updated CRUD Widget"
-                verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
+                    val verifiedWidget =
+                        objectMapper.readValue(
+                            updateResult.response.contentAsString,
+                            WidgetResponse::class.java,
+                        )
+                    verifiedWidget.name shouldBe "Updated CRUD Widget"
+                    verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
+                }
             }
         }
     }
