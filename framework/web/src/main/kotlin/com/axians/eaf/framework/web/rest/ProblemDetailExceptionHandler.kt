@@ -5,13 +5,16 @@ import com.axians.eaf.framework.core.exceptions.EafException
 import com.axians.eaf.framework.core.exceptions.TenantIsolationException
 import com.axians.eaf.framework.core.exceptions.ValidationException
 import jakarta.servlet.http.HttpServletRequest
+import org.axonframework.commandhandling.CommandExecutionException
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 import java.net.URI
 import java.time.Instant
 
@@ -37,12 +40,15 @@ import java.time.Instant
  * - Architecture: Section 15 (API Contracts - Error Format)
  * - Tech Spec: Section 5.3 (Error Response Format)
  *
+ * **Story 2.10:** Extended with additional handlers for Bean Validation, Axon exceptions.
+ *
  * @see ProblemDetail
  * @see ValidationException
  * @see AggregateNotFoundException
  * @see TenantIsolationException
  */
 @RestControllerAdvice
+@Suppress("TooManyFunctions") // Exception handlers naturally require many functions
 class ProblemDetailExceptionHandler {
     private val logger = LoggerFactory.getLogger(ProblemDetailExceptionHandler::class.java)
 
@@ -85,7 +91,47 @@ class ProblemDetailExceptionHandler {
     }
 
     /**
-     * Handles AggregateNotFoundException → 404 Not Found.
+     * Handles Axon's AggregateNotFoundException → 404 Not Found.
+     *
+     * Triggered when command targets a non-existent aggregate.
+     *
+     * **Story 2.10:** Added to handle Axon exceptions directly (not wrapped in CommandExecutionException).
+     *
+     * **Example Response:**
+     * ```json
+     * {
+     *   "type": "https://eaf.axians.com/errors/not-found",
+     *   "title": "Not Found",
+     *   "status": 404,
+     *   "detail": "Aggregate with ID 00000000-0000-0000-0000-000000000002 not found",
+     *   "instance": "/api/v1/widgets/...",
+     *   "traceId": "abc123",
+     *   "timestamp": "2025-11-07T10:30:00Z"
+     * }
+     * ```
+     */
+    @ExceptionHandler(org.axonframework.modelling.command.AggregateNotFoundException::class)
+    fun handleAxonAggregateNotFound(
+        ex: org.axonframework.modelling.command.AggregateNotFoundException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.info("Axon aggregate not found: ${ex.message}")
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.message ?: "Aggregate not found",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/not-found")
+        problem.title = "Not Found"
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem)
+    }
+
+    /**
+     * Handles EAF AggregateNotFoundException → 404 Not Found.
      *
      * Triggered when requested aggregate/entity doesn't exist.
      *
@@ -200,6 +246,205 @@ class ProblemDetailExceptionHandler {
         enrichProblemDetail(problem, request)
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem)
+    }
+
+    /**
+     * Handles Axon CommandExecutionException by unwrapping and delegating to appropriate handler.
+     *
+     * Axon Framework wraps all command handler exceptions in CommandExecutionException.
+     * This handler extracts the cause and re-throws it so specific handlers can process it.
+     *
+     * **Story 2.10:** Added to unwrap domain validation exceptions from Widget aggregate.
+     *
+     * @param ex CommandExecutionException wrapping the original exception
+     * @param request HttpServletRequest for context
+     * @throws Exception The unwrapped cause for delegation to specific handlers
+     */
+    @ExceptionHandler(CommandExecutionException::class)
+    fun handleCommandExecutionException(
+        ex: CommandExecutionException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        val cause = ex.cause
+
+        // Delegate to specific handlers based on cause type
+        return when {
+            cause is IllegalArgumentException -> handleIllegalArgument(cause, request)
+            cause is AggregateNotFoundException -> handleNotFound(cause, request)
+            cause is org.axonframework.modelling.command.AggregateNotFoundException ->
+                handleAxonAggregateNotFound(
+                    cause,
+                    request,
+                )
+            cause is ValidationException -> handleValidation(cause, request)
+            cause is TenantIsolationException -> handleTenantIsolation(cause, request)
+            cause is EafException -> handleEafException(cause, request)
+            else -> handleUnknownCommandException(ex, request)
+        }
+    }
+
+    /**
+     * Handles unknown command execution exceptions.
+     */
+    private fun handleUnknownCommandException(
+        ex: CommandExecutionException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.error("Command execution failed: ${ex.message}", ex)
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Command execution failed",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/command-execution-error")
+        problem.title = "Command Execution Error"
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem)
+    }
+
+    /**
+     * Handles MethodArgumentNotValidException → 400 Bad Request.
+     *
+     * Triggered by Jakarta Bean Validation (@Valid on @RequestBody).
+     * Returns field-specific validation errors in RFC 7807 format.
+     *
+     * **Story 2.10:** Added for @NotBlank, @Size validation on Request DTOs.
+     *
+     * **Example Response:**
+     * ```json
+     * {
+     *   "type": "https://eaf.axians.com/errors/validation-error",
+     *   "title": "Validation Failed",
+     *   "status": 400,
+     *   "detail": "Validation failed for object='createWidgetRequest'. Error count: 1",
+     *   "instance": "/api/v1/widgets",
+     *   "traceId": "abc123",
+     *   "timestamp": "2025-11-07T10:30:00Z",
+     *   "errors": ["name: Name cannot be blank"]
+     * }
+     * ```
+     */
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleMethodArgumentNotValid(
+        ex: MethodArgumentNotValidException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.warn("Validation failed: ${ex.bindingResult.errorCount} errors")
+
+        val errors =
+            ex.bindingResult.fieldErrors.map { fieldError ->
+                "${fieldError.field}: ${fieldError.defaultMessage}"
+            }
+
+        val errorCount = ex.bindingResult.errorCount
+        val objectName = ex.bindingResult.objectName
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Validation failed for object='$objectName'. Error count: $errorCount",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/validation-error")
+        problem.title = "Validation Failed"
+        problem.setProperty("errors", errors)
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.badRequest().body(problem)
+    }
+
+    /**
+     * Handles ResponseStatusException with appropriate HTTP status.
+     *
+     * Triggered by controllers throwing ResponseStatusException (e.g., 404, 400).
+     * Maps the exception's status and reason to RFC 7807 ProblemDetail.
+     *
+     * **Story 2.10:** Added to handle WidgetController 404 responses.
+     *
+     * **Example Response:**
+     * ```json
+     * {
+     *   "type": "https://eaf.axians.com/errors/not-found",
+     *   "title": "Not Found",
+     *   "status": 404,
+     *   "detail": "Widget with id '...' not found",
+     *   "instance": "/api/v1/widgets/...",
+     *   "traceId": "abc123",
+     *   "timestamp": "2025-11-07T10:30:00Z"
+     * }
+     * ```
+     */
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatus(
+        ex: ResponseStatusException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        val status = HttpStatus.valueOf(ex.statusCode.value())
+        logger.info("ResponseStatusException: {} - {}", status, ex.reason)
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                status,
+                ex.reason ?: status.reasonPhrase,
+            )
+
+        // Map status to appropriate error type
+        problem.type =
+            when (status) {
+                HttpStatus.NOT_FOUND -> URI.create("https://eaf.axians.com/errors/not-found")
+                HttpStatus.BAD_REQUEST -> URI.create("https://eaf.axians.com/errors/validation-error")
+                HttpStatus.FORBIDDEN -> URI.create("https://eaf.axians.com/errors/forbidden")
+                HttpStatus.UNAUTHORIZED -> URI.create("https://eaf.axians.com/errors/unauthorized")
+                else -> URI.create("https://eaf.axians.com/errors/http-error")
+            }
+
+        problem.title = status.reasonPhrase
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.status(status).body(problem)
+    }
+
+    /**
+     * Handles IllegalArgumentException → 400 Bad Request.
+     *
+     * Triggered by domain validation (require() statements in aggregates).
+     * Maps domain precondition failures to client errors.
+     *
+     * **Story 2.10:** Added to handle Widget aggregate validation exceptions.
+     *
+     * **Example Response:**
+     * ```json
+     * {
+     *   "type": "https://eaf.axians.com/errors/validation-error",
+     *   "title": "Validation Error",
+     *   "status": 400,
+     *   "detail": "Widget name cannot be blank",
+     *   "instance": "/api/widgets",
+     *   "traceId": "abc123",
+     *   "timestamp": "2025-11-07T10:30:00Z"
+     * }
+     * ```
+     */
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgument(
+        ex: IllegalArgumentException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.warn("Illegal argument: ${ex.message}", ex)
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.message ?: "Invalid argument",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/validation-error")
+        problem.title = "Validation Error"
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.badRequest().body(problem)
     }
 
     /**
