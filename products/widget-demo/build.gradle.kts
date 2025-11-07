@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:cqrs"))
     implementation(project(":framework:persistence"))
+    implementation(project(":framework:web"))
 
     // Axon Framework for CQRS/ES
     implementation(libs.bundles.axon.framework)

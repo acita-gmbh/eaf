@@ -20,4 +20,12 @@ dependencies {
     api(libs.spring.boot.test)
     api(libs.spring.boot.test.autoconfigure)
     api(libs.spring.test)
+
+    // jOOQ for Nullable DSLContext implementation (Story 2.8)
+    api(libs.bundles.jooq)
+
+    // H2 in-memory database for Nullable Pattern ONLY (Story 2.8)
+    // CRITICAL: This is the ONLY approved use of H2 in EAF
+    // Integration tests MUST use Testcontainers PostgreSQL
+    api(libs.h2)
 }
