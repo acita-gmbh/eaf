@@ -40,12 +40,15 @@ import java.time.Instant
  * - Architecture: Section 15 (API Contracts - Error Format)
  * - Tech Spec: Section 5.3 (Error Response Format)
  *
+ * **Story 2.10:** Extended with additional handlers for Bean Validation, Axon exceptions.
+ *
  * @see ProblemDetail
  * @see ValidationException
  * @see AggregateNotFoundException
  * @see TenantIsolationException
  */
 @RestControllerAdvice
+@Suppress("TooManyFunctions") // Exception handlers naturally require many functions
 class ProblemDetailExceptionHandler {
     private val logger = LoggerFactory.getLogger(ProblemDetailExceptionHandler::class.java)
 
@@ -264,39 +267,42 @@ class ProblemDetailExceptionHandler {
     ): ResponseEntity<ProblemDetail> {
         val cause = ex.cause
 
-        // Delegate to specific handlers by re-throwing the cause
-        when (cause) {
-            is IllegalArgumentException -> return handleIllegalArgument(cause, request)
-            is AggregateNotFoundException -> return handleNotFound(cause, request)
-            is org.axonframework.modelling.command.AggregateNotFoundException -> {
-                // Convert Axon's AggregateNotFoundException to EAF's for consistent handling
-                val eafException =
-                    AggregateNotFoundException(
-                        aggregateId = cause.aggregateIdentifier.toString(),
-                        aggregateType = "Aggregate",
-                    )
-                return handleNotFound(eafException, request)
-            }
-            is ValidationException -> return handleValidation(cause, request)
-            is TenantIsolationException -> return handleTenantIsolation(cause, request)
-            is EafException -> return handleEafException(cause, request)
-            else -> {
-                // Unknown cause - treat as internal error
-                logger.error("Command execution failed: ${ex.message}", ex)
-
-                val problem =
-                    ProblemDetail.forStatusAndDetail(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Command execution failed",
-                    )
-
-                problem.type = URI.create("https://eaf.axians.com/errors/command-execution-error")
-                problem.title = "Command Execution Error"
-                enrichProblemDetail(problem, request)
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem)
-            }
+        // Delegate to specific handlers based on cause type
+        return when {
+            cause is IllegalArgumentException -> handleIllegalArgument(cause, request)
+            cause is AggregateNotFoundException -> handleNotFound(cause, request)
+            cause is org.axonframework.modelling.command.AggregateNotFoundException ->
+                handleAxonAggregateNotFound(
+                    cause,
+                    request,
+                )
+            cause is ValidationException -> handleValidation(cause, request)
+            cause is TenantIsolationException -> handleTenantIsolation(cause, request)
+            cause is EafException -> handleEafException(cause, request)
+            else -> handleUnknownCommandException(ex, request)
         }
+    }
+
+    /**
+     * Handles unknown command execution exceptions.
+     */
+    private fun handleUnknownCommandException(
+        ex: CommandExecutionException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ProblemDetail> {
+        logger.error("Command execution failed: ${ex.message}", ex)
+
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Command execution failed",
+            )
+
+        problem.type = URI.create("https://eaf.axians.com/errors/command-execution-error")
+        problem.title = "Command Execution Error"
+        enrichProblemDetail(problem, request)
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem)
     }
 
     /**
@@ -333,10 +339,12 @@ class ProblemDetailExceptionHandler {
                 "${fieldError.field}: ${fieldError.defaultMessage}"
             }
 
+        val errorCount = ex.bindingResult.errorCount
+        val objectName = ex.bindingResult.objectName
         val problem =
             ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
-                "Validation failed for object='${ex.bindingResult.objectName}'. Error count: ${ex.bindingResult.errorCount}",
+                "Validation failed for object='$objectName'. Error count: $errorCount",
             )
 
         problem.type = URI.create("https://eaf.axians.com/errors/validation-error")
