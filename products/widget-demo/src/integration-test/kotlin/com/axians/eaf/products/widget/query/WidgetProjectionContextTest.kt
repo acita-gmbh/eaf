@@ -1,6 +1,7 @@
 package com.axians.eaf.products.widget.query
 
 import com.axians.eaf.products.widget.WidgetDemoApplication
+import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
@@ -9,6 +10,7 @@ import org.jooq.DSLContext
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.ApplicationContext
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.PostgreSQLContainer
@@ -30,6 +32,7 @@ import org.testcontainers.utility.DockerImageName
         "spring.jpa.defer-datasource-initialization=true",
     ],
 )
+@Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 class WidgetProjectionContextTest : FunSpec() {

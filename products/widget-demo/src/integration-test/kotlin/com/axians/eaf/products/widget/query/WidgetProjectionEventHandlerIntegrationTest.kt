@@ -5,6 +5,7 @@ import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
+import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -14,6 +15,7 @@ import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.PostgreSQLContainer
@@ -42,6 +44,7 @@ import java.util.UUID
         "spring.jpa.defer-datasource-initialization=true",
     ],
 )
+@Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {

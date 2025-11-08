@@ -67,3 +67,13 @@ dependencies {
     integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
 }
+
+// ============================================================================
+// Test Performance Optimizations (Story 2.13 - Vector 3)
+// ============================================================================
+
+tasks.withType<Test> {
+    // Disable jOOQ startup logo and tips (saves fractional-second delay)
+    systemProperty("org.jooq.no-tips", "true")
+    systemProperty("org.jooq.no-logo", "true")
+}
