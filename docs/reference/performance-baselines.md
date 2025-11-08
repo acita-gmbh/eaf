@@ -1,7 +1,7 @@
 # EAF v1.0 Performance Baselines
 
-**Measured:** 2025-11-07
-**Environment:** Local Development (MacBook Pro M2, 16GB RAM, macOS 15.0)
+**Measured:** TBD (Pending nightly CI/CD execution)
+**Environment:** GitHub Actions (ubuntu-latest, 2-core, 7GB RAM) + Local Dev (MacBook Pro M2, 16GB)
 **Test Tool:** Gatling 3.14.0
 **Story:** 2.13 - Performance Baseline and Monitoring
 **Epic:** 2 - Walking Skeleton - CQRS/Event Sourcing Core
@@ -32,9 +32,10 @@
 
 **Test Methodology:**
 - Load test with Gatling 3.14.0
-- Scenario: Ramp from 10 to 100 concurrent users over 30 seconds
-- Sustained load duration: 5 minutes
-- Request pattern: Create → Pause 1s → List
+- Warm-up: 10 users immediately
+- Ramp phase: 0 → 500 users/second over 1 minute
+- Sustained load: 500 users/second for 2 minutes (→ 1000 req/s sustained)
+- Request pattern: Create → Pause 100ms → List
 
 ---
 
@@ -74,9 +75,9 @@
 
 **Test Methodology:**
 - Integration test: Create aggregate with 1000 events
-- Measure event store read time
+- Measure aggregate reconstruction time (snapshots reduce event replay)
 - Compare with baseline (full replay without snapshots)
-- Document improvement factor
+- Document improvement factor (target: >10x)
 
 ---
 
@@ -92,9 +93,10 @@
 | Mixed CRUD | TBD | 1000 rps | ⏳ |
 
 **Load Test Configuration:**
-- 100 concurrent users
-- 30-second ramp-up period
-- 5-minute sustained load
+- Warm-up: 10 users immediately
+- Ramp: 0 → 500 users/second over 1 minute
+- Sustained: 500 users/second for 2 minutes (total: 3 minutes load phase)
+- Target throughput: 1000 requests/second (500 users/s × 2 requests/user)
 - Success rate target: >99%
 
 ---
