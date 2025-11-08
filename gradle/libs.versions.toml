@@ -77,6 +77,10 @@ mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 # Fuzz Testing (Story 8.6)
 jazzer = "0.26.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
 
+# Performance Testing (Story 2.13)
+gatling = "3.14.0"        # Load testing framework
+gatling-gradle-plugin = "3.14.6.3"  # Gatling Gradle plugin
+
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
 
@@ -189,6 +193,9 @@ mustache = { module = "com.github.spullara.mustache.java:compiler", version.ref 
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
 
+# Performance Testing
+gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
+
 # Jakarta JSON Bind
 jakarta-json-bind-api = { module = "jakarta.json.bind:jakarta.json.bind-api", version.ref = "jakarta-json-bind" }
 
@@ -244,6 +251,9 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 # Database
 jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+
+# Performance Testing
+gatling = { id = "io.gatling.gradle", version.ref = "gatling-gradle-plugin" }
 
 # Application
 application = { id = "application" }
