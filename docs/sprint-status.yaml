@@ -65,7 +65,7 @@ development_status:
   2-11-end-to-end-integration-test: done
   2-12-openapi-swagger: done
   2-13-performance-baseline: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   # Epic 3: Authentication & Authorization (12 stories)
   epic-3: backlog
