@@ -190,7 +190,7 @@ class WidgetController(
   - application.yml updated: PostgreSQL password fixed, port changed to 8090, Hibernate/Flyway config adjusted
   - All tests passing (41 tests in framework/web)
   - Application starts successfully on port 8090
-  - PR #34 created: https://github.com/acita-gmbh/eaf/pull/34
+  - PR #34 created: [GitHub PR #34](https://github.com/acita-gmbh/eaf/pull/34)
 
 ---
 
@@ -224,7 +224,7 @@ class WidgetController(
 
 ### Completion Notes
 
-**✅ Story 2.12 Implementation Complete**
+#### ✅ Story 2.12 Implementation Complete
 
 **Implemented:**
 - OpenApiConfiguration bean with complete API metadata
@@ -239,7 +239,7 @@ class WidgetController(
 - Disabled Flyway migration validation for development convenience
 
 **Key Technical Decisions:**
-1. **Security Scheme as Placeholder**: Bearer JWT declared in OpenAPI spec but enforcement deferred to Epic 3 (Authentication & Authorization). This is by design for Walking Skeleton phase.
+1. **Security Scheme as Placeholder**: Bearer JWT declared in OpenAPI spec, but enforcement deferred to Epic 3 (Authentication & Authorization). This is by design for Walking Skeleton phase.
 2. **Unit Tests Only**: OpenApiConfigurationTest validates bean configuration without external dependencies, following Nullable Design Pattern principles.
 3. **Development Configuration**: Changes to application.yml are local development optimizations (password fix, port change, Flyway/Hibernate settings).
 
@@ -256,8 +256,8 @@ class WidgetController(
 
 **PR Created:**
 - Branch: `feature/2-12-openapi-swagger`
-- PR: https://github.com/acita-gmbh/eaf/pull/34
-- Status: Ready for review
+- PR: [GitHub PR #34](https://github.com/acita-gmbh/eaf/pull/34)
+- Status: Merged to main
 - All pre-commit/pre-push hooks passed
 
 ---
