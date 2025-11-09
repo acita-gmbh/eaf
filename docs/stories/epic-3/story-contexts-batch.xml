@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Batch Story-Context Generation for Epic 3 Stories 3.2-3.4, 3.8-3.9, 3.11-3.12 -->
+<!-- Generated: 2025-11-09 -->
+<!-- Source: tech-spec-epic-3.md (improved version with 11 fixes) -->
+
+<story-contexts-epic-3>
+  <metadata>
+    <epic>Epic 3 - Authentication & Authorization</epic>
+    <tech-spec>docs/tech-spec-epic-3.md (1,833 lines, 88 ACs, 95/100 quality)</tech-spec>
+    <total-stories>12</total-stories>
+    <context-files-created>12</context-files-created>
+  </metadata>
+
+  <story id="3.2">
+    <title>Keycloak OIDC Discovery and JWKS Integration</title>
+    <acs>7</acs>
+    <key-components>
+      <component>KeycloakOidcConfiguration.kt - OIDC discovery configuration</component>
+      <component>JWK Set URI: http://keycloak:8080/realms/eaf/protocol/openid-connect/certs</component>
+      <component>Public key caching (10-minute refresh)</component>
+    </key-components>
+    <tech-spec-ref>Lines 1280-1286</tech-spec-ref>
+  </story>
+
+  <story id="3.3">
+    <title>JWT Format and Signature Validation (Layers 1-2)</title>
+    <acs>7</acs>
+    <key-components>
+      <component>JwtValidationFilter.kt - Layer 1: Format validation (3 parts)</component>
+      <component>Layer 2: RS256 signature validation</component>
+      <component>Token extraction from Authorization Bearer header</component>
+    </key-components>
+    <tech-spec-ref>Lines 218-302, 1288-1294</tech-spec-ref>
+  </story>
+
+  <story id="3.4">
+    <title>JWT Claims Schema and Time-Based Validation (Layers 3-5)</title>
+    <acs>7</acs>
+    <key-components>
+      <component>Layer 3: Algorithm validation (RS256 only)</component>
+      <component>Layer 4: Claims schema (sub, iss, aud, exp, iat, tenant_id, roles)</component>
+      <component>Layer 5: Time-based (exp/iat/nbf + 30s clock skew)</component>
+    </key-components>
+    <tech-spec-ref>Lines 1296-1302</tech-spec-ref>
+  </story>
+
+  <story id="3.8">
+    <title>Complete 10-Layer JWT Validation Integration</title>
+    <acs>7</acs>
+    <key-components>
+      <component>JwtValidationFilter.kt orchestrates all 10 layers</component>
+      <component>Fail-fast approach (short-circuit on first failure)</component>
+      <component>Validation metrics per layer</component>
+      <component>Performance target: &lt;50ms total validation</component>
+    </key-components>
+    <tech-spec-ref>Lines 218-302, 1338-1344</tech-spec-ref>
+  </story>
+
+  <story id="3.9">
+    <title>Role-Based Access Control on API Endpoints</title>
+    <acs>7</acs>
+    <key-components>
+      <component>Widget API endpoints with @PreAuthorize annotations</component>
+      <component>@PreAuthorize("hasRole('WIDGET_ADMIN')") on POST/PUT</component>
+      <component>@PreAuthorize("hasAnyRole('WIDGET_ADMIN', 'WIDGET_VIEWER')") on GET</component>
+      <component>Integration tests validate role-based access</component>
+    </key-components>
+    <tech-spec-ref>Lines 527-591 (WidgetController), 1346-1352</tech-spec-ref>
+  </story>
+
+  <story id="3.11">
+    <title>Custom ppc64le Keycloak Docker Image</title>
+    <acs>8</acs>
+    <key-components>
+      <component>docker/keycloak/Dockerfile.ppc64le (UBI9-based multi-stage build)</component>
+      <component>scripts/build-keycloak-ppc64le.sh automation</component>
+      <component>Image tag: keycloak:26.4.2-ppc64le</component>
+      <component>docker-compose.ppc64le.yml variant</component>
+    </key-components>
+    <tech-spec-ref>Lines 1367-1374</tech-spec-ref>
+  </story>
+
+  <story id="3.12">
+    <title>Security Fuzz Testing with Jazzer</title>
+    <acs>7</acs>
+    <key-components>
+      <component>Jazzer 0.25.1 fuzz tests for JWT security components</component>
+      <component>JwtFormatFuzzer.kt (5min)</component>
+      <component>TokenExtractorFuzzer.kt (5min)</component>
+      <component>RoleNormalizationFuzzer.kt (5min)</component>
+      <component>Corpus caching for regression prevention</component>
+    </key-components>
+    <tech-spec-ref>Lines 1376-1382, 1283-1324 (Fuzz Test Examples)</tech-spec-ref>
+  </story>
+</story-contexts-epic-3>

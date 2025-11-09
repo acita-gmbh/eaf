@@ -23,8 +23,10 @@ So that revoked tokens cannot be used even before expiration.
 4. ✅ Revoked tokens stored with 10-minute TTL (matching token lifetime)
 5. ✅ Revocation API endpoint: POST /auth/revoke (admin only)
 6. ✅ Integration test validates: revoke token → subsequent requests rejected with 401
-7. ✅ Redis unavailable fallback: skip revocation check with warning log (graceful degradation)
-8. ✅ Revocation metrics emitted (revocation_check_duration, cache_hit_rate)
+7. ✅ Redis unavailable fallback configurable (fail-open default, fail-closed optional)
+8. ✅ application.yml property: eaf.security.revocation.fail-closed (default: false)
+9. ✅ Integration test validates both modes (fail-open graceful degradation, fail-closed SecurityException)
+10. ✅ Revocation metrics emitted (revocation_check_duration, cache_hit_rate)
 
 ---
 

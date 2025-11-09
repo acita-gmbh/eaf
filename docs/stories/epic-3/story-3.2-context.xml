@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.2</story-id>
+  <title>Keycloak OIDC Discovery and JWKS Integration</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+  <summary>Configure automatic Keycloak public key discovery via JWKS endpoint with 10-minute caching for JWT signature validation.</summary>
+  <tech-spec-ref>docs/tech-spec-epic-3.md Lines 1280-1286</tech-spec-ref>
+  <key-code>
+    - KeycloakOidcConfiguration.kt: OIDC discovery setup
+    - JWK Set URI: http://keycloak:8080/realms/eaf/protocol/openid-connect/certs
+    - Public key caching (refresh every 10 minutes)
+    - Configuration: eaf.security.jwt.jwks-cache-duration=10m
+  </key-code>
+  <testing>Integration test validates signature verification with Keycloak-signed JWT, Testcontainers Keycloak 26.4.2</testing>
+</story-context>
