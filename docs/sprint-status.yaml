@@ -69,18 +69,18 @@ development_status:
 
   # Epic 3: Authentication & Authorization (12 stories)
   epic-3: backlog
-  3-1-spring-security-oauth2: drafted
-  3-2-keycloak-oidc-jwks: drafted
-  3-3-jwt-format-signature: drafted
-  3-4-jwt-claims-time-validation: drafted
-  3-5-issuer-audience-role: drafted
-  3-6-redis-revocation-cache: drafted
-  3-7-user-injection-detection: drafted
-  3-8-complete-jwt-integration: drafted
-  3-9-rbac-api-endpoints: drafted
-  3-10-testcontainers-keycloak: drafted
-  3-11-keycloak-ppc64le: drafted
-  3-12-security-fuzz-testing: drafted
+  3-1-spring-security-oauth2: in-progress
+  3-2-keycloak-oidc-jwks: ready-for-dev
+  3-3-jwt-format-signature: ready-for-dev
+  3-4-jwt-claims-time-validation: ready-for-dev
+  3-5-issuer-audience-role: ready-for-dev
+  3-6-redis-revocation-cache: ready-for-dev
+  3-7-user-injection-detection: ready-for-dev
+  3-8-complete-jwt-integration: ready-for-dev
+  3-9-rbac-api-endpoints: ready-for-dev
+  3-10-testcontainers-keycloak: ready-for-dev
+  3-11-keycloak-ppc64le: ready-for-dev
+  3-12-security-fuzz-testing: ready-for-dev
   epic-3-retrospective: optional
 
   # Epic 4: Multi-Tenancy & Data Isolation (10 stories)
