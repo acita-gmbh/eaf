@@ -38,8 +38,9 @@ open class SecurityConfiguration {
     /**
      * Configures the application's HTTP security filter chain.
      *
-     * Permits unauthenticated access to /actuator/health; requires authentication for all other requests.
-     * Enables OAuth2 Resource Server support with JWT authentication, disables CSRF, and configures stateless session management.
+     * Permits unauthenticated access to /actuator/health; requires authentication
+     * for all other requests. Enables OAuth2 Resource Server support with JWT
+     * authentication, disables CSRF, and configures stateless session management.
      *
      * @return The configured SecurityFilterChain.
      */
@@ -63,12 +64,14 @@ open class SecurityConfiguration {
     }
 
     /**
-             * Creates a JwtDecoder configured to use the Keycloak JWKS endpoint.
-             *
-             * The decoder fetches public keys from the configured JWKS URI and validates JWT signatures and standard claims such as expiration, issuance time, issuer, and audience.
-             *
-             * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
-             */
+     * Creates a JwtDecoder configured to use the Keycloak JWKS endpoint.
+     *
+     * The decoder fetches public keys from the configured JWKS URI and validates
+     * JWT signatures and standard claims such as expiration, issuance time,
+     * issuer, and audience.
+     *
+     * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
+     */
     @Bean
     open fun jwtDecoder(): JwtDecoder =
         NimbusJwtDecoder
