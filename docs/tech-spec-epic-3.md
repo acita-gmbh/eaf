@@ -4,6 +4,20 @@ Date: 2025-11-09
 Author: Wall-E
 Epic ID: 3
 Status: Draft
+**Story Resequencing:** 2025-11-09 (Story 3.10 moved to position 3 for Constitutional TDD compliance)
+
+---
+
+> **IMPORTANT: Story Resequencing Notice (2025-11-09)**
+>
+> Story 3.10 (Testcontainers Keycloak) has been moved to position 3, immediately after Story 3.2.
+> This enables real Keycloak JWT testing for Stories 3.3-3.10 (formerly 3.3-3.9), ensuring Constitutional
+> TDD compliance with "Real Dependencies via Testcontainers" principle.
+>
+> **New Sequence:** 3.1 → 3.2 → **3.3 (Testcontainers)** → 3.4-3.10 → 3.11 → 3.12
+> **Rationale:** Stories 3.4-3.10 all require Keycloak-signed JWTs for integration testing.
+>
+> See: docs/sprint-change-proposal-2025-11-09.md for complete analysis.
 
 ---
 
@@ -1282,11 +1296,22 @@ stringData:
 2. JWKS URI configured (Keycloak certs endpoint)
 3. Public key caching (10-minute refresh)
 4. KeycloakJwksProvider.kt fetches and caches keys
-5. Integration test: signature verification with Keycloak JWT
-6. Testcontainers Keycloak 26.4.2
+5. Integration test: configuration validation
+6. Documentation: JWKS caching strategy
 7. JWKS rotation handled gracefully
 
-**Story 3.3: JWT Format & Signature** (7 ACs)
+**Story 3.3: Testcontainers Keycloak** (9 ACs) ← MOVED from position 10
+1. Testcontainers Keycloak 26.4.2 configured
+2. KeycloakTestContainer.kt with generateToken() method
+3. realm-export.json (eaf realm, eaf-api client, test users, roles)
+4. Test users: admin@eaf.com, viewer@eaf.com
+5. Test roles: WIDGET_ADMIN, WIDGET_VIEWER, ADMIN
+6. application-test.yml with Keycloak Admin Client
+7. Container reuse enabled (<30s startup)
+8. Container-generated JWTs for tests
+9. All security integration tests pass with real Keycloak
+
+**Story 3.4: JWT Format & Signature** (7 ACs) ← RENUMBERED from 3.3
 1. JwtValidationFilter.kt implements Layer 1 (format) and Layer 2 (signature)
 2. Token extraction from Authorization Bearer header
 3. RS256 algorithm enforcement (reject HS256)
@@ -1295,7 +1320,7 @@ stringData:
 6. Unit tests with Nullable Pattern
 7. Integration test with real Keycloak tokens
 
-**Story 3.4: Claims & Time Validation** (7 ACs)
+**Story 3.5: Claims & Time Validation** (7 ACs) ← RENUMBERED from 3.4
 1. Layer 3: Algorithm validation (RS256 only)
 2. Layer 4: Claims schema (sub, iss, aud, exp, iat, tenant_id, roles)
 3. Layer 5: Time-based (exp, iat, nbf + 30s skew)
@@ -1304,7 +1329,7 @@ stringData:
 6. Unit tests for each layer
 7. Integration test with invalid tokens
 
-**Story 3.5: Issuer, Audience, Role** (8 ACs)
+**Story 3.6: Issuer, Audience, Role** (8 ACs) ← RENUMBERED from 3.5
 1. Layer 6: Issuer validation (Keycloak realm)
 2. Layer 6: Audience validation (eaf-api)
 3. Layer 8: Role validation and normalization
@@ -1314,7 +1339,7 @@ stringData:
 7. Property-based tests for role normalization
 8. Fuzz test for role extraction
 
-**Story 3.6: Redis Revocation** (10 ACs)
+**Story 3.7: Redis Revocation** (10 ACs) ← RENUMBERED from 3.6
 1. Redis 7.2 dependency in framework/security
 2. RedisRevocationStore.kt implements revocation
 3. Layer 7: Revocation validation (Redis JTI check)
@@ -1326,7 +1351,7 @@ stringData:
 9. Integration test validates both modes (fail-open graceful degradation, fail-closed SecurityException)
 10. Revocation metrics emitted
 
-**Story 3.7: User & Injection Detection** (7 ACs)
+**Story 3.8: User & Injection Detection** (7 ACs) ← RENUMBERED from 3.7
 1. Layer 9: User validation (optional, configurable)
 2. Layer 10: Injection detection (SQL/XSS patterns)
 3. Invalid users → 401
@@ -1335,7 +1360,7 @@ stringData:
 6. Performance <5ms per request
 7. User validation configurable
 
-**Story 3.8: 10-Layer Integration** (7 ACs)
+**Story 3.9: 10-Layer Integration** (7 ACs) ← RENUMBERED from 3.8
 1. JwtValidationFilter.kt orchestrates all 10 layers
 2. Validation failure short-circuits (fail-fast)
 3. Success → SecurityContext populated
@@ -1344,7 +1369,7 @@ stringData:
 6. Performance: <50ms total validation
 7. All 10 layers documented
 
-**Story 3.9: Role-Based Access Control** (7 ACs)
+**Story 3.10: Role-Based Access Control** (7 ACs) ← RENUMBERED from 3.9
 1. Widget API with @PreAuthorize("hasRole('WIDGET_ADMIN')")
 2. Keycloak realm roles (WIDGET_ADMIN, WIDGET_VIEWER)
 3. Test users with role assignments
@@ -1352,17 +1377,6 @@ stringData:
 5. Unauthorized → 403 Forbidden (RFC 7807)
 6. Role requirements in OpenAPI spec
 7. Authorization test suite (all permission combinations)
-
-**Story 3.10: Testcontainers Keycloak** (9 ACs)
-1. Testcontainers Keycloak 26.4.2
-2. KeycloakTestContainer.kt utility with generateToken() method
-3. realm-export.json configured (eaf realm, eaf-api client, test users, roles, tenant_id mapper)
-4. Test realm includes users: admin@eaf.com (WIDGET_ADMIN, ADMIN), viewer@eaf.com (WIDGET_VIEWER)
-5. Test realm includes roles: WIDGET_ADMIN, WIDGET_VIEWER, ADMIN
-6. application-test.yml configured with Keycloak Admin Client properties
-7. Container reuse (<30s startup)
-8. Container-generated JWTs for tests
-9. All security integration tests pass
 
 **Story 3.11: ppc64le Keycloak Image** (8 ACs)
 1. docker/keycloak/Dockerfile.ppc64le (UBI9-based)

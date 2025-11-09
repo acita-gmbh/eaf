@@ -1,206 +1,212 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <story-context>
   <story-id>3.7</story-id>
-  <title>User Validation and Injection Detection (Layers 9-10)</title>
+  <title>Redis Revocation Cache (Layer 7)</title>
   <epic>Epic 3 - Authentication & Authorization</epic>
   <generated>2025-11-09</generated>
 
   <summary>
-    Implement JWT Layers 9-10: Optional user validation (check user exists and is active) and comprehensive injection detection (SQL, XSS, JNDI, Expression Injection, Path Traversal). This story completes the 10-layer JWT validation defense-in-depth strategy, providing OWASP A03 (Injection) protection and optional user existence validation.
+    Implement JWT Layer 7 (Token Revocation) with Redis blacklist cache, configurable fail-closed/fail-open behavior for Redis unavailability, and admin-only revocation API endpoint (POST /auth/revoke). This story enables immediate token invalidation for security incidents (compromised tokens, user logout) while balancing security vs. availability trade-offs.
   </summary>
 
-  <acceptance-criteria count="7">
-    <criterion id="1">Layer 9 (optional): User validation - check user exists and is active (configurable)</criterion>
-    <criterion id="2">Layer 10: Injection detection for SQL, XSS, JNDI, Expression Injection, Path Traversal patterns</criterion>
-    <criterion id="3">Invalid users rejected with 401</criterion>
-    <criterion id="4">Injection patterns detected and rejected with 400 Bad Request</criterion>
-    <criterion id="5">Fuzz test with Jazzer targets injection detection (SQL/XSS/Expression/PathTraversal payloads)</criterion>
-    <criterion id="6">Performance impact &lt;5ms per request (Layer 9 + Layer 10 combined)</criterion>
-    <criterion id="7">Layer 9 user validation can be disabled via configuration for performance</criterion>
+  <acceptance-criteria count="10">
+    <criterion id="1">Redis 7.2 dependency added to framework/security</criterion>
+    <criterion id="2">RedisRevocationStore.kt implements revocation check and storage</criterion>
+    <criterion id="3">Layer 7: Revocation validation queries Redis for token JTI (JWT ID)</criterion>
+    <criterion id="4">Revoked tokens stored with 10-minute TTL (matching token lifetime)</criterion>
+    <criterion id="5">Revocation API endpoint: POST /auth/revoke (admin only)</criterion>
+    <criterion id="6">Integration test validates: revoke token → subsequent requests rejected with 401</criterion>
+    <criterion id="7">Redis unavailable fallback configurable (fail-open default, fail-closed optional)</criterion>
+    <criterion id="8">application.yml property: eaf.security.revocation.fail-closed (default: false)</criterion>
+    <criterion id="9">Integration test validates both modes (fail-open graceful degradation, fail-closed SecurityException)</criterion>
+    <criterion id="10">Revocation metrics emitted (revocation_check_duration, cache_hit_rate)</criterion>
   </acceptance-criteria>
 
-  <critical-security-fixes>
-    <alert>CRITICAL FIX APPLIED: Added Expression Injection patterns (\${...}) for JNDI/SpEL injection detection</alert>
-    <alert>CRITICAL FIX APPLIED: Added Path Traversal patterns (../) for directory traversal prevention</alert>
-    <alert>CRITICAL FIX APPLIED: InjectionDetectedException extends EafException (not RuntimeException)</alert>
-    <alert>PERFORMANCE FIX: Regex patterns moved to companion object (compile once)</alert>
-    <reference>architecture.md Lines 3239-3254 (complete injection pattern list)</reference>
-  </critical-security-fixes>
+  <critical-architectural-decision>
+    <decision>Fail-Open vs. Fail-Closed for Redis Unavailability</decision>
+    <rationale>
+      **Default: Fail-Open (fail-closed=false)**
+      - Prioritizes availability over security
+      - Suitable for: Development, low-risk environments
+      - Behavior: Redis unavailable → skip check, log warning, allow request
+      - Risk: Revoked tokens accepted during Redis outage
+      - Mitigation: Monitor Redis health, alert on failures
+
+      **Optional: Fail-Closed (fail-closed=true)**
+      - Prioritizes security over availability
+      - Suitable for: Production, high-risk environments
+      - Behavior: Redis unavailable → throw SecurityException, reject request with 401
+      - Requirement: Redis HA (Sentinel/Cluster)
+    </rationale>
+    <configuration>
+      <property>eaf.security.revocation.fail-closed=${REVOCATION_FAIL_CLOSED:false}</property>
+      <default>false (fail-open, graceful degradation)</default>
+    </configuration>
+  </critical-architectural-decision>
 
   <technical-context>
     <tech-spec-reference>
       <file>docs/tech-spec-epic-3.md</file>
       <sections>
-        <section>Lines 419-491: InjectionDetector.kt CORRECTED with all 5 pattern categories</section>
-        <section>Lines 432-436: InjectionDetectedException extends EafException</section>
-        <section>Lines 1329-1336: Story 3.7 Acceptance Criteria (7 ACs)</section>
+        <section>Lines 350-416: RedisRevocationStore.kt with configurable fail-closed</section>
+        <section>Lines 599-627: AuthController with /auth/revoke endpoint</section>
+        <section>Lines 855-858: Configuration property for revocation.fail-closed</section>
+        <section>Lines 1317-1327: Story 3.6 Acceptance Criteria (10 ACs)</section>
       </sections>
     </tech-spec-reference>
 
+    <dependencies>
+      <dependency type="gradle" scope="implementation">
+        <artifact>spring-boot-starter-data-redis</artifact>
+        <version>Spring Boot 3.5.7 managed</version>
+      </dependency>
+      <dependency type="external" scope="runtime">
+        <service>Redis 7.2</service>
+        <purpose>Token revocation blacklist cache</purpose>
+        <config>docker/redis/redis.conf</config>
+      </dependency>
+    </dependencies>
+
     <code-examples>
-      <example name="InjectionDetector.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/InjectionDetector.kt">
-        <description>CRITICAL: Comprehensive injection detection with 5 pattern categories</description>
+      <example name="RedisRevocationStore.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/RedisRevocationStore.kt">
+        <description>CRITICAL: Token revocation with configurable fail-closed/fail-open behavior</description>
         <source><![CDATA[
-import com.axians.eaf.framework.core.common.exceptions.EafException
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
+import java.time.Duration
+import java.time.Instant
 
 @Component
-class InjectionDetector {
+class RedisRevocationStore(
+    private val redisTemplate: RedisTemplate<String, String>,
+    @Value("\${eaf.security.revocation.fail-closed:false}")
+    private val failClosed: Boolean
+) {
+
+    private val keyPrefix = "jwt:revoked:"
+    private val defaultTtl = Duration.ofMinutes(10)
 
     companion object {
-        // SQL Injection patterns (refined to reduce false positives)
-        private val sqlPatterns = listOf(
-            "(?i).*((\\-\\-)|(;)|(\\*)|(<)|(>)|(\\|)|(\\^)).*",
-            "(?i).*(union|select|insert|update|delete|drop|create|alter).*"
-        ).map { it.toRegex() }
-
-        // XSS patterns
-        private val xssPatterns = listOf(
-            "(?i).*(<script|javascript:|onerror=|onload=).*"
-        ).map { it.toRegex() }
-
-        // JNDI Injection patterns
-        private val jndiPatterns = listOf(
-            "(?i).*(jndi:|ldap:|rmi:).*"
-        ).map { it.toRegex() }
-
-        // ✅ CRITICAL: Expression Injection (from architecture.md)
-        private val expressionInjectionPatterns = listOf(
-            "(?i).*(\\$\\{.*}).*"  // ${...} patterns (Log4Shell-style)
-        ).map { it.toRegex() }
-
-        // ✅ CRITICAL: Path Traversal (from architecture.md)
-        private val pathTraversalPatterns = listOf(
-            "(?i).*(\\.\\.[\\\\/]).*"  // ../ or ..\
-        ).map { it.toRegex() }
-
-        // All patterns combined (compiled once for performance)
-        private val allPatterns = sqlPatterns + xssPatterns + jndiPatterns +
-                                  expressionInjectionPatterns + pathTraversalPatterns
+        private val logger = LoggerFactory.getLogger(RedisRevocationStore::class.java)
     }
 
-    fun scan(claims: Map<String, Any>) {
-        claims.forEach { (key, value) ->
-            if (value is String) {
-                detectInjection(value, key)
-            }
-        }
-    }
+    /**
+     * Check if token is revoked.
+     *
+     * Fail-Open (default, failClosed=false):
+     * - Redis unavailable → return false (graceful degradation)
+     * - Prioritizes availability over security
+     *
+     * Fail-Closed (failClosed=true):
+     * - Redis unavailable → throw SecurityException
+     * - Prioritizes security over availability
+     * - Requires robust Redis HA (Sentinel/Cluster)
+     */
+    fun isRevoked(jti: String): Boolean {
+        return try {
+            redisTemplate.hasKey(keyPrefix + jti)
+        } catch (ex: RedisConnectionFailure) {
+            logger.warn("Redis unavailable during revocation check", ex)
 
-    private fun detectInjection(value: String, claimName: String) {
-        allPatterns.forEach { pattern ->
-            if (pattern.matches(value)) {
-                throw InjectionDetectedException(
-                    claim = claimName,
-                    detectedPattern = pattern.pattern,
-                    value = value
+            if (failClosed) {
+                throw SecurityException(
+                    "Cannot verify token revocation status - Redis unavailable",
+                    ex
                 )
+            } else {
+                return false  // Graceful degradation
             }
         }
+    }
+
+    fun revoke(jti: String, expiresAt: Instant) {
+        val ttl = Duration.between(Instant.now(), expiresAt)
+            .coerceAtLeast(defaultTtl)
+
+        redisTemplate.opsForValue()
+            .set(keyPrefix + jti, "revoked", ttl)
     }
 }
-
-/**
- * Thrown when potential injection attack is detected in JWT claim.
- * Extends EafException per Zero-Tolerance Policy #2.
- */
-class InjectionDetectedException(
-    val claim: String,
-    val detectedPattern: String,
-    val value: String
-) : EafException("Potential injection detected in claim '$claim': pattern=$detectedPattern")
 ]]></source>
       </example>
 
-      <example name="JwtFormatFuzzer.kt" location="framework/security/src/fuzzTest/kotlin/.../JwtFormatFuzzer.kt">
-        <description>Fuzz test for injection detection</description>
+      <example name="AuthController.kt" location="products/widget-demo/src/main/kotlin/.../api/AuthController.kt">
+        <description>Token revocation API endpoint (admin only)</description>
         <source><![CDATA[
-@FuzzTest
-class InjectionDetectionFuzzer {
+@RestController
+@RequestMapping("/auth")
+class AuthController(
+    private val revocationStore: RedisRevocationStore,
+    private val jwtDecoder: JwtDecoder
+) {
 
-    @FuzzTest
-    fun fuzzInjectionPatterns(data: FuzzedDataProvider) {
-        val claimValue = data.consumeRemainingAsString()
-        val claims = mapOf("sub" to claimValue)
+    @PostMapping("/revoke")
+    @PreAuthorize("hasRole('ADMIN')")
+    fun revokeToken(
+        @Valid @RequestBody request: RevokeTokenRequest
+    ): ResponseEntity<Void> {
+        val jwt = jwtDecoder.decode(request.token)
 
-        val detector = InjectionDetector()
+        revocationStore.revoke(
+            jti = jwt.id,
+            expiresAt = jwt.expiresAt
+        )
 
-        // Should not crash, only throw InjectionDetectedException
-        assertDoesNotThrow {
-            try {
-                detector.scan(claims)
-            } catch (ex: InjectionDetectedException) {
-                // Expected for malicious patterns
-            }
-        }
+        return ResponseEntity.noContent().build()
     }
 }
+
+data class RevokeTokenRequest(
+    @field:NotBlank
+    val token: String
+)
 ]]></source>
       </example>
     </code-examples>
 
-    <implementation-sequence>
-      <step order="1">Add Redis dependency to framework/security/build.gradle.kts</step>
-      <step order="2">Configure application.yml with Redis properties and revocation.fail-closed</step>
-      <step order="3">Create InjectionDetector.kt with companion object for patterns</step>
-      <step order="4">Implement all 5 pattern categories (SQL, XSS, JNDI, Expression, PathTraversal)</step>
-      <step order="5">Create InjectionDetectedException extending EafException</step>
-      <step order="6">Create RedisRevocationStore.kt with @Value injection for fail-closed</step>
-      <step order="7">Implement isRevoked() with configurable fallback</step>
-      <step order="8">Implement revoke() with TTL</step>
-      <step order="9">Create AuthController.kt with /auth/revoke endpoint</step>
-      <step order="10">Write integration tests for both fail-open and fail-closed modes</step>
-      <step order="11">Write fuzz test for injection detection (Jazzer)</step>
-      <step order="12">Configure Micrometer metrics for revocation operations</step>
-    </implementation-sequence>
-
     <testing-guidance>
-      <unit-tests>
-        <test>InjectionDetector detects SQL injection patterns</test>
-        <test>InjectionDetector detects XSS patterns</test>
-        <test>InjectionDetector detects JNDI patterns</test>
-        <test>InjectionDetector detects Expression Injection (\${...})</test>
-        <test>InjectionDetector detects Path Traversal (../)</test>
-        <test>InjectionDetector allows safe claim values (no false positives)</test>
-      </unit-tests>
       <integration-tests>
-        <test>Revoke token → subsequent request with same JWT → 401</test>
-        <test>Revoke token → different JWT → 200 OK (not affected)</test>
-        <test>Redis unavailable + fail-open → 200 OK (graceful)</test>
-        <test>Redis unavailable + fail-closed → 401 Unauthorized (SecurityException)</test>
+        <test-scenario name="Happy Path">
+          <step>Admin calls POST /auth/revoke with valid JWT</step>
+          <step>Verify token stored in Redis with TTL</step>
+          <step>Subsequent API request with same JWT → 401 Unauthorized</step>
+        </test-scenario>
+        <test-scenario name="Fail-Open Mode (default)">
+          <step>Stop Redis container (simulate outage)</step>
+          <step>API request with revoked token → 200 OK (graceful degradation)</step>
+          <step>Verify warning log emitted</step>
+        </test-scenario>
+        <test-scenario name="Fail-Closed Mode">
+          <step>Set eaf.security.revocation.fail-closed=true</step>
+          <step>Stop Redis container</step>
+          <step>API request → 401 Unauthorized with SecurityException</step>
+        </test-scenario>
       </integration-tests>
-      <fuzz-tests>
-        <target>InjectionDetectionFuzzer.kt (5 minutes)</target>
-        <corpus>fuzzTest/corpus/injection-detection/</corpus>
-        <goal>Find bypasses, DoS conditions, false positives</goal>
-      </fuzz-tests>
+      <metrics-validation>
+        <metric>revocation_check_duration (Prometheus timer)</metric>
+        <metric>token_revocations_total (counter)</metric>
+        <metric>redis_cache_hit_rate (gauge)</metric>
+      </metrics-validation>
     </testing-guidance>
 
-    <performance-targets>
-      <target>Layer 9 (User Validation): &lt;10ms if enabled</target>
-      <target>Layer 10 (Injection Detection): &lt;3ms (regex matching on ~10 claims)</target>
-      <target>Combined: &lt;5ms per request (Layer 9 disabled by default)</target>
-      <target>Redis revocation check: &lt;2ms (cache hit)</target>
-    </performance-targets>
-
     <common-pitfalls>
-      <pitfall>SQL pattern too broad (flagging "O'Malley" as injection) - refined in fix</pitfall>
-      <pitfall>Missing Expression Injection patterns (${...}) - CRITICAL vulnerability</pitfall>
-      <pitfall>Missing Path Traversal patterns (../) - CRITICAL vulnerability</pitfall>
-      <pitfall>Using RuntimeException instead of EafException - coding standards violation</pitfall>
-      <pitfall>Regex compiled per instance instead of companion object - performance issue</pitfall>
+      <pitfall>Not handling Redis connection failures gracefully (crashes instead of degrading)</pitfall>
+      <pitfall>TTL not set → tokens remain revoked forever (Redis memory leak)</pitfall>
+      <pitfall>JTI (JWT ID claim) missing in JWT → NPE in revoke()</pitfall>
+      <pitfall>Fail-closed mode without Redis HA → complete service outage</pitfall>
     </common-pitfalls>
   </technical-context>
 
   <definition-of-done>
-    <item>All 7 acceptance criteria met</item>
-    <item>InjectionDetector with all 5 pattern categories (SQL, XSS, JNDI, Expression, PathTraversal)</item>
-    <item>InjectionDetectedException extends EafException with structured fields</item>
-    <item>RedisRevocationStore with configurable fail-closed</item>
-    <item>Integration tests pass for both fail-open and fail-closed modes</item>
-    <item>Fuzz test runs 5 minutes without crashes</item>
-    <item>Performance validated: &lt;5ms per request</item>
-    <item>Metrics emitted and validated</item>
+    <item>All 10 acceptance criteria met</item>
+    <item>RedisRevocationStore.kt with configurable fail-closed/fail-open</item>
+    <item>Integration tests pass for both modes</item>
+    <item>Revocation API returns 204 No Content on success</item>
+    <item>Revocation metrics emitted and validated</item>
+    <item>Redis connection pooling configured (Lettuce default)</item>
+    <item>application.yml includes revocation.fail-closed property</item>
     <item>Zero ktlint/Detekt violations</item>
+    <item>Code review completed</item>
   </definition-of-done>
 </story-context>

@@ -1,4 +1,4 @@
-# Story 3.9: Role-Based Access Control on API Endpoints
+# Story 3.10: Role-Based Access Control on API Endpoints
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO

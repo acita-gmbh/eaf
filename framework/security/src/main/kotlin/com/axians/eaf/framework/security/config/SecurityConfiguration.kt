@@ -1,6 +1,6 @@
 package com.axians.eaf.framework.security.config
 
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -21,19 +21,21 @@ import org.springframework.security.web.SecurityFilterChain
  * - Method-level security annotations (@PreAuthorize support)
  * - CSRF disabled (stateless JWT-based API)
  * - Stateless session management (no HTTP sessions)
+ * - JWKS caching with configurable duration (Story 3.2)
  *
  * Note: @Profile("!test") isolates this configuration from test profile where
  * security is disabled for integration testing convenience.
  *
  * Story 3.1: Spring Security OAuth2 Resource Server Foundation
+ * Story 3.2: Keycloak OIDC Discovery and JWKS Integration
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @Profile("!test")
 open class SecurityConfiguration {
-    @Value("\${eaf.security.jwt.jwks-uri}")
-    private lateinit var keycloakJwksUri: String
+    @Autowired
+    private lateinit var keycloakConfig: KeycloakOidcConfiguration
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -70,11 +72,18 @@ open class SecurityConfiguration {
      * JWT signatures and standard claims such as expiration, issuance time,
      * issuer, and audience.
      *
+     * JWKS Caching (Story 3.2):
+     * - NimbusJwtDecoder includes built-in JWKS caching (default: 5 minutes)
+     * - KeycloakJwksProvider provides additional caching layer with configurable
+     *   duration (default: 10 minutes) for use cases requiring explicit cache control
+     * - Cache refresh triggered automatically on cache miss or expiration
+     * - Graceful handling of JWKS rotation via cache invalidation
+     *
      * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
      */
     @Bean
     open fun jwtDecoder(): JwtDecoder =
         NimbusJwtDecoder
-            .withJwkSetUri(keycloakJwksUri)
+            .withJwkSetUri(keycloakConfig.jwksUri)
             .build()
 }

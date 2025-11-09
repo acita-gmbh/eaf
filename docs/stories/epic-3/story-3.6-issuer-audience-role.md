@@ -1,4 +1,4 @@
-# Story 3.5: Issuer, Audience, and Role Validation (Layers 6-8)
+# Story 3.6: Issuer, Audience, and Role Validation (Layers 6-8)
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO
