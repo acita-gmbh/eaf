@@ -1,6 +1,8 @@
 package com.axians.eaf.framework.security.config
 
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
+import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
+import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -84,13 +86,17 @@ open class SecurityConfiguration {
                 .withJwkSetUri(keycloakConfig.jwksUri)
                 .build()
 
-        // Story 3.4: Add explicit validators for Layers 3 and 5
+        // Story 3.5: Add explicit validators for Layers 3, 4, and 5
         // Compose with Spring Security defaults for defense-in-depth
+        // Note: createDefault() already includes JwtTimestampValidator (exp, nbf validation)
+        // Our JwtTimeBasedValidator extends this with iat validation and configurable clock skew
         val defaults = JwtValidators.createDefault()
         val customValidators =
             DelegatingOAuth2TokenValidator(
                 defaults, // Preserve Spring Security baseline protections
                 JwtAlgorithmValidator(), // Layer 3: RS256 enforcement (reject HS256)
+                JwtClaimSchemaValidator(), // Layer 4: Required claims validation
+                JwtTimeBasedValidator(), // Layer 5: Enhanced time validation (iat + configurable skew)
             )
 
         decoder.setJwtValidator(customValidators)
