@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -8,7 +9,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
 
@@ -69,8 +72,13 @@ open class SecurityConfiguration {
      * Creates a JwtDecoder configured to use the Keycloak JWKS endpoint.
      *
      * The decoder fetches public keys from the configured JWKS URI and validates
-     * JWT signatures and standard claims such as expiration, issuance time,
-     * issuer, and audience.
+     * JWT signatures and standard claims.
+     *
+     * JWT Validation Layers (Story 3.4):
+     * - Layer 1: Format validation (3-part structure) - handled by NimbusJwtDecoder
+     * - Layer 2: Signature validation (RS256 with JWKS) - handled by NimbusJwtDecoder
+     * - Layer 3: Algorithm validation (RS256 only, reject HS256) - JwtAlgorithmValidator
+     * - Layer 5: Timestamp validation (exp, iat, nbf) - JwtTimestampValidator
      *
      * JWKS Caching (Story 3.2):
      * - NimbusJwtDecoder includes built-in JWKS caching (default: 5 minutes)
@@ -82,8 +90,21 @@ open class SecurityConfiguration {
      * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
      */
     @Bean
-    open fun jwtDecoder(): JwtDecoder =
-        NimbusJwtDecoder
-            .withJwkSetUri(keycloakConfig.jwksUri)
-            .build()
+    open fun jwtDecoder(): JwtDecoder {
+        val decoder =
+            NimbusJwtDecoder
+                .withJwkSetUri(keycloakConfig.jwksUri)
+                .build()
+
+        // Story 3.4: Add explicit validators for Layers 3 and 5
+        val validators =
+            DelegatingOAuth2TokenValidator(
+                JwtTimestampValidator(), // Layer 5: exp, iat, nbf validation
+                JwtAlgorithmValidator(), // Layer 3: RS256 enforcement (reject HS256)
+            )
+
+        decoder.setJwtValidator(validators)
+
+        return decoder
+    }
 }
