@@ -62,7 +62,7 @@ Project type signals: API, mobile, web, CLI, SDK, SaaS
 Domain complexity signals: medical, finance, government, education, aerospace
 
 SPECIAL ROUTING:
-If game detected → Suggest game-brief and GDD workflows
+If game detected → Inform user that game development requires the BMGD module (BMad Game Development)
 If complex domain detected → Offer domain research options:
 A) Run domain-research workflow (thorough)
 B) Quick web search (basic)

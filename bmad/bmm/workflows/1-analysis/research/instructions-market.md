@@ -663,7 +663,7 @@ Would you like me to strengthen any areas with additional research?"
 {{#if standalone_mode != true}}
 
 - **Next workflow:** {{next_workflow}} ({{next_agent}} agent)
-- **Optional:** Review findings with stakeholders, or run additional analysis workflows (product-brief, game-brief, etc.)
+- **Optional:** Review findings with stakeholders, or run additional analysis workflows (product-brief for software, or install BMGD module for game-brief)
 
 Check status anytime with: `workflow-status`
 {{else}}

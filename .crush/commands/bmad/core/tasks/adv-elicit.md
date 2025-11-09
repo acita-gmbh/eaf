@@ -1,3 +1,9 @@
+# /task-adv-elicit Command
+
+When this command is used, execute the following task:
+
+## Advanced Elicitation Task
+
 <task id="bmad/core/tasks/adv-elicit.xml" name="Advanced Elicitation" standalone="true">
   <llm critical="true">
     <i>MANDATORY: Execute ALL steps in the flow section IN EXACT ORDER</i>
@@ -102,3 +108,11 @@
     </step>
   </flow>
 </task>
+
+## Command Usage
+
+This command executes the Advanced Elicitation task from the BMAD CORE module.
+
+## Module
+
+Part of the BMAD CORE module.

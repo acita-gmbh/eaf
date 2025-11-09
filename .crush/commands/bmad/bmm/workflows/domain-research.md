@@ -1,3 +1,9 @@
+# /domain-research Command
+
+When this command is used, execute the following workflow:
+
+## Domain Research Workflow
+
 # Domain Research Workflow Configuration
 name: domain-research
 description: "Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects"
@@ -39,3 +45,11 @@ when_to_use:
 standalone: true
 
 # Web bundle configuration for standalone deployment
+
+## Command Usage
+
+This command executes the Domain Research workflow from the BMAD BMM module.
+
+## Module
+
+Part of the BMAD BMM module.

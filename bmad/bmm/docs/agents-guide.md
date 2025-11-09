@@ -1013,7 +1013,6 @@ Quick reference for agent selection:
 
 - [Enterprise Agentic Development](./enterprise-agentic-development.md) - Team collaboration
 - [FAQ](./faq.md) - Common questions
-- [Troubleshooting](./troubleshooting.md) - Problem resolution
 - [Glossary](./glossary.md) - Terminology reference
 
 ---
