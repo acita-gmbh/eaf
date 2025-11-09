@@ -31,6 +31,8 @@ import org.springframework.security.oauth2.jwt.Jwt
 class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
     companion object {
         // Core required claims (always enforced)
+        // TODO Story 3.6: Enforce aud and roles as required claims (Layer 6 & 8)
+        // TODO Epic 4.2: Enforce tenant_id as required claim (Layer 1 multi-tenancy)
         private val REQUIRED_CLAIMS =
             setOf(
                 "sub", // Subject (user ID)
