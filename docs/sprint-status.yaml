@@ -71,8 +71,8 @@ development_status:
   # RESEQUENCED 2025-11-09: Story 3.10 moved to position 3 for Constitutional TDD compliance
   epic-3: backlog
   3-1-spring-security-oauth2: done
-  3-2-keycloak-oidc-jwks: review
-  3-3-testcontainers-keycloak: in-progress  # MOVED from position 10 - enables real JWT testing
+  3-2-keycloak-oidc-jwks: done
+  3-3-testcontainers-keycloak: done  # MOVED from position 10 - enables real JWT testing
   3-4-jwt-format-signature: ready-for-dev  # RENUMBERED from 3.3
   3-5-jwt-claims-time-validation: ready-for-dev  # RENUMBERED from 3.4
   3-6-issuer-audience-role: ready-for-dev  # RENUMBERED from 3.5
