@@ -74,7 +74,7 @@ development_status:
   3-2-keycloak-oidc-jwks: done
   3-3-testcontainers-keycloak: done  # MOVED from position 10 - enables real JWT testing
   3-4-jwt-format-signature: done  # RENUMBERED from 3.3
-  3-5-jwt-claims-time-validation: ready-for-dev  # RENUMBERED from 3.4
+  3-5-jwt-claims-time-validation: review  # RENUMBERED from 3.4 - PR #50 ready for review
   3-6-issuer-audience-role: ready-for-dev  # RENUMBERED from 3.5
   3-7-redis-revocation-cache: ready-for-dev  # RENUMBERED from 3.6
   3-8-user-injection-detection: ready-for-dev  # RENUMBERED from 3.7
