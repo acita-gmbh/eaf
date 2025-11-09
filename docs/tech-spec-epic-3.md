@@ -1825,6 +1825,21 @@ After comprehensive multi-perspective analysis (Security Audit, Code Review, Arc
 
 ---
 
+## Post-Review Follow-ups
+
+Action items identified during code reviews that may impact multiple Epic 3 stories.
+
+### Story 3.1 Review (2025-11-09)
+
+- Add Konsist architecture test for SecurityModule boundary enforcement (MEDIUM severity)
+  - Validate @ApplicationModule annotation on SecurityModule
+  - Verify allowedDependencies = ["core"] is programmatically enforced
+  - Ensure no dependencies on other framework modules
+  - Reference: Story 3.1 AC2, Definition of Done
+  - Impact: All Epic 3 stories rely on SecurityModule as foundation
+
+---
+
 *Generated: 2025-11-09*
 *Updated: 2025-11-09 (Post-Analysis)*
 *Template Version: 6.0*

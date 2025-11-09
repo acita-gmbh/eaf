@@ -58,6 +58,16 @@ spring:
         format_sql: true
         use_sql_comments: true
 
+  # ============================================================================
+  # Spring Security OAuth2 Configuration (Story 3.1)
+  # ============================================================================
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${eaf.security.jwt.issuer-uri}
+          jwk-set-uri: ${eaf.security.jwt.jwks-uri}
+
 # ============================================================================
 # Axon Framework Configuration
 # ============================================================================
@@ -123,3 +133,14 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+
+# ============================================================================
+# EAF Security Configuration (Story 3.1)
+# ============================================================================
+# JWT OAuth2 Resource Server configuration for Keycloak OIDC integration
+eaf:
+  security:
+    jwt:
+      issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/eaf}
+      jwks-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/eaf/protocol/openid-connect/certs}
+      audience: ${JWT_AUDIENCE:eaf-api}

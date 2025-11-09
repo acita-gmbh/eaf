@@ -24,6 +24,13 @@ spring:
       jdbc:
         enabled: false
 
+  # Disable Spring Security for tests (Story 3.1)
+  # Security will be properly tested in Epic 3 integration tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
 # Disable Management/Actuator for tests (avoids OpenTelemetry issues)
 management:
   endpoints:

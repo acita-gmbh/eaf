@@ -1,0 +1,45 @@
+# ============================================================================
+# Security Framework Test Configuration (Story 3.1)
+# ============================================================================
+# Test configuration for Security module integration tests.
+# ============================================================================
+
+spring:
+  # Disable JMX for tests
+  jmx:
+    enabled: false
+
+  # Allow bean overriding for test flexibility
+  main:
+    allow-bean-definition-overriding: true
+
+  # Spring Security OAuth2 Resource Server configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${eaf.security.jwt.issuer-uri}
+          jwk-set-uri: ${eaf.security.jwt.jwks-uri}
+
+# ============================================================================
+# JWT Security Test Configuration (Story 3.1)
+# ============================================================================
+# Mock Keycloak JWKS URI for integration tests (no real Keycloak needed yet)
+eaf:
+  security:
+    jwt:
+      issuer-uri: http://localhost:8080/realms/eaf
+      jwks-uri: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
+      audience: eaf-api
+
+# Disable Management/Actuator for tests
+management:
+  endpoints:
+    enabled-by-default: false
+
+# Logging level for tests
+logging:
+  level:
+    root: WARN
+    com.axians.eaf: INFO
+    org.springframework.security: DEBUG

@@ -10,6 +10,7 @@ Routing guidance:
 
 | Date | Story | Epic | Type | Severity | Owner | Status | Notes |
 | ---- | ----- | ---- | ---- | -------- | ----- | ------ | ----- |
+| 2025-11-09 | 3.1 | 3 | TechDebt | Medium | TBD | Open | Add Konsist architecture test for SecurityModule boundary enforcement. Validate: @ApplicationModule annotation, allowedDependencies=["core"], no circular dependencies. File: framework/security/src/konsist-test/kotlin/.../ArchitectureTest.kt. Required by AC2 and Definition of Done. |
 | 2025-11-08 | Epic 2 Retro | 3 | Research | High | Elena | Open | Keycloak Testcontainer research before Epic 3 Story 1. Investigate: Keycloak 26.4.2 Testcontainer setup, JWT token generation in tests, realm configuration, multi-arch support (amd64/arm64/ppc64le). Estimated: 4 hours. Critical for Story 3.10 (Testcontainers Keycloak) approach. |
 | 2025-11-08 | Epic 2 Retro | 3 | Knowledge | Medium | Team | Open | Spring Security OAuth2 Resource Server knowledge development session before Epic 3 Story 1. Topics: Spring Security 6.x architecture, JWT validation flow, role extraction, security context propagation, testing patterns. Estimated: 2 hours. Preparation for Stories 3.1-3.5. |
 | 2025-11-08 | Epic 2 Retro | 3 | Validation | Low | Charlie | Open | Verify aggregate caching (WeakReferenceCache) production readiness before Epic 3. Review: GC behavior under load, memory consumption patterns, cache hit/miss metrics, thread safety. Estimated: 1 hour. Validates Epic 2 Story 2.13 optimization in production context. |
