@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.7</story-id>
+  <title>User Validation and Injection Detection (Layers 9-10)</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+
+  <summary>
+    Implement JWT Layers 9-10: Optional user validation (check user exists and is active) and comprehensive injection detection (SQL, XSS, JNDI, Expression Injection, Path Traversal). This story completes the 10-layer JWT validation defense-in-depth strategy, providing OWASP A03 (Injection) protection and optional user existence validation.
+  </summary>
+
+  <acceptance-criteria count="7">
+    <criterion id="1">Layer 9 (optional): User validation - check user exists and is active (configurable)</criterion>
+    <criterion id="2">Layer 10: Injection detection for SQL, XSS, JNDI, Expression Injection, Path Traversal patterns</criterion>
+    <criterion id="3">Invalid users rejected with 401</criterion>
+    <criterion id="4">Injection patterns detected and rejected with 400 Bad Request</criterion>
+    <criterion id="5">Fuzz test with Jazzer targets injection detection (SQL/XSS/Expression/PathTraversal payloads)</criterion>
+    <criterion id="6">Performance impact &lt;5ms per request (Layer 9 + Layer 10 combined)</criterion>
+    <criterion id="7">Layer 9 user validation can be disabled via configuration for performance</criterion>
+  </acceptance-criteria>
+
+  <critical-security-fixes>
+    <alert>CRITICAL FIX APPLIED: Added Expression Injection patterns (\${...}) for JNDI/SpEL injection detection</alert>
+    <alert>CRITICAL FIX APPLIED: Added Path Traversal patterns (../) for directory traversal prevention</alert>
+    <alert>CRITICAL FIX APPLIED: InjectionDetectedException extends EafException (not RuntimeException)</alert>
+    <alert>PERFORMANCE FIX: Regex patterns moved to companion object (compile once)</alert>
+    <reference>architecture.md Lines 3239-3254 (complete injection pattern list)</reference>
+  </critical-security-fixes>
+
+  <technical-context>
+    <tech-spec-reference>
+      <file>docs/tech-spec-epic-3.md</file>
+      <sections>
+        <section>Lines 419-491: InjectionDetector.kt CORRECTED with all 5 pattern categories</section>
+        <section>Lines 432-436: InjectionDetectedException extends EafException</section>
+        <section>Lines 1329-1336: Story 3.7 Acceptance Criteria (7 ACs)</section>
+      </sections>
+    </tech-spec-reference>
+
+    <code-examples>
+      <example name="InjectionDetector.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/InjectionDetector.kt">
+        <description>CRITICAL: Comprehensive injection detection with 5 pattern categories</description>
+        <source><![CDATA[
+import com.axians.eaf.framework.core.common.exceptions.EafException
+import org.springframework.stereotype.Component
+
+@Component
+class InjectionDetector {
+
+    companion object {
+        // SQL Injection patterns (refined to reduce false positives)
+        private val sqlPatterns = listOf(
+            "(?i).*((\\-\\-)|(;)|(\\*)|(<)|(>)|(\\|)|(\\^)).*",
+            "(?i).*(union|select|insert|update|delete|drop|create|alter).*"
+        ).map { it.toRegex() }
+
+        // XSS patterns
+        private val xssPatterns = listOf(
+            "(?i).*(<script|javascript:|onerror=|onload=).*"
+        ).map { it.toRegex() }
+
+        // JNDI Injection patterns
+        private val jndiPatterns = listOf(
+            "(?i).*(jndi:|ldap:|rmi:).*"
+        ).map { it.toRegex() }
+
+        // ✅ CRITICAL: Expression Injection (from architecture.md)
+        private val expressionInjectionPatterns = listOf(
+            "(?i).*(\\$\\{.*}).*"  // ${...} patterns (Log4Shell-style)
+        ).map { it.toRegex() }
+
+        // ✅ CRITICAL: Path Traversal (from architecture.md)
+        private val pathTraversalPatterns = listOf(
+            "(?i).*(\\.\\.[\\\\/]).*"  // ../ or ..\
+        ).map { it.toRegex() }
+
+        // All patterns combined (compiled once for performance)
+        private val allPatterns = sqlPatterns + xssPatterns + jndiPatterns +
+                                  expressionInjectionPatterns + pathTraversalPatterns
+    }
+
+    fun scan(claims: Map<String, Any>) {
+        claims.forEach { (key, value) ->
+            if (value is String) {
+                detectInjection(value, key)
+            }
+        }
+    }
+
+    private fun detectInjection(value: String, claimName: String) {
+        allPatterns.forEach { pattern ->
+            if (pattern.matches(value)) {
+                throw InjectionDetectedException(
+                    claim = claimName,
+                    detectedPattern = pattern.pattern,
+                    value = value
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Thrown when potential injection attack is detected in JWT claim.
+ * Extends EafException per Zero-Tolerance Policy #2.
+ */
+class InjectionDetectedException(
+    val claim: String,
+    val detectedPattern: String,
+    val value: String
+) : EafException("Potential injection detected in claim '$claim': pattern=$detectedPattern")
+]]></source>
+      </example>
+
+      <example name="JwtFormatFuzzer.kt" location="framework/security/src/fuzzTest/kotlin/.../JwtFormatFuzzer.kt">
+        <description>Fuzz test for injection detection</description>
+        <source><![CDATA[
+@FuzzTest
+class InjectionDetectionFuzzer {
+
+    @FuzzTest
+    fun fuzzInjectionPatterns(data: FuzzedDataProvider) {
+        val claimValue = data.consumeRemainingAsString()
+        val claims = mapOf("sub" to claimValue)
+
+        val detector = InjectionDetector()
+
+        // Should not crash, only throw InjectionDetectedException
+        assertDoesNotThrow {
+            try {
+                detector.scan(claims)
+            } catch (ex: InjectionDetectedException) {
+                // Expected for malicious patterns
+            }
+        }
+    }
+}
+]]></source>
+      </example>
+    </code-examples>
+
+    <implementation-sequence>
+      <step order="1">Add Redis dependency to framework/security/build.gradle.kts</step>
+      <step order="2">Configure application.yml with Redis properties and revocation.fail-closed</step>
+      <step order="3">Create InjectionDetector.kt with companion object for patterns</step>
+      <step order="4">Implement all 5 pattern categories (SQL, XSS, JNDI, Expression, PathTraversal)</step>
+      <step order="5">Create InjectionDetectedException extending EafException</step>
+      <step order="6">Create RedisRevocationStore.kt with @Value injection for fail-closed</step>
+      <step order="7">Implement isRevoked() with configurable fallback</step>
+      <step order="8">Implement revoke() with TTL</step>
+      <step order="9">Create AuthController.kt with /auth/revoke endpoint</step>
+      <step order="10">Write integration tests for both fail-open and fail-closed modes</step>
+      <step order="11">Write fuzz test for injection detection (Jazzer)</step>
+      <step order="12">Configure Micrometer metrics for revocation operations</step>
+    </implementation-sequence>
+
+    <testing-guidance>
+      <unit-tests>
+        <test>InjectionDetector detects SQL injection patterns</test>
+        <test>InjectionDetector detects XSS patterns</test>
+        <test>InjectionDetector detects JNDI patterns</test>
+        <test>InjectionDetector detects Expression Injection (\${...})</test>
+        <test>InjectionDetector detects Path Traversal (../)</test>
+        <test>InjectionDetector allows safe claim values (no false positives)</test>
+      </unit-tests>
+      <integration-tests>
+        <test>Revoke token → subsequent request with same JWT → 401</test>
+        <test>Revoke token → different JWT → 200 OK (not affected)</test>
+        <test>Redis unavailable + fail-open → 200 OK (graceful)</test>
+        <test>Redis unavailable + fail-closed → 401 Unauthorized (SecurityException)</test>
+      </integration-tests>
+      <fuzz-tests>
+        <target>InjectionDetectionFuzzer.kt (5 minutes)</target>
+        <corpus>fuzzTest/corpus/injection-detection/</corpus>
+        <goal>Find bypasses, DoS conditions, false positives</goal>
+      </fuzz-tests>
+    </testing-guidance>
+
+    <performance-targets>
+      <target>Layer 9 (User Validation): &lt;10ms if enabled</target>
+      <target>Layer 10 (Injection Detection): &lt;3ms (regex matching on ~10 claims)</target>
+      <target>Combined: &lt;5ms per request (Layer 9 disabled by default)</target>
+      <target>Redis revocation check: &lt;2ms (cache hit)</target>
+    </performance-targets>
+
+    <common-pitfalls>
+      <pitfall>SQL pattern too broad (flagging "O'Malley" as injection) - refined in fix</pitfall>
+      <pitfall>Missing Expression Injection patterns (${...}) - CRITICAL vulnerability</pitfall>
+      <pitfall>Missing Path Traversal patterns (../) - CRITICAL vulnerability</pitfall>
+      <pitfall>Using RuntimeException instead of EafException - coding standards violation</pitfall>
+      <pitfall>Regex compiled per instance instead of companion object - performance issue</pitfall>
+    </common-pitfalls>
+  </technical-context>
+
+  <definition-of-done>
+    <item>All 7 acceptance criteria met</item>
+    <item>InjectionDetector with all 5 pattern categories (SQL, XSS, JNDI, Expression, PathTraversal)</item>
+    <item>InjectionDetectedException extends EafException with structured fields</item>
+    <item>RedisRevocationStore with configurable fail-closed</item>
+    <item>Integration tests pass for both fail-open and fail-closed modes</item>
+    <item>Fuzz test runs 5 minutes without crashes</item>
+    <item>Performance validated: &lt;5ms per request</item>
+    <item>Metrics emitted and validated</item>
+    <item>Zero ktlint/Detekt violations</item>
+  </definition-of-done>
+</story-context>

@@ -18,12 +18,14 @@ So that JWT-based authentication is enforced on all API endpoints.
 ## Acceptance Criteria
 
 1. ✅ framework/security module created with Spring Security OAuth2 dependencies
-2. ✅ SecurityConfiguration.kt configures HTTP security with JWT authentication
-3. ✅ OAuth2 Resource Server configured with Keycloak issuer URI
-4. ✅ All API endpoints require authentication by default (except /actuator/health)
-5. ✅ Integration test validates unauthenticated requests return 401 Unauthorized
-6. ✅ Valid JWT allows API access
-7. ✅ Security filter chain documented
+2. ✅ SecurityModule.kt created with @ApplicationModule annotation for Spring Modulith boundary enforcement
+3. ✅ SecurityConfiguration.kt configures HTTP security with JWT authentication
+4. ✅ application.yml configured with JWT properties (issuer-uri, jwks-uri, audience)
+5. ✅ OAuth2 Resource Server configured with Keycloak issuer URI
+6. ✅ All API endpoints require authentication by default (except /actuator/health)
+7. ✅ Integration test validates unauthenticated requests return 401 Unauthorized
+8. ✅ Valid JWT allows API access
+9. ✅ Security filter chain documented
 
 ---
 
@@ -80,15 +82,17 @@ spring:
 ## Implementation Checklist
 
 - [ ] Create framework/security module
-- [ ] Add Spring Security OAuth2 Resource Server dependencies
-- [ ] Create SecurityConfiguration.kt with @EnableWebSecurity
-- [ ] Configure OAuth2 Resource Server with Keycloak OIDC
-- [ ] Configure security filter chain (all endpoints authenticated)
-- [ ] Allow /actuator/health without authentication
-- [ ] Write integration test: unauthenticated request → 401
+- [ ] Add Spring Security OAuth2 Resource Server dependencies to build.gradle.kts
+- [ ] Create SecurityModule.kt with @ApplicationModule(displayName = "EAF Security Module", allowedDependencies = ["core"])
+- [ ] Create application.yml with eaf.security.jwt properties (issuer-uri, jwks-uri, audience)
+- [ ] Create SecurityConfiguration.kt with @EnableWebSecurity and @EnableMethodSecurity
+- [ ] Configure OAuth2 Resource Server with Keycloak OIDC (spring.security.oauth2.resourceserver.jwt)
+- [ ] Configure security filter chain (all endpoints authenticated except /actuator/health)
+- [ ] Write integration test: unauthenticated request → 401 Unauthorized (with RFC 7807 ProblemDetail)
 - [ ] Write integration test: valid JWT → 200 OK
-- [ ] Document security filter chain
-- [ ] Commit: "Add Spring Security OAuth2 Resource Server foundation"
+- [ ] Document security filter chain in docs/reference/security-architecture.md
+- [ ] Verify Konsist architecture test validates SecurityModule boundaries
+- [ ] Commit: "feat: Add Spring Security OAuth2 Resource Server foundation (Story 3.1)"
 
 ---
 
