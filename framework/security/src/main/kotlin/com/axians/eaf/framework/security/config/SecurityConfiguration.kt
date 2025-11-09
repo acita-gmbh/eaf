@@ -69,25 +69,12 @@ open class SecurityConfiguration {
     }
 
     /**
-     * Creates a JwtDecoder configured to use the Keycloak JWKS endpoint.
+     * Create a JwtDecoder that validates tokens against the configured Keycloak JWKS endpoint.
      *
-     * The decoder fetches public keys from the configured JWKS URI and validates
-     * JWT signatures and standard claims.
+     * Validates signatures using keys obtained from keycloakConfig.jwksUri, enforces the RS256
+     * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
-     * JWT Validation Layers (Story 3.4):
-     * - Layer 1: Format validation (3-part structure) - handled by NimbusJwtDecoder
-     * - Layer 2: Signature validation (RS256 with JWKS) - handled by NimbusJwtDecoder
-     * - Layer 3: Algorithm validation (RS256 only, reject HS256) - JwtAlgorithmValidator
-     * - Layer 5: Timestamp validation (exp, iat, nbf) - JwtTimestampValidator
-     *
-     * JWKS Caching (Story 3.2):
-     * - NimbusJwtDecoder includes built-in JWKS caching (default: 5 minutes)
-     * - KeycloakJwksProvider provides additional caching layer with configurable
-     *   duration (default: 10 minutes) for use cases requiring explicit cache control
-     * - Cache refresh triggered automatically on cache miss or expiration
-     * - Graceful handling of JWKS rotation via cache invalidation
-     *
-     * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
+     * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces RS256, and validates token timestamps
      */
     @Bean
     open fun jwtDecoder(): JwtDecoder {
