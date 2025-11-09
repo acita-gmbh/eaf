@@ -1,0 +1,68 @@
+{
+  "realm": "eaf",
+  "enabled": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "requiredActions": [],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@eaf.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": ["WIDGET_ADMIN", "ADMIN"],
+      "attributes": {
+        "tenant_id": ["tenant-test-001"]
+      }
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@eaf.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": ["WIDGET_VIEWER"],
+      "attributes": {
+        "tenant_id": ["tenant-test-002"]
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "WIDGET_ADMIN"
+      },
+      {
+        "name": "WIDGET_VIEWER"
+      },
+      {
+        "name": "ADMIN"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "eaf-api",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false
+    }
+  ]
+}

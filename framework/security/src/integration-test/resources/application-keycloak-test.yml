@@ -1,0 +1,34 @@
+# ============================================================================
+# Keycloak Test Profile Configuration (Story 3.3)
+# ============================================================================
+# Configuration for integration tests using Testcontainers Keycloak.
+# Unlike regular test profile, this profile ENABLES SecurityConfiguration.
+# ============================================================================
+
+spring:
+  # Disable JMX for tests
+  jmx:
+    enabled: false
+
+  # Allow bean overriding for test flexibility
+  main:
+    allow-bean-definition-overriding: true
+
+# Disable Management/Actuator for tests
+management:
+  endpoints:
+    enabled-by-default: false
+
+# EAF Security Configuration (set dynamically via @DynamicPropertySource)
+# eaf.security.jwt.issuer-uri: <from KeycloakTestContainer>
+# eaf.security.jwt.jwks-uri: <from KeycloakTestContainer>
+# eaf.security.jwt.audience: eaf-api
+
+# Logging level for tests
+logging:
+  level:
+    root: WARN
+    com.axians.eaf: INFO
+    org.springframework.security: DEBUG
+    org.testcontainers: INFO
+    dasniko.testcontainers: DEBUG
