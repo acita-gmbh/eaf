@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtTimestampValidator
+import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
 
@@ -85,13 +85,15 @@ open class SecurityConfiguration {
                 .build()
 
         // Story 3.4: Add explicit validators for Layers 3 and 5
-        val validators =
+        // Compose with Spring Security defaults for defense-in-depth
+        val defaults = JwtValidators.createDefault()
+        val customValidators =
             DelegatingOAuth2TokenValidator(
-                JwtTimestampValidator(), // Layer 5: exp, iat, nbf validation
+                defaults, // Preserve Spring Security baseline protections
                 JwtAlgorithmValidator(), // Layer 3: RS256 enforcement (reject HS256)
             )
 
-        decoder.setJwtValidator(validators)
+        decoder.setJwtValidator(customValidators)
 
         return decoder
     }
