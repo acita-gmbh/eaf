@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * Integration test for JWT Claims Schema and Time-Based Validation (Layers 4-5).
  *
  * Validates:
- * - AC2: Layer 4 - Claims schema validation (required: sub, iss, aud, exp, iat, tenant_id, roles)
+ * - AC2: Layer 4 - Claims schema validation (currently required: sub, iss, exp, iat; additional claims such as aud, tenant_id, roles will be validated in future phases as per the story file)
  * - AC3: Layer 5 - Time-based validation (exp, iat, nbf with 30s clock skew)
  * - AC4: Missing or invalid claims rejected with 401 and specific error message
  * - AC5: Expired tokens rejected with 401
@@ -46,7 +46,7 @@ class JwtClaimsTimeIntegrationTest : FunSpec() {
             // are rejected before reaching Layer 4 claim validation
             //
             // Decoded payload: {"iss":"test", "aud":"eaf-api", "exp":9999999999}
-            // Missing claims: sub, iat, tenant_id, roles
+            // Missing required claims: sub, iat
             // Signature: invalid (will fail at Layer 2 before Layer 4)
             val malformedToken =
                 "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9." +
@@ -66,7 +66,7 @@ class JwtClaimsTimeIntegrationTest : FunSpec() {
             // are rejected before reaching issuer validation (Layer 6)
             //
             // Decoded payload: {"sub":"user", "iss":"wrong", "aud":"eaf-api", "exp":9999999999}
-            // Missing claims: iat, tenant_id, roles
+            // Missing required claim: iat (tenant_id and roles are optional)
             // Invalid: issuer = "wrong" (should be Keycloak realm URL)
             // Signature: invalid (will fail at Layer 2 before Layer 6)
             val tokenWithWrongIssuer =
