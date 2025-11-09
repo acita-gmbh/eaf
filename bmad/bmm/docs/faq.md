@@ -557,11 +557,10 @@ Trust your expertise - BMM supports your decisions.
 
 **A:**
 
-1. Check [Troubleshooting Guide](./troubleshooting.md) for common issues
-2. Search [Complete Documentation](./README.md) for related topics
-3. Ask in [Discord Community](https://discord.gg/gk8jAdXWmj) (#general-dev)
-4. Open a [GitHub Issue](https://github.com/bmad-code-org/BMAD-METHOD/issues)
-5. Watch [YouTube Tutorials](https://www.youtube.com/@BMadCode)
+1. Search [Complete Documentation](./README.md) for related topics
+2. Ask in [Discord Community](https://discord.gg/gk8jAdXWmj) (#general-dev)
+3. Open a [GitHub Issue](https://github.com/bmad-code-org/BMAD-METHOD/issues)
+4. Watch [YouTube Tutorials](https://www.youtube.com/@BMadCode)
 
 ### Q: How do I report a bug or request a feature?
 
@@ -580,7 +579,6 @@ Please include:
 
 - [Quick Start Guide](./quick-start.md) - Get started with BMM
 - [Glossary](./glossary.md) - Terminology reference
-- [Troubleshooting](./troubleshooting.md) - Problem resolution
 - [Scale Adaptive System](./scale-adaptive-system.md) - Understanding levels
 - [Brownfield Guide](./brownfield-guide.md) - Existing codebase workflows
 

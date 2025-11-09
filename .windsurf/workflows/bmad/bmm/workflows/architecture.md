@@ -70,3 +70,5 @@ features:
   - "Implementation patterns for agent consistency"
 
 standalone: true
+
+# Web bundle configuration for standalone deployment

@@ -6,6 +6,10 @@
 - Path: `bmad/bmm/workflows/1-analysis/brainstorm-project/workflow.yaml`
 - Facilitate project brainstorming sessions by orchestrating the CIS brainstorming workflow with project-specific context and guidance.
 
+**domain-research**
+- Path: `bmad/bmm/workflows/1-analysis/domain-research/workflow.yaml`
+- Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects
+
 **product-brief**
 - Path: `bmad/bmm/workflows/1-analysis/product-brief/workflow.yaml`
 - Interactive product brief creation workflow that guides users through defining their product vision with multiple input sources and conversational collaboration
@@ -17,10 +21,6 @@
 **create-ux-design**
 - Path: `bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.yaml`
 - Collaborative UX design facilitation workflow that creates exceptional user experiences through visual exploration and informed decision-making. Unlike template-driven approaches, this workflow facilitates discovery, generates visual options, and collaboratively designs the UX with the user at every step.
-
-**narrative**
-- Path: `bmad/bmm/workflows/2-plan-workflows/narrative/workflow.yaml`
-- Narrative design workflow for story-driven games and applications. Creates comprehensive narrative documentation including story structure, character arcs, dialogue systems, and narrative implementation guidance.
 
 **create-epics-and-stories**
 - Path: `bmad/bmm/workflows/2-plan-workflows/prd/create-epics-and-stories/workflow.yaml`

@@ -317,6 +317,56 @@ Your choice [1/2/3]:</ask>
 - Default to "software" if not clearly a game
   </action>
 
+<check if="project_type == game">
+  <output>
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎮 **GAME DEVELOPMENT DETECTED**
+
+Game development workflows are now part of the **BMad Game Development (BMGD)** module.
+
+The BMM module is designed for software development. For game development, you'll need
+the BMGD module which provides specialized game development workflows and agents.
+
+**Would you like to:**
+a) Install BMGD module now (recommended for game projects)
+b) Continue with BMM workflows (for software projects only)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+</output>
+
+<ask>Your choice [a/b]:</ask>
+
+  <check if="choice == a">
+    <output>
+    Please run the following command to install the BMGD module:
+
+    ```bash
+    bmad install bmgd
+    ```
+
+    After installation, you can start your game development workflow with the Game Designer agent.
+
+    This workflow-init will now exit. Re-run it after installing BMGD.
+    </output>
+    <action>Exit workflow with success status</action>
+
+  </check>
+
+  <check if="choice == b">
+    <output>
+    ⚠️ **Warning:** BMM workflows are optimized for software development, not game development.
+
+    You may encounter mismatched terminology and workflows. Consider installing BMGD for
+    a better game development experience.
+
+    Continuing with software development workflows...
+    </output>
+    <action>Set project_type = "software" (override game detection)</action>
+
+  </check>
+</check>
+
 <template-output>user_description</template-output>
 <template-output>field_type</template-output>
 <template-output>project_type</template-output>

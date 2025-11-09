@@ -1,3 +1,11 @@
+# domain-research Workflow
+
+## Description
+Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects
+
+## Activation
+Type `@workflow-domain-research` to execute this workflow.
+
 # Domain Research Workflow Configuration
 name: domain-research
 description: "Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects"
@@ -39,3 +47,6 @@ when_to_use:
 standalone: true
 
 # Web bundle configuration for standalone deployment
+
+## Module
+BMAD BMM module

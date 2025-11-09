@@ -1,3 +1,8 @@
+# Advanced Elicitation Task
+
+## Activation
+Type `@task-adv-elicit` to execute this task.
+
 <task id="bmad/core/tasks/adv-elicit.xml" name="Advanced Elicitation" standalone="true">
   <llm critical="true">
     <i>MANDATORY: Execute ALL steps in the flow section IN EXACT ORDER</i>
@@ -102,3 +107,6 @@
     </step>
   </flow>
 </task>
+
+## Module
+BMAD CORE module

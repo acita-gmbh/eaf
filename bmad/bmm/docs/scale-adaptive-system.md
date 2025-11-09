@@ -51,9 +51,9 @@ flowchart TD
     Q1 -->|Yes| QF[Quick Flow<br/>Tech-spec only]
     Q1 -->|Uncertain| M
 
-    style QF fill:#bfb,stroke:#333,stroke-width:2px
-    style M fill:#bbf,stroke:#333,stroke-width:2px
-    style E fill:#f9f,stroke:#333,stroke-width:2px
+    style QF fill:#bfb,stroke:#333,stroke-width:2px,color:#000
+    style M fill:#bbf,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
 ### Quick Keywords
@@ -389,8 +389,8 @@ flowchart TD
     TRACK -->|Method| M[PRD + Arch]
     TRACK -->|Enterprise| E[PRD + Arch + Sec/Ops]
 
-    style DOC fill:#ffb,stroke:#333,stroke-width:2px
-    style TRACK fill:#bfb,stroke:#333,stroke-width:2px
+    style DOC fill:#ffb,stroke:#333,stroke-width:2px,color:#000
+    style TRACK fill:#bfb,stroke:#333,stroke-width:2px,color:#000
 ```
 
 ---

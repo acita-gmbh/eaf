@@ -52,7 +52,7 @@ Complete guide to BMM's AI agent team:
   - Example party compositions
   - Multi-module integration (BMM + CIS + BMB + custom)
   - Agent customization in party mode
-  - Best practices and troubleshooting
+  - Best practices
 
 ---
 
@@ -65,7 +65,7 @@ Comprehensive guide for brownfield development:
   - Track selection for brownfield
   - Integration with existing patterns
   - Phase-by-phase workflow guidance
-  - Common scenarios and troubleshooting
+  - Common scenarios
 
 ---
 
@@ -75,7 +75,6 @@ Essential reference materials:
 
 - **[Glossary](./glossary.md)** - Key terminology and concepts
 - **[FAQ](./faq.md)** - Frequently asked questions across all topics
-- **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
 - **[Enterprise Agentic Development](./enterprise-agentic-development.md)** - Team collaboration strategies
 
 ---
@@ -99,7 +98,7 @@ Essential reference materials:
 → See [Scale Adaptive System](./scale-adaptive-system.md)
 
 **Find specific commands or answers**
-→ Check [FAQ](./faq.md) or [Troubleshooting](./troubleshooting.md)
+→ Check [FAQ](./faq.md)
 
 ---
 
@@ -213,12 +212,12 @@ flowchart TD
     SAS --> IMPL
     BF --> IMPL
 
-    IMPL --> REF[Quick References<br/>Glossary, FAQ, Troubleshooting]
+    IMPL --> REF[Quick References<br/>Glossary, FAQ]
 
-    style START fill:#bfb,stroke:#333,stroke-width:2px
-    style QS fill:#bbf,stroke:#333,stroke-width:2px
-    style DECIDE fill:#ffb,stroke:#333,stroke-width:2px
-    style IMPL fill:#f9f,stroke:#333,stroke-width:2px
+    style START fill:#bfb,stroke:#333,stroke-width:2px,color:#000
+    style QS fill:#bbf,stroke:#333,stroke-width:2px,color:#000
+    style DECIDE fill:#ffb,stroke:#333,stroke-width:2px,color:#000
+    style IMPL fill:#f9f,stroke:#333,stroke-width:2px,color:#000
 ```
 
 ---

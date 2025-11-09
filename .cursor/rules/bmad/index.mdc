@@ -31,6 +31,7 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/core/agents/bmad-master - bmad-master
 
 **Tasks:**
+- @bmad/core/tasks/adv-elicit - adv-elicit
 - @bmad/core/tasks/index-docs - index-docs
 
 **Tools:**
@@ -54,10 +55,10 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 
 **Workflows:**
 - @bmad/bmm/workflows/brainstorm-project - brainstorm-project
+- @bmad/bmm/workflows/domain-research - domain-research
 - @bmad/bmm/workflows/product-brief - product-brief
 - @bmad/bmm/workflows/research - research
 - @bmad/bmm/workflows/create-ux-design - create-ux-design
-- @bmad/bmm/workflows/narrative - narrative
 - @bmad/bmm/workflows/create-epics-and-stories - create-epics-and-stories
 - @bmad/bmm/workflows/prd - prd
 - @bmad/bmm/workflows/tech-spec - tech-spec

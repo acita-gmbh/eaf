@@ -60,10 +60,10 @@ flowchart TD
     STORIES --> IMPL
     IMPL --> DONE
 
-    style START fill:#bfb,stroke:#333,stroke-width:2px
-    style OPTIONAL fill:#ffb,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
-    style IMPL fill:#bbf,stroke:#333,stroke-width:2px
-    style DONE fill:#f9f,stroke:#333,stroke-width:3px
+    style START fill:#bfb,stroke:#333,stroke-width:2px,color:#000
+    style OPTIONAL fill:#ffb,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5,color:#000
+    style IMPL fill:#bbf,stroke:#333,stroke-width:2px,color:#000
+    style DONE fill:#f9f,stroke:#333,stroke-width:3px,color:#000
 ```
 
 ---

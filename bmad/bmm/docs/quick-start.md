@@ -323,10 +323,10 @@ flowchart LR
     P2 --> P3
     P3 --> P4
 
-    style P1 fill:#bbf,stroke:#333,stroke-width:2px
-    style P2 fill:#bfb,stroke:#333,stroke-width:2px
-    style P3 fill:#ffb,stroke:#333,stroke-width:2px
-    style P4 fill:#fbf,stroke:#333,stroke-width:2px
+    style P1 fill:#bbf,stroke:#333,stroke-width:2px,color:#000
+    style P2 fill:#bfb,stroke:#333,stroke-width:2px,color:#000
+    style P3 fill:#ffb,stroke:#333,stroke-width:2px,color:#000
+    style P4 fill:#fbf,stroke:#333,stroke-width:2px,color:#000
 ```
 
 ## Common Questions

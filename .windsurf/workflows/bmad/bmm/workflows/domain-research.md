@@ -1,3 +1,8 @@
+---
+description: domain-research
+auto_execution_mode: 1
+---
+
 # Domain Research Workflow Configuration
 name: domain-research
 description: "Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects"

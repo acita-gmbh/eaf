@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -8,7 +9,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
 
@@ -66,24 +69,32 @@ open class SecurityConfiguration {
     }
 
     /**
-     * Creates a JwtDecoder configured to use the Keycloak JWKS endpoint.
+     * Create a JwtDecoder that validates tokens against the configured Keycloak JWKS endpoint.
      *
-     * The decoder fetches public keys from the configured JWKS URI and validates
-     * JWT signatures and standard claims such as expiration, issuance time,
-     * issuer, and audience.
+     * Validates signatures using keys obtained from keycloakConfig.jwksUri, enforces the RS256
+     * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
-     * JWKS Caching (Story 3.2):
-     * - NimbusJwtDecoder includes built-in JWKS caching (default: 5 minutes)
-     * - KeycloakJwksProvider provides additional caching layer with configurable
-     *   duration (default: 10 minutes) for use cases requiring explicit cache control
-     * - Cache refresh triggered automatically on cache miss or expiration
-     * - Graceful handling of JWKS rotation via cache invalidation
-     *
-     * @return a JwtDecoder that validates JWTs using the configured JWKS endpoint
+     * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces
+     * RS256, and validates token timestamps
      */
     @Bean
-    open fun jwtDecoder(): JwtDecoder =
-        NimbusJwtDecoder
-            .withJwkSetUri(keycloakConfig.jwksUri)
-            .build()
+    open fun jwtDecoder(): JwtDecoder {
+        val decoder =
+            NimbusJwtDecoder
+                .withJwkSetUri(keycloakConfig.jwksUri)
+                .build()
+
+        // Story 3.4: Add explicit validators for Layers 3 and 5
+        // Compose with Spring Security defaults for defense-in-depth
+        val defaults = JwtValidators.createDefault()
+        val customValidators =
+            DelegatingOAuth2TokenValidator(
+                defaults, // Preserve Spring Security baseline protections
+                JwtAlgorithmValidator(), // Layer 3: RS256 enforcement (reject HS256)
+            )
+
+        decoder.setJwtValidator(customValidators)
+
+        return decoder
+    }
 }
