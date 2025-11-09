@@ -1,7 +1,7 @@
 # Story 3.1: Spring Security OAuth2 Resource Server Foundation
 
 **Epic:** Epic 3 - Authentication & Authorization
-**Status:** review
+**Status:** done
 **Story Points:** TBD
 **Related Requirements:** FR006 (Authentication, Security, and Compliance), NFR002 (Security)
 
