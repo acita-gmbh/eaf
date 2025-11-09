@@ -74,7 +74,8 @@ open class SecurityConfiguration {
      * Validates signatures using keys obtained from keycloakConfig.jwksUri, enforces the RS256
      * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
-     * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces RS256, and validates token timestamps
+     * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces
+     * RS256, and validates token timestamps
      */
     @Bean
     open fun jwtDecoder(): JwtDecoder {
