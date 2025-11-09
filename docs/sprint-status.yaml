@@ -70,7 +70,7 @@ development_status:
   # Epic 3: Authentication & Authorization (12 stories)
   epic-3: backlog
   3-1-spring-security-oauth2: done
-  3-2-keycloak-oidc-jwks: ready-for-dev
+  3-2-keycloak-oidc-jwks: in-progress
   3-3-jwt-format-signature: ready-for-dev
   3-4-jwt-claims-time-validation: ready-for-dev
   3-5-issuer-audience-role: ready-for-dev

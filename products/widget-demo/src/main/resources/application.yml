@@ -135,7 +135,7 @@ server:
     include-binding-errors: always
 
 # ============================================================================
-# EAF Security Configuration (Story 3.1)
+# EAF Security Configuration (Stories 3.1-3.2)
 # ============================================================================
 # JWT OAuth2 Resource Server configuration for Keycloak OIDC integration
 eaf:
@@ -144,3 +144,4 @@ eaf:
       issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/eaf}
       jwks-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/eaf/protocol/openid-connect/certs}
       audience: ${JWT_AUDIENCE:eaf-api}
+      jwks-cache-duration: ${JWKS_CACHE_DURATION:10m}  # Story 3.2: JWKS public key cache duration
