@@ -66,6 +66,7 @@ dependencies {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine") // Exclude JUnit 4 engine
     }
     testImplementation(libs.bundles.testcontainers)
+    // Story 3.3: keycloak-admin-client provided transitively by testcontainers-keycloak
     testImplementation(project(":shared:testing"))
 
     // Ensure only JUnit 5 for Pitest
