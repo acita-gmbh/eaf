@@ -1633,6 +1633,246 @@ class OrderApiIntegrationTest : FunSpec({
 })
 ```
 
+#### Axon Framework Integration Testing Patterns (Epic 2 Lessons)
+
+**Critical Pattern:** `mode=subscribing` for Synchronous Event Processing
+
+**Problem Discovered (Story 2.13):**
+- TrackingEventProcessor polls event store asynchronously (6s latency per command in tests)
+- Tests wait for async processor to poll and process events
+- Causes 21x performance degradation vs synchronous processing
+
+**Solution:**
+```kotlin
+// application-test.yml
+axon:
+  eventhandling:
+    processors:
+      __default__:
+        mode: subscribing  # Synchronous processing in same thread
+```
+
+**Impact:** 21x performance improvement (6s → 280ms per command)
+
+**Test Configuration Pattern (MANDATORY for Axon Integration Tests):**
+
+```kotlin
+// AxonTestConfiguration.kt
+@TestConfiguration
+@Profile("test")
+class AxonTestConfiguration {
+    /**
+     * PropagatingErrorHandler ensures event handler exceptions
+     * fail the test immediately (no silent LoggingErrorHandler)
+     */
+    @Autowired
+    fun configure(configurer: EventProcessingConfigurer) {
+        configurer.registerDefaultListenerInvocationErrorHandler {
+            PropagatingErrorHandler.INSTANCE
+        }
+    }
+
+    /**
+     * Aggregate cache for performance (70x improvement)
+     * Eliminates O(n) event reloading overhead
+     */
+    @Bean
+    fun aggregateCache(): Cache = WeakReferenceCache()
+}
+
+// Integration Test
+@SpringBootTest(classes = [WidgetDemoApplication::class])
+@Import(AxonTestConfiguration::class)  // CRITICAL: Import test config
+@Testcontainers
+@Sql("/schema.sql")
+@ActiveProfiles("test")
+class WidgetIntegrationTest : FunSpec() {
+    // MANDATORY: Field injection + init block (NOT constructor injection)
+    @Autowired
+    private lateinit var commandGateway: CommandGateway
+
+    @Autowired
+    private lateinit var dsl: DSLContext
+
+    init {
+        extension(SpringExtension())
+
+        test("should process commands with event projection") {
+            val widgetId = WidgetId(UUID.randomUUID())
+
+            // Dispatch command (blocks until event handled by SubscribingEventProcessor)
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test"))
+
+            // Verify projection updated (eventually pattern for async tolerance)
+            eventually(Duration.ofSeconds(5)) {
+                val projection = dsl.selectFrom(table)
+                    .where(field("id").eq(UUID.fromString(widgetId.value)))
+                    .fetchOne()
+
+                projection.shouldNotBeNull()
+                projection[field("name", String::class.java)] shouldBe "Test"
+            }
+        }
+    }
+
+    companion object {
+        @Container
+        @ServiceConnection
+        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer(
+            DockerImageName.parse("postgres:16.10-alpine")
+        )
+        // Performance optimizations (70x improvement):
+        .withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off")
+        .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+    }
+}
+```
+
+**Performance Optimization Pattern (@Profile for Test Performance):**
+
+```kotlin
+// AxonConfiguration.kt (Production)
+@Configuration
+class AxonConfiguration {
+    /**
+     * Snapshots disabled in test profile for 70x performance improvement
+     * Production: Creates snapshots every 100 events
+     * Test: Disabled to eliminate snapshot overhead (~70ms per snapshot)
+     */
+    @Bean
+    @Profile("!test")  // Exclude from test profile
+    fun snapshotTriggerDefinition(snapshotter: Snapshotter): SnapshotTriggerDefinition =
+        EventCountSnapshotTriggerDefinition(snapshotter, 100)
+
+    /**
+     * Aggregate cache (production AND test)
+     * - Production: Hot aggregate performance
+     * - Test: Eliminates O(n) event reloading (70x improvement)
+     */
+    @Bean
+    fun aggregateCache(): Cache = WeakReferenceCache()
+}
+
+// Domain Aggregate
+@Aggregate(cache = "aggregateCache")  // Enable caching
+class WidgetAggregate : Serializable { ... }
+```
+
+**Performance Impact (Story 2.13 Results):**
+- Without optimizations: 6s per command (25+ minutes for 250 commands)
+- With mode=subscribing: 280ms per command (21x faster)
+- With aggregate caching: 4ms per command (70x faster, **1500x total improvement**)
+- With Testcontainers optimization: Sub-10ms variance
+
+**Multi-Vector Optimization Strategy:**
+
+| Vector | Optimization | Impact |
+|--------|--------------|--------|
+| **Vector 1: Database I/O** | fsync=off, synchronous_commit=off, tmpfs | ~140ms savings |
+| **Vector 2: Axon Framework** | mode=subscribing, @Profile("!test") snapshots | ~70ms savings |
+| **Vector 3: Spring Boot** | Metrics disabled, jOOQ startup optimization | ~5-10ms savings |
+| **Vector 4: Aggregate Caching** | WeakReferenceCache eliminates O(n) reloading | ~125ms savings ⭐ |
+
+**Total Improvement:** 280ms → 4ms per command (**70x faster**)
+
+**Realistic Workload Performance (50 aggregates × 10 commands = 500 total):**
+- CREATE (cold cache): 6.9ms avg (3-66ms range)
+- UPDATE (warm cache): 5.2ms avg (3-70ms range)
+- Overall: 5.8ms avg, 250 cmd/sec throughput
+
+**Key Insight:** Aggregate caching is **production-critical**, not optional. Without caching, command performance degrades quadratically as event count grows (O(n) complexity).
+
+**Eventually Pattern (for Async Validation):**
+
+```kotlin
+// Eventually pattern: Polls until success or timeout
+private suspend fun eventually(timeout: Duration, block: suspend () -> Unit) {
+    val deadline = System.currentTimeMillis() + timeout.toMillis()
+    var lastException: Throwable? = null
+
+    while (System.currentTimeMillis() < deadline) {
+        try {
+            block()
+            return  // Success!
+        } catch (e: Throwable) {
+            lastException = e
+            kotlinx.coroutines.delay(100)  // Poll every 100ms
+        }
+    }
+
+    throw AssertionError("Eventually block failed within $timeout", lastException)
+}
+```
+
+**Anti-Patterns to Avoid:**
+
+❌ **Constructor Injection with @SpringBootTest** (causes circular dependency):
+```kotlin
+// FORBIDDEN - Compilation error
+@SpringBootTest
+class BadTest(
+    private val commandGateway: CommandGateway  // ERROR!
+) : FunSpec({ ... })
+```
+
+✅ **Field Injection + Init Block** (MANDATORY pattern):
+```kotlin
+// CORRECT
+@SpringBootTest
+class GoodTest : FunSpec() {
+    @Autowired
+    private lateinit var commandGateway: CommandGateway
+
+    init {
+        extension(SpringExtension())
+        test("...") { ... }
+    }
+}
+```
+
+❌ **mode=tracking in Integration Tests** (21x slower):
+```kotlin
+// Causes 6s latency per command in tests
+axon:
+  eventhandling:
+    processors:
+      __default__:
+        mode: tracking  // AVOID in tests!
+```
+
+✅ **mode=subscribing in Tests** (21x faster):
+```kotlin
+// Synchronous event processing, immediate projection updates
+axon:
+  eventhandling:
+    processors:
+      __default__:
+        mode: subscribing  // MANDATORY for tests
+```
+
+❌ **Missing PropagatingErrorHandler** (silent failures):
+```kotlin
+// Event handler exceptions logged but test passes (BAD!)
+// No configuration → defaults to LoggingErrorHandler
+```
+
+✅ **PropagatingErrorHandler** (fail-fast on errors):
+```kotlin
+// Event handler exceptions fail the test immediately (GOOD!)
+configurer.registerDefaultListenerInvocationErrorHandler {
+    PropagatingErrorHandler.INSTANCE
+}
+```
+
+**Reference Implementation:**
+- `products/widget-demo/src/integration-test/.../AxonTestConfiguration.kt` - Test config with all patterns
+- `products/widget-demo/src/integration-test/.../SnapshotPerformanceTest.kt` - Performance optimization showcase
+- `products/widget-demo/src/integration-test/.../RealisticWorkloadPerformanceTest.kt` - Realistic workload validation
+- `framework/cqrs/src/main/kotlin/.../AxonConfiguration.kt` - Production config with caching
+
+**Story 2.13 Performance Investigation:**
+For detailed performance optimization journey, see: `docs/retrospectives/epic-2-retro-2025-11-08.md`
+
 **Layer 4: Property-Based Tests (Kotest)**
 ```kotlin
 class RoleNormalizationPropertyTest : FunSpec() {
