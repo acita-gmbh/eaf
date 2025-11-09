@@ -1,4 +1,4 @@
-# Story 3.3: JWT Format and Signature Validation (Layers 1-2)
+# Story 3.4: JWT Format and Signature Validation (Layers 1-2)
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO

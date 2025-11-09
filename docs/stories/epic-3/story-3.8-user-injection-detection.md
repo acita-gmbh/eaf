@@ -1,4 +1,4 @@
-# Story 3.7: User Validation and Injection Detection (Layers 9-10)
+# Story 3.8: User Validation and Injection Detection (Layers 9-10)
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO

@@ -1,4 +1,4 @@
-# Story 3.4: JWT Claims Schema and Time-Based Validation (Layers 3-5)
+# Story 3.5: JWT Claims Schema and Time-Based Validation (Layers 3-5)
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO

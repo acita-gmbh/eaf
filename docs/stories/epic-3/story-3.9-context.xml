@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <story-context>
   <story-id>3.9</story-id>
-  <title>Role-Based Access Control on API Endpoints</title>
+  <title>Complete 10-Layer JWT Validation Integration</title>
   <epic>Epic 3 - Authentication & Authorization</epic>
   <generated>2025-11-09</generated>
-  <summary>Secure Widget API endpoints with @PreAuthorize annotations using normalized roles from RoleNormalizer (Story 3.5). Validates WIDGET_ADMIN can create/update, WIDGET_VIEWER can only read.</summary>
-  <tech-spec-ref>docs/tech-spec-epic-3.md Lines 527-591, 1211-1235 (Test Examples), 1346-1352</tech-spec-ref>
+  <summary>Integrate all 10 JWT validation layers into JwtValidationFilter with fail-fast approach, comprehensive exception handling, and per-layer metrics. Validates &lt;50ms total performance target.</summary>
+  <tech-spec-ref>docs/tech-spec-epic-3.md Lines 218-302, 1338-1344</tech-spec-ref>
   <key-code>
-    - WidgetController.kt with @PreAuthorize annotations
-    - POST /api/widgets: @PreAuthorize("hasRole('WIDGET_ADMIN')")
-    - GET /api/widgets/{id}: @PreAuthorize("hasAnyRole('WIDGET_ADMIN', 'WIDGET_VIEWER')")
-    - PUT /api/widgets/{id}: @PreAuthorize("hasRole('WIDGET_ADMIN')")
-    - @AuthenticationPrincipal Jwt for user context
+    - JwtValidationFilter.kt orchestrates all 10 layers sequentially
+    - Comprehensive exception handling with @Suppress("TooGenericExceptionCaught")
+    - Handles: JwtException, InjectionDetectedException, SecurityException, IllegalArgumentException
+    - Fail-fast: First validation failure short-circuits (no wasted processing)
+    - Metrics per layer: jwt_validation_duration_seconds{layer}
   </key-code>
-  <critical-dependency>
-    REQUIRES Story 3.5 RoleNormalizer fix (Set&lt;GrantedAuthority&gt; with ROLE_ prefix)
-    WITHOUT this fix, ALL @PreAuthorize checks will FAIL
-  </critical-dependency>
-  <testing>Integration tests: ADMIN create/update works, VIEWER read-only works, VIEWER create fails with 403 Forbidden, Authorization test suite covers all permission combinations</testing>
+  <performance-target>
+    - Total JWT validation: &lt;50ms (target: &lt;30ms)
+    - Layer 1-6 (Spring Security): &lt;20ms
+    - Layer 7 (Redis): &lt;5ms
+    - Layer 8 (Role Normalization): &lt;2ms
+    - Layer 9 (User Validation, optional): &lt;10ms
+    - Layer 10 (Injection Detection): &lt;3ms
+  </performance-target>
+  <testing>E2E integration test with all 10 layers, Comprehensive JWT variations, Performance assertions, Real infrastructure (Testcontainers Keycloak + Redis)</testing>
 </story-context>

@@ -1,4 +1,4 @@
-# Story 3.6: Redis Revocation Cache (Layer 7)
+# Story 3.7: Redis Revocation Cache (Layer 7)
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO

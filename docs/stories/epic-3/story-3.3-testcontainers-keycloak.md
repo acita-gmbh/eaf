@@ -1,9 +1,10 @@
-# Story 3.10: Testcontainers Keycloak for Integration Tests
+# Story 3.3: Testcontainers Keycloak for Integration Tests
 
 **Epic:** Epic 3 - Authentication & Authorization
 **Status:** TODO
 **Story Points:** TBD
 **Related Requirements:** FR006
+**Story Resequenced:** 2025-11-09 (moved from 3.10 to 3.3 for Constitutional TDD compliance)
 
 ---
 
@@ -31,7 +32,7 @@ So that authentication flows are tested against real Keycloak instance.
 
 ## Prerequisites
 
-**Story 3.8** - Complete 10-Layer JWT Validation Integration
+**Story 3.2** - Keycloak OIDC Discovery and JWKS Integration
 
 ---
 
