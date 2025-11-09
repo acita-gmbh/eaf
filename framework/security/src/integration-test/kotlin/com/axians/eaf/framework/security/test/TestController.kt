@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/widgets")
 class TestController {
+    /**
+     * Provide a simple status map used as a protected test endpoint.
+     *
+     * @return A map with a single entry: "status" mapped to "ok".
+     */
     @GetMapping
     fun getWidgets(): Map<String, String> = mapOf("status" to "ok")
 }
