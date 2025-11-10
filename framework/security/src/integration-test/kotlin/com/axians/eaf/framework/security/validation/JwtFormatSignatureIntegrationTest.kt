@@ -51,6 +51,16 @@ class JwtFormatSignatureIntegrationTest : FunSpec() {
                 ).andExpect(status().isOk())
         }
 
+        test("should return 403 when user lacks required admin role") {
+            val viewerJwt = KeycloakTestContainer.generateToken("viewer", "password")
+
+            mockMvc
+                .perform(
+                    get("/api/widgets")
+                        .header("Authorization", "Bearer $viewerJwt"),
+                ).andExpect(status().isForbidden())
+        }
+
         test("should reject JWT with invalid format (only 2 parts)") {
             // AC4: Invalid format tokens rejected with 401
             val invalidFormatJwt = "header.payload" // Missing signature

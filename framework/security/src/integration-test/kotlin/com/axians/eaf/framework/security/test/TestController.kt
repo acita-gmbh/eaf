@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security.test
 
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -14,12 +15,13 @@ import org.springframework.web.bind.annotation.RestController
  */
 @RestController
 @RequestMapping("/api/widgets")
-class TestController {
+open class TestController {
     /**
      * Provide a simple status map used as a protected test endpoint.
      *
      * @return A map with a single entry: "status" mapped to "ok".
      */
     @GetMapping
-    fun getWidgets(): Map<String, String> = mapOf("status" to "ok")
+    @PreAuthorize("hasRole('WIDGET_ADMIN')")
+    open fun getWidgets(): Map<String, String> = mapOf("status" to "ok")
 }

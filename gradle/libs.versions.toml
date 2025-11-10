@@ -14,7 +14,7 @@ spring-dependency-management = "1.1.7"
 
 # CQRS and Event Sourcing
 axon = "4.12.1"            # Latest stable, v5 migration planned
-arrow = "2.1.2"            # Functional programming
+arrow = "2.2.0"            # Functional programming
 
 # Database and persistence
 postgresql = "42.7.8"      # PostgreSQL driver (security updates)
@@ -30,7 +30,7 @@ kotest-plugin = "6.0.4"   # Kotest Gradle plugin for hybrid test execution (nati
 kotest-assertions-arrow = "1.4.0"  # Kotest Arrow assertions extension
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
-h2 = "2.3.232"            # ONLY for Nullable Pattern unit tests (Story 2.8) - Integration tests MUST use Testcontainers PostgreSQL
+h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - Integration tests MUST use Testcontainers PostgreSQL
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
@@ -46,7 +46,7 @@ dependency-check = "12.1.8" # Supply chain scanning
 
 # Documentation
 dokka = "2.1.0"          # API documentation
-springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
+springdoc = "2.8.14"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
