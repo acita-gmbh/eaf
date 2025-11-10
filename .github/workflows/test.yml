@@ -68,7 +68,7 @@ jobs:
   gradle-quality:
     name: Gradle Quality Matrix
     needs: selective-guard
-    if: needs['selective-guard'].outputs.docs_only != 'true'
+    if: needs.selective-guard.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -116,7 +116,7 @@ jobs:
     name: Shell Lint
     needs: selective-guard
     runs-on: ubuntu-latest
-    if: needs['selective-guard'].outputs.docs_only != 'true'
+    if: needs.selective-guard.outputs.docs_only != 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Install shellcheck
@@ -145,9 +145,10 @@ jobs:
   burn-in:
     name: Burn-In Loop
     needs:
+      - selective-guard
       - gradle-quality
       - shell-lint
-    if: needs['selective-guard'].outputs.docs_only != 'true' && (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    if: needs.selective-guard.outputs.docs_only != 'true' && (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
