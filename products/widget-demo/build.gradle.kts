@@ -11,8 +11,9 @@ group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
 // CRITICAL: Override Spring Boot's managed Netty version BEFORE any dependencies are resolved
-// This must be set at the top level to ensure it's applied before Spring Boot's BOM
-ext["netty.version"] = "4.1.108.Final"
+// IoOps class was introduced in Netty 4.1.91, so we need an older version for Gatling 3.14.0
+// Using 4.1.90.Final which is the last version before IoOps was added
+extra.set("netty.version", "4.1.90.Final")
 
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198
@@ -70,33 +71,6 @@ dependencies {
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
-}
-
-// ============================================================================
-// Gatling Netty Version Override (CRITICAL for nightly CI)
-// ============================================================================
-// Spring Boot dependency management forces Netty 4.1.125.Final, which is
-// incompatible with Gatling 3.14.0 (causes NoClassDefFoundError: io/netty/channel/IoOps).
-// We must prevent Spring Boot from managing Netty versions and let Gatling use
-// its bundled compatible version.
-// See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
-
-// Exclude Netty from Spring Boot's dependency management
-configurations.all {
-    resolutionStrategy {
-        // Let Gatling's transitive dependencies determine Netty version
-        // This overrides both Spring Boot BOM and root build.gradle.kts enforcement
-        force(
-            "io.netty:netty-buffer:4.1.108.Final",
-            "io.netty:netty-codec:4.1.108.Final",
-            "io.netty:netty-codec-http:4.1.108.Final",
-            "io.netty:netty-common:4.1.108.Final",
-            "io.netty:netty-handler:4.1.108.Final",
-            "io.netty:netty-resolver:4.1.108.Final",
-            "io.netty:netty-transport:4.1.108.Final",
-            "io.netty:netty-transport-native-unix-common:4.1.108.Final",
-        )
-    }
 }
 
 // ============================================================================
