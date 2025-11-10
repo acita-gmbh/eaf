@@ -90,7 +90,7 @@ configurations.all {
             "io.netty:netty-handler:4.1.108.Final",
             "io.netty:netty-resolver:4.1.108.Final",
             "io.netty:netty-transport:4.1.108.Final",
-            "io.netty:netty-transport-native-unix-common:4.1.108.Final"
+            "io.netty:netty-transport-native-unix-common:4.1.108.Final",
         )
     }
 }
