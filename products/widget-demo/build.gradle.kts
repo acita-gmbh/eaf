@@ -69,6 +69,33 @@ dependencies {
 }
 
 // ============================================================================
+// Gatling Netty Version Override (CRITICAL for nightly CI)
+// ============================================================================
+// Spring Boot dependency management forces Netty 4.1.125.Final, which is
+// incompatible with Gatling 3.14.0 (causes NoClassDefFoundError: io/netty/channel/IoOps).
+// We must prevent Spring Boot from managing Netty versions and let Gatling use
+// its bundled compatible version.
+// See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
+
+// Exclude Netty from Spring Boot's dependency management
+configurations.all {
+    resolutionStrategy {
+        // Let Gatling's transitive dependencies determine Netty version
+        // This overrides both Spring Boot BOM and root build.gradle.kts enforcement
+        force(
+            "io.netty:netty-buffer:4.1.108.Final",
+            "io.netty:netty-codec:4.1.108.Final",
+            "io.netty:netty-codec-http:4.1.108.Final",
+            "io.netty:netty-common:4.1.108.Final",
+            "io.netty:netty-handler:4.1.108.Final",
+            "io.netty:netty-resolver:4.1.108.Final",
+            "io.netty:netty-transport:4.1.108.Final",
+            "io.netty:netty-transport-native-unix-common:4.1.108.Final"
+        )
+    }
+}
+
+// ============================================================================
 // Test Performance Optimizations (Story 2.13 - Vector 3)
 // ============================================================================
 
