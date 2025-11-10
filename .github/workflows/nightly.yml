@@ -32,17 +32,17 @@ jobs:
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
 
       - name: Property-Based Tests
-        run: ./gradlew propertyTest --no-daemon --stacktrace
+        run: ./gradlew :framework:security:propertyTest --no-daemon --stacktrace
 
       - name: Fuzz Tests (Jazzer)
-        run: ./gradlew fuzzTest --no-daemon --stacktrace
+        run: ./gradlew :framework:security:fuzzTest --no-daemon --stacktrace
 
       # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
       # - name: Concurrency Tests (LitmusKt)
       #   run: ./gradlew litmusTest --no-daemon --stacktrace
 
       - name: Mutation Testing (Pitest)
-        run: ./gradlew pitest --no-daemon --stacktrace
+        run: ./gradlew :framework:cqrs:pitest :framework:observability:pitest :framework:security:pitest --no-daemon --stacktrace
 
       - name: Upload Property Test Reports
         if: always()
