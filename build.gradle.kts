@@ -42,10 +42,12 @@ subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
 
     configurations.configureEach {
-        // Skip Gatling configurations to avoid Netty version conflicts
+        // Skip ALL configurations for projects with Gatling plugin to avoid Netty version conflicts
         // Gatling 3.14.x requires specific Netty version incompatible with forced 4.1.125.Final
+        // The gatlingRun task uses both gatling-specific configs AND main runtimeClasspath,
+        // so we must skip Netty enforcement for the entire project, not just gatling configs.
         // See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
-        if (name.lowercase().contains("gatling")) {
+        if (project.path == ":products:widget-demo") {
             return@configureEach
         }
 
