@@ -1,7 +1,10 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.role.RoleNormalizer
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
+import com.axians.eaf.framework.security.validation.JwtAudienceValidator
 import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
+import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -15,6 +18,7 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
 
 /**
@@ -42,6 +46,9 @@ open class SecurityConfiguration {
     @Autowired
     private lateinit var keycloakConfig: KeycloakOidcConfiguration
 
+    @Autowired
+    private lateinit var roleNormalizer: RoleNormalizer
+
     /**
      * Configures the application's HTTP security filter chain.
      *
@@ -53,6 +60,11 @@ open class SecurityConfiguration {
      */
     @Bean
     open fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        val jwtAuthenticationConverter =
+            JwtAuthenticationConverter().apply {
+                setJwtGrantedAuthoritiesConverter { jwt -> roleNormalizer.normalize(jwt).toList() }
+            }
+
         http
             .authorizeHttpRequests { auth ->
                 auth
@@ -61,7 +73,9 @@ open class SecurityConfiguration {
                     .anyRequest()
                     .authenticated()
             }.oauth2ResourceServer { oauth2 ->
-                oauth2.jwt { }
+                oauth2.jwt { jwtConfigurer ->
+                    jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter)
+                }
             }.csrf { it.disable() } // Stateless API, CSRF not needed
             .sessionManagement { session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -97,6 +111,8 @@ open class SecurityConfiguration {
                 JwtAlgorithmValidator(), // Layer 3: RS256 enforcement (reject HS256)
                 JwtClaimSchemaValidator(), // Layer 4: Required claims validation
                 JwtTimeBasedValidator(), // Layer 5: Enhanced time validation (iat + configurable skew)
+                JwtIssuerValidator(keycloakConfig.issuerUri), // Layer 6: Issuer validation
+                JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
             )
 
         decoder.setJwtValidator(customValidators)
