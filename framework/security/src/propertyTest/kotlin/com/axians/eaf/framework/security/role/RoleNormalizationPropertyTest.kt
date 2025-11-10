@@ -11,7 +11,6 @@ import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
 import org.junit.jupiter.api.Tag
 import org.springframework.security.oauth2.jwt.Jwt
-import java.util.Locale
 import java.util.UUID
 
 @Tag("PBT")
@@ -201,7 +200,12 @@ private fun expectedAuthorities(
     rawRoles.addAll(realmRoles)
     rawRoles.addAll(resourceRoles)
 
-    return rawRoles.mapNotNull { normalizeRoleString(it) }.toSet()
+    val deduped = linkedMapOf<String, String>()
+    rawRoles.mapNotNull { normalizeRoleString(it) }.forEach { authority ->
+        deduped.putIfAbsent(authority.lowercase(), authority)
+    }
+
+    return deduped.values.toSet()
 }
 
 private fun normalizeRoleString(role: String): String? {
@@ -213,7 +217,7 @@ private fun normalizeRoleString(role: String): String? {
     return when {
         trimmed.contains(":") -> trimmed
         trimmed.startsWith("ROLE_", ignoreCase = true) ->
-            "ROLE_" + trimmed.substring(5).replace('-', '_').uppercase(Locale.US)
-        else -> "ROLE_" + trimmed.replace('-', '_').uppercase(Locale.US)
+            "ROLE_" + trimmed.substring(5)
+        else -> "ROLE_" + trimmed
     }
 }

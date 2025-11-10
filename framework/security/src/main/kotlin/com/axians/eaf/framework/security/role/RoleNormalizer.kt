@@ -5,7 +5,6 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Component
-import java.util.Locale
 
 /**
  * Normalizes Keycloak JWT role structures into Spring Security GrantedAuthority values.
@@ -36,9 +35,16 @@ class RoleNormalizer(
         extractRealmRoles(jwt, collectedRoles)
         extractResourceRoles(jwt, collectedRoles)
 
-        return collectedRoles
-            .mapNotNull { toAuthority(it) }
-            .toSet()
+        val authorities = linkedMapOf<String, GrantedAuthority>()
+
+        collectedRoles.forEach { rawRole ->
+            toAuthority(rawRole)?.let { authority ->
+                val key = authority.authority.lowercase()
+                authorities.putIfAbsent(key, authority)
+            }
+        }
+
+        return authorities.values.toSet()
     }
 
     private fun extractRealmRoles(
@@ -85,8 +91,8 @@ class RoleNormalizer(
             when {
                 trimmed.contains(":") -> trimmed // Permission-style (widget:create) - no prefixing
                 trimmed.startsWith(ROLE_PREFIX, ignoreCase = true) ->
-                    ROLE_PREFIX + trimmed.substring(ROLE_PREFIX.length).replace('-', '_').uppercase(Locale.US)
-                else -> ROLE_PREFIX + trimmed.replace('-', '_').uppercase(Locale.US)
+                    ROLE_PREFIX + trimmed.substring(ROLE_PREFIX.length)
+                else -> ROLE_PREFIX + trimmed
             }
 
         return SimpleGrantedAuthority(authorityValue)

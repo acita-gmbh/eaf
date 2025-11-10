@@ -64,7 +64,7 @@ class RoleNormalizerTest :
             val authorities = underTest.normalize(jwt)
 
             authorities.size.shouldBe(1)
-            authorities.first().authority.shouldBe("ROLE_WIDGET_ADMIN")
+            authorities.first().authority.shouldBe("ROLE_widget_admin")
         }
 
         test("should flatten nested structures and arrays") {
@@ -82,7 +82,23 @@ class RoleNormalizerTest :
 
             val authorities = underTest.normalize(jwt).map { it.authority }
 
-            authorities.shouldContainExactly("ROLE_NESTED_ROLE", "ROLE_CUSTOM")
+            authorities.shouldContainExactly("ROLE_nested-role", "ROLE_CUSTOM")
+        }
+
+        test("should preserve hyphenated realm roles when prefixing") {
+            val underTest = normalizer()
+            val jwt =
+                Jwt
+                    .withTokenValue("token")
+                    .header("alg", "RS256")
+                    .claim(
+                        "realm_access",
+                        mapOf("roles" to listOf("eaf-admin")),
+                    ).build()
+
+            val authorities = underTest.normalize(jwt).map { it.authority }
+
+            authorities.shouldContainExactly("ROLE_eaf-admin")
         }
 
         test("should ignore resource roles from other clients") {

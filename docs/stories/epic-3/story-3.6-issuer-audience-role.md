@@ -44,7 +44,7 @@ So that tokens are from trusted sources and contain required permissions.
 
 ## Tasks / Subtasks
 
-- [x] Implement Layer 6 issuer validation (expected issuer: http://keycloak:8080/realms/eaf)
+- [x] Implement Layer 6 issuer validation (expected issuer: <http://keycloak:8080/realms/eaf>)
 - [x] Implement Layer 6 audience validation (expected audience: eaf-api)
 - [x] Implement Layer 8 role normalization logic in `RoleNormalizer.kt`
 - [x] Verify `@PreAuthorize` annotations work with normalized roles
@@ -71,7 +71,7 @@ So that tokens are from trusted sources and contain required permissions.
 ### Completion Notes
 
 - Layer-6 validators new: issuer normalization w/ trailing-slash tolerance + audience/azp enforcement, both wired into the JWT decoder.
-- New `RoleNormalizer` extracts realm/resource roles, uppercases/prefixes, preserves permission styles, and feeds a custom `JwtAuthenticationConverter`.
+- New `RoleNormalizer` extracts realm/resource roles, prefixes traditional roles with ROLE_, preserves permission styles, and feeds a custom `JwtAuthenticationConverter`.
 - Controller now protected via `@PreAuthorize`; admin tokens succeed while viewer tokens produce 403, validated by Keycloak-backed integration tests.
 - Coverage expanded with Kotest unit specs, property-based suite, targeted integration tests (issuer/audience mismatches), and Jazzer fuzzers for role extraction edge cases.
 - Gradle runs executed: `:framework:security:test`, `:framework:security:integrationTest`, `:framework:security:propertyTest`, and four `:framework:security:fuzzTest --tests RoleNormalizationFuzzer.*` invocations – all green.

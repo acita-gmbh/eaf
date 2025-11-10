@@ -122,5 +122,5 @@ class RoleNormalizationFuzzer {
         }
     }
 
-    private fun safeString(value: String): String = value.ifBlank { "role-${'$'}{value.hashCode()}" }
+    private fun safeString(value: String): String = value.ifBlank { "role-${value.hashCode()}" }
 }
