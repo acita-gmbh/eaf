@@ -162,9 +162,21 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Resolve burn-in iterations
+        id: burn_config
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BURN_INPUT: ${{ github.event.inputs.burn_iterations }}
+        run: |
+          iterations=10
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$BURN_INPUT" ]; then
+            iterations="$BURN_INPUT"
+          fi
+          echo "iterations=$iterations" >> "$GITHUB_OUTPUT"
+
       - name: Execute burn-in loop
         env:
-          BURN_IN_ITERATIONS: ${{ inputs.burn_iterations && inputs.burn_iterations || 10 }}
+          BURN_IN_ITERATIONS: ${{ steps.burn_config.outputs.iterations }}
           BURN_IN_TASKS: "ciTests integrationTest"
         run: |
           chmod +x scripts/burn-in.sh
