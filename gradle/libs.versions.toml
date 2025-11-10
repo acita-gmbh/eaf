@@ -54,7 +54,7 @@ logback = "1.5.19"        # Spring Boot 3.5.7 actual BOM version (matches spring
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
 opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
 opentelemetry-instrumentation = "2.21.0"  # Spring Boot auto-instrumentation (latest stable)
-opentelemetry-semconv = "1.28.0-alpha"  # OpenTelemetry semantic conventions
+opentelemetry-semconv = "1.37.0"  # OpenTelemetry semantic conventions
 snakeyaml = "2.3"         # YAML parsing (security update)
 commons-io = "2.20.0"     # IO utilities (security update)
 
