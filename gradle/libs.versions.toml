@@ -46,7 +46,7 @@ dependency-check = "12.1.8" # Supply chain scanning
 
 # Documentation
 dokka = "2.1.0"          # API documentation
-springdoc = "2.6.0"       # OpenAPI documentation (keeping stable version)
+springdoc = "2.8.14"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
