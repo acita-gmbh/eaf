@@ -42,15 +42,6 @@ subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
 
     configurations.configureEach {
-        // Skip ALL configurations for projects with Gatling plugin to avoid Netty version conflicts
-        // Gatling 3.14.x requires specific Netty version incompatible with forced 4.1.125.Final
-        // The gatlingRun task uses both gatling-specific configs AND main runtimeClasspath,
-        // so we must skip Netty enforcement for the entire project, not just gatling configs.
-        // See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
-        if (project.path == ":products:widget-demo") {
-            return@configureEach
-        }
-
         resolutionStrategy.eachDependency {
             when (requested.group to requested.name) {
                 "org.yaml" to "snakeyaml" -> {
@@ -90,8 +81,12 @@ subprojects {
                 "io.netty" to "netty-resolver",
                 "io.netty" to "netty-transport",
                 "io.netty" to "netty-transport-native-unix-common" -> {
-                    useVersion(catalog.findVersion("netty").get().requiredVersion)
-                    because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                    // Skip Netty enforcement for widget-demo to allow Gatling bundled version
+                    // Gatling 3.14.x incompatible with Netty 4.1.125.Final (IoOps error)
+                    if (project.path != ":products:widget-demo") {
+                        useVersion(catalog.findVersion("netty").get().requiredVersion)
+                        because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                    }
                 }
             }
         }
