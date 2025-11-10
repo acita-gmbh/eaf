@@ -10,6 +10,10 @@ plugins {
 group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
+// CRITICAL: Override Spring Boot's managed Netty version BEFORE any dependencies are resolved
+// This must be set at the top level to ensure it's applied before Spring Boot's BOM
+ext["netty.version"] = "4.1.108.Final"
+
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198
 // TODO: Remove when Detekt 2.x stable is released with Kotlin 2.2.x support
