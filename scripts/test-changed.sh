@@ -59,8 +59,8 @@ for file in "${CHANGED_FILES[@]}"; do
     esac
 done
 
-declare -a tasks
-declare -A seen
+tasks=()
+declare -A seen=()
 
 if [ "$run_ci_tests" = true ]; then
     tasks+=("ciTests")
