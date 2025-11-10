@@ -42,6 +42,13 @@ subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
 
     configurations.configureEach {
+        // Skip Gatling configurations to avoid Netty version conflicts
+        // Gatling 3.14.x requires specific Netty version incompatible with forced 4.1.125.Final
+        // See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
+        if (name.toLowerCase().contains("gatling")) {
+            return@configureEach
+        }
+
         resolutionStrategy.eachDependency {
             when (requested.group to requested.name) {
                 "org.yaml" to "snakeyaml" -> {
