@@ -9,7 +9,6 @@ set -e
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
@@ -39,7 +38,8 @@ verify_keycloak_users() {
 
     for USERNAME in "${EXPECTED_USERS[@]}"; do
         # Query Keycloak admin API to check if user exists
-        local USER_EXISTS=$(docker exec eaf-keycloak /opt/keycloak/bin/kcadm.sh get users \
+        local USER_EXISTS
+        USER_EXISTS=$(docker exec eaf-keycloak /opt/keycloak/bin/kcadm.sh get users \
             -r eaf \
             --server http://localhost:8080 \
             --realm master \
@@ -75,14 +75,16 @@ verify_postgres_schema() {
     local POSTGRES_DB=${POSTGRES_DB:-eaf}
 
     # Check if eaf schema exists
-    local SCHEMA_EXISTS=$(docker exec eaf-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+    local SCHEMA_EXISTS
+    SCHEMA_EXISTS=$(docker exec eaf-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
         "SELECT 1 FROM information_schema.schemata WHERE schema_name='eaf'" 2>/dev/null || echo "0")
 
     if [ "$SCHEMA_EXISTS" = "1" ]; then
         print_success "Schema 'eaf' exists"
 
         # List Axon Framework tables
-        local TABLE_COUNT=$(docker exec eaf-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+        local TABLE_COUNT
+        TABLE_COUNT=$(docker exec eaf-postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
             "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='eaf'" 2>/dev/null || echo "0")
 
         print_info "Found $TABLE_COUNT tables in schema 'eaf'"
@@ -104,7 +106,8 @@ verify_redis() {
         print_success "Redis is responding"
 
         # Get Redis info
-        local REDIS_VERSION=$(docker exec eaf-redis redis-cli INFO server 2>/dev/null | grep "redis_version:" | cut -d: -f2 | tr -d '\r')
+        local REDIS_VERSION
+        REDIS_VERSION=$(docker exec eaf-redis redis-cli INFO server 2>/dev/null | grep "redis_version:" | cut -d: -f2 | tr -d '\r')
         if [ -n "$REDIS_VERSION" ]; then
             print_info "Redis version: $REDIS_VERSION"
         fi

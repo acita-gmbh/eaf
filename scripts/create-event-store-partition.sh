@@ -92,8 +92,7 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
-read -r PARTITION_NAME START_DATE END_DATE <<EOF
-$(python3 - <<'PY' "$MONTH_SPEC" "$TABLE"
+partition_output="$(python3 - "$MONTH_SPEC" "$TABLE" <<'PY'
 from datetime import datetime, timezone
 import sys
 
@@ -125,8 +124,10 @@ end = datetime(end_year, end_month, 1, tzinfo=timezone.utc)
 partition_suffix = start.strftime("%Y_%m")
 
 print(f"{table_name}_{partition_suffix} {start.strftime('%Y-%m-%d')}T00:00:00Z {end.strftime('%Y-%m-%d')}T00:00:00Z")
-PY)
-EOF
+PY
+)"
+
+IFS=' ' read -r PARTITION_NAME START_DATE END_DATE <<<"$partition_output"
 
 # Validate partition name follows expected pattern: {TABLE}_{YYYY_MM}
 if [[ ! "$PARTITION_NAME" =~ ^${TABLE}_[0-9]{4}_[0-9]{2}$ ]]; then
