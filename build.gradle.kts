@@ -45,7 +45,7 @@ subprojects {
         // Skip Gatling configurations to avoid Netty version conflicts
         // Gatling 3.14.x requires specific Netty version incompatible with forced 4.1.125.Final
         // See: https://community.gatling.io/t/java-lang-noclassdeffounderror-io-netty-channel-iohandle/9672
-        if (name.toLowerCase().contains("gatling")) {
+        if (name.lowercase().contains("gatling")) {
             return@configureEach
         }
 
