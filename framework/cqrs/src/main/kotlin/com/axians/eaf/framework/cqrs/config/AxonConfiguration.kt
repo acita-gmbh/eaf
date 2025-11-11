@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration
  * @see org.axonframework.springboot.autoconfig.AxonAutoConfiguration
  */
 @Configuration
-class AxonConfiguration {
+open class AxonConfiguration {
     /**
      * Creates a CommandGateway bean for dispatching commands
      *
@@ -37,7 +37,7 @@ class AxonConfiguration {
      * @return Configured CommandGateway instance
      */
     @Bean
-    fun commandGateway(commandBus: CommandBus): CommandGateway =
+    open fun commandGateway(commandBus: CommandBus): CommandGateway =
         DefaultCommandGateway
             .builder()
             .commandBus(commandBus)
@@ -50,7 +50,7 @@ class AxonConfiguration {
      * @return Configured QueryGateway instance
      */
     @Bean
-    fun queryGateway(queryBus: QueryBus): QueryGateway =
+    open fun queryGateway(queryBus: QueryBus): QueryGateway =
         org.axonframework.queryhandling.DefaultQueryGateway
             .builder()
             .queryBus(queryBus)
@@ -68,7 +68,7 @@ class AxonConfiguration {
      * @return Configured Snapshotter instance
      */
     @Bean
-    fun snapshotter(
+    open fun snapshotter(
         eventStore: EventStore,
         parameterResolverFactory: ParameterResolverFactory,
     ): Snapshotter =
@@ -92,7 +92,7 @@ class AxonConfiguration {
      */
     @Bean
     @org.springframework.context.annotation.Profile("!test")
-    fun snapshotTriggerDefinition(snapshotter: Snapshotter): SnapshotTriggerDefinition =
+    open fun snapshotTriggerDefinition(snapshotter: Snapshotter): SnapshotTriggerDefinition =
         EventCountSnapshotTriggerDefinition(snapshotter, 100)
 
     /**
@@ -118,5 +118,5 @@ class AxonConfiguration {
      * @return WeakReferenceCache for aggregate caching
      */
     @Bean
-    fun aggregateCache(): Cache = WeakReferenceCache()
+    open fun aggregateCache(): Cache = WeakReferenceCache()
 }

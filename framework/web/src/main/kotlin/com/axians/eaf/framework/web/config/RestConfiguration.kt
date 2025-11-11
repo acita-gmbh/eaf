@@ -36,7 +36,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
  * @see CorsConfigurationSource
  */
 @Configuration
-class RestConfiguration {
+open class RestConfiguration {
     /**
      * Configures Jackson ObjectMapper with EAF standards (Story 2.9).
      *
@@ -65,7 +65,7 @@ class RestConfiguration {
      * @return Configured Jackson ObjectMapper
      */
     @Bean
-    fun objectMapper(): ObjectMapper =
+    open fun objectMapper(): ObjectMapper =
         Jackson2ObjectMapperBuilder()
             // Exclude null fields from JSON output (cleaner responses)
             .serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -103,7 +103,7 @@ class RestConfiguration {
      * @return CORS configuration source
      */
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
+    open fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
 
         // Development: React dev server on localhost:3000

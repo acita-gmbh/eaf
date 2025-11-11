@@ -21,9 +21,9 @@ import org.springframework.context.annotation.Configuration
  * Story 2.12: OpenAPI Documentation and Swagger UI
  */
 @Configuration
-class OpenApiConfiguration {
+open class OpenApiConfiguration {
     @Bean
-    fun openAPI(): OpenAPI =
+    open fun openAPI(): OpenAPI =
         OpenAPI()
             .info(
                 Info()
