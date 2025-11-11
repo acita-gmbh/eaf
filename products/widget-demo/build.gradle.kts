@@ -26,34 +26,9 @@ gatling {
     includeTestOutput = false
 }
 
-// CRITICAL: Explicitly provide Netty 4.2.x to Gatling configurations
+// CRITICAL: Explicitly provide Netty 4.2.x to Gatling configuration
 // Gatling 3.14.0 requires Netty 4.2.x (EpollIoHandler, IoHandle), incompatible with Spring Boot's 4.1.x
 // We exclude Netty from all implementation dependencies and explicitly add comprehensive 4.2.x modules here
-configurations {
-    // Add complete Netty 4.2.1.Final stack to all Gatling configurations
-    matching { it.name.lowercase().contains("gatling") }.configureEach {
-        dependencies {
-            // Core Netty modules
-            add(name, libs.netty.buffer)
-            add(name, libs.netty.codec)
-            add(name, libs.netty.codec.http)
-            add(name, libs.netty.codec.http2)
-            add(name, libs.netty.common)
-            add(name, libs.netty.handler)
-            add(name, libs.netty.handler.proxy)
-            add(name, libs.netty.resolver)
-            add(name, libs.netty.resolver.dns)
-            add(name, libs.netty.transport)
-
-            // Epoll native transport (Linux) - Required for EpollIoHandler
-            add(name, libs.netty.transport.classes.epoll)
-            add(name, libs.netty.transport.native.unix.common)
-            // Native epoll with Linux x86_64 classifier (version catalog doesn't support classifiers)
-            val nettyVersion = libs.versions.netty.gatling.get()
-            add(name, "io.netty:netty-transport-native-epoll:$nettyVersion:linux-x86_64")
-        }
-    }
-}
 
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198
@@ -131,6 +106,25 @@ dependencies {
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
+
+    // Gatling Performance Testing - Complete Netty 4.2.1.Final stack
+    // Gatling 3.14.0 requires Netty 4.2.x (EpollIoHandler, IoHandle classes)
+    // These are incompatible with Spring Boot's Netty 4.1.x
+    "gatlingImplementation"(libs.netty.buffer)
+    "gatlingImplementation"(libs.netty.codec)
+    "gatlingImplementation"(libs.netty.codec.http)
+    "gatlingImplementation"(libs.netty.codec.http2)
+    "gatlingImplementation"(libs.netty.common)
+    "gatlingImplementation"(libs.netty.handler)
+    "gatlingImplementation"(libs.netty.handler.proxy)
+    "gatlingImplementation"(libs.netty.resolver)
+    "gatlingImplementation"(libs.netty.resolver.dns)
+    "gatlingImplementation"(libs.netty.transport)
+    "gatlingImplementation"(libs.netty.transport.classes.epoll)
+    "gatlingImplementation"(libs.netty.transport.native.unix.common)
+    // Native epoll with Linux x86_64 classifier
+    val nettyVersion = libs.versions.netty.gatling.get()
+    "gatlingImplementation"("io.netty:netty-transport-native-epoll:$nettyVersion:linux-x86_64")
 }
 
 // ============================================================================
