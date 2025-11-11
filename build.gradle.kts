@@ -81,8 +81,13 @@ subprojects {
                 "io.netty" to "netty-resolver",
                 "io.netty" to "netty-transport",
                 "io.netty" to "netty-transport-native-unix-common" -> {
-                    useVersion(catalog.findVersion("netty").get().requiredVersion)
-                    because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                    // Skip Netty enforcement for widget-demo to allow Gatling 3.14.0 to use Netty 4.2.1.Final
+                    // Widget-demo main app still uses Netty 4.1.125.Final (from Spring Boot)
+                    // Widget-demo Gatling tests use isolated classpath with Netty 4.2.1.Final
+                    if (project.path != ":products:widget-demo") {
+                        useVersion(catalog.findVersion("netty").get().requiredVersion)
+                        because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                    }
                 }
             }
         }
