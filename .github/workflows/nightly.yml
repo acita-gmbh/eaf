@@ -24,6 +24,28 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x ./gradlew
 
+      - name: Start Infrastructure Services
+        run: |
+          # Start only essential services for Gatling tests (skip prometheus/grafana for speed)
+          docker compose up -d postgres redis keycloak
+          echo "Infrastructure services started"
+
+      - name: Wait for Infrastructure Services
+        run: |
+          echo "Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until docker exec eaf-postgres pg_isready -U eaf_user -d eaf 2>/dev/null; do sleep 2; done'
+          echo "PostgreSQL is ready!"
+
+          echo "Waiting for Redis..."
+          timeout 30 bash -c 'until docker exec eaf-redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 2; done'
+          echo "Redis is ready!"
+
+          echo "Waiting for Keycloak..."
+          timeout 120 bash -c 'until curl -f http://localhost:8080/health/ready 2>/dev/null; do sleep 5; done'
+          echo "Keycloak is ready!"
+
+          echo "All infrastructure services are healthy!"
+
       - name: Build Widget Demo Application
         run: ./gradlew :products:widget-demo:assemble --no-daemon
 
@@ -130,6 +152,13 @@ jobs:
           path: |
             **/build/reports/pitest/
           retention-days: 30
+
+      - name: Stop Infrastructure Services
+        if: always()
+        run: |
+          echo "Stopping infrastructure services..."
+          docker compose down -v
+          echo "Infrastructure services stopped"
 
       - name: Notify on Failure
         if: failure()
