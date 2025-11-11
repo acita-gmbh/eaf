@@ -123,8 +123,8 @@ dependencies {
     "gatlingImplementation"(libs.netty.transport.classes.epoll)
     "gatlingImplementation"(libs.netty.transport.native.unix.common)
     // Native epoll with Linux x86_64 classifier
-    val nettyVersion = libs.versions.netty.gatling
-        .get()
+    val nettyVersion =
+        libs.versions.netty.gatling.get()
     "gatlingImplementation"("io.netty:netty-transport-native-epoll:$nettyVersion:linux-x86_64")
 }
 
