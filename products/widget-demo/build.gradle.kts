@@ -45,47 +45,29 @@ sourceSets {
 }
 
 dependencies {
-    // Framework modules - EXCLUDE Netty to prevent version conflicts with Gatling
-    // Framework modules have Netty 4.1.125.Final from root enforcement
-    // Widget-demo needs Netty flexibility for Gatling 4.2.1.Final
-    implementation(project(":framework:core")) {
-        exclude(group = "io.netty")
-    }
-    implementation(project(":framework:cqrs")) {
-        exclude(group = "io.netty")
-    }
-    implementation(project(":framework:persistence")) {
-        exclude(group = "io.netty")
-    }
-    implementation(project(":framework:web")) {
-        exclude(group = "io.netty")
-    }
+    // Framework modules
+    // Netty 4.1.125.Final from root enforcement is correct for Spring Boot runtime
+    // Gatling isolation via includeMainOutput=false prevents classpath pollution
+    implementation(project(":framework:core"))
+    implementation(project(":framework:cqrs"))
+    implementation(project(":framework:persistence"))
+    implementation(project(":framework:web"))
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)
-    implementation(libs.spring.boot.starter.validation) {
-        exclude(group = "io.netty")
-    }
+    implementation(libs.spring.boot.starter.validation)
 
     // Axon Framework for CQRS/ES
-    implementation(libs.bundles.axon.framework) {
-        exclude(group = "io.netty")
-    }
+    implementation(libs.bundles.axon.framework)
 
     // jOOQ for type-safe SQL (Story 2.6-2.7)
-    implementation(libs.bundles.jooq) {
-        exclude(group = "io.netty")
-    }
+    implementation(libs.bundles.jooq)
 
     // Metrics for projection monitoring (Story 2.7)
-    implementation(libs.micrometer.core) {
-        exclude(group = "io.netty")
-    }
+    implementation(libs.micrometer.core)
 
     // OpenAPI documentation and Swagger UI (Story 2.10)
-    implementation(libs.springdoc.openapi.starter.webmvc.ui) {
-        exclude(group = "io.netty")
-    }
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     // Exclude OpenTelemetry dependencies only (Story 5.x - Observability Epic)
     // Prevents version conflict: Spring Boot 3.5.7 expects OpenTelemetry 1.49.0, framework has 1.55.0
