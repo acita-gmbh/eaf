@@ -31,7 +31,7 @@ import java.io.Serializable
  * This provides ~100-150ms performance improvement per command for hot aggregates.
  */
 @Aggregate(cache = "aggregateCache")
-class Widget : Serializable {
+open class Widget : Serializable {
     @AggregateIdentifier
     private lateinit var widgetId: WidgetId
 
@@ -76,7 +76,7 @@ class Widget : Serializable {
      * @throws IllegalArgumentException if widget is already published or name is blank
      */
     @CommandHandler
-    fun handle(command: UpdateWidgetCommand) {
+    open fun handle(command: UpdateWidgetCommand) {
         require(!published) { "Cannot update published widget" }
         require(command.name.isNotBlank()) { "Widget name cannot be blank" }
 
@@ -95,7 +95,7 @@ class Widget : Serializable {
      * @throws IllegalArgumentException if widget is already published
      */
     @CommandHandler
-    fun handle(command: PublishWidgetCommand) {
+    open fun handle(command: PublishWidgetCommand) {
         require(!published) { "Widget already published" }
 
         AggregateLifecycle.apply(
@@ -112,7 +112,7 @@ class Widget : Serializable {
      * @param event WidgetCreatedEvent with initial widget data
      */
     @EventSourcingHandler
-    fun on(event: WidgetCreatedEvent) {
+    open fun on(event: WidgetCreatedEvent) {
         this.widgetId = event.widgetId
         this.name = event.name
         this.published = false
@@ -127,7 +127,7 @@ class Widget : Serializable {
      * @param event WidgetUpdatedEvent with new name
      */
     @EventSourcingHandler
-    fun on(event: WidgetUpdatedEvent) {
+    open fun on(event: WidgetUpdatedEvent) {
         this.name = event.name
     }
 
@@ -140,7 +140,7 @@ class Widget : Serializable {
      * @param event WidgetPublishedEvent
      */
     @EventSourcingHandler
-    fun on(event: WidgetPublishedEvent) {
+    open fun on(event: WidgetPublishedEvent) {
         this.published = true
     }
 }
