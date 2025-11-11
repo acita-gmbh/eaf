@@ -27,19 +27,26 @@ gatling {
 }
 
 // CRITICAL: Explicitly provide Netty 4.2.x to Gatling configurations
-// Gatling 3.14.0 requires Netty 4.2.x, which is incompatible with Spring Boot's 4.1.x
-// We exclude Netty from all implementation dependencies and explicitly add it here
+// Gatling 3.14.0 requires Netty 4.2.x (EpollIoHandler, IoHandle), incompatible with Spring Boot's 4.1.x
+// We exclude Netty from all implementation dependencies and explicitly add comprehensive 4.2.x modules here
 configurations {
-    // Add Netty 4.2.1.Final to all Gatling configurations
+    // Add complete Netty 4.2.1.Final stack to all Gatling configurations
     matching { it.name.lowercase().contains("gatling") }.configureEach {
         dependencies {
+            // Core Netty modules
             add(name, libs.netty.buffer)
             add(name, libs.netty.codec)
             add(name, libs.netty.codec.http)
+            add(name, libs.netty.codec.http2)
             add(name, libs.netty.common)
             add(name, libs.netty.handler)
+            add(name, libs.netty.handler.proxy)
             add(name, libs.netty.resolver)
+            add(name, libs.netty.resolver.dns)
             add(name, libs.netty.transport)
+
+            // Epoll native transport (Linux) - Required for EpollIoHandler
+            add(name, libs.netty.transport.classes.epoll)
             add(name, libs.netty.transport.native.unix.common)
             add(name, libs.netty.transport.native.epoll)
         }

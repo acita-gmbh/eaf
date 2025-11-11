@@ -138,16 +138,20 @@ jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 # JSON processing
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 
-# Netty (for Gatling performance tests)
+# Netty 4.2.x (for Gatling performance tests - requires IoHandle/EpollIoHandler classes)
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty-gatling" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty-gatling" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty-gatling" }
+netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "netty-gatling" }
 netty-common = { module = "io.netty:netty-common", version.ref = "netty-gatling" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty-gatling" }
+netty-handler-proxy = { module = "io.netty:netty-handler-proxy", version.ref = "netty-gatling" }
 netty-resolver = { module = "io.netty:netty-resolver", version.ref = "netty-gatling" }
+netty-resolver-dns = { module = "io.netty:netty-resolver-dns", version.ref = "netty-gatling" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty-gatling" }
+netty-transport-classes-epoll = { module = "io.netty:netty-transport-classes-epoll", version.ref = "netty-gatling" }
 netty-transport-native-unix-common = { module = "io.netty:netty-transport-native-unix-common", version.ref = "netty-gatling" }
-netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty-gatling" }
+netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty-gatling", classifier = "linux-x86_64" }
 
 # Testing
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
