@@ -22,6 +22,7 @@ flyway = "11.15.0"         # Database migration framework
 jooq = "3.20.8"           # SQL DSL for read projections (updated)
 jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025-58057 fixes
+netty-gatling = "4.2.1.Final"  # Gatling 3.14.0 requires Netty 4.2.x (incompatible with Spring Boot's 4.1.x)
 commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursion)
 
 # Testing framework (MANDATORY)
@@ -136,6 +137,17 @@ jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 
 # JSON processing
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+
+# Netty (for Gatling performance tests)
+netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty-gatling" }
+netty-codec = { module = "io.netty:netty-codec", version.ref = "netty-gatling" }
+netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty-gatling" }
+netty-common = { module = "io.netty:netty-common", version.ref = "netty-gatling" }
+netty-handler = { module = "io.netty:netty-handler", version.ref = "netty-gatling" }
+netty-resolver = { module = "io.netty:netty-resolver", version.ref = "netty-gatling" }
+netty-transport = { module = "io.netty:netty-transport", version.ref = "netty-gatling" }
+netty-transport-native-unix-common = { module = "io.netty:netty-transport-native-unix-common", version.ref = "netty-gatling" }
+netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty-gatling" }
 
 # Testing
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }

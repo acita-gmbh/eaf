@@ -26,23 +26,22 @@ gatling {
     includeTestOutput = false
 }
 
-// CRITICAL: Force Netty 4.2.x for Gatling configurations regardless of global enforcement
-// This overrides both root build.gradle.kts and Spring Boot BOM
-// Use afterEvaluate to ensure this runs AFTER all plugins have configured dependencies
-afterEvaluate {
-    configurations.matching { it.name.lowercase().contains("gatling") }.configureEach {
-        resolutionStrategy {
-            force(
-                "io.netty:netty-buffer:4.2.1.Final",
-                "io.netty:netty-codec:4.2.1.Final",
-                "io.netty:netty-codec-http:4.2.1.Final",
-                "io.netty:netty-common:4.2.1.Final",
-                "io.netty:netty-handler:4.2.1.Final",
-                "io.netty:netty-resolver:4.2.1.Final",
-                "io.netty:netty-transport:4.2.1.Final",
-                "io.netty:netty-transport-native-unix-common:4.2.1.Final",
-                "io.netty:netty-transport-native-epoll:4.2.1.Final",
-            )
+// CRITICAL: Explicitly provide Netty 4.2.x to Gatling configurations
+// Gatling 3.14.0 requires Netty 4.2.x, which is incompatible with Spring Boot's 4.1.x
+// We exclude Netty from all implementation dependencies and explicitly add it here
+configurations {
+    // Add Netty 4.2.1.Final to all Gatling configurations
+    matching { it.name.lowercase().contains("gatling") }.configureEach {
+        dependencies {
+            add(name, libs.netty.buffer)
+            add(name, libs.netty.codec)
+            add(name, libs.netty.codec.http)
+            add(name, libs.netty.common)
+            add(name, libs.netty.handler)
+            add(name, libs.netty.resolver)
+            add(name, libs.netty.transport)
+            add(name, libs.netty.transport.native.unix.common)
+            add(name, libs.netty.transport.native.epoll)
         }
     }
 }
