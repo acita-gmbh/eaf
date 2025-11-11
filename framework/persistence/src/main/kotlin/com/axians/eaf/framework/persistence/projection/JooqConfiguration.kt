@@ -33,5 +33,5 @@ open class JooqConfiguration {
      * @return configured DSLContext using PostgreSQL dialect
      */
     @Bean
-    fun dslContext(dataSource: DataSource): DSLContext = DSL.using(dataSource, SQLDialect.POSTGRES)
+    open fun dslContext(dataSource: DataSource): DSLContext = DSL.using(dataSource, SQLDialect.POSTGRES)
 }
