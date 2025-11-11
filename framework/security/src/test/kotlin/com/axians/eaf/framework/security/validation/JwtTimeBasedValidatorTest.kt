@@ -205,7 +205,10 @@ private fun createJwt(
     return Jwt
         .withTokenValue(tokenValue)
         .headers { h -> h.putAll(headers) }
-        .apply {
+        .claims {
+            it["sub"] = "user"
+            it["jti"] = "time-test-jti"
+        }.apply {
             if (exp != null) expiresAt(exp)
             if (iat != null) issuedAt(iat)
             if (nbf != null) notBefore(nbf)

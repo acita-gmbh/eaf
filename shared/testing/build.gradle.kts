@@ -9,6 +9,7 @@ dependencies {
     api(libs.kotest.runner.junit5.jvm)
     api(libs.kotest.assertions.core.jvm)
     api(libs.testcontainers.postgresql)
+    api(libs.testcontainers.keycloak)
 
     // Architecture testing (provided to dependents)
     api(libs.konsist)
@@ -20,6 +21,9 @@ dependencies {
     api(libs.spring.boot.test)
     api(libs.spring.boot.test.autoconfigure)
     api(libs.spring.test)
+
+    // Web client utilities for Keycloak token generation
+    api(libs.spring.boot.starter.web)
 
     // jOOQ for Nullable DSLContext implementation (Story 2.8)
     api(libs.bundles.jooq)

@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":framework:cqrs"))
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
+    implementation(project(":framework:security"))
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)
@@ -66,6 +67,7 @@ dependencies {
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
+    integrationTestImplementation(project(":shared:testing"))
 }
 
 // ============================================================================

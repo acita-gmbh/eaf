@@ -88,6 +88,7 @@ So that revoked tokens cannot be used even before expiration.
 - Extended shared testing module with reusable Keycloak Testcontainer + realm import, refactored security integration tests, and introduced revocation-specific suites (happy-path revoke, fail-open, fail-closed) plus widget `AuthController` + integration coverage.
 - Updated Kotlin schema/validator unit tests, introduced Redis store + validator specs, and executed full CI workflow locally (assemble → lint → detekt → ciTests → integrationTest → :shared:testing:test → shellcheck) to satisfy DoD.
 - Resolved Review-Nacharbeit: Widget-Revocation-API-Integrationstest kompiliert nun, AC6 wird über `AuthControllerIntegrationTest` + Security-Integrationstests nachgewiesen und vollständige CI läuft erneut grün.
+- 2025-11-10: Review-Follow-up abgeschlossen – `AuthControllerIntegrationTest` kompiliert, komplette CI-Kette (`assemble`, `ktlintCheck`, `detekt`, `ciTests`, `integrationTest --stacktrace`, `:shared:testing:test`, `shellcheck`) lokal erfolgreich.
 - ✅ Resolved review finding [High]: AuthControllerIntegrationTest Container-Generic fix + erneuter CI-Lauf bestätigt AC6.
 
 ---
@@ -126,6 +127,10 @@ So that revoked tokens cannot be used even before expiration.
 - 2025-11-10: Review fix follow-up — refactored revocation validator/store abstractions, removed mocking frameworks in favor of Nullable Pattern tests, and repeated `ktlintCheck`, `detekt`, `ciTests`, `integrationTest --stacktrace`, `:shared:testing:test`.
 - 2025-11-10: Addressed code review findings – 1 item resolved (AuthControllerIntegrationTest Container fix + vollständige CI: assemble, ktlintCheck, detekt, ciTests, integrationTest --stacktrace, :shared:testing:test, shellcheck).
 - 2025-11-10: Senior Developer Review (AI) protokolliert; Story blockiert bis Integrationstest `AuthControllerIntegrationTest` kompiliert und AC6 erneut nachgewiesen ist.
+- 2025-11-10: Review-Follow-up bestätigt – AuthControllerIntegrationTest erneut kompiliert, vollständige CI-Kette erfolgreich, Review-Action-Item dokumentiert.
+- 2025-11-10: Plan (Review-Follow-up) → AuthControllerIntegrationTest Redis-Container korrekt typisieren/starten und anschließend komplette CI-Sequenz (`assemble`, `ktlintCheck`, `detekt`, `ciTests`, `integrationTest --stacktrace`, `:shared:testing:test`, `shellcheck`) erneut ausführen, um AC6 zu verifizieren.
+- 2025-11-10: Umsetzung (Review-Follow-up) → AuthControllerIntegrationTest erneut kompiliert (`./gradlew :products:widget-demo:compileIntegrationTestKotlin`), CI-Kommandokette (`assemble`, `ktlintCheck`, `detekt`, `ciTests`, `integrationTest --stacktrace`, `:shared:testing:test`, `find scripts -name \"*.sh\" -exec shellcheck {}`)
+  erfolgreich ausgeführt; alle Suites grün, AC6 erneut nachgewiesen.
 
 ---
 

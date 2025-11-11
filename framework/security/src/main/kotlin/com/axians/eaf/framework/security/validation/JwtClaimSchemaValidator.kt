@@ -39,6 +39,7 @@ class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
                 "iss", // Issuer (Keycloak URL)
                 "exp", // Expiration time
                 "iat", // Issued at time
+                "jti", // Token identifier (required for Layer 7 revocation)
             )
     }
 

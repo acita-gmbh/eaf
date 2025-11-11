@@ -67,6 +67,7 @@ class JwtRevocationIntegrationTest : FunSpec() {
         @JvmStatic
         fun configure(registry: DynamicPropertyRegistry) {
             KeycloakTestContainer.start()
+            redis.start()
 
             registry.add("spring.data.redis.host") { redis.host }
             registry.add("spring.data.redis.port") { redis.getMappedPort(6379) }

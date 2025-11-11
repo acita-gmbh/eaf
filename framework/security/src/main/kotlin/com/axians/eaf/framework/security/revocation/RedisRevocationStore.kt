@@ -27,11 +27,12 @@ import java.util.concurrent.atomic.AtomicLong
 @Component
 @Profile("!test")
 class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
-    private val redisTemplate: StringRedisTemplate,
+    redisTemplate: StringRedisTemplate,
     private val properties: RevocationProperties,
     meterRegistry: MeterRegistry,
     private val clock: Clock = Clock.systemUTC(),
-) {
+    private val redisAccessor: RevocationRedisAccessor = StringRedisTemplateAccessor(redisTemplate),
+) : TokenRevocationStore {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private val checkTimer: Timer =
@@ -57,8 +58,7 @@ class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
                 } else {
                     hitSamples.get().toDouble() / total
                 }
-            }
-            .description("Rolling hit rate for revocation cache lookups (1.0 = perfect hit rate)")
+            }.description("Rolling hit rate for revocation cache lookups (1.0 = perfect hit rate)")
             .strongReference(true)
             .register(meterRegistry)
     }
@@ -69,12 +69,12 @@ class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
      * @return true when Redis contains the revoked key, false otherwise.
      * @throws SecurityException when fail-closed is enabled and Redis is unavailable.
      */
-    fun isRevoked(jti: String): Boolean {
+    override fun isRevoked(jti: String): Boolean {
         require(jti.isNotBlank()) { "JTI must not be blank" }
 
         val sample = Timer.start()
         return try {
-            val revoked = redisTemplate.hasKey(prefixedKey(jti)) == true
+            val revoked = redisAccessor.hasKey(prefixedKey(jti))
             sample.stop(checkTimer)
             recordResult(revoked)
             revoked
@@ -88,13 +88,14 @@ class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
     /**
      * Stores the given JTI as revoked using a TTL derived from the token expiration.
      */
-    fun revoke(jti: String, expiresAt: Instant?) {
+    override fun revoke(
+        jti: String,
+        expiresAt: Instant?,
+    ) {
         require(jti.isNotBlank()) { "JTI must not be blank" }
 
         val ttl = computeTtl(expiresAt)
-        redisTemplate
-            .opsForValue()
-            .set(prefixedKey(jti), "revoked", ttl)
+        redisAccessor.setValue(prefixedKey(jti), ttl)
     }
 
     private fun recordResult(revoked: Boolean) {
@@ -150,4 +151,26 @@ class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
             .description("Revocation lookup results grouped by outcome")
             .tag("result", result)
             .register(meterRegistry)
+
+    interface RevocationRedisAccessor {
+        fun hasKey(key: String): Boolean
+
+        fun setValue(
+            key: String,
+            ttl: Duration,
+        )
+    }
+
+    private class StringRedisTemplateAccessor(
+        private val template: StringRedisTemplate,
+    ) : RevocationRedisAccessor {
+        override fun hasKey(key: String): Boolean = template.hasKey(key) == true
+
+        override fun setValue(
+            key: String,
+            ttl: Duration,
+        ) {
+            template.opsForValue().set(key, "revoked", ttl)
+        }
+    }
 }

@@ -55,3 +55,4 @@ private fun createJwt(): Jwt.Builder =
         .withTokenValue("token")
         .header("alg", "RS256")
         .claim("sub", "user")
+        .claim("jti", "issuer-test-jti")

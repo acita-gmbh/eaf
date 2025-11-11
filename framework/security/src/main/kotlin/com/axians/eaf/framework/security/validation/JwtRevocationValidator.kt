@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.security.validation
 
-import com.axians.eaf.framework.security.revocation.RedisRevocationStore
+import com.axians.eaf.framework.security.revocation.TokenRevocationStore
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
@@ -14,11 +15,14 @@ import org.springframework.stereotype.Component
 @Component
 @Profile("!test")
 class JwtRevocationValidator(
-    private val revocationStore: RedisRevocationStore,
+    private val revocationStore: TokenRevocationStore,
 ) : OAuth2TokenValidator<Jwt> {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     override fun validate(token: Jwt): OAuth2TokenValidatorResult {
-        val jti = token.id?.takeIf { it.isNotBlank() }
-            ?: return OAuth2TokenValidatorResult.failure(MISSING_JTI_ERROR)
+        val jti =
+            token.id?.takeIf { it.isNotBlank() }
+                ?: return OAuth2TokenValidatorResult.failure(MISSING_JTI_ERROR)
 
         return try {
             val revoked = revocationStore.isRevoked(jti)
@@ -28,6 +32,7 @@ class JwtRevocationValidator(
                 OAuth2TokenValidatorResult.success()
             }
         } catch (ex: SecurityException) {
+            logger.warn("Token revocation status unavailable", ex)
             OAuth2TokenValidatorResult.failure(REVOCATION_UNAVAILABLE_ERROR)
         }
     }

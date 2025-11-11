@@ -8,5 +8,8 @@ import java.time.Instant
 interface TokenRevocationStore {
     fun isRevoked(jti: String): Boolean
 
-    fun revoke(jti: String, expiresAt: Instant?)
+    fun revoke(
+        jti: String,
+        expiresAt: Instant?,
+    )
 }

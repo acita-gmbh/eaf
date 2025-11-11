@@ -15,9 +15,9 @@ import org.springframework.test.web.servlet.get
 import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
-@SpringBootTest(classes = [SecurityTestApplication::class, RedisFailureConfig::class])
+@SpringBootTest(classes = [SecurityTestApplication::class])
 @AutoConfigureMockMvc
-@ActiveProfiles("keycloak-test")
+@ActiveProfiles("keycloak-test", "redis-failure")
 class JwtRevocationFailOpenIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc
