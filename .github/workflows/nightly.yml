@@ -25,7 +25,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Widget Demo Application
-        run: ./gradlew :products:widget-demo:build -x test --no-daemon
+        run: ./gradlew :products:widget-demo:assemble --no-daemon
 
       - name: Start Widget Demo Application
         run: |
