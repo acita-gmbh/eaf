@@ -24,9 +24,49 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x ./gradlew
 
+      - name: Build Widget Demo Application
+        run: ./gradlew :products:widget-demo:build -x test --no-daemon
+
+      - name: Start Widget Demo Application
+        run: |
+          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+          echo $! > app.pid
+          echo "Started application with PID $(cat app.pid)"
+
+      - name: Wait for Application Startup
+        run: |
+          echo "Waiting for application to be ready..."
+          timeout 90 bash -c '
+            until curl -f http://localhost:8090/actuator/health 2>/dev/null; do
+              echo "Waiting for application... (checking http://localhost:8090/actuator/health)"
+              sleep 3
+            done
+          '
+          echo "Application is ready!"
+
       - name: Performance Baseline Tests
         run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
         continue-on-error: false  # Fail build if performance targets not met
+
+      - name: Stop Widget Demo Application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            APP_PID=$(cat app.pid)
+            echo "Stopping application (PID: $APP_PID)"
+            kill $APP_PID || true
+            # Wait for graceful shutdown
+            timeout 30 bash -c "while kill -0 $APP_PID 2>/dev/null; do sleep 1; done" || kill -9 $APP_PID || true
+            rm app.pid
+          fi
+
+      - name: Upload Application Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-demo-app-logs
+          path: app.log
+          retention-days: 14
 
       - name: Snapshot Performance Tests
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
