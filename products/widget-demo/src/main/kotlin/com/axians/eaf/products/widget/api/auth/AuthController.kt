@@ -43,7 +43,8 @@ class AuthController(
                 ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "JWT missing jti claim")
 
         revocationStore.revoke(jti, jwt.expiresAt)
-        logger.info("Token revoked for subject={} (jti={})", jwt.subject, jti)
+        logger.debug("Token revoked for subject={} (jti={})", jwt.subject, jti)
+        logger.info("Token revoked (jti={})", jti)
     }
 }
 
