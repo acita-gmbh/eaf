@@ -10,10 +10,21 @@ plugins {
 group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
-// CRITICAL: Override Spring Boot's managed Netty version BEFORE any dependencies are resolved
-// IoOps class was introduced in Netty 4.1.91, so we need an older version for Gatling 3.14.0
-// Using 4.1.90.Final which is the last version before IoOps was added
-extra.set("netty.version", "4.1.90.Final")
+// ============================================================================
+// Gatling Netty 4.2 Isolation (CRITICAL for nightly CI)
+// ============================================================================
+// Gatling 3.14.0 uses Netty 4.2.1.Final (with IoHandle interface)
+// Spring Boot uses Netty 4.1.x (without IoHandle)
+// These are fundamentally incompatible major versions.
+//
+// Solution: Configure Gatling to NOT include main/test output which brings
+// Spring Boot's Netty 4.1.x dependencies. Gatling tests must be standalone.
+gatling {
+    // Disable automatic inclusion of main and test classes
+    // This prevents Spring Boot's Netty 4.1.x from polluting Gatling's classpath
+    includeMainOutput = false
+    includeTestOutput = false
+}
 
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198

@@ -81,12 +81,8 @@ subprojects {
                 "io.netty" to "netty-resolver",
                 "io.netty" to "netty-transport",
                 "io.netty" to "netty-transport-native-unix-common" -> {
-                    // Skip Netty enforcement for widget-demo to allow Gatling bundled version
-                    // Gatling 3.14.x incompatible with Netty 4.1.125.Final (IoOps error)
-                    if (project.path != ":products:widget-demo") {
-                        useVersion(catalog.findVersion("netty").get().requiredVersion)
-                        because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
-                    }
+                    useVersion(catalog.findVersion("netty").get().requiredVersion)
+                    because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
                 }
             }
         }
