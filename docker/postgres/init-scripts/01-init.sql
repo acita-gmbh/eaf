@@ -9,9 +9,10 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- For full-text search support
 -- Create EAF schema
 CREATE SCHEMA IF NOT EXISTS eaf;
 
--- Grant schema permissions to eaf_user
-GRANT ALL PRIVILEGES ON SCHEMA eaf TO CURRENT_USER;
-GRANT USAGE ON SCHEMA eaf TO CURRENT_USER;
+-- Grant schema permissions to eaf_user (the application user)
+GRANT ALL PRIVILEGES ON SCHEMA eaf TO eaf_user;
+GRANT USAGE ON SCHEMA eaf TO eaf_user;
+GRANT CREATE ON SCHEMA eaf TO eaf_user;
 
 -- Set default schema search path
 ALTER DATABASE eaf SET search_path TO eaf, public;
@@ -110,6 +111,14 @@ CREATE INDEX IF NOT EXISTS idx_dead_letter_processing ON eaf.dead_letter_entry(p
 -- RLS policies will be added in Epic 4 Story 4.4
 -- This comment serves as a marker for future RLS implementation
 
+-- Grant all privileges on all tables in eaf schema to eaf_user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA eaf TO eaf_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA eaf TO eaf_user;
+
+-- Set default privileges for future tables (for Flyway migrations)
+ALTER DEFAULT PRIVILEGES IN SCHEMA eaf GRANT ALL PRIVILEGES ON TABLES TO eaf_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA eaf GRANT ALL PRIVILEGES ON SEQUENCES TO eaf_user;
+
 -- Verify setup
 DO $$
 BEGIN
@@ -117,4 +126,5 @@ BEGIN
     RAISE NOTICE 'Schema: eaf';
     RAISE NOTICE 'Extensions: uuid-ossp, pg_trgm';
     RAISE NOTICE 'Axon Framework tables created';
+    RAISE NOTICE 'Permissions granted to eaf_user';
 END $$;
