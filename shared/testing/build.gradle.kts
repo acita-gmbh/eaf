@@ -14,8 +14,7 @@ dependencies {
     // Architecture testing (provided to dependents)
     api(libs.konsist)
 
-    // Spring Modulith documentation generation
-    api(libs.spring.modulith.docs)
+    // Spring Modulith docs werden nur im Produktiv-Build benötigt, nicht im Test-Profil → bewusst weggelassen
 
     // Spring Test support (granular dependencies - no JUnit leak)
     api(libs.spring.boot.test)

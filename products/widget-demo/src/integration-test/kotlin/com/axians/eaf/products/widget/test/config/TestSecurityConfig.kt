@@ -3,6 +3,7 @@ package com.axians.eaf.products.widget.test.config
 import com.axians.eaf.framework.security.revocation.TokenRevocationStore
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -22,6 +23,7 @@ import java.time.Instant
 @org.springframework.context.annotation.Configuration
 @EnableWebSecurity
 @Profile("test")
+@Import(TestDslConfiguration::class, TestJpaBypassConfiguration::class)
 open class TestSecurityConfig {
     @Bean
     @Primary

@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api.auth
 
+import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
@@ -19,7 +20,10 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
-@SpringBootTest(classes = [AuthControllerTestApplication::class])
+@SpringBootTest(
+    classes = [AuthControllerTestApplication::class],
+    properties = [TestAutoConfigurationOverrides.DISABLE_MODULITH_JPA],
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("keycloak-test")
 class AuthControllerIntegrationTest : FunSpec() {

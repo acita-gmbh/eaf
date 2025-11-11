@@ -23,6 +23,7 @@ object KeycloakTokenGenerator {
 
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
+        headers.add("X-Forwarded-Proto", "https")
 
         val body =
             LinkedMultiValueMap<String, String>().apply {
