@@ -62,11 +62,21 @@ sourceSets {
 }
 
 dependencies {
-    // Framework modules
-    implementation(project(":framework:core"))
-    implementation(project(":framework:cqrs"))
-    implementation(project(":framework:persistence"))
-    implementation(project(":framework:web"))
+    // Framework modules - EXCLUDE Netty to prevent version conflicts with Gatling
+    // Framework modules have Netty 4.1.125.Final from root enforcement
+    // Widget-demo needs Netty flexibility for Gatling 4.2.1.Final
+    implementation(project(":framework:core")) {
+        exclude(group = "io.netty")
+    }
+    implementation(project(":framework:cqrs")) {
+        exclude(group = "io.netty")
+    }
+    implementation(project(":framework:persistence")) {
+        exclude(group = "io.netty")
+    }
+    implementation(project(":framework:web")) {
+        exclude(group = "io.netty")
+    }
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)
