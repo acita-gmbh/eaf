@@ -22,7 +22,7 @@ import javax.sql.DataSource
  * @see org.jooq.codegen.KotlinGenerator
  */
 @Configuration
-class JooqConfiguration {
+open class JooqConfiguration {
     /**
      * Creates a jOOQ DSLContext bean for type-safe SQL query execution.
      *
