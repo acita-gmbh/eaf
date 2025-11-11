@@ -54,7 +54,7 @@ class RedisRevocationStore( // Story 3.7: Layer 7 revocation cache
             .builder("security.revocation.cache.hit-rate") {
                 val total = totalSamples.get()
                 if (total == 0L) {
-                    1.0
+                    0.0
                 } else {
                     hitSamples.get().toDouble() / total
                 }

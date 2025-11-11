@@ -23,6 +23,7 @@ object KeycloakTokenGenerator {
 
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
+        // Keycloak runs behind HTTPS in production; forwarding proto ensures it still issues https URLs in tests
         headers.add("X-Forwarded-Proto", "https")
 
         val body =
@@ -34,7 +35,16 @@ object KeycloakTokenGenerator {
             }
 
         val request = HttpEntity(body, headers)
-        val response = restTemplate.postForEntity(tokenUrl, request, Map::class.java)
+        val response =
+            runCatching {
+                restTemplate.postForEntity(tokenUrl, request, Map::class.java)
+            }.getOrElse { ex ->
+                error("Failed to call Keycloak token endpoint: ${ex.message}")
+            }
+
+        if (!response.statusCode.is2xxSuccessful) {
+            error("Keycloak token endpoint returned ${response.statusCode}: ${response.body}")
+        }
 
         @Suppress("UNCHECKED_CAST")
         val responseBody =

@@ -33,8 +33,9 @@ class AuthController(
     ) {
         val jwt =
             runCatching { jwtDecoder.decode(request.token.trim()) }
+                .onFailure { logger.debug("Failed to decode JWT", it) }
                 .getOrElse {
-                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to decode JWT: ${it.message}", it)
+                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to decode JWT")
                 }
 
         val jti =

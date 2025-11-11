@@ -28,7 +28,7 @@ dependencies {
     api(libs.bundles.jooq)
 
     // H2 in-memory database for Nullable Pattern ONLY (Story 2.8)
-    // CRITICAL: This is the ONLY approved use of H2 in EAF
-    // Integration tests MUST use Testcontainers PostgreSQL
+    // CRITICAL: This is the ONLY approved use of H2 in EAF and integration tests MUST use Testcontainers PostgreSQL.
+    // Exported via api() so downstream Nullable-pattern unit tests can reuse createNullableDSLContext() helpers.
     api(libs.h2)
 }
