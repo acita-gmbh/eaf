@@ -151,7 +151,7 @@ netty-resolver-dns = { module = "io.netty:netty-resolver-dns", version.ref = "ne
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty-gatling" }
 netty-transport-classes-epoll = { module = "io.netty:netty-transport-classes-epoll", version.ref = "netty-gatling" }
 netty-transport-native-unix-common = { module = "io.netty:netty-transport-native-unix-common", version.ref = "netty-gatling" }
-netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty-gatling", classifier = "linux-x86_64" }
+netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty-gatling" }
 
 # Testing
 kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }

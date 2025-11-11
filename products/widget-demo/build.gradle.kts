@@ -48,7 +48,9 @@ configurations {
             // Epoll native transport (Linux) - Required for EpollIoHandler
             add(name, libs.netty.transport.classes.epoll)
             add(name, libs.netty.transport.native.unix.common)
-            add(name, libs.netty.transport.native.epoll)
+            // Native epoll with Linux x86_64 classifier (version catalog doesn't support classifiers)
+            val nettyVersion = libs.versions.netty.gatling.get()
+            add(name, "io.netty:netty-transport-native-epoll:$nettyVersion:linux-x86_64")
         }
     }
 }
