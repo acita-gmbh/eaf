@@ -26,6 +26,24 @@ gatling {
     includeTestOutput = false
 }
 
+// CRITICAL: Force Netty 4.2.x for Gatling configurations regardless of global enforcement
+// This overrides both root build.gradle.kts and Spring Boot BOM
+configurations.matching { it.name.lowercase().contains("gatling") }.configureEach {
+    resolutionStrategy {
+        force(
+            "io.netty:netty-buffer:4.2.1.Final",
+            "io.netty:netty-codec:4.2.1.Final",
+            "io.netty:netty-codec-http:4.2.1.Final",
+            "io.netty:netty-common:4.2.1.Final",
+            "io.netty:netty-handler:4.2.1.Final",
+            "io.netty:netty-resolver:4.2.1.Final",
+            "io.netty:netty-transport:4.2.1.Final",
+            "io.netty:netty-transport-native-unix-common:4.2.1.Final",
+            "io.netty:netty-transport-native-epoll:4.2.1.Final",
+        )
+    }
+}
+
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198
 // TODO: Remove when Detekt 2.x stable is released with Kotlin 2.2.x support
