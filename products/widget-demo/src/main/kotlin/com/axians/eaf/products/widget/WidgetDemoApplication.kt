@@ -8,8 +8,12 @@ import org.springframework.boot.runApplication
  *
  * Reference implementation demonstrating EAF framework capabilities
  * with complete CQRS/ES vertical slice using Axon Framework.
+ *
+ * Component Scanning:
+ * - Scans com.axians.eaf to include framework module configurations
+ * - Picks up AxonConfiguration from framework:cqrs module
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["com.axians.eaf"])
 class WidgetDemoApplication
 
 fun main(args: Array<String>) {
