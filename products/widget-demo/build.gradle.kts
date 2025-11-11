@@ -80,19 +80,29 @@ dependencies {
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)
-    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.validation) {
+        exclude(group = "io.netty")
+    }
 
     // Axon Framework for CQRS/ES
-    implementation(libs.bundles.axon.framework)
+    implementation(libs.bundles.axon.framework) {
+        exclude(group = "io.netty")
+    }
 
     // jOOQ for type-safe SQL (Story 2.6-2.7)
-    implementation(libs.bundles.jooq)
+    implementation(libs.bundles.jooq) {
+        exclude(group = "io.netty")
+    }
 
     // Metrics for projection monitoring (Story 2.7)
-    implementation(libs.micrometer.core)
+    implementation(libs.micrometer.core) {
+        exclude(group = "io.netty")
+    }
 
     // OpenAPI documentation and Swagger UI (Story 2.10)
-    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui) {
+        exclude(group = "io.netty")
+    }
 
     // Exclude OpenTelemetry dependencies only (Story 5.x - Observability Epic)
     // Prevents version conflict: Spring Boot 3.5.7 expects OpenTelemetry 1.49.0, framework has 1.55.0
