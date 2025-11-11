@@ -64,7 +64,7 @@ So that revoked tokens cannot be used even before expiration.
 
 ### Debug Log
 
-- 2025-11-10: Plan →
+- 2025-11-10: Plan:
   - Scaffold story + sprint tracking (branch `feature/story-3-7-redis-revocation-cache`, PR #58) and enumerate tasks mapped to ACs.
   - Implement Layer-7 stack in `framework/security`: Redis connection props, `RedisRevocationStore`, fail-open/fail-closed toggles, Micrometer timers/counters, `JwtRevocationValidator`, and integration with `SecurityConfiguration` (AC1-4, AC7-10).
   - Build `AuthController` in widget demo with admin-only revoke endpoint using `JwtDecoder` + store, ensuring request validation and logging (AC5).
