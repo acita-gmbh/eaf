@@ -54,7 +54,7 @@ class WidgetLoadTest : Simulation() {
                     .formParam("username", "admin")
                     .formParam("password", "admin")
                     .check(HttpDsl.status().`is`(200))
-                    .check(HttpDsl.jmesPath("access_token").saveAs("accessToken")),
+                    .check(HttpDsl.jsonPath("$.access_token").saveAs("accessToken")),
             )
             // Step 2: Create widget with Authorization header
             .exec(
