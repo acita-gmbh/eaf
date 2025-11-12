@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
 
 /**
- * jOOQ Configuration for type-safe SQL queries on projection tables.
+ * EAF jOOQ Configuration for type-safe SQL queries on projection tables.
  *
  * Configures a DSLContext bean for executing type-safe SQL queries against
  * PostgreSQL projection tables (e.g., widget_view).
@@ -18,11 +18,15 @@ import javax.sql.DataSource
  * - Shares DataSource with JPA/Axon Event Store
  * - Generated classes provide compile-time safety for read models
  *
+ * **Class Naming:**
+ * Named `EafJooqConfiguration` (not `JooqConfiguration`) to avoid bean name conflict
+ * with Spring Boot's auto-configured `JooqAutoConfiguration`.
+ *
  * @see org.jooq.DSLContext
  * @see org.jooq.codegen.KotlinGenerator
  */
 @Configuration
-open class JooqConfiguration {
+open class EafJooqConfiguration {
     /**
      * Creates a jOOQ DSLContext bean for type-safe SQL query execution.
      *
