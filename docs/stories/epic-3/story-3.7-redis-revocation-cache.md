@@ -1,7 +1,7 @@
 # Story 3.7: Redis Revocation Cache (Layer 7)
 
 **Epic:** Epic 3 - Authentication & Authorization
-**Status:** review
+**Status:** done
 **Story Points:** TBD
 **Related Requirements:** FR006, FR018 (Error Recovery - Redis fallback)
 
@@ -93,6 +93,9 @@ So that revoked tokens cannot be used even before expiration.
 - 2025-11-10: Review-Follow-up abgeschlossen – `AuthControllerIntegrationTest` kompiliert, komplette CI-Kette (`assemble`, `ktlintCheck`, `detekt`, `ciTests`, `integrationTest --stacktrace`, `:shared:testing:test`, `shellcheck`) lokal erfolgreich.
 - ✅ Resolved review finding [High]: AuthControllerIntegrationTest Container-Generic fix + erneuter CI-Lauf bestätigt AC6.
 - 2025-11-11: Follow-up erneut ausgeführt – Widget-Testprofil ohne Modulith/JPA, Keycloak-HTTP-Bypass + neue Integrationstests; komplette CI-Logs dokumentiert (`/tmp/ci-*.log`), AC6 nachweisbar über `AuthControllerIntegrationTest` + Security-Suites.
+
+**Completed:** 2025-11-11
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing
 
 ---
 
