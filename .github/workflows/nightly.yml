@@ -58,6 +58,35 @@ jobs:
           timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf/protocol/openid-connect/certs 2>/dev/null | grep -q "keys"; do sleep 3; done'
           echo "Keycloak JWKS endpoint is responding!"
 
+          echo "Testing Keycloak authentication (critical for Gatling tests)..."
+          # Test password grant flow with admin user
+          AUTH_RESPONSE=$(curl -X POST http://localhost:8080/realms/eaf/protocol/openid-connect/token \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=password" \
+            -d "client_id=eaf-api" \
+            -d "client_secret=eaf-api-secret-development-only" \
+            -d "username=admin" \
+            -d "password=admin" \
+            -w "\n%{http_code}" -s)
+
+          HTTP_CODE=$(echo "$AUTH_RESPONSE" | tail -1)
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: Keycloak authentication test failed with HTTP $HTTP_CODE"
+            echo "Response: $AUTH_RESPONSE"
+            echo "This will cause Gatling tests to fail. Checking Keycloak logs..."
+            docker logs eaf-keycloak --tail 100
+            exit 1
+          fi
+
+          # Verify we got an access token
+          if echo "$AUTH_RESPONSE" | grep -q "access_token"; then
+            echo "✓ Keycloak authentication test passed! Admin user can authenticate."
+          else
+            echo "ERROR: Keycloak returned 200 but no access_token in response"
+            echo "Response: $AUTH_RESPONSE"
+            exit 1
+          fi
+
           echo "All infrastructure services are healthy!"
 
       - name: Build Widget Demo Application
