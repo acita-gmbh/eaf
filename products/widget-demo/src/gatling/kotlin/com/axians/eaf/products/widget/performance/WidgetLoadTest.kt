@@ -32,12 +32,6 @@ import java.time.Duration
  * Story 2.13: Performance Baseline and Monitoring
  */
 class WidgetLoadTest : Simulation() {
-    private val keycloakProtocol =
-        HttpDsl.http
-            .baseUrl("http://localhost:8080")
-            .acceptHeader("application/json")
-            .contentTypeHeader("application/x-www-form-urlencoded")
-
     private val httpProtocol =
         HttpDsl.http
             .baseUrl("http://localhost:8090")
@@ -45,26 +39,24 @@ class WidgetLoadTest : Simulation() {
             .contentTypeHeader("application/json")
             .userAgentHeader("Gatling-EAF-v1.0")
 
-    // Authentication step: Get JWT token from Keycloak
-    private val authenticate =
+    private val widgetCrudScenario =
         CoreDsl
+            .scenario("Widget CRUD Load Test")
+            // Step 1: Get JWT token from Keycloak
             .exec(
                 HttpDsl
                     .http("Keycloak Token")
-                    .post("/realms/eaf/protocol/openid-connect/token")
+                    .post("http://localhost:8080/realms/eaf/protocol/openid-connect/token")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
                     .formParam("grant_type", "password")
                     .formParam("client_id", "eaf-api")
                     .formParam("client_secret", "eaf-api-secret-development-only")
                     .formParam("username", "admin")
                     .formParam("password", "admin")
                     .check(HttpDsl.status().`is`(200))
-                    .check(HttpDsl.jsonPath("$.access_token").saveAs("accessToken")),
-            ).protocol(keycloakProtocol)
-
-    private val widgetCrudScenario =
-        CoreDsl
-            .scenario("Widget CRUD Load Test")
-            .exec(authenticate) // Get JWT token first
+                    .check(HttpDsl.jmesPath("access_token").saveAs("accessToken")),
+            )
+            // Step 2: Create widget with Authorization header
             .exec(
                 HttpDsl
                     .http("Create Widget")
@@ -72,7 +64,10 @@ class WidgetLoadTest : Simulation() {
                     .header("Authorization", "Bearer #{accessToken}")
                     .body(CoreDsl.StringBody("""{"name":"LoadTestWidget"}"""))
                     .check(HttpDsl.status().`is`(201)),
-            ).pause(Duration.ofMillis(100)) // Realistic think time
+            )
+            // Step 3: Realistic think time
+            .pause(Duration.ofMillis(100))
+            // Step 4: List widgets with Authorization header
             .exec(
                 HttpDsl
                     .http("List Widgets")
