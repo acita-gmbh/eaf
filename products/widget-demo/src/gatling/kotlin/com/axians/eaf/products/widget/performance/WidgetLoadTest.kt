@@ -6,7 +6,7 @@ import io.gatling.javaapi.http.HttpDsl
 import java.time.Duration
 
 /**
- * Gatling load test for Widget CRUD API endpoints.
+ * Gatling load test for Widget CRUD API endpoints with Keycloak JWT authentication.
  *
  * Load Test Scenarios:
  * - Warm-up: 10 users immediately
@@ -19,11 +19,12 @@ import java.time.Duration
  * - Success rate greater than 99%
  *
  * Test Pattern (per user):
- * 1. Create widget via POST
- * 2. Verify 201 Created response
- * 3. Pause 100ms (realistic think time)
- * 4. List widgets via GET
- * 5. Verify 200 OK response
+ * 1. Authenticate with Keycloak (get JWT token)
+ * 2. Create widget via POST with Authorization header
+ * 3. Verify 201 Created response
+ * 4. Pause 100ms (realistic think time)
+ * 5. List widgets via GET with Authorization header
+ * 6. Verify 200 OK response
  *
  * Usage: Run with gradlew gatlingRun (requires widget-demo on port 8090)
  * Results: build/reports/gatling/widgetloadtest-timestamp/index.html
@@ -31,6 +32,12 @@ import java.time.Duration
  * Story 2.13: Performance Baseline and Monitoring
  */
 class WidgetLoadTest : Simulation() {
+    private val keycloakProtocol =
+        HttpDsl.http
+            .baseUrl("http://localhost:8080")
+            .acceptHeader("application/json")
+            .contentTypeHeader("application/x-www-form-urlencoded")
+
     private val httpProtocol =
         HttpDsl.http
             .baseUrl("http://localhost:8090")
@@ -38,13 +45,31 @@ class WidgetLoadTest : Simulation() {
             .contentTypeHeader("application/json")
             .userAgentHeader("Gatling-EAF-v1.0")
 
+    // Authentication step: Get JWT token from Keycloak
+    private val authenticate =
+        CoreDsl
+            .exec(
+                HttpDsl
+                    .http("Keycloak Token")
+                    .post("/realms/eaf/protocol/openid-connect/token")
+                    .formParam("grant_type", "password")
+                    .formParam("client_id", "eaf-api")
+                    .formParam("client_secret", "eaf-api-secret-development-only")
+                    .formParam("username", "admin")
+                    .formParam("password", "admin")
+                    .check(HttpDsl.status().`is`(200))
+                    .check(HttpDsl.jsonPath("$.access_token").saveAs("accessToken")),
+            ).protocol(keycloakProtocol)
+
     private val widgetCrudScenario =
         CoreDsl
             .scenario("Widget CRUD Load Test")
+            .exec(authenticate) // Get JWT token first
             .exec(
                 HttpDsl
                     .http("Create Widget")
                     .post("/api/v1/widgets")
+                    .header("Authorization", "Bearer #{accessToken}")
                     .body(CoreDsl.StringBody("""{"name":"LoadTestWidget"}"""))
                     .check(HttpDsl.status().`is`(201)),
             ).pause(Duration.ofMillis(100)) // Realistic think time
@@ -52,6 +77,7 @@ class WidgetLoadTest : Simulation() {
                 HttpDsl
                     .http("List Widgets")
                     .get("/api/v1/widgets?limit=50")
+                    .header("Authorization", "Bearer #{accessToken}")
                     .check(HttpDsl.status().`is`(200)),
             )
 
