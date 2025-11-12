@@ -117,9 +117,30 @@ class JwtClaimSchemaValidatorTest :
 
             result.hasErrors() shouldBe true
             val description = result.errors.first().description
-            // Only core required claims (sub, iss, aud, exp, iat) are enforced
+            // Only 'iat' and 'iss' are missing and enforced as required claims in this test.
+            // The next test covers the jti requirement.
             // tenant_id and roles are optional until Epic 4 and Epic 3.6+
             description shouldBe "JWT missing required claims: iat, iss"
+        }
+
+        test("JWT missing jti claim should fail validation") {
+            val jwt =
+                createJwt(
+                    claims =
+                        mapOf(
+                            "sub" to "user-123",
+                            "iss" to "https://keycloak.example.com/realms/eaf",
+                            "aud" to "eaf-api",
+                            "exp" to Instant.now().plusSeconds(3600),
+                            "iat" to Instant.now(),
+                        ),
+                    includeJti = false,
+                )
+
+            val result = validator.validate(jwt)
+
+            result.hasErrors() shouldBe true
+            result.errors.first().description shouldBe "JWT missing required claims: jti"
         }
 
         test("JWT with blank tenant_id should fail validation") {
@@ -209,13 +230,26 @@ class JwtClaimSchemaValidatorTest :
 /**
  * Helper function to create a test JWT with specified claims.
  */
-private fun createJwt(claims: Map<String, Any>): Jwt {
+private fun createJwt(
+    claims: Map<String, Any>,
+    includeJti: Boolean = true,
+): Jwt {
     val headers = mapOf("alg" to "RS256", "typ" to "JWT")
     val tokenValue = "mock-token-value"
+
+    val exp = claims["exp"] as? Instant
+    val iat = claims["iat"] as? Instant
 
     return Jwt
         .withTokenValue(tokenValue)
         .headers { h -> h.putAll(headers) }
-        .claims { c -> c.putAll(claims) }
-        .build()
+        .claims { c ->
+            c.putAll(claims)
+            if (includeJti) {
+                c.putIfAbsent("jti", "test-jti")
+            }
+        }.apply {
+            exp?.let { expiresAt(it) }
+            iat?.let { issuedAt(it) }
+        }.build()
 }

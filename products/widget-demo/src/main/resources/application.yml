@@ -58,6 +58,15 @@ spring:
         format_sql: true
         use_sql_comments: true
 
+  jooq:
+    sql-dialect: POSTGRES
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 5s
+
   # ============================================================================
   # Spring Security OAuth2 Configuration (Story 3.1)
   # ============================================================================
@@ -145,3 +154,5 @@ eaf:
       jwks-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/eaf/protocol/openid-connect/certs}
       audience: ${JWT_AUDIENCE:eaf-api}
       jwks-cache-duration: ${JWKS_CACHE_DURATION:10m}  # Story 3.2: JWKS public key cache duration
+    revocation:
+      fail-closed: ${REVOCATION_FAIL_CLOSED:false}

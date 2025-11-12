@@ -68,6 +68,7 @@ dependencies {
     testImplementation(libs.bundles.testcontainers)
     // Story 3.3: keycloak-admin-client provided transitively by testcontainers-keycloak
     testImplementation(project(":shared:testing"))
+    integrationTestImplementation(project(":shared:testing"))
 
     // Ensure only JUnit 5 for Pitest
     configurations.named("testRuntimeClasspath") {
@@ -75,6 +76,9 @@ dependencies {
     }
 
     // Integration test specific dependencies for security framework
+    integrationTestImplementation(libs.bundles.testcontainers)
+    integrationTestImplementation(libs.testcontainers.junit.jupiter)
+    integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(libs.spring.security.test)
     integrationTestImplementation(libs.spring.boot.starter.test)
 

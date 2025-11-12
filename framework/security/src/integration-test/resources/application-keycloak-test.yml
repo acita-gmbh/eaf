@@ -32,3 +32,8 @@ logging:
     org.springframework.security: DEBUG
     org.testcontainers: INFO
     dasniko.testcontainers: DEBUG
+
+eaf:
+  security:
+    revocation:
+      fail-closed: false

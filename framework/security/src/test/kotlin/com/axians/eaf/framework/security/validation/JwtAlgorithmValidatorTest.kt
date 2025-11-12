@@ -40,6 +40,7 @@ class JwtAlgorithmValidatorTest :
                 .withTokenValue("test.token.value")
                 .headers { it.putAll(headers) }
                 .claim("sub", "test-user")
+                .claim("jti", "alg-test-jti")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build()
@@ -124,6 +125,7 @@ class JwtAlgorithmValidatorTest :
                         .withTokenValue("test.token.value")
                         .headers { it["typ"] = "JWT" } // Only typ, no alg
                         .claim("sub", "test-user")
+                        .claim("jti", "alg-test-jti")
                         .issuedAt(Instant.now())
                         .expiresAt(Instant.now().plusSeconds(3600))
                         .build()

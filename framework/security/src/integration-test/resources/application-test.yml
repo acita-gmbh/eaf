@@ -31,6 +31,8 @@ eaf:
       issuer-uri: http://localhost:8080/realms/eaf
       jwks-uri: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
       audience: eaf-api
+    revocation:
+      fail-closed: false
 
 # Disable Management/Actuator for tests
 management:

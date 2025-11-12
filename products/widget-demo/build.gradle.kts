@@ -10,6 +10,13 @@ plugins {
 group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
+configurations.configureEach {
+    exclude(group = "org.springframework.modulith", module = "spring-modulith-events-jpa")
+    exclude(group = "org.springframework.modulith", module = "spring-modulith-starter-jpa")
+    exclude(group = "org.springframework.modulith", module = "spring-modulith-starter-core")
+    exclude(group = "org.springframework.modulith", module = "spring-modulith-api")
+}
+
 // Temporary workaround for Detekt Kotlin 2.2.21 compatibility issue
 // See: https://github.com/detekt/detekt/issues/6198
 // TODO: Remove when Detekt 2.x stable is released with Kotlin 2.2.x support
@@ -30,6 +37,7 @@ dependencies {
     implementation(project(":framework:cqrs"))
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
+    implementation(project(":framework:security"))
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)
@@ -66,6 +74,8 @@ dependencies {
     integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
+    integrationTestImplementation(project(":shared:testing"))
+    integrationTestImplementation("org.springframework:spring-jdbc")
 }
 
 // ============================================================================

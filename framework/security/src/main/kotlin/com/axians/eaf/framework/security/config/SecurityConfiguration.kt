@@ -5,6 +5,7 @@ import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import com.axians.eaf.framework.security.validation.JwtAudienceValidator
 import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
 import com.axians.eaf.framework.security.validation.JwtIssuerValidator
+import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -48,6 +49,9 @@ open class SecurityConfiguration {
 
     @Autowired
     private lateinit var roleNormalizer: RoleNormalizer
+
+    @Autowired
+    private lateinit var revocationValidator: JwtRevocationValidator
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -100,7 +104,7 @@ open class SecurityConfiguration {
                 .withJwkSetUri(keycloakConfig.jwksUri)
                 .build()
 
-        // Story 3.5: Add explicit validators for Layers 3, 4, and 5
+        // Story 3.5 & 3.7: Add explicit validators for Layers 3-7
         // Compose with Spring Security defaults for defense-in-depth
         // Note: createDefault() already includes JwtTimestampValidator (exp, nbf validation)
         // Our JwtTimeBasedValidator extends this with iat validation and configurable clock skew
@@ -113,6 +117,7 @@ open class SecurityConfiguration {
                 JwtTimeBasedValidator(), // Layer 5: Enhanced time validation (iat + configurable skew)
                 JwtIssuerValidator(keycloakConfig.issuerUri), // Layer 6: Issuer validation
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
+                revocationValidator, // Layer 7: Redis revocation cache enforcement
             )
 
         decoder.setJwtValidator(customValidators)

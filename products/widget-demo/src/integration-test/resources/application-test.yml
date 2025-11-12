@@ -10,6 +10,12 @@ spring:
   jmx:
     enabled: false
 
+  datasource:
+    url: jdbc:tc:postgresql:16.10-alpine:///eaf_test
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
   # Allow bean overriding for test flexibility
   main:
     allow-bean-definition-overriding: true
@@ -23,6 +29,8 @@ spring:
     events:
       jdbc:
         enabled: false
+      jpa:
+        enabled: false
 
   # Disable Spring Security for tests (Story 3.1)
   # Security will be properly tested in Epic 3 integration tests
@@ -30,6 +38,9 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.modulith.events.jpa.archiving.ArchivingAutoConfiguration
 
 # Disable Management/Actuator for tests (avoids OpenTelemetry issues)
 management:

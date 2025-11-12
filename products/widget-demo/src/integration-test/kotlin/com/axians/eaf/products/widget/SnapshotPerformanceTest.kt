@@ -5,6 +5,7 @@ import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
+import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.longs.shouldBeLessThan
@@ -59,6 +60,7 @@ import kotlin.time.measureTime
         "axon.eventhandling.processors.__default__.mode=subscribing",
         "management.metrics.enable.all=false",
         "management.endpoint.metrics.enabled=false",
+        TestAutoConfigurationOverrides.DISABLE_MODULITH_JPA,
     ],
 )
 @Import(AxonTestConfiguration::class)

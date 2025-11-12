@@ -2,6 +2,7 @@ package com.axians.eaf.products.widget.query
 
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
+import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
@@ -30,6 +31,7 @@ import org.testcontainers.utility.DockerImageName
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.defer-datasource-initialization=true",
+        TestAutoConfigurationOverrides.DISABLE_MODULITH_JPA,
     ],
 )
 @Import(AxonTestConfiguration::class)
