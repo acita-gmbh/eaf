@@ -6,6 +6,7 @@
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
+  "sslRequired": "NONE",
   "requiredActions": [],
   "users": [
     {

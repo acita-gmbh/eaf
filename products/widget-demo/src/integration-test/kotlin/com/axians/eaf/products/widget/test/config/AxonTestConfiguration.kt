@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.test.config
 
+import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.config.EventProcessingConfigurer
@@ -7,6 +8,7 @@ import org.axonframework.eventhandling.PropagatingErrorHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Profile
 
 /**
@@ -27,6 +29,7 @@ import org.springframework.context.annotation.Profile
  */
 @TestConfiguration
 @Profile("test")
+@Import(TestDslConfiguration::class, TestJpaBypassConfiguration::class, PostgresEventStoreConfiguration::class)
 class AxonTestConfiguration {
     /**
      * Registers PropagatingErrorHandler as default for all event processors.

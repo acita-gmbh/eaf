@@ -1,4 +1,4 @@
-# generated: 2025-11-04
+# generated: 2025-11-12
 # project: EAF
 # project_key: EAF
 # tracking_system: file-system
@@ -28,7 +28,7 @@
 # - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', dev reviews, then Dev moves to 'done'
 
-generated: 2025-11-04
+generated: 2025-11-12
 project: EAF
 project_key: EAF
 tracking_system: file-system
@@ -72,14 +72,14 @@ development_status:
   epic-3: backlog
   3-1-spring-security-oauth2: done
   3-2-keycloak-oidc-jwks: done
-  3-3-testcontainers-keycloak: done  # MOVED from position 10 - enables real JWT testing
-  3-4-jwt-format-signature: done  # RENUMBERED from 3.3
-  3-5-jwt-claims-time-validation: done  # RENUMBERED from 3.4 - PR #50 approved, ready to merge
-  3-6-issuer-audience-role: done  # RENUMBERED from 3.5
-  3-7-redis-revocation-cache: ready-for-dev  # RENUMBERED from 3.6
-  3-8-user-injection-detection: ready-for-dev  # RENUMBERED from 3.7
-  3-9-complete-jwt-integration: ready-for-dev  # RENUMBERED from 3.8
-  3-10-rbac-api-endpoints: ready-for-dev  # RENUMBERED from 3.9
+  3-3-testcontainers-keycloak: done # MOVED from position 10 - enables real JWT testing
+  3-4-jwt-format-signature: done # RENUMBERED from 3.3
+  3-5-jwt-claims-time-validation: done # RENUMBERED from 3.4 - PR #50 approved, ready to merge
+  3-6-issuer-audience-role: done # RENUMBERED from 3.5
+  3-7-redis-revocation-cache: done # RENUMBERED from 3.6
+  3-8-user-injection-detection: ready-for-dev # RENUMBERED from 3.7
+  3-9-complete-jwt-integration: ready-for-dev # RENUMBERED from 3.8
+  3-10-rbac-api-endpoints: ready-for-dev # RENUMBERED from 3.9
   3-11-keycloak-ppc64le: ready-for-dev
   3-12-security-fuzz-testing: ready-for-dev
   epic-3-retrospective: optional

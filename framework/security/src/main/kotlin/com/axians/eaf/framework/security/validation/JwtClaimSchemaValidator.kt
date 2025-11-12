@@ -39,6 +39,7 @@ class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
                 "iss", // Issuer (Keycloak URL)
                 "exp", // Expiration time
                 "iat", // Issued at time
+                "jti", // Token identifier (required for Layer 7 revocation)
             )
     }
 
@@ -74,6 +75,12 @@ class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
             if (sub.isBlank()) {
                 invalidClaims.add("sub (blank)")
             }
+        }
+
+        // jti must be present and non-blank for revocation tracking (Layer 7)
+        val jti = token.getClaimAsString("jti")
+        if (jti.isNullOrBlank()) {
+            invalidClaims.add("jti (missing or blank)")
         }
 
         // tenant_id must be non-blank if present (required in Epic 4, optional until then)

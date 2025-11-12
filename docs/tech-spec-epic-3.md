@@ -1850,7 +1850,7 @@ Action items identified during code reviews that may impact multiple Epic 3 stor
   - Verify allowedDependencies = ["core"] is programmatically enforced
   - Ensure no dependencies on other framework modules
   - Reference: Story 3.1 AC2, Definition of Done
-  - Impact: All Epic 3 stories rely on SecurityModule as foundation
+- Impact: All Epic 3 stories rely on SecurityModule as foundation
 
 ---
 

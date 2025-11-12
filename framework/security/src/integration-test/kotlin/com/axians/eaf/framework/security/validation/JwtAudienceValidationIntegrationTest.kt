@@ -1,7 +1,7 @@
 package com.axians.eaf.framework.security.validation
 
-import com.axians.eaf.framework.security.test.KeycloakTestContainer
 import com.axians.eaf.framework.security.test.SecurityTestApplication
+import com.axians.eaf.testing.keycloak.KeycloakTestContainer
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import org.springframework.beans.factory.annotation.Autowired

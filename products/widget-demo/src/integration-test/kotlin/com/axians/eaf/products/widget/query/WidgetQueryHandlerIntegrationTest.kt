@@ -6,6 +6,7 @@ import com.axians.eaf.products.widget.domain.PublishWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
+import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -50,6 +51,7 @@ import java.util.UUID
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.defer-datasource-initialization=true",
+        TestAutoConfigurationOverrides.DISABLE_MODULITH_JPA,
     ],
 )
 @Import(AxonTestConfiguration::class)

@@ -3,6 +3,7 @@ package com.axians.eaf.products.widget.api
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
+import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.core.spec.style.FunSpec
@@ -62,6 +63,7 @@ import java.time.Duration
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.defer-datasource-initialization=true",
         "spring.mvc.problemdetails.enabled=true",
+        TestAutoConfigurationOverrides.DISABLE_MODULITH_JPA,
     ],
 )
 @Import(AxonTestConfiguration::class)
