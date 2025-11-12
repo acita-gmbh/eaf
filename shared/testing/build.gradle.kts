@@ -14,7 +14,7 @@ dependencies {
     // Architecture testing (provided to dependents)
     api(libs.konsist)
 
-    // Spring Modulith docs werden nur im Produktiv-Build benötigt, nicht im Test-Profil → bewusst weggelassen
+    // Spring Modulith docs are production-only and intentionally omitted from the test profile
 
     // Spring Test support (granular dependencies - no JUnit leak)
     api(libs.spring.boot.test)
@@ -29,6 +29,6 @@ dependencies {
 
     // H2 in-memory database for Nullable Pattern ONLY (Story 2.8)
     // CRITICAL: This is the ONLY approved use of H2 in EAF and integration tests MUST use Testcontainers PostgreSQL.
-    // Exported via api() so downstream Nullable-pattern unit tests can reuse createNullableDSLContext() helpers.
+    // Exported via api() so downstream Nullable-pattern unit tests can reuse the shared DSLContext helpers defined in this module.
     api(libs.h2)
 }

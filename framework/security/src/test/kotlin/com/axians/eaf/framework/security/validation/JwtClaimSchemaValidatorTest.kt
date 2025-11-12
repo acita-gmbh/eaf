@@ -117,7 +117,8 @@ class JwtClaimSchemaValidatorTest :
 
             result.hasErrors() shouldBe true
             val description = result.errors.first().description
-            // Only 'iat' and 'iss' are missing and enforced as required claims in this test
+            // Only 'iat' and 'iss' are missing and enforced as required claims in this test.
+            // The next test covers the jti requirement.
             // tenant_id and roles are optional until Epic 4 and Epic 3.6+
             description shouldBe "JWT missing required claims: iat, iss"
         }

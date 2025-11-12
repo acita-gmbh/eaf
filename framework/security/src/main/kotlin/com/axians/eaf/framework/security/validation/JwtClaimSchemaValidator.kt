@@ -77,11 +77,10 @@ class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
             }
         }
 
-        // jti must be non-blank for revocation tracking (Layer 7)
-        token.getClaimAsString("jti")?.let { jti ->
-            if (jti.isBlank()) {
-                invalidClaims.add("jti (blank)")
-            }
+        // jti must be present and non-blank for revocation tracking (Layer 7)
+        val jti = token.getClaimAsString("jti")
+        if (jti.isNullOrBlank()) {
+            invalidClaims.add("jti (missing or blank)")
         }
 
         // tenant_id must be non-blank if present (required in Epic 4, optional until then)

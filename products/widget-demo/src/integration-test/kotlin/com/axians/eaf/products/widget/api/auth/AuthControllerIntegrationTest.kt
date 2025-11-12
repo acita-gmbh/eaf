@@ -78,7 +78,6 @@ class AuthControllerIntegrationTest : FunSpec() {
         @Container
         private val redis: GenericContainer<*> =
             GenericContainer(DockerImageName.parse("redis:7.2-alpine")).apply {
-                withReuse(true)
                 withExposedPorts(6379)
             }
 

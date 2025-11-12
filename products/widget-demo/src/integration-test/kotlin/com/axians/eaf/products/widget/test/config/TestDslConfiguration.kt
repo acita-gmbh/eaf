@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -48,10 +49,15 @@ open class TestDslConfiguration(
 
     @PostConstruct
     fun logAutoconfigureExcludes() {
-        println("spring.autoconfigure.exclude=" + environment.getProperty("spring.autoconfigure.exclude"))
+        logger.debug(
+            "spring.autoconfigure.exclude={}",
+            environment.getProperty("spring.autoconfigure.exclude"),
+        )
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger(TestDslConfiguration::class.java)
+
         private const val DEFAULT_JDBC_URL = "jdbc:tc:postgresql:16.10-alpine:///eaf_test"
         private const val DEFAULT_USERNAME = "test"
         private const val DEFAULT_PASSWORD = "test"
