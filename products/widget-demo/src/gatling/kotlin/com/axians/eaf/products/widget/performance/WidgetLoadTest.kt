@@ -35,6 +35,16 @@ import java.time.Duration
  * Story 2.13: Performance Baseline and Monitoring
  */
 class WidgetLoadTest : Simulation() {
+    // User feeder: Rotates through multiple test users to avoid Keycloak brute force protection
+    // Each user has different tenant and role assignments for comprehensive testing
+    private val userFeeder = CoreDsl.arrayFeeder(
+        arrayOf(
+            mapOf("username" to "admin", "password" to "admin", "tenant" to "tenant-a"),
+            mapOf("username" to "viewer", "password" to "viewer", "tenant" to "tenant-a"),
+            mapOf("username" to "tenant-b-admin", "password" to "admin", "tenant" to "tenant-b")
+        )
+    ).circular() // Rotate continuously through users
+
     private val httpProtocol =
         HttpDsl.http
             .baseUrl("http://localhost:8090")
@@ -44,6 +54,7 @@ class WidgetLoadTest : Simulation() {
 
     private val widgetCrudScenario =
         CoreDsl.scenario("Widget CRUD Load Test")
+            .feed(userFeeder) // Feed user credentials into scenario
             // Step 1: Get JWT token from Keycloak
             .exec(
                 HttpDsl.http("Keycloak Token")
@@ -52,8 +63,8 @@ class WidgetLoadTest : Simulation() {
                     .formParam("grant_type", "password")
                     .formParam("client_id", "eaf-api")
                     .formParam("client_secret", "eaf-api-secret-development-only")
-                    .formParam("username", "admin")
-                    .formParam("password", "admin")
+                    .formParam("username", "#{username}") // From feeder
+                    .formParam("password", "#{password}") // From feeder
                     .check(HttpDsl.status().`is`(200))
                     .check(CoreDsl.jsonPath("$.access_token").saveAs("accessToken")),
             )

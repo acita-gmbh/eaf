@@ -130,6 +130,84 @@ jobs:
           cat app.log || echo "No log file found"
           exit 1
 
+      - name: Manual API Test (Pre-Gatling Validation)
+        run: |
+          echo "Testing API endpoints manually before Gatling run..."
+
+          # Get JWT token
+          echo "1. Getting JWT token for admin user..."
+          TOKEN_RESPONSE=$(curl -X POST http://localhost:8080/realms/eaf/protocol/openid-connect/token \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=password" \
+            -d "client_id=eaf-api" \
+            -d "client_secret=eaf-api-secret-development-only" \
+            -d "username=admin" \
+            -d "password=admin" \
+            -s)
+
+          ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+          if [ -z "$ACCESS_TOKEN" ]; then
+            echo "ERROR: Failed to get access token"
+            echo "Response: $TOKEN_RESPONSE"
+            exit 1
+          fi
+
+          echo "✓ Got access token (first 50 chars): ${ACCESS_TOKEN:0:50}..."
+
+          # Test POST /api/v1/widgets (Create Widget)
+          echo ""
+          echo "2. Testing POST /api/v1/widgets (Create Widget)..."
+          CREATE_RESPONSE=$(curl -X POST http://localhost:8090/api/v1/widgets \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"ManualTestWidget"}' \
+            -w "\nHTTP_CODE:%{http_code}" \
+            -s)
+
+          CREATE_HTTP_CODE=$(echo "$CREATE_RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
+          CREATE_BODY=$(echo "$CREATE_RESPONSE" | grep -v "HTTP_CODE")
+
+          echo "Response Code: $CREATE_HTTP_CODE"
+          echo "Response Body: $CREATE_BODY"
+
+          if [ "$CREATE_HTTP_CODE" != "201" ]; then
+            echo "ERROR: Expected 201 Created, got $CREATE_HTTP_CODE"
+            echo "This explains why Gatling Create Widget requests are failing!"
+          else
+            echo "✓ POST /api/v1/widgets succeeded with 201"
+          fi
+
+          # Test GET /api/v1/widgets (List Widgets)
+          echo ""
+          echo "3. Testing GET /api/v1/widgets (List Widgets)..."
+          LIST_RESPONSE=$(curl -X GET "http://localhost:8090/api/v1/widgets?limit=50" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Accept: application/json" \
+            -w "\nHTTP_CODE:%{http_code}" \
+            -s)
+
+          LIST_HTTP_CODE=$(echo "$LIST_RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
+          LIST_BODY=$(echo "$LIST_RESPONSE" | grep -v "HTTP_CODE")
+
+          echo "Response Code: $LIST_HTTP_CODE"
+          echo "Response Body: $LIST_BODY"
+
+          if [ "$LIST_HTTP_CODE" != "200" ]; then
+            echo "ERROR: Expected 200 OK, got $LIST_HTTP_CODE"
+            echo "This explains why Gatling List Widgets requests are failing!"
+
+            # Show application logs for debugging
+            echo ""
+            echo "=== Last 50 lines of application log ==="
+            tail -50 app.log || echo "No log file found"
+          else
+            echo "✓ GET /api/v1/widgets succeeded with 200"
+          fi
+
+          echo ""
+          echo "Manual API test complete. Proceeding to Gatling tests..."
+
       - name: Performance Baseline Tests
         run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
         continue-on-error: false  # Fail build if performance targets not met

@@ -16,7 +16,7 @@
   "waitIncrementSeconds": 60,
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
-  "failureFactor": 30,
+  "failureFactor": 1000,
   "defaultRole": {
     "name": "default-roles-eaf",
     "description": "${role_default-roles}",
