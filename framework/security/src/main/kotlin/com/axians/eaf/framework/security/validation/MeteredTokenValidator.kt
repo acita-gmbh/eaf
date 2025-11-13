@@ -43,8 +43,8 @@ abstract class MeteredTokenValidator(
             }
 
             result
-        } catch (
             // LEGITIMATE: Observability only, re-throws immediately
+        } catch (
             @Suppress("TooGenericExceptionCaught")
             ex: Exception,
         ) {
