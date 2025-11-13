@@ -1405,7 +1405,7 @@ tasks.withType<KotlinCompile>().configureEach {
 - **[Test Strategy](test-strategy.md)** - Constitutional TDD, 7-layer testing defense
 - **[Tech Spec](../tech-spec.md)** - FR-to-Epic mapping, implementation patterns
 - **[PRD](../PRD.md)** - Product requirements, success criteria
-- **[Stories](../stories/)** - 112 implementation-ready stories with code examples
+- **[Stories](../sprint-artifacts/stories/)** - 112 implementation-ready stories with code examples
 
 ---
 

@@ -1438,7 +1438,7 @@ class NullablePerformanceBenchmark : FunSpec({
 - **[Architecture Document](../architecture.md)** - Constitutional TDD mandate, 7-layer strategy
 - **[Coding Standards](coding-standards.md)** - Kotest patterns, anti-patterns
 - **[Tech Spec](../tech-spec.md)** - Epic 8 testing implementation details
-- **[Stories](../stories/epic-8/)** - Epic 8: Comprehensive Testing Strategy (10 stories)
+- **[Stories](../sprint-artifacts/epic-8/)** - Epic 8: Comprehensive Testing Strategy (10 stories)
 
 ---
 
