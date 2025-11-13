@@ -48,7 +48,7 @@ development_status:
   1-9-cicd-pipeline: done
   1-10-git-hooks: done
   1-11-foundation-documentation: done
-  epic-1-retrospective: done
+  epic-1-retrospective: completed
 
   # Epic 2: Walking Skeleton - CQRS/Event Sourcing Core (13 stories)
   epic-2: contexted
@@ -65,21 +65,20 @@ development_status:
   2-11-end-to-end-integration-test: done
   2-12-openapi-swagger: done
   2-13-performance-baseline: done
-  epic-2-retrospective: done
+  epic-2-retrospective: completed
 
   # Epic 3: Authentication & Authorization (12 stories)
-  # RESEQUENCED 2025-11-09: Story 3.10 moved to position 3 for Constitutional TDD compliance
   epic-3: backlog
   3-1-spring-security-oauth2: done
   3-2-keycloak-oidc-jwks: done
-  3-3-testcontainers-keycloak: done # MOVED from position 10 - enables real JWT testing
-  3-4-jwt-format-signature: done # RENUMBERED from 3.3
-  3-5-jwt-claims-time-validation: done # RENUMBERED from 3.4 - PR #50 approved, ready to merge
-  3-6-issuer-audience-role: done # RENUMBERED from 3.5
-  3-7-redis-revocation-cache: done # RENUMBERED from 3.6
-  3-8-user-injection-detection: ready-for-dev # RENUMBERED from 3.7
-  3-9-complete-jwt-integration: ready-for-dev # RENUMBERED from 3.8
-  3-10-rbac-api-endpoints: ready-for-dev # RENUMBERED from 3.9
+  3-3-testcontainers-keycloak: done
+  3-4-jwt-format-signature: done
+  3-5-jwt-claims-time-validation: done
+  3-6-issuer-audience-role: done
+  3-7-redis-revocation-cache: done
+  3-8-user-injection-detection: in-progress
+  3-9-complete-jwt-integration: ready-for-dev
+  3-10-rbac-api-endpoints: ready-for-dev
   3-11-keycloak-ppc64le: ready-for-dev
   3-12-security-fuzz-testing: ready-for-dev
   epic-3-retrospective: optional

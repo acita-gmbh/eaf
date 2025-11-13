@@ -153,6 +153,13 @@ eaf:
       issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/eaf}
       jwks-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/eaf/protocol/openid-connect/certs}
       audience: ${JWT_AUDIENCE:eaf-api}
+      validate-user: ${JWT_VALIDATE_USER:false}
       jwks-cache-duration: ${JWKS_CACHE_DURATION:10m}  # Story 3.2: JWKS public key cache duration
     revocation:
       fail-closed: ${REVOCATION_FAIL_CLOSED:false}
+
+  keycloak:
+    base-url: ${KEYCLOAK_BASE_URL:http://keycloak:8080}
+    realm: ${KEYCLOAK_REALM:eaf}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:eaf-admin}
+    admin-client-secret: ${KEYCLOAK_ADMIN_SECRET:}

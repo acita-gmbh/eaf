@@ -7,6 +7,7 @@ import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
 import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
+import com.axians.eaf.framework.security.validation.JwtUserValidator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -52,6 +53,9 @@ open class SecurityConfiguration {
 
     @Autowired
     private lateinit var revocationValidator: JwtRevocationValidator
+
+    @Autowired
+    private lateinit var userValidator: JwtUserValidator
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -118,6 +122,7 @@ open class SecurityConfiguration {
                 JwtIssuerValidator(keycloakConfig.issuerUri), // Layer 6: Issuer validation
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
+                userValidator, // Layer 9: Optional user validation (active user enforcement)
             )
 
         decoder.setJwtValidator(customValidators)

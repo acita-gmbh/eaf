@@ -1,0 +1,118 @@
+package com.axians.eaf.framework.security.user
+
+import com.axians.eaf.framework.security.config.KeycloakAdminProperties
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.test.web.client.ExpectedCount
+import org.springframework.test.web.client.MockRestServiceServer
+import org.springframework.test.web.client.match.MockRestRequestMatchers.method
+import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
+import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
+import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
+
+class KeycloakUserDirectoryTest :
+    FunSpec({
+        lateinit var properties: KeycloakAdminProperties
+        lateinit var directory: KeycloakUserDirectory
+        lateinit var server: MockRestServiceServer
+
+        beforeTest {
+            properties =
+                KeycloakAdminProperties(
+                    baseUrl = "http://localhost:8080",
+                    realm = "eaf",
+                    adminClientId = "eaf-admin",
+                    adminClientSecret = "secret",
+                    userCacheTtl = Duration.ofSeconds(60),
+                    negativeUserCacheTtl = Duration.ofSeconds(30),
+                    tokenExpirySkew = Duration.ofSeconds(0),
+                )
+            directory =
+                KeycloakUserDirectory(
+                    properties,
+                    RestTemplateBuilder(),
+                    Clock.fixed(Instant.parse("2025-11-12T00:00:00Z"), ZoneOffset.UTC),
+                )
+            server = MockRestServiceServer.createServer(directory.restTemplate)
+        }
+
+        afterTest {
+            server.verify()
+        }
+
+        fun expectTokenRequest(
+            token: String = "admin-token",
+            expiresIn: Long = 120L,
+        ) {
+            server
+                .expect(
+                    ExpectedCount.once(),
+                    requestTo("http://localhost:8080/realms/eaf/protocol/openid-connect/token"),
+                ).andExpect(method(HttpMethod.POST))
+                .andRespond(
+                    withSuccess(
+                        """{"access_token":"$token","expires_in":$expiresIn}""",
+                        MediaType.APPLICATION_JSON,
+                    ),
+                )
+        }
+
+        fun expectUserRequest(
+            userId: String,
+            enabled: Boolean? = true,
+        ) {
+            val responder =
+                if (enabled == null) {
+                    withStatus(HttpStatus.NOT_FOUND)
+                } else {
+                    withSuccess(
+                        """{"id":"$userId","enabled":$enabled}""",
+                        MediaType.APPLICATION_JSON,
+                    )
+                }
+
+            server
+                .expect(
+                    ExpectedCount.once(),
+                    requestTo("http://localhost:8080/admin/realms/eaf/users/$userId"),
+                ).andExpect(method(HttpMethod.GET))
+                .andRespond(responder)
+        }
+
+        test("returns active user and caches result") {
+            expectTokenRequest()
+            expectUserRequest("user-123", enabled = true)
+
+            val first = directory.findById("user-123")
+            first!!.active.shouldBeTrue()
+
+            directory.findById("user-123")!!.active.shouldBeTrue()
+        }
+
+        test("returns null for missing user and caches negative result") {
+            expectTokenRequest()
+            expectUserRequest("ghost", enabled = null)
+
+            directory.findById("ghost").shouldBeNull()
+            directory.findById("ghost").shouldBeNull()
+        }
+
+        test("reuses admin token across lookups until expiry") {
+            expectTokenRequest(token = "token-a", expiresIn = 300)
+            expectUserRequest("alpha", enabled = true)
+            expectUserRequest("beta", enabled = true)
+
+            directory.findById("alpha")!!.id.shouldBe("alpha")
+            directory.findById("beta")!!.id.shouldBe("beta")
+        }
+    })
