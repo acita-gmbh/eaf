@@ -94,17 +94,14 @@ jobs:
 
       - name: Start Widget Demo Application
         run: |
-          # Export environment variables for Spring Boot application
-          export KEYCLOAK_ISSUER_URI="http://localhost:8080/realms/eaf"
-          export KEYCLOAK_JWKS_URI="http://localhost:8080/realms/eaf/protocol/openid-connect/certs"
-
-          echo "Starting application with:"
-          echo "  KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI"
-          echo "  KEYCLOAK_JWKS_URI=$KEYCLOAK_JWKS_URI"
-
-          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+          echo "Starting application with JWT config for localhost Keycloak..."
+          nohup ./gradlew :products:widget-demo:bootRun \
+            --args='--server.port=8090 --eaf.security.jwt.issuer-uri=http://localhost:8080/realms/eaf --eaf.security.jwt.jwks-uri=http://localhost:8080/realms/eaf/protocol/openid-connect/certs' \
+            > app.log 2>&1 &
           echo $! > app.pid
           echo "Started application with PID $(cat app.pid)"
+          echo "JWT Issuer URI: http://localhost:8080/realms/eaf"
+          echo "JWT JWKS URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs"
 
       - name: Wait for Application Startup
         run: |
