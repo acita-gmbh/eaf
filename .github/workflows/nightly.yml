@@ -93,10 +93,15 @@ jobs:
         run: ./gradlew :products:widget-demo:assemble --no-daemon
 
       - name: Start Widget Demo Application
-        env:
-          KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/eaf
-          KEYCLOAK_JWKS_URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
         run: |
+          # Export environment variables for Spring Boot application
+          export KEYCLOAK_ISSUER_URI="http://localhost:8080/realms/eaf"
+          export KEYCLOAK_JWKS_URI="http://localhost:8080/realms/eaf/protocol/openid-connect/certs"
+
+          echo "Starting application with:"
+          echo "  KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI"
+          echo "  KEYCLOAK_JWKS_URI=$KEYCLOAK_JWKS_URI"
+
           nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
           echo $! > app.pid
           echo "Started application with PID $(cat app.pid)"
