@@ -29,7 +29,7 @@ So that only users with correct roles can perform operations.
 
 ## Prerequisites
 
-**Story 3.8** - Complete 10-Layer JWT Validation Integration
+**Story 3.9** - Complete 10-Layer JWT Validation Integration
 
 ---
 
