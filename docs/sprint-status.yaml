@@ -76,8 +76,8 @@ development_status:
   3-5-jwt-claims-time-validation: done
   3-6-issuer-audience-role: done
   3-7-redis-revocation-cache: done
-  3-8-user-injection-detection: in-progress
-  3-9-complete-jwt-integration: ready-for-dev
+  3-8-user-injection-detection: done
+  3-9-complete-jwt-integration: in-progress
   3-10-rbac-api-endpoints: ready-for-dev
   3-11-keycloak-ppc64le: ready-for-dev
   3-12-security-fuzz-testing: ready-for-dev

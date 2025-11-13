@@ -1,9 +1,11 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.InjectionDetector
 import com.axians.eaf.framework.security.role.RoleNormalizer
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import com.axians.eaf.framework.security.validation.JwtAudienceValidator
 import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
+import com.axians.eaf.framework.security.validation.JwtInjectionValidator
 import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
@@ -57,6 +59,9 @@ open class SecurityConfiguration {
     @Autowired
     private lateinit var userValidator: JwtUserValidator
 
+    @Autowired
+    private lateinit var injectionDetector: InjectionDetector
+
     /**
      * Configures the application's HTTP security filter chain.
      *
@@ -108,7 +113,7 @@ open class SecurityConfiguration {
                 .withJwkSetUri(keycloakConfig.jwksUri)
                 .build()
 
-        // Story 3.5 & 3.7: Add explicit validators for Layers 3-7
+        // Story 3.5, 3.7 & 3.8: Add explicit validators for Layers 3-7, 9-10
         // Compose with Spring Security defaults for defense-in-depth
         // Note: createDefault() already includes JwtTimestampValidator (exp, nbf validation)
         // Our JwtTimeBasedValidator extends this with iat validation and configurable clock skew
@@ -123,6 +128,8 @@ open class SecurityConfiguration {
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
                 userValidator, // Layer 9: Optional user validation (active user enforcement)
+                JwtInjectionValidator(injectionDetector),
+                // Layer 10: Injection detection (SQL, XSS, JNDI, Expression, Path Traversal)
             )
 
         decoder.setJwtValidator(customValidators)
