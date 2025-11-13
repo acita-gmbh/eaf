@@ -1,17 +1,20 @@
 package com.axians.eaf.framework.security.validation
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
  * Layer 6 validator – ensures JWT issuer (iss) matches the trusted Keycloak realm.
+ *
+ * Story 3.9: Added per-layer metrics instrumentation
  */
 class JwtIssuerValidator(
     private val expectedIssuer: String,
-) : OAuth2TokenValidator<Jwt> {
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer6_issuer", meterRegistry) {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val issuerClaim = token.issuer?.toString() ?: token.getClaimAsString("iss")
         val errorMessage =
             when {

@@ -1,9 +1,10 @@
 package com.axians.eaf.framework.security.validation
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
 
 /**
  * JWT Claim Schema Validator - Enforces core required claims presence.
@@ -27,8 +28,12 @@ import org.springframework.security.oauth2.jwt.Jwt
  * - Epic 4.2: Tenant context extraction and validation (Layer 1)
  *
  * Story 3.5: JWT Claims Schema and Time-Based Validation (Layers 3-5)
+ * Story 3.9: Added per-layer metrics instrumentation
  */
-class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
+@Component
+class JwtClaimSchemaValidator(
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer4_claim_schema", meterRegistry) {
     companion object {
         // Core required claims (always enforced)
         // TODO Story 3.6: Enforce aud and roles as required claims (Layer 6 & 8)
@@ -54,7 +59,7 @@ class JwtClaimSchemaValidator : OAuth2TokenValidator<Jwt> {
      * @return An OAuth2TokenValidatorResult representing validation failure with an `invalid_token` error
      *         listing all missing or invalid claims, or success when all required claims are present and valid.
      */
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val missingClaims = REQUIRED_CLAIMS.filter { !token.hasClaim(it) }
 
         if (missingClaims.isNotEmpty()) {

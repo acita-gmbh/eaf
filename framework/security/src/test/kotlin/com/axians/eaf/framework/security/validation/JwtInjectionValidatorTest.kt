@@ -5,6 +5,7 @@ import com.axians.eaf.framework.security.InjectionDetector
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
@@ -21,7 +22,7 @@ import java.time.Instant
 class JwtInjectionValidatorTest :
     FunSpec({
         val injectionDetector = InjectionDetector()
-        val validator = JwtInjectionValidator(injectionDetector)
+        val validator = JwtInjectionValidator(injectionDetector, SimpleMeterRegistry())
 
         test("valid JWT with safe claims should pass validation") {
             val jwt =

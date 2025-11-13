@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 
 class JwtIssuerValidatorTest :
@@ -11,21 +12,21 @@ class JwtIssuerValidatorTest :
         val expectedIssuer = "http://keycloak:8080/realms/eaf"
 
         test("valid issuer should pass validation") {
-            val validator = JwtIssuerValidator(expectedIssuer)
+            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
             val jwt = createJwt().claim("iss", expectedIssuer).build()
 
             validator.validate(jwt).hasErrors().shouldBeFalse()
         }
 
         test("issuer with trailing slash still matches") {
-            val validator = JwtIssuerValidator(expectedIssuer)
+            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
             val jwt = createJwt().claim("iss", "$expectedIssuer/").build()
 
             validator.validate(jwt).hasErrors().shouldBeFalse()
         }
 
         test("missing issuer claim should fail") {
-            val validator = JwtIssuerValidator(expectedIssuer)
+            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
             val jwt = createJwt().build()
 
             val result = validator.validate(jwt)
@@ -38,7 +39,7 @@ class JwtIssuerValidatorTest :
         }
 
         test("mismatched issuer should fail") {
-            val validator = JwtIssuerValidator(expectedIssuer)
+            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
             val jwt = createJwt().claim("iss", "http://evil-issuer/realms/root").build()
 
             val result = validator.validate(jwt)

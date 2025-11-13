@@ -8,6 +8,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 
 class JwtUserValidatorTest :
@@ -22,13 +23,23 @@ class JwtUserValidatorTest :
                 }.build()
 
         test("skips validation when feature disabled") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = false), AcceptAllDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = false),
+                    AcceptAllDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             validator.validate(jwt(null)).hasErrors().shouldBeFalse()
         }
 
         test("fails when subject missing") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = true), AcceptAllDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = true),
+                    AcceptAllDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             val result = validator.validate(jwt(subject = null))
 
@@ -40,7 +51,12 @@ class JwtUserValidatorTest :
         }
 
         test("fails when user directory reports missing user") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = true), MissingUserDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = true),
+                    MissingUserDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             val result = validator.validate(jwt())
 
@@ -52,7 +68,12 @@ class JwtUserValidatorTest :
         }
 
         test("fails when user inactive") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = true), InactiveUserDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = true),
+                    InactiveUserDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             val result = validator.validate(jwt())
 
@@ -64,7 +85,12 @@ class JwtUserValidatorTest :
         }
 
         test("propagates directory failures as validation errors") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = true), ThrowingDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = true),
+                    ThrowingDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             val result = validator.validate(jwt())
 
@@ -76,7 +102,12 @@ class JwtUserValidatorTest :
         }
 
         test("passes when user exists and active") {
-            val validator = JwtUserValidator(KeycloakOidcConfiguration(validateUser = true), AcceptAllDirectory())
+            val validator =
+                JwtUserValidator(
+                    KeycloakOidcConfiguration(validateUser = true),
+                    AcceptAllDirectory(),
+                    SimpleMeterRegistry(),
+                )
 
             validator.validate(jwt()).hasErrors().shouldBeFalse()
         }
