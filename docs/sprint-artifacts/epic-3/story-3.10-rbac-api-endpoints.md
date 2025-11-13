@@ -38,3 +38,66 @@ So that only users with correct roles can perform operations.
 - PRD: FR006
 - Architecture: Section 16 (Role-Based Access Control)
 - Tech Spec: Section 7.1
+
+---
+
+## Tasks/Subtasks
+
+### Implementation Tasks
+- [ ] Add @PreAuthorize annotations to WidgetController endpoints (POST, GET, PUT)
+- [ ] Configure Keycloak realm with WIDGET_ADMIN and WIDGET_VIEWER roles
+- [ ] Create test users with role assignments in Keycloak testcontainer setup
+- [ ] Document role requirements in OpenAPI annotations (@Operation, @SecurityRequirement)
+
+### Testing Tasks
+- [ ] Write integration test: WIDGET_ADMIN can create widgets
+- [ ] Write integration test: WIDGET_ADMIN can update widgets
+- [ ] Write integration test: WIDGET_VIEWER can read widgets
+- [ ] Write integration test: WIDGET_VIEWER cannot create/update (403 Forbidden)
+- [ ] Verify 403 responses follow RFC 7807 ProblemDetail format
+- [ ] Create comprehensive authorization test suite covering all permission combinations
+
+---
+
+## Dev Notes
+
+**Critical Dependency:**
+- Story 3.5 RoleNormalizer MUST be complete (Set<GrantedAuthority> with ROLE_ prefix)
+- Without this fix, ALL @PreAuthorize checks will FAIL
+
+**Implementation Approach:**
+- Use Spring Security @PreAuthorize with hasRole() expressions
+- Leverage existing JWT validation from Story 3.9
+- Follow existing error handling patterns (RFC 7807)
+
+---
+
+## Dev Agent Record
+
+### Context Reference
+- `docs/sprint-artifacts/epic-3/story-3.10-context.xml`
+
+### Debug Log
+*(To be filled during implementation)*
+
+### Completion Notes
+*(To be filled at story completion)*
+
+---
+
+## File List
+
+*(To be updated during implementation)*
+
+---
+
+## Change Log
+
+- 2025-11-13: Tasks/Subtasks section added by Dev Agent (story structure completion)
+
+---
+
+## Status
+
+**Current Status:** ready-for-dev
+**Last Updated:** 2025-11-13
