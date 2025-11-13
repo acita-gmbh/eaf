@@ -1,7 +1,7 @@
 # Story 3.8: User Validation and Injection Detection (Layers 9-10)
 
 **Epic:** Epic 3 - Authentication & Authorization
-**Status:** review
+**Status:** done
 **Story Points:** TBD
 **Related Requirements:** FR006, NFR002 (OWASP ASVS)
 
