@@ -30,7 +30,9 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * Story 3.8: User Validation and Injection Detection (Layers 9-10)
  */
-@SpringBootTest(classes = [SecurityTestApplication::class, JwtUserValidationIntegrationTest.StubUserDirectoryConfiguration::class])
+@SpringBootTest(
+    classes = [SecurityTestApplication::class, JwtUserValidationIntegrationTest.StubUserDirectoryConfiguration::class],
+)
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
 class JwtUserValidationIntegrationTest : FunSpec() {

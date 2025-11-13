@@ -36,4 +36,9 @@ data class KeycloakAdminProperties(
      * Safety window subtracted from access-token expiry to ensure we refresh before expiration.
      */
     var tokenExpirySkew: Duration = Duration.ofSeconds(5),
+    /**
+     * Enable optional user validation (Layer 9) - checks user existence and active status.
+     * Disabled by default for performance. Enable only if required by security policy.
+     */
+    var userValidationEnabled: Boolean = false,
 )

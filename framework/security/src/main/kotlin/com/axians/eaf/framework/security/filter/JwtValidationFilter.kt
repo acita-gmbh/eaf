@@ -15,6 +15,9 @@ import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
@@ -22,9 +25,6 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.filter.OncePerRequestFilter
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import java.time.Duration
 import java.time.Instant
 
@@ -62,9 +62,8 @@ class JwtValidationFilter(
     private val injectionDetector: InjectionDetector,
     private val meterRegistry: MeterRegistry,
     private val keycloakConfig: com.axians.eaf.framework.security.config.KeycloakOidcConfiguration,
-    private val userValidationEnabled: Boolean = false
+    private val userValidationEnabled: Boolean = false,
 ) : OncePerRequestFilter() {
-
     private val log = LoggerFactory.getLogger(JwtValidationFilter::class.java)
 
     companion object {
@@ -82,14 +81,15 @@ class JwtValidationFilter(
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
         val startTime = System.nanoTime()
 
         try {
             // Layer 1: Format validation - Extract and validate JWT
-            val token = extractAndValidateTokenFormat(request)
-                ?: return filterChain.doFilter(request, response)
+            val token =
+                extractAndValidateTokenFormat(request)
+                    ?: return filterChain.doFilter(request, response)
 
             // Execute validation layers 2-10 with metrics and fail-fast
             val validatedJwt = validateAllLayers(token)
@@ -102,7 +102,6 @@ class JwtValidationFilter(
             recordTotalValidationTime(Duration.ofNanos(System.nanoTime() - startTime))
 
             filterChain.doFilter(request, response)
-
         } catch (e: JwtValidationException) {
             // Fail-fast: Record failure metrics and return error
             recordValidationFailure(e.layer, e.cause)
@@ -124,7 +123,8 @@ class JwtValidationFilter(
     private fun extractAndValidateTokenFormat(request: HttpServletRequest): String? {
         val authHeader = request.getHeader(AUTHORIZATION_HEADER) ?: return null
 
-        return Timer.builder("jwt_validation_layer_duration")
+        return Timer
+            .builder("jwt_validation_layer_duration")
             .tag("layer", "1")
             .tag("operation", "format_validation")
             .register(meterRegistry)
@@ -134,14 +134,14 @@ class JwtValidationFilter(
                         throw JwtValidationException(
                             layer = "1",
                             message = "Authorization header must start with 'Bearer '",
-                            cause = IllegalArgumentException("Invalid authorization header format")
+                            cause = IllegalArgumentException("Invalid authorization header format"),
                         )
 
                     authHeader.length <= BEARER_PREFIX.length ->
                         throw JwtValidationException(
                             layer = "1",
                             message = "Authorization header missing JWT token",
-                            cause = IllegalArgumentException("Empty JWT token")
+                            cause = IllegalArgumentException("Empty JWT token"),
                         )
 
                     else -> authHeader.substring(BEARER_PREFIX.length).trim()
@@ -162,9 +162,10 @@ class JwtValidationFilter(
     // Complexity is inherent: 10 sequential validation layers with individual error handling
     private fun validateAllLayers(tokenString: String): Jwt {
         // Layer 2: Signature validation (delegated to JwtDecoder)
-        val jwt = validateLayer("2", "signature_validation") {
-            jwtDecoder.decode(tokenString)
-        }
+        val jwt =
+            validateLayer("2", "signature_validation") {
+                jwtDecoder.decode(tokenString)
+            }
 
         // Layer 3: Algorithm validation
         validateLayer("3", "algorithm_validation") {
@@ -173,7 +174,7 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = "3",
                         message = result.errors.first().description,
-                        cause = IllegalArgumentException(result.errors.first().description)
+                        cause = IllegalArgumentException(result.errors.first().description),
                     )
                 }
             }
@@ -186,7 +187,7 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = "4",
                         message = result.errors.first().description,
-                        cause = IllegalArgumentException(result.errors.first().description)
+                        cause = IllegalArgumentException(result.errors.first().description),
                     )
                 }
             }
@@ -199,7 +200,7 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = "5",
                         message = result.errors.first().description,
-                        cause = IllegalArgumentException(result.errors.first().description)
+                        cause = IllegalArgumentException(result.errors.first().description),
                     )
                 }
             }
@@ -212,7 +213,7 @@ class JwtValidationFilter(
                 throw JwtValidationException(
                     layer = "6",
                     message = issuerResult.errors.first().description,
-                    cause = IllegalArgumentException(issuerResult.errors.first().description)
+                    cause = IllegalArgumentException(issuerResult.errors.first().description),
                 )
             }
 
@@ -221,7 +222,7 @@ class JwtValidationFilter(
                 throw JwtValidationException(
                     layer = "6",
                     message = audienceResult.errors.first().description,
-                    cause = IllegalArgumentException(audienceResult.errors.first().description)
+                    cause = IllegalArgumentException(audienceResult.errors.first().description),
                 )
             }
         }
@@ -233,7 +234,7 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = "7",
                         message = result.errors.first().description,
-                        cause = IllegalArgumentException(result.errors.first().description)
+                        cause = IllegalArgumentException(result.errors.first().description),
                     )
                 }
             }
@@ -252,7 +253,7 @@ class JwtValidationFilter(
                         throw JwtValidationException(
                             layer = "9",
                             message = "User validation failed",
-                            cause = IllegalArgumentException(result.errors.first().description)
+                            cause = IllegalArgumentException(result.errors.first().description),
                         )
                     }
                 }
@@ -266,7 +267,7 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = "10",
                         message = result.errors.first().description,
-                        cause = IllegalArgumentException(result.errors.first().description)
+                        cause = IllegalArgumentException(result.errors.first().description),
                     )
                 }
             }
@@ -291,14 +292,14 @@ class JwtValidationFilter(
                 throw JwtValidationException(
                     layer = "8",
                     message = "JWT missing roles claim",
-                    cause = IllegalArgumentException("No roles present in token")
+                    cause = IllegalArgumentException("No roles present in token"),
                 )
 
             roles.any { it.isBlank() } ->
                 throw JwtValidationException(
                     layer = "8",
                     message = "JWT contains empty role",
-                    cause = IllegalArgumentException("Blank role detected")
+                    cause = IllegalArgumentException("Blank role detected"),
                 )
 
             else -> {
@@ -308,14 +309,14 @@ class JwtValidationFilter(
                         throw JwtValidationException(
                             layer = "8",
                             message = "Role too long: $role",
-                            cause = IllegalArgumentException("Role exceeds maximum length")
+                            cause = IllegalArgumentException("Role exceeds maximum length"),
                         )
                     }
                     if (!role.matches(Regex("^[a-zA-Z0-9:_-]+$"))) { // Alphanumeric, colon, underscore, dash
                         throw JwtValidationException(
                             layer = "8",
                             message = "Invalid role format: $role",
-                            cause = IllegalArgumentException("Role contains invalid characters")
+                            cause = IllegalArgumentException("Role contains invalid characters"),
                         )
                     }
                 }
@@ -336,9 +337,10 @@ class JwtValidationFilter(
     private inline fun <T : Any> validateLayer(
         layer: String,
         operation: String,
-        crossinline block: () -> T
-    ): T {
-        return Timer.builder("jwt_validation_layer_duration")
+        crossinline block: () -> T,
+    ): T =
+        Timer
+            .builder("jwt_validation_layer_duration")
             .tag("layer", layer)
             .tag("operation", operation)
             .register(meterRegistry)
@@ -352,14 +354,13 @@ class JwtValidationFilter(
                     throw JwtValidationException(
                         layer = layer,
                         message = "Validation failed for layer $layer",
-                        cause = e
+                        cause = e,
                     )
                 }
             } ?: throw JwtValidationException(
-                layer = layer,
-                message = "Validation returned null for layer $layer"
-            )
-    }
+            layer = layer,
+            message = "Validation returned null for layer $layer",
+        )
 
     /**
      * Builds Spring Security Authentication from validated JWT.
@@ -374,7 +375,8 @@ class JwtValidationFilter(
      * Records total validation time for performance monitoring.
      */
     private fun recordTotalValidationTime(duration: Duration) {
-        Timer.builder("jwt_validation_total_duration")
+        Timer
+            .builder("jwt_validation_total_duration")
             .register(meterRegistry)
             .record(duration)
     }
@@ -382,7 +384,10 @@ class JwtValidationFilter(
     /**
      * Records validation failures by layer for monitoring and alerting.
      */
-    private fun recordValidationFailure(layer: String, cause: Throwable?) {
+    private fun recordValidationFailure(
+        layer: String,
+        cause: Throwable?,
+    ) {
         meterRegistry.counter("jwt_validation_failures_total", "layer", layer).increment()
         log.warn("JWT validation failed at layer $layer: ${cause?.message}")
     }
@@ -390,12 +395,16 @@ class JwtValidationFilter(
     /**
      * Handles validation failures with appropriate HTTP responses.
      */
-    private fun handleValidationFailure(response: HttpServletResponse, e: JwtValidationException) {
-        val status = when (e.layer) {
-            "1", "2", "3", "4", "5", "6" -> HttpServletResponse.SC_UNAUTHORIZED
-            "7", "8", "9", "10" -> HttpServletResponse.SC_FORBIDDEN
-            else -> HttpServletResponse.SC_BAD_REQUEST
-        }
+    private fun handleValidationFailure(
+        response: HttpServletResponse,
+        e: JwtValidationException,
+    ) {
+        val status =
+            when (e.layer) {
+                "1", "2", "3", "4", "5", "6" -> HttpServletResponse.SC_UNAUTHORIZED
+                "7", "8", "9", "10" -> HttpServletResponse.SC_FORBIDDEN
+                else -> HttpServletResponse.SC_BAD_REQUEST
+            }
 
         response.sendError(status, "Authentication failed")
     }
@@ -407,5 +416,5 @@ class JwtValidationFilter(
 class JwtValidationException(
     val layer: String,
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : RuntimeException(message, cause)

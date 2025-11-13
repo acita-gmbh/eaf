@@ -14,6 +14,7 @@ import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -32,7 +33,6 @@ import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
-import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * Spring Security OAuth2 Resource Server configuration with JWT authentication.
@@ -111,23 +111,23 @@ open class SecurityConfiguration {
             }
 
         // Story 3.9: Add comprehensive JWT validation filter with 10-layer validation
-        val jwtValidationFilter = JwtValidationFilter(
-            jwtDecoder = jwtDecoder(),
-            roleNormalizer = roleNormalizer,
-            revocationStore = tokenRevocationStore,
-            userDirectory = userDirectory,
-            injectionDetector = injectionDetector,
-            meterRegistry = meterRegistry,
-            keycloakConfig = keycloakConfig,
-            userValidationEnabled = keycloakAdminProperties.userValidationEnabled
-        )
+        val jwtValidationFilter =
+            JwtValidationFilter(
+                jwtDecoder = jwtDecoder(),
+                roleNormalizer = roleNormalizer,
+                revocationStore = tokenRevocationStore,
+                userDirectory = userDirectory,
+                injectionDetector = injectionDetector,
+                meterRegistry = meterRegistry,
+                keycloakConfig = keycloakConfig,
+                userValidationEnabled = keycloakAdminProperties.userValidationEnabled,
+            )
 
         http
             .addFilterBefore(
                 jwtValidationFilter,
-                org.springframework.security.web.authentication.www.BasicAuthenticationFilter::class.java
-            )
-            .authorizeHttpRequests { auth ->
+                org.springframework.security.web.authentication.www.BasicAuthenticationFilter::class.java,
+            ).authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/actuator/health")
                     .permitAll()

@@ -24,4 +24,12 @@ open class TestController {
     @GetMapping
     @PreAuthorize("hasRole('WIDGET_ADMIN')")
     open fun getWidgets(): Map<String, String> = mapOf("status" to "ok")
+
+    /**
+     * Simple test endpoint for JWT validation filter integration tests.
+     *
+     * @return Success response for validation testing
+     */
+    @GetMapping("/test")
+    open fun testEndpoint(): Map<String, String> = mapOf("result" to "success")
 }
