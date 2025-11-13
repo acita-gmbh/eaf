@@ -1,9 +1,6 @@
 package com.axians.eaf.framework.security.config
 
 import com.axians.eaf.framework.security.InjectionDetector
-import com.axians.eaf.framework.security.config.KeycloakAdminProperties
-import com.axians.eaf.framework.security.filter.JwtValidationFilter
-import com.axians.eaf.framework.security.revocation.TokenRevocationStore
 import com.axians.eaf.framework.security.role.RoleNormalizer
 import com.axians.eaf.framework.security.user.UserDirectory
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
@@ -14,9 +11,7 @@ import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
-import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -26,8 +21,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
@@ -54,7 +47,6 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@EnableConfigurationProperties(KeycloakAdminProperties::class)
 @Profile("!test")
 open class SecurityConfiguration {
     // Suppress VarCouldBeVal: lateinit properties must be declared as var (Kotlin language requirement)
@@ -70,6 +62,7 @@ open class SecurityConfiguration {
     @Autowired
     private lateinit var revocationValidator: JwtRevocationValidator
 
+    // Story 3.8: Layer 9+10 validator dependencies
     @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var userValidator: JwtUserValidator
@@ -77,22 +70,6 @@ open class SecurityConfiguration {
     @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var injectionDetector: InjectionDetector
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
-    private lateinit var tokenRevocationStore: TokenRevocationStore
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
-    private lateinit var userDirectory: UserDirectory
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
-    private lateinit var meterRegistry: MeterRegistry
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
-    private lateinit var keycloakAdminProperties: KeycloakAdminProperties
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -110,24 +87,8 @@ open class SecurityConfiguration {
                 setJwtGrantedAuthoritiesConverter { jwt -> roleNormalizer.normalize(jwt).toList() }
             }
 
-        // Story 3.9: Add comprehensive JWT validation filter with 10-layer validation
-        val jwtValidationFilter =
-            JwtValidationFilter(
-                jwtDecoder = jwtDecoder(),
-                roleNormalizer = roleNormalizer,
-                revocationStore = tokenRevocationStore,
-                userDirectory = userDirectory,
-                injectionDetector = injectionDetector,
-                meterRegistry = meterRegistry,
-                keycloakConfig = keycloakConfig,
-                userValidationEnabled = keycloakAdminProperties.userValidationEnabled,
-            )
-
         http
-            .addFilterBefore(
-                jwtValidationFilter,
-                org.springframework.security.web.authentication.www.BasicAuthenticationFilter::class.java,
-            ).authorizeHttpRequests { auth ->
+            .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/actuator/health")
                     .permitAll()
@@ -151,6 +112,8 @@ open class SecurityConfiguration {
      * Validates signatures using keys obtained from keycloakConfig.jwksUri, enforces the RS256
      * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
+     * Story 3.8: Added Layers 9-10 (User Validation and Injection Detection) to validation chain.
+     *
      * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces
      * RS256, and validates token timestamps
      */
@@ -161,7 +124,7 @@ open class SecurityConfiguration {
                 .withJwkSetUri(keycloakConfig.jwksUri)
                 .build()
 
-        // Story 3.5, 3.7 & 3.8: Add explicit validators for Layers 3-7, 9-10
+        // Story 3.5, 3.7 & 3.8: Add explicit validators for Layers 3-10
         // Compose with Spring Security defaults for defense-in-depth
         // Note: createDefault() already includes JwtTimestampValidator (exp, nbf validation)
         // Our JwtTimeBasedValidator extends this with iat validation and configurable clock skew
@@ -176,8 +139,7 @@ open class SecurityConfiguration {
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
                 userValidator, // Layer 9: Optional user validation (active user enforcement)
-                JwtInjectionValidator(injectionDetector),
-                // Layer 10: Injection detection (SQL, XSS, JNDI, Expression, Path Traversal)
+                JwtInjectionValidator(injectionDetector), // Layer 10: Injection detection
             )
 
         decoder.setJwtValidator(customValidators)
