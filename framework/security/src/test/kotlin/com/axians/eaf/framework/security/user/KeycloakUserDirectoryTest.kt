@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
+import org.springframework.test.web.client.ExpectedCount.once
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.method
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
@@ -19,6 +20,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlin.test.assertEquals
 
 class KeycloakUserDirectoryTest :
     FunSpec({
@@ -108,11 +110,33 @@ class KeycloakUserDirectoryTest :
         }
 
         test("reuses admin token across lookups until expiry") {
-            expectTokenRequest(token = "token-a", expiresIn = 300)
-            expectUserRequest("alpha", enabled = true)
-            expectUserRequest("beta", enabled = true)
+            // First lookup - should acquire token
+            server
+                .expect(once(), requestTo("http://localhost:8080/realms/eaf/protocol/openid-connect/token"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("""{"access_token":"token123","expires_in":300}""", MediaType.APPLICATION_JSON))
 
-            directory.findById("alpha")!!.id.shouldBe("alpha")
-            directory.findById("beta")!!.id.shouldBe("beta")
+            server
+                .expect(once(), requestTo("http://localhost:8080/admin/realms/eaf/users/user123"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(
+                    withSuccess("""{"id":"user123","username":"user123","enabled":true}""", MediaType.APPLICATION_JSON),
+                )
+
+            val result1 = directory.findById("user123")
+            assertEquals("user123", result1?.id)
+            assertEquals(true, result1?.active)
+
+            // Second lookup - should reuse token (no new token request)
+            server
+                .expect(once(), requestTo("http://localhost:8080/admin/realms/eaf/users/user456"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(
+                    withSuccess("""{"id":"user456","username":"user456","enabled":true}""", MediaType.APPLICATION_JSON),
+                )
+
+            val result2 = directory.findById("user456")
+            assertEquals("user456", result2?.id)
+            assertEquals(true, result2?.active)
         }
     })

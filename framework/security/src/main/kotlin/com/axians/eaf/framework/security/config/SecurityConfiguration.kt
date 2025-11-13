@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.security.config
 
 import com.axians.eaf.framework.security.InjectionDetector
+import com.axians.eaf.framework.security.config.KeycloakAdminProperties
 import com.axians.eaf.framework.security.role.RoleNormalizer
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import com.axians.eaf.framework.security.validation.JwtAudienceValidator
@@ -11,6 +12,8 @@ import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -19,6 +22,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.core.OAuth2TokenValidator
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
@@ -45,6 +50,7 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@EnableConfigurationProperties(KeycloakAdminProperties::class)
 @Profile("!test")
 open class SecurityConfiguration {
     @Autowired

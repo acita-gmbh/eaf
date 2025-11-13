@@ -30,8 +30,7 @@ class JwtUserValidator(
             try {
                 val record = userDirectory.findById(subject)
                 when {
-                    record == null -> failure("JWT subject user does not exist (Layer 9)")
-                    !record.active -> failure("JWT subject user is disabled (Layer 9)")
+                    record == null || !record.active -> failure("JWT subject user is invalid (Layer 9)")
                     else -> OAuth2TokenValidatorResult.success()
                 }
             } catch (ex: UserValidationException) {

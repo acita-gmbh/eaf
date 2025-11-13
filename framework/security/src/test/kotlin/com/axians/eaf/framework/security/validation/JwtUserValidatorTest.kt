@@ -48,7 +48,7 @@ class JwtUserValidatorTest :
             result.errors
                 .first()
                 .description
-                .shouldBe("JWT subject user does not exist (Layer 9)")
+                .shouldBe("JWT subject user is invalid (Layer 9)")
         }
 
         test("fails when user inactive") {
@@ -60,7 +60,7 @@ class JwtUserValidatorTest :
             result.errors
                 .first()
                 .description
-                .shouldBe("JWT subject user is disabled (Layer 9)")
+                .shouldBe("JWT subject user is invalid (Layer 9)")
         }
 
         test("propagates directory failures as validation errors") {

@@ -1,13 +1,11 @@
 package com.axians.eaf.framework.security.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.stereotype.Component
 import java.time.Duration
 
 /**
  * Configuration for Keycloak admin client access used by Layer 9 user validation.
  */
-@Component
 @ConfigurationProperties(prefix = "eaf.keycloak")
 data class KeycloakAdminProperties(
     /**
