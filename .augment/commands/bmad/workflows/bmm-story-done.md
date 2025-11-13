@@ -1,10 +1,8 @@
+---
+description: "Marks a story as done (DoD complete) and moves it from its current status → DONE in the status file. Advances the story queue. Simple status-update workflow with no searching required."
+---
+
 # story-done Workflow
-
-## Description
-Marks a story as done (DoD complete) and moves it from its current status → DONE in the status file. Advances the story queue. Simple status-update workflow with no searching required.
-
-## Activation
-Type `@workflow-story-done` to execute this workflow.
 
 # Story Done Workflow (DEV Agent)
 name: story-done
@@ -12,20 +10,21 @@ description: "Marks a story as done (DoD complete) and moves it from its current
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
 date: system-generated
+sprint_artifacts: "{config_source}:sprint_artifacts"
+sprint_status: "{sprint_artifacts}/sprint-status.yaml || {output_folder}/sprint-status.yaml"
 
 # Workflow components
-installed_path: "{project-root}/bmad/bmm/workflows/4-implementation/story-done"
+installed_path: "{project-root}/.bmad/bmm/workflows/4-implementation/story-done"
 instructions: "{installed_path}/instructions.md"
 
 # Variables and inputs
 variables:
-  story_path: "" # Explicit path to story file
-  story_dir: "{config_source}:dev_story_location" # Directory where stories are stored
+  story_dir: "{config_source}:sprint_artifacts" # Directory where stories are stored
 
 # Output configuration - no output file, just status updates
 default_output_file: ""

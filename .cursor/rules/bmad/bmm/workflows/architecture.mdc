@@ -10,7 +10,7 @@ description: "Collaborative architectural decision facilitation for AI-agent con
 author: "BMad"
 
 # Critical variables
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -18,32 +18,28 @@ document_output_language: "{config_source}:document_output_language"
 user_skill_level: "{config_source}:user_skill_level"
 date: system-generated
 
-# Input requirements - We work from PRD, Epics, and optionally UX Spec
-recommended_inputs:
-  - prd: "Product Requirements Document with FRs and NFRs"
-  - epics: "Epic definitions with user stories and acceptance criteria"
-  - ux_spec: "UX specification with interface designs and interaction patterns (optional)"
-
 # Smart input file references - handles both whole docs and sharded docs
 # Priority: Whole document first, then sharded version
+# Strategy: How to load sharded documents (FULL_LOAD, SELECTIVE_LOAD, INDEX_GUIDED)
 input_file_patterns:
   prd:
     whole: "{output_folder}/*prd*.md"
     sharded: "{output_folder}/*prd*/index.md"
-
+    load_strategy: "FULL_LOAD"
   epics:
     whole: "{output_folder}/*epic*.md"
     sharded: "{output_folder}/*epic*/index.md"
-
+    load_strategy: "FULL_LOAD"
   ux_design:
     whole: "{output_folder}/*ux*.md"
     sharded: "{output_folder}/*ux*/index.md"
-
+    load_strategy: "FULL_LOAD"
   document_project:
-    sharded: "{output_folder}/docs/index.md"
+    sharded: "{output_folder}/index.md"
+    load_strategy: "INDEX_GUIDED"
 
 # Module path and component files
-installed_path: "{project-root}/bmad/bmm/workflows/3-solutioning/architecture"
+installed_path: "{project-root}/.bmad/bmm/workflows/3-solutioning/architecture"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 template: "{installed_path}/architecture-template.md"
@@ -55,20 +51,6 @@ pattern_categories: "{installed_path}/pattern-categories.csv"
 
 # Output configuration
 default_output_file: "{output_folder}/architecture.md"
-
-# Workflow metadata
-version: "1.3.2"
-replaces: "architecture"
-paradigm: "facilitation-driven"
-execution_time: "30-90 minutes depending on user skill level"
-features:
-  - "Starter template discovery and integration"
-  - "Dynamic version verification via web search"
-  - "Adaptive facilitation by skill level"
-  - "Decision-focused architecture"
-  - "Novel pattern design for unique concepts"
-  - "Intelligent pattern identification - LLM figures out what patterns matter"
-  - "Implementation patterns for agent consistency"
 
 standalone: true
 

@@ -9,7 +9,7 @@ description: "Collaborative exploration of domain-specific requirements, regulat
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -18,7 +18,7 @@ user_skill_level: "{config_source}:user_skill_level"
 date: system-generated
 
 # Module path and component files
-installed_path: "{project-root}/bmad/bmm/workflows/1-analysis/domain-research"
+installed_path: "{project-root}/.bmad/bmm/workflows/1-analysis/domain-research"
 instructions: "{installed_path}/instructions.md"
 template: "{installed_path}/template.md"
 
@@ -27,19 +27,6 @@ domain_knowledge_base: "{installed_path}/domain-knowledge-base.md"
 
 # Output configuration
 default_output_file: "{output_folder}/domain-brief.md"
-
-# Workflow metadata
-version: "6.0.0-alpha"
-category: "analysis"
-complexity: "medium"
-execution_time: "30-45 minutes"
-prerequisites:
-  - "Basic project understanding"
-when_to_use:
-  - "Complex regulated domains (healthcare, finance, aerospace)"
-  - "Novel technical domains requiring deep understanding"
-  - "Before PRD when domain expertise needed"
-  - "When compliance and regulations matter"
 
 standalone: true
 

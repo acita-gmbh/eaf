@@ -9,7 +9,7 @@ description: "Collaborative UX design facilitation workflow that creates excepti
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -30,28 +30,34 @@ brainstorm_file: "{output_folder}/brainstorming.md or brainstorm.md or ideation.
 
 # Smart input file references - handles both whole docs and sharded docs
 # Priority: Whole document first, then sharded version
+# Strategy: How to load sharded documents (FULL_LOAD, SELECTIVE_LOAD, INDEX_GUIDED)
 input_file_patterns:
   prd:
     whole: "{output_folder}/*prd*.md"
     sharded: "{output_folder}/*prd*/index.md"
+    load_strategy: "FULL_LOAD"
 
   product_brief:
     whole: "{output_folder}/*brief*.md"
     sharded: "{output_folder}/*brief*/index.md"
+    load_strategy: "FULL_LOAD"
 
   epics:
     whole: "{output_folder}/*epic*.md"
     sharded: "{output_folder}/*epic*/index.md"
+    load_strategy: "FULL_LOAD"
 
   brainstorming:
     whole: "{output_folder}/*brainstorm*.md"
     sharded: "{output_folder}/*brainstorm*/index.md"
+    load_strategy: "FULL_LOAD"
 
   document_project:
     sharded: "{output_folder}/docs/index.md"
+    load_strategy: "INDEX_GUIDED"
 
 # Module path and component files
-installed_path: "{project-root}/bmad/bmm/workflows/2-plan-workflows/create-ux-design"
+installed_path: "{project-root}/.bmad/bmm/workflows/2-plan-workflows/create-ux-design"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"
 template: "{installed_path}/ux-design-template.md"

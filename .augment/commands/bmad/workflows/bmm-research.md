@@ -1,10 +1,8 @@
+---
+description: "Adaptive research workflow supporting multiple research types: market research, deep research prompt generation, technical/architecture evaluation, competitive intelligence, user research, and domain analysis"
+---
+
 # research Workflow
-
-## Description
-Adaptive research workflow supporting multiple research types: market research, deep research prompt generation, technical/architecture evaluation, competitive intelligence, user research, and domain analysis
-
-## Activation
-Type `@workflow-research` to execute this workflow.
 
 # Research Workflow - Multi-Type Research System
 name: research
@@ -12,7 +10,7 @@ description: "Adaptive research workflow supporting multiple research types: mar
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -32,7 +30,7 @@ minimum_sources_per_claim: 2
 fact_check_critical_data: true
 
 # Workflow components - ROUTER PATTERN
-installed_path: "{project-root}/bmad/bmm/workflows/1-analysis/research"
+installed_path: "{project-root}/.bmad/bmm/workflows/1-analysis/research"
 instructions: "{installed_path}/instructions-router.md" # Router loads specific instruction sets
 validation: "{installed_path}/checklist.md"
 
