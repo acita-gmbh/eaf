@@ -147,12 +147,9 @@ class KeycloakUserDirectory(
                         HttpEntity(form, headers),
                         AccessTokenResponse::class.java,
                     )
-                val body = response.body
-                val accessToken = body?.accessToken
-                val expiresInSeconds = body?.expiresIn
-
-                check(body != null) { "Keycloak token endpoint returned empty body" }
-                check(accessToken != null) { "Keycloak token endpoint missing access_token" }
+                val body = checkNotNull(response.body) { "Keycloak token endpoint returned empty body" }
+                val accessToken = checkNotNull(body.accessToken) { "Keycloak token endpoint missing access_token" }
+                val expiresInSeconds = body.expiresIn
 
                 val expiry =
                     now

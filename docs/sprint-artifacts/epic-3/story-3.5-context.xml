@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.5</story-id>
+  <title>JWT Claims Schema and Time-Based Validation (Layers 3-5)</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+  <summary>Implement JWT Algorithm validation (RS256 only), Claims schema validation (required claims), and Time-based validation (exp/iat/nbf with 30s clock skew).</summary>
+  <tech-spec-ref>docs/tech-spec-epic-3.md Lines 1296-1302</tech-spec-ref>
+  <key-code>
+    - Layer 3: RS256 algorithm enforcement (hardcoded, reject HS256)
+    - Layer 4: Required claims: sub, iss, aud, exp, iat, tenant_id, roles
+    - Layer 5: Time-based validation with 30s clock skew tolerance
+    - Configuration: eaf.security.jwt.clock-skew=30s
+  </key-code>
+  <critical-claims>
+    - sub (user ID)
+    - tenant_id (for Epic 4 multi-tenancy)
+    - roles (for Epic 3 RBAC)
+    - exp/iat/nbf (prevent expired/future tokens)
+  </critical-claims>
+  <testing>Unit tests for each validation layer, Integration test with intentionally invalid tokens (missing claims, expired)</testing>
+</story-context>

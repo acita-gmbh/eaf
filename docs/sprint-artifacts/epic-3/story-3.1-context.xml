@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.1</story-id>
+  <title>Spring Security OAuth2 Resource Server Foundation</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+
+  <summary>
+    Establish Spring Security OAuth2 Resource Server foundation with Keycloak OIDC integration, SecurityModule with @ApplicationModule for Spring Modulith boundary enforcement, and comprehensive application.yml configuration for JWT properties. This story creates the security infrastructure that all subsequent Epic 3 stories build upon.
+  </summary>
+
+  <acceptance-criteria count="9">
+    <criterion id="1">framework/security module created with Spring Security OAuth2 dependencies</criterion>
+    <criterion id="2">SecurityModule.kt created with @ApplicationModule annotation for Spring Modulith boundary enforcement</criterion>
+    <criterion id="3">SecurityConfiguration.kt configures HTTP security with JWT authentication</criterion>
+    <criterion id="4">application.yml configured with JWT properties (issuer-uri, jwks-uri, audience)</criterion>
+    <criterion id="5">OAuth2 Resource Server configured with Keycloak issuer URI</criterion>
+    <criterion id="6">All API endpoints require authentication by default (except /actuator/health)</criterion>
+    <criterion id="7">Integration test validates unauthenticated requests return 401 Unauthorized</criterion>
+    <criterion id="8">Valid JWT allows API access</criterion>
+    <criterion id="9">Security filter chain documented</criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <tech-spec-reference>
+      <file>docs/tech-spec-epic-3.md</file>
+      <sections>
+        <section>Lines 139-155: SecurityModule @ApplicationModule</section>
+        <section>Lines 180-222: SecurityConfiguration.kt complete implementation</section>
+        <section>Lines 835-949: Configuration Properties (application.yml, application-test.yml, .env, Kubernetes secrets)</section>
+      </sections>
+    </tech-spec-reference>
+
+    <architecture-alignment>
+      <reference>architecture.md Section 11 (Security Stack)</reference>
+      <technology>Spring Security 6.3.5 (Spring Boot 3.5.7 managed)</technology>
+      <technology>OAuth2 Resource Server with JWT decoder</technology>
+      <technology>Keycloak 26.4.2 as Identity Provider (OIDC)</technology>
+      <pattern>Fail-closed design - missing/invalid JWT immediately rejected</pattern>
+    </architecture-alignment>
+
+    <dependencies>
+      <dependency type="gradle" scope="implementation">
+        <artifact>spring-boot-starter-security</artifact>
+        <version>Spring Boot 3.5.7 managed</version>
+      </dependency>
+      <dependency type="gradle" scope="implementation">
+        <artifact>spring-boot-starter-oauth2-resource-server</artifact>
+        <version>Spring Boot 3.5.7 managed</version>
+      </dependency>
+      <dependency type="gradle" scope="implementation">
+        <artifact>spring-boot-starter-oauth2-jose</artifact>
+        <version>Spring Boot 3.5.7 managed</version>
+      </dependency>
+      <dependency type="gradle" scope="implementation">
+        <artifact>spring-modulith-core</artifact>
+        <version>1.4.4</version>
+      </dependency>
+    </dependencies>
+
+    <code-examples>
+      <example name="SecurityModule.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/SecurityModule.kt">
+        <description>Spring Modulith module metadata for boundary enforcement</description>
+        <source><![CDATA[
+import org.springframework.modulith.ApplicationModule
+
+@ApplicationModule(
+    displayName = "EAF Security Module",
+    allowedDependencies = ["core"]
+)
+class SecurityModule
+
+// Purpose: Programmatic Spring Modulith boundary enforcement
+// Validates: framework/security can only depend on framework/core
+// Enforcement: Compile-time via Konsist + Spring Modulith verification
+]]></source>
+      </example>
+
+      <example name="SecurityConfiguration.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/SecurityConfiguration.kt">
+        <description>Spring Security OAuth2 Resource Server configuration with JWT authentication</description>
+        <source><![CDATA[
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
+class SecurityConfiguration {
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http {
+            authorizeHttpRequests {
+                authorize("/actuator/health", permitAll)
+                authorize(anyRequest, authenticated)
+            }
+            oauth2ResourceServer {
+                jwt {
+                    jwtDecoder = jwtDecoder()
+                }
+            }
+            csrf { disable() } // Stateless API
+        }
+        return http.build()
+    }
+
+    @Bean
+    fun jwtDecoder(): JwtDecoder {
+        val decoder = NimbusJwtDecoder
+            .withJwkSetUri(keycloakJwksUri)
+            .build()
+
+        decoder.setJwtValidator(
+            DelegatingOAuth2TokenValidator(
+                JwtTimestampValidator(),
+                JwtIssuerValidator(expectedIssuer),
+                CustomClaimsValidator()
+            )
+        )
+
+        return decoder
+    }
+}
+]]></source>
+      </example>
+
+      <example name="application.yml" location="framework/security/src/main/resources/application.yml">
+        <description>JWT OAuth2 Resource Server configuration</description>
+        <source><![CDATA[
+eaf:
+  security:
+    jwt:
+      issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/eaf}
+      jwks-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/eaf/protocol/openid-connect/certs}
+      audience: ${JWT_AUDIENCE:eaf-api}
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${eaf.security.jwt.issuer-uri}
+          jwk-set-uri: ${eaf.security.jwt.jwks-uri}
+]]></source>
+      </example>
+
+      <example name="SecurityConfigurationIntegrationTest.kt" location="framework/security/src/integrationTest/kotlin/.../SecurityConfigurationIntegrationTest.kt">
+        <description>Integration test validating unauthenticated requests return 401</description>
+        <source><![CDATA[
+@SpringBootTest
+@ActiveProfiles("test")
+class SecurityConfigurationIntegrationTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+
+        test("should return 401 for unauthenticated requests") {
+            mockMvc.perform(get("/api/widgets"))
+                .andExpect(status().isUnauthorized())
+        }
+
+        test("should allow /actuator/health without authentication") {
+            mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+        }
+    }
+}
+]]></source>
+      </example>
+    </code-examples>
+
+    <testing-guidance>
+      <test-framework>Kotest 6.0.4 (FunSpec)</test-framework>
+      <test-pattern>@SpringBootTest with @Autowired field injection + init block</test-pattern>
+      <integration-testing>
+        <tool>MockMvc for REST API testing</tool>
+        <tool>@ActiveProfiles("test") for test configuration</tool>
+        <tool>SpringExtension() for Spring Boot integration</tool>
+      </integration-testing>
+      <coverage-target>85%+ line coverage (Kover)</coverage-target>
+    </testing-guidance>
+
+    <implementation-notes>
+      <note priority="high">Create SecurityModule.kt FIRST for Spring Modulith enforcement (AC2)</note>
+      <note priority="high">Configure application.yml BEFORE SecurityConfiguration (AC4 before AC3)</note>
+      <note priority="medium">Ensure @EnableMethodSecurity(prePostEnabled = true) for future @PreAuthorize support</note>
+      <note priority="medium">CSRF disabled for stateless API (JWT-based, not cookie-based)</note>
+      <note priority="low">Document security filter chain in docs/reference/security-architecture.md (AC9)</note>
+    </implementation-notes>
+
+    <related-stories>
+      <prerequisite>Epic 2 complete (REST API foundation must exist)</prerequisite>
+      <next-story>Story 3.2: Keycloak OIDC Discovery and JWKS Integration</next-story>
+      <depends-on-me>
+        <story>Story 3.2</story>
+        <story>Story 3.3</story>
+        <story>Story 3.4</story>
+        <story>Story 3.5</story>
+        <story>Story 3.6</story>
+        <story>Story 3.7</story>
+        <story>Story 3.8</story>
+        <story>Story 3.9</story>
+        <story>Story 3.10</story>
+        <story>Story 3.11</story>
+        <story>Story 3.12</story>
+      </depends-on-me>
+    </related-stories>
+
+    <traceability>
+      <prd-requirements>
+        <requirement id="FR006">Authentication, Security, and Compliance</requirement>
+        <requirement id="NFR002">Security and Compliance (OWASP ASVS Level 1)</requirement>
+      </prd-requirements>
+      <architecture-sections>
+        <section>Section 11: Security Stack</section>
+        <section>Section 12: 10-Layer JWT Validation (Foundation)</section>
+      </architecture-sections>
+    </traceability>
+  </technical-context>
+
+  <definition-of-done>
+    <item>All 9 acceptance criteria met with test evidence</item>
+    <item>Integration tests pass (unauthenticated → 401, /actuator/health → 200)</item>
+    <item>SecurityModule @ApplicationModule validated by Konsist</item>
+    <item>application.yml configuration complete and documented</item>
+    <item>Zero ktlint/Detekt/Konsist violations</item>
+    <item>Code review completed</item>
+    <item>Security filter chain documented</item>
+    <item>Commit message follows convention: "feat: Add Spring Security OAuth2 Resource Server foundation (Story 3.1)"</item>
+  </definition-of-done>
+</story-context>

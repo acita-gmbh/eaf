@@ -110,12 +110,14 @@ class KeycloakUserDirectoryTest :
         }
 
         test("reuses admin token across lookups until expiry") {
-            // First lookup - should acquire token
+            // Setup ALL expectations BEFORE making any requests
+            // Token request (should happen only once)
             server
                 .expect(once(), requestTo("http://localhost:8080/realms/eaf/protocol/openid-connect/token"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("""{"access_token":"token123","expires_in":300}""", MediaType.APPLICATION_JSON))
 
+            // First user lookup
             server
                 .expect(once(), requestTo("http://localhost:8080/admin/realms/eaf/users/user123"))
                 .andExpect(method(HttpMethod.GET))
@@ -123,17 +125,18 @@ class KeycloakUserDirectoryTest :
                     withSuccess("""{"id":"user123","username":"user123","enabled":true}""", MediaType.APPLICATION_JSON),
                 )
 
-            val result1 = directory.findById("user123")
-            assertEquals("user123", result1?.id)
-            assertEquals(true, result1?.active)
-
-            // Second lookup - should reuse token (no new token request)
+            // Second user lookup (token should be reused, so no new token request)
             server
                 .expect(once(), requestTo("http://localhost:8080/admin/realms/eaf/users/user456"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(
                     withSuccess("""{"id":"user456","username":"user456","enabled":true}""", MediaType.APPLICATION_JSON),
                 )
+
+            // Now execute the lookups
+            val result1 = directory.findById("user123")
+            assertEquals("user123", result1?.id)
+            assertEquals(true, result1?.active)
 
             val result2 = directory.findById("user456")
             assertEquals("user456", result2?.id)

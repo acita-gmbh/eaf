@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.3</story-id>
+  <title>Testcontainers Keycloak for Integration Tests</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+  <resequenced>2025-11-09 (moved from 3.10 to 3.3 for Constitutional TDD compliance)</resequenced>
+
+  <summary>
+    Provision Keycloak Testcontainer 26.4.2 with complete realm configuration (eaf realm, eaf-api client, test users with roles, tenant_id attribute mapper) and generateToken() utility for security integration tests. This story enables all Epic 3 integration tests to use real Keycloak authentication instead of mocking JWT validation.
+  </summary>
+
+  <acceptance-criteria count="9">
+    <criterion id="1">Testcontainers Keycloak 26.4.2 configured in test dependencies</criterion>
+    <criterion id="2">KeycloakTestContainer.kt utility creates container with realm import and generateToken() method</criterion>
+    <criterion id="3">realm-export.json configured (eaf realm, eaf-api client, test users, roles, tenant_id mapper)</criterion>
+    <criterion id="4">Test realm includes users: admin@eaf.com (WIDGET_ADMIN, ADMIN), viewer@eaf.com (WIDGET_VIEWER)</criterion>
+    <criterion id="5">Test realm includes roles: WIDGET_ADMIN, WIDGET_VIEWER, ADMIN</criterion>
+    <criterion id="6">application-test.yml configured with Keycloak Admin Client properties (admin-cli, admin password)</criterion>
+    <criterion id="7">Container reuse enabled for performance (start once per test class)</criterion>
+    <criterion id="8">Container-generated JWTs for authentication tests (via KeycloakBuilder with password grant)</criterion>
+    <criterion id="9">All security integration tests pass using Testcontainers Keycloak</criterion>
+  </acceptance-criteria>
+
+  <technical-context>
+    <tech-spec-reference>
+      <file>docs/tech-spec-epic-3.md</file>
+      <sections>
+        <section>Lines 749-786: KeycloakTestContainer.kt with complete generateToken() implementation</section>
+        <section>Lines 788-892: realm-export.json complete structure (104 lines)</section>
+        <section>Lines 888-917: application-test.yml with Keycloak Admin Client config</section>
+        <section>Lines 1356-1365: Story 3.10 Acceptance Criteria (9 ACs)</section>
+      </sections>
+    </tech-spec-reference>
+
+    <dependencies>
+      <dependency type="gradle" scope="testImplementation">
+        <artifact>testcontainers-keycloak</artifact>
+        <group>com.github.dasniko</group>
+        <version>3.5.0</version>
+      </dependency>
+      <dependency type="gradle" scope="testImplementation">
+        <artifact>keycloak-admin-client</artifact>
+        <version>26.4.2</version>
+      </dependency>
+    </dependencies>
+
+    <code-examples>
+      <example name="KeycloakTestContainer.kt" location="framework/security/src/test/kotlin/.../KeycloakTestContainer.kt">
+        <description>COMPLETE: Keycloak Testcontainer with realm import and JWT generation</description>
+        <source><![CDATA[
+import dasniko.testcontainers.keycloak.KeycloakContainer
+import org.keycloak.admin.client.KeycloakBuilder
+
+object KeycloakTestContainer {
+
+    private val container = KeycloakContainer("quay.io/keycloak/keycloak:26.4.2")
+        .withRealmImportFile("keycloak/realm-export.json")
+        .withReuse(true)
+
+    fun start() {
+        if (!container.isRunning) {
+            container.start()
+        }
+    }
+
+    fun getIssuerUri(): String {
+        return "${container.authServerUrl}/realms/eaf"
+    }
+
+    fun getJwksUri(): String {
+        return "$issuerUri/protocol/openid-connect/certs"
+    }
+
+    fun generateToken(username: String, password: String): String {
+        val keycloak = KeycloakBuilder.builder()
+            .serverUrl(container.authServerUrl)
+            .realm("eaf")
+            .clientId("eaf-api")
+            .username(username)
+            .password(password)
+            .grantType("password")
+            .build()
+
+        val tokenResponse = keycloak.tokenManager().accessToken
+        return tokenResponse.token
+    }
+}
+]]></source>
+      </example>
+
+      <example name="realm-export.json" location="framework/security/src/test/resources/keycloak/realm-export.json">
+        <description>Complete Keycloak test realm configuration with users, roles, tenant_id mapper</description>
+        <source><![CDATA[
+{
+  "realm": "eaf",
+  "enabled": true,
+  "displayName": "EAF Test Realm",
+
+  "clients": [
+    {
+      "clientId": "eaf-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "publicClient": false,
+      "secret": "test-client-secret",
+      "redirectUris": ["http://localhost:*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "access.token.lifespan": "600"
+      }
+    }
+  ],
+
+  "users": [
+    {
+      "username": "admin@eaf.com",
+      "enabled": true,
+      "email": "admin@eaf.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["WIDGET_ADMIN", "ADMIN"],
+      "attributes": {
+        "tenant_id": ["tenant-test-001"]
+      }
+    },
+    {
+      "username": "viewer@eaf.com",
+      "enabled": true,
+      "email": "viewer@eaf.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["WIDGET_VIEWER"],
+      "attributes": {
+        "tenant_id": ["tenant-test-002"]
+      }
+    }
+  ],
+
+  "roles": {
+    "realm": [
+      {
+        "name": "WIDGET_ADMIN",
+        "description": "Widget administrator - create, update, delete widgets"
+      },
+      {
+        "name": "WIDGET_VIEWER",
+        "description": "Widget viewer - read-only access to widgets"
+      },
+      {
+        "name": "ADMIN",
+        "description": "System administrator - all permissions including token revocation"
+      }
+    ]
+  },
+
+  "clientScopes": [
+    {
+      "name": "tenant_id",
+      "description": "Tenant ID claim for multi-tenancy",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}
+]]></source>
+      </example>
+
+      <example name="SecuredWidgetApiTest.kt" location="products/widget-demo/src/integrationTest/kotlin/.../SecuredWidgetApiTest.kt">
+        <description>Example integration test using Testcontainers Keycloak</description>
+        <source><![CDATA[
+@SpringBootTest
+@ActiveProfiles("test")
+class SecuredWidgetApiTest : FunSpec() {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    init {
+        extension(SpringExtension())
+
+        beforeSpec {
+            KeycloakTestContainer.start()
+        }
+
+        test("should allow WIDGET_ADMIN to create widgets") {
+            val jwt = KeycloakTestContainer.generateToken("admin@eaf.com", "password")
+
+            mockMvc.perform(post("/api/widgets")
+                .header("Authorization", "Bearer $jwt")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Test Widget"}"""))
+                .andExpect(status().isCreated())
+        }
+
+        test("should reject WIDGET_VIEWER from creating widgets") {
+            val jwt = KeycloakTestContainer.generateToken("viewer@eaf.com", "password")
+
+            mockMvc.perform(post("/api/widgets")
+                .header("Authorization", "Bearer $jwt")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Test Widget"}"""))
+                .andExpect(status().isForbidden())
+        }
+    }
+
+    companion object {
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            KeycloakTestContainer.start()
+
+            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                KeycloakTestContainer.getIssuerUri()
+            }
+            registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri") {
+                KeycloakTestContainer.getJwksUri()
+            }
+        }
+    }
+}
+]]></source>
+      </example>
+    </code-examples>
+
+    <implementation-sequence>
+      <step order="1">Add testcontainers-keycloak and keycloak-admin-client test dependencies</step>
+      <step order="2">Create realm-export.json in src/test/resources/keycloak/</step>
+      <step order="3">Configure test users (admin@eaf.com, viewer@eaf.com) with passwords and tenant_id attributes</step>
+      <step order="4">Configure test roles (WIDGET_ADMIN, WIDGET_VIEWER, ADMIN)</step>
+      <step order="5">Configure tenant_id client scope with attribute mapper</step>
+      <step order="6">Create KeycloakTestContainer.kt object with singleton pattern</step>
+      <step order="7">Implement generateToken() using KeycloakBuilder with password grant</step>
+      <step order="8">Configure application-test.yml with Keycloak Admin Client properties</step>
+      <step order="9">Add @DynamicPropertySource to set issuer-uri and jwk-set-uri dynamically</step>
+      <step order="10">Write integration tests for both admin and viewer roles</step>
+      <step order="11">Validate container startup &lt;30 seconds</step>
+      <step order="12">Validate container reuse works across test classes</step>
+    </implementation-sequence>
+
+    <testing-guidance>
+      <container-setup>
+        <pattern>Singleton object pattern (start once, reuse everywhere)</pattern>
+        <pattern>@DynamicPropertySource for dynamic configuration</pattern>
+        <pattern>beforeSpec {} for container startup</pattern>
+      </container-setup>
+      <jwt-generation>
+        <method>KeycloakBuilder with password grant type</method>
+        <users>admin@eaf.com (WIDGET_ADMIN, ADMIN), viewer@eaf.com (WIDGET_VIEWER)</users>
+        <expected-claims>sub, iss, aud, exp, iat, tenant_id, realm_access.roles</expected-claims>
+      </jwt-generation>
+      <performance>
+        <target>Container startup: &lt;30 seconds</target>
+        <optimization>withReuse(true) for container reuse</optimization>
+      </performance>
+    </testing-guidance>
+
+    <common-pitfalls>
+      <pitfall>realm-export.json not found (incorrect path in withRealmImportFile)</pitfall>
+      <pitfall>directAccessGrantsEnabled=false prevents password grant (generateToken fails)</pitfall>
+      <pitfall>Missing tenant_id attribute in test users (Layer 4 validation fails)</pitfall>
+      <pitfall>Container not started in beforeSpec (tests fail with connection refused)</pitfall>
+      <pitfall>Missing @DynamicPropertySource (Spring Security uses wrong issuer-uri)</pitfall>
+    </common-pitfalls>
+  </technical-context>
+
+  <definition-of-done>
+    <item>All 9 acceptance criteria met</item>
+    <item>realm-export.json complete with 2 test users, 3 roles, tenant_id mapper</item>
+    <item>KeycloakTestContainer.generateToken() working for both users</item>
+    <item>Container startup &lt;30 seconds validated</item>
+    <item>Container reuse working (singleton pattern)</item>
+    <item>Integration tests pass using real Keycloak JWTs</item>
+    <item>@DynamicPropertySource configures issuer-uri and jwk-set-uri</item>
+    <item>application-test.yml includes Keycloak Admin Client properties</item>
+    <item>Zero test failures</item>
+  </definition-of-done>
+</story-context>

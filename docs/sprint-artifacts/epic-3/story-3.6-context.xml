@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.6</story-id>
+  <title>Issuer, Audience, and Role Validation (Layers 6-8)</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+
+  <summary>
+    Implement JWT Layers 6-8: Issuer validation (Keycloak realm), Audience validation (eaf-api), and Role normalization with ROLE_ prefix for Spring Security compatibility. This story is CRITICAL as it enables role-based access control for all subsequent authorization features.
+  </summary>
+
+  <acceptance-criteria count="8">
+    <criterion id="1">Layer 6: Issuer validation (expected: http://keycloak:8080/realms/eaf)</criterion>
+    <criterion id="2">Layer 6: Audience validation (expected: eaf-api)</criterion>
+    <criterion id="3">Layer 8: Role validation and normalization</criterion>
+    <criterion id="4">RoleNormalizer.kt extracts and normalizes roles into Set&lt;GrantedAuthority&gt; with ROLE_ prefix</criterion>
+    <criterion id="5">@PreAuthorize annotations work with normalized roles</criterion>
+    <criterion id="6">Tokens from wrong issuer rejected with 401</criterion>
+    <criterion id="7">Property-based tests for role normalization edge cases (nested structures, missing keys)</criterion>
+    <criterion id="8">Fuzz test for role extraction (Jazzer)</criterion>
+  </acceptance-criteria>
+
+  <critical-importance>
+    <alert>CRITICAL FIX APPLIED: RoleNormalizer must return Set&lt;GrantedAuthority&gt;, not Set&lt;String&gt;</alert>
+    <alert>CRITICAL FIX APPLIED: Must add ROLE_ prefix for Spring Security hasRole() compatibility</alert>
+    <alert>Without this fix, ALL @PreAuthorize checks will FAIL and RBAC will be non-functional</alert>
+  </critical-importance>
+
+  <technical-context>
+    <tech-spec-reference>
+      <file>docs/tech-spec-epic-3.md</file>
+      <sections>
+        <section>Lines 284-330: RoleNormalizer.kt CORRECTED implementation with GrantedAuthority</section>
+        <section>Lines 1195-1235: Property-Based Test examples for role normalization</section>
+        <section>Lines 1310-1316: Story 3.5 Acceptance Criteria (8 ACs)</section>
+      </sections>
+    </tech-spec-reference>
+
+    <architecture-alignment>
+      <reference>architecture.md Lines 3358-3375: Role Normalization Pattern</reference>
+      <pattern>3 role styles supported: Traditional (WIDGET_ADMIN), Permission (widget:create), Prefixed (ROLE_ADMIN)</pattern>
+      <pattern>Keycloak structure: realm_access.roles[] + resource_access.{client}.roles[]</pattern>
+    </architecture-alignment>
+
+    <code-examples>
+      <example name="RoleNormalizer.kt" location="framework/security/src/main/kotlin/com/axians/eaf/framework/security/RoleNormalizer.kt">
+        <description>CRITICAL: Extracts roles from Keycloak JWT and normalizes to Spring Security GrantedAuthority with ROLE_ prefix</description>
+        <source><![CDATA[
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
+
+@Component
+class RoleNormalizer {
+
+    companion object {
+        private const val ROLE_PREFIX = "ROLE_"
+    }
+
+    fun normalize(jwt: Jwt): Set<GrantedAuthority> {
+        val roles = mutableSetOf<String>()
+
+        // Extract from realm_access.roles
+        val realmAccess = jwt.getClaim<Map<String, Any>>("realm_access")
+        realmAccess?.let { access ->
+            @Suppress("UNCHECKED_CAST")
+            val realmRoles = access["roles"] as? List<String>
+            realmRoles?.let { roles.addAll(it) }
+        }
+
+        // Extract from resource_access.{client}.roles
+        val resourceAccess = jwt.getClaim<Map<String, Any>>("resource_access")
+        resourceAccess?.let { access ->
+            access.forEach { (_, clientAccess) ->
+                @Suppress("UNCHECKED_CAST")
+                val clientRoles = (clientAccess as? Map<String, Any>)
+                    ?.get("roles") as? List<String>
+                clientRoles?.let { roles.addAll(it) }
+            }
+        }
+
+        // Normalize to GrantedAuthority with ROLE_ prefix for Spring Security
+        return roles
+            .map { role ->
+                when {
+                    role.startsWith(ROLE_PREFIX) -> SimpleGrantedAuthority(role)  // Already prefixed
+                    role.contains(":") -> SimpleGrantedAuthority(role)  // Permission-style (widget:create)
+                    else -> SimpleGrantedAuthority(ROLE_PREFIX + role)  // Add ROLE_ prefix
+                }
+            }
+            .toSet()
+    }
+}
+]]></source>
+      </example>
+
+      <example name="RoleNormalizationPropertyTest.kt" location="framework/security/src/test/kotlin/.../RoleNormalizationPropertyTest.kt">
+        <description>Property-based testing for edge cases in role normalization</description>
+        <source><![CDATA[
+class RoleNormalizationPropertyTest : FunSpec({
+    test("should handle arbitrary role structures") {
+        checkAll<List<String>>(iterations = 100) { roles ->
+            val jwt = mockJwt(
+                claims = mapOf("realm_access" to mapOf("roles" to roles))
+            )
+
+            val normalizer = RoleNormalizer()
+            val normalized = normalizer.normalize(jwt)
+
+            normalized shouldContainAll roles.map { "ROLE_$it" }.map { SimpleGrantedAuthority(it) }
+        }
+    }
+
+    test("should handle missing realm_access") {
+        val jwt = mockJwt(claims = emptyMap())
+
+        val normalizer = RoleNormalizer()
+        val normalized = normalizer.normalize(jwt)
+
+        normalized.shouldBeEmpty()
+    }
+})
+]]></source>
+      </example>
+    </code-examples>
+
+    <implementation-sequence>
+      <step order="1">Create RoleNormalizer.kt with companion object for ROLE_PREFIX</step>
+      <step order="2">Implement normalize() method returning Set&lt;GrantedAuthority&gt;</step>
+      <step order="3">Extract roles from realm_access.roles (Keycloak realm-level roles)</step>
+      <step order="4">Extract roles from resource_access.{client}.roles (client-specific roles)</step>
+      <step order="5">Apply ROLE_ prefix normalization using when() expression</step>
+      <step order="6">Write unit tests with Nullable Pattern (mock JWT claims)</step>
+      <step order="7">Write property-based tests for edge cases (empty roles, null values, nested structures)</step>
+      <step order="8">Write fuzz test with Jazzer (RoleNormalizationFuzzer.kt)</step>
+      <step order="9">Integration test validates @PreAuthorize works with normalized roles (Story 3.9 dependency)</step>
+    </implementation-sequence>
+
+    <testing-guidance>
+      <unit-tests>
+        <pattern>Kotest FunSpec with mock JWT (mockJwt helper)</pattern>
+        <coverage>Test all 3 role styles (traditional, permission, prefixed)</coverage>
+        <coverage>Test missing realm_access (empty set)</coverage>
+        <coverage>Test missing resource_access (only realm roles)</coverage>
+        <coverage>Test both present (union of both sets)</coverage>
+      </unit-tests>
+      <property-tests>
+        <tool>Kotest checkAll&lt;List&lt;String&gt;&gt;</tool>
+        <iterations>100</iterations>
+        <focus>Edge cases: empty lists, null values, special characters</focus>
+      </property-tests>
+      <fuzz-tests>
+        <tool>Jazzer @FuzzTest</tool>
+        <target>RoleNormalizationFuzzer.kt</target>
+        <duration>5 minutes (nightly)</duration>
+        <corpus>fuzzTest/corpus/role-normalization/</corpus>
+      </fuzz-tests>
+    </testing-guidance>
+
+    <common-pitfalls>
+      <pitfall>Returning Set&lt;String&gt; instead of Set&lt;GrantedAuthority&gt; breaks Spring Security</pitfall>
+      <pitfall>Missing ROLE_ prefix causes hasRole() checks to fail</pitfall>
+      <pitfall>Not handling missing realm_access or resource_access gracefully (NPE)</pitfall>
+      <pitfall>Unsafe casting without type checks (ClassCastException)</pitfall>
+    </common-pitfalls>
+  </technical-context>
+
+  <definition-of-done>
+    <item>All 8 acceptance criteria met with test evidence</item>
+    <item>RoleNormalizer.kt returns Set&lt;GrantedAuthority&gt; (CRITICAL)</item>
+    <item>ROLE_ prefix applied correctly (validated by unit tests)</item>
+    <item>Property-based tests pass (100 iterations, edge cases)</item>
+    <item>Fuzz test runs 5 minutes without crashes</item>
+    <item>Integration test validates @PreAuthorize compatibility (prep for Story 3.9)</item>
+    <item>Zero ktlint/Detekt violations</item>
+    <item>Code review completed</item>
+  </definition-of-done>
+</story-context>

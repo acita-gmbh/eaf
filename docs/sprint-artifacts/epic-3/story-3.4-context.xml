@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <story-id>3.4</story-id>
+  <title>JWT Format and Signature Validation (Layers 1-2)</title>
+  <epic>Epic 3 - Authentication & Authorization</epic>
+  <generated>2025-11-09</generated>
+  <summary>Implement JWT Format validation (3-part structure) and RS256 signature validation using Keycloak JWKS public keys.</summary>
+  <tech-spec-ref>docs/tech-spec-epic-3.md Lines 218-302, 1288-1294</tech-spec-ref>
+  <key-code>
+    - JwtValidationFilter.kt Lines 228-231: Token extraction from Authorization Bearer header
+    - Lines 304-309: validateFormat() - require 3 parts (header.payload.signature)
+    - Layer 2: RS256 signature validation via Spring Security JwtDecoder
+    - Reject HS256 (algorithm confusion prevention)
+  </key-code>
+  <testing>Unit tests with Nullable Pattern for validation logic, Integration test with real Keycloak tokens</testing>
+</story-context>

@@ -2,7 +2,10 @@ package com.axians.eaf.framework.security.config
 
 import com.axians.eaf.framework.security.InjectionDetector
 import com.axians.eaf.framework.security.config.KeycloakAdminProperties
+import com.axians.eaf.framework.security.filter.JwtValidationFilter
+import com.axians.eaf.framework.security.revocation.TokenRevocationStore
 import com.axians.eaf.framework.security.role.RoleNormalizer
+import com.axians.eaf.framework.security.user.UserDirectory
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import com.axians.eaf.framework.security.validation.JwtAudienceValidator
 import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
@@ -29,6 +32,7 @@ import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
+import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * Spring Security OAuth2 Resource Server configuration with JWT authentication.
@@ -53,20 +57,42 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableConfigurationProperties(KeycloakAdminProperties::class)
 @Profile("!test")
 open class SecurityConfiguration {
+    // Suppress VarCouldBeVal: lateinit properties must be declared as var (Kotlin language requirement)
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var keycloakConfig: KeycloakOidcConfiguration
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var roleNormalizer: RoleNormalizer
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var revocationValidator: JwtRevocationValidator
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var userValidator: JwtUserValidator
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var injectionDetector: InjectionDetector
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var tokenRevocationStore: TokenRevocationStore
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var userDirectory: UserDirectory
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var meterRegistry: MeterRegistry
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var keycloakAdminProperties: KeycloakAdminProperties
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -84,7 +110,23 @@ open class SecurityConfiguration {
                 setJwtGrantedAuthoritiesConverter { jwt -> roleNormalizer.normalize(jwt).toList() }
             }
 
+        // Story 3.9: Add comprehensive JWT validation filter with 10-layer validation
+        val jwtValidationFilter = JwtValidationFilter(
+            jwtDecoder = jwtDecoder(),
+            roleNormalizer = roleNormalizer,
+            revocationStore = tokenRevocationStore,
+            userDirectory = userDirectory,
+            injectionDetector = injectionDetector,
+            meterRegistry = meterRegistry,
+            keycloakConfig = keycloakConfig,
+            userValidationEnabled = keycloakAdminProperties.userValidationEnabled
+        )
+
         http
+            .addFilterBefore(
+                jwtValidationFilter,
+                org.springframework.security.web.authentication.www.BasicAuthenticationFilter::class.java
+            )
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/actuator/health")

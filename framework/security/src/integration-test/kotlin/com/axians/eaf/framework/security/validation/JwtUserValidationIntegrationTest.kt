@@ -15,21 +15,24 @@ import org.springframework.context.annotation.Primary
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.concurrent.atomic.AtomicReference
 
-@SpringBootTest(
-    classes = [
-        SecurityTestApplication::class,
-        JwtUserValidationIntegrationTest.StubUserDirectoryConfiguration::class,
-    ],
-)
+/**
+ * Integration test for JWT Layer 9 user validation.
+ *
+ * Validates:
+ * - AC1: Layer 9 user validation checks if user exists and is active
+ * - AC3: Invalid users are rejected with 401
+ * - AC7: User validation can be enabled via configuration
+ *
+ * Story 3.8: User Validation and Injection Detection (Layers 9-10)
+ */
+@SpringBootTest(classes = [SecurityTestApplication::class, JwtUserValidationIntegrationTest.StubUserDirectoryConfiguration::class])
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
-@TestPropertySource(properties = ["eaf.security.jwt.validate-user=true"])
 class JwtUserValidationIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -78,23 +81,28 @@ class JwtUserValidationIntegrationTest : FunSpec() {
         }
     }
 
+    @TestConfiguration
+    open class StubUserDirectoryConfiguration {
+        @Bean
+        @Primary
+        open fun stubUserDirectory(): UserDirectory = StubUserDirectory()
+    }
+
     companion object {
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
             KeycloakTestContainer.start()
 
-            registry.add("eaf.security.jwt.issuer-uri") { KeycloakTestContainer.getIssuerUri() }
-            registry.add("eaf.security.jwt.jwks-uri") { KeycloakTestContainer.getJwksUri() }
+            registry.add("eaf.security.jwt.issuer-uri") {
+                KeycloakTestContainer.getIssuerUri()
+            }
+            registry.add("eaf.security.jwt.jwks-uri") {
+                KeycloakTestContainer.getJwksUri()
+            }
             registry.add("eaf.security.jwt.audience") { "eaf-api" }
+            registry.add("eaf.keycloak.user-validation-enabled") { "true" }
         }
-    }
-
-    @TestConfiguration
-    open class StubUserDirectoryConfiguration {
-        @Bean
-        @Primary
-        open fun stubUserDirectory(): UserDirectory = StubUserDirectory()
     }
 }
 
