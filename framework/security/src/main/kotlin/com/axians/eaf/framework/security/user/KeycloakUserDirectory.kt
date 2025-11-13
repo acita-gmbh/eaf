@@ -93,6 +93,7 @@ class KeycloakUserDirectory(
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${accessToken.token}")
                 .build()
 
+        @Suppress("SwallowedException")
         return try {
             restTemplate.exchange(request, KeycloakUserRepresentation::class.java).body
         } catch (ex: HttpClientErrorException.NotFound) {
