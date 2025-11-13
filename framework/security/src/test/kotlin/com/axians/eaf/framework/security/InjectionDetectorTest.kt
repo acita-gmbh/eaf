@@ -1,6 +1,6 @@
 package com.axians.eaf.framework.security
 
-import com.axians.eaf.framework.core.common.exceptions.EafException
+import com.axians.eaf.framework.core.exceptions.EafException
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
