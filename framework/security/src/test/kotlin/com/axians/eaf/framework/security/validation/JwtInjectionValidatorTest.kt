@@ -63,7 +63,8 @@ class JwtInjectionValidatorTest :
             result.hasErrors() shouldBe true
             result.errors.first().errorCode shouldBe "invalid_request"
             result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'sub': pattern=(?i).*((--)|(;)|(\\*)|(< )|(>)|(\\|)|(\\^)).*"
+                "JWT claim contains potential injection pattern: Potential injection detected in claim 'sub': " +
+                "pattern=(?i).*((--)|(;)|(\\*)|(< )|(>)|(\\|)|(\\^)).*"
         }
 
         test("JWT with XSS injection in name claim should fail validation") {
@@ -106,7 +107,8 @@ class JwtInjectionValidatorTest :
             result.hasErrors() shouldBe true
             result.errors.first().errorCode shouldBe "invalid_request"
             result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'email': pattern=(?i).*(jndi:|ldap:|rmi:).*"
+                "JWT claim contains potential injection pattern: Potential injection detected in claim 'email': " +
+                "pattern=(?i).*(jndi:|ldap:|rmi:).*"
         }
 
         test("JWT with Expression Injection in custom claim should fail validation") {
@@ -149,7 +151,8 @@ class JwtInjectionValidatorTest :
             result.hasErrors() shouldBe true
             result.errors.first().errorCode shouldBe "invalid_request"
             result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'file_path': pattern=(?i).*(\\.\\.[\\\\/]).*"
+                "JWT claim contains potential injection pattern: Potential injection detected in claim 'file_path': " +
+                "pattern=(?i).*(\\.\\.[\\\\/]).*"
         }
 
         test("JWT with multiple injection patterns should fail on first detected pattern") {

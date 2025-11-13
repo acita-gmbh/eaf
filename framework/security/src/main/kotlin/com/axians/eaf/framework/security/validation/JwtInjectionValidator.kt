@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.security.validation
 
+import com.axians.eaf.framework.security.InjectionDetectedException
 import com.axians.eaf.framework.security.InjectionDetector
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
@@ -45,9 +46,8 @@ class JwtInjectionValidator(
             // InjectionDetector will throw InjectionDetectedException if malicious content found
             injectionDetector.scan(token.claims)
             OAuth2TokenValidatorResult.success()
-        } catch (ex: Exception) {
-            // Handle injection detection (InjectionDetectedException extends EafException)
-            // Also catch any unexpected exceptions from pattern matching for fail-safe behavior
+        } catch (ex: InjectionDetectedException) {
+            // Handle injection detection - malicious content found in JWT claims
             OAuth2TokenValidatorResult.failure(
                 OAuth2Error(
                     "invalid_request",
