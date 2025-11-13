@@ -11,6 +11,7 @@ import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -58,7 +59,7 @@ open class SecurityConfiguration {
     @Autowired
     private lateinit var roleNormalizer: RoleNormalizer
 
-    // Story 3.9: All validators autowired as @Component beans
+    // Story 3.9: Auto-configured validators (all created as @Component beans)
     @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var algorithmValidator: JwtAlgorithmValidator
@@ -73,14 +74,6 @@ open class SecurityConfiguration {
 
     @Suppress("VarCouldBeVal")
     @Autowired
-    private lateinit var issuerValidator: JwtIssuerValidator
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
-    private lateinit var audienceValidator: JwtAudienceValidator
-
-    @Suppress("VarCouldBeVal")
-    @Autowired
     private lateinit var revocationValidator: JwtRevocationValidator
 
     @Suppress("VarCouldBeVal")
@@ -90,6 +83,10 @@ open class SecurityConfiguration {
     @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var injectionValidator: JwtInjectionValidator
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var meterRegistry: MeterRegistry
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -133,6 +130,7 @@ open class SecurityConfiguration {
      * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
      * Story 3.8: Added Layers 9-10 (User Validation and Injection Detection) to validation chain.
+     * Story 3.9: Added per-layer metrics instrumentation via MeteredTokenValidator
      *
      * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces
      * RS256, and validates token timestamps
@@ -155,8 +153,8 @@ open class SecurityConfiguration {
                 algorithmValidator, // Layer 3: RS256 enforcement (reject HS256)
                 claimSchemaValidator, // Layer 4: Required claims validation
                 timeBasedValidator, // Layer 5: Enhanced time validation (iat + configurable skew)
-                issuerValidator, // Layer 6: Issuer validation
-                audienceValidator, // Layer 6: Audience validation
+                JwtIssuerValidator(keycloakConfig.issuerUri, meterRegistry), // Layer 6: Issuer validation
+                JwtAudienceValidator(keycloakConfig.audience, meterRegistry), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
                 userValidator, // Layer 9: Optional user validation (active user enforcement)
                 injectionValidator, // Layer 10: Injection detection

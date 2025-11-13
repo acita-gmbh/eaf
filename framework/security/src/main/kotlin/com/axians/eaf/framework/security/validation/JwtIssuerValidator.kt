@@ -1,20 +1,16 @@
 package com.axians.eaf.framework.security.validation
 
 import io.micrometer.core.instrument.MeterRegistry
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.stereotype.Component
 
 /**
  * Layer 6 validator – ensures JWT issuer (iss) matches the trusted Keycloak realm.
  *
  * Story 3.9: Added per-layer metrics instrumentation
  */
-@Component
 class JwtIssuerValidator(
-    @Value("\${eaf.security.keycloak.issuer-uri}")
     private val expectedIssuer: String,
     meterRegistry: MeterRegistry,
 ) : MeteredTokenValidator("layer6_issuer", meterRegistry) {
