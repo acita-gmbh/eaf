@@ -1,17 +1,24 @@
 package com.axians.eaf.framework.security.validation
 
+import io.micrometer.core.instrument.MeterRegistry
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
 
 /**
  * Layer 6 validator – ensures JWT audience includes the expected API identifier.
+ *
+ * Story 3.9: Added per-layer metrics instrumentation
  */
+@Component
 class JwtAudienceValidator(
+    @Value("\${eaf.security.keycloak.audience}")
     private val expectedAudience: String,
-) : OAuth2TokenValidator<Jwt> {
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer6_audience", meterRegistry) {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val audiences = resolveAudiences(token)
         val errorMessage =
             when {

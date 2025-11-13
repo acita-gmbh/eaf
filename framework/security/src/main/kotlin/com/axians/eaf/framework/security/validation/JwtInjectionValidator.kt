@@ -2,8 +2,8 @@ package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.InjectionDetectedException
 import com.axians.eaf.framework.security.InjectionDetector
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Component
@@ -27,11 +27,13 @@ import org.springframework.stereotype.Component
  * All string claims scanned efficiently with fail-fast behavior.
  *
  * Story 3.8: User Validation and Injection Detection (Layers 9-10)
+ * Story 3.9: Added per-layer metrics instrumentation
  */
 @Component
 class JwtInjectionValidator(
     private val injectionDetector: InjectionDetector,
-) : OAuth2TokenValidator<Jwt> {
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer10_injection_detection", meterRegistry) {
     /**
      * Validates JWT claims for injection patterns using InjectionDetector.
      *
@@ -42,7 +44,7 @@ class JwtInjectionValidator(
      * @return OAuth2TokenValidatorResult.success() if no injection detected,
      *         or failure with detailed error information.
      */
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult =
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult =
         try {
             // Scan all claims for injection patterns
             // InjectionDetector will throw InjectionDetectedException if malicious content found

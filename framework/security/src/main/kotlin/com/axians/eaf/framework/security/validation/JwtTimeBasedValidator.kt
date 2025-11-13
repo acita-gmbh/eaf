@@ -1,9 +1,10 @@
 package com.axians.eaf.framework.security.validation
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -28,11 +29,14 @@ import java.time.Instant
  * - Uses system clock by default (testable via Clock injection)
  *
  * Story 3.5: JWT Claims Schema and Time-Based Validation (Layers 3-5)
+ * Story 3.9: Added per-layer metrics instrumentation
  */
+@Component
 class JwtTimeBasedValidator(
     private val clockSkew: Duration = Duration.ofSeconds(30),
     private val clock: Clock = Clock.systemUTC(),
-) : OAuth2TokenValidator<Jwt> {
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer5_time_based", meterRegistry) {
     /**
      * Validates time-based claims (exp, iat, nbf) with clock skew tolerance.
      *
@@ -47,7 +51,7 @@ class JwtTimeBasedValidator(
      * @return An OAuth2TokenValidatorResult representing validation failure with an `invalid_token` error,
      *         or success when all time checks pass.
      */
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val now = Instant.now(clock)
 
         val error =
