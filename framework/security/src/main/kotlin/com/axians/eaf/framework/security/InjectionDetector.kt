@@ -9,33 +9,33 @@ class InjectionDetector {
         // SQL Injection patterns (refined to reduce false positives)
         private val sqlPatterns =
             listOf(
-                "(?i).*((\\\\-\\\\-)|(;)|(\\\\*)|(<)|(>)|(\\|)|(\\\\^)).*",
-                "(?i).*(union|select|insert|update|delete|drop|create|alter).*",
-            ).map { it.toRegex() }
+                Regex("(?i).*((--)|(;)|(\\*)|(< )|(>)|(\\|)|(\\^)).*"),
+                Regex("(?i).*(union|select|insert|update|delete|drop|create|alter).*"),
+            )
 
         // XSS patterns
         private val xssPatterns =
             listOf(
-                "(?i).*(<script|javascript:|onerror=|onload=).*",
-            ).map { it.toRegex() }
+                Regex("(?i).*(<script|javascript:|onerror=|onload=).*"),
+            )
 
         // JNDI Injection patterns
         private val jndiPatterns =
             listOf(
-                "(?i).*(jndi:|ldap:|rmi:).*",
-            ).map { it.toRegex() }
+                Regex("(?i).*(jndi:|ldap:|rmi:).*"),
+            )
 
         // ✅ CRITICAL: Expression Injection (from architecture.md)
         private val expressionInjectionPatterns =
             listOf(
-                "(?i).*(\\\$\\\\{.*\\\\}).*", // ${...} patterns (Log4Shell-style)
-            ).map { it.toRegex() }
+                Regex("(?i).*\\$\\{.*}"), // ${...} patterns (Log4Shell-style)
+            )
 
         // ✅ CRITICAL: Path Traversal (from architecture.md)
         private val pathTraversalPatterns =
             listOf(
-                "(?i).*(\\\\.\\\\.[\\\\\\\\/]).*", // ../ or ..\
-            ).map { it.toRegex() }
+                Regex("(?i).*(\\.\\.[\\\\/]).*"), // ../ or ..\
+            )
 
         // All patterns combined (compiled once for performance)
         private val allPatterns =
