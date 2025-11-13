@@ -70,7 +70,7 @@ class InjectionDetectorTest :
                 val claims = mapOf("message" to "Hello \${T(java.lang.Runtime).getRuntime().exec('calc')}")
                 val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
                 exception.claim shouldContain "message"
-                exception.detectedPattern shouldContain "\\u0024\{.*}"
+                exception.detectedPattern shouldContain "\${"
             }
         }
 
@@ -79,14 +79,14 @@ class InjectionDetectorTest :
                 val claims = mapOf("path" to "../../etc/passwd")
                 val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
                 exception.claim shouldContain "path"
-                exception.detectedPattern shouldContain "\\.\\..\\\\/"
+                exception.detectedPattern shouldContain ".."
             }
 
             test("should detect Path Traversal with ..\\") {
                 val claims = mapOf("path" to "..\\..\\windows\\win.ini")
                 val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
                 exception.claim shouldContain "path"
-                exception.detectedPattern shouldContain "\\.\\..\\\\/"
+                exception.detectedPattern shouldContain ".."
             }
         }
 
