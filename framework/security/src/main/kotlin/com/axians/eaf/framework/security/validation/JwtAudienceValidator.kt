@@ -48,6 +48,5 @@ private fun resolveAudiences(token: Jwt): List<String> {
 
     return propertyAudiences
         ?: claimAudiences
-        ?: authorizedParty
-        ?: emptyList()
+        ?: authorizedParty.orEmpty()
 }

@@ -49,8 +49,9 @@ class KeycloakJwksProvider(
         val now = Instant.now()
 
         // Return cached JWK Set if still valid
-        if (cachedJwkSet != null && cacheExpiry != null && now.isBefore(cacheExpiry)) {
-            return cachedJwkSet!!
+        val cached = cachedJwkSet
+        if (cached != null && cacheExpiry != null && now.isBefore(cacheExpiry)) {
+            return cached
         }
 
         // Fetch fresh JWK Set from Keycloak

@@ -1,13 +1,18 @@
 package com.axians.eaf.framework.security.config
 
+import com.axians.eaf.framework.security.InjectionDetector
 import com.axians.eaf.framework.security.role.RoleNormalizer
+import com.axians.eaf.framework.security.user.UserDirectory
 import com.axians.eaf.framework.security.validation.JwtAlgorithmValidator
 import com.axians.eaf.framework.security.validation.JwtAudienceValidator
 import com.axians.eaf.framework.security.validation.JwtClaimSchemaValidator
+import com.axians.eaf.framework.security.validation.JwtInjectionValidator
 import com.axians.eaf.framework.security.validation.JwtIssuerValidator
 import com.axians.eaf.framework.security.validation.JwtRevocationValidator
 import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
+import com.axians.eaf.framework.security.validation.JwtUserValidator
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -44,14 +49,27 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableMethodSecurity(prePostEnabled = true)
 @Profile("!test")
 open class SecurityConfiguration {
+    // Suppress VarCouldBeVal: lateinit properties must be declared as var (Kotlin language requirement)
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var keycloakConfig: KeycloakOidcConfiguration
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var roleNormalizer: RoleNormalizer
 
+    @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var revocationValidator: JwtRevocationValidator
+
+    // Story 3.8: Layer 9+10 validator dependencies
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var userValidator: JwtUserValidator
+
+    @Suppress("VarCouldBeVal")
+    @Autowired
+    private lateinit var injectionValidator: JwtInjectionValidator
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -94,6 +112,8 @@ open class SecurityConfiguration {
      * Validates signatures using keys obtained from keycloakConfig.jwksUri, enforces the RS256
      * signing algorithm, and validates standard timestamp claims (`exp`, `iat`, `nbf`).
      *
+     * Story 3.8: Added Layers 9-10 (User Validation and Injection Detection) to validation chain.
+     *
      * @return a JwtDecoder which verifies signatures with the Keycloak JWKS endpoint, enforces
      * RS256, and validates token timestamps
      */
@@ -104,7 +124,7 @@ open class SecurityConfiguration {
                 .withJwkSetUri(keycloakConfig.jwksUri)
                 .build()
 
-        // Story 3.5 & 3.7: Add explicit validators for Layers 3-7
+        // Story 3.5, 3.7 & 3.8: Add explicit validators for Layers 3-10
         // Compose with Spring Security defaults for defense-in-depth
         // Note: createDefault() already includes JwtTimestampValidator (exp, nbf validation)
         // Our JwtTimeBasedValidator extends this with iat validation and configurable clock skew
@@ -118,6 +138,8 @@ open class SecurityConfiguration {
                 JwtIssuerValidator(keycloakConfig.issuerUri), // Layer 6: Issuer validation
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
+                userValidator, // Layer 9: Optional user validation (active user enforcement)
+                injectionValidator, // Layer 10: Injection detection
             )
 
         decoder.setJwtValidator(customValidators)

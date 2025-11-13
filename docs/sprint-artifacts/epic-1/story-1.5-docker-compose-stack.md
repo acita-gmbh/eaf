@@ -8,7 +8,7 @@
 ## Dev Agent Record
 
 **Context Reference:**
-- [Story Context XML](./1-5-docker-compose-stack.context.xml) - Generated 2025-11-02
+- [Story Context XML](1-5-docker-compose-stack.context.xml) - Generated 2025-11-02
 
 **Debug Log:**
 - Implemented docker-compose.yml with all 5 services (PostgreSQL 16.10, Keycloak 26.4.2, Redis 7.2, Prometheus latest, Grafana 12.2.0)
