@@ -3,6 +3,7 @@ package com.axians.eaf.framework.security.validation
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Clock
 import java.time.Duration
@@ -24,7 +25,7 @@ class JwtTimeBasedValidatorTest :
         val clockSkew = Duration.ofSeconds(30)
 
         test("valid JWT with exp in future should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600), // 1 hour from now
@@ -37,7 +38,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("expired JWT beyond clock skew should fail validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.minusSeconds(31), // Expired 31 seconds ago (beyond 30s skew)
@@ -52,7 +53,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("expired JWT within clock skew should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.minusSeconds(29), // Expired 29 seconds ago (within 30s skew)
@@ -65,7 +66,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT issued in future beyond clock skew should fail validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -80,7 +81,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT issued in future within clock skew should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -93,7 +94,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT with nbf in future beyond clock skew should fail validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -109,7 +110,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT with nbf in future within clock skew should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -123,7 +124,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT with nbf in past should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -137,7 +138,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT without nbf claim should pass validation") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -151,7 +152,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT without exp claim should pass validation (optional claim)") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = null,
@@ -164,7 +165,7 @@ class JwtTimeBasedValidatorTest :
         }
 
         test("JWT without iat claim should pass validation (optional claim)") {
-            val validator = JwtTimeBasedValidator(clockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(clockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.plusSeconds(3600),
@@ -178,7 +179,7 @@ class JwtTimeBasedValidatorTest :
 
         test("custom clock skew duration should be respected") {
             val customClockSkew = Duration.ofSeconds(60)
-            val validator = JwtTimeBasedValidator(customClockSkew, fixedClock)
+            val validator = JwtTimeBasedValidator(customClockSkew, fixedClock, SimpleMeterRegistry())
             val jwt =
                 createJwt(
                     exp = fixedInstant.minusSeconds(59), // Expired 59 seconds ago (within 60s skew)

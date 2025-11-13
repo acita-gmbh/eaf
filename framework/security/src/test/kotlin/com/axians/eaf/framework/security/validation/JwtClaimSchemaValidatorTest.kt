@@ -2,6 +2,7 @@ package com.axians.eaf.framework.security.validation
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
@@ -20,7 +21,7 @@ import java.time.Instant
  */
 class JwtClaimSchemaValidatorTest :
     FunSpec({
-        val validator = JwtClaimSchemaValidator()
+        val validator = JwtClaimSchemaValidator(SimpleMeterRegistry())
 
         test("valid JWT with all required claims should pass validation") {
             val jwt =

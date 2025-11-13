@@ -3,6 +3,7 @@ package com.axians.eaf.framework.security.validation
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
@@ -22,7 +23,7 @@ import java.time.Instant
  */
 class JwtAlgorithmValidatorTest :
     FunSpec({
-        val validator = JwtAlgorithmValidator()
+        val validator = JwtAlgorithmValidator(SimpleMeterRegistry())
 
         /**
          * Creates a test JWT with specified algorithm header.
