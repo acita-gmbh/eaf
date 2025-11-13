@@ -31,7 +31,7 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/core/agents/bmad-master - bmad-master
 
 **Tasks:**
-- @bmad/core/tasks/adv-elicit - adv-elicit
+- @bmad/core/tasks/advanced-elicitation - advanced-elicitation
 - @bmad/core/tasks/index-docs - index-docs
 
 **Tools:**

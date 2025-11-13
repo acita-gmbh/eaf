@@ -10,7 +10,7 @@ description: "Interactive product brief creation workflow that guides users thro
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -27,20 +27,24 @@ recommended_inputs:
 
 # Smart input file references - handles both whole docs and sharded docs
 # Priority: Whole document first, then sharded version
+# Strategy: How to load sharded documents (FULL_LOAD, SELECTIVE_LOAD, INDEX_GUIDED)
 input_file_patterns:
   research:
     whole: "{output_folder}/*research*.md"
     sharded: "{output_folder}/*research*/index.md"
+    load_strategy: "FULL_LOAD"
 
   brainstorming:
     whole: "{output_folder}/*brainstorm*.md"
     sharded: "{output_folder}/*brainstorm*/index.md"
+    load_strategy: "FULL_LOAD"
 
   document_project:
     sharded: "{output_folder}/docs/index.md"
+    load_strategy: "INDEX_GUIDED"
 
 # Module path and component files
-installed_path: "{project-root}/bmad/bmm/workflows/1-analysis/product-brief"
+installed_path: "{project-root}/.bmad/bmm/workflows/1-analysis/product-brief"
 template: "{installed_path}/template.md"
 instructions: "{installed_path}/instructions.md"
 validation: "{installed_path}/checklist.md"

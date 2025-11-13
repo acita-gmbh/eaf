@@ -4,7 +4,7 @@ When this command is used, execute the following task:
 
 ## Index Docs Task
 
-<task id="bmad/core/tasks/index-docs" name="Index Docs"
+<task id=".bmad/core/tasks/index-docs" name="Index Docs"
   description="Generates or updates an index.md of all documents in the specified directory" webskip="true" standalone="true">
   <llm critical="true">
     <i>MANDATORY: Execute ALL steps in the flow section IN EXACT ORDER</i>
