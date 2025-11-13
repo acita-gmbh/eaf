@@ -64,7 +64,7 @@ class JwtInjectionValidatorTest :
             result.errors.first().errorCode shouldBe "invalid_request"
             result.errors.first().description shouldBe
                 "JWT claim contains potential injection pattern: Potential injection detected in claim 'sub': " +
-                "pattern=(?i).*((--)|(;)|(\\*)|(< )|(>)|(\\|)|(\\^)).*"
+                "pattern=(?i).*(--).*"
         }
 
         test("JWT with XSS injection in name claim should fail validation") {
@@ -152,7 +152,7 @@ class JwtInjectionValidatorTest :
             result.errors.first().errorCode shouldBe "invalid_request"
             result.errors.first().description shouldBe
                 "JWT claim contains potential injection pattern: Potential injection detected in claim 'file_path': " +
-                "pattern=(?i).*(\\.\\.[\\\\/]).*"
+                "pattern=.*(\\.\\.[\\\\/]).*"
         }
 
         test("JWT with multiple injection patterns should fail on first detected pattern") {
@@ -174,7 +174,7 @@ class JwtInjectionValidatorTest :
             val result = validator.validate(jwt)
 
             result.hasErrors() shouldBe true
-            // Should fail on the first detected pattern (name claim matches SQL pattern due to ">")
+            // Should fail on the first detected pattern (name claim matches XSS pattern due to "<script>")
             result.errors
                 .first()
                 .description
@@ -182,7 +182,7 @@ class JwtInjectionValidatorTest :
             result.errors
                 .first()
                 .description
-                .contains(">") shouldBe true
+                .contains("<script") shouldBe true
         }
 
         test("JWT with non-string claims should be ignored by injection detection") {

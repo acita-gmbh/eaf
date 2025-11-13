@@ -9,8 +9,10 @@ class InjectionDetector {
         // SQL Injection patterns (refined to reduce false positives)
         private val sqlPatterns =
             listOf(
-                Regex("(?i).*((--)|(;)|(\\*)|(< )|(>)|(\\|)|(\\^)).*"),
-                Regex("(?i).*(union|select|insert|update|delete|drop|create|alter).*"),
+                Regex("(?i).*(--).*"), // SQL comment
+                Regex("(?i).*(;\\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE)).*"), // Dangerous SQL
+                Regex("(?i).*(UNION\\s+SELECT).*"), // UNION injection
+                Regex("(?i).*(OR\\s+['\"]?1['\"]?\\s*=\\s*['\"]?1).*"), // Tautology injection
             )
 
         // XSS patterns
@@ -28,13 +30,13 @@ class InjectionDetector {
         // ✅ CRITICAL: Expression Injection (from architecture.md)
         private val expressionInjectionPatterns =
             listOf(
-                Regex("(?i).*\\$\\{.*}"), // ${...} patterns (Log4Shell-style)
+                Regex(".*\\$\\{.*}"), // ${...} patterns (Log4Shell-style)
             )
 
         // ✅ CRITICAL: Path Traversal (from architecture.md)
         private val pathTraversalPatterns =
             listOf(
-                Regex("(?i).*(\\.\\.[\\\\/]).*"), // ../ or ..\
+                Regex(".*(\\.\\.[\\\\/]).*"), // ../ or ..\
             )
 
         // All patterns combined (compiled once for performance)

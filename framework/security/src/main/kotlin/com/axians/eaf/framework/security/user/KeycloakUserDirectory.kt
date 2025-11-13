@@ -103,7 +103,7 @@ class KeycloakUserDirectory(
             throw UserValidationException("Keycloak user lookup failed with status ${ex.statusCode.value()}", ex)
         } catch (ex: RestClientException) {
             log.warn("Keycloak user lookup failed", ex)
-            throw ex
+            throw UserValidationException("Keycloak user lookup failed", ex)
         }
     }
 

@@ -6,6 +6,7 @@ import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
 
 /**
  * JWT Injection Detection Validator - Scans JWT claims for malicious injection patterns.
@@ -27,6 +28,7 @@ import org.springframework.security.oauth2.jwt.Jwt
  *
  * Story 3.8: User Validation and Injection Detection (Layers 9-10)
  */
+@Component
 class JwtInjectionValidator(
     private val injectionDetector: InjectionDetector,
 ) : OAuth2TokenValidator<Jwt> {

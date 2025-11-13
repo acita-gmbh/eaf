@@ -69,7 +69,7 @@ open class SecurityConfiguration {
 
     @Suppress("VarCouldBeVal")
     @Autowired
-    private lateinit var injectionDetector: InjectionDetector
+    private lateinit var injectionValidator: JwtInjectionValidator
 
     /**
      * Configures the application's HTTP security filter chain.
@@ -139,7 +139,7 @@ open class SecurityConfiguration {
                 JwtAudienceValidator(keycloakConfig.audience), // Layer 6: Audience validation
                 revocationValidator, // Layer 7: Redis revocation cache enforcement
                 userValidator, // Layer 9: Optional user validation (active user enforcement)
-                JwtInjectionValidator(injectionDetector), // Layer 10: Injection detection
+                injectionValidator, // Layer 10: Injection detection
             )
 
         decoder.setJwtValidator(customValidators)
