@@ -43,7 +43,11 @@ abstract class MeteredTokenValidator(
             }
 
             result
-        } catch (ex: Exception) {
+        } catch (
+            // LEGITIMATE: Observability only, re-throws immediately
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
             sample.stop(durationTimer)
             recordFailure(meterRegistry, ex.javaClass.simpleName)
             throw ex

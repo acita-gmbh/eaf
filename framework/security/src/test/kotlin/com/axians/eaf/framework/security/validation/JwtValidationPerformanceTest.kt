@@ -59,7 +59,6 @@ class JwtValidationPerformanceTest :
             }
 
         val mockConfig = KeycloakOidcConfiguration(validateUser = false)
-        val roleNormalizer = RoleNormalizer(mockConfig)
         val injectionDetector = InjectionDetector()
 
         // Create all validators for per-layer testing
