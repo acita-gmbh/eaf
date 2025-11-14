@@ -87,3 +87,13 @@ jooq {
         }
     }
 }
+
+// ============================================================================
+// Performance-Critical Test Configuration
+// ============================================================================
+// Persistence tests validate event store performance (<200ms with 100K events)
+// Parallel test execution increases disk I/O contention → invalidates performance measurements
+// Solution: Run all persistence tests sequentially for accurate performance validation
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 1 // Sequential execution for accurate event store performance measurements
+}
