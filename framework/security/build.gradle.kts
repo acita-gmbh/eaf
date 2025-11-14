@@ -10,38 +10,52 @@ description = "EAF Security Framework - 10-layer JWT validation and tenant isola
 // ============================================================================
 // Story 8.6: Multi-Stage Testing - Property Test and Fuzz Test Source Sets
 // ============================================================================
-sourceSets {
-    create("propertyTest") {
-        compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-        runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-        java.srcDir("src/propertyTest/java")
-        kotlin.srcDir("src/propertyTest/kotlin")
-        resources.srcDir("src/propertyTest/resources")
+// CRITICAL: Only create these source-sets for Nightly builds to avoid CI overhead
+val isNightlyBuild = project.hasProperty("nightlyBuild")
+
+if (isNightlyBuild) {
+    // CRITICAL: Configuration cache compatibility - lazy evaluation with afterEvaluate
+    afterEvaluate {
+        val mainOutput = sourceSets.main.get().output
+        val testOutput = sourceSets.test.get().output
+        val integrationTestOutput = sourceSets.getByName("integrationTest").output
+
+        sourceSets {
+            named("propertyTest") {
+                compileClasspath += mainOutput + testOutput
+                runtimeClasspath += mainOutput + testOutput
+            }
+
+            named("fuzzTest") {
+                compileClasspath += mainOutput + testOutput
+                runtimeClasspath += mainOutput + testOutput
+            }
+
+            // perfTest source-set (created by eaf.testing convention plugin) needs integrationTest source-set access
+            // SecurityTestApplication is in integrationTest, not test
+            named("perfTest") {
+                compileClasspath += integrationTestOutput
+                runtimeClasspath += integrationTestOutput
+            }
+        }
     }
+}
 
-    create("fuzzTest") {
-        compileClasspath += sourceSets.main.get().output
-        runtimeClasspath += sourceSets.main.get().output
-        java.srcDir("src/fuzzTest/java")
-        kotlin.srcDir("src/fuzzTest/kotlin")
-        resources.srcDir("src/fuzzTest/resources")
+// Source directories defined immediately (not deferred) - only for Nightly builds
+if (isNightlyBuild) {
+    sourceSets {
+        create("propertyTest") {
+            java.srcDir("src/propertyTest/java")
+            kotlin.srcDir("src/propertyTest/kotlin")
+            resources.srcDir("src/propertyTest/resources")
+        }
+
+        create("fuzzTest") {
+            java.srcDir("src/fuzzTest/java")
+            kotlin.srcDir("src/fuzzTest/kotlin")
+            resources.srcDir("src/fuzzTest/resources")
+        }
     }
-}
-
-// Property test dependencies extend from test dependencies
-val propertyTestImplementation by configurations.getting {
-    extendsFrom(configurations.testImplementation.get())
-}
-val propertyTestRuntimeOnly by configurations.getting {
-    extendsFrom(configurations.testRuntimeOnly.get())
-}
-
-// Fuzz test dependencies
-val fuzzTestImplementation by configurations.getting {
-    extendsFrom(configurations.testImplementation.get())
-}
-val fuzzTestRuntimeOnly by configurations.getting {
-    extendsFrom(configurations.testRuntimeOnly.get())
 }
 
 dependencies {
@@ -71,12 +85,6 @@ dependencies {
     testImplementation(project(":shared:testing"))
     integrationTestImplementation(project(":shared:testing"))
 
-    // Performance test dependencies (same as integration tests)
-    perfTestImplementation(libs.bundles.kotest)
-    perfTestImplementation(libs.spring.boot.starter.test)
-    perfTestImplementation(libs.bundles.testcontainers)
-    perfTestImplementation(project(":shared:testing"))
-
     // Ensure only JUnit 5 for Pitest
     configurations.named("testRuntimeClasspath") {
         exclude(group = "junit", module = "junit")
@@ -88,103 +96,105 @@ dependencies {
     integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(libs.spring.security.test)
     integrationTestImplementation(libs.spring.boot.starter.test)
+}
 
-    // Story 8.6: Fuzz testing with Jazzer (Google OSS-Fuzz standard)
-    fuzzTestImplementation(libs.jazzer.junit)
-    fuzzTestImplementation(libs.jazzer.api)
+// Property test, fuzz test, and performance test dependencies - only for Nightly builds
+if (isNightlyBuild) {
+    configurations.named("propertyTestImplementation") {
+        extendsFrom(configurations.testImplementation.get())
+    }
+    configurations.named("propertyTestRuntimeOnly") {
+        extendsFrom(configurations.testRuntimeOnly.get())
+    }
+
+    configurations.named("fuzzTestImplementation") {
+        extendsFrom(configurations.testImplementation.get())
+    }
+    configurations.named("fuzzTestRuntimeOnly") {
+        extendsFrom(configurations.testRuntimeOnly.get())
+    }
+
+    dependencies {
+        // Story 8.6: Fuzz testing with Jazzer (Google OSS-Fuzz standard)
+        "fuzzTestImplementation"(libs.jazzer.junit)
+        "fuzzTestImplementation"(libs.jazzer.api)
+
+        // Performance test dependencies (same as integration tests)
+        "perfTestImplementation"(libs.bundles.kotest)
+        "perfTestImplementation"(libs.spring.boot.starter.test)
+        "perfTestImplementation"(libs.bundles.testcontainers)
+        // Required for @Testcontainers, @Container annotations
+        "perfTestImplementation"(libs.testcontainers.junit.jupiter)
+        "perfTestImplementation"(project(":shared:testing"))
+    }
 }
 
 // ============================================================================
 // Story 8.6: Multi-Stage Testing - Property Test and Fuzz Test Tasks
 // ============================================================================
-val propertyTest =
-    tasks.register<Test>("propertyTest") {
-        group = "verification"
-        description = "Runs property-based tests (nightly/main branch only)"
-        testClassesDirs = sourceSets["propertyTest"].output.classesDirs
-        classpath = sourceSets["propertyTest"].runtimeClasspath
-        useJUnitPlatform {
-            // Only run tests tagged with @PBT
-            includeTags("PBT")
+// CRITICAL: Only register tasks for Nightly builds to avoid CI overhead
+if (isNightlyBuild) {
+    // Helper function to determine if nightly-only tests should run
+    fun shouldRunNightlyTest(taskName: String): Boolean =
+        project.hasProperty("nightlyBuild") ||
+            project.gradle.startParameter.taskNames
+                .any { it.substringAfterLast(':') == taskName }
+
+    afterEvaluate {
+        tasks.register<Test>("propertyTest") {
+            group = "verification"
+            description = "Runs property-based tests (nightly/main branch only)"
+            testClassesDirs = sourceSets["propertyTest"].output.classesDirs
+            classpath = sourceSets["propertyTest"].runtimeClasspath
+            useJUnitPlatform {
+                // Only run tests tagged with @PBT
+                includeTags("PBT")
+            }
+            // Nightly-only execution
+            onlyIf { shouldRunNightlyTest("propertyTest") }
+        }
+
+        tasks.register<Test>("fuzzTest") {
+            group = "verification"
+            description = "Runs Jazzer fuzz tests (nightly/security validation)"
+            testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
+            classpath = sourceSets["fuzzTest"].runtimeClasspath
+            useJUnitPlatform()
+
+            // Story 8.8: Jazzer corpus and fuzzing configuration
+            // CRITICAL LIMITATION: Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest
+            // per invocation. Even filtering by class runs only 1 method from that class!
+            // WORKAROUND: GitHub Actions workflow invokes this task 7 times (once per method)
+            // Total: 7 methods × 5min = ~35-40 minutes with Gradle overhead
+
+            // Configure Jazzer for fuzzing mode (not just test mode)
+            systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
+            environment("JAZZER_FUZZ", "1")
+
+            // Story 8.8: Jazzer time limits (EMPIRICAL FINDINGS)
+            // DISCOVERY: System properties are NOT read by Jazzer 0.24.0
+            // PROVEN: Only @FuzzTest annotation maxDuration parameter controls duration
+            // LIMITATION: Annotation values cannot be overridden at runtime
+
+            // Nightly-only execution
+            onlyIf { shouldRunNightlyTest("fuzzTest") }
+        }
+
+        // Exclude PBT from default test task (fast feedback loop)
+        tasks.named<Test>("test") {
+            useJUnitPlatform {
+                excludeTags("PBT")
+            }
+        }
+
+        // Story 8.7: Prevent Kover from triggering nightly-only test tasks
+        tasks.named("koverXmlReport") {
+            mustRunAfter("propertyTest", "fuzzTest")
+        }
+        tasks.named("koverVerify") {
+            mustRunAfter("propertyTest", "fuzzTest")
         }
     }
-
-val fuzzTest =
-    tasks.register<Test>("fuzzTest") {
-        group = "verification"
-        description = "Runs Jazzer fuzz tests (nightly/security validation)"
-        testClassesDirs = sourceSets["fuzzTest"].output.classesDirs
-        classpath = sourceSets["fuzzTest"].runtimeClasspath
-        useJUnitPlatform()
-
-        // Story 8.8: Jazzer corpus and fuzzing configuration
-        // CRITICAL LIMITATION: Jazzer 0.24.0 with JAZZER_FUZZ=1 runs ONLY ONE @FuzzTest per invocation
-        //                      Even filtering by class (--tests "...ClassName") runs only 1 method from that class!
-        // WORKAROUND: GitHub Actions workflow invokes this task 7 times (once per @FuzzTest method):
-        //             1. JwtFormatFuzzer.fuzzJwtBasicFormatValidation (5min)
-        //             2. TokenExtractorFuzzer.fuzzTokenExtraction (5min)
-        //             3. TokenExtractorFuzzer.fuzzTokenExtractionWithNull (5min)
-        //             4. RoleNormalizationFuzzer.fuzzRoleNormalization (5min)
-        //             5. RoleNormalizationFuzzer.fuzzRoleNormalizationWithNull (5min)
-        //             6. RoleNormalizationFuzzer.fuzzRoleNormalizationInjectionPatterns (5min)
-        //             7. RoleNormalizationFuzzer.fuzzRoleNormalizationUnicodeAttacks (5min)
-        //             Total: 7 methods × 5min = ~35-40 minutes with Gradle overhead
-        // CORPUS DIRECTORY: Jazzer uses .cifuzz-corpus/<package>/<class>/<method>/ (cannot be overridden)
-        // CORPUS CACHING: GitHub Actions caches with run_id-based keys for incremental fuzzing
-
-        // Configure Jazzer for fuzzing mode (not just test mode)
-        systemProperty("jazzer.instrumentation_includes", "com.axians.eaf.**")
-        environment("JAZZER_FUZZ", "1")
-
-        // Story 8.8: Jazzer time limits (EMPIRICAL FINDINGS)
-        // DISCOVERY: System properties (jazzer.max_duration, jazzer.max_total_time, jazzer.flags)
-        //            are NOT read by Jazzer 0.24.0 in JUnit integration mode
-        // PROVEN: Only @FuzzTest annotation maxDuration parameter controls fuzzing duration
-        // LIMITATION: Annotation values are static - cannot be overridden at runtime via -D flags
-        // SOLUTION: Rely on @FuzzTest annotation defaults (5m per test) + GitHub Actions timeout (50m)
-        // VALIDATION: Empirical tests confirmed:
-        //   - @FuzzTest(maxDuration="15s") → stopped at 16s ✅
-        //   - @FuzzTest default "5m" → stopped at 301s ✅
-        //   - Property jazzer.max_duration=20s → ignored, ran until Gradle timeout ❌
-        //   - JAZZER_FUZZ=1 → only ONE @FuzzTest executes per invocation (even within same class) ✅
-        // See: .ai/jazzer-flags-research-prompt.md for multi-agent research findings
-        // See: https://github.com/CodeIntelligenceTesting/jazzer/issues/599 (Jazzer design limitation)
-        // See: Empirical validation from nightly runs #18453404174 (3/7 tests ran when filtering by class)
-    }
-
-// Exclude PBT from default test task (fast feedback loop)
-tasks.named<Test>("test") {
-    useJUnitPlatform {
-        excludeTags("PBT")
-    }
-}
-
-// Story 8.7: Exclude advanced tests from Kover coverage in CI
-// propertyTest and fuzzTest should ONLY run in nightly pipeline, not PR pipeline
-// Kover automatically depends on ALL Test tasks - we must explicitly exclude nightly-only tests
-tasks.named("koverXmlReport") {
-    // Prevent Kover from triggering nightly-only test tasks during CI
-    mustRunAfter("propertyTest", "fuzzTest")
-}
-tasks.named("koverVerify") {
-    // Prevent Kover from triggering nightly-only test tasks during CI
-    mustRunAfter("propertyTest", "fuzzTest")
-}
-
-// Helper function to determine if nightly-only tests should run
-// Handles both bare task names ("propertyTest") and qualified paths (":framework:security:propertyTest")
-// Returns true when: (1) nightlyBuild property set, OR (2) task explicitly requested by developer
-fun shouldRunNightlyTest(taskName: String): Boolean =
-    project.hasProperty("nightlyBuild") ||
-        project.gradle.startParameter.taskNames
-            .any { it.substringAfterLast(':') == taskName }
-
-// Explicitly mark nightly-only tests to not run automatically
-tasks.named("propertyTest") {
-    onlyIf { shouldRunNightlyTest("propertyTest") }
-}
-tasks.named("fuzzTest") {
-    onlyIf { shouldRunNightlyTest("fuzzTest") }
 }
 
 // Pitest configuration - override targetClasses and configure for Kotest

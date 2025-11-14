@@ -25,6 +25,24 @@ sourceSets {
     }
 }
 
+// CRITICAL: Only configure perfTest for Nightly builds to avoid CI overhead
+val isNightlyBuild = project.hasProperty("nightlyBuild")
+
+if (isNightlyBuild) {
+    // CRITICAL: Configuration cache compatibility - lazy evaluation with afterEvaluate
+    afterEvaluate {
+        val testOutput = sourceSets.test.get().output
+
+        sourceSets {
+            // perfTest source-set (created by eaf.testing convention plugin) needs test source-set access
+            named("perfTest") {
+                compileClasspath += testOutput
+                runtimeClasspath += testOutput
+            }
+        }
+    }
+}
+
 dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:cqrs"))
@@ -55,16 +73,22 @@ dependencies {
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.spring.boot.starter.test)
 
-    // Performance test dependencies (same as integration tests)
-    perfTestImplementation(libs.bundles.kotest)
-    perfTestImplementation(libs.spring.boot.starter.test)
-    perfTestImplementation(libs.bundles.testcontainers)
-    perfTestImplementation(project(":framework:cqrs"))
-    perfTestImplementation(project(":shared:testing"))
-
     // jOOQ code generation dependencies
     jooqCodegen(libs.postgresql)
     jooqCodegen(libs.jooq.codegen)
+}
+
+// Performance test dependencies - only for Nightly builds
+if (isNightlyBuild) {
+    dependencies {
+        "perfTestImplementation"(libs.bundles.kotest)
+        "perfTestImplementation"(libs.spring.boot.starter.test)
+        "perfTestImplementation"(libs.bundles.testcontainers)
+        // Required for @Testcontainers, @Container annotations
+        "perfTestImplementation"(libs.testcontainers.junit.jupiter)
+        "perfTestImplementation"(project(":framework:cqrs"))
+        "perfTestImplementation"(project(":shared:testing"))
+    }
 }
 
 // jOOQ Code Generation Configuration

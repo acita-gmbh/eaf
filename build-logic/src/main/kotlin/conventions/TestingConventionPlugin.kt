@@ -90,13 +90,24 @@ class TestingConventionPlugin : Plugin<Project> {
                     java.srcDirs("src/konsist-test/kotlin")
                 }
 
-            // Story 8.3: Create dedicated performance test source set
-            val perfTest =
-                sourceSets.create("perfTest") {
-                    compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
-                    runtimeClasspath += output + compileClasspath
-                    java.srcDirs("src/perf-test/kotlin")
+            // Story 8.3: Create dedicated performance test source set - ONLY for Nightly builds
+            val isNightlyBuild = project.hasProperty("nightlyBuild")
+
+            if (isNightlyBuild) {
+                val perfTest =
+                    sourceSets.create("perfTest") {
+                        compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
+                        runtimeClasspath += output + compileClasspath
+                        java.srcDirs("src/perf-test/kotlin")
+                    }
+
+                configurations.named("perfTestImplementation") {
+                    extendsFrom(configurations.getByName("testImplementation"))
                 }
+                configurations.named("perfTestRuntimeOnly") {
+                    extendsFrom(configurations.getByName("testRuntimeOnly"))
+                }
+            }
 
             configurations.named("integrationTestImplementation") {
                 extendsFrom(configurations.getByName("testImplementation"))
@@ -106,12 +117,6 @@ class TestingConventionPlugin : Plugin<Project> {
             }
             configurations.named("konsistTestImplementation") {
                 extendsFrom(configurations.getByName("testImplementation"))
-            }
-            configurations.named("perfTestImplementation") {
-                extendsFrom(configurations.getByName("testImplementation"))
-            }
-            configurations.named("perfTestRuntimeOnly") {
-                extendsFrom(configurations.getByName("testRuntimeOnly"))
             }
             configurations.named("konsistTestRuntimeOnly") {
                 extendsFrom(configurations.getByName("testRuntimeOnly"))
@@ -190,27 +195,29 @@ class TestingConventionPlugin : Plugin<Project> {
                     ),
                 )
 
-                // Story 8.3: Performance test dependencies (similar to integration tests)
-                DependencyHandlerScope_addAll(
-                    "perfTestImplementation",
-                    listOf(
-                        "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-runner-junit5-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
-                        "kotest-extensions-testcontainers",
-                        "testcontainers-postgresql",
-                        "spring-boot-starter-security",
-                    ),
-                )
+                // Story 8.3: Performance test dependencies (similar to integration tests) - ONLY for Nightly builds
+                if (isNightlyBuild) {
+                    DependencyHandlerScope_addAll(
+                        "perfTestImplementation",
+                        listOf(
+                            "kotlin-test",
+                            "kotest-framework-engine-jvm",
+                            "kotest-runner-junit5-jvm",
+                            "kotest-assertions-core-jvm",
+                            "kotest-property-jvm",
+                            "kotest-extensions-spring",
+                            "kotest-extensions-testcontainers",
+                            "testcontainers-postgresql",
+                            "spring-boot-starter-security",
+                        ),
+                    )
 
-                add("perfTestImplementation", platform("${testcontainersBom.module}:${testcontainersBom.version}"))
+                    add("perfTestImplementation", platform("${testcontainersBom.module}:${testcontainersBom.version}"))
 
-                if (sharedTestingProject != null) {
-                    add("perfTestImplementation", sharedTestingProject)
-                    add("perfTestRuntimeOnly", sharedTestingProject)
+                    if (sharedTestingProject != null) {
+                        add("perfTestImplementation", sharedTestingProject)
+                        add("perfTestRuntimeOnly", sharedTestingProject)
+                    }
                 }
             }
 
@@ -266,35 +273,38 @@ class TestingConventionPlugin : Plugin<Project> {
                     shouldRunAfter(tasks.named("jvmKotest"))
                 }
 
-            // Story 8.3: Performance test task for benchmark execution
-            val perfTestTask =
-                tasks.register("perfTest", Test::class.java) {
-                    description = "Runs performance benchmark tests."
-                    group = "verification"
+            // Story 8.3: Performance test task for benchmark execution - ONLY for Nightly builds
+            if (isNightlyBuild) {
+                val perfTest = sourceSets.getByName("perfTest")
+                val perfTestTask =
+                    tasks.register("perfTest", Test::class.java) {
+                        description = "Runs performance benchmark tests."
+                        group = "verification"
 
-                    // Configuration cache compatible: capture values at configuration time
-                    val perfTestClassesDirs = perfTest.output.classesDirs
-                    val perfTestClasspath = perfTest.runtimeClasspath
+                        // Configuration cache compatible: capture values at configuration time
+                        val perfTestClassesDirs = perfTest.output.classesDirs
+                        val perfTestClasspath = perfTest.runtimeClasspath
 
-                    testClassesDirs = perfTestClassesDirs
-                    classpath = perfTestClasspath
+                        testClassesDirs = perfTestClassesDirs
+                        classpath = perfTestClasspath
 
-                    useJUnitPlatform()
+                        useJUnitPlatform()
 
-                    shouldRunAfter(tasks.named("jvmKotest"), integrationTestTask)
+                        shouldRunAfter(tasks.named("jvmKotest"), integrationTestTask)
 
-                    // Performance tests need Testcontainers
-                    doFirst {
-                        try {
-                            Class
-                                .forName("com.axians.eaf.testing.containers.TestContainers")
-                                .getDeclaredMethod("startAll")
-                                .invoke(null)
-                        } catch (ignored: ClassNotFoundException) {
-                            // shared-testing module not on classpath
+                        // Performance tests need Testcontainers
+                        doFirst {
+                            try {
+                                Class
+                                    .forName("com.axians.eaf.testing.containers.TestContainers")
+                                    .getDeclaredMethod("startAll")
+                                    .invoke(null)
+                            } catch (ignored: ClassNotFoundException) {
+                                // shared-testing module not on classpath
+                            }
                         }
                     }
-                }
+            }
 
             tasks.named("check") {
                 dependsOn(integrationTestTask)
@@ -375,52 +385,55 @@ class TestingConventionPlugin : Plugin<Project> {
                     }
                 }
 
-            // Story 8.3: CI performance test task
-            val ciPerfTestTask =
-                tasks.register("ciPerfTest", Test::class.java) {
-                    description = "Runs performance benchmark tests with JUnit Platform for CI/CD"
-                    group = "verification"
+            // Story 8.3: CI performance test task - ONLY for Nightly builds
+            if (isNightlyBuild) {
+                val perfTest = sourceSets.getByName("perfTest")
+                val ciPerfTestTask =
+                    tasks.register("ciPerfTest", Test::class.java) {
+                        description = "Runs performance benchmark tests with JUnit Platform for CI/CD"
+                        group = "verification"
 
-                    // Configuration cache compatible: capture values at configuration time
-                    val perfTestClassesDirs = perfTest.output.classesDirs
-                    val perfTestClasspath = perfTest.runtimeClasspath
+                        // Configuration cache compatible: capture values at configuration time
+                        val perfTestClassesDirs = perfTest.output.classesDirs
+                        val perfTestClasspath = perfTest.runtimeClasspath
 
-                    testClassesDirs = perfTestClassesDirs
-                    classpath = perfTestClasspath
+                        testClassesDirs = perfTestClassesDirs
+                        classpath = perfTestClasspath
 
-                    useJUnitPlatform()
+                        useJUnitPlatform()
 
-                    reports {
-                        junitXml.required.set(true)
-                        html.required.set(true)
-                    }
+                        reports {
+                            junitXml.required.set(true)
+                            html.required.set(true)
+                        }
 
-                    reports.junitXml.outputLocation.set(
-                        project.layout.buildDirectory.dir("test-results/ciPerfTest"),
-                    )
-                    reports.html.outputLocation.set(
-                        project.layout.buildDirectory.dir("reports/tests/ciPerfTest"),
-                    )
+                        reports.junitXml.outputLocation.set(
+                            project.layout.buildDirectory.dir("test-results/ciPerfTest"),
+                        )
+                        reports.html.outputLocation.set(
+                            project.layout.buildDirectory.dir("reports/tests/ciPerfTest"),
+                        )
 
-                    shouldRunAfter(tasks.named("ciTest"), ciIntegrationTestTask)
+                        shouldRunAfter(tasks.named("ciTest"), ciIntegrationTestTask)
 
-                    // Performance tests need Testcontainers
-                    doFirst {
-                        try {
-                            Class
-                                .forName("com.axians.eaf.testing.containers.TestContainers")
-                                .getDeclaredMethod("startAll")
-                                .invoke(null)
-                        } catch (ignored: ClassNotFoundException) {
-                            // shared-testing module not on classpath
+                        // Performance tests need Testcontainers
+                        doFirst {
+                            try {
+                                Class
+                                    .forName("com.axians.eaf.testing.containers.TestContainers")
+                                    .getDeclaredMethod("startAll")
+                                    .invoke(null)
+                            } catch (ignored: ClassNotFoundException) {
+                                // shared-testing module not on classpath
+                            }
+                        }
+
+                        // Only run if there are actual test classes
+                        onlyIf {
+                            !perfTestClassesDirs.asFileTree.isEmpty
                         }
                     }
-
-                    // Only run if there are actual test classes
-                    onlyIf {
-                        !perfTestClassesDirs.asFileTree.isEmpty
-                    }
-                }
+            }
 
             // Create aggregate CI task (excludes perfTest - run in nightly only)
             tasks.register("ciTests") {
