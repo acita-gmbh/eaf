@@ -12,6 +12,11 @@ import org.gradle.api.plugins.JavaPlugin
 
 // Removed gradle-versions plugin due to ConcurrentModificationException with Gradle 8.14
 
+// SBOM Generation (CycloneDX) - Week 2 Enhancement
+plugins {
+    alias(libs.plugins.cyclonedx) apply true
+}
+
 group = "com.axians.eaf"
 version = "0.1.0-SNAPSHOT"
 
@@ -36,6 +41,29 @@ gradle.projectsEvaluated {
             dependsOn(analyzeDependencies)
         }
     }
+}
+
+// SBOM Generation Configuration (CycloneDX)
+configure<org.cyclonedx.gradle.CycloneDxExtension> {
+    // Include runtime classpath for complete dependency tree
+    includeConfigs.set(listOf("runtimeClasspath"))
+
+    // Skip test dependencies to reduce SBOM size
+    skipConfigs.set(listOf("testRuntimeClasspath", "testImplementation"))
+
+    // Output format: JSON (standard for supply chain tools)
+    outputFormat.set("json")
+    outputName.set("bom")
+
+    // Include project metadata
+    projectType.set("application")
+    schemaVersion.set("1.6")
+
+    // Include license information
+    includeLicenseText.set(false)
+
+    // Component analysis
+    componentVersion.set(project.version.toString())
 }
 
 subprojects {
