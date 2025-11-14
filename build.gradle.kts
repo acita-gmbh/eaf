@@ -45,13 +45,13 @@ gradle.projectsEvaluated {
 
 // SBOM Generation Configuration (CycloneDX 3.0)
 // In 3.0+: cyclonedxBom aggregates BOMs from all subprojects
-// Configuration is applied at task level via cyclonedxBom extension
-cyclonedxBom {
-    // Output format: JSON (standard for supply chain tools)
-    outputFormat = "json"
-    outputName = "bom"
+// API changed in 3.0: use task configuration instead of extension block
+tasks.cyclonedxBom {
+    // Output location: JSON only (standard for supply chain tools)
+    jsonOutput = file("build/reports/bom.json")
+    // XML output disabled (only JSON is generated when xmlOutput is not set)
 
-    // Include license information
+    // License information
     includeLicenseText = false
 }
 
