@@ -41,4 +41,9 @@ data class KeycloakOidcConfiguration(
      * Shorter duration = more JWKS fetches, faster key rotation response
      */
     var jwksCacheDuration: Duration = Duration.ofMinutes(10),
+    /**
+     * Layer 9 toggle: when true, JWT subjects are validated against the user directory
+     * to ensure the referenced user still exists and remains active.
+     */
+    var validateUser: Boolean = false,
 )

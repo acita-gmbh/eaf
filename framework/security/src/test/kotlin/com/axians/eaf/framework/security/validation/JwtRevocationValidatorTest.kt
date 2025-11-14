@@ -5,13 +5,15 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 
 class JwtRevocationValidatorTest :
     FunSpec({
         fun validator(
             store: TestTokenRevocationStore = TestTokenRevocationStore(),
-        ): Pair<JwtRevocationValidator, TestTokenRevocationStore> = JwtRevocationValidator(store) to store
+        ): Pair<JwtRevocationValidator, TestTokenRevocationStore> =
+            JwtRevocationValidator(store, SimpleMeterRegistry()) to store
 
         test("missing jti fails validation") {
             val (validator, store) = validator()
@@ -29,7 +31,7 @@ class JwtRevocationValidatorTest :
 
         test("revoked token fails validation") {
             val store = TestTokenRevocationStore().apply { revoked += "dead-beef" }
-            val validator = JwtRevocationValidator(store)
+            val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
             val jwt = jwtBuilder().claim("jti", "dead-beef").build()
 
             val result = validator.validate(jwt)
@@ -42,7 +44,7 @@ class JwtRevocationValidatorTest :
         }
 
         test("active token passes validation") {
-            val validator = JwtRevocationValidator(TestTokenRevocationStore())
+            val validator = JwtRevocationValidator(TestTokenRevocationStore(), SimpleMeterRegistry())
             val jwt = jwtBuilder().claim("jti", "alive").build()
 
             validator.validate(jwt).hasErrors().shouldBeFalse()
@@ -50,7 +52,7 @@ class JwtRevocationValidatorTest :
 
         test("fail-closed propagates as validation failure") {
             val store = TestTokenRevocationStore().apply { throwFor = "locked" }
-            val validator = JwtRevocationValidator(store)
+            val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
             val jwt = jwtBuilder().claim("jti", "locked").build()
 
             val result = validator.validate(jwt)

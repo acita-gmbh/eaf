@@ -33,6 +33,12 @@ eaf:
       audience: eaf-api
     revocation:
       fail-closed: false
+  keycloak:
+    base-url: http://localhost:8080
+    realm: eaf
+    admin-client-id: eaf-admin
+    admin-client-secret: test-secret
+    user-validation-enabled: false
 
 # Disable Management/Actuator for tests
 management:

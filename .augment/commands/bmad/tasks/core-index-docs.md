@@ -1,9 +1,10 @@
+---
+description: "Execute the Index Docs task"
+---
+
 # Index Docs Task
 
-## Activation
-Type `@task-index-docs` to execute this task.
-
-<task id="bmad/core/tasks/index-docs" name="Index Docs"
+<task id=".bmad/core/tasks/index-docs" name="Index Docs"
   description="Generates or updates an index.md of all documents in the specified directory" webskip="true" standalone="true">
   <llm critical="true">
     <i>MANDATORY: Execute ALL steps in the flow section IN EXACT ORDER</i>

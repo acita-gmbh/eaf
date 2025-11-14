@@ -1,10 +1,8 @@
+---
+description: "Unified PRD workflow for BMad Method and Enterprise Method tracks. Produces strategic PRD and tactical epic breakdown. Hands off to architecture workflow for technical design. Note: Quick Flow track uses tech-spec workflow."
+---
+
 # prd Workflow
-
-## Description
-Unified PRD workflow for BMad Method and Enterprise Method tracks. Produces strategic PRD and tactical epic breakdown. Hands off to architecture workflow for technical design. Note: Quick Flow track uses tech-spec workflow.
-
-## Activation
-Type `@workflow-prd` to execute this workflow.
 
 # Product Requirements Document (PRD) Workflow
 name: prd
@@ -12,7 +10,7 @@ description: "Unified PRD workflow for BMad Method and Enterprise Method tracks.
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 project_name: "{config_source}:project_name"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
@@ -22,7 +20,7 @@ user_skill_level: "{config_source}:user_skill_level"
 date: system-generated
 
 # Workflow components
-installed_path: "{project-root}/bmad/bmm/workflows/2-plan-workflows/prd"
+installed_path: "{project-root}/.bmad/bmm/workflows/2-plan-workflows/prd"
 instructions: "{installed_path}/instructions.md"
 
 # Templates
@@ -39,17 +37,21 @@ recommended_inputs:
 
 # Smart input file references - handles both whole docs and sharded docs
 # Priority: Whole document first, then sharded version
+# Strategy: How to load sharded documents (FULL_LOAD, SELECTIVE_LOAD, INDEX_GUIDED)
 input_file_patterns:
   product_brief:
     whole: "{output_folder}/*brief*.md"
     sharded: "{output_folder}/*brief*/index.md"
+    load_strategy: "FULL_LOAD"
 
   research:
     whole: "{output_folder}/*research*.md"
     sharded: "{output_folder}/*research*/index.md"
+    load_strategy: "FULL_LOAD"
 
   document_project:
     sharded: "{output_folder}/docs/index.md"
+    load_strategy: "INDEX_GUIDED"
 
 standalone: true
 

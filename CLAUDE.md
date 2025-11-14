@@ -28,7 +28,7 @@ See the full design in **docs/architecture.md** (159 KB, 89 architectural decisi
 - [`docs/architecture.md`](docs/architecture.md) - Unified Decision Architecture (159 KB, Production-Ready)
 - [`docs/tech-spec.md`](docs/tech-spec.md) - Technical Specification (FR-to-Epic mapping)
 - [`docs/epics.md`](docs/epics.md) - Epic breakdown with story sequencing
-- [`docs/stories/epic-*/story-*.md`](docs/stories/) - 112 implementation-ready stories with code examples
+- [`docs/stories/epic-*/story-*.md`](docs/sprint-artifacts/) - 112 implementation-ready stories with code examples
 
 **Implementation Standards:**
 - [`docs/architecture/coding-standards.md`](docs/architecture/coding-standards.md) - Detailed Kotlin/Spring coding standards
@@ -635,7 +635,7 @@ Monitor these continuously for system health:
 - [Product Requirements (PRD)](docs/PRD.md) - 30 FRs, 3 NFRs, success criteria
 - [Technical Specification](docs/tech-spec.md) - FR-to-Epic mapping
 - [Epic Breakdown](docs/epics.md) - 10 epics with story sequencing
-- [Implementation Stories](docs/stories/) - 112 implementation-ready stories
+- [Implementation Stories](docs/sprint-artifacts/) - 112 implementation-ready stories
 
 **Architecture & Design:**
 - [Architecture Document](docs/architecture.md) - 89 decisions, version verification, complete structure

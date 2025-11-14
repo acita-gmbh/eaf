@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.security.oauth2.jwt.Jwt
 
 class JwtAudienceValidatorTest :
@@ -11,14 +12,14 @@ class JwtAudienceValidatorTest :
         val expected = "eaf-api"
 
         test("audience containing expected value should pass validation") {
-            val validator = JwtAudienceValidator(expected)
+            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
             val jwt = createJwt().audience(listOf("eaf-api", "eaf-console")).build()
 
             validator.validate(jwt).hasErrors().shouldBeFalse()
         }
 
         test("audience expressed as string should be supported") {
-            val validator = JwtAudienceValidator(expected)
+            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
             val jwt =
                 createJwt()
                     .claim("aud", "eaf-api")
@@ -28,7 +29,7 @@ class JwtAudienceValidatorTest :
         }
 
         test("authorized party (azp) should be used as fallback for audience") {
-            val validator = JwtAudienceValidator(expected)
+            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
             val jwt =
                 createJwt()
                     .claim("azp", "eaf-api")
@@ -38,7 +39,7 @@ class JwtAudienceValidatorTest :
         }
 
         test("missing audience claim should fail") {
-            val validator = JwtAudienceValidator(expected)
+            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
             val jwt = createJwt().build()
 
             val result = validator.validate(jwt)
@@ -51,7 +52,7 @@ class JwtAudienceValidatorTest :
         }
 
         test("audience missing expected value should fail") {
-            val validator = JwtAudienceValidator(expected)
+            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
             val jwt = createJwt().audience(listOf("eaf-console")).build()
 
             val result = validator.validate(jwt)

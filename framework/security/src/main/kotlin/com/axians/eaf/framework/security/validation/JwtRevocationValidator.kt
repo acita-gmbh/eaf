@@ -1,25 +1,28 @@
 package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.revocation.TokenRevocationStore
+import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.stereotype.Component
 
 /**
  * Layer 7 validator that rejects JWTs flagged as revoked in Redis.
+ *
+ * Story 3.9: Added per-layer metrics instrumentation
  */
 @Component
 @Profile("!test")
 class JwtRevocationValidator(
     private val revocationStore: TokenRevocationStore,
-) : OAuth2TokenValidator<Jwt> {
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer7_revocation", meterRegistry) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val jti =
             token.id?.takeIf { it.isNotBlank() }
                 ?: return OAuth2TokenValidatorResult.failure(MISSING_JTI_ERROR)

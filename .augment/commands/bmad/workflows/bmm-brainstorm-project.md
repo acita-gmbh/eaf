@@ -1,10 +1,8 @@
+---
+description: "Facilitate project brainstorming sessions by orchestrating the CIS brainstorming workflow with project-specific context and guidance."
+---
+
 # brainstorm-project Workflow
-
-## Description
-Facilitate project brainstorming sessions by orchestrating the CIS brainstorming workflow with project-specific context and guidance.
-
-## Activation
-Type `@workflow-brainstorm-project` to execute this workflow.
 
 # Brainstorm Project Workflow Configuration
 name: "brainstorm-project"
@@ -12,7 +10,7 @@ description: "Facilitate project brainstorming sessions by orchestrating the CIS
 author: "BMad"
 
 # Critical variables from config
-config_source: "{project-root}/bmad/bmm/config.yaml"
+config_source: "{project-root}/.bmad/bmm/config.yaml"
 output_folder: "{config_source}:output_folder"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
@@ -21,7 +19,7 @@ user_skill_level: "{config_source}:user_skill_level"
 date: system-generated
 
 # Module path and component files
-installed_path: "{project-root}/bmad/bmm/workflows/1-analysis/brainstorm-project"
+installed_path: "{project-root}/.bmad/bmm/workflows/1-analysis/brainstorm-project"
 template: false
 instructions: "{installed_path}/instructions.md"
 
@@ -29,7 +27,7 @@ instructions: "{installed_path}/instructions.md"
 project_context: "{installed_path}/project-context.md"
 
 # CORE brainstorming workflow to invoke
-core_brainstorming: "{project-root}/bmad/core/workflows/brainstorming/workflow.yaml"
+core_brainstorming: "{project-root}/.bmad/core/workflows/brainstorming/workflow.yaml"
 
 standalone: true
 

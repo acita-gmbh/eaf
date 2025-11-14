@@ -1,9 +1,10 @@
 package com.axians.eaf.framework.security.validation
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.stereotype.Component
 
 /**
  * JWT Algorithm Validator - Enforces RS256 signature algorithm.
@@ -19,8 +20,12 @@ import org.springframework.security.oauth2.jwt.Jwt
  * - Algorithm confusion: Attacker signs token with HS256 using server's public key
  *
  * Story 3.4: JWT Format and Signature Validation (Layers 1-2)
+ * Story 3.9: Added per-layer metrics instrumentation
  */
-class JwtAlgorithmValidator : OAuth2TokenValidator<Jwt> {
+@Component
+class JwtAlgorithmValidator(
+    meterRegistry: MeterRegistry,
+) : MeteredTokenValidator("layer3_algorithm", meterRegistry) {
     companion object {
         private const val REQUIRED_ALGORITHM = "RS256"
         private val FORBIDDEN_ALGORITHMS = setOf("HS256", "HS384", "HS512", "none")
@@ -36,7 +41,7 @@ class JwtAlgorithmValidator : OAuth2TokenValidator<Jwt> {
      * @return An OAuth2TokenValidatorResult representing validation failure with an `invalid_token` error
      *         for missing/forbidden/wrong algorithms, or success when the algorithm is `RS256`.
      */
-    override fun validate(token: Jwt): OAuth2TokenValidatorResult {
+    override fun doValidate(token: Jwt): OAuth2TokenValidatorResult {
         val algorithm = token.headers["alg"] as? String
 
         val error =
