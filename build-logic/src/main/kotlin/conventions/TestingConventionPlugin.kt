@@ -422,11 +422,12 @@ class TestingConventionPlugin : Plugin<Project> {
                     }
                 }
 
-            // Create aggregate CI task
+            // Create aggregate CI task (excludes perfTest - run in nightly only)
             tasks.register("ciTests") {
-                description = "Runs all tests with JUnit Platform for CI/CD"
+                description = "Runs all tests with JUnit Platform for CI/CD (excludes performance tests)"
                 group = "verification"
-                dependsOn("ciTest", ciIntegrationTestTask, ciKonsistTestTask, ciPerfTestTask)
+                dependsOn("ciTest", ciIntegrationTestTask, ciKonsistTestTask)
+                // ciPerfTestTask excluded - performance tests run in nightly only
             }
 
             // Configure parallel test execution for all Test tasks
