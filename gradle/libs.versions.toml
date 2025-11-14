@@ -80,7 +80,7 @@ jazzer = "0.26.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz sta
 
 # Performance Testing (Story 2.13)
 gatling = "3.14.0"        # Load testing framework
-gatling-gradle-plugin = "3.14.6.3"  # Gatling Gradle plugin
+gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
