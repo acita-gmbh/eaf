@@ -51,7 +51,7 @@ jobs:
         run: ./gradlew cyclonedxBom --no-daemon --stacktrace
 
       - name: Upload SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sbom-cyclonedx-${{ github.run_number }}
           path: '**/build/reports/bom.json'
