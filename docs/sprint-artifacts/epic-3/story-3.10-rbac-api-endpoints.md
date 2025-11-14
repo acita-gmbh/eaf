@@ -138,7 +138,7 @@ So that only users with correct roles can perform operations.
 
 ## Status
 
-**Current Status:** review
+**Current Status:** done
 **Last Updated:** 2025-11-14
 
 ---
