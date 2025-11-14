@@ -230,7 +230,10 @@ class TestingConventionPlugin : Plugin<Project> {
                     testClassesDirs = integrationTestClassesDirs
                     classpath = integrationTestClasspath
 
-                    useJUnitPlatform()
+                    useJUnitPlatform {
+                        // Exclude performance tests from fast CI (run in nightly only)
+                        excludeTags("Performance")
+                    }
 
                     shouldRunAfter(tasks.named("jvmKotest"))
 
@@ -312,7 +315,10 @@ class TestingConventionPlugin : Plugin<Project> {
                     testClassesDirs = integrationTestClassesDirs
                     classpath = integrationTestClasspath
 
-                    useJUnitPlatform()
+                    useJUnitPlatform {
+                        // Exclude performance tests from fast CI (run in nightly only)
+                        excludeTags("Performance")
+                    }
 
                     reports {
                         junitXml.required.set(true)

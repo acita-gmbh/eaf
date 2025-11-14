@@ -2,6 +2,7 @@ package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -56,6 +57,7 @@ import java.util.Base64
  * Story 3.9: Complete 10-Layer JWT Validation Integration
  */
 @Testcontainers
+@Tags("Performance") // Exclude from fast CI - run in nightly only
 @SpringBootTest(classes = [SecurityTestApplication::class])
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
