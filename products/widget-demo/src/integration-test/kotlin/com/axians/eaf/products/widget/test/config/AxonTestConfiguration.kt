@@ -26,6 +26,10 @@ import org.springframework.context.annotation.Profile
  * Expected performance impact: ~100-150ms improvement per command for cached aggregates.
  *
  * Story 2.13: Performance Baseline and Monitoring - Phase 2
+ *
+ * **Story 3.10: Profile Isolation**
+ * - Active ONLY for "test" profile (rbac-test uses RbacTestContainersConfig)
+ * - Prevents @ServiceConnection timing race condition
  */
 @TestConfiguration
 @Profile("test")

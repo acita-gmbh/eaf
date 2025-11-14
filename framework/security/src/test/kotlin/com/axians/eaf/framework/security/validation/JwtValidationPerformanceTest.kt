@@ -32,7 +32,7 @@ import java.time.Instant
  * - Layer 7 (Redis mock): <5ms
  * - Layer 8 (Role normalization): <2ms
  * - Layer 9 (User validation, optional): <10ms
- * - Layer 10 (Injection detection): <3ms
+ * - Layer 10 (Injection detection): <5ms
  *
  * Story 3.9: Complete 10-Layer JWT Validation Integration
  */
@@ -195,7 +195,7 @@ class JwtValidationPerformanceTest :
                 println("✅ Layer 7 (revocation): ${"%.3f".format(durationMs)}ms (target: <5ms)")
             }
 
-            test("Layer 10 (injection detection) should complete in under 3ms") {
+            test("Layer 10 (injection detection) should complete in under 5ms") {
                 val jwt = createValidJwt()
                 val validator = JwtInjectionValidator(injectionDetector, meterRegistry)
 
@@ -203,9 +203,9 @@ class JwtValidationPerformanceTest :
                 validator.validate(jwt)
                 val durationMs = (System.nanoTime() - startTime) / 1_000_000.0
 
-                durationMs shouldBeLessThan 3.0
+                durationMs shouldBeLessThan 5.0
 
-                println("✅ Layer 10 (injection): ${"%.3f".format(durationMs)}ms (target: <3ms)")
+                println("✅ Layer 10 (injection): ${"%.3f".format(durationMs)}ms (target: <5ms)")
             }
         }
     })

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
@@ -23,6 +24,9 @@ import org.axonframework.queryhandling.QueryGateway
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -67,9 +71,13 @@ class WidgetController(
         produces = [MediaType.APPLICATION_JSON_VALUE],
     )
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('WIDGET_ADMIN')")
     @Operation(
         summary = "Create a new widget",
-        description = "Creates a new widget with the specified name. Returns 201 Created with the created widget.",
+        description =
+            "Creates a new widget with the specified name. " +
+                "Returns 201 Created with the created widget. Requires WIDGET_ADMIN role.",
+        security = [SecurityRequirement(name = "bearer-jwt")],
     )
     @ApiResponses(
         value = [
@@ -83,10 +91,21 @@ class WidgetController(
                 description = "Invalid request (validation error)",
                 content = [Content(schema = Schema(implementation = ProblemDetail::class))],
             ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized - Missing or invalid JWT token",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User lacks WIDGET_ADMIN role",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
         ],
     )
     fun createWidget(
         @Valid @RequestBody request: CreateWidgetRequest,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt?, // Nullable for test profile (permitAll)
     ): WidgetResponse {
         val widgetId = WidgetId(UUID.randomUUID())
 
@@ -121,9 +140,13 @@ class WidgetController(
         "/{id}",
         produces = [MediaType.APPLICATION_JSON_VALUE],
     )
+    @PreAuthorize("hasAnyRole('WIDGET_ADMIN', 'WIDGET_VIEWER')")
     @Operation(
         summary = "Get widget by ID",
-        description = "Retrieves a widget by its unique identifier. Returns 404 if not found.",
+        description =
+            "Retrieves a widget by its unique identifier. Returns 404 if not found. " +
+                "Requires WIDGET_ADMIN or WIDGET_VIEWER role.",
+        security = [SecurityRequirement(name = "bearer-jwt")],
     )
     @ApiResponses(
         value = [
@@ -131,6 +154,16 @@ class WidgetController(
                 responseCode = "200",
                 description = "Widget found",
                 content = [Content(schema = Schema(implementation = WidgetResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized - Missing or invalid JWT token",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User lacks required role",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
             ),
             ApiResponse(
                 responseCode = "404",
@@ -142,6 +175,7 @@ class WidgetController(
     fun getWidget(
         @Parameter(description = "UUID of the widget to retrieve")
         @PathVariable id: UUID,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt?,
     ): WidgetResponse {
         // Query with retry for eventual consistency
         val projection =
@@ -172,9 +206,13 @@ class WidgetController(
      * @return Paginated list of widgets with HTTP 200 OK
      */
     @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PreAuthorize("hasAnyRole('WIDGET_ADMIN', 'WIDGET_VIEWER')")
     @Operation(
         summary = "List all widgets with cursor pagination",
-        description = "Returns a paginated list of widgets. Use cursor-based pagination for stable results.",
+        description =
+            "Returns a paginated list of widgets. Use cursor-based pagination for stable results. " +
+                "Requires WIDGET_ADMIN or WIDGET_VIEWER role.",
+        security = [SecurityRequirement(name = "bearer-jwt")],
     )
     @ApiResponses(
         value = [
@@ -182,6 +220,16 @@ class WidgetController(
                 responseCode = "200",
                 description = "Widget list retrieved successfully",
                 content = [Content(schema = Schema(implementation = PaginatedResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized - Missing or invalid JWT token",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User lacks required role",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
             ),
         ],
     )
@@ -193,6 +241,7 @@ class WidgetController(
         limit: Int,
         @Parameter(description = "Cursor for pagination (from previous response)")
         @RequestParam(required = false) cursor: String?,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt?,
     ): PaginatedResponse<WidgetResponse> {
         val query = ListWidgetsQuery(limit, cursor)
 
@@ -226,9 +275,11 @@ class WidgetController(
         consumes = [MediaType.APPLICATION_JSON_VALUE],
         produces = [MediaType.APPLICATION_JSON_VALUE],
     )
+    @PreAuthorize("hasRole('WIDGET_ADMIN')")
     @Operation(
         summary = "Update a widget",
-        description = "Updates a widget's name. Returns 404 if the widget does not exist.",
+        description = "Updates a widget's name. Returns 404 if the widget does not exist. Requires WIDGET_ADMIN role.",
+        security = [SecurityRequirement(name = "bearer-jwt")],
     )
     @ApiResponses(
         value = [
@@ -243,6 +294,16 @@ class WidgetController(
                 content = [Content(schema = Schema(implementation = ProblemDetail::class))],
             ),
             ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized - Missing or invalid JWT token",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User lacks WIDGET_ADMIN role",
+                content = [Content(schema = Schema(implementation = ProblemDetail::class))],
+            ),
+            ApiResponse(
                 responseCode = "404",
                 description = "Widget not found",
                 content = [Content(schema = Schema(implementation = ProblemDetail::class))],
@@ -253,6 +314,7 @@ class WidgetController(
         @Parameter(description = "UUID of the widget to update")
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateWidgetRequest,
+        @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt?,
     ): WidgetResponse {
         // Synchronous command execution (CQRS write path)
         // Let exceptions propagate to ProblemDetailExceptionHandler
