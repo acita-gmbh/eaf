@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: wrapper
           cache-cleanup: always
@@ -52,7 +52,7 @@ jobs:
 
       - name: Upload Property Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: property-test-reports-${{ github.run_number }}
           path: |
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload Fuzz Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: fuzz-test-reports-${{ github.run_number }}
           path: |
@@ -71,7 +71,7 @@ jobs:
       # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
       # - name: Upload Concurrency Test Reports
       #   if: always()
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@v5
       #   with:
       #     name: concurrency-test-reports
       #     path: |
@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload Performance Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: performance-test-reports-${{ github.run_number }}
           path: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload Mutation Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: mutation-test-reports-${{ github.run_number }}
           path: |

@@ -13,12 +13,12 @@ spring-modulith = "1.4.4" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.7"
 
 # CQRS and Event Sourcing
-axon = "4.12.1"            # Latest stable, v5 migration planned
+axon = "4.12.2"            # Latest stable, v5 migration planned
 arrow = "2.2.0"            # Functional programming
 
 # Database and persistence
 postgresql = "42.7.8"      # PostgreSQL driver (security updates)
-flyway = "11.15.0"         # Database migration framework
+flyway = "11.17.0"         # Database migration framework
 jooq = "3.20.8"           # SQL DSL for read projections (updated)
 jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025-58057 fixes
@@ -34,7 +34,7 @@ h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - I
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
-ktlint-gradle-plugin = "13.1.0"  # ktlint Gradle plugin version
+ktlint-gradle-plugin = "14.0.1"  # ktlint Gradle plugin version
 detekt = "1.23.8"         # Static analysis (latest stable - targets Kotlin 2.0.21, works with 2.2.21)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
@@ -51,18 +51,18 @@ springdoc = "2.8.14"       # OpenAPI documentation (keeping stable version)
 
 # Observability
 micrometer = "1.15.5"     # Metrics (updated, avoiding milestone)
-logback = "1.5.19"        # Spring Boot 3.5.7 actual BOM version (matches spring-boot-starter-logging dependency)
+logback = "1.5.21"        # Spring Boot 3.5.7 actual BOM version (matches spring-boot-starter-logging dependency)
 logstash-logback-encoder = "8.1"  # JSON logging encoder for structured logs (latest stable)
 opentelemetry-bom = "1.55.0"  # Latest stable OpenTelemetry for distributed tracing
 opentelemetry-instrumentation = "2.21.0"  # Spring Boot auto-instrumentation (latest stable)
 opentelemetry-semconv = "1.37.0"  # OpenTelemetry semantic conventions
-snakeyaml = "2.3"         # YAML parsing (security update)
+snakeyaml = "2.5"         # YAML parsing (security update)
 commons-io = "2.20.0"     # IO utilities (security update)
 
 # Security
 keycloak = "26.4.2"       # Identity provider (verified current stable 2025-10-30)
 jose4j = "0.9.6"          # JWT processing
-spring-security = "6.5.5" # Spring Security test dependency
+spring-security = "6.5.6" # Spring Security test dependency
 
 # Cache and session storage
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
@@ -80,7 +80,7 @@ jazzer = "0.26.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz sta
 
 # Performance Testing (Story 2.13)
 gatling = "3.14.0"        # Load testing framework
-gatling-gradle-plugin = "3.14.6.3"  # Gatling Gradle plugin
+gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
