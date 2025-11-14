@@ -71,6 +71,12 @@ dependencies {
     testImplementation(project(":shared:testing"))
     integrationTestImplementation(project(":shared:testing"))
 
+    // Performance test dependencies (same as integration tests)
+    perfTestImplementation(libs.bundles.kotest)
+    perfTestImplementation(libs.spring.boot.starter.test)
+    perfTestImplementation(libs.bundles.testcontainers)
+    perfTestImplementation(project(":shared:testing"))
+
     // Ensure only JUnit 5 for Pitest
     configurations.named("testRuntimeClasspath") {
         exclude(group = "junit", module = "junit")

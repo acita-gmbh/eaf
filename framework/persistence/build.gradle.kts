@@ -55,6 +55,13 @@ dependencies {
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.spring.boot.starter.test)
 
+    // Performance test dependencies (same as integration tests)
+    perfTestImplementation(libs.bundles.kotest)
+    perfTestImplementation(libs.spring.boot.starter.test)
+    perfTestImplementation(libs.bundles.testcontainers)
+    perfTestImplementation(project(":framework:cqrs"))
+    perfTestImplementation(project(":shared:testing"))
+
     // jOOQ code generation dependencies
     jooqCodegen(libs.postgresql)
     jooqCodegen(libs.jooq.codegen)
