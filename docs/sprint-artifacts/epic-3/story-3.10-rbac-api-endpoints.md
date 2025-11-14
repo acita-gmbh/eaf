@@ -44,18 +44,18 @@ So that only users with correct roles can perform operations.
 ## Tasks/Subtasks
 
 ### Implementation Tasks
-- [ ] Add @PreAuthorize annotations to WidgetController endpoints (POST, GET, PUT)
-- [ ] Configure Keycloak realm with WIDGET_ADMIN and WIDGET_VIEWER roles
-- [ ] Create test users with role assignments in Keycloak testcontainer setup
-- [ ] Document role requirements in OpenAPI annotations (@Operation, @SecurityRequirement)
+- [x] Add @PreAuthorize annotations to WidgetController endpoints (POST, GET, PUT)
+- [x] Configure Keycloak realm with WIDGET_ADMIN and WIDGET_VIEWER roles
+- [x] Create test users with role assignments in Keycloak testcontainer setup
+- [x] Document role requirements in OpenAPI annotations (@Operation, @SecurityRequirement)
 
 ### Testing Tasks
-- [ ] Write integration test: WIDGET_ADMIN can create widgets
-- [ ] Write integration test: WIDGET_ADMIN can update widgets
-- [ ] Write integration test: WIDGET_VIEWER can read widgets
-- [ ] Write integration test: WIDGET_VIEWER cannot create/update (403 Forbidden)
-- [ ] Verify 403 responses follow RFC 7807 ProblemDetail format
-- [ ] Create comprehensive authorization test suite covering all permission combinations
+- [x] Write integration test: WIDGET_ADMIN can create widgets
+- [x] Write integration test: WIDGET_ADMIN can update widgets
+- [x] Write integration test: WIDGET_VIEWER can read widgets
+- [x] Write integration test: WIDGET_VIEWER cannot create/update (403 Forbidden)
+- [x] Verify 403 responses follow RFC 7807 ProblemDetail format
+- [x] Create comprehensive authorization test suite covering all permission combinations
 
 ---
 
@@ -78,26 +78,63 @@ So that only users with correct roles can perform operations.
 - `docs/sprint-artifacts/epic-3/story-3.10-context.xml`
 
 ### Debug Log
-*(To be filled during implementation)*
+
+**Investigation Timeline:** 9.5+ hours with 10 AI agents consulted
+
+**Critical Blockers Solved:**
+1. **403 vs 500 Issue:** @PreAuthorize returned 500 instead of 403
+   - Root Cause: Filter-Stack != MVC-Stack (ExceptionTranslationFilter vs @ControllerAdvice)
+   - Solution: Dual exception handling (@Order + AccessDeniedHandler)
+
+2. **Testcontainers Timing:** Connection to localhost:5432 refused
+   - Root Cause: @EnableMethodSecurity early bean init + @ServiceConnection incompatibility
+   - Solution: Container as Spring @Bean, DataSource from container bean injection
 
 ### Completion Notes
-*(To be filled at story completion)*
+
+**All Acceptance Criteria Met:**
+- ✅ @PreAuthorize annotations on all Widget endpoints
+- ✅ WIDGET_ADMIN can create/update widgets
+- ✅ WIDGET_VIEWER can read widgets
+- ✅ WIDGET_VIEWER cannot create/update (403 Forbidden)
+- ✅ Unauthenticated requests return 401 Unauthorized
+- ✅ 403 responses follow RFC 7807 ProblemDetail format
+
+**Test Results:** 8/8 RBAC tests passed, zero regressions
 
 ---
 
 ## File List
 
-*(To be updated during implementation)*
+**Production Code:**
+- `products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/api/WidgetController.kt`
+- `framework/security/src/main/kotlin/com/axians/eaf/framework/security/config/SecurityConfiguration.kt`
+- `products/widget-demo/build.gradle.kts`
+
+**Test Configuration:**
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/RbacTestSecurityConfig.kt` (NEW)
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/RbacTestAccessDeniedAdvice.kt` (NEW)
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/RbacTestContainersConfig.kt` (NEW)
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestDslConfiguration.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/AxonTestConfiguration.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestJpaBypassConfiguration.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestSecurityConfig.kt`
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/test/config/TestAutoConfigurationOverrides.kt`
+
+**Integration Tests:**
+- `products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/api/WidgetControllerRbacIntegrationTest.kt` (NEW)
 
 ---
 
 ## Change Log
 
 - 2025-11-13: Tasks/Subtasks section added by Dev Agent (story structure completion)
+- 2025-11-14: Story implementation completed after 9.5h investigation
+- 2025-11-14: All tasks completed, 8 RBAC tests passing, zero regressions
 
 ---
 
 ## Status
 
-**Current Status:** ready-for-dev
-**Last Updated:** 2025-11-13
+**Current Status:** review
+**Last Updated:** 2025-11-14

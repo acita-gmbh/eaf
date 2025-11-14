@@ -148,7 +148,7 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
             }
         }
 
-        context("GET /api/v1/widgets/{id} - Find Widget (authenticated required, no role restriction)") {
+        context("GET /api/v1/widgets/{id} - Find Widget (requires WIDGET_ADMIN or WIDGET_VIEWER role)") {
 
             test("WIDGET_VIEWER can read widget by ID - returns 200 OK") {
                 // Given - Create widget first (with ADMIN)

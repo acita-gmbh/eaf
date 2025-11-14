@@ -1,6 +1,5 @@
 package com.axians.eaf.products.widget.test.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.Profile
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -38,8 +37,6 @@ import java.net.URI
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Profile("rbac-test")
 class RbacTestAccessDeniedAdvice {
-    private val objectMapper = ObjectMapper()
-
     /**
      * Handles legacy AccessDeniedException from @PreAuthorize.
      *
