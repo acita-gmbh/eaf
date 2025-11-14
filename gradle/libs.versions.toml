@@ -34,7 +34,7 @@ h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - I
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
-ktlint-gradle-plugin = "13.1.0"  # ktlint Gradle plugin version
+ktlint-gradle-plugin = "14.0.1"  # ktlint Gradle plugin version
 detekt = "1.23.8"         # Static analysis (latest stable - targets Kotlin 2.0.21, works with 2.2.21)
 konsist = "0.17.3"        # Architecture testing
 pitest = "1.19.0-rc.2"    # Gradle plugin version (Gradle 9 compatible)
