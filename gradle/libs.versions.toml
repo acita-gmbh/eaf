@@ -31,6 +31,7 @@ kotest-assertions-arrow = "2.0.0"  # Kotest Arrow assertions extension
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
 h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - Integration tests MUST use Testcontainers PostgreSQL
+hamcrest = "3.0"          # Hamcrest matchers - required by Axon Test Framework
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
@@ -152,6 +153,7 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "testcontainers-keycloak" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 
 # Static analysis
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }

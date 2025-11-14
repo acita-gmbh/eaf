@@ -431,7 +431,9 @@ class TestingConventionPlugin : Plugin<Project> {
 
             // Configure parallel test execution for all Test tasks
             tasks.withType<Test>().configureEach {
-                // Parallel test execution (cores/2 for local, 2 for CI)
+                // Parallel test execution: cores/2 (minimum 1)
+                // CI gets 2 forks (2-core GitHub Actions runners)
+                // Local gets 5 forks (10-core development machines)
                 // Performance-sensitive tests run sequentially (maxParallelForks = 1)
                 val isPerformanceTest = name.contains("perf", ignoreCase = true) ||
                                        name.contains("performance", ignoreCase = true) ||
