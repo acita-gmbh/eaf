@@ -62,7 +62,7 @@ commons-io = "2.20.0"     # IO utilities (security update)
 # Security
 keycloak = "26.4.2"       # Identity provider (verified current stable 2025-10-30)
 jose4j = "0.9.6"          # JWT processing
-spring-security = "6.5.5" # Spring Security test dependency
+spring-security = "6.5.6" # Spring Security test dependency
 
 # Cache and session storage
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
