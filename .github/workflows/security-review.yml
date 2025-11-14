@@ -36,6 +36,15 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x ./gradlew
 
+      - name: Cache OWASP Dependency Check Data
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/dependency-check-data
+          key: ${{ runner.os }}-dependency-check-${{ hashFiles('gradle/libs.versions.toml') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-${{ hashFiles('gradle/libs.versions.toml') }}-
+            ${{ runner.os }}-dependency-check-
+
       - name: OWASP Dependency Check Analysis
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
