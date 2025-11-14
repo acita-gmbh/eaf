@@ -19,6 +19,9 @@ import java.time.Instant
  *
  * This configuration is only active for the "test" profile and overrides
  * any security configuration from framework/security module.
+ *
+ * NOTE: Does NOT enable method security (@PreAuthorize) to avoid breaking existing tests.
+ * For RBAC tests, see RbacTestSecurityConfig with "rbac-test" profile.
  */
 @org.springframework.context.annotation.Configuration
 @EnableWebSecurity

@@ -78,7 +78,7 @@ development_status:
   3-7-redis-revocation-cache: done
   3-8-user-injection-detection: done
   3-9-complete-jwt-integration: done
-  3-10-rbac-api-endpoints: ready-for-dev
+  3-10-rbac-api-endpoints: in-progress
   3-11-keycloak-ppc64le: ready-for-dev
   3-12-security-fuzz-testing: ready-for-dev
   epic-3-retrospective: optional
