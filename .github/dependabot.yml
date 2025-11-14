@@ -45,7 +45,10 @@ updates:
     commit-message:
       prefix: "ci"
 
-  # Docker base images (for init-dev.sh and future Dockerfiles)
+  # Docker base images
+  # NOTE: Currently configured for future use when Dockerfiles are added to the repository.
+  # This will monitor docker-compose.yml and any Dockerfile once they are created.
+  # For now, it monitors the Docker Compose services defined in init-dev.sh scripts.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
