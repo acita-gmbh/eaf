@@ -5,6 +5,10 @@ on:
     - cron: '0 2 * * *'  # 2 AM UTC daily
   workflow_dispatch:  # Allow manual trigger
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel long-running nightly builds
+
 jobs:
   deep-validation:
     runs-on: ubuntu-latest
@@ -14,15 +18,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-cleanup: always
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x ./gradlew
 
       - name: Performance Baseline Tests
         run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
@@ -48,19 +54,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: property-test-reports
+          name: property-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/tests/propertyTest/
-          retention-days: 14
+          retention-days: 30
 
       - name: Upload Fuzz Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-test-reports
+          name: fuzz-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/tests/fuzzTest/
-          retention-days: 14
+          retention-days: 30
 
       # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
       # - name: Upload Concurrency Test Reports
@@ -76,20 +82,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: performance-test-reports
+          name: performance-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/gatling/
             **/build/reports/tests/integrationTest/
-          retention-days: 30
+          retention-days: 90
 
       - name: Upload Mutation Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mutation-test-reports
+          name: mutation-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/pitest/
-          retention-days: 30
+          retention-days: 90
 
       - name: Notify on Failure
         if: failure()

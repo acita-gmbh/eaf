@@ -19,6 +19,10 @@ on:
         description: 'Override burn-in iterations (default 10)'
         required: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   BASELINE_BRANCH: origin/main
 
@@ -38,12 +42,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Run selective tests
         id: guard
@@ -59,11 +69,11 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: selective-outputs
+          name: selective-outputs-${{ github.run_number }}
           path: |
             **/build/reports/tests/
             **/build/test-results/
-          retention-days: 7
+          retention-days: 14
 
   gradle-quality:
     name: Gradle Quality Matrix
@@ -86,12 +96,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Gradle ${{ matrix.name }}
         uses: nick-invision/retry@v3
@@ -156,12 +172,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Resolve burn-in iterations
         id: burn_config
