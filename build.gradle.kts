@@ -15,6 +15,12 @@ import org.gradle.api.plugins.JavaPlugin
 // SBOM Generation (CycloneDX) - Week 2 Enhancement
 plugins {
     alias(libs.plugins.cyclonedx) apply true
+
+    // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
+    // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.spring) apply false
+    alias(libs.plugins.kotlin.jpa) apply false
 }
 
 group = "com.axians.eaf"
@@ -57,6 +63,11 @@ tasks.cyclonedxBom {
 
 subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
+
+    // Dependency Locking (improves build performance and reproducibility)
+    configurations.configureEach {
+        resolutionStrategy.activateDependencyLocking()
+    }
 
     configurations.configureEach {
         resolutionStrategy.eachDependency {

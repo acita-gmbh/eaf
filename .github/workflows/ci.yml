@@ -1,4 +1,4 @@
-name: CI - Fast Feedback
+name: CI - Fast Feedback (Optimized)
 
 on:
   push:
@@ -11,13 +11,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  # Job 1: Build once (cached for subsequent jobs)
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # Hard limit: must complete in <15min normally
+    timeout-minutes: 10
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+            ~/.gradle/caches/build-cache-1
+          key: gradle-deps-${{ hashFiles('**/*.gradle.kts', 'gradle.properties', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-deps-
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
@@ -33,58 +48,167 @@ jobs:
           distribution: 'temurin'
 
       - name: Build Project
-        run: ./gradlew assemble --no-daemon --stacktrace
+        run: ./gradlew assemble --no-daemon --build-cache --scan
 
-      - name: Code Formatting Check (ktlint)
-        run: ./gradlew ktlintCheck --no-daemon
+      - name: Cache Build Outputs
+        uses: actions/cache/save@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: '**/build/'
+          key: build-${{ github.sha }}
 
-      - name: Static Analysis (Detekt)
-        run: ./gradlew detekt --no-daemon
+  # Job 2: Quality checks (parallel)
+  quality:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-      - name: Unit Tests (JUnit Platform for XML reports)
-        run: ./gradlew ciTests --no-daemon
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [ktlint, detekt, konsist]
 
-      - name: Integration Tests
-        run: ./gradlew integrationTest --no-daemon --stacktrace
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Architecture Tests (Konsist)
-        run: ./gradlew :shared:testing:test --no-daemon
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Restore Build Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: '**/build/'
+          key: build-${{ github.sha }}
+
+      - name: Run ${{ matrix.check }}
+        run: |
+          case "${{ matrix.check }}" in
+            ktlint) ./gradlew ktlintCheck --no-daemon --build-cache ;;
+            detekt) ./gradlew detekt --no-daemon --build-cache ;;
+            konsist) ./gradlew :shared:testing:test --no-daemon --build-cache ;;
+          esac
+
+  # Job 3: Tests (parallel by type)
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, integration, architecture]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Restore Build Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: '**/build/'
+          key: build-${{ github.sha }}
+
+      - name: Run ${{ matrix.test-type }} Tests
+        run: |
+          if [ "${{ matrix.test-type }}" = "unit" ]; then
+            ./gradlew ciTests --no-daemon --build-cache --scan
+          elif [ "${{ matrix.test-type }}" = "integration" ]; then
+            ./gradlew integrationTest --no-daemon --build-cache --scan
+          else
+            ./gradlew :shared:testing:test --no-daemon --build-cache
+          fi
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports-${{ matrix.test-type }}-${{ github.run_number }}
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
+
+  # Job 4: Coverage (runs after tests)
+  coverage:
+    needs: tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Restore Build Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: '**/build/'
+          key: build-${{ github.sha }}
 
       - name: Generate Coverage Report
-        if: always()
         run: ./gradlew koverXmlReport --no-daemon
 
       - name: Upload Coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: '**/build/reports/kover/report.xml'
           flags: unittests,integrationtests
           name: eaf-coverage
-          fail_ci_if_error: false  # Don't fail if Codecov is down
+          fail_ci_if_error: false
           verbose: true
-
-      - name: Shell Script Analysis (shellcheck)
-        run: |
-          sudo apt-get update && sudo apt-get install -y shellcheck
-          find scripts/ -name "*.sh" -exec shellcheck {} \;
-
-      - name: Upload Test Reports
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: test-reports-${{ github.run_number }}
-          path: |
-            **/build/reports/tests/
-            **/build/test-results/
-          retention-days: 7
 
       - name: Upload Coverage Reports
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: coverage-reports-${{ github.run_number }}
-          path: |
-            **/build/reports/kover/
+          path: '**/build/reports/kover/'
           retention-days: 90
+
+  # Job 5: Shell script analysis
+  shellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: find scripts/ -name "*.sh" -exec shellcheck {} \;

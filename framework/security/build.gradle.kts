@@ -196,3 +196,13 @@ configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
     // PBT + mutation testing = exponential time complexity
     excludedTestClasses.set(setOf("*PropertyTest", "*PropertySpec"))
 }
+
+// ============================================================================
+// Performance-Critical Test Configuration
+// ============================================================================
+// Security tests validate JWT performance (<50ms requirement in AC6)
+// Parallel test execution increases CPU contention → invalidates performance measurements
+// Solution: Run all security tests sequentially for accurate performance validation
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 1 // Sequential execution for accurate JWT performance measurements
+}

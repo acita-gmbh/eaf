@@ -27,6 +27,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
       # CRITICAL: Set up Gradle and Java 21 BEFORE CodeQL init
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
@@ -46,8 +49,12 @@ jobs:
         with:
           languages: java-kotlin
 
-      - name: Build Project (Manual Build for CodeQL)
-        run: ./gradlew assemble --no-daemon --stacktrace
+      # Two-stage build for composite builds: build-logic first, then main project
+      - name: Build Convention Plugins (build-logic)
+        run: ./gradlew :build-logic:assemble --no-daemon --no-build-cache --stacktrace
+
+      - name: Build Main Project
+        run: ./gradlew assemble --no-daemon --no-build-cache --stacktrace
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

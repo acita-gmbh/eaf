@@ -222,8 +222,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("integrationTest", Test::class.java) {
                     description = "Runs integration tests with Testcontainers."
                     group = "verification"
-                    testClassesDirs = integrationTest.output.classesDirs
-                    classpath = integrationTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val integrationTestClassesDirs = integrationTest.output.classesDirs
+                    val integrationTestClasspath = integrationTest.runtimeClasspath
+
+                    testClassesDirs = integrationTestClassesDirs
+                    classpath = integrationTestClasspath
 
                     useJUnitPlatform()
 
@@ -245,8 +250,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("konsistTest", Test::class.java) {
                     description = "Runs Konsist architecture and coding standards checks."
                     group = "verification"
-                    testClassesDirs = konsistTest.output.classesDirs
-                    classpath = konsistTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val konsistTestClassesDirs = konsistTest.output.classesDirs
+                    val konsistTestClasspath = konsistTest.runtimeClasspath
+
+                    testClassesDirs = konsistTestClassesDirs
+                    classpath = konsistTestClasspath
 
                     useJUnitPlatform()
 
@@ -258,8 +268,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("perfTest", Test::class.java) {
                     description = "Runs performance benchmark tests."
                     group = "verification"
-                    testClassesDirs = perfTest.output.classesDirs
-                    classpath = perfTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val perfTestClassesDirs = perfTest.output.classesDirs
+                    val perfTestClasspath = perfTest.runtimeClasspath
+
+                    testClassesDirs = perfTestClassesDirs
+                    classpath = perfTestClasspath
 
                     useJUnitPlatform()
 
@@ -289,8 +304,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("ciIntegrationTest", Test::class.java) {
                     description = "Runs integration tests with JUnit Platform for CI/CD"
                     group = "verification"
-                    testClassesDirs = integrationTest.output.classesDirs
-                    classpath = integrationTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val integrationTestClassesDirs = integrationTest.output.classesDirs
+                    val integrationTestClasspath = integrationTest.runtimeClasspath
+
+                    testClassesDirs = integrationTestClassesDirs
+                    classpath = integrationTestClasspath
 
                     useJUnitPlatform()
 
@@ -310,7 +330,7 @@ class TestingConventionPlugin : Plugin<Project> {
 
                     // Only run if there are actual test classes
                     onlyIf {
-                        !integrationTest.output.classesDirs.asFileTree.isEmpty
+                        !integrationTestClassesDirs.asFileTree.isEmpty
                     }
                 }
 
@@ -318,8 +338,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("ciKonsistTest", Test::class.java) {
                     description = "Runs Konsist tests with JUnit Platform for CI/CD"
                     group = "verification"
-                    testClassesDirs = konsistTest.output.classesDirs
-                    classpath = konsistTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val konsistTestClassesDirs = konsistTest.output.classesDirs
+                    val konsistTestClasspath = konsistTest.runtimeClasspath
+
+                    testClassesDirs = konsistTestClassesDirs
+                    classpath = konsistTestClasspath
 
                     useJUnitPlatform()
 
@@ -340,7 +365,7 @@ class TestingConventionPlugin : Plugin<Project> {
 
                     // Only run if there are actual test classes
                     onlyIf {
-                        !konsistTest.output.classesDirs.asFileTree.isEmpty
+                        !konsistTestClassesDirs.asFileTree.isEmpty
                     }
                 }
 
@@ -349,8 +374,13 @@ class TestingConventionPlugin : Plugin<Project> {
                 tasks.register("ciPerfTest", Test::class.java) {
                     description = "Runs performance benchmark tests with JUnit Platform for CI/CD"
                     group = "verification"
-                    testClassesDirs = perfTest.output.classesDirs
-                    classpath = perfTest.runtimeClasspath
+
+                    // Configuration cache compatible: capture values at configuration time
+                    val perfTestClassesDirs = perfTest.output.classesDirs
+                    val perfTestClasspath = perfTest.runtimeClasspath
+
+                    testClassesDirs = perfTestClassesDirs
+                    classpath = perfTestClasspath
 
                     useJUnitPlatform()
 
@@ -382,7 +412,7 @@ class TestingConventionPlugin : Plugin<Project> {
 
                     // Only run if there are actual test classes
                     onlyIf {
-                        !perfTest.output.classesDirs.asFileTree.isEmpty
+                        !perfTestClassesDirs.asFileTree.isEmpty
                     }
                 }
 
@@ -391,6 +421,40 @@ class TestingConventionPlugin : Plugin<Project> {
                 description = "Runs all tests with JUnit Platform for CI/CD"
                 group = "verification"
                 dependsOn("ciTest", ciIntegrationTestTask, ciKonsistTestTask, ciPerfTestTask)
+            }
+
+            // Configure parallel test execution for all Test tasks
+            tasks.withType<Test>().configureEach {
+                // Parallel test execution (cores/2 for local, 2 for CI)
+                // Performance-sensitive tests run sequentially (maxParallelForks = 1)
+                val isPerformanceTest = name.contains("perf", ignoreCase = true) ||
+                                       name.contains("performance", ignoreCase = true) ||
+                                       name.contains("benchmark", ignoreCase = true)
+
+                maxParallelForks = if (isPerformanceTest) {
+                    1  // Sequential execution for accurate performance measurements
+                } else {
+                    (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+                }
+
+                // Fork new JVM every 100 tests to prevent memory leaks
+                forkEvery = 100
+
+                // JVM args for test processes (separate from Gradle daemon)
+                jvmArgs(
+                    "-Xmx1g",
+                    "-XX:+UseParallelGC",
+                    "-XX:MaxMetaspaceSize=512m"
+                )
+
+                // Improved test logging
+                testLogging {
+                    events("passed", "skipped", "failed")
+                    showStandardStreams = false
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                    showCauses = true
+                    showStackTraces = true
+                }
             }
 
             afterEvaluate {
