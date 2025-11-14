@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload OWASP Dependency Check Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: owasp-dependency-check-report-${{ github.run_number }}
           path: '**/build/reports/dependency-check-report.html'
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload Trivy Report Artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: trivy-filesystem-report-${{ github.run_number }}
           path: 'trivy-results.sarif'

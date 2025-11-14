@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload selective artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: selective-outputs-${{ github.run_number }}
           path: |
@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload ${{ matrix.name }} artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }}-reports
           path: |
@@ -148,7 +148,7 @@ jobs:
           fi
       - name: Upload shellcheck log
         if: steps.shelllint.outputs.status == 'failed'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: shellcheck-report
           path: shellcheck.log
@@ -207,7 +207,7 @@ jobs:
 
       - name: Upload burn-in artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: burn-in-reports
           path: |
