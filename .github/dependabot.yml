@@ -1,11 +1,67 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot configuration for EAF project
+# See: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Gradle dependencies (libraries, plugins)
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "daily"  # More frequent for security updates
+      time: "03:00"      # After nightly tests complete (2 AM UTC)
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "acita-gmbh/engineering"  # Update with actual team
+    labels:
+      - "dependencies"
+      - "gradle"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # Ignore major version bumps for critical dependencies requiring migration
+      - dependency-name: "org.axonframework:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "acita-gmbh/engineering"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+
+  # Docker base images
+  # NOTE: Currently configured for future use when Dockerfiles are added to the repository.
+  # This will monitor docker-compose.yml and any Dockerfile once they are created.
+  # For now, it monitors the Docker Compose services defined in init-dev.sh scripts.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "acita-gmbh/engineering"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "chore"

@@ -17,6 +17,10 @@ on:
     - cron: '0 0 * * 0'  # Weekly on Sunday at midnight UTC
   workflow_dispatch:  # Allow manual trigger
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   owasp-dependency-check:
     runs-on: ubuntu-latest
@@ -26,15 +30,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x ./gradlew
+      - name: Cache OWASP Dependency Check Data
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/dependency-check-data
+          key: ${{ runner.os }}-dependency-check-${{ hashFiles('gradle/libs.versions.toml') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-${{ hashFiles('gradle/libs.versions.toml') }}-
+            ${{ runner.os }}-dependency-check-
 
       - name: OWASP Dependency Check Analysis
         env:
@@ -45,12 +61,49 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: owasp-dependency-check-report
+          name: owasp-dependency-check-report-${{ github.run_number }}
           path: '**/build/reports/dependency-check-report.html'
-          retention-days: 30
+          retention-days: 90
 
       - name: Fail on Critical Vulnerabilities
         if: failure()
         run: |
           echo "::error::OWASP Dependency Check found critical vulnerabilities. Review the uploaded report."
           exit 1
+
+  trivy-filesystem-scan:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@0.33.1  # Pinned for reproducibility (latest as of Sept 2025)
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail build, just report
+
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-filesystem'
+
+      - name: Upload Trivy Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-filesystem-report-${{ github.run_number }}
+          path: 'trivy-results.sarif'
+          retention-days: 90

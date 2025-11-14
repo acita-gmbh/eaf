@@ -12,6 +12,11 @@ import org.gradle.api.plugins.JavaPlugin
 
 // Removed gradle-versions plugin due to ConcurrentModificationException with Gradle 8.14
 
+// SBOM Generation (CycloneDX) - Week 2 Enhancement
+plugins {
+    alias(libs.plugins.cyclonedx) apply true
+}
+
 group = "com.axians.eaf"
 version = "0.1.0-SNAPSHOT"
 
@@ -36,6 +41,18 @@ gradle.projectsEvaluated {
             dependsOn(analyzeDependencies)
         }
     }
+}
+
+// SBOM Generation Configuration (CycloneDX 3.0)
+// In 3.0+: cyclonedxBom aggregates BOMs from all subprojects
+// API changed in 3.0: use task configuration instead of extension block
+tasks.cyclonedxBom {
+    // Output location: JSON only (standard for supply chain tools)
+    jsonOutput = file("build/reports/bom.json")
+    // XML output disabled (only JSON is generated when xmlOutput is not set)
+
+    // License information
+    includeLicenseText = false
 }
 
 subprojects {

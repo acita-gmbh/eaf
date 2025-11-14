@@ -43,6 +43,7 @@ pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
 kover = "0.9.3"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
 dependency-check = "12.1.8" # Supply chain scanning
+cyclonedx = "3.0.1"       # SBOM generation (CycloneDX Gradle plugin) - v3.0+ required for Gradle 9
 
 # Documentation
 dokka = "2.1.0"          # API documentation
@@ -212,6 +213,7 @@ gradlePlugin-konsist = { module = "com.lemonappdev:konsist-gradle-plugin", versi
 gradlePlugin-pitest = { module = "info.solidsoft.gradle.pitest:gradle-pitest-plugin", version.ref = "pitest" }
 gradlePlugin-kover = { module = "org.jetbrains.kotlinx.kover:org.jetbrains.kotlinx.kover.gradle.plugin", version.ref = "kover" }
 gradlePlugin-dependencyCheck = { module = "org.owasp:dependency-check-gradle", version.ref = "dependency-check" }
+gradlePlugin-cyclonedx = { module = "org.cyclonedx:cyclonedx-gradle-plugin", version.ref = "cyclonedx" }
 
 [bundles]
 kotlin = ["kotlin-stdlib", "kotlin-reflect", "kotlin-coroutines-core"]
@@ -245,6 +247,7 @@ konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
 kotest-plugin = { id = "io.kotest", version.ref = "kotest-plugin" }
 
 # Documentation
