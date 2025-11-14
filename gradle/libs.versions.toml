@@ -43,7 +43,7 @@ pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
 kover = "0.9.3"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
 dependency-check = "12.1.8" # Supply chain scanning
-cyclonedx = "2.1.8"       # SBOM generation (CycloneDX Gradle plugin)
+cyclonedx = "1.10.0"      # SBOM generation (CycloneDX Gradle plugin)
 
 # Documentation
 dokka = "2.1.0"          # API documentation
@@ -247,7 +247,7 @@ konsist = { id = "com.lemonappdev.konsist", version.ref = "konsist" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
-cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
+cyclonedx = { id = "org.cyclonedx.sbom", version.ref = "cyclonedx" }
 kotest-plugin = { id = "io.kotest", version.ref = "kotest-plugin" }
 
 # Documentation

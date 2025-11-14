@@ -44,26 +44,23 @@ gradle.projectsEvaluated {
 }
 
 // SBOM Generation Configuration (CycloneDX)
-configure<org.cyclonedx.gradle.CycloneDxExtension> {
+cyclonedxSbom {
     // Include runtime classpath for complete dependency tree
-    includeConfigs.set(listOf("runtimeClasspath"))
+    includeConfigs = listOf("runtimeClasspath")
 
     // Skip test dependencies to reduce SBOM size
-    skipConfigs.set(listOf("testRuntimeClasspath", "testImplementation"))
+    skipConfigs = listOf("testRuntimeClasspath", "testImplementation")
 
     // Output format: JSON (standard for supply chain tools)
-    outputFormat.set("json")
-    outputName.set("bom")
+    outputFormat = "json"
+    outputName = "bom"
 
     // Include project metadata
-    projectType.set("application")
-    schemaVersion.set("1.6")
+    projectType = "application"
+    schemaVersion = "1.6"
 
     // Include license information
-    includeLicenseText.set(false)
-
-    // Component analysis
-    componentVersion.set(project.version.toString())
+    includeLicenseText = false
 }
 
 subprojects {
