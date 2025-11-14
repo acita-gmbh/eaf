@@ -23,6 +23,9 @@ jobs:
       - name: Setup CI Gradle Configuration
         run: cp .github/ci-gradle.properties gradle.properties
 
+      # Additional dependency cache (complements setup-gradle's automatic caching)
+      # setup-gradle caches: build-cache, wrapper, notifications
+      # This adds: modules-2 (for faster dependency resolution)
       - name: Cache Gradle Dependencies
         uses: actions/cache@v4
         with:

@@ -114,7 +114,7 @@ subprojects {
                 }
 
                 "io.grpc" to "grpc-netty-shaded" -> {
-                    useVersion("1.75.0")
+                    useVersion(catalog.findVersion("grpc-netty-shaded").get().requiredVersion)
                     because("Fix CVE-2025-55163 in grpc-netty-shaded (requires >= 1.75.0)")
                 }
             }
