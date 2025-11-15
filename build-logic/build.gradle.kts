@@ -168,6 +168,10 @@ gradlePlugin {
             id = "eaf.pre-commit-hooks"
             implementationClass = "conventions.PreCommitHooksConventionPlugin"
         }
+        register("eaf.testing-v2") {
+            id = "eaf.testing-v2"
+            implementationClass = "conventions.EafTestingV2Plugin"
+        }
     }
 }
 

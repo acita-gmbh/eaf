@@ -1,5 +1,5 @@
 plugins {
-    id("eaf.testing")
+    id("eaf.testing-v2") // PILOT: Testing v2 plugin (Story 2.1)
     id("eaf.kotlin-common")
 }
 
