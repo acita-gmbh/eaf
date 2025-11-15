@@ -11,8 +11,8 @@ concurrency:
 
 jobs:
   deep-validation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180  # 3 hours max (target ~2.5h)
+    runs-on: [self-hosted, Linux, X64, nightly]  # Story 1.5: Self-hosted runner
+    timeout-minutes: 480  # 8 hours max (Story 1.5: Extended for 30min fuzzing)
 
     steps:
       - name: Checkout Code
@@ -125,11 +125,14 @@ jobs:
       - name: Snapshot Performance Tests
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
 
+      # Story 1.5: Nightly tests will use suite-based execution after Phase 2-3 migration
+      # For now, keeping module-qualified execution (will update in Phase 3)
       - name: Property-Based Tests (Module-Qualified)
         run: ./gradlew :framework:security:propertyTest -PnightlyBuild --no-daemon --stacktrace
 
-      - name: Fuzz Tests (Jazzer - Module-Qualified)
+      - name: Fuzz Tests (Jazzer - Module-Qualified - 30 min/target)
         run: ./gradlew :framework:security:fuzzTest -PnightlyBuild --no-daemon --stacktrace
+        timeout-minutes: 240  # 4 hours for 7 targets × 30 min
 
       # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
       # - name: Concurrency Tests (LitmusKt)

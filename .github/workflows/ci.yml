@@ -137,7 +137,7 @@ jobs:
       - name: Run ${{ matrix.test-type }} Tests
         run: |
           if [ "${{ matrix.test-type }}" = "unit" ]; then
-            ./gradlew ciTests --no-daemon --build-cache --scan
+            ./gradlew test --no-daemon --build-cache --scan
           elif [ "${{ matrix.test-type }}" = "integration" ]; then
             ./gradlew integrationTest --no-daemon --build-cache --scan
           else
