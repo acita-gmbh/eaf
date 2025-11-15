@@ -63,22 +63,22 @@ tasks=()
 declare -A seen=()
 
 if [ "$run_ci_tests" = true ]; then
-    tasks+=("ciTests")
-    seen["ciTests"]=1
+    tasks+=("test")
+    seen["test"]=1
 fi
 if [ "$run_integration" = true ] && [ -z "${seen[\"integrationTest\"]:-}" ]; then
     tasks+=("integrationTest")
     seen["integrationTest"]=1
 fi
-if [ "$run_arch" = true ] && [ -z "${seen[\":shared:testing:test\"]:-}" ]; then
-    tasks+=(":shared:testing:test")
-    seen[":shared:testing:test"]=1
+if [ "$run_arch" = true ] && [ -z "${seen[\"konsistTest\"]:-}" ]; then
+    tasks+=("konsistTest")
+    seen["konsistTest"]=1
 fi
 
 if [ "$FORCE_FULL_SUITE" = true ]; then
     docs_only=false
     if [ "${#tasks[@]}" -eq 0 ]; then
-        tasks=("ciTests" "integrationTest" ":shared:testing:test")
+        tasks=("test" "integrationTest" "konsistTest")
     fi
 fi
 
@@ -87,8 +87,8 @@ if [ "$docs_only" = true ]; then
     ./gradlew ktlintCheck --no-daemon --stacktrace
 else
     if [ "${#tasks[@]}" -eq 0 ]; then
-        echo "No targeted tasks derived from diff. Falling back to ciTests."
-        tasks=("ciTests")
+        echo "No targeted tasks derived from diff. Falling back to test."
+        tasks=("test")
     fi
 
     echo "🔍 Selective execution triggered for tasks: ${tasks[*]}"
