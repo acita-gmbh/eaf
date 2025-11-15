@@ -86,12 +86,12 @@ jobs:
         include:
           - name: build-static
             gradle_tasks: "assemble ktlintCheck detekt"
-          - name: ci-tests
-            gradle_tasks: "ciTests"
+          - name: unit-tests
+            gradle_tasks: "test"
           - name: integration-tests
             gradle_tasks: "integrationTest"
           - name: architecture-tests
-            gradle_tasks: ":shared:testing:test"
+            gradle_tasks: "konsistTest"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -200,7 +200,7 @@ jobs:
       - name: Execute burn-in loop
         env:
           BURN_IN_ITERATIONS: ${{ steps.burn_config.outputs.iterations }}
-          BURN_IN_TASKS: "ciTests integrationTest"
+          BURN_IN_TASKS: "test integrationTest"
         run: |
           chmod +x scripts/burn-in.sh
           ./scripts/burn-in.sh
