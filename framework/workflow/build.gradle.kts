@@ -1,6 +1,6 @@
 plugins {
     id("eaf.workflow")
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.2: Migrated to v2
 }
 
 description = "EAF Workflow Framework - Flowable BPMN integration"

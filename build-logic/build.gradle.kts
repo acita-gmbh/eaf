@@ -91,6 +91,15 @@ repositories {
 }
 
 dependencies {
+    // CRITICAL FIX (Story 2.1): Add gradle-testing-base JAR for TestingExtension
+    // This JAR contains org.gradle.testing.base.TestingExtension which is NOT
+    // in the core gradleApi() artifact. Required for jvm-test-suite plugin.
+    //
+    // We add the entire gradleApi() which includes gradle-testing-base and other modules.
+    // The kotlin-dsl plugin normally provides this, but we make it explicit for TestingExtension.
+    implementation(gradleApi())
+    implementation(gradleKotlinDsl())
+
     listOf(
         "gradlePlugin-kotlin-jvm",
         "gradlePlugin-kotlin-allopen",
@@ -158,6 +167,10 @@ gradlePlugin {
         register("eaf.pre-commit-hooks") {
             id = "eaf.pre-commit-hooks"
             implementationClass = "conventions.PreCommitHooksConventionPlugin"
+        }
+        register("eaf.testing-v2") {
+            id = "eaf.testing-v2"
+            implementationClass = "conventions.EafTestingV2Plugin"
         }
     }
 }
