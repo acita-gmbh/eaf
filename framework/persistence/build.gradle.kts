@@ -25,7 +25,7 @@ sourceSets {
     }
 }
 
-// CRITICAL: Only configure perfTest for Nightly builds to avoid CI overhead
+// CRITICAL: Only configure nightlyTest for Nightly builds to avoid CI overhead
 val isNightlyBuild = project.hasProperty("nightlyBuild")
 
 if (isNightlyBuild) {
@@ -34,8 +34,8 @@ if (isNightlyBuild) {
         val testOutput = sourceSets.test.get().output
 
         sourceSets {
-            // perfTest source-set (created by eaf.testing convention plugin) needs test source-set access
-            named("perfTest") {
+            // nightlyTest source-set (created by eaf.testing-v2 convention plugin) needs test source-set access
+            named("nightlyTest") {
                 compileClasspath += testOutput
                 runtimeClasspath += testOutput
             }
@@ -81,13 +81,13 @@ dependencies {
 // Performance test dependencies - only for Nightly builds
 if (isNightlyBuild) {
     dependencies {
-        "perfTestImplementation"(libs.bundles.kotest)
-        "perfTestImplementation"(libs.spring.boot.starter.test)
-        "perfTestImplementation"(libs.bundles.testcontainers)
+        "nightlyTestImplementation"(libs.bundles.kotest)
+        "nightlyTestImplementation"(libs.spring.boot.starter.test)
+        "nightlyTestImplementation"(libs.bundles.testcontainers)
         // Required for @Testcontainers, @Container annotations
-        "perfTestImplementation"(libs.testcontainers.junit.jupiter)
-        "perfTestImplementation"(project(":framework:cqrs"))
-        "perfTestImplementation"(project(":shared:testing"))
+        "nightlyTestImplementation"(libs.testcontainers.junit.jupiter)
+        "nightlyTestImplementation"(project(":framework:cqrs"))
+        "nightlyTestImplementation"(project(":shared:testing"))
     }
 }
 

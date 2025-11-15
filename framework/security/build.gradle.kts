@@ -31,9 +31,9 @@ if (isNightlyBuild) {
                 runtimeClasspath += mainOutput + testOutput
             }
 
-            // perfTest source-set (created by eaf.testing convention plugin) needs integrationTest source-set access
+            // nightlyTest source-set (created by eaf.testing convention plugin) needs integrationTest source-set access
             // SecurityTestApplication is in integrationTest, not test
-            named("perfTest") {
+            named("nightlyTest") {
                 compileClasspath += integrationTestOutput
                 runtimeClasspath += integrationTestOutput
             }
@@ -120,12 +120,12 @@ if (isNightlyBuild) {
         "fuzzTestImplementation"(libs.jazzer.api)
 
         // Performance test dependencies (same as integration tests)
-        "perfTestImplementation"(libs.bundles.kotest)
-        "perfTestImplementation"(libs.spring.boot.starter.test)
-        "perfTestImplementation"(libs.bundles.testcontainers)
+        "nightlyTestImplementation"(libs.bundles.kotest)
+        "nightlyTestImplementation"(libs.spring.boot.starter.test)
+        "nightlyTestImplementation"(libs.bundles.testcontainers)
         // Required for @Testcontainers, @Container annotations
-        "perfTestImplementation"(libs.testcontainers.junit.jupiter)
-        "perfTestImplementation"(project(":shared:testing"))
+        "nightlyTestImplementation"(libs.testcontainers.junit.jupiter)
+        "nightlyTestImplementation"(project(":shared:testing"))
     }
 }
 
