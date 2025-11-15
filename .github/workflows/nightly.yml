@@ -125,20 +125,21 @@ jobs:
       - name: Snapshot Performance Tests
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
 
-      # Story 1.5: Nightly tests will use suite-based execution after Phase 2-3 migration
-      # For now, keeping module-qualified execution (will update in Phase 3)
-      - name: Property-Based Tests (Module-Qualified)
-        run: ./gradlew :framework:security:propertyTest -PnightlyBuild --no-daemon --stacktrace
+      # Phase 2 V2: Consolidated nightlyTest suite (replaces propertyTest, fuzzTest, perfTest)
+      # nightlyTest includes all comprehensive test types via @Tags:
+      # - @Tag("Property"): Kotest property-based testing
+      # - @Tag("Fuzz"): Jazzer fuzz testing (30 min/target)
+      # - @Tag("Concurrency"): LitmusKt concurrency tests (Epic 8)
+      # - @Tag("Mutation"): Pitest mutation coverage
+      # - @Tag("Performance"): Benchmark/performance tests
+      # - @Tag("Nightly"): General nightly tests
+      - name: Nightly Comprehensive Test Suite (V2)
+        run: ./gradlew nightlyTest -PnightlyBuild --no-daemon --stacktrace
+        timeout-minutes: 480  # 8 hours for comprehensive validation
 
-      - name: Fuzz Tests (Jazzer - Module-Qualified - 30 min/target)
-        run: ./gradlew :framework:security:fuzzTest -PnightlyBuild --no-daemon --stacktrace
-        timeout-minutes: 240  # 4 hours for 7 targets × 30 min
-
-      # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
-      # - name: Concurrency Tests (LitmusKt)
-      #   run: ./gradlew litmusTest --no-daemon --stacktrace
-
-      - name: Mutation Testing (Pitest - All Modules)
+      # Mutation Testing (Pitest - separate from nightlyTest suite)
+      # TODO: Integrate with nightlyTest in Phase 2.5
+      - name: Mutation Testing (Pitest - Framework Modules)
         run: ./gradlew :framework:core:pitest :framework:security:pitest :framework:cqrs:pitest --no-daemon --stacktrace
 
       # ========================================================================
@@ -172,22 +173,14 @@ jobs:
             app.log
           retention-days: 7
 
-      - name: Upload Property Test Reports
+      - name: Upload Nightly Test Reports
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: property-test-reports-${{ github.run_number }}
+          name: nightly-test-reports-${{ github.run_number }}
           path: |
-            **/build/reports/tests/propertyTest/
-          retention-days: 30
-
-      - name: Upload Fuzz Test Reports
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: fuzz-test-reports-${{ github.run_number }}
-          path: |
-            **/build/reports/tests/fuzzTest/
+            **/build/reports/tests/nightlyTest/
+            **/build/test-results/nightlyTest/
           retention-days: 30
 
       - name: Upload Performance Test Reports
