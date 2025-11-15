@@ -2,7 +2,7 @@
 // Implements complete CQRS/ES vertical slice with Axon Framework
 
 plugins {
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.3: Complete rollout - migrated to v2
     id("eaf.spring-boot")
     alias(libs.plugins.gatling)
 }
