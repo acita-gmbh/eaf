@@ -69,7 +69,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [ktlint, detekt, konsist]
+        # V2: konsist removed from matrix - architecture tests run in 'test' task
+        check: [ktlint, detekt]
 
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +99,8 @@ jobs:
           case "${{ matrix.check }}" in
             ktlint) ./gradlew ktlintCheck --no-daemon --build-cache ;;
             detekt) ./gradlew detekt --no-daemon --build-cache ;;
-            konsist) ./gradlew konsistTest --no-daemon --build-cache ;;
+            # V2: konsistTest removed - architecture tests run in 'test' task
+            # konsist job now runs standard test task (includes Konsist tests)
           esac
 
   # Job 3: Tests (parallel by type)

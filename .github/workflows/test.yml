@@ -90,8 +90,8 @@ jobs:
             gradle_tasks: "test"
           - name: integration-tests
             gradle_tasks: "integrationTest"
-          - name: architecture-tests
-            gradle_tasks: "konsistTest"
+          # V2: architecture-tests removed - Konsist now runs in 'test' task
+          # Architecture validation included in unit-tests job
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
