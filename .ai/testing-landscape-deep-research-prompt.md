@@ -1132,24 +1132,224 @@ class MyTest : FunSpec() {
 
 ---
 
-## Part 12: Questions for Clarification
+## Part 12: Research Parameters (CONFIRMED)
 
-**Before starting research, please confirm**:
+**The following parameters have been confirmed and should guide all research and recommendations:**
 
-1. **Scope**: Should research cover only testing infrastructure, or also test content quality?
-2. **Constraints**: Are there budget/timeline constraints for implementation?
-3. **Stakeholders**: Who will review and approve recommendations?
-4. **Risk Tolerance**: How aggressive can recommendations be? (Conservative vs. transformative)
-5. **Migration**: Must recommendations support incremental migration, or can we consider clean slate?
+### 12.1 Scope (CONFIRMED)
+
+**Focus: Testing Infrastructure & Developer Experience (NOT Test Content Quality)**
+
+- ✅ **In Scope**: Testing infrastructure, tooling, task organization, developer workflows, error messages
+- ❌ **Out of Scope**: Test content quality, test effectiveness, coverage analysis
+- **Rationale**: The "jungle" problem is about complexity and developer friction, not test effectiveness. Constitutional TDD ensures test quality.
+
+---
+
+### 12.2 Risk Tolerance (CONFIRMED)
+
+**Moderate-to-Aggressive (Balanced Approach)**
+
+**Quick Wins** (0-2 weeks):
+- Conservative, low-risk changes
+- No breaking changes
+- Immediate improvements
+
+**Strategic Improvements** (1-2 months):
+- Moderate risk, well-validated approaches
+- Industry best practices
+- Incremental adoption
+
+**Long-Term Vision** (3-6 months):
+- Can explore transformative changes, but must be:
+  - Incrementally adoptable (no big-bang migrations)
+  - Reversible (can roll back if issues arise)
+  - Evidence-based (industry best practices or proven patterns)
+
+**Hard Constraints**:
+- ❌ No "rip and replace" of Kotest (it's constitutionally mandated)
+- ❌ No compromises on Constitutional TDD or 7-layer defense
+- ✅ Open to rethinking task structure, source sets, execution modes
+- ✅ Willing to contribute upstream fixes (Kotest, Gradle plugins) if beneficial
+
+---
+
+### 12.3 Migration Strategy (CONFIRMED)
+
+**MANDATORY: All Recommendations MUST Support Incremental Migration**
+
+- **Hard Requirement**: All recommendations must be adoptable incrementally
+- **No Clean Slate**: Cannot stop implementation work for 3-6 month testing overhaul
+- **Phased Approach**: Each improvement must be:
+  - Standalone (doesn't require other changes first)
+  - Testable (can validate improvement in isolation)
+  - Reversible (can revert if issues arise)
+
+**Acceptable Pattern Example**:
+```
+Phase 1: Consolidate tasks in security module (1 week, isolated)
+Phase 2: Apply to framework modules (1 week, validated pattern)
+Phase 3: Apply to product modules (1 week, fully rolled out)
+```
+
+**Unacceptable Pattern Example**:
+```
+Phase 1: Migrate all modules to new testing framework (6 weeks, all-or-nothing)
+```
+
+---
+
+### 12.4 Implementation Constraints (CONFIRMED)
+
+**Timeline**:
+- **Quick Wins**: Must be implementable within current sprint (2 weeks max)
+- **Strategic Improvements**: Q1 2026 (January-March 2026)
+- **Long-Term Vision**: Q2-Q3 2026 (April-September 2026)
+
+**Resources**:
+- **Solo Developer**: Currently 1 developer working on EAF
+- **Community Support**: Can engage Kotest/Gradle communities for upstream fixes
+- **Documentation Effort**: Willing to invest in documentation if it reduces long-term burden
+
+**Budget**:
+- No budget for commercial tools/licenses
+- Open-source only
+- Can contribute to upstream projects if needed
+
+---
+
+### 12.5 Success Criteria Priority (CONFIRMED)
+
+**Top 3 Critical Metrics** (in priority order):
+
+#### **#1 PRIORITY: Developer Onboarding Time** (Target: <2 hours)
+
+**Current State**: ~8-10 hours to understand testing landscape
+**Target**: <2 hours to understand and be productive
+**Why Critical**: New team members will join, and complexity is a barrier to entry
+
+**Measurement**:
+- Time from "git clone" to "successfully run tests and understand workflow"
+- Documentation burden reduction (currently ~50 pages in test-strategy.md + CLAUDE.md)
+- Number of concepts to learn (target: 50% reduction)
+
+**Success Indicators**:
+- New developer can run tests without reading extensive documentation
+- Clear, intuitive task naming (no ambiguity)
+- Self-explanatory error messages
+
+---
+
+#### **#2 PRIORITY: Task Count per Module** (Target: ≤6 tasks)
+
+**Current State**: 11+ tasks per module (13 in security module)
+**Target**: ≤6 tasks per module
+**Why Critical**: High cognitive load, developer confusion ("Which task do I use?")
+
+**Measurement**:
+- Count of test tasks per module
+- Number of workaround tasks (e.g., `ci*` variants)
+- Duplicate/redundant tasks
+
+**Success Indicators**:
+- Obvious task names and purposes
+- No "disabled" tasks (e.g., `test` task with `onlyIf { false }`)
+- Minimal special cases
+
+---
+
+#### **#3 PRIORITY: Error Recovery Time** (Target: <10 minutes)
+
+**Current State**: Common errors take 30+ minutes to debug
+**Target**: <10 minutes to identify and fix common mistakes
+**Why Critical**: Developer velocity is hampered by non-obvious errors
+
+**Current Pain Point Examples**:
+- Plugin order errors: 150+ compilation errors (no mention of root cause)
+- BUILD FAILED with passing tests: Requires understanding XML reporter bug
+- Constructor injection in @SpringBootTest: Circular dependency errors (root cause not mentioned)
+
+**Measurement**:
+- Time from error encounter to resolution
+- Clarity of error messages
+- Need for "workarounds" documentation
+
+**Success Indicators**:
+- Error messages mention root cause
+- Gradle/compiler errors guide developers to solution
+- Fewer special cases requiring workarounds
+
+---
+
+### 12.6 Research Focus Areas (CONFIRMED PRIORITIES)
+
+**High Priority** (Must Address in Detail):
+
+1. **Kotest Native vs JUnit Platform** - Dual execution is major pain point, confusion source
+2. **Task Consolidation** - 11+ tasks is too many, reduces onboarding time
+3. **Spring Boot Integration Pattern** - Error-prone, non-obvious, affects error recovery time
+
+**Medium Priority** (Should Address):
+
+4. **Nightly-Only Test Strategy** - Inconsistency is confusing, affects onboarding
+5. **Source Set Simplification** - 6 source sets may be too many
+6. **Plugin Order Sensitivity** - Fragile, hard to debug, affects error recovery
+
+**Lower Priority** (Can Be Concise):
+
+7. **Parallel Execution Strategy** - Works, but special cases are confusing
+8. **Configuration Cache Complexity** - Works, but adds cognitive load
+
+---
+
+### 12.7 Expected Deliverable Emphasis (CONFIRMED)
+
+**Please emphasize these sections** (detailed analysis):
+
+1. **Executive Summary**: Focus on top 3 pain points + top 3 quick wins
+2. **Developer Experience Assessment**: Deep dive on onboarding and error recovery
+3. **Task Consolidation Recommendations**: Detailed proposal with migration plan
+4. **Kotest Native vs JUnit Platform**: Decision framework with evidence
+
+**Please be more concise on** (high-level only):
+
+- Comparison & Benchmarking (summarize key insights, 3-5 pages)
+- Long-term vision (high-level only, detailed roadmap for quick wins)
+- Configuration cache complexity (acknowledge, but low priority)
+
+---
+
+### 12.8 Additional Guidance (CONFIRMED)
+
+**Preferred Solution Characteristics**:
+
+1. **Favor Standardization Over Flexibility**
+   - Consistent patterns across all modules
+   - Module-specific overrides only when absolutely necessary (with clear documentation)
+
+2. **Favor Explicit Over Implicit**
+   - Clear task names (no `test` task that doesn't run tests)
+   - Obvious error messages (mention root cause in error text)
+
+3. **Favor Convention Over Configuration**
+   - Sensible defaults that work for 90% of cases
+   - Override only when necessary
+
+4. **Favor Upstream Fixes Over Local Workarounds**
+   - If Kotest XML reporter is fixable, prefer fixing it upstream
+   - If Gradle can provide better patterns, contribute to Gradle
+   - Local workarounds only when upstream fix is not feasible
 
 ---
 
 ## Contact & Support
 
-**For questions or clarifications during research**:
+**For questions or additional context during research**:
 - Reference files in `/home/user/eaf/` directory
-- Priority: Focus on developer experience improvements
-- Constraint: Maintain Constitutional TDD and 7-layer defense
+- Priority: Developer experience improvements (onboarding, task simplification, error recovery)
+- Constraint: Maintain Constitutional TDD and 7-layer defense (non-negotiable)
 - Goal: Simplify without sacrificing enterprise quality
+
+**Research Mandate**: Produce actionable, incrementally adoptable recommendations that reduce cognitive load by 50% while preserving all quality standards.
 
 **Thank you for conducting this research. The EAF team looks forward to your insights and recommendations for a world-class testing experience!**
