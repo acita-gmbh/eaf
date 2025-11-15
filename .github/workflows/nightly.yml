@@ -133,8 +133,24 @@ jobs:
       # - @Tag("Mutation"): Pitest mutation coverage
       # - @Tag("Performance"): Benchmark/performance tests
       # - @Tag("Nightly"): General nightly tests
+      #
+      # IMPORTANT: nightlyTest task only exists for framework modules (EafTestingV2Plugin.kt:113-117)
+      # Must explicitly specify framework modules - global task execution would fail
       - name: Nightly Comprehensive Test Suite (V2)
-        run: ./gradlew nightlyTest -PnightlyBuild --no-daemon --stacktrace
+        run: |
+          ./gradlew \
+            :framework:core:nightlyTest \
+            :framework:security:nightlyTest \
+            :framework:cqrs:nightlyTest \
+            :framework:persistence:nightlyTest \
+            :framework:web:nightlyTest \
+            :framework:observability:nightlyTest \
+            :framework:multi-tenancy:nightlyTest \
+            :framework:workflow:nightlyTest \
+            :shared:testing:nightlyTest \
+            :shared:shared-api:nightlyTest \
+            :shared:shared-types:nightlyTest \
+            -PnightlyBuild --no-daemon --stacktrace --continue
         timeout-minutes: 480  # 8 hours for comprehensive validation
 
       # Mutation Testing (Pitest - separate from nightlyTest suite)
