@@ -66,6 +66,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.axon.test)
+    testImplementation(libs.hamcrest) // Required by Axon Test Framework
 
     // Integration Testing (Story 2.7)
     integrationTestImplementation(libs.bundles.testcontainers)

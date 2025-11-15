@@ -13,14 +13,60 @@ pluginManagement {
 // Settings plugins
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    id("com.gradle.develocity") version "3.18.2"
+}
+
+// Build Scan configuration (performance visibility and debugging)
+develocity {
+    buildScan {
+        termsOfUseUrl.set("https://gradle.com/help/legal-terms-of-use")
+        termsOfUseAgree.set("yes")
+
+        // Publish scans in CI or on failure
+        publishing {
+            onlyIf {
+                it.buildResult.failures.isNotEmpty() || System.getenv("CI") == "true"
+            }
+        }
+
+        // Tag scans for easier filtering
+        tag(if (System.getenv("CI") == "true") "CI" else "local")
+    }
 }
 
 // Dependency resolution management
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        mavenCentral()
-        gradlePluginPortal()
+        // Order matters: most frequently used first
+        // Content filtering reduces HTTP requests by preventing lookups in wrong repositories
+        mavenCentral() {
+            content {
+                // Exclude Gradle plugins (use Plugin Portal)
+                excludeGroupByRegex("org\\.gradle.*")
+                excludeGroup("com.gradle")
+                excludeGroup("io.spring.gradle")
+            }
+        }
+        gradlePluginPortal() {
+            content {
+                // Only Gradle plugins and build tools
+                includeGroupByRegex("org\\.gradle.*")
+                includeGroupByRegex("com\\.gradle.*")
+                includeGroup("org.jetbrains.kotlin")
+                includeGroup("org.springframework.boot")
+                includeGroup("io.spring.gradle")
+                includeGroup("org.jlleitschuh.gradle")
+                includeGroup("io.gitlab.arturbosch.detekt")
+                includeGroup("info.solidsoft.gradle.pitest")
+                includeGroup("org.jetbrains.kotlinx.kover")
+                includeGroup("org.owasp")
+                includeGroup("org.cyclonedx")
+                includeGroup("io.kotest")
+                includeGroup("org.jooq")
+                includeGroup("io.gatling.gradle")
+            }
+        }
     }
 }
 

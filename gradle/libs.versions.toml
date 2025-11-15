@@ -22,6 +22,7 @@ flyway = "11.17.0"         # Database migration framework
 jooq = "3.20.8"           # SQL DSL for read projections (updated)
 jackson = "2.18.2"         # JSON processing (matches Spring Boot BOM)
 netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025-58057 fixes
+grpc-netty-shaded = "1.75.0" # CVE-2025-55163 fix (gRPC Netty DoS vulnerability)
 commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursion)
 
 # Testing framework (MANDATORY)
@@ -31,6 +32,7 @@ kotest-assertions-arrow = "2.0.0"  # Kotest Arrow assertions extension
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
 h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - Integration tests MUST use Testcontainers PostgreSQL
+hamcrest = "3.0"          # Hamcrest matchers - required by Axon Test Framework
 
 # Quality gates and static analysis
 ktlint = "1.7.1"          # Code formatting (better Kotlin 2.2 support)
@@ -43,7 +45,7 @@ pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
 kover = "0.9.3"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
 dependency-check = "12.1.8" # Supply chain scanning
-cyclonedx = "3.0.1"       # SBOM generation (CycloneDX Gradle plugin) - v3.0+ required for Gradle 9
+cyclonedx = "3.0.2"       # SBOM generation (CycloneDX Gradle plugin) - CVE-2025-64518 fix
 
 # Documentation
 dokka = "2.1.0"          # API documentation
@@ -152,6 +154,7 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "testcontainers-keycloak" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 
 # Static analysis
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }

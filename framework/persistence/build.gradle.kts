@@ -25,6 +25,24 @@ sourceSets {
     }
 }
 
+// CRITICAL: Only configure perfTest for Nightly builds to avoid CI overhead
+val isNightlyBuild = project.hasProperty("nightlyBuild")
+
+if (isNightlyBuild) {
+    // CRITICAL: Configuration cache compatibility - lazy evaluation with afterEvaluate
+    afterEvaluate {
+        val testOutput = sourceSets.test.get().output
+
+        sourceSets {
+            // perfTest source-set (created by eaf.testing convention plugin) needs test source-set access
+            named("perfTest") {
+                compileClasspath += testOutput
+                runtimeClasspath += testOutput
+            }
+        }
+    }
+}
+
 dependencies {
     implementation(project(":framework:core"))
     implementation(project(":framework:cqrs"))
@@ -60,6 +78,19 @@ dependencies {
     jooqCodegen(libs.jooq.codegen)
 }
 
+// Performance test dependencies - only for Nightly builds
+if (isNightlyBuild) {
+    dependencies {
+        "perfTestImplementation"(libs.bundles.kotest)
+        "perfTestImplementation"(libs.spring.boot.starter.test)
+        "perfTestImplementation"(libs.bundles.testcontainers)
+        // Required for @Testcontainers, @Container annotations
+        "perfTestImplementation"(libs.testcontainers.junit.jupiter)
+        "perfTestImplementation"(project(":framework:cqrs"))
+        "perfTestImplementation"(project(":shared:testing"))
+    }
+}
+
 // jOOQ Code Generation Configuration
 jooq {
     configuration {
@@ -86,4 +117,14 @@ jooq {
             }
         }
     }
+}
+
+// ============================================================================
+// Performance-Critical Test Configuration
+// ============================================================================
+// Persistence tests validate event store performance (<200ms with 100K events)
+// Parallel test execution increases disk I/O contention → invalidates performance measurements
+// Solution: Run all persistence tests sequentially for accurate performance validation
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 1 // Sequential execution for accurate event store performance measurements
 }

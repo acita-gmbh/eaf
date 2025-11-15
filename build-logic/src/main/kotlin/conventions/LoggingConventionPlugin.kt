@@ -27,17 +27,18 @@ class LoggingConventionPlugin : Plugin<Project> {
 
             // Copy logback-eaf.xml to each module's resources for Spring Boot auto-discovery
             tasks.register("copyLoggingConfig") {
-                doLast {
-                    val sourceConfig = rootProject.file("build-logic/src/main/resources/logback-eaf.xml")
-                    val targetConfig = file("src/main/resources/logback-spring.xml")
+                // Configuration cache compatible: capture values at configuration time
+                val sourceConfigPath = rootProject.file("build-logic/src/main/resources/logback-eaf.xml")
+                val targetConfigPath = file("src/main/resources/logback-spring.xml")
 
+                doLast {
                     // Ensure target directory exists
-                    targetConfig.parentFile.mkdirs()
+                    targetConfigPath.parentFile.mkdirs()
 
                     // Copy configuration file
-                    sourceConfig.copyTo(targetConfig, overwrite = true)
+                    sourceConfigPath.copyTo(targetConfigPath, overwrite = true)
 
-                    logger.info("EAF Logging: Copied logback-eaf.xml to ${targetConfig.path}")
+                    logger.info("EAF Logging: Copied logback-eaf.xml to ${targetConfigPath.path}")
                 }
             }
 

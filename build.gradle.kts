@@ -15,6 +15,12 @@ import org.gradle.api.plugins.JavaPlugin
 // SBOM Generation (CycloneDX) - Week 2 Enhancement
 plugins {
     alias(libs.plugins.cyclonedx) apply true
+
+    // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
+    // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.spring) apply false
+    alias(libs.plugins.kotlin.jpa) apply false
 }
 
 group = "com.axians.eaf"
@@ -58,6 +64,11 @@ tasks.cyclonedxBom {
 subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
 
+    // Dependency Locking (improves build performance and reproducibility)
+    configurations.configureEach {
+        resolutionStrategy.activateDependencyLocking()
+    }
+
     configurations.configureEach {
         resolutionStrategy.eachDependency {
             when (requested.group to requested.name) {
@@ -100,6 +111,11 @@ subprojects {
                 "io.netty" to "netty-transport-native-unix-common" -> {
                     useVersion(catalog.findVersion("netty").get().requiredVersion)
                     because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                }
+
+                "io.grpc" to "grpc-netty-shaded" -> {
+                    useVersion(catalog.findVersion("grpc-netty-shaded").get().requiredVersion)
+                    because("Fix CVE-2025-55163 in grpc-netty-shaded (requires >= 1.75.0)")
                 }
             }
         }

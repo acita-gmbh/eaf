@@ -11,12 +11,15 @@ concurrency:
 
 jobs:
   deep-validation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180  # 3 hours max (target ~2.5h)
+    runs-on: [self-hosted, Linux, X64, nightly]  # Story 1.5: Self-hosted runner
+    timeout-minutes: 480  # 8 hours max (Story 1.5: Extended for 30min fuzzing)
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
@@ -30,25 +33,144 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Performance Baseline Tests
+      # ========================================================================
+      # Infrastructure Lifecycle Management (from PR #59)
+      # ========================================================================
+
+      - name: Clean Up Previous Infrastructure
+        run: |
+          # Remove any leftover containers and volumes from previous runs
+          docker compose down -v --remove-orphans || true
+          echo "✅ Previous infrastructure cleaned up"
+
+      - name: Start Infrastructure Services
+        run: |
+          # Start essential services for tests (skip prometheus/grafana for speed)
+          docker compose up -d postgres redis keycloak
+          echo "🚀 Infrastructure services started"
+
+      - name: Wait for Infrastructure Services
+        run: |
+          echo "⏳ Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until docker exec eaf-postgres pg_isready -U eaf_user -d eaf 2>/dev/null; do sleep 2; done'
+          echo "✅ PostgreSQL is ready!"
+
+          echo "⏳ Waiting for Redis..."
+          timeout 30 bash -c 'until docker exec eaf-redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 2; done'
+          echo "✅ Redis is ready!"
+
+          echo "⏳ Waiting for Keycloak..."
+          timeout 120 bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} eaf-keycloak 2>/dev/null)" = "healthy" ]; do sleep 5; done'
+          echo "✅ Keycloak health check passed!"
+
+          echo "⏳ Verifying Keycloak realm import..."
+          timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf 2>/dev/null | grep -q "eaf"; do sleep 3; done'
+          echo "✅ Keycloak realm 'eaf' is available!"
+
+          echo "⏳ Verifying Keycloak JWKS endpoint..."
+          timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf/protocol/openid-connect/certs 2>/dev/null | grep -q "keys"; do sleep 3; done'
+          echo "✅ Keycloak JWKS endpoint is responding!"
+
+          echo "🎉 All infrastructure services are healthy!"
+
+      - name: Build Widget Demo Application
+        run: ./gradlew :products:widget-demo:assemble --no-daemon --build-cache
+
+      - name: Start Widget Demo Application
+        env:
+          KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/eaf
+          KEYCLOAK_JWKS_URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
+        run: |
+          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+          echo $! > app.pid
+          echo "🚀 Started application with PID $(cat app.pid)"
+
+      - name: Wait for Application Startup
+        run: |
+          echo "⏳ Waiting for application to be ready..."
+          TIMEOUT=120
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Try health check
+            if curl -f http://localhost:8090/actuator/health 2>/dev/null; then
+              echo "✅ Application is ready!"
+              exit 0
+            fi
+
+            # Show last 10 lines of log for debugging
+            if [ -f app.log ]; then
+              echo "=== Last 10 lines of app.log ==="
+              tail -10 app.log
+              echo "================================"
+            fi
+
+            echo "⏳ Waiting for application... ($ELAPSED/$TIMEOUT seconds elapsed)"
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+          echo "❌ ERROR: Application failed to start within $TIMEOUT seconds"
+          echo "=== Full application log ==="
+          cat app.log || echo "No log file found"
+          exit 1
+
+      # ========================================================================
+      # Performance & Deep Validation Tests
+      # ========================================================================
+
+      - name: Performance Baseline Tests (Gatling)
         run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
         continue-on-error: false  # Fail build if performance targets not met
 
       - name: Snapshot Performance Tests
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
 
-      - name: Property-Based Tests
-        run: ./gradlew propertyTest --no-daemon --stacktrace
+      # Story 1.5: Nightly tests will use suite-based execution after Phase 2-3 migration
+      # For now, keeping module-qualified execution (will update in Phase 3)
+      - name: Property-Based Tests (Module-Qualified)
+        run: ./gradlew :framework:security:propertyTest -PnightlyBuild --no-daemon --stacktrace
 
-      - name: Fuzz Tests (Jazzer)
-        run: ./gradlew fuzzTest --no-daemon --stacktrace
+      - name: Fuzz Tests (Jazzer - Module-Qualified - 30 min/target)
+        run: ./gradlew :framework:security:fuzzTest -PnightlyBuild --no-daemon --stacktrace
+        timeout-minutes: 240  # 4 hours for 7 targets × 30 min
 
       # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
       # - name: Concurrency Tests (LitmusKt)
       #   run: ./gradlew litmusTest --no-daemon --stacktrace
 
-      - name: Mutation Testing (Pitest)
-        run: ./gradlew pitest --no-daemon --stacktrace
+      - name: Mutation Testing (Pitest - All Modules)
+        run: ./gradlew :framework:core:pitest :framework:security:pitest :framework:cqrs:pitest --no-daemon --stacktrace
+
+      # ========================================================================
+      # Cleanup & Artifact Upload
+      # ========================================================================
+
+      - name: Stop Widget Demo Application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            APP_PID=$(cat app.pid)
+            echo "🛑 Stopping application (PID: $APP_PID)"
+            kill $APP_PID || true
+            # Wait for graceful shutdown
+            timeout 30 bash -c "while kill -0 $APP_PID 2>/dev/null; do sleep 1; done" || kill -9 $APP_PID || true
+            rm app.pid
+          fi
+
+      - name: Stop Infrastructure Services
+        if: always()
+        run: |
+          docker compose down -v
+          echo "✅ Infrastructure services stopped"
+
+      - name: Upload Application Logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: application-logs-${{ github.run_number }}
+          path: |
+            app.log
+          retention-days: 7
 
       - name: Upload Property Test Reports
         if: always()
@@ -67,16 +189,6 @@ jobs:
           path: |
             **/build/reports/tests/fuzzTest/
           retention-days: 30
-
-      # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
-      # - name: Upload Concurrency Test Reports
-      #   if: always()
-      #   uses: actions/upload-artifact@v5
-      #   with:
-      #     name: concurrency-test-reports
-      #     path: |
-      #       **/build/reports/tests/litmusTest/
-      #     retention-days: 14
 
       - name: Upload Performance Test Reports
         if: always()
