@@ -61,7 +61,8 @@ class TestingConventionPlugin : Plugin<Project> {
                 }
 
             // Story 8.3: Create dedicated performance test source set - ONLY for Nightly builds
-            val isNightlyBuild = project.hasProperty("nightlyBuild")
+            // Use providers API for configuration cache compatibility
+            val isNightlyBuild = project.providers.gradleProperty("nightlyBuild").isPresent
 
             if (isNightlyBuild) {
                 val perfTest =

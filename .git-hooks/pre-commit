@@ -31,12 +31,14 @@ success(){ printf "%s✅%s %s\n" "$GREEN" "$RESET" "$1"; }
 warn()  { printf "%s⚠️ %s %s\n" "$YELLOW" "$RESET" "$1"; }
 fail()  { printf "%s❌%s %s\n" "$RED" "$RESET" "$1"; }
 
-# Helper: Get affected Gradle modules from file paths
+# Helper: Get affected Gradle modules from file paths (reads from stdin)
+# Note: Intentionally ignores changes in build-logic, scripts, or root project files
+# to keep the pre-commit hook fast. Full validation runs in pre-push and CI.
 get_affected_gradle_modules() {
-  local files="$1"
   local modules=""
+  local file=""
 
-  for file in $files; do
+  while IFS= read -r file; do
     # Extract module path (e.g., framework/core/src/... → framework:core)
     if [[ "$file" =~ ^(framework|shared|products|tools)/([^/]+)/ ]]; then
       local module="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
@@ -63,9 +65,9 @@ if [[ -n "${STAGED_KOTLIN}" ]]; then
   info "Running ktlintFormat on staged Kotlin files..."
 
   if ./gradlew ktlintFormat --quiet; then
-    # Re-stage files that were modified by ktlintFormat
-    for file in $STAGED_KOTLIN; do
-      if [[ -f "$file" ]]; then
+    # Re-stage files that were modified by ktlintFormat (safe for filenames with spaces)
+    echo "$STAGED_KOTLIN" | while IFS= read -r file; do
+      if [[ -n "$file" && -f "$file" ]]; then
         git add "$file"
       fi
     done
@@ -87,7 +89,7 @@ fi
 if [[ -n "${STAGED_KOTLIN}" ]]; then
   info "Running detekt on affected modules (incremental)..."
 
-  AFFECTED_MODULES=$(get_affected_gradle_modules "$STAGED_KOTLIN")
+  AFFECTED_MODULES=$(echo "$STAGED_KOTLIN" | get_affected_gradle_modules)
 
   if [[ -z "${AFFECTED_MODULES}" ]]; then
     warn "No Gradle modules affected - skipping detekt"
@@ -110,7 +112,8 @@ fi
 # 3. shellcheck - Bash script safety on staged scripts
 # ============================================================================
 
-STAGED_SHELL=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.sh$' || true)
+# Use null-delimited output for safe handling of filenames with spaces
+STAGED_SHELL=$(git diff --cached --name-only -z --diff-filter=ACMR | grep -z -E '\.sh$' || true)
 
 if [[ -n "${STAGED_SHELL}" ]]; then
   info "Running shellcheck on staged shell scripts..."
@@ -119,7 +122,8 @@ if [[ -n "${STAGED_SHELL}" ]]; then
     warn "shellcheck not installed - skipping shell script checks"
     warn "Install: brew install shellcheck (macOS) or apt install shellcheck (Linux)"
   else
-    if echo "$STAGED_SHELL" | xargs shellcheck; then
+    # Use xargs -0 for null-delimited input (safe for filenames with spaces)
+    if echo -n "$STAGED_SHELL" | xargs -0 shellcheck; then
       success "shellcheck passed"
     else
       echo ""

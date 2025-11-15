@@ -98,7 +98,7 @@ jobs:
           case "${{ matrix.check }}" in
             ktlint) ./gradlew ktlintCheck --no-daemon --build-cache ;;
             detekt) ./gradlew detekt --no-daemon --build-cache ;;
-            konsist) ./gradlew :shared:testing:test --no-daemon --build-cache ;;
+            konsist) ./gradlew konsistTest --no-daemon --build-cache ;;
           esac
 
   # Job 3: Tests (parallel by type)
@@ -110,7 +110,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-type: [unit, integration, architecture]
+        test-type: [unit, integration]
 
     steps:
       - uses: actions/checkout@v4
@@ -140,8 +140,6 @@ jobs:
             ./gradlew test --no-daemon --build-cache --scan
           elif [ "${{ matrix.test-type }}" = "integration" ]; then
             ./gradlew integrationTest --no-daemon --build-cache --scan
-          else
-            ./gradlew :shared:testing:test --no-daemon --build-cache
           fi
 
       - name: Upload Test Reports
@@ -202,7 +200,7 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 90
 
-  # Job 5: Shell script analysis
+  # Job 5: Shell script analysis (scripts + git hooks)
   shellcheck:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -213,5 +211,5 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
-      - name: Run shellcheck
-        run: find scripts/ -name "*.sh" -exec shellcheck {} \;
+      - name: Run shellcheck on scripts and git hooks
+        run: find scripts/ .git-hooks/ -name "*.sh" -exec shellcheck {} +
