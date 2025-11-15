@@ -1,7 +1,7 @@
 plugins {
     id("eaf.kotlin-common")
     id("eaf.observability")
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.2: Migrated to v2
     id("eaf.quality-gates")
 }
 
