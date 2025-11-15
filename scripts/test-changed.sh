@@ -23,7 +23,7 @@ fi
 docs_only=true
 run_ci_tests=false
 run_integration=false
-run_arch=false
+# V2: run_arch removed - architecture tests now in 'test' suite (no separate task)
 run_shell_lint=false
 
 for file in "${CHANGED_FILES[@]}"; do
@@ -32,11 +32,13 @@ for file in "${CHANGED_FILES[@]}"; do
     case "$file" in
         shared/testing/*|architecture/*)
             docs_only=false
-            run_arch=true
+            # V2: Architecture tests run in 'test' suite
+            run_ci_tests=true
             ;;
         docs/architecture/*)
             docs_only=false
-            run_arch=true
+            # V2: Architecture tests run in 'test' suite
+            run_ci_tests=true
             ;;
         */integration/*|*IntegrationTest*.kt|*integrationTest*|*integration-test*)
             docs_only=false
@@ -70,15 +72,14 @@ if [ "$run_integration" = true ] && [ -z "${seen[\"integrationTest\"]:-}" ]; the
     tasks+=("integrationTest")
     seen["integrationTest"]=1
 fi
-if [ "$run_arch" = true ] && [ -z "${seen[\"konsistTest\"]:-}" ]; then
-    tasks+=("konsistTest")
-    seen["konsistTest"]=1
-fi
+# V2: konsistTest removed - architecture tests now run in 'test' suite
+# if [ "$run_arch" = true ]; then architecture tests are in test task
 
 if [ "$FORCE_FULL_SUITE" = true ]; then
     docs_only=false
     if [ "${#tasks[@]}" -eq 0 ]; then
-        tasks=("test" "integrationTest" "konsistTest")
+        # V2: konsistTest removed - architecture validation included in 'test'
+        tasks=("test" "integrationTest")
     fi
 fi
 
