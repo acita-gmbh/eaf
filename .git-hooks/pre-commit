@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# EAF v1.0 Pre-Commit Hook - Incremental Quality Gates
+# Story 1.4: Testing Infrastructure Modernization - 2-Stage Validation
+#
+# Philosophy: Fast, incremental validation on staged files only
+# Runtime: 20s-2.5min (depends on change size)
+#
+# Checks:
+# 1. ktlintFormat - Auto-fix Kotlin formatting + auto-stage changes
+# 2. detekt - Static analysis on affected modules only
+# 3. shellcheck - Bash script safety on staged scripts
+
 if command -v tput >/dev/null 2>&1; then
   BLUE="$(tput setaf 4)"
   GREEN="$(tput setaf 2)"
@@ -20,24 +31,108 @@ success(){ printf "%s✅%s %s\n" "$GREEN" "$RESET" "$1"; }
 warn()  { printf "%s⚠️ %s %s\n" "$YELLOW" "$RESET" "$1"; }
 fail()  { printf "%s❌%s %s\n" "$RED" "$RESET" "$1"; }
 
+# Helper: Get affected Gradle modules from file paths
+get_affected_gradle_modules() {
+  local files="$1"
+  local modules=""
+
+  for file in $files; do
+    # Extract module path (e.g., framework/core/src/... → framework:core)
+    if [[ "$file" =~ ^(framework|shared|products|tools)/([^/]+)/ ]]; then
+      local module="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      if [[ ! " $modules " =~ " $module " ]]; then
+        modules="$modules $module"
+      fi
+    fi
+  done
+
+  echo "$modules"
+}
+
 echo ""
-info "Running pre-commit quality gate (ktlint)"
+info "Pre-commit quality gate (incremental, staged files only)"
+echo ""
+
+# ============================================================================
+# 1. ktlintFormat - Auto-fix Kotlin formatting + auto-stage changes
+# ============================================================================
 
 STAGED_KOTLIN=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(kt|kts)$' || true)
 
-if [[ -z "${STAGED_KOTLIN}" ]]; then
+if [[ -n "${STAGED_KOTLIN}" ]]; then
+  info "Running ktlintFormat on staged Kotlin files..."
+
+  if ./gradlew ktlintFormat --quiet; then
+    # Re-stage files that were modified by ktlintFormat
+    for file in $STAGED_KOTLIN; do
+      if [[ -f "$file" ]]; then
+        git add "$file"
+      fi
+    done
+    success "Kotlin files formatted and re-staged"
+  else
+    echo ""
+    fail "ktlintFormat failed"
+    warn "Fix formatting issues and commit again"
+    exit 1
+  fi
+else
   success "No Kotlin files staged – skipping ktlint"
-  exit 0
 fi
 
-info "Checking Kotlin formatting via ./gradlew ktlintCheck --quiet"
-if ./gradlew ktlintCheck --quiet; then
-  success "ktlint passed"
-  exit 0
+# ============================================================================
+# 2. detekt - Static analysis on affected modules only (incremental)
+# ============================================================================
+
+if [[ -n "${STAGED_KOTLIN}" ]]; then
+  info "Running detekt on affected modules (incremental)..."
+
+  AFFECTED_MODULES=$(get_affected_gradle_modules "$STAGED_KOTLIN")
+
+  if [[ -z "${AFFECTED_MODULES}" ]]; then
+    warn "No Gradle modules affected - skipping detekt"
+  else
+    for module in $AFFECTED_MODULES; do
+      info "  → Analyzing module: $module"
+      if ! ./gradlew :$module:detekt --quiet; then
+        echo ""
+        fail "Detekt violations in module: $module"
+        warn "Report: build/reports/detekt/detekt.html"
+        warn "Fix violations and commit again"
+        exit 1
+      fi
+    done
+    success "Detekt passed for affected modules"
+  fi
+fi
+
+# ============================================================================
+# 3. shellcheck - Bash script safety on staged scripts
+# ============================================================================
+
+STAGED_SHELL=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.sh$' || true)
+
+if [[ -n "${STAGED_SHELL}" ]]; then
+  info "Running shellcheck on staged shell scripts..."
+
+  if ! command -v shellcheck >/dev/null 2>&1; then
+    warn "shellcheck not installed - skipping shell script checks"
+    warn "Install: brew install shellcheck (macOS) or apt install shellcheck (Linux)"
+  else
+    if echo "$STAGED_SHELL" | xargs shellcheck; then
+      success "shellcheck passed"
+    else
+      echo ""
+      fail "shellcheck violations detected"
+      warn "Fix shell script issues and commit again"
+      exit 1
+    fi
+  fi
+else
+  success "No shell scripts staged – skipping shellcheck"
 fi
 
 echo ""
-fail "ktlint violations detected"
-warn "Fix with: ./gradlew ktlintFormat"
-warn "Bypass (not recommended): git commit --no-verify"
-exit 1
+success "✨ All pre-commit checks passed!"
+echo ""
+exit 0
