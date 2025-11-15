@@ -27,56 +27,26 @@ class TestingConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
-                apply("io.kotest") // Native Kotest plugin
-                apply("org.jetbrains.kotlin.plugin.serialization") // For Kotest XML reports
+                // Story 1.2: Removed io.kotest native plugin - using JUnit Platform instead
+                apply("org.jetbrains.kotlin.plugin.serialization") // Keep for other serialization needs
             }
 
-            // Native Kotest execution - no JUnit Platform needed!
-            // Replace standard test task with jvmKotest in check lifecycle
+            // Story 1.2: Enable standard test task with JUnit Platform
+            // This uses kotest-runner-junit5-jvm to run Kotest tests via JUnit Platform
+            tasks.named<Test>("test") {
+                useJUnitPlatform()
+                description = "Runs unit tests via JUnit Platform (Kotest engine)"
+                group = "verification"
+            }
+
+            // Story 1.2: Update check to depend on test (not jvmKotest)
             tasks.named("check") {
-                dependsOn("jvmKotest")
-            }
-
-            // Delegate standard test task to Kotest (keeps IDE/Gradle compatibility)
-            tasks.named("test").configure {
-                dependsOn("jvmKotest")
-                onlyIf { false }
+                dependsOn("test")
             }
 
             val sourceSets = extensions.getByType(SourceSetContainer::class.java)
 
-            // Create CI test task that uses JUnit Platform for XML reports
-            val ciTestTask =
-                tasks.register("ciTest", Test::class.java) {
-                    description = "Runs tests with JUnit Platform for CI/CD XML reporting"
-                    group = "verification"
-
-                    // Use the standard test source set
-                    testClassesDirs = sourceSets.getByName("test").output.classesDirs
-                    classpath = sourceSets.getByName("test").runtimeClasspath
-
-                    useJUnitPlatform()
-
-                    // Enable JUnit XML reports for CI
-                    reports {
-                        junitXml.required.set(true)
-                        html.required.set(true)
-                    }
-
-                    // Set report directories
-                    reports.junitXml.outputLocation.set(
-                        project.layout.buildDirectory.dir("test-results/ciTest"),
-                    )
-                    reports.html.outputLocation.set(
-                        project.layout.buildDirectory.dir("reports/tests/ciTest"),
-                    )
-
-                    // This requires kotest-runner-junit5-jvm dependency
-                    testLogging {
-                        events("passed", "skipped", "failed")
-                        showStandardStreams = false
-                    }
-                }
+            // Story 1.2: Removed ciTest task - test task now uses JUnit Platform directly
             val integrationTest =
                 sourceSets.create("integrationTest") {
                     compileClasspath += sourceSets.getByName("main").output + sourceSets.getByName("test").output
@@ -242,7 +212,7 @@ class TestingConventionPlugin : Plugin<Project> {
                         excludeTags("Performance")
                     }
 
-                    shouldRunAfter(tasks.named("jvmKotest"))
+                    shouldRunAfter(tasks.named("test"))
 
                     doFirst {
                         try {
@@ -270,7 +240,7 @@ class TestingConventionPlugin : Plugin<Project> {
 
                     useJUnitPlatform()
 
-                    shouldRunAfter(tasks.named("jvmKotest"))
+                    shouldRunAfter(tasks.named("test"))
                 }
 
             // Story 8.3: Performance test task for benchmark execution - ONLY for Nightly builds
@@ -290,7 +260,7 @@ class TestingConventionPlugin : Plugin<Project> {
 
                         useJUnitPlatform()
 
-                        shouldRunAfter(tasks.named("jvmKotest"), integrationTestTask)
+                        shouldRunAfter(tasks.named("test"), integrationTestTask)
 
                         // Performance tests need Testcontainers
                         doFirst {
@@ -312,136 +282,9 @@ class TestingConventionPlugin : Plugin<Project> {
                 // Note: perfTest not in check by default (opt-in for performance validation)
             }
 
-            // Create CI variants that use JUnit Platform for XML reports
-            val ciIntegrationTestTask =
-                tasks.register("ciIntegrationTest", Test::class.java) {
-                    description = "Runs integration tests with JUnit Platform for CI/CD"
-                    group = "verification"
-
-                    // Configuration cache compatible: capture values at configuration time
-                    val integrationTestClassesDirs = integrationTest.output.classesDirs
-                    val integrationTestClasspath = integrationTest.runtimeClasspath
-
-                    testClassesDirs = integrationTestClassesDirs
-                    classpath = integrationTestClasspath
-
-                    useJUnitPlatform {
-                        // Exclude performance tests from fast CI (run in nightly only)
-                        excludeTags("Performance")
-                    }
-
-                    reports {
-                        junitXml.required.set(true)
-                        html.required.set(true)
-                    }
-
-                    reports.junitXml.outputLocation.set(
-                        project.layout.buildDirectory.dir("test-results/ciIntegrationTest"),
-                    )
-                    reports.html.outputLocation.set(
-                        project.layout.buildDirectory.dir("reports/tests/ciIntegrationTest"),
-                    )
-
-                    shouldRunAfter(tasks.named("ciTest"))
-
-                    // Only run if there are actual test classes
-                    onlyIf {
-                        !integrationTestClassesDirs.asFileTree.isEmpty
-                    }
-                }
-
-            val ciKonsistTestTask =
-                tasks.register("ciKonsistTest", Test::class.java) {
-                    description = "Runs Konsist tests with JUnit Platform for CI/CD"
-                    group = "verification"
-
-                    // Configuration cache compatible: capture values at configuration time
-                    val konsistTestClassesDirs = konsistTest.output.classesDirs
-                    val konsistTestClasspath = konsistTest.runtimeClasspath
-
-                    testClassesDirs = konsistTestClassesDirs
-                    classpath = konsistTestClasspath
-
-                    useJUnitPlatform()
-
-                    reports {
-                        junitXml.required.set(true)
-                        html.required.set(true)
-                    }
-
-                    reports.junitXml.outputLocation.set(
-                        project.layout.buildDirectory.dir("test-results/ciKonsistTest"),
-                    )
-                    reports.html.outputLocation.set(
-                        project.layout.buildDirectory.dir("reports/tests/ciKonsistTest"),
-                    )
-
-                    shouldRunAfter(tasks.named("ciTest"))
-                    shouldRunAfter(ciIntegrationTestTask)
-
-                    // Only run if there are actual test classes
-                    onlyIf {
-                        !konsistTestClassesDirs.asFileTree.isEmpty
-                    }
-                }
-
-            // Story 8.3: CI performance test task - ONLY for Nightly builds
-            if (isNightlyBuild) {
-                val perfTest = sourceSets.getByName("perfTest")
-                val ciPerfTestTask =
-                    tasks.register("ciPerfTest", Test::class.java) {
-                        description = "Runs performance benchmark tests with JUnit Platform for CI/CD"
-                        group = "verification"
-
-                        // Configuration cache compatible: capture values at configuration time
-                        val perfTestClassesDirs = perfTest.output.classesDirs
-                        val perfTestClasspath = perfTest.runtimeClasspath
-
-                        testClassesDirs = perfTestClassesDirs
-                        classpath = perfTestClasspath
-
-                        useJUnitPlatform()
-
-                        reports {
-                            junitXml.required.set(true)
-                            html.required.set(true)
-                        }
-
-                        reports.junitXml.outputLocation.set(
-                            project.layout.buildDirectory.dir("test-results/ciPerfTest"),
-                        )
-                        reports.html.outputLocation.set(
-                            project.layout.buildDirectory.dir("reports/tests/ciPerfTest"),
-                        )
-
-                        shouldRunAfter(tasks.named("ciTest"), ciIntegrationTestTask)
-
-                        // Performance tests need Testcontainers
-                        doFirst {
-                            try {
-                                Class
-                                    .forName("com.axians.eaf.testing.containers.TestContainers")
-                                    .getDeclaredMethod("startAll")
-                                    .invoke(null)
-                            } catch (ignored: ClassNotFoundException) {
-                                // shared-testing module not on classpath
-                            }
-                        }
-
-                        // Only run if there are actual test classes
-                        onlyIf {
-                            !perfTestClassesDirs.asFileTree.isEmpty
-                        }
-                    }
-            }
-
-            // Create aggregate CI task (excludes perfTest - run in nightly only)
-            tasks.register("ciTests") {
-                description = "Runs all tests with JUnit Platform for CI/CD (excludes performance tests)"
-                group = "verification"
-                dependsOn("ciTest", ciIntegrationTestTask, ciKonsistTestTask)
-                // ciPerfTestTask excluded - performance tests run in nightly only
-            }
+            // Story 1.2: Removed all ci* tasks (ciTest, ciIntegrationTest, ciKonsistTest, ciPerfTest, ciTests)
+            // All test tasks now use JUnit Platform directly via useJUnitPlatform()
+            // This eliminates the dual execution mode and the Kotest XML reporter bug workaround
 
             // Configure parallel test execution for all Test tasks
             tasks.withType<Test>().configureEach {
