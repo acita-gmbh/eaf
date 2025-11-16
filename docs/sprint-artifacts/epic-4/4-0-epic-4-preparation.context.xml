@@ -1,0 +1,195 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>0</storyId>
+    <title>Epic 4 Preparation - Process, Context, and Research</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.0-epic-4-preparation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>the development team</asA>
+    <iWant>comprehensive Epic 4 preparation including process improvements, story regeneration, and technical research</iWant>
+    <soThat>Epic 4 (Multi-Tenancy) starts with fresh context, documented patterns, and validated prerequisites</soThat>
+    <tasks>
+      - Phase 1: Process Improvements (Epic 2 Outstanding)
+        - Add "Axon Testing Patterns" section to architecture.md
+        - Create Story Definition of Done checklist
+      - Phase 2: Continuous Context Process (Epic 3 Finding)
+        - Document Continuous Story Context in CONTRIBUTING.md
+        - Add continuous context to Story DoD checklist
+      - Phase 3: Story Preparation (Critical Blockers)
+        - Regenerate all 10 Epic 4 stories with current template
+        - Generate Story Context XML for all 10 Epic 4 stories
+        - Create batch regeneration automation script
+      - Phase 4: Technical Research (Epic 4 Prerequisites)
+        - Research Axon ThreadLocal Propagation Patterns
+        - Setup LitmusKt Framework Early
+        - PostgreSQL RLS Research &amp; Documentation
+      - Phase 5: Security Research (OWASP Preparation)
+        - Document SSRF Protection requirements
+        - Research Circuit Breaker patterns
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. All Epic 2 outstanding action items completed (2 items)
+    2. Continuous Story Context process documented and implemented
+    3. All 10 Epic 4 stories regenerated with current template format
+    4. Story Context XML generated for all 10 Epic 4 stories
+    5. Batch story regeneration automation created
+    6. Axon ThreadLocal propagation patterns researched and documented
+    7. LitmusKt framework setup completed for early concurrency testing
+    8. PostgreSQL RLS research completed (Elena knowledge transfer)
+    9. OWASP security research documented for future stories
+    10. All preparation work validated and tested
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <title>Epic 3 Retrospective - Authentication &amp; Authorization</title>
+        <section>Context Drift Finding (Stories 3.7-3.10)</section>
+        <snippet>Story Context XML created at epic start became stale by Stories 3.7-3.10. Stories worked with outdated patterns from 3.1-3.3, missing patterns from 3.4-3.6. Impact: Story 3.7 multiple iterations, Story 3.10 9.5h investigation. Solution: Continuous Story Context regeneration after each story.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <title>Epic 3 Retrospective</title>
+        <section>OWASP Security Finding (PR #92)</section>
+        <snippet>PR #92 identified critical gaps in supply chain security (65/100) and exception handling (60/100) that must be addressed BEFORE Epic 4 to prevent tenant isolation failures. PR was too large (13K additions, 44 files) with build failures.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/retrospectives/epic-2-retro-2025-11-08.md</path>
+        <title>Epic 2 Retrospective - Walking Skeleton</title>
+        <section>Outstanding Action Items</section>
+        <snippet>Two action items remain from Epic 2: (1) Document Axon Testing Patterns (mode=subscribing, @ServiceConnection timing, Container as @Bean, PropagatingErrorHandler, aggregate caching), (2) Create Story Definition of Done checklist with quality gates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EAF Epic Breakdown</title>
+        <section>Epic 4: Multi-Tenancy &amp; Data Isolation</section>
+        <snippet>Epic 4 implements 3-layer defense-in-depth tenant isolation: Layer 1 (JWT → ThreadLocal), Layer 2 (Command validation), Layer 3 (PostgreSQL RLS). Includes async context propagation, cross-tenant leak detection, per-tenant quotas, and LitmusKt concurrency testing. Fail-closed security: missing tenant context immediately rejects requests.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EAF Epic Breakdown</title>
+        <section>Story 4.1: TenantContext and ThreadLocal Management</section>
+        <snippet>ThreadLocal-based tenant context storage with stack-based management, WeakReference for memory safety, thread isolation validation, and cleanup after request completion.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EAF Epic Breakdown</title>
+        <section>Story 4.5: Tenant Context Propagation to Async Event Processors</section>
+        <snippet>AxonTenantInterceptor propagates tenant_id to async event processors via event metadata. Critical for projection updates and event handlers to maintain tenant context in asynchronous processing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EAF Epic Breakdown</title>
+        <section>Story 4.4: PostgreSQL Row-Level Security Policies</section>
+        <snippet>RLS policies enforce tenant isolation at database level using current_setting('app.tenant_id'). Even SQL injection or bugs cannot breach tenant boundaries. Performance target: &lt;2ms overhead per query.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Multi-Tenancy Decision #2</section>
+        <snippet>3-layer tenant isolation architecture with fail-closed design. TenantContext uses ThreadLocal for request-scoped storage. Axon interceptors for command validation and async propagation. PostgreSQL RLS as final defense layer.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>framework/security/src/main/kotlin/com/axians/eaf/framework/security</path>
+        <kind>module</kind>
+        <symbol>SecurityModule</symbol>
+        <lines>N/A</lines>
+        <reason>Existing security infrastructure from Epic 3 provides JWT validation patterns that Epic 4 will extend for tenant_id extraction</reason>
+      </artifact>
+      <artifact>
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs</path>
+        <kind>module</kind>
+        <symbol>CqrsModule</symbol>
+        <lines>N/A</lines>
+        <reason>Axon Framework configuration base for implementing ThreadLocal propagation interceptors in Phase 4</reason>
+      </artifact>
+      <artifact>
+        <path>products/widget-demo/src/test/kotlin</path>
+        <kind>test-directory</kind>
+        <symbol>WidgetTests</symbol>
+        <lines>N/A</lines>
+        <reason>Existing test infrastructure demonstrates Kotest, Testcontainers, and Nullable Pattern usage from Epic 2-3</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <kotlin>2.2.21</kotlin>
+      <spring-boot>3.5.7</spring-boot>
+      <spring-modulith>1.4.4</spring-modulith>
+      <axon-framework>4.12.1</axon-framework>
+      <kotest>6.0.4</kotest>
+      <testcontainers>1.21.3</testcontainers>
+      <jooq>3.20.8</jooq>
+      <postgresql>16.10</postgresql>
+      <gradle>9.1.0</gradle>
+      <litmuskt>0.1.0 (to be added in Phase 4)</litmuskt>
+      <jazzer>0.25.1 (from Story 3.12)</jazzer>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Story 4.0 is a PREPARATION story, not an implementation story
+    - All work is documentation, research, and process improvement
+    - NO production code changes except documentation updates
+    - Phase 3 uses existing create-story workflow in #yolo mode
+    - Phase 3 uses existing story-context workflow for all 10 Epic 4 stories
+    - LitmusKt setup in Phase 4 must NOT interfere with Epic 4 story scope (extract from Story 4.10)
+    - PostgreSQL RLS research in Phase 4 includes Elena knowledge transfer (pair programming)
+    - Batch regeneration script must be reusable for Epic 5, 6, 7+
+    - All documentation in English (document_output_language from config)
+    - Continuous Story Context process must prevent Epic 3 context drift repetition
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>create-story workflow</name>
+      <kind>BMM workflow</kind>
+      <signature>.bmad/bmm/workflows/4-implementation/create-story/workflow.yaml</signature>
+      <path>.bmad/bmm/workflows/4-implementation/create-story</path>
+    </interface>
+    <interface>
+      <name>story-context workflow</name>
+      <kind>BMM workflow</kind>
+      <signature>.bmad/bmm/workflows/4-implementation/story-context/workflow.yaml</signature>
+      <path>.bmad/bmm/workflows/4-implementation/story-context</path>
+    </interface>
+    <interface>
+      <name>Story Template Format</name>
+      <kind>Markdown template</kind>
+      <signature>Stories must include: Status, Story, ACs, Tasks/Subtasks, Dev Notes, Dev Agent Record (Context Reference, Model Used, Debug Log, Completion Notes, File List, Change Log)</signature>
+      <path>docs/stories/epic-X/story-X.Y-name.md</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      All testing follows Constitutional TDD (test-first mandatory), 7-Layer Defense (static, unit, integration, property, fuzz, concurrency, mutation), Kotest 6.0.4 framework (JUnit forbidden), Testcontainers for stateful dependencies, Nullable Design Pattern for stateless infrastructure. Story 4.0 has NO production code, therefore NO new tests required. Validation is via documentation review and workflow execution verification.
+    </standards>
+    <locations>
+      - framework/*/src/test/kotlin (framework module tests)
+      - products/*/src/test/kotlin (product module tests)
+      - shared/testing/src/main/kotlin (Nullable implementations and test utilities)
+    </locations>
+    <ideas>
+      <idea ac="1">Verify Epic 2 action items completed by reading architecture.md for Axon Testing Patterns section and checking for Story DoD checklist file</idea>
+      <idea ac="2">Verify Continuous Story Context process documented in CONTRIBUTING.md with workflow reminder/automation guidance</idea>
+      <idea ac="3">Verify all 10 Epic 4 stories regenerated by checking story file format includes Tasks/Subtasks, Dev Agent Record sections</idea>
+      <idea ac="4">Verify Story Context XML exists for all 10 Epic 4 stories (4.1-4.10) in docs/sprint-artifacts/epic-4/*.context.xml</idea>
+      <idea ac="5">Verify batch regeneration script exists at scripts/regenerate-epic-stories.sh with error handling and progress reporting</idea>
+      <idea ac="6">Verify Axon ThreadLocal propagation patterns documented in architecture.md Multi-Tenancy section with MessageHandlerInterceptor examples</idea>
+      <idea ac="7">Verify LitmusKt dependency added to framework/multi-tenancy test dependencies with example concurrency test for TenantContext</idea>
+      <idea ac="8">Verify PostgreSQL RLS research documented in architecture.md with current_setting() pattern and widget_view table examples</idea>
+      <idea ac="9">Verify OWASP SSRF protection documented based on A01:2025 and Circuit Breaker patterns researched for Epic 5+</idea>
+      <idea ac="10">Verify all preparation work complete via checklist validation and documentation review</idea>
+    </ideas>
+  </tests>
+</story-context>
