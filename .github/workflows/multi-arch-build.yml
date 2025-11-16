@@ -142,7 +142,7 @@ jobs:
       - name: Validate docker-compose Syntax
         run: |
           echo "✅ Validating docker-compose.ppc64le.yml syntax..."
-          docker-compose -f docker-compose.ppc64le.yml config > /dev/null
+          docker compose -f docker-compose.ppc64le.yml config > /dev/null
           echo "✅ docker-compose.ppc64le.yml is valid"
 
       - name: Verify Services Configuration
