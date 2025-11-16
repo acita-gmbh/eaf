@@ -51,6 +51,18 @@ jobs:
         run: |
           # Remove any leftover containers and volumes from previous runs
           docker compose down -v --remove-orphans || true
+
+          # CRITICAL: Ensure PostgreSQL volume is completely removed (fixes Flyway migration errors)
+          # Self-hosted runners may have persistent volumes that survive `docker compose down -v`
+          # Volume name format: <project>_<volume> where project defaults to directory name
+          docker volume rm eaf_postgres_data || true
+          docker volume rm eaf-postgres-data || true  # Fallback for dash separator
+          docker volume prune -f || true
+
+          # Verify volumes are removed
+          echo "📋 Remaining volumes:"
+          docker volume ls | grep -E "(postgres|redis|keycloak)" || echo "   (none - all cleaned)"
+
           echo "✅ Previous infrastructure cleaned up"
 
       - name: Start Infrastructure Services
