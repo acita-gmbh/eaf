@@ -169,9 +169,22 @@ But Story Context for later stories (3.7-3.10) still references **outdated patte
    ```
 
 3. **Verify Fresh Context Includes Recent Learnings:**
-   - Check context includes patterns from just-completed Story X.Y
-   - Verify code artifacts reference latest implementations
-   - Confirm test patterns reflect current best practices
+
+   **Fresh Context Validation Checklist:**
+   - [ ] Context includes code snippets/patterns from just-completed Story X.Y
+   - [ ] Test patterns reference latest Kotest/Testcontainers configurations
+   - [ ] Architecture decisions from recent stories are documented
+   - [ ] Updated constraints reflect recent learnings and discoveries
+   - [ ] Code artifacts point to newly created files/modules
+   - [ ] Interfaces reference latest API signatures and patterns
+   - [ ] Security patterns include Epic 3 validation approaches
+   - [ ] Performance patterns include Epic 2 optimization discoveries
+
+   **Example Validation (after completing Story 3.7):**
+   - ✅ Story 3.8 context should include Redis RevocationStore from 3.7
+   - ✅ Test patterns should reference Nullable Pattern from 3.4-3.6
+   - ✅ Security constraints should include 10-layer validation from 3.1-3.5
+   - ❌ If Story 3.8 context still references "placeholder auth" → STALE!
 
 4. **Continue with Next Story:**
    ```bash
