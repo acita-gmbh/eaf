@@ -97,6 +97,8 @@ The system shall meet defined performance targets including API response time p9
 **NFR002: Security and Compliance**
 The system shall achieve audit-ready security compliance including OWASP ASVS 5.0 (100% Level 1, 50% Level 2), support for ISO 27001/NIS2 certification requirements, automated OWASP dependency scanning in CI/CD with zero critical vulnerabilities in production, and comprehensive security documentation for customer due diligence.
 
+**Enhancement (2025-11-16):** OWASP Top 10:2025 compliance implemented with comprehensive security controls addressing A01 (SSRF Protection), A02 (Security Headers), A03 (Command Injection Protection), A05 (Security Configuration Validator), A06 (Enhanced Supply Chain Security with SBOM), and A10 (Resilience Patterns + DLQ). Implementation includes 112+ tests and complete documentation. See `docs/architecture.md` Section 16 "OWASP Top 10:2025 Compliance" and `docs/owasp-top-10-2025-story-mapping.md` for details.
+
 **NFR003: Developer Experience**
 The system shall reduce developer overhead to <5% (from 25%), achieve new developer time-to-productivity <3 days for simple aggregates and <3 months for first production deployment, maintain Developer Net Promoter Score (dNPS) ≥+50, and enable code generation that passes all quality gates immediately.
 

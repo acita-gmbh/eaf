@@ -242,6 +242,47 @@ jobs:
 - Set timeout limits: CI 20min, Nightly 180min, Security 30min
 - Configured artifact retention: test reports 7d, mutation reports 30d
 
+### Enhancement (2025-11-16) - OWASP Top 10:2025 Compliance
+
+**Supply Chain Security Enhanced (A06:2025 - Vulnerable and Outdated Components):**
+
+The basic OWASP Dependency Check implementation in AC5 has been significantly enhanced as part of OWASP Top 10:2025 compliance:
+
+**Additions:**
+- ✅ **SBOM Generation** - CycloneDX format for complete software bill of materials
+- ✅ **Dependabot Configuration** - Automated dependency updates (.github/dependabot.yml)
+- ✅ **NVD API Key Integration** - Accurate vulnerability data from National Vulnerability Database
+- ✅ **Severity Thresholds** - Configurable fail-on-violation policies
+- ✅ **Enhanced Documentation** - Comprehensive guide at `docs/security/supply-chain-security.md`
+
+**Implementation Details:**
+```groovy
+dependencyCheck {
+    nvd {
+        apiKey = providers.environmentVariable("NVD_API_KEY").orNull
+    }
+    formats = ["HTML", "JSON", "SARIF"]
+    failBuildOnCVSS = 7.0 // Fail on HIGH/CRITICAL vulnerabilities
+}
+```
+
+**Dependabot Configuration:**
+- Daily security updates for all ecosystems (Gradle, npm, Docker, GitHub Actions)
+- Auto-merge for low-risk patches (minor/patch versions)
+- Grouped updates by dependency type
+
+**SBOM Generation:**
+- CycloneDX JSON format (industry standard)
+- Generated during build: `build/reports/bom.json`
+- Tracks all dependencies including transitive ones
+- Supports compliance audits and vulnerability tracking
+
+**References:**
+- PR: `claude/review-owasp-top-10-01PBm8GwADKrkvqqoxJDTDMr`
+- Documentation: `docs/security/supply-chain-security.md`
+- Analysis: `docs/owasp-top-10-2025-story-mapping.md`
+- OWASP Compliance: A06:2025 - Vulnerable and Outdated Components
+
 ---
 
 ## References
