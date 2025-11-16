@@ -13,7 +13,7 @@ pluginManagement {
 // Settings plugins
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-    id("com.gradle.develocity") version "3.18.2"
+    id("com.gradle.develocity") version "4.2.2"
 }
 
 // Build Scan configuration (performance visibility and debugging)
