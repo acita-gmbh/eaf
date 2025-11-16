@@ -80,11 +80,12 @@ development_status:
   3-9-complete-jwt-integration: done
   3-10-rbac-api-endpoints: done
   3-11-keycloak-ppc64le: done
-  3-12-security-fuzz-testing: review
-  epic-3-retrospective: optional
+  3-12-security-fuzz-testing: done
+  epic-3-retrospective: done
 
-  # Epic 4: Multi-Tenancy & Data Isolation (10 stories)
+  # Epic 4: Multi-Tenancy & Data Isolation (11 stories - Story 4.0 is preparation)
   epic-4: backlog
+  4-0-epic-4-preparation: drafted
   4-1-tenant-context-threadlocal: drafted
   4-2-tenant-context-filter: drafted
   4-3-axon-tenant-interceptor: drafted
