@@ -32,6 +32,50 @@ So that isolation violations are detected immediately.
 
 ---
 
+## Tasks / Subtasks
+
+- [ ] AC1: Metrics emitted: tenant_context_missing, tenant_context_mismatch, cross_tenant_access_attempts
+- [ ] AC2: Security audit log for all tenant isolation violations
+- [ ] AC3: Structured JSON log includes: violation_type, user_id, attempted_tenant, actual_tenant, trace_id
+- [ ] AC4: Alerting rules configured in Prometheus for isolation violations
+- [ ] AC5: Dashboard query templates for tenant isolation monitoring
+- [ ] AC6: Integration test validates metrics are emitted on violations
+- [ ] AC7: Leak detection documented in docs/reference/security-monitoring.md
+
+---
+
+## Dev Agent Record
+
+### Context Reference
+
+- Comprehensive monitoring and alerting for tenant isolation violations
+- Security audit log with structured JSON for SIEM integration
+- Prometheus metrics for real-time monitoring
+- Alerting rules for immediate detection of isolation breaches
+- Integration with observability stack (FR005)
+
+### Agent Model Used
+
+claude-sonnet-4-5-20250929
+
+### Debug Log References
+
+*To be populated during implementation*
+
+### Completion Notes List
+
+*To be populated during implementation*
+
+### File List
+
+*To be populated during implementation*
+
+### Change Log
+
+*To be populated during implementation*
+
+---
+
 ## References
 
 - PRD: FR004, FR005

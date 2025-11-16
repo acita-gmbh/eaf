@@ -32,6 +32,49 @@ So that even SQL injection or bugs cannot breach tenant boundaries (Layer 3).
 
 ---
 
+## Tasks / Subtasks
+
+- [ ] AC1: Flyway migration V004__rls_policies.sql enables RLS on all tenant-scoped tables
+- [ ] AC2: RLS policies created: widget_view table requires tenant_id = current_setting('app.tenant_id')
+- [ ] AC3: PostgreSQL session variable set by JooqConfiguration before queries
+- [ ] AC4: RLS policies tested: attempt cross-tenant query → returns empty result
+- [ ] AC5: Integration test validates Layer 3 blocks unauthorized access
+- [ ] AC6: Performance impact measured (<2ms overhead per query)
+- [ ] AC7: RLS policies documented in docs/reference/multi-tenancy.md
+
+---
+
+## Dev Agent Record
+
+### Context Reference
+
+- Implements Layer 3 of 3-layer tenant isolation defense
+- PostgreSQL RLS provides database-level enforcement
+- Performance target: <2ms overhead per query
+- Session variable app.tenant_id set by jOOQ configuration
+
+### Agent Model Used
+
+claude-sonnet-4-5-20250929
+
+### Debug Log References
+
+*To be populated during implementation*
+
+### Completion Notes List
+
+*To be populated during implementation*
+
+### File List
+
+*To be populated during implementation*
+
+### Change Log
+
+*To be populated during implementation*
+
+---
+
 ## References
 
 - PRD: FR004
