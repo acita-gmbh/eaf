@@ -1,0 +1,152 @@
+# Resilience4j Default Configuration
+# OWASP A10:2025 - Mishandling of Exceptional Conditions
+#
+# This configuration file provides sensible defaults for resilience patterns.
+# Products can override these settings in their application.yml files.
+#
+# Reference: docs/security/exception-handling-improvements.md
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        # Sliding window configuration
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 10
+
+        # Failure rate thresholds
+        failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 5s
+
+        # Circuit breaker states
+        permittedNumberOfCallsInHalfOpenState: 10
+        waitDurationInOpenState: 60s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+        # Exception handling
+        recordExceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - java.net.UnknownHostException
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - com.axians.eaf.framework.core.exceptions.ValidationException
+          - com.axians.eaf.framework.core.exceptions.BusinessRuleViolation
+          - java.lang.IllegalArgumentException
+
+    instances:
+      # Keycloak authentication circuit breaker
+      keycloakAuth:
+        baseConfig: default
+        waitDurationInOpenState: 30s  # Faster recovery for auth
+        failureRateThreshold: 30      # More sensitive (30% failure rate)
+        slidingWindowSize: 50
+
+      # External API calls
+      externalApi:
+        baseConfig: default
+        slidingWindowSize: 50
+        failureRateThreshold: 60
+
+      # Database operations
+      database:
+        baseConfig: default
+        waitDurationInOpenState: 120s  # Longer recovery for DB
+        slowCallDurationThreshold: 2s
+        failureRateThreshold: 40
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        exponentialMaxWaitDuration: 10s
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - org.springframework.dao.TransientDataAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - com.axians.eaf.framework.core.exceptions.ValidationException
+          - com.axians.eaf.framework.core.exceptions.BusinessRuleViolation
+          - java.lang.IllegalArgumentException
+
+    instances:
+      # Event processor retry strategy
+      eventProcessor:
+        maxAttempts: 5
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        exponentialMaxWaitDuration: 60s
+
+      # API calls
+      api:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: 25
+        maxWaitDuration: 0  # Fail immediately if full
+
+    instances:
+      # External API calls (limit concurrent requests)
+      externalApi:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 100ms
+
+      # CPU-intensive operations
+      cpuIntensive:
+        maxConcurrentCalls: 4  # Match typical CPU cores
+        maxWaitDuration: 0
+
+      # I/O operations
+      ioOperations:
+        maxConcurrentCalls: 50
+        maxWaitDuration: 500ms
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+        cancelRunningFuture: true
+
+    instances:
+      externalApi:
+        timeoutDuration: 10s
+        cancelRunningFuture: true
+
+      database:
+        timeoutDuration: 30s
+        cancelRunningFuture: false  # Don't cancel DB operations
+
+  ratelimiter:
+    configs:
+      default:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0  # Fail immediately if limit exceeded
+
+    instances:
+      # Per-tenant rate limiting
+      tenant:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+
+# Metrics integration
+management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        resilience4j.circuitbreaker.calls: true
+        resilience4j.retry.calls: true
+        resilience4j.bulkhead.calls: true

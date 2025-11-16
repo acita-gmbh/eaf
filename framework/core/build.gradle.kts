@@ -13,5 +13,8 @@ dependencies {
     implementation(libs.spring.modulith.api)
     testImplementation(libs.spring.modulith.test)
 
+    // Resilience patterns (OWASP A10:2025 - Exception Handling)
+    api(libs.bundles.resilience4j)
+
     testImplementation(libs.bundles.kotest)
 }
