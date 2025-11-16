@@ -7,6 +7,32 @@
 
 ---
 
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [Version Verification Log](#2-version-verification-log)
+3. [Project Initialization](#3-project-initialization)
+4. [Decision Summary](#4-decision-summary)
+5. [Complete Project Structure](#5-complete-project-structure)
+6. [Epic to Architecture Mapping](#6-epic-to-architecture-mapping)
+7. [Technology Stack Details](#7-technology-stack-details)
+8. [Integration Points](#8-integration-points)
+9. [High Availability Strategy](#9-high-availability-strategy)
+10. [Multi-Architecture Support](#10-multi-architecture-support)
+11. [Testing Strategy](#11-testing-strategy)
+    - [11.5. Constitutional TDD & Red-Green-Refactor Mandate](#115-constitutional-tdd--red-green-refactor-mandate)
+12. [Implementation Patterns](#12-implementation-patterns)
+13. [Consistency Rules](#13-consistency-rules)
+14. [Data Architecture](#14-data-architecture)
+15. [API Contracts](#15-api-contracts)
+16. [Security Architecture](#16-security-architecture)
+17. [Performance Considerations](#17-performance-considerations)
+18. [Deployment Architecture](#18-deployment-architecture)
+19. [Development Environment](#19-development-environment)
+20. [Architecture Decision Records (ADRs)](#20-architecture-decision-records-adrs)
+
+---
+
 ## 1. Executive Summary
 
 EAF v1.0 implements a production-validated architecture combining **Hexagonal Architecture**, **CQRS/Event Sourcing** (Axon Framework 4.12.1), and **Spring Modulith 1.4.4** for programmatic boundary enforcement. Built on Kotlin 2.2.21 and Spring Boot 3.5.7 with PostgreSQL 16.10 as a swappable event store adapter, the framework delivers enterprise-grade multi-tenancy (3-layer isolation), comprehensive security (10-layer JWT validation, Keycloak OIDC), and industry-leading testing strategy (7-layer defense including Property-Based, Fuzz, and Concurrency testing).
@@ -3467,7 +3493,7 @@ private val injectionPatterns = listOf(
     Regex("<script"),              // XSS
     Regex("javascript:"),          // XSS
     Regex("\\$\\{.*}"),            // Expression injection
-    Regex("\\.\\.[\\\\/]")         // Path traversal
+    Regex("(^|/|\\\\)\\.\\.([/|\\\\]|$)")  // Path traversal (more robust, catches encoded variants)
 )
 
 fun detectInjectionPatterns(value: Any?) {

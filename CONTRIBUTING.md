@@ -203,11 +203,16 @@ But Story Context for later stories (3.7-3.10) still references **outdated patte
 
 **Option 2: Git Hook (Future Enhancement)**
 ```bash
-# Post-merge hook on main branch
+# .git/hooks/post-merge
 #!/bin/bash
-if [[ "$BRANCH" == story/* ]]; then
-    echo "Story merged! Remember to regenerate context for next story."
-    echo "Run: /bmad:bmm:workflows:story-context"
+
+# Get the ref of the branch that was just merged
+MERGED_BRANCH_REF=$(git rev-parse --symbolic-full-name @{-1} 2>/dev/null)
+
+if [[ "$MERGED_BRANCH_REF" == refs/heads/story/* ]]; then
+    echo "✅ Story branch merged! Remember to regenerate context for the next story."
+    echo "   Run: /bmad:bmm:workflows:story-context"
+    echo ""
 fi
 ```
 

@@ -179,10 +179,10 @@ The workflow will:
     ✓ Add Dev Agent Record section
     ✓ Add File List and Change Log
 
-Press Enter when story regeneration is complete...
+Press ENTER to continue after completing the manual step...
 EOF
 
-    read -r
+    read -r -p "→ "
 
     log_success "Story regenerated: ${story_key}"
 }
@@ -218,10 +218,10 @@ The workflow will generate:
     ✓ Testing standards and patterns
     ✓ Fresh patterns from completed stories
 
-Press Enter when context generation is complete...
+Press ENTER to continue after completing the manual step...
 EOF
 
-    read -r
+    read -r -p "→ "
 
     log_success "Context generated: ${story_key}"
 }
