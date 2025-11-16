@@ -69,6 +69,9 @@ spring-security = "6.5.6" # Spring Security test dependency
 # Cache and session storage
 redis = "3.5.6"           # Spring Boot Data Redis (matches Spring Boot baseline)
 
+# Resilience (OWASP A10:2025 - Exception Handling)
+resilience4j = "2.2.0"    # Circuit breakers, retry, bulkhead, rate limiter
+
 # Workflow
 flowable = "7.2.0"        # BPMN workflow engine (Story 6.1)
 jsch = "2.27.5"           # Java SSH client (maintained fork, CVE-2023-48795 patched) - Story 6.4
@@ -183,6 +186,16 @@ commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 # Cache and session storage
 spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
 
+# Resilience (OWASP A10:2025 - Exception Handling)
+resilience4j-spring-boot = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "resilience4j" }
+resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
+resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
+resilience4j-bulkhead = { module = "io.github.resilience4j:resilience4j-bulkhead", version.ref = "resilience4j" }
+resilience4j-ratelimiter = { module = "io.github.resilience4j:resilience4j-ratelimiter", version.ref = "resilience4j" }
+resilience4j-timelimiter = { module = "io.github.resilience4j:resilience4j-timelimiter", version.ref = "resilience4j" }
+resilience4j-micrometer = { module = "io.github.resilience4j:resilience4j-micrometer", version.ref = "resilience4j" }
+
 # Documentation
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 
@@ -231,6 +244,7 @@ kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-a
 testcontainers = ["testcontainers-postgresql", "testcontainers-keycloak"]
 observability = ["micrometer-core", "micrometer-registry-prometheus"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp", "opentelemetry-semconv", "opentelemetry-instrumentation-spring-boot"]
+resilience4j = ["resilience4j-spring-boot", "resilience4j-kotlin", "resilience4j-circuitbreaker", "resilience4j-retry", "resilience4j-bulkhead", "resilience4j-ratelimiter", "resilience4j-timelimiter", "resilience4j-micrometer"]
 
 [plugins]
 # Core Kotlin and JVM
