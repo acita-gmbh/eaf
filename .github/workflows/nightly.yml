@@ -27,6 +27,16 @@ jobs:
           gradle-version: wrapper
           cache-cleanup: always
 
+      - name: Clean Stale Gradle User Home Config
+        run: |
+          # Clean GRADLE_USER_HOME to prevent stale configs on self-hosted runner
+          # The gradle/actions/setup-gradle action sets GRADLE_USER_HOME
+          # Remove any gradle.properties that might have invalid inline comments
+          if [ -f "$GRADLE_USER_HOME/gradle.properties" ]; then
+            echo "🧹 Removing stale $GRADLE_USER_HOME/gradle.properties"
+            rm -f "$GRADLE_USER_HOME/gradle.properties"
+          fi
+
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -39,9 +49,34 @@ jobs:
 
       - name: Clean Up Previous Infrastructure
         run: |
-          # Remove any leftover containers and volumes from previous runs
-          docker compose down -v --remove-orphans || true
-          echo "✅ Previous infrastructure cleaned up"
+          echo "🧹 Starting infrastructure cleanup..."
+
+          # Step 1: Stop all containers (wait for graceful shutdown)
+          docker compose down --remove-orphans || true
+          sleep 3
+
+          # Step 2: Force remove containers if still running
+          docker rm -f eaf-postgres eaf-redis eaf-keycloak 2>/dev/null || true
+
+          # Step 3: Remove volumes explicitly (after containers are gone)
+          # CRITICAL: Ensures fresh database for each run, prevents Flyway migration conflicts
+          docker volume rm eaf_postgres_data 2>/dev/null || true
+          docker volume rm eaf_redis_data 2>/dev/null || true
+          docker volume rm eaf-postgres-data 2>/dev/null || true  # Fallback
+          docker volume rm eaf-redis-data 2>/dev/null || true     # Fallback
+
+          # Step 4: Prune all orphaned volumes
+          docker volume prune -f
+
+          # Step 5: Verify volumes are removed
+          echo "📋 Remaining EAF volumes:"
+          docker volume ls --filter name=eaf_ --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}" || echo "   ✅ None (all cleaned)"
+
+          # Step 6: Verify containers are removed
+          echo "📋 Remaining EAF containers:"
+          docker ps -a --filter name=eaf- --format "table {{.Names}}\t{{.Status}}" || echo "   ✅ None (all cleaned)"
+
+          echo "✅ Infrastructure cleanup complete"
 
       - name: Start Infrastructure Services
         run: |
@@ -81,7 +116,7 @@ jobs:
           KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/eaf
           KEYCLOAK_JWKS_URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
         run: |
-          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' --stacktrace > app.log 2>&1 &
           echo $! > app.pid
           echo "🚀 Started application with PID $(cat app.pid)"
 
@@ -91,16 +126,27 @@ jobs:
           TIMEOUT=120
           ELAPSED=0
           while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if Gradle bootRun process failed
+            if [ -f app.pid ]; then
+              APP_PID=$(cat app.pid)
+              if ! kill -0 $APP_PID 2>/dev/null; then
+                echo "❌ ERROR: Application process ($APP_PID) has terminated!"
+                echo "=== Full application log ==="
+                cat app.log || echo "No log file found"
+                exit 1
+              fi
+            fi
+
             # Try health check
             if curl -f http://localhost:8090/actuator/health 2>/dev/null; then
               echo "✅ Application is ready!"
               exit 0
             fi
 
-            # Show last 10 lines of log for debugging
+            # Show last 20 lines of log for debugging (increased from 10)
             if [ -f app.log ]; then
-              echo "=== Last 10 lines of app.log ==="
-              tail -10 app.log
+              echo "=== Last 20 lines of app.log ==="
+              tail -20 app.log
               echo "================================"
             fi
 
@@ -110,8 +156,8 @@ jobs:
           done
 
           echo "❌ ERROR: Application failed to start within $TIMEOUT seconds"
-          echo "=== Full application log ==="
-          cat app.log || echo "No log file found"
+          echo "=== Full application log (last 200 lines) ==="
+          tail -200 app.log || echo "No log file found"
           exit 1
 
       # ========================================================================
@@ -133,8 +179,24 @@ jobs:
       # - @Tag("Mutation"): Pitest mutation coverage
       # - @Tag("Performance"): Benchmark/performance tests
       # - @Tag("Nightly"): General nightly tests
+      #
+      # IMPORTANT: nightlyTest task only exists for framework modules (EafTestingV2Plugin.kt:113-117)
+      # Must explicitly specify framework modules - global task execution would fail
       - name: Nightly Comprehensive Test Suite (V2)
-        run: ./gradlew nightlyTest -PnightlyBuild --no-daemon --stacktrace
+        run: |
+          ./gradlew \
+            :framework:core:nightlyTest \
+            :framework:security:nightlyTest \
+            :framework:cqrs:nightlyTest \
+            :framework:persistence:nightlyTest \
+            :framework:web:nightlyTest \
+            :framework:observability:nightlyTest \
+            :framework:multi-tenancy:nightlyTest \
+            :framework:workflow:nightlyTest \
+            :shared:testing:nightlyTest \
+            :shared:shared-api:nightlyTest \
+            :shared:shared-types:nightlyTest \
+            -PnightlyBuild --no-daemon --stacktrace --continue
         timeout-minutes: 480  # 8 hours for comprehensive validation
 
       # Mutation Testing (Pitest - separate from nightlyTest suite)
