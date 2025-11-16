@@ -128,8 +128,8 @@
         <purpose>Base image for UBI9-based Keycloak build</purpose>
       </docker>
       <docker>
-        <package>registry.access.redhat.com/ubi9/openjdk-21:1.19</package>
-        <version>1.19</version>
+        <package>registry.access.redhat.com/ubi9/openjdk-21:1.23</package>
+        <version>1.23</version>
         <purpose>JDK 21 runtime for Keycloak (ppc64le compatible)</purpose>
       </docker>
       <maven>

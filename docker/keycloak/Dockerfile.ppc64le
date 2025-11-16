@@ -46,7 +46,7 @@ RUN wget -q https://github.com/keycloak/keycloak/releases/download/${KEYCLOAK_VE
 # ==============================================================================
 # Stage 2: Runtime Stage - Optimized final image
 # ==============================================================================
-FROM registry.access.redhat.com/ubi9/openjdk-21:1.19
+FROM registry.access.redhat.com/ubi9/openjdk-21:1.23
 
 # Keycloak version (must match build stage)
 ARG KEYCLOAK_VERSION=26.4.2
@@ -56,7 +56,7 @@ LABEL maintainer="EAF Team <eaf@axians.com>"
 LABEL description="Keycloak ${KEYCLOAK_VERSION} for ppc64le architecture (UBI9-based)"
 LABEL version="${KEYCLOAK_VERSION}"
 LABEL architecture="ppc64le"
-LABEL base-image="registry.access.redhat.com/ubi9/openjdk-21:1.19"
+LABEL base-image="registry.access.redhat.com/ubi9/openjdk-21:1.23"
 
 # Create keycloak user and group
 USER root

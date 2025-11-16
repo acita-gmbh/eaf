@@ -154,9 +154,11 @@ docker images keycloak:26.4.2-ppc64le
 
 ## Testing on ppc64le
 
-### Option 1: QEMU Emulation (Recommended for Development)
+### Option 1: QEMU Emulation (Linux Only)
 
-**Setup QEMU:**
+**⚠️ macOS/Docker Desktop Limitation:** QEMU ppc64le emulation does **not work** on macOS/Docker Desktop due to containerd-shim compatibility issues. Use **Linux** or **GitHub Actions CI** for ppc64le builds.
+
+**Setup QEMU (Linux only):**
 
 ```bash
 # Install QEMU emulation
@@ -166,6 +168,12 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 docker run --platform linux/ppc64le --rm alpine uname -m
 # Expected output: ppc64le
 ```
+
+**Known Issue on macOS:**
+```
+ERROR: fork/exec /usr/bin/unpigz: exec format error
+```
+**Solution:** Use GitHub Actions CI (`.github/workflows/multi-arch-build.yml`) which runs on Linux.
 
 **Test Keycloak Image:**
 
@@ -503,6 +511,36 @@ ls -la docker/keycloak/realm-export.json
 # Verify realm imported
 docker-compose -f docker-compose.ppc64le.yml logs keycloak | grep "imported"
 ```
+
+---
+
+## GitHub Actions CI Integration
+
+**Workflow:** `.github/workflows/multi-arch-build.yml`
+
+**Triggers:**
+- Pull requests modifying ppc64le-related files
+- Manual workflow dispatch (with optional registry push)
+
+**What it does:**
+1. Sets up QEMU on Linux (ubuntu-latest)
+2. Builds Keycloak ppc64le image using build script
+3. Verifies image architecture and size
+4. Validates docker-compose.ppc64le.yml syntax
+5. (Optional) Pushes to GitHub Container Registry
+
+**Manual Trigger:**
+```bash
+# Via GitHub UI: Actions → Multi-Architecture Build → Run workflow
+# Or via gh CLI:
+gh workflow run multi-arch-build.yml
+gh workflow run multi-arch-build.yml -f push_to_registry=true
+```
+
+**CI will automatically run** when you push changes to:
+- `docker/keycloak/Dockerfile.ppc64le`
+- `scripts/build-keycloak-ppc64le.sh`
+- `docker-compose.ppc64le.yml`
 
 ---
 
