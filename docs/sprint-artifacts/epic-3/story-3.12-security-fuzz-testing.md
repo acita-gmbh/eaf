@@ -136,6 +136,7 @@ claude-sonnet-4-5-20250929
 
 ### Completion Notes List
 
+**Initial Implementation:**
 - ✅ Created JwtFormatFuzzer.kt targeting JWT 3-part structure parsing with comprehensive edge cases (malformed parts, Base64 encoding errors, delimiter variations, null bytes, very long strings)
 - ✅ Created TokenExtractorFuzzer.kt targeting Authorization header parsing with security-focused test cases (case sensitivity, whitespace handling, injection patterns, Unicode attacks)
 - ✅ Adjusted RoleNormalizationFuzzer.kt from 4 tests × 30s to 2 tests × 2m30s for 5-minute total runtime as per AC #3
@@ -146,11 +147,17 @@ claude-sonnet-4-5-20250929
 - ✅ Smoke tested fuzzer compilation and execution - all tests compile and start successfully
 - ✅ Total fuzzing duration: 15 minutes (5min/target) as specified in AC #3
 
+**Code Review Enhancements:**
+- ✅ Added NPE assertion to JwtFormatFuzzer for consistency with TokenExtractorFuzzer (defensive programming)
+- ✅ Created comprehensive corpus/README.md with management guide, cleanup procedures, troubleshooting
+- ✅ Implemented corpus size monitoring script (scripts/check-corpus-size.sh) with 50MB warning, 100MB error thresholds
+- ✅ Script includes automated cleanup for large files (>1MB) and old auto-generated files (>90 days)
+
 ### File List
 
 **NEW**:
-- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/jwt/JwtFormatFuzzer.kt
-- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/jwt/TokenExtractorFuzzer.kt
+- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/jwt/JwtFormatFuzzer.kt (126 lines)
+- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/jwt/TokenExtractorFuzzer.kt (154 lines)
 - framework/security/corpus/jwt-format/valid-jwt.txt
 - framework/security/corpus/jwt-format/malformed-parts.txt
 - framework/security/corpus/jwt-format/empty-signature.txt
@@ -160,13 +167,17 @@ claude-sonnet-4-5-20250929
 - framework/security/corpus/role-normalization/realm-roles.txt
 - framework/security/corpus/role-normalization/resource-roles.txt
 - framework/security/corpus/role-normalization/empty-roles.txt
+- framework/security/corpus/README.md (comprehensive corpus management guide)
+- scripts/check-corpus-size.sh (corpus monitoring and cleanup automation)
 
 **MODIFIED**:
-- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/role/RoleNormalizationFuzzer.kt (consolidated from 4×30s to 2×2m30s tests)
+- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/role/RoleNormalizationFuzzer.kt (consolidated from 4×30s to 2×2m30s tests, +13 lines, -43 lines)
+- framework/security/src/fuzzTest/kotlin/com/axians/eaf/framework/security/jwt/JwtFormatFuzzer.kt (added NPE assertion for defensive programming)
 - docs/sprint-status.yaml (story status: ready-for-dev → in-progress → review)
-- docs/sprint-artifacts/epic-3/story-3.12-security-fuzz-testing.md (regenerated template, tasks completed)
+- docs/sprint-artifacts/epic-3/story-3.12-security-fuzz-testing.md (regenerated template, tasks completed, enhancements added)
 
 ### Change Log
 
 - 2025-11-16: Story regenerated with correct template format (Amelia)
 - 2025-11-16: Implemented 3 security fuzz testing targets (JwtFormat, TokenExtractor, RoleNormalization) with 15min total runtime, created corpus structure with 9 seed files, verified CI/CD integration (Amelia)
+- 2025-11-16: Added code review enhancements - NPE assertion in JwtFormatFuzzer, corpus/README.md management guide, corpus monitoring script with automated cleanup (Amelia)

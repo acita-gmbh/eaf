@@ -41,6 +41,9 @@ class JwtFormatFuzzer {
             } catch (ex: IllegalArgumentException) {
                 // Expected for invalid Base64 or structure
                 require(ex.message != null) { "IllegalArgumentException should have a message" }
+            } catch (ex: NullPointerException) {
+                // Should not happen - indicates a bug in JWT decoder
+                throw AssertionError("JWT decoder should not throw NPE", ex)
             }
         }
     }
