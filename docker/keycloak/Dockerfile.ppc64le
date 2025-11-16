@@ -1,0 +1,102 @@
+# Multi-stage Dockerfile for Keycloak 26.4.2 on ppc64le architecture
+#
+# Stage 1: Build Keycloak from source using Maven
+# Stage 2: Runtime image with optimized size
+#
+# Target Architecture: linux/ppc64le
+# Base Image: Red Hat Universal Base Image 9 (UBI9)
+# Keycloak Version: 26.4.2
+#
+# Build: docker buildx build --platform linux/ppc64le -f docker/keycloak/Dockerfile.ppc64le -t keycloak:26.4.2-ppc64le .
+# Run:   docker run --platform linux/ppc64le -p 8080:8080 keycloak:26.4.2-ppc64le start-dev
+
+# ==============================================================================
+# Stage 1: Build Stage - Maven compilation
+# ==============================================================================
+FROM registry.access.redhat.com/ubi9/ubi:9.3 AS builder
+
+# Keycloak version to build
+ARG KEYCLOAK_VERSION=26.4.2
+
+# Install build dependencies
+RUN dnf install -y \
+    java-21-openjdk-devel \
+    maven \
+    git \
+    wget \
+    tar \
+    && dnf clean all
+
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Create build directory
+WORKDIR /build
+
+# Download Keycloak source distribution
+RUN wget -q https://github.com/keycloak/keycloak/releases/download/${KEYCLOAK_VERSION}/keycloak-${KEYCLOAK_VERSION}.tar.gz \
+    && tar -xzf keycloak-${KEYCLOAK_VERSION}.tar.gz \
+    && rm keycloak-${KEYCLOAK_VERSION}.tar.gz \
+    && mv keycloak-${KEYCLOAK_VERSION} keycloak
+
+# Note: Pre-built distributions are available for Keycloak, no Maven build needed
+# We use the distribution directly and optimize in the runtime stage
+
+# ==============================================================================
+# Stage 2: Runtime Stage - Optimized final image
+# ==============================================================================
+FROM registry.access.redhat.com/ubi9/openjdk-21:1.19
+
+# Keycloak version (must match build stage)
+ARG KEYCLOAK_VERSION=26.4.2
+
+# Metadata labels
+LABEL maintainer="EAF Team <eaf@axians.com>"
+LABEL description="Keycloak ${KEYCLOAK_VERSION} for ppc64le architecture (UBI9-based)"
+LABEL version="${KEYCLOAK_VERSION}"
+LABEL architecture="ppc64le"
+LABEL base-image="registry.access.redhat.com/ubi9/openjdk-21:1.19"
+
+# Create keycloak user and group
+USER root
+RUN groupadd -r keycloak --gid=1000 \
+    && useradd -r -g keycloak --uid=1000 -d /opt/keycloak keycloak
+
+# Copy Keycloak distribution from builder
+COPY --from=builder --chown=keycloak:keycloak /build/keycloak /opt/keycloak
+
+# Set working directory
+WORKDIR /opt/keycloak
+
+# Create necessary directories
+RUN mkdir -p /opt/keycloak/data/import \
+    && chown -R keycloak:keycloak /opt/keycloak
+
+# Switch to keycloak user
+USER keycloak
+
+# Set environment variables
+ENV KC_HOME=/opt/keycloak
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+ENV KC_HTTP_ENABLED=true
+ENV KC_HTTP_PORT=8080
+ENV KC_HOSTNAME_STRICT=false
+ENV KC_HOSTNAME_STRICT_HTTPS=false
+ENV KC_LOG_LEVEL=info
+
+# Expose ports
+EXPOSE 8080
+EXPOSE 8443
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/health/ready || exit 1
+
+# Set the entrypoint to Keycloak
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+
+# Default command: start in development mode
+# Override with: start (production mode)
+CMD ["start-dev", "--import-realm"]
