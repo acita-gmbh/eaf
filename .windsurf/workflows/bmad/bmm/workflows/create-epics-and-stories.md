@@ -18,27 +18,37 @@ document_output_language: "{config_source}:document_output_language"
 user_skill_level: "{config_source}:user_skill_level"
 date: system-generated
 
-# Input requirements
-recommended_inputs:
-  - prd: "Product Requirements Document with FRs and NFRs"
-  - product_brief: "Product Brief with vision and goals (optional)"
-  - domain_brief: "Domain-specific requirements and context (optional)"
-
 # Smart input file references - handles both whole docs and sharded docs
 # Priority: Whole document first, then sharded version
 input_file_patterns:
   prd:
+    description: "Product Requirements Document with FRs and NFRs"
     whole: "{output_folder}/*prd*.md"
     sharded: "{output_folder}/*prd*/index.md"
+    load_strategy: "INDEX_GUIDED"
   product_brief:
+    description: "Product vision and goals (optional)"
     whole: "{output_folder}/*product*brief*.md"
     sharded: "{output_folder}/*product*brief*/index.md"
+    load_strategy: "INDEX_GUIDED"
   domain_brief:
+    description: "Domain-specific requirements and context (optional)"
     whole: "{output_folder}/*domain*brief*.md"
     sharded: "{output_folder}/*domain*brief*/index.md"
+    load_strategy: "INDEX_GUIDED"
+  ux_design:
+    description: "UX design specification for interaction patterns (optional)"
+    whole: "{output_folder}/*ux*.md"
+    sharded: "{output_folder}/*ux*/index.md"
+    load_strategy: "FULL_LOAD"
+  architecture:
+    description: "Architecture decisions and technical design (optional)"
+    whole: "{output_folder}/*architecture*.md"
+    sharded: "{output_folder}/*architecture*/index.md"
+    load_strategy: "FULL_LOAD"
 
 # Module path and component files
-installed_path: "{project-root}/.bmad/bmm/workflows/2-plan-workflows/prd/create-epics-and-stories"
+installed_path: "{project-root}/.bmad/bmm/workflows/2-plan-workflows/create-epics-and-stories"
 instructions: "{installed_path}/instructions.md"
 template: "{installed_path}/epics-template.md"
 
