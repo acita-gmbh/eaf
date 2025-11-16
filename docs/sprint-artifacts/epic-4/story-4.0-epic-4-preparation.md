@@ -1,6 +1,6 @@
 # Story 4.0: Epic 4 Preparation - Process, Context, and Research
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
