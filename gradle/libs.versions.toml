@@ -82,7 +82,9 @@ jazzer = "0.26.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz sta
 
 # Concurrency Testing (Story 4.0/4.10)
 jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
-# litmuskt = "local"      # LitmusKt experimental (Git submodule, Story 4.10)
+# NOTE: LitmusKt is experimental (not on Maven Central) - will be added in Story 4.10
+# Integration options: (1) Git submodule + publishToMavenLocal, (2) JCStress fallback, (3) Defer to Epic 8
+# See architecture.md lines 2044-2208 for setup documentation
 
 # Performance Testing (Story 2.13)
 gatling = "3.14.0"        # Load testing framework
