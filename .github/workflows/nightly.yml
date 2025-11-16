@@ -49,21 +49,34 @@ jobs:
 
       - name: Clean Up Previous Infrastructure
         run: |
-          # Remove any leftover containers and volumes from previous runs
-          docker compose down -v --remove-orphans || true
+          echo "🧹 Starting infrastructure cleanup..."
 
-          # CRITICAL: Ensure PostgreSQL volume is completely removed (fixes Flyway migration errors)
-          # Self-hosted runners may have persistent volumes that survive `docker compose down -v`
-          # Volume name format: <project>_<volume> where project defaults to directory name
-          docker volume rm eaf_postgres_data || true
-          docker volume rm eaf-postgres-data || true  # Fallback for dash separator
-          docker volume prune -f || true
+          # Step 1: Stop all containers (wait for graceful shutdown)
+          docker compose down --remove-orphans || true
+          sleep 3
 
-          # Verify volumes are removed
-          echo "📋 Remaining volumes:"
-          docker volume ls | grep -E "(postgres|redis|keycloak)" || echo "   (none - all cleaned)"
+          # Step 2: Force remove containers if still running
+          docker rm -f eaf-postgres eaf-redis eaf-keycloak 2>/dev/null || true
 
-          echo "✅ Previous infrastructure cleaned up"
+          # Step 3: Remove volumes explicitly (after containers are gone)
+          # CRITICAL: Ensures fresh database for each run, prevents Flyway migration conflicts
+          docker volume rm eaf_postgres_data 2>/dev/null || true
+          docker volume rm eaf_redis_data 2>/dev/null || true
+          docker volume rm eaf-postgres-data 2>/dev/null || true  # Fallback
+          docker volume rm eaf-redis-data 2>/dev/null || true     # Fallback
+
+          # Step 4: Prune all orphaned volumes
+          docker volume prune -f
+
+          # Step 5: Verify volumes are removed
+          echo "📋 Remaining EAF volumes:"
+          docker volume ls --filter name=eaf_ --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}" || echo "   ✅ None (all cleaned)"
+
+          # Step 6: Verify containers are removed
+          echo "📋 Remaining EAF containers:"
+          docker ps -a --filter name=eaf- --format "table {{.Names}}\t{{.Status}}" || echo "   ✅ None (all cleaned)"
+
+          echo "✅ Infrastructure cleanup complete"
 
       - name: Start Infrastructure Services
         run: |
