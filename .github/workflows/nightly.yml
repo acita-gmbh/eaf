@@ -91,7 +91,7 @@ jobs:
           KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/eaf
           KEYCLOAK_JWKS_URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
         run: |
-          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' --stacktrace > app.log 2>&1 &
           echo $! > app.pid
           echo "🚀 Started application with PID $(cat app.pid)"
 
@@ -101,16 +101,27 @@ jobs:
           TIMEOUT=120
           ELAPSED=0
           while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if Gradle bootRun process failed
+            if [ -f app.pid ]; then
+              APP_PID=$(cat app.pid)
+              if ! kill -0 $APP_PID 2>/dev/null; then
+                echo "❌ ERROR: Application process ($APP_PID) has terminated!"
+                echo "=== Full application log ==="
+                cat app.log || echo "No log file found"
+                exit 1
+              fi
+            fi
+
             # Try health check
             if curl -f http://localhost:8090/actuator/health 2>/dev/null; then
               echo "✅ Application is ready!"
               exit 0
             fi
 
-            # Show last 10 lines of log for debugging
+            # Show last 20 lines of log for debugging (increased from 10)
             if [ -f app.log ]; then
-              echo "=== Last 10 lines of app.log ==="
-              tail -10 app.log
+              echo "=== Last 20 lines of app.log ==="
+              tail -20 app.log
               echo "================================"
             fi
 
@@ -120,8 +131,8 @@ jobs:
           done
 
           echo "❌ ERROR: Application failed to start within $TIMEOUT seconds"
-          echo "=== Full application log ==="
-          cat app.log || echo "No log file found"
+          echo "=== Full application log (last 200 lines) ==="
+          tail -200 app.log || echo "No log file found"
           exit 1
 
       # ========================================================================
