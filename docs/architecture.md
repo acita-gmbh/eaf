@@ -2041,6 +2041,171 @@ litmusTest("TenantContext Thread Isolation") {
 // 5. Active-Active session consistency
 ```
 
+#### LitmusKt Setup and Integration (Story 4.0 Research)
+
+**Current Status:** LitmusKt is in experimental stage (JetBrains Research, October 2025) and NOT published to Maven Central.
+
+**Integration Approach for Story 4.10:**
+
+**Option 1: Git Submodule (Recommended for Early Adoption)**
+```bash
+# Add LitmusKt as submodule in tools/litmuskt
+git submodule add https://github.com/JetBrains-Research/litmuskt.git tools/litmuskt
+git submodule update --init --recursive
+
+# Build LitmusKt locally
+cd tools/litmuskt
+./gradlew build publishToMavenLocal
+```
+
+**Option 2: JCStress Direct Integration (Fallback if LitmusKt Too Experimental)**
+```kotlin
+// If LitmusKt proves too unstable, use JCStress directly
+testImplementation("org.openjdk.jcstress:jcstress-core:0.18")
+
+// Manual JCStress test (more verbose than LitmusKt DSL)
+@JCStressTest
+@Outcome(id = "tenant-A, tenant-B, false", expect = ACCEPTABLE)
+@Outcome(id = "*, *, true", expect = FORBIDDEN, desc = "Cross-tenant leak")
+class TenantContextRaceTest { ... }
+```
+
+**Option 3: Wait for Maven Central Publication (Deferred to Epic 8)**
+- Monitor https://github.com/JetBrains-Research/litmuskt for releases
+- Add to version catalog when 1.0.0 published
+- Implement in Story 8.4 instead of 4.10
+
+**Dependency Requirements:**
+
+```toml
+# gradle/libs.versions.toml (for Story 4.10 or 8.4)
+[versions]
+jcstress = "0.18"          # JCStress for JVM concurrency testing
+litmuskt = "local"         # Built from Git submodule or awaiting publication
+
+[libraries]
+jcstress-core = { module = "org.openjdk.jcstress:jcstress-core", version.ref = "jcstress" }
+# litmuskt will be added when available on Maven Central
+```
+
+**Example Concurrency Test for TenantContext (Story 4.1/4.10):**
+
+```kotlin
+// TenantContextConcurrencyTest.kt
+import org.jetbrains.litmuskt.*
+
+val TenantContextThreadIsolation = litmusTest({
+    object : LitmusIIOutcome() {
+        lateinit var tenantContext: TenantContext
+        var tenant1: String? = null
+        var tenant2: String? = null
+        var crossTenantLeak = false
+    }
+}) {
+    thread {
+        // Thread 1: Set tenant-A
+        tenantContext.setCurrentTenantId("tenant-A")
+        tenant1 = tenantContext.getCurrentTenantId()
+        tenantContext.clearCurrentTenant()
+    }
+
+    thread {
+        // Thread 2: Set tenant-B
+        tenantContext.setCurrentTenantId("tenant-B")
+        tenant2 = tenantContext.getCurrentTenantId()
+
+        // Check for cross-tenant contamination
+        if (tenant2 == "tenant-A") {
+            crossTenantLeak = true  // CRITICAL BUG if this happens
+        }
+        tenantContext.clearCurrentTenant()
+    }
+
+    spec {
+        // Acceptable outcomes
+        accept(tenant1 = "tenant-A", tenant2 = "tenant-B", leak = false)
+
+        // FORBIDDEN: Cross-tenant leak
+        forbidden { crossTenantLeak == true }
+    }
+
+    reset {
+        tenant1 = null
+        tenant2 = null
+        crossTenantLeak = false
+        tenantContext = TenantContext()  // Fresh instance
+    }
+}
+```
+
+**Concurrency Scenarios to Test (Story 4.10):**
+
+1. **TenantContext ThreadLocal Isolation**
+   - Two threads set different tenant IDs
+   - Verify no cross-contamination
+   - Validate cleanup prevents leaks
+
+2. **Event Handler Context Restoration**
+   - Command dispatched with tenant-A context
+   - Event handler in different thread
+   - Verify context correctly restored from metadata
+
+3. **Nested Context Management**
+   - Outer context: tenant-A
+   - Nested context: tenant-B (testing scenario)
+   - Verify stack-based restoration
+
+4. **Context Cleanup Race Conditions**
+   - Multiple threads set/clear context
+   - Verify no orphaned contexts
+   - Validate WeakReference garbage collection
+
+5. **High-Concurrency Context Switching**
+   - 100+ threads rapid set/clear cycles
+   - Verify no corruption or cross-contamination
+   - Measure performance degradation
+
+**Performance Targets:**
+- Context set/get operations: <100ns
+- Cleanup overhead: <50ns
+- Zero memory leaks (WeakReference validated)
+- Zero cross-tenant contamination (forbidden outcomes)
+
+**Integration with CI/CD (Story 4.10):**
+
+```yaml
+# .github/workflows/nightly.yml
+- name: Concurrency Tests (LitmusKt)
+  run: |
+    # Build LitmusKt if not cached
+    cd tools/litmuskt && ./gradlew publishToMavenLocal
+    cd ../..
+
+    # Run concurrency tests
+    ./gradlew :framework:multi-tenancy:litmusTest
+
+    # Analyze results
+    if grep -q "FORBIDDEN outcome observed" build/litmus-reports/*.txt; then
+      echo "CRITICAL: Race condition detected in TenantContext"
+      exit 1
+    fi
+```
+
+**Story 4.0 Preparation Actions:**
+- ✅ LitmusKt research completed (experimental, Git submodule approach)
+- ✅ JCStress fallback documented (mature, stable, Maven Central available)
+- ✅ Example concurrency tests designed (5 scenarios)
+- ✅ Integration approach documented (3 options)
+- ⏳ Actual implementation deferred to Story 4.10
+
+**Decision for Story 4.10:**
+Evaluate LitmusKt stability during Epic 4. If experimental concerns arise, fall back to JCStress direct integration. Both provide race condition detection; LitmusKt offers better DSL and Kotlin-native semantics.
+
+**References:**
+- [LitmusKt GitHub](https://github.com/JetBrains-Research/litmuskt)
+- [LitmusKt Research Blog](https://blog.jetbrains.com/research/2025/10/litmuskt-concurrency-testing/)
+- [JCStress Project](https://github.com/openjdk/jcstress)
+
 ### Test Execution Strategy
 
 **Fast Feedback (Every Commit):**
@@ -3391,6 +3556,413 @@ CREATE POLICY tenant_isolation_events ON events
 -- If app.tenant_id is not set, queries return zero rows
 ```
 
+#### PostgreSQL RLS Implementation Details (Story 4.0 Research)
+
+**Session Variable Pattern with jOOQ (Story 4.4):**
+
+```kotlin
+@Configuration
+class JooqTenantConfiguration {
+    @Bean
+    fun dslContext(dataSource: DataSource): DSLContext {
+        return DSL.using(dataSource, SQLDialect.POSTGRES).apply {
+            // Register execute listener for tenant context propagation
+            configuration().set(
+                DefaultExecuteListenerProvider(TenantRLSExecuteListener())
+            )
+        }
+    }
+}
+
+class TenantRLSExecuteListener : DefaultExecuteListener() {
+    override fun start(ctx: ExecuteContext) {
+        val tenantId = TenantContext.current() ?: return
+
+        // SET LOCAL ensures session variable scoped to current transaction
+        ctx.dsl().execute(
+            "SET LOCAL app.tenant_id = ?",
+            tenantId
+        )
+    }
+}
+```
+
+**Alternative: Direct Connection Configuration**
+
+```kotlin
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 15)  // After TenantContextFilter
+class PostgreSQLRLSFilter(private val dataSource: DataSource) : OncePerRequestFilter() {
+    override fun doFilterInternal(request, response, filterChain) {
+        val tenantId = TenantContext.getCurrentTenantId()
+
+        dataSource.connection.use { conn ->
+            // SET LOCAL scoped to transaction, auto-reset after commit
+            conn.prepareStatement("SET LOCAL app.tenant_id = ?").use { stmt ->
+                stmt.setString(1, tenantId)
+                stmt.execute()
+            }
+
+            filterChain.doFilter(request, response)
+        }
+    }
+}
+```
+
+**Key RLS Patterns:**
+
+1. **SET LOCAL vs SET:** Use `SET LOCAL` for transaction-scoped variables (auto-reset after COMMIT/ROLLBACK)
+2. **Fail-Closed Design:** Missing app.tenant_id → queries return zero rows (safe default)
+3. **UUID vs INTEGER:** Use tenant_id type matching your domain model (UUID common for distributed systems)
+4. **Policy Scope:** `FOR ALL` covers SELECT, INSERT, UPDATE, DELETE
+5. **Performance:** RLS policy evaluation adds <2ms overhead per query (acceptable)
+
+**Critical Security Considerations:**
+
+```sql
+-- ❌ DANGER: Table owner bypasses RLS policies
+CREATE TABLE orders (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    data JSONB
+);
+ALTER TABLE orders OWNER TO postgres;  -- BYPASSRLS privilege!
+
+-- ✅ CORRECT: Application user without BYPASSRLS
+CREATE USER eaf_app WITH PASSWORD 'secure_password';
+GRANT SELECT, INSERT, UPDATE, DELETE ON orders TO eaf_app;
+ALTER TABLE orders OWNER TO eaf_app;  -- RLS applies to this owner
+
+-- Table owner must NOT have BYPASSRLS privilege
+-- Verify with: SELECT rolname, rolbypassrls FROM pg_roles;
+```
+
+**BYPASSRLS Privilege Management:**
+
+```sql
+-- Superuser and roles with BYPASSRLS bypass ALL policies
+-- Use for migrations and admin tools ONLY
+
+-- Application role must NOT have BYPASSRLS
+CREATE ROLE eaf_app LOGIN PASSWORD 'secure';
+-- Default: rolbypassrls = false (correct)
+
+-- Admin role for migrations (careful!)
+CREATE ROLE eaf_admin SUPERUSER LOGIN PASSWORD 'admin';
+-- Has BYPASSRLS = true (use sparingly)
+```
+
+**Testing RLS Policies (Story 4.7):**
+
+```kotlin
+@SpringBootTest
+@Testcontainers
+class RLSPolicyTest : FunSpec() {
+    init {
+        test("RLS blocks cross-tenant access even with direct SQL") {
+            // Set tenant-A context
+            dsl.execute("SET LOCAL app.tenant_id = ?", "tenant-a")
+
+            // Insert widget for tenant-A
+            dsl.insertInto(WIDGET_VIEW)
+                .set(WIDGET_VIEW.TENANT_ID, UUID.fromString("tenant-a"))
+                .set(WIDGET_VIEW.NAME, "Widget A")
+                .execute()
+
+            // Query returns widget-A
+            val resultA = dsl.selectFrom(WIDGET_VIEW).fetch()
+            resultA shouldHaveSize 1
+
+            // Switch to tenant-B context
+            dsl.execute("SET LOCAL app.tenant_id = ?", "tenant-b")
+
+            // Query returns ZERO rows (RLS blocks tenant-A data)
+            val resultB = dsl.selectFrom(WIDGET_VIEW).fetch()
+            resultB shouldHaveSize 0  // ✅ RLS working
+        }
+    }
+}
+```
+
+**RLS Policy Variants:**
+
+```sql
+-- Read-only for specific role
+CREATE POLICY tenant_readonly_policy ON orders
+  FOR SELECT
+  TO readonly_user
+  USING (tenant_id = current_setting('app.tenant_id')::uuid);
+
+-- Write restrictions
+CREATE POLICY tenant_insert_policy ON orders
+  FOR INSERT
+  WITH CHECK (
+    tenant_id = current_setting('app.tenant_id')::uuid
+    AND created_by = current_setting('app.user_id')::uuid
+  );
+
+-- Conditional policies for super admins
+CREATE POLICY super_admin_bypass ON orders
+  FOR ALL
+  USING (
+    tenant_id = current_setting('app.tenant_id')::uuid
+    OR current_setting('app.is_super_admin', true)::boolean = true
+  );
+```
+
+**Performance Optimization:**
+
+```sql
+-- Create index on tenant_id for RLS performance
+CREATE INDEX idx_orders_tenant_id ON orders(tenant_id);
+CREATE INDEX idx_widget_view_tenant_id ON widget_view(tenant_id);
+
+-- BRIN index for partitioned tables (time-series data)
+CREATE INDEX idx_events_tenant_time ON events
+  USING BRIN (tenant_id, timestamp);
+```
+
+**Monitoring RLS Policy Effectiveness:**
+
+```sql
+-- Verify policies are enabled
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public' AND rowsecurity = true;
+
+-- List all policies
+SELECT schemaname, tablename, policyname, qual, with_check
+FROM pg_policies
+WHERE schemaname = 'public';
+
+-- Check role privileges
+SELECT rolname, rolsuper, rolbypassrls
+FROM pg_roles
+WHERE rolname IN ('eaf_app', 'eaf_admin', 'postgres');
+```
+
+**Migration Strategy (Flyway):**
+
+```sql
+-- V004__enable_rls.sql
+-- Enable RLS on all tenant-scoped tables
+DO $$
+DECLARE
+    tbl TEXT;
+BEGIN
+    FOR tbl IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename NOT IN ('flyway_schema_history', 'databasechangelog')
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
+        EXECUTE format('
+            CREATE POLICY tenant_isolation_%I ON %I
+            FOR ALL
+            USING (tenant_id = current_setting(''app.tenant_id'')::uuid)
+        ', tbl, tbl);
+    END LOOP;
+END $$;
+```
+
+**Story 4.0 Preparation Summary:**
+- ✅ current_setting() pattern researched and documented
+- ✅ SET LOCAL vs SET transaction scoping clarified
+- ✅ BYPASSRLS security implications documented
+- ✅ jOOQ ExecuteListener integration pattern provided
+- ✅ Testing patterns with direct SQL verification
+- ✅ Performance optimization (indexes) documented
+- ✅ Migration automation (Flyway) example provided
+- ✅ Monitoring queries for RLS validation
+
+**References:**
+- [Crunchy Data: RLS for Tenants](https://www.crunchydata.com/blog/row-level-security-for-tenants-in-postgres)
+- [AWS Multi-Tenant RLS](https://aws.amazon.com/blogs/database/multi-tenant-data-isolation-with-postgresql-row-level-security/)
+- [PostgreSQL 16 RLS Documentation](https://www.postgresql.org/docs/16/ddl-rowsecurity.html)
+
+### Axon ThreadLocal Context Propagation to Async Event Processors
+
+**Challenge (Story 4.5):**
+TrackingEventProcessor uses dedicated threads for async event processing, causing ThreadLocal context (tenant_id) to be lost when events are handled asynchronously. Without propagation, event handlers and projections would have no tenant context, breaking Layer 2 validation.
+
+**Solution: Event Metadata Enrichment Pattern**
+
+#### Step 1: Enrich Event Metadata in Command Handlers
+
+```kotlin
+@CommandHandler
+constructor(command: CreateWidgetCommand) {
+    val tenantId = TenantContext.getCurrentTenantId()
+
+    // Validate command tenant matches context (Layer 2)
+    require(command.tenantId == tenantId) {
+        "Access denied: tenant context mismatch"
+    }
+
+    // Apply event with tenant_id in METADATA (not just event payload)
+    AggregateLifecycle.apply(
+        WidgetCreatedEvent(
+            widgetId = command.widgetId,
+            tenantId = command.tenantId,  // Also in payload for RLS
+            name = command.name
+        ),
+        MetaData.with("tenant_id", tenantId)  // CRITICAL: Metadata propagation
+    )
+}
+```
+
+**Alternative: Automatic Metadata Enrichment via CorrelationDataProvider**
+
+```kotlin
+@Configuration
+class AxonTenantConfiguration {
+    /**
+     * CorrelationDataProvider automatically enriches ALL events
+     * with tenant_id from current context
+     */
+    @Bean
+    fun tenantCorrelationDataProvider(): CorrelationDataProvider =
+        SimpleCorrelationDataProvider("tenant_id") {
+            TenantContext.current()  // Nullable - returns null if missing
+        }
+}
+```
+
+#### Step 2: Restore Context in Event Handler Interceptor
+
+```kotlin
+@Component
+class TenantContextEventInterceptor : MessageHandlerInterceptor<EventMessage<*>> {
+    override fun handle(
+        unitOfWork: UnitOfWork<out EventMessage<*>>,
+        interceptorChain: InterceptorChain
+    ): Any? {
+        val event = unitOfWork.message
+        val tenantId = event.metaData["tenant_id"] as? String
+
+        return if (tenantId != null) {
+            TenantContext.set(TenantId(tenantId))
+            try {
+                interceptorChain.proceed()
+            } finally {
+                TenantContext.clear()  // CRITICAL: Cleanup
+            }
+        } else {
+            // Optional: Allow events without tenant context (system events)
+            interceptorChain.proceed()
+        }
+    }
+}
+```
+
+#### Step 3: Register Interceptor for Event Processors
+
+```kotlin
+@Configuration
+class EventProcessingConfiguration {
+    @Autowired
+    fun configureEventProcessing(
+        configurer: EventProcessingConfigurer,
+        tenantInterceptor: TenantContextEventInterceptor
+    ) {
+        // Register for ALL event processors
+        configurer.registerDefaultHandlerInterceptor { tenantInterceptor }
+
+        // Or register for specific processor:
+        // configurer.registerHandlerInterceptor("widget-projection") { tenantInterceptor }
+    }
+}
+```
+
+#### Step 4: Access Context in Event Handler
+
+```kotlin
+@EventHandler
+fun on(event: WidgetCreatedEvent) {
+    // TenantContext now available in async event processor thread!
+    val tenantId = TenantContext.getCurrentTenantId()
+
+    // Verify event tenant matches context
+    require(event.tenantId == tenantId) {
+        "Tenant context corrupted in event processor"
+    }
+
+    // Update projection with tenant context
+    dsl.insertInto(WIDGET_VIEW)
+        .set(WIDGET_VIEW.ID, UUID.fromString(event.widgetId.value))
+        .set(WIDGET_VIEW.TENANT_ID, UUID.fromString(tenantId))
+        .set(WIDGET_VIEW.NAME, event.name)
+        .execute()
+}
+```
+
+**Key Patterns:**
+
+1. **Metadata > Payload:** Use MetaData for context (tenant_id, correlation_id, user_id), not just event payload
+2. **CorrelationDataProvider:** Automatic enrichment at command boundaries (recommended)
+3. **MessageHandlerInterceptor:** Restores ThreadLocal in event processor threads
+4. **Try-Finally:** MANDATORY cleanup to prevent context leaks
+5. **Defensive Validation:** Verify context matches event payload in handlers
+
+**Limitations in Axon 4.12.1:**
+- DefaultUnitOfWork expects single-thread processing
+- ThreadLocal requires manual propagation (Axon 5.x removes ThreadLocal entirely)
+- TrackingEventProcessor threads isolated from command thread
+
+**Performance Impact:**
+- Metadata enrichment: <1ms overhead per command
+- Interceptor context restoration: <0.5ms per event
+- Total: <2ms end-to-end (negligible)
+
+**Security Considerations:**
+- Missing metadata = no tenant context = fail-closed rejection
+- Interceptor must handle null gracefully (system events)
+- Context cleanup prevents cross-tenant contamination
+- Metrics: tenant_context_propagation_failures
+
+**Testing Pattern:**
+
+```kotlin
+@SpringBootTest
+@Testcontainers
+class TenantContextPropagationTest : FunSpec() {
+    init {
+        test("should propagate tenant context to event handler") {
+            val tenantId = "tenant-a"
+            val widgetId = WidgetId(UUID.randomUUID())
+
+            // Dispatch command with tenant context
+            val token = keycloak.getToken("user-a", tenant_id = tenantId)
+            mockMvc.perform(
+                post("/api/widgets")
+                    .header("Authorization", "Bearer $token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"widgetId":"$widgetId","name":"Test"}""")
+            ).andExpect(status().isCreated())
+
+            // Verify event handler received context
+            eventually(Duration.ofSeconds(3)) {
+                val projection = dsl.selectFrom(WIDGET_VIEW)
+                    .where(WIDGET_VIEW.ID.eq(UUID.fromString(widgetId.value)))
+                    .fetchOne()
+
+                projection.shouldNotBeNull()
+                projection[WIDGET_VIEW.TENANT_ID].toString() shouldBe tenantId
+            }
+        }
+    }
+}
+```
+
+**References:**
+- [Axon Metadata Documentation](https://docs.axoniq.io/axon-framework-reference/4.11/messaging-concepts/)
+- [Axon 4.6.0 Replay Context Propagation](https://www.axoniq.io/blog/axon-framework-4-6-0-replay-context-propagation)
+- [Multi-Tenancy Event Processors Discussion](https://discuss.axoniq.io/t/multi-tenancy-event-processors/3250)
+
+**Migration Note (Axon 5.x):**
+Axon Framework 5 removes ThreadLocal entirely with async-native architecture. When migrating (Q3-Q4 2026), this pattern simplifies to reactive context propagation.
+
 ### Role-Based Access Control (RBAC)
 
 **Role Hierarchy:**
@@ -3500,6 +4072,361 @@ class CorsConfiguration {
     }
 }
 ```
+
+### OWASP Top 10:2025 Compliance (Story 4.0 Research)
+
+**Status:** Preparation research for post-Epic 4 security enhancements
+
+#### A01:2025 - Broken Access Control (includes SSRF - CWE-918)
+
+**Context:** SSRF moved from A10:2021 into A01:2025 Broken Access Control. SSRF allows attackers to coerce servers into making unauthorized requests (to internal services, metadata endpoints, or arbitrary URLs).
+
+**SSRF Attack Vectors:**
+
+```kotlin
+// ❌ VULNERABLE: User-controlled URL without validation
+@PostMapping("/fetch-resource")
+fun fetchResource(@RequestParam url: String): String {
+    val restTemplate = RestTemplate()
+    return restTemplate.getForObject(url, String::class.java)  // DANGEROUS!
+}
+
+// Attacker can access:
+// - http://169.254.169.254/latest/meta-data/ (AWS metadata)
+// - http://localhost:8080/actuator/env (internal endpoints)
+// - file:///etc/passwd (local file system)
+```
+
+**Prevention Pattern 1: URL Allow List**
+
+```kotlin
+@Configuration
+class SsrfProtectionConfiguration {
+    private val allowedDomains = setOf(
+        "api.example.com",
+        "cdn.example.com",
+        "webhook.example.com"
+    )
+
+    fun validateUrl(url: String): Either<SecurityError, URL> = either {
+        val parsed = try {
+            URL(url)
+        } catch (e: MalformedURLException) {
+            shift(SecurityError.InvalidUrl("Malformed URL: $url"))
+        }
+
+        // Deny dangerous protocols
+        require(parsed.protocol in setOf("https", "http")) {
+            "Protocol not allowed: ${parsed.protocol}"
+        }.mapLeft { SecurityError.ForbiddenProtocol(it) }
+
+        // Deny private IP ranges
+        val address = InetAddress.getByName(parsed.host)
+        require(!address.isLoopbackAddress) { "Loopback not allowed" }
+        require(!address.isSiteLocalAddress) { "Private IP not allowed" }
+        require(!address.isLinkLocalAddress) { "Link-local not allowed" }
+
+        // Allow list check
+        ensure(parsed.host in allowedDomains) {
+            SecurityError.DomainNotAllowed("Domain not in allow list: ${parsed.host}")
+        }
+
+        parsed
+    }
+}
+```
+
+**Prevention Pattern 2: Network Segmentation**
+
+```yaml
+# docker-compose.yml - Isolate application network
+services:
+  eaf-backend:
+    networks:
+      - frontend  # Access to external APIs
+      - backend   # Access to DB, Redis
+    # No access to Docker host network
+    network_mode: bridge  # NOT host
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    internal: true  # No internet access
+```
+
+**Prevention Pattern 3: Timeout and Resource Limits**
+
+```kotlin
+@Bean
+fun restTemplate(): RestTemplate {
+    val factory = SimpleClientHttpRequestFactory().apply {
+        setConnectTimeout(5000)       // 5s connect timeout
+        setReadTimeout(5000)          // 5s read timeout
+        setBufferRequestBody(false)   // Prevent memory exhaustion
+    }
+
+    return RestTemplate(factory).apply {
+        // Add response size limit interceptor
+        interceptors.add(ClientHttpRequestInterceptor { request, body, execution ->
+            val response = execution.execute(request, body)
+            if (response.body.available() > 10_000_000) {  // 10MB limit
+                throw SecurityException("Response too large")
+            }
+            response
+        })
+    }
+}
+```
+
+**Monitoring and Detection:**
+
+```kotlin
+// Metrics for SSRF attempt detection
+@Component
+class OutboundRequestMetrics(private val registry: MeterRegistry) {
+    fun recordRequest(url: String, allowed: Boolean) {
+        registry.counter(
+            "outbound_requests_total",
+            "url", url,
+            "allowed", allowed.toString()
+        ).increment()
+
+        if (!allowed) {
+            // Alert on SSRF attempts
+            logger.warn(
+                "SSRF attempt blocked",
+                kv("url", url),
+                kv("alert", "security.ssrf_attempt")
+            )
+        }
+    }
+}
+```
+
+**Story 4.0 Preparation:**
+- ✅ SSRF vectors identified (metadata endpoints, localhost, file://)
+- ✅ Prevention patterns documented (allow list, network segmentation, timeouts)
+- ✅ Monitoring and alerting patterns defined
+- ⏳ Implementation deferred to post-Epic 4 security stories
+
+#### A10:2025 - Mishandling of Exceptional Conditions (NEW)
+
+**Context:** NEW category in 2025 focusing on improper error handling, logical errors, failing open, and abnormal condition handling. Contains 24 CWEs including race conditions, memory issues, and authentication/authorization failures.
+
+**Circuit Breaker Pattern with Resilience4j**
+
+**Problem Without Circuit Breaker:**
+
+```kotlin
+// ❌ VULNERABLE: No protection against cascading failures
+@Service
+class OrderService(private val paymentApi: PaymentApiClient) {
+    fun processOrder(order: Order): Either<Error, Receipt> {
+        // If paymentApi is down, this keeps retrying
+        // Exhausts connections, thread pool, causes cascading failure
+        return paymentApi.charge(order.total)
+    }
+}
+```
+
+**Solution: Resilience4j Circuit Breaker**
+
+**Dependencies:**
+
+```kotlin
+// gradle/libs.versions.toml
+[versions]
+resilience4j = "2.3.0"  // Latest stable for Spring Boot 3
+
+[libraries]
+resilience4j-spring-boot3 = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
+resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
+resilience4j-ratelimiter = { module = "io.github.resilience4j:resilience4j-ratelimiter", version.ref = "resilience4j" }
+resilience4j-micrometer = { module = "io.github.resilience4j:resilience4j-micrometer", version.ref = "resilience4j" }
+```
+
+**Configuration:**
+
+```yaml
+# application.yml
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentApi:
+        registerHealthIndicator: true
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50  # Open circuit if 50% failures
+        waitDurationInOpenState: 60s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 50  # Consider slow calls as failures
+
+  retry:
+    instances:
+      paymentApi:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+  ratelimiter:
+    instances:
+      paymentApi:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0s  # Fail immediately if limit reached
+```
+
+**Implementation:**
+
+```kotlin
+@Service
+class OrderService(
+    private val paymentApi: PaymentApiClient,
+    private val circuitBreakerFactory: CircuitBreakerFactory<*, *>
+) {
+    private val paymentCircuitBreaker = circuitBreakerFactory.create("paymentApi")
+
+    fun processOrder(order: Order): Either<Error, Receipt> {
+        return Try {
+            paymentCircuitBreaker.run(
+                { paymentApi.charge(order.total) },
+                { throwable -> handlePaymentFailure(throwable, order) }
+            )
+        }.toEither().mapLeft { error ->
+            when (error) {
+                is CallNotPermittedException -> DomainError.ServiceUnavailable(
+                    service = "payment-api",
+                    message = "Payment service temporarily unavailable",
+                    retryAfter = 60  // Circuit breaker wait duration
+                )
+                else -> DomainError.PaymentFailed(error.message)
+            }
+        }
+    }
+
+    private fun handlePaymentFailure(error: Throwable, order: Order): Receipt {
+        // Fallback logic: Queue for retry, use alternative provider, etc.
+        queueForRetry(order)
+        return Receipt.pending(order.orderId)
+    }
+}
+```
+
+**Global Exception Handler (A02/A10:2025 Compliance):**
+
+```kotlin
+@RestControllerAdvice
+class GlobalExceptionHandler {
+    @ExceptionHandler(CallNotPermittedException::class)
+    fun handleCircuitBreakerOpen(ex: CallNotPermittedException): ResponseEntity<ProblemDetail> {
+        // DO NOT expose internal details (OWASP A02:2025)
+        val problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "Service temporarily unavailable"  // Generic message (CWE-209)
+        ).apply {
+            title = "Circuit Breaker Open"
+            setProperty("retryAfter", 60)
+            setProperty("traceId", MDC.get("traceId"))  // Safe to expose
+            // DO NOT include: circuit breaker state, failure count, error details
+        }
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem)
+    }
+
+    @ExceptionHandler(Exception::class)
+    fun handleGenericException(ex: Exception): ResponseEntity<ProblemDetail> {
+        // Log full details securely
+        logger.error("Unhandled exception", ex, kv("alert", "exception.unhandled"))
+
+        // Return generic message to client (prevent information disclosure)
+        val problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "An error occurred processing your request"
+        ).apply {
+            title = "Internal Server Error"
+            setProperty("traceId", MDC.get("traceId"))
+            // NEVER include: stack trace, error message, system paths
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem)
+    }
+}
+```
+
+**Metrics and Monitoring:**
+
+```kotlin
+// Circuit breaker state transitions automatically emit metrics
+// Via resilience4j-micrometer integration
+resilience4j.circuitbreaker.calls{name="paymentApi",kind="successful"}
+resilience4j.circuitbreaker.calls{name="paymentApi",kind="failed"}
+resilience4j.circuitbreaker.state{name="paymentApi",state="closed"}
+resilience4j.circuitbreaker.state{name="paymentApi",state="open"}
+resilience4j.circuitbreaker.state{name="paymentApi",state="half_open"}
+
+// Alerting rule (Prometheus)
+- alert: CircuitBreakerOpen
+  expr: resilience4j_circuitbreaker_state{state="open"} > 0
+  for: 1m
+  annotations:
+    summary: "Circuit breaker {{ $labels.name }} is OPEN"
+    description: "Service degraded - circuit breaker protecting from cascading failures"
+```
+
+**Layered Resilience Pattern (Combining Patterns):**
+
+```kotlin
+@Service
+class ResilientService {
+    @CircuitBreaker(name = "backend", fallbackMethod = "fallback")
+    @Retry(name = "backend", fallbackMethod = "fallback")
+    @RateLimiter(name = "backend")
+    @Bulkhead(name = "backend")
+    fun callBackendService(): String {
+        return backendClient.getData()
+    }
+
+    private fun fallback(ex: Exception): String {
+        logger.warn("Fallback triggered", ex)
+        return "Default response"
+    }
+}
+```
+
+**OWASP Alignment:**
+
+| OWASP Category | EAF Control | Implementation | Status |
+|---|---|---|---|
+| **A01: Broken Access Control** | SSRF Prevention | URL allow list, network segmentation, timeouts | Research Complete (Story 4.0) |
+| **A02: Security Misconfiguration** | Error Hiding | Global exception handler, CWE-209 protection | Epic 3 (Story 3.8) |
+| **A10: Mishandling Exceptions** | Circuit Breaker | Resilience4j, fail-fast, fallback logic | Research Complete (Story 4.0) |
+| **Supply Chain Security** | Dependency Scanning | OWASP Dependency Check, SBOM | Epic 1 (Story 1.9) |
+| **Exception Handling** | Centralized | Global @RestControllerAdvice | Epic 5+ (planned) |
+
+**Story 4.0 Preparation Summary:**
+- ✅ SSRF prevention patterns researched (allow list, network segmentation, timeouts, monitoring)
+- ✅ Circuit Breaker patterns researched (Resilience4j with Spring Boot 3)
+- ✅ OWASP A01/A02/A10:2025 alignment documented
+- ✅ Global exception handler pattern (CWE-209 compliance)
+- ✅ Metrics and alerting patterns defined
+- ⏳ Implementation deferred to Epic 5+ security enhancement stories
+
+**References:**
+- [OWASP Top 10:2025 RC1](https://owasp.org/Top10/2025/)
+- [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [Resilience4j Documentation](https://resilience4j.readme.io/docs/getting-started-3)
+- [Baeldung: Resilience4j with Spring Boot](https://www.baeldung.com/spring-boot-resilience4j)
+
+**Next Steps (Post-Epic 4):**
+1. Implement SSRF protection (URL validation, allow list)
+2. Add Resilience4j dependencies to version catalog
+3. Configure circuit breakers for external service calls
+4. Enhance global exception handler (CWE-209 compliance)
+5. Add security monitoring and alerting rules
 
 ---
 

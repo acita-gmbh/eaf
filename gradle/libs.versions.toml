@@ -80,6 +80,10 @@ mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 # Fuzz Testing (Story 8.6)
 jazzer = "0.26.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
 
+# Concurrency Testing (Story 4.0/4.10)
+jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
+# litmuskt = "local"      # LitmusKt experimental (Git submodule, Story 4.10)
+
 # Performance Testing (Story 2.13)
 gatling = "3.14.0"        # Load testing framework
 gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
@@ -197,6 +201,10 @@ mustache = { module = "com.github.spullara.mustache.java:compiler", version.ref 
 # Fuzz Testing
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
+
+# Concurrency Testing (Story 4.0/4.10)
+jcstress-core = { module = "org.openjdk.jcstress:jcstress-core", version.ref = "jcstress" }
+# LitmusKt: Not on Maven Central (experimental) - use Git submodule in Story 4.10
 
 # Performance Testing
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
