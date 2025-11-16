@@ -3,6 +3,8 @@ package com.axians.eaf.framework.security.jwt
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationException
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver
 import org.springframework.mock.web.MockHttpServletRequest
@@ -44,12 +46,18 @@ class TokenExtractorFuzzer {
         }
 
         // The resolver should handle all malformed headers gracefully
-        // It should either extract a token or return null without crashing
+        // It should either extract a token, return null, or throw controlled exceptions
         assertDoesNotThrow {
             try {
                 tokenResolver.resolve(request)
+            } catch (ex: OAuth2AuthenticationException) {
+                // Expected for malformed tokens (Spring Security 6.x behavior)
+                require(ex.error != null) { "OAuth2 exception should have error details" }
+            } catch (ex: BearerTokenAuthenticationException) {
+                // Expected for invalid Bearer token formats
+                require(ex.error != null) { "Bearer token exception should have error details" }
             } catch (ex: IllegalArgumentException) {
-                // Expected for invalid formats
+                // Expected for invalid formats (legacy behavior)
                 require(ex.message != null) { "Exception should have a message" }
             } catch (ex: NullPointerException) {
                 // Should not happen - indicates a bug in token extraction

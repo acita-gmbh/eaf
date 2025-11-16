@@ -10,7 +10,7 @@ so that security vulnerabilities and edge cases are discovered automatically.
 
 ## Acceptance Criteria
 
-1. ✅ Jazzer 0.25.1 dependency added to framework/security
+1. ✅ Jazzer 0.26.0 dependency added to framework/security
 2. ✅ Fuzz tests created in fuzzTest/kotlin/ source set:
    - JwtFormatFuzzer.kt (fuzzes token format parsing)
    - TokenExtractorFuzzer.kt (fuzzes Bearer token extraction)
@@ -65,7 +65,7 @@ so that security vulnerabilities and edge cases are discovered automatically.
 
 **Key Architecture References:**
 - Architecture Section 11: 7-Layer Testing Defense (Fuzz layer)
-- Tech Spec Section 2.2: Jazzer 0.25.1 dependency specification
+- Tech Spec Section 2.2: Jazzer 0.26.0 dependency specification
 - Tech Spec Section 9.1: Fuzz Testing strategy and targets
 
 **Security Requirements:**
@@ -96,13 +96,15 @@ so that security vulnerabilities and edge cases are discovered automatically.
 **Module:** `framework/security`
 
 **New Directories:**
-```
+```text
 framework/security/
 ├── src/
-│   └── fuzzTest/kotlin/com/axians/eaf/framework/security/fuzz/
-│       ├── JwtFormatFuzzer.kt
-│       ├── TokenExtractorFuzzer.kt
-│       └── RoleNormalizationFuzzer.kt
+│   └── fuzzTest/kotlin/com/axians/eaf/framework/security/
+│       ├── jwt/
+│       │   ├── JwtFormatFuzzer.kt
+│       │   └── TokenExtractorFuzzer.kt
+│       └── role/
+│           └── RoleNormalizationFuzzer.kt
 └── corpus/
     ├── jwt-format/
     ├── token-extractor/
@@ -111,7 +113,7 @@ framework/security/
 
 **Gradle Configuration:**
 - Add `fuzzTest` source set to framework/security
-- Jazzer 0.25.1 in version catalog
+- Jazzer 0.26.0 in version catalog
 - New `fuzzTests` task for CI integration
 
 ### References
