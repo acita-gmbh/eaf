@@ -1,0 +1,174 @@
+# Docker Compose configuration for ppc64le architecture
+#
+# This file is a variant of docker-compose.yml specifically for ppc64le systems.
+# Key differences:
+# - Custom Keycloak image built for ppc64le (keycloak:26.4.2-ppc64le)
+# - Platform specifications for ppc64le architecture
+# - Same service configuration and dependencies as main docker-compose.yml
+#
+# Build custom Keycloak image before running:
+#   ./scripts/build-keycloak-ppc64le.sh
+#
+# Usage:
+#   docker-compose -f docker-compose.ppc64le.yml up -d
+#   docker-compose -f docker-compose.ppc64le.yml down
+#
+# Prerequisites:
+#   - Docker with buildx support
+#   - QEMU ppc64le emulation (for non-ppc64le hosts)
+#   - Custom Keycloak image (keycloak:26.4.2-ppc64le)
+
+services:
+  postgres:
+    image: postgres:16.10
+    platform: linux/ppc64le
+    container_name: eaf-postgres-ppc64le
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eaf}
+      POSTGRES_USER: ${POSTGRES_USER:-eaf_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eaf_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data_ppc64le:/var/lib/postgresql/data
+      - ./docker/postgres/init-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eaf_user} -d ${POSTGRES_DB:-eaf}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eaf-network-ppc64le
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    platform: linux/ppc64le
+    container_name: eaf-redis-ppc64le
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data_ppc64le:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - eaf-network-ppc64le
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  keycloak:
+    # ⚠️ CRITICAL: Uses custom ppc64le image
+    # Build before running: ./scripts/build-keycloak-ppc64le.sh
+    image: keycloak:26.4.2-ppc64le
+    platform: linux/ppc64le
+    container_name: eaf-keycloak-ppc64le
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-eaf}
+      KC_DB_USERNAME: ${POSTGRES_USER:-eaf_user}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-eaf_password}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8080}
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - eaf-network-ppc64le
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    platform: linux/ppc64le
+    container_name: eaf-prometheus-ppc64le
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_ppc64le:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eaf-network-ppc64le
+    restart: unless-stopped
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    platform: linux/ppc64le
+    container_name: eaf-grafana-ppc64le
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SERVER_ROOT_URL: http://localhost:${GRAFANA_PORT:-3100}
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "${GRAFANA_PORT:-3100}:3000"
+    volumes:
+      - grafana_data_ppc64le:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eaf-network-ppc64le
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+volumes:
+  postgres_data_ppc64le:
+    driver: local
+  redis_data_ppc64le:
+    driver: local
+  prometheus_data_ppc64le:
+    driver: local
+  grafana_data_ppc64le:
+    driver: local
+
+networks:
+  eaf-network-ppc64le:
+    driver: bridge

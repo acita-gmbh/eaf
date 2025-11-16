@@ -1,0 +1,279 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>11</storyId>
+    <title>Custom ppc64le Keycloak Docker Image</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-3/story-3.11-keycloak-ppc64le.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a framework developer</asA>
+    <iWant>custom Keycloak Docker image built for ppc64le architecture</iWant>
+    <soThat>EAF supports all required processor architectures (amd64, arm64, ppc64le)</soThat>
+    <tasks>
+### Tasks/Subtasks
+
+#### Task 1: Create Dockerfile.ppc64le
+- [ ] Create docker/keycloak/Dockerfile.ppc64le with UBI9 base image
+- [ ] Implement multi-stage build (UBI9 → Maven build → Runtime image)
+- [ ] Configure Keycloak 26.4.2 build from source
+- [ ] Optimize image size (remove build artifacts in final stage)
+
+#### Task 2: Create build automation script
+- [ ] Create scripts/build-keycloak-ppc64le.sh
+- [ ] Add command-line parameters (version, registry, tag)
+- [ ] Document script usage and prerequisites
+- [ ] Make script executable and add error handling
+
+#### Task 3: Test image on ppc64le
+- [ ] Test build on QEMU ppc64le emulation OR real hardware if available
+- [ ] Verify Keycloak starts successfully
+- [ ] Test OIDC endpoints (/.well-known/openid-configuration)
+- [ ] Test realm import functionality
+
+#### Task 4: Push image to container registry
+- [ ] Build and tag image as keycloak:26.4.2-ppc64le
+- [ ] Configure registry authentication
+- [ ] Push image to container registry
+- [ ] Verify image is pullable from registry
+
+#### Task 5: Create docker-compose variant
+- [ ] Create docker-compose.ppc64le.yml
+- [ ] Configure to use custom ppc64le image
+- [ ] Test complete stack startup (PostgreSQL + Keycloak + Redis)
+- [ ] Verify network connectivity between services
+
+#### Task 6: Document build process and maintenance
+- [ ] Create docs/reference/multi-arch-builds.md
+- [ ] Document UBI9 base image selection rationale
+- [ ] Document Maven build process
+- [ ] Document quarterly rebuild schedule (align with Keycloak releases)
+- [ ] Document troubleshooting steps (QEMU, registry issues)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. ✅ docker/keycloak/Dockerfile.ppc64le created (UBI9-based build)
+2. ✅ Multi-stage build: UBI9 → Maven build → Runtime image
+3. ✅ Build script: scripts/build-keycloak-ppc64le.sh automates image creation
+4. ✅ Image tested on ppc64le emulation (QEMU) or real hardware if available
+5. ✅ Image pushed to container registry with tag: keycloak:26.4.2-ppc64le
+6. ✅ docker-compose.ppc64le.yml variant uses custom image
+7. ✅ Build process documented in docs/reference/multi-arch-builds.md
+8. ✅ Quarterly rebuild schedule documented (align with Keycloak releases)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR006: Authentication, Security, and Compliance</section>
+        <snippet>The system shall provide IdP abstraction layer supporting multiple providers (Keycloak, Auth0, Okta) with 10-layer JWT validation. Multi-architecture support (amd64, arm64, ppc64le) ensures deployment flexibility.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Section 2: Version Verification Log - Keycloak 26.4.2</section>
+        <snippet>Keycloak 26.4.2 selected as current stable version. Quarterly version review recommended to align with Keycloak ppc64le rebuild schedule. Multi-architecture build support (amd64/arm64/ppc64le) documented in Section 10.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Critical Architectural Decisions - Multi-Architecture Support</section>
+        <snippet>Multi-Architecture: amd64, arm64, ppc64le required for framework reusability. Custom Keycloak ppc64le build (UBI9-based) represents €4.4K investment for future-proofing. No official ppc64le images available from Keycloak project.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification</title>
+        <section>Multi-Architecture Support (Story 3.11)</section>
+        <snippet>Custom ppc64le Keycloak Docker image (UBI9-based), multi-stage build (UBI9 → Maven → Runtime), build automation script (scripts/build-keycloak-ppc64le.sh), quarterly rebuild schedule (align with Keycloak releases). Prerequisites: Story 3.1 (Spring Security OAuth2 Resource Server Foundation).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification</title>
+        <section>Acceptance Criteria - Story 3.11</section>
+        <snippet>8 acceptance criteria covering Dockerfile creation, multi-stage build, automation script, ppc64le testing, registry push, docker-compose variant, documentation, and quarterly rebuild schedule. Testing includes QEMU ppc64le emulation or real hardware validation.</snippet>
+      </artifact>
+      <artifact>
+        <path>docker/keycloak/realm-export.json</path>
+        <title>Keycloak Test Realm Configuration</title>
+        <section>EAF Test Realm</section>
+        <snippet>Pre-configured Keycloak realm with test users (admin@eaf.com, viewer@eaf.com), roles (WIDGET_ADMIN, WIDGET_VIEWER, ADMIN), client configuration (eaf-api), and tenant_id claim mapper. This configuration should be compatible with ppc64le image.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>docker/keycloak/README.md</path>
+        <kind>documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Existing documentation for Keycloak Docker setup - reference for ppc64le variant structure</reason>
+      </artifact>
+      <artifact>
+        <path>docker/keycloak/realm-export.json</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Test realm configuration to be imported in ppc64le image - validates OIDC functionality</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <docker>
+        <package>registry.access.redhat.com/ubi9/ubi:9.3</package>
+        <version>9.3</version>
+        <purpose>Base image for UBI9-based Keycloak build</purpose>
+      </docker>
+      <docker>
+        <package>registry.access.redhat.com/ubi9/openjdk-21:1.23</package>
+        <version>1.23</version>
+        <purpose>JDK 21 runtime for Keycloak (ppc64le compatible)</purpose>
+      </docker>
+      <maven>
+        <package>org.keycloak:keycloak-quarkus-server</package>
+        <version>26.4.2</version>
+        <purpose>Keycloak server build from source</purpose>
+      </maven>
+      <tools>
+        <tool>qemu-user-static</tool>
+        <purpose>ppc64le emulation for testing on amd64/arm64 hosts</purpose>
+      </tools>
+      <tools>
+        <tool>docker buildx</tool>
+        <purpose>Multi-architecture Docker image builds</purpose>
+      </tools>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **UBI9 Base Image Required**: Red Hat Universal Base Image 9 provides official ppc64le support and long-term maintenance.
+- **Multi-Stage Build**: Separate build stage (with Maven) from runtime stage to minimize final image size.
+- **Keycloak Version Lock**: Must build Keycloak 26.4.2 specifically to match version used in amd64/arm64 deployments.
+- **Quarterly Rebuild**: Image must be rebuilt quarterly to incorporate security patches and align with Keycloak release cycle.
+- **No Official ppc64le Support**: Keycloak project does not provide official ppc64le images - custom build is required.
+- **Registry Compatibility**: Image must be pushable to standard container registries (Docker Hub, GitHub Container Registry, etc.).
+- **QEMU Testing Acceptable**: Testing on QEMU ppc64le emulation is acceptable if real ppc64le hardware is unavailable.
+- **Compatibility with Existing Setup**: ppc64le image must import realm-export.json and work with existing EAF Keycloak configuration.
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Keycloak OIDC Endpoints</name>
+      <kind>REST API</kind>
+      <signature>
+GET /.well-known/openid-configuration
+GET /realms/{realm}/protocol/openid-connect/certs
+POST /realms/{realm}/protocol/openid-connect/token
+      </signature>
+      <path>Built into Keycloak 26.4.2 server</path>
+      <note>ppc64le image must expose same OIDC endpoints as amd64/arm64 images</note>
+    </interface>
+    <interface>
+      <name>Docker Compose Services</name>
+      <kind>Container Orchestration</kind>
+      <signature>
+services:
+  keycloak:
+    image: keycloak:26.4.2-ppc64le
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    command: start-dev --import-realm
+      </signature>
+      <path>docker-compose.ppc64le.yml</path>
+      <note>Must maintain compatibility with existing docker-compose.yml structure</note>
+    </interface>
+    <interface>
+      <name>Build Script Interface</name>
+      <kind>Shell Script</kind>
+      <signature>
+#!/bin/bash
+# Usage: ./scripts/build-keycloak-ppc64le.sh [OPTIONS]
+# Options:
+#   --version VERSION    Keycloak version to build (default: 26.4.2)
+#   --registry REGISTRY  Container registry URL (default: docker.io)
+#   --tag TAG            Image tag (default: keycloak:VERSION-ppc64le)
+#   --push               Push image to registry after build
+      </signature>
+      <path>scripts/build-keycloak-ppc64le.sh</path>
+      <note>Script must be idempotent and support dry-run mode</note>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing for Story 3.11 focuses on build validation and functional verification rather than unit/integration tests. Use **manual testing** and **build verification** to ensure the ppc64le image works correctly.
+
+**Build Verification:**
+- Dockerfile builds successfully without errors
+- Multi-stage build produces optimized image size (&lt;500MB final image)
+- Image runs on QEMU ppc64le emulation (qemu-system-ppc64 or Docker buildx)
+
+**Functional Testing:**
+- Keycloak server starts successfully (health check: curl http://localhost:8080/health)
+- Admin console accessible (http://localhost:8080/admin)
+- OIDC discovery endpoint returns valid configuration (/.well-known/openid-configuration)
+- Realm import works (realm-export.json successfully imported)
+
+**Integration Testing:**
+- Docker Compose stack starts with ppc64le image
+- PostgreSQL connection works
+- JWT token generation functional (POST /realms/eaf/protocol/openid-connect/token)
+
+**Documentation Testing:**
+- Build process documented clearly enough for another developer to reproduce
+- Troubleshooting section covers common QEMU and registry issues
+    </standards>
+    <locations>
+- Manual testing: QEMU ppc64le environment or real ppc64le hardware
+- Build verification: docker build command output
+- Functional testing: curl commands against Keycloak endpoints
+- Integration testing: docker-compose up with ppc64le variant
+    </locations>
+    <ideas>
+      <idea ac="1,2">
+**Build Test:** Verify Dockerfile.ppc64le builds successfully
+- Test: `docker buildx build --platform linux/ppc64le -f docker/keycloak/Dockerfile.ppc64le -t keycloak:26.4.2-ppc64le .`
+- Success: Image builds without errors
+- Verify: Multi-stage build (check build logs for Maven build stage and runtime stage)
+      </idea>
+      <idea ac="3">
+**Automation Test:** Verify build-keycloak-ppc64le.sh script works
+- Test: `./scripts/build-keycloak-ppc64le.sh --version 26.4.2 --registry localhost:5000 --tag test-ppc64le`
+- Success: Script executes without errors and produces tagged image
+- Verify: Script supports --help flag and shows usage
+      </idea>
+      <idea ac="4">
+**QEMU Test:** Verify image runs on ppc64le emulation
+- Test: `docker run --platform linux/ppc64le -it keycloak:26.4.2-ppc64le start-dev`
+- Success: Keycloak starts and listens on port 8080
+- Verify: Health check endpoint returns 200 OK
+      </idea>
+      <idea ac="5">
+**Registry Test:** Verify image can be pushed and pulled
+- Test: `docker push localhost:5000/keycloak:26.4.2-ppc64le && docker pull localhost:5000/keycloak:26.4.2-ppc64le`
+- Success: Push and pull complete without errors
+- Verify: Image layers match between local and registry
+      </idea>
+      <idea ac="6">
+**Docker Compose Test:** Verify ppc64le variant works
+- Test: `docker-compose -f docker-compose.ppc64le.yml up -d`
+- Success: All services start successfully
+- Verify: Keycloak connects to PostgreSQL and realm import succeeds
+      </idea>
+      <idea ac="7,8">
+**Documentation Test:** Verify multi-arch-builds.md is comprehensive
+- Test: Follow documentation step-by-step to build image
+- Success: Another developer can reproduce build without assistance
+- Verify: Quarterly rebuild schedule is clearly documented with Keycloak release calendar
+      </idea>
+    </ideas>
+  </tests>
+</story-context>
