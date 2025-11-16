@@ -1,0 +1,1 @@
+{"resource_access":{"eaf-api":{"roles":["WIDGET_VIEWER"]}}}
