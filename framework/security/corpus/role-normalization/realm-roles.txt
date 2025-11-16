@@ -1,0 +1,1 @@
+{"realm_access":{"roles":["WIDGET_ADMIN","USER"]}}
