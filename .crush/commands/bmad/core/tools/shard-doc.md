@@ -42,7 +42,7 @@ When this command is used, execute the following tool:
 
     <step n="3" title="Execute Sharding">
       <action>Inform user that sharding is beginning</action>
-      <action>Execute command: `npx @kayvan/markdown-tree-parser [source-document] [destination-folder]`</action>
+      <action>Execute command: `npx @kayvan/markdown-tree-parser explode [source-document] [destination-folder]`</action>
       <action>Capture command output and any errors</action>
       <action if="command fails">HALT and display error to user</action>
     </step>
@@ -113,6 +113,7 @@ Consider deleting or archiving the original document.</output>
     <i>HALT if npx command fails or produces no output files</i>
   </halt-conditions>
 </tool>
+
 
 ## Command Usage
 
