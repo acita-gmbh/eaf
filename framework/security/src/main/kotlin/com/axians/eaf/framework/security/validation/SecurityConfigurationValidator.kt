@@ -27,15 +27,13 @@ import org.springframework.stereotype.Component
     prefix = "eaf.security.validation",
     name = ["enabled"],
     havingValue = "true",
-    matchIfMissing = true
+    matchIfMissing = true,
 )
 class SecurityConfigurationValidatorAutoConfiguration {
-
     @Component
     class SecurityConfigurationValidator(
-        private val environment: Environment
+        private val environment: Environment,
     ) : ApplicationRunner {
-
         private val logger = LoggerFactory.getLogger(SecurityConfigurationValidator::class.java)
 
         override fun run(args: ApplicationArguments) {
@@ -67,7 +65,7 @@ class SecurityConfigurationValidatorAutoConfiguration {
                 failures.forEach { logger.error("  ❌ ${it.message}") }
                 throw SecurityConfigurationException(
                     "Security configuration validation failed. " +
-                        "Fix the errors above before starting the application."
+                        "Fix the errors above before starting the application.",
                 )
             }
 
@@ -91,7 +89,7 @@ class SecurityConfigurationValidatorAutoConfiguration {
                     if (invalidProfiles.isNotEmpty()) {
                         ValidationResult.error(
                             "Production profile includes development profiles: $invalidProfiles. " +
-                                "Remove development profiles from production deployment."
+                                "Remove development profiles from production deployment.",
                         )
                     } else {
                         ValidationResult.success("Production profile configuration is valid")
@@ -100,7 +98,7 @@ class SecurityConfigurationValidatorAutoConfiguration {
                 activeProfiles.isEmpty() -> {
                     ValidationResult.warning(
                         "No active Spring profiles detected. Using default configuration. " +
-                            "Consider using explicit profiles (dev, test, prod)."
+                            "Consider using explicit profiles (dev, test, prod).",
                     )
                 }
                 else -> {
@@ -117,7 +115,7 @@ class SecurityConfigurationValidatorAutoConfiguration {
                 "prod" in activeProfiles && !sslEnabled -> {
                     ValidationResult.error(
                         "SSL/TLS is DISABLED in production profile. " +
-                            "Enable SSL with server.ssl.enabled=true and configure certificates."
+                            "Enable SSL with server.ssl.enabled=true and configure certificates.",
                     )
                 }
                 "prod" in activeProfiles && sslEnabled -> {
@@ -128,12 +126,12 @@ class SecurityConfigurationValidatorAutoConfiguration {
                     when {
                         keyStore.isNullOrBlank() -> {
                             ValidationResult.error(
-                                "SSL enabled but server.ssl.key-store is not configured"
+                                "SSL enabled but server.ssl.key-store is not configured",
                             )
                         }
                         keyStorePassword.isNullOrBlank() -> {
                             ValidationResult.error(
-                                "SSL enabled but server.ssl.key-store-password is not configured"
+                                "SSL enabled but server.ssl.key-store-password is not configured",
                             )
                         }
                         else -> {
@@ -147,7 +145,7 @@ class SecurityConfigurationValidatorAutoConfiguration {
                     } else {
                         ValidationResult.warning(
                             "SSL/TLS is disabled in development/test environment. " +
-                                "Consider enabling for production-like testing."
+                                "Consider enabling for production-like testing.",
                         )
                     }
                 }
@@ -158,23 +156,24 @@ class SecurityConfigurationValidatorAutoConfiguration {
         }
 
         private fun validateSecurityHeaders(): ValidationResult {
-            val headersEnabled = environment.getProperty(
-                "eaf.security.headers.enabled",
-                Boolean::class.java,
-                true
-            )
+            val headersEnabled =
+                environment.getProperty(
+                    "eaf.security.headers.enabled",
+                    Boolean::class.java,
+                    true,
+                )
 
             return when {
                 !headersEnabled && "prod" in environment.activeProfiles -> {
                     ValidationResult.error(
                         "Security headers are DISABLED in production. " +
-                            "Enable with eaf.security.headers.enabled=true"
+                            "Enable with eaf.security.headers.enabled=true",
                     )
                 }
                 !headersEnabled -> {
                     ValidationResult.warning(
                         "Security headers are disabled. " +
-                            "Enable for better security posture."
+                            "Enable for better security posture.",
                     )
                 }
                 else -> {
@@ -190,19 +189,19 @@ class SecurityConfigurationValidatorAutoConfiguration {
                 issuerUri.isNullOrBlank() -> {
                     ValidationResult.error(
                         "JWT issuer URI is not configured. " +
-                            "Set spring.security.oauth2.resourceserver.jwt.issuer-uri"
+                            "Set spring.security.oauth2.resourceserver.jwt.issuer-uri",
                     )
                 }
                 issuerUri.startsWith("http://") && "prod" in environment.activeProfiles -> {
                     ValidationResult.error(
                         "JWT issuer URI uses HTTP in production: $issuerUri. " +
-                            "Use HTTPS for production Keycloak."
+                            "Use HTTPS for production Keycloak.",
                     )
                 }
                 issuerUri.contains("localhost") && "prod" in environment.activeProfiles -> {
                     ValidationResult.error(
                         "JWT issuer URI points to localhost in production: $issuerUri. " +
-                            "Configure production Keycloak URL."
+                            "Configure production Keycloak URL.",
                     )
                 }
                 else -> {
@@ -228,26 +227,26 @@ class SecurityConfigurationValidatorAutoConfiguration {
                 datasourceUsername in defaultUsernames && "prod" in activeProfiles -> {
                     ValidationResult.error(
                         "Database uses default username '$datasourceUsername' in production. " +
-                            "Use a custom username for production databases."
+                            "Use a custom username for production databases.",
                     )
                 }
                 datasourcePassword in defaultPasswords && "prod" in activeProfiles -> {
                     ValidationResult.error(
                         "Database uses weak/default password in production. " +
-                            "Configure a strong password."
+                            "Configure a strong password.",
                     )
                 }
-                !datasourceUrl.contains("ssl=true") && !datasourceUrl.contains("sslmode=require")
-                    && "prod" in activeProfiles -> {
+                !datasourceUrl.contains("ssl=true") && !datasourceUrl.contains("sslmode=require") &&
+                    "prod" in activeProfiles -> {
                     ValidationResult.warning(
                         "Database connection does not enforce SSL in production: $datasourceUrl. " +
-                            "Add sslmode=require for encrypted connections."
+                            "Add sslmode=require for encrypted connections.",
                     )
                 }
                 datasourceUsername in defaultUsernames -> {
                     ValidationResult.warning(
                         "Database uses default username '$datasourceUsername' in development. " +
-                            "This is acceptable for dev/test but not for production."
+                            "This is acceptable for dev/test but not for production.",
                     )
                 }
                 else -> {
@@ -263,11 +262,13 @@ class SecurityConfigurationValidatorAutoConfiguration {
  */
 data class ValidationResult(
     val level: ValidationLevel,
-    val message: String
+    val message: String,
 ) {
     companion object {
         fun success(message: String) = ValidationResult(ValidationLevel.SUCCESS, message)
+
         fun warning(message: String) = ValidationResult(ValidationLevel.WARNING, message)
+
         fun error(message: String) = ValidationResult(ValidationLevel.ERROR, message)
     }
 }
@@ -275,10 +276,12 @@ data class ValidationResult(
 enum class ValidationLevel {
     SUCCESS,
     WARNING,
-    ERROR
+    ERROR,
 }
 
 /**
  * Exception thrown when security configuration validation fails.
  */
-class SecurityConfigurationException(message: String) : RuntimeException(message)
+class SecurityConfigurationException(
+    message: String,
+) : RuntimeException(message)

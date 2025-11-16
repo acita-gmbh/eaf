@@ -40,7 +40,7 @@ import org.springframework.stereotype.Component
 class ResilientOperationExecutor(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
     private val retryRegistry: RetryRegistry,
-    private val bulkheadRegistry: BulkheadRegistry
+    private val bulkheadRegistry: BulkheadRegistry,
 ) {
     private val logger = LoggerFactory.getLogger(ResilientOperationExecutor::class.java)
 
@@ -60,7 +60,7 @@ class ResilientOperationExecutor(
         circuitBreakerName: String,
         retryName: String? = null,
         bulkheadName: String? = null,
-        operation: () -> T
+        operation: () -> T,
     ): T {
         val circuitBreaker = circuitBreakerRegistry.circuitBreaker(circuitBreakerName)
 
@@ -86,22 +86,22 @@ class ResilientOperationExecutor(
         } catch (ex: CallNotPermittedException) {
             logger.error(
                 "Circuit breaker is OPEN - operation not permitted: name={}",
-                circuitBreakerName
+                circuitBreakerName,
             )
             throw ResilientOperationException(
                 "Service temporarily unavailable - circuit breaker is OPEN",
                 ex,
-                circuitBreakerName
+                circuitBreakerName,
             )
         } catch (ex: BulkheadFullException) {
             logger.warn(
                 "Bulkhead is full - operation rejected: name={}",
-                bulkheadName
+                bulkheadName,
             )
             throw ResilientOperationException(
                 "Service capacity exceeded - too many concurrent requests",
                 ex,
-                bulkheadName ?: "unknown"
+                bulkheadName ?: "unknown",
             )
         }
     }
@@ -115,9 +115,9 @@ class ResilientOperationExecutor(
         circuitBreakerName: String,
         retryName: String? = null,
         bulkheadName: String? = null,
-        operation: suspend () -> T
-    ): T {
-        return withContext(Dispatchers.IO) {
+        operation: suspend () -> T,
+    ): T =
+        withContext(Dispatchers.IO) {
             val circuitBreaker = circuitBreakerRegistry.circuitBreaker(circuitBreakerName)
 
             try {
@@ -142,92 +142,85 @@ class ResilientOperationExecutor(
             } catch (ex: CallNotPermittedException) {
                 logger.error(
                     "Circuit breaker is OPEN - operation not permitted: name={}",
-                    circuitBreakerName
+                    circuitBreakerName,
                 )
                 throw ResilientOperationException(
                     "Service temporarily unavailable - circuit breaker is OPEN",
                     ex,
-                    circuitBreakerName
+                    circuitBreakerName,
                 )
             } catch (ex: BulkheadFullException) {
                 logger.warn(
                     "Bulkhead is full - operation rejected: name={}",
-                    bulkheadName
+                    bulkheadName,
                 )
                 throw ResilientOperationException(
                     "Service capacity exceeded - too many concurrent requests",
                     ex,
-                    bulkheadName ?: "unknown"
+                    bulkheadName ?: "unknown",
                 )
             }
         }
-    }
 
     private fun <T> executeWithRetry(
         circuitBreaker: CircuitBreaker,
         retry: Retry,
-        operation: () -> T
-    ): T {
-        return circuitBreaker.executeSupplier {
+        operation: () -> T,
+    ): T =
+        circuitBreaker.executeSupplier {
             retry.executeSupplier(operation)
         }
-    }
 
     private fun <T> executeWithBulkhead(
         circuitBreaker: CircuitBreaker,
         bulkhead: Bulkhead,
-        operation: () -> T
-    ): T {
-        return circuitBreaker.executeSupplier {
+        operation: () -> T,
+    ): T =
+        circuitBreaker.executeSupplier {
             bulkhead.executeSupplier(operation)
         }
-    }
 
     private fun <T> executeWithAllPatterns(
         circuitBreaker: CircuitBreaker,
         retry: Retry,
         bulkhead: Bulkhead,
-        operation: () -> T
-    ): T {
-        return circuitBreaker.executeSupplier {
+        operation: () -> T,
+    ): T =
+        circuitBreaker.executeSupplier {
             retry.executeSupplier {
                 bulkhead.executeSupplier(operation)
             }
         }
-    }
 
     private suspend fun <T> executeSuspendWithRetry(
         circuitBreaker: CircuitBreaker,
         retry: Retry,
-        operation: suspend () -> T
-    ): T {
-        return circuitBreaker.executeSuspendFunction {
+        operation: suspend () -> T,
+    ): T =
+        circuitBreaker.executeSuspendFunction {
             retry.executeSuspendFunction(operation)
         }
-    }
 
     private suspend fun <T> executeSuspendWithBulkhead(
         circuitBreaker: CircuitBreaker,
         bulkhead: Bulkhead,
-        operation: suspend () -> T
-    ): T {
-        return circuitBreaker.executeSuspendFunction {
+        operation: suspend () -> T,
+    ): T =
+        circuitBreaker.executeSuspendFunction {
             bulkhead.executeSuspendFunction(operation)
         }
-    }
 
     private suspend fun <T> executeSuspendWithAllPatterns(
         circuitBreaker: CircuitBreaker,
         retry: Retry,
         bulkhead: Bulkhead,
-        operation: suspend () -> T
-    ): T {
-        return circuitBreaker.executeSuspendFunction {
+        operation: suspend () -> T,
+    ): T =
+        circuitBreaker.executeSuspendFunction {
             retry.executeSuspendFunction {
                 bulkhead.executeSuspendFunction(operation)
             }
         }
-    }
 }
 
 /**
@@ -240,5 +233,5 @@ class ResilientOperationExecutor(
 class ResilientOperationException(
     message: String,
     cause: Throwable,
-    val patternName: String
+    val patternName: String,
 ) : RuntimeException(message, cause)

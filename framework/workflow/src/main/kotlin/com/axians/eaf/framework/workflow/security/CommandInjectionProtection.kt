@@ -20,7 +20,7 @@ import java.nio.file.Paths
  * @since 1.0.0
  */
 class CommandInjectionProtection(
-    private val properties: CommandInjectionProtectionProperties
+    private val properties: CommandInjectionProtectionProperties,
 ) {
     private val logger = LoggerFactory.getLogger(CommandInjectionProtection::class.java)
 
@@ -31,7 +31,10 @@ class CommandInjectionProtection(
      * @param value The parameter value
      * @throws CommandInjectionException if the value contains malicious patterns
      */
-    fun validateParameter(parameterName: String, value: String) {
+    fun validateParameter(
+        parameterName: String,
+        value: String,
+    ) {
         if (!properties.enabled) {
             return
         }
@@ -41,24 +44,24 @@ class CommandInjectionProtection(
             logger.warn(
                 "Blocked command injection attempt: parameter={}, value={}",
                 parameterName,
-                sanitizeForLog(value)
+                sanitizeForLog(value),
             )
             throw CommandInjectionException(
-                "Parameter '$parameterName' contains forbidden characters"
+                "Parameter '$parameterName' contains forbidden characters",
             )
         }
 
         // Check for null bytes
         if (value.contains('\u0000')) {
             throw CommandInjectionException(
-                "Parameter '$parameterName' contains null byte"
+                "Parameter '$parameterName' contains null byte",
             )
         }
 
         // Check maximum length
         if (value.length > properties.maxParameterLength) {
             throw CommandInjectionException(
-                "Parameter '$parameterName' exceeds maximum length of ${properties.maxParameterLength}"
+                "Parameter '$parameterName' exceeds maximum length of ${properties.maxParameterLength}",
             )
         }
     }
@@ -74,15 +77,16 @@ class CommandInjectionProtection(
             return
         }
 
-        val commandName = command.split(" ").firstOrNull()
-            ?: throw CommandInjectionException("Empty command")
+        val commandName =
+            command.split(" ").firstOrNull()
+                ?: throw CommandInjectionException("Empty command")
 
         // Check if command is in allowlist
         if (properties.allowedCommands.isNotEmpty()) {
             if (commandName !in properties.allowedCommands) {
                 logger.warn("Blocked execution of non-whitelisted command: {}", commandName)
                 throw CommandInjectionException(
-                    "Command '$commandName' is not in allowed commands list"
+                    "Command '$commandName' is not in allowed commands list",
                 )
             }
         }
@@ -91,7 +95,7 @@ class CommandInjectionProtection(
         if (commandName in properties.blockedCommands) {
             logger.warn("Blocked execution of explicitly forbidden command: {}", commandName)
             throw CommandInjectionException(
-                "Command '$commandName' is explicitly blocked"
+                "Command '$commandName' is explicitly blocked",
             )
         }
     }
@@ -104,7 +108,10 @@ class CommandInjectionProtection(
      * @return The sanitized canonical path
      * @throws CommandInjectionException if the path is invalid or attempts traversal
      */
-    fun sanitizeFilePath(path: String, baseDirectory: String? = null): String {
+    fun sanitizeFilePath(
+        path: String,
+        baseDirectory: String? = null,
+    ): String {
         if (!properties.enabled) {
             return path
         }
@@ -116,7 +123,7 @@ class CommandInjectionProtection(
             // Check for path traversal attempts
             if (normalizedPath.contains("..")) {
                 throw CommandInjectionException(
-                    "File path contains path traversal: $path"
+                    "File path contains path traversal: $path",
                 )
             }
 
@@ -127,7 +134,7 @@ class CommandInjectionProtection(
 
                 if (!canonicalPath.startsWith(canonicalBase)) {
                     throw CommandInjectionException(
-                        "File path escapes base directory: $path"
+                        "File path escapes base directory: $path",
                     )
                 }
             }
@@ -135,7 +142,7 @@ class CommandInjectionProtection(
             // Check for null bytes
             if (normalizedPath.contains('\u0000')) {
                 throw CommandInjectionException(
-                    "File path contains null byte"
+                    "File path contains null byte",
                 )
             }
 
@@ -156,7 +163,10 @@ class CommandInjectionProtection(
      * @param value The environment variable value
      * @throws CommandInjectionException if the value is invalid
      */
-    fun validateEnvironmentVariable(name: String, value: String) {
+    fun validateEnvironmentVariable(
+        name: String,
+        value: String,
+    ) {
         if (!properties.enabled) {
             return
         }
@@ -164,7 +174,7 @@ class CommandInjectionProtection(
         // Check variable name
         if (!isValidEnvironmentVariableName(name)) {
             throw CommandInjectionException(
-                "Invalid environment variable name: $name"
+                "Invalid environment variable name: $name",
             )
         }
 
@@ -173,24 +183,22 @@ class CommandInjectionProtection(
             logger.warn(
                 "Blocked environment variable with shell metacharacters: name={}, value={}",
                 name,
-                sanitizeForLog(value)
+                sanitizeForLog(value),
             )
             throw CommandInjectionException(
-                "Environment variable '$name' contains forbidden characters"
+                "Environment variable '$name' contains forbidden characters",
             )
         }
 
         // Check maximum length
         if (value.length > properties.maxEnvironmentVariableLength) {
             throw CommandInjectionException(
-                "Environment variable '$name' exceeds maximum length"
+                "Environment variable '$name' exceeds maximum length",
             )
         }
     }
 
-    private fun containsShellMetacharacters(value: String): Boolean {
-        return SHELL_METACHARACTERS.any { value.contains(it) }
-    }
+    private fun containsShellMetacharacters(value: String): Boolean = SHELL_METACHARACTERS.any { value.contains(it) }
 
     private fun isValidEnvironmentVariableName(name: String): Boolean {
         // Environment variable names should contain only alphanumeric and underscore
@@ -210,21 +218,22 @@ class CommandInjectionProtection(
         /**
          * Shell metacharacters that could enable command injection.
          */
-        private val SHELL_METACHARACTERS = listOf(
-            ";",  // Command separator
-            "&",  // Background execution
-            "|",  // Pipe
-            "`",  // Command substitution
-            "$",  // Variable expansion
-            "(",  // Subshell
-            ")",  // Subshell
-            "<",  // Input redirection
-            ">",  // Output redirection
-            "\n", // Newline
-            "\r", // Carriage return
-            "\\", // Escape character
-            "!"   // History expansion (bash)
-        )
+        private val SHELL_METACHARACTERS =
+            listOf(
+                ";", // Command separator
+                "&", // Background execution
+                "|", // Pipe
+                "`", // Command substitution
+                "$", // Variable expansion
+                "(", // Subshell
+                ")", // Subshell
+                "<", // Input redirection
+                ">", // Output redirection
+                "\n", // Newline
+                "\r", // Carriage return
+                "\\", // Escape character
+                "!", // History expansion (bash)
+            )
     }
 }
 
@@ -238,42 +247,39 @@ data class CommandInjectionProtectionProperties(
      * Default: true
      */
     val enabled: Boolean = true,
-
     /**
      * Maximum length for workflow parameters.
      * Default: 1000 characters
      */
     val maxParameterLength: Int = 1000,
-
     /**
      * Maximum length for environment variables.
      * Default: 1000 characters
      */
     val maxEnvironmentVariableLength: Int = 1000,
-
     /**
      * Allowed external commands (whitelist).
      * If empty, all commands except blocked ones are allowed.
      * Example: ["git", "docker", "kubectl"]
      */
     val allowedCommands: Set<String> = emptySet(),
-
     /**
      * Explicitly blocked commands.
      * Example: ["rm", "dd", "mkfs", "format"]
      */
-    val blockedCommands: Set<String> = setOf(
-        "rm",       // Remove files
-        "dd",       // Disk operations
-        "mkfs",     // Format filesystem
-        "format",   // Format filesystem
-        "fdisk",    // Partition disk
-        "mkswap",   // Create swap
-        "shutdown", // System shutdown
-        "reboot",   // System reboot
-        "halt",     // System halt
-        "poweroff"  // System poweroff
-    )
+    val blockedCommands: Set<String> =
+        setOf(
+            "rm", // Remove files
+            "dd", // Disk operations
+            "mkfs", // Format filesystem
+            "format", // Format filesystem
+            "fdisk", // Partition disk
+            "mkswap", // Create swap
+            "shutdown", // System shutdown
+            "reboot", // System reboot
+            "halt", // System halt
+            "poweroff", // System poweroff
+        ),
 )
 
 /**
@@ -281,5 +287,5 @@ data class CommandInjectionProtectionProperties(
  */
 class CommandInjectionException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : SecurityException(message, cause)

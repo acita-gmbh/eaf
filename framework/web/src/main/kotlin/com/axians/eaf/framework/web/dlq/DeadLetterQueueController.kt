@@ -38,9 +38,8 @@ import java.util.UUID
 @RequestMapping("/api/admin/dlq")
 @ConditionalOnBean(DeadLetterQueueService::class)
 class DeadLetterQueueController(
-    private val dlqService: DeadLetterQueueService
+    private val dlqService: DeadLetterQueueService,
 ) {
-
     /**
      * List all DLQ entries with optional filters.
      *
@@ -51,14 +50,15 @@ class DeadLetterQueueController(
         @RequestParam(required = false) status: DLQStatus?,
         @RequestParam(required = false) operationType: OperationType?,
         @RequestParam(required = false) tenantId: String?,
-        @RequestParam(required = false) since: Instant?
+        @RequestParam(required = false) since: Instant?,
     ): ResponseEntity<List<DeadLetterQueueEntryDTO>> {
-        val entries = dlqService.findAll(
-            status = status,
-            operationType = operationType,
-            tenantId = tenantId,
-            since = since
-        )
+        val entries =
+            dlqService.findAll(
+                status = status,
+                operationType = operationType,
+                tenantId = tenantId,
+                since = since,
+            )
 
         return ResponseEntity.ok(entries.map { it.toDTO() })
     }
@@ -69,9 +69,12 @@ class DeadLetterQueueController(
      * GET /api/admin/dlq/{id}
      */
     @GetMapping("/{id}")
-    fun getEntry(@PathVariable id: UUID): ResponseEntity<DeadLetterQueueEntryDTO> {
-        val entry = dlqService.findById(id)
-            ?: return ResponseEntity.notFound().build()
+    fun getEntry(
+        @PathVariable id: UUID,
+    ): ResponseEntity<DeadLetterQueueEntryDTO> {
+        val entry =
+            dlqService.findById(id)
+                ?: return ResponseEntity.notFound().build()
 
         return ResponseEntity.ok(entry.toDTO())
     }
@@ -82,9 +85,12 @@ class DeadLetterQueueController(
      * POST /api/admin/dlq/{id}/replay
      */
     @PostMapping("/{id}/replay")
-    fun replayEntry(@PathVariable id: UUID): ResponseEntity<DeadLetterQueueEntryDTO> {
-        val entry = dlqService.markReplayed(id)
-            ?: return ResponseEntity.notFound().build()
+    fun replayEntry(
+        @PathVariable id: UUID,
+    ): ResponseEntity<DeadLetterQueueEntryDTO> {
+        val entry =
+            dlqService.markReplayed(id)
+                ?: return ResponseEntity.notFound().build()
 
         return ResponseEntity.ok(entry.toDTO())
     }
@@ -95,9 +101,12 @@ class DeadLetterQueueController(
      * POST /api/admin/dlq/{id}/replay-failed
      */
     @PostMapping("/{id}/replay-failed")
-    fun markReplayFailed(@PathVariable id: UUID): ResponseEntity<DeadLetterQueueEntryDTO> {
-        val entry = dlqService.markReplayFailed(id)
-            ?: return ResponseEntity.notFound().build()
+    fun markReplayFailed(
+        @PathVariable id: UUID,
+    ): ResponseEntity<DeadLetterQueueEntryDTO> {
+        val entry =
+            dlqService.markReplayFailed(id)
+                ?: return ResponseEntity.notFound().build()
 
         return ResponseEntity.ok(entry.toDTO())
     }
@@ -108,9 +117,12 @@ class DeadLetterQueueController(
      * POST /api/admin/dlq/{id}/discard
      */
     @PostMapping("/{id}/discard")
-    fun discardEntry(@PathVariable id: UUID): ResponseEntity<DeadLetterQueueEntryDTO> {
-        val entry = dlqService.discard(id)
-            ?: return ResponseEntity.notFound().build()
+    fun discardEntry(
+        @PathVariable id: UUID,
+    ): ResponseEntity<DeadLetterQueueEntryDTO> {
+        val entry =
+            dlqService.discard(id)
+                ?: return ResponseEntity.notFound().build()
 
         return ResponseEntity.ok(entry.toDTO())
     }
@@ -121,7 +133,9 @@ class DeadLetterQueueController(
      * DELETE /api/admin/dlq/{id}
      */
     @DeleteMapping("/{id}")
-    fun deleteEntry(@PathVariable id: UUID): ResponseEntity<Void> {
+    fun deleteEntry(
+        @PathVariable id: UUID,
+    ): ResponseEntity<Void> {
         val deleted = dlqService.delete(id)
         return if (deleted) {
             ResponseEntity.noContent().build()
@@ -136,9 +150,7 @@ class DeadLetterQueueController(
      * GET /api/admin/dlq/statistics
      */
     @GetMapping("/statistics")
-    fun getStatistics(): ResponseEntity<Map<DLQStatus, Long>> {
-        return ResponseEntity.ok(dlqService.getStatistics())
-    }
+    fun getStatistics(): ResponseEntity<Map<DLQStatus, Long>> = ResponseEntity.ok(dlqService.getStatistics())
 
     /**
      * Get DLQ statistics by tenant.
@@ -146,9 +158,8 @@ class DeadLetterQueueController(
      * GET /api/admin/dlq/statistics/by-tenant
      */
     @GetMapping("/statistics/by-tenant")
-    fun getStatisticsByTenant(): ResponseEntity<Map<String?, Map<DLQStatus, Long>>> {
-        return ResponseEntity.ok(dlqService.getStatisticsByTenant())
-    }
+    fun getStatisticsByTenant(): ResponseEntity<Map<String?, Map<DLQStatus, Long>>> =
+        ResponseEntity.ok(dlqService.getStatisticsByTenant())
 }
 
 /**
@@ -171,14 +182,14 @@ data class DeadLetterQueueEntryDTO(
     val status: DLQStatus,
     val lastAttempt: Instant?,
     val replayCount: Int,
-    val metadata: Map<String, String>
+    val metadata: Map<String, String>,
 )
 
 /**
  * Convert DeadLetterQueueEntry to DTO.
  */
-private fun DeadLetterQueueEntry.toDTO(includeStackTrace: Boolean = true): DeadLetterQueueEntryDTO {
-    return DeadLetterQueueEntryDTO(
+private fun DeadLetterQueueEntry.toDTO(includeStackTrace: Boolean = true): DeadLetterQueueEntryDTO =
+    DeadLetterQueueEntryDTO(
         id = id,
         timestamp = timestamp,
         operationType = operationType,
@@ -193,6 +204,5 @@ private fun DeadLetterQueueEntry.toDTO(includeStackTrace: Boolean = true): DeadL
         status = status,
         lastAttempt = lastAttempt,
         replayCount = replayCount,
-        metadata = metadata
+        metadata = metadata,
     )
-}

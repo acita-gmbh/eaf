@@ -13,8 +13,16 @@ dependencies {
     implementation(libs.spring.modulith.api)
     testImplementation(libs.spring.modulith.test)
 
+    // Spring Boot for auto-configuration, dependency injection, and Jackson (ObjectMapper)
+    // spring-boot-starter-web brings: spring-boot, spring-context, spring-web, jackson-databind
+    implementation(libs.spring.boot.starter.web)
+
+    // Micrometer for metrics (resilience patterns)
+    implementation(libs.micrometer.core)
+
     // Resilience patterns (OWASP A10:2025 - Exception Handling)
     api(libs.bundles.resilience4j)
 
     testImplementation(libs.bundles.kotest)
+    testImplementation(libs.micrometer.core) // For SimpleMeterRegistry in tests
 }

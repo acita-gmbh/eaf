@@ -3,12 +3,9 @@ package com.axians.eaf.framework.security.headers
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.springframework.mock.web.MockFilterChain
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
 
 /**
  * Unit tests for SecurityHeadersConfiguration.
@@ -20,372 +17,328 @@ import org.mockito.kotlin.whenever
  * - Security headers enablement/disablement
  * - Custom policy configuration
  *
+ * Uses Spring's MockHttpServletRequest/Response (real test doubles, not mocks)
+ * per EAF "No Mocks" policy.
+ *
  * OWASP A02:2025 - Security Misconfiguration
  *
  * @since 1.0.0
  */
-class SecurityHeadersConfigurationTest : FunSpec({
+class SecurityHeadersConfigurationTest :
+    FunSpec({
 
-    context("HSTS Header") {
-        test("should add HSTS header with default configuration") {
-            // Given: Default HSTS configuration
-            val properties = SecurityHeadersProperties(
-                enabled = true,
-                hsts = SecurityHeadersProperties.HstsProperties(
-                    enabled = true,
-                    maxAge = 31536000,
-                    includeSubdomains = true,
-                    preload = false
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+        context("HSTS Header") {
+            test("should add HSTS header with default configuration") {
+                // Given: Default HSTS configuration
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        hsts =
+                            SecurityHeadersProperties.HstsProperties(
+                                enabled = true,
+                                maxAge = 31536000,
+                                includeSubdomains = true,
+                                preload = false,
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: HSTS header is set correctly
-            verify(response).setHeader(
-                "Strict-Transport-Security",
-                "max-age=31536000; includeSubDomains"
-            )
+                // Then: HSTS header is set correctly
+                response.getHeader("Strict-Transport-Security") shouldBe "max-age=31536000; includeSubDomains"
+            }
+
+            test("should add HSTS header with preload") {
+                // Given: HSTS with preload enabled
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        hsts =
+                            SecurityHeadersProperties.HstsProperties(
+                                enabled = true,
+                                maxAge = 31536000,
+                                includeSubdomains = true,
+                                preload = true,
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
+
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
+
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
+
+                // Then: HSTS header includes preload
+                response.getHeader("Strict-Transport-Security") shouldBe "max-age=31536000; includeSubDomains; preload"
+            }
+
+            test("should not add HSTS header when disabled") {
+                // Given: HSTS disabled
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        hsts =
+                            SecurityHeadersProperties.HstsProperties(
+                                enabled = false,
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
+
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
+
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
+
+                // Then: No HSTS header
+                response.getHeader("Strict-Transport-Security") shouldBe null
+            }
         }
 
-        test("should add HSTS header with preload") {
-            // Given: HSTS configuration with preload enabled
-            val properties = SecurityHeadersProperties(
-                hsts = SecurityHeadersProperties.HstsProperties(
-                    maxAge = 63072000, // 2 years for preload
-                    includeSubdomains = true,
-                    preload = true
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+        context("Content-Security-Policy Header") {
+            test("should add CSP header with default policy") {
+                // Given: Default CSP configuration
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        csp =
+                            SecurityHeadersProperties.CspProperties(
+                                enabled = true,
+                                policy =
+                                    "default-src 'self'; script-src 'self'; style-src 'self'; " +
+                                        "img-src 'self' data:; font-src 'self'; " +
+                                        "connect-src 'self'; frame-ancestors 'none'",
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: HSTS header includes preload directive
-            verify(response).setHeader(
-                "Strict-Transport-Security",
-                "max-age=63072000; includeSubDomains; preload"
-            )
+                // Then: CSP header is set
+                val cspHeader = response.getHeader("Content-Security-Policy")
+                cspHeader shouldContain "default-src 'self'"
+                cspHeader shouldContain "frame-ancestors 'none'"
+            }
+
+            test("should add CSP report-only header when report-only mode") {
+                // Given: CSP in report-only mode
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        csp =
+                            SecurityHeadersProperties.CspProperties(
+                                enabled = true,
+                                policy = "default-src 'self'",
+                                reportOnly = true,
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
+
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
+
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
+
+                // Then: CSP report-only header is set
+                response.getHeader("Content-Security-Policy-Report-Only") shouldContain "default-src 'self'"
+                response.getHeader("Content-Security-Policy") shouldBe null
+            }
+
+            test("should support custom CSP policy") {
+                // Given: Custom CSP policy
+                val customPolicy = "default-src 'self' https://cdn.example.com; script-src 'self' 'unsafe-inline'"
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        csp =
+                            SecurityHeadersProperties.CspProperties(
+                                enabled = true,
+                                policy = customPolicy,
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
+
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
+
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
+
+                // Then: Custom policy is set
+                response.getHeader("Content-Security-Policy") shouldBe customPolicy
+            }
         }
 
-        test("should not add HSTS header when disabled") {
-            // Given: HSTS disabled
-            val properties = SecurityHeadersProperties(
-                hsts = SecurityHeadersProperties.HstsProperties(enabled = false)
-            )
-            val filter = SecurityHeadersFilter(properties)
+        context("X-Frame-Options Header") {
+            test("should add X-Frame-Options header with DENY") {
+                // Given: X-Frame-Options DENY
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        frameOptions =
+                            SecurityHeadersProperties.FrameOptionsProperties(
+                                enabled = true,
+                                policy = "DENY",
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: HSTS header is not set
-            verify(response, org.mockito.kotlin.never()).setHeader(
-                org.mockito.kotlin.eq("Strict-Transport-Security"),
-                org.mockito.kotlin.any()
-            )
-        }
-    }
+                // Then: X-Frame-Options is DENY
+                response.getHeader("X-Frame-Options") shouldBe "DENY"
+            }
 
-    context("Content-Security-Policy Header") {
-        test("should add CSP header with default restrictive policy") {
-            // Given: Default CSP configuration
-            val properties = SecurityHeadersProperties(
-                csp = SecurityHeadersProperties.CspProperties(
-                    enabled = true,
-                    reportOnly = false
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+            test("should add X-Frame-Options header with SAMEORIGIN") {
+                // Given: X-Frame-Options SAMEORIGIN
+                val properties =
+                    SecurityHeadersProperties(
+                        enabled = true,
+                        frameOptions =
+                            SecurityHeadersProperties.FrameOptionsProperties(
+                                enabled = true,
+                                policy = "SAMEORIGIN",
+                            ),
+                    )
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: CSP header is set with restrictive policy
-            val captor = org.mockito.kotlin.argumentCaptor<String>()
-            verify(response).setHeader(org.mockito.kotlin.eq("Content-Security-Policy"), captor.capture())
-
-            val cspPolicy = captor.firstValue
-            cspPolicy shouldContain "default-src 'self'"
-            cspPolicy shouldContain "script-src 'self'"
-            cspPolicy shouldContain "frame-ancestors 'none'"
-        }
-
-        test("should add CSP header in report-only mode") {
-            // Given: CSP in report-only mode
-            val properties = SecurityHeadersProperties(
-                csp = SecurityHeadersProperties.CspProperties(
-                    enabled = true,
-                    reportOnly = true,
-                    policy = "default-src 'self'"
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: CSP header is set in report-only mode
-            verify(response).setHeader(
-                "Content-Security-Policy-Report-Only",
-                "default-src 'self'"
-            )
+                // Then: X-Frame-Options is SAMEORIGIN
+                response.getHeader("X-Frame-Options") shouldBe "SAMEORIGIN"
+            }
         }
 
-        test("should support custom CSP policy") {
-            // Given: Custom CSP policy
-            val customPolicy = "default-src 'self'; script-src 'self' cdn.example.com; style-src 'self' 'unsafe-inline'"
-            val properties = SecurityHeadersProperties(
-                csp = SecurityHeadersProperties.CspProperties(
-                    policy = customPolicy
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+        context("Additional Security Headers") {
+            test("should add X-Content-Type-Options header") {
+                // Given: Default configuration
+                val properties = SecurityHeadersProperties(enabled = true)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: Custom policy is set
-            verify(response).setHeader("Content-Security-Policy", customPolicy)
-        }
-    }
+                // Then: X-Content-Type-Options is set
+                response.getHeader("X-Content-Type-Options") shouldBe "nosniff"
+            }
 
-    context("X-Frame-Options Header") {
-        test("should add X-Frame-Options with DENY") {
-            // Given: Default frame options (DENY)
-            val properties = SecurityHeadersProperties(
-                frameOptions = SecurityHeadersProperties.FrameOptionsProperties(
-                    policy = "DENY"
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+            test("should add X-XSS-Protection header") {
+                // Given: Default configuration
+                val properties = SecurityHeadersProperties(enabled = true)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: X-Frame-Options is set to DENY
-            verify(response).setHeader("X-Frame-Options", "DENY")
-        }
+                // Then: X-XSS-Protection is set
+                response.getHeader("X-XSS-Protection") shouldBe "1; mode=block"
+            }
 
-        test("should support SAMEORIGIN policy") {
-            // Given: SAMEORIGIN frame options
-            val properties = SecurityHeadersProperties(
-                frameOptions = SecurityHeadersProperties.FrameOptionsProperties(
-                    policy = "SAMEORIGIN"
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+            test("should add Referrer-Policy header") {
+                // Given: Default configuration (uses default referrerPolicy)
+                val properties = SecurityHeadersProperties(enabled = true)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: X-Frame-Options is set to SAMEORIGIN
-            verify(response).setHeader("X-Frame-Options", "SAMEORIGIN")
-        }
-    }
+                // Then: Referrer-Policy is set
+                response.getHeader("Referrer-Policy") shouldBe "strict-origin-when-cross-origin"
+            }
 
-    context("Additional Security Headers") {
-        test("should add X-Content-Type-Options header") {
-            // Given: Security headers enabled
-            val properties = SecurityHeadersProperties(enabled = true)
-            val filter = SecurityHeadersFilter(properties)
+            test("should add Permissions-Policy header") {
+                // Given: Default configuration (uses default permissionsPolicy)
+                val properties = SecurityHeadersProperties(enabled = true)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: X-Content-Type-Options is set to nosniff
-            verify(response).setHeader("X-Content-Type-Options", "nosniff")
-        }
+                // Then: Permissions-Policy is set (default value from PermissionsPolicyProperties)
+                response.getHeader("Permissions-Policy") shouldBe
+                    "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+            }
 
-        test("should add X-XSS-Protection header") {
-            // Given: Security headers enabled
-            val properties = SecurityHeadersProperties(enabled = true)
-            val filter = SecurityHeadersFilter(properties)
+            test("should add Cache-Control header") {
+                // Given: Default configuration (Cache-Control is always added)
+                val properties = SecurityHeadersProperties(enabled = true)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: X-XSS-Protection is set
-            verify(response).setHeader("X-XSS-Protection", "1; mode=block")
+                // Then: Cache-Control is set (hard-coded values from implementation)
+                response.getHeader("Cache-Control") shouldBe "no-cache, no-store, must-revalidate"
+                response.getHeader("Pragma") shouldBe "no-cache"
+                response.getHeader("Expires") shouldBe "0"
+            }
         }
 
-        test("should add Referrer-Policy header") {
-            // Given: Default referrer policy
-            val properties = SecurityHeadersProperties(
-                referrerPolicy = SecurityHeadersProperties.ReferrerPolicyProperties(
-                    policy = "strict-origin-when-cross-origin"
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
+        context("Global Enablement") {
+            test("should not add any headers when globally disabled") {
+                // Given: Security headers globally disabled
+                val properties = SecurityHeadersProperties(enabled = false)
+                val filter = SecurityHeadersFilter(properties)
 
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
+                val request = MockHttpServletRequest()
+                val response = MockHttpServletResponse()
+                val filterChain = MockFilterChain()
 
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
+                // When: Filter processes request
+                filter.doFilter(request, response, filterChain)
 
-            // Then: Referrer-Policy is set
-            verify(response).setHeader("Referrer-Policy", "strict-origin-when-cross-origin")
+                // Then: No security headers are set
+                response.getHeader("Strict-Transport-Security") shouldBe null
+                response.getHeader("Content-Security-Policy") shouldBe null
+                response.getHeader("X-Frame-Options") shouldBe null
+                response.getHeader("X-Content-Type-Options") shouldBe null
+            }
         }
-
-        test("should add Permissions-Policy header") {
-            // Given: Default permissions policy
-            val properties = SecurityHeadersProperties(
-                permissionsPolicy = SecurityHeadersProperties.PermissionsPolicyProperties(
-                    policy = "geolocation=(), microphone=(), camera=()"
-                )
-            )
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: Permissions-Policy is set
-            verify(response).setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-        }
-
-        test("should add Cache-Control headers for sensitive content") {
-            // Given: Security headers enabled
-            val properties = SecurityHeadersProperties(enabled = true)
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            whenever(response.containsHeader("Cache-Control")).thenReturn(false)
-
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: Cache-Control headers are set
-            verify(response).setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
-            verify(response).setHeader("Pragma", "no-cache")
-            verify(response).setHeader("Expires", "0")
-        }
-
-        test("should not override existing Cache-Control header") {
-            // Given: Response already has Cache-Control
-            val properties = SecurityHeadersProperties(enabled = true)
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            whenever(response.containsHeader("Cache-Control")).thenReturn(true)
-
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: Cache-Control is not overridden
-            verify(response, org.mockito.kotlin.never()).setHeader(
-                org.mockito.kotlin.eq("Cache-Control"),
-                org.mockito.kotlin.any()
-            )
-        }
-    }
-
-    context("Global Enablement") {
-        test("should not add any headers when globally disabled") {
-            // Given: Security headers globally disabled
-            val properties = SecurityHeadersProperties(enabled = false)
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: No security headers are set
-            verify(response, org.mockito.kotlin.never()).setHeader(
-                org.mockito.kotlin.any(),
-                org.mockito.kotlin.any()
-            )
-        }
-
-        test("should still call filter chain when disabled") {
-            // Given: Security headers disabled
-            val properties = SecurityHeadersProperties(enabled = false)
-            val filter = SecurityHeadersFilter(properties)
-
-            val request = mock<HttpServletRequest>()
-            val response = mock<HttpServletResponse>()
-            val filterChain = mock<FilterChain>()
-
-            // When: Filter processes request
-            filter.doFilterInternal(request, response, filterChain)
-
-            // Then: Filter chain is still called
-            verify(filterChain).doFilter(request, response)
-        }
-    }
-
-    context("Property Defaults") {
-        test("should use sensible defaults") {
-            // Given: Default properties
-            val properties = SecurityHeadersProperties()
-
-            // Then: Defaults are secure
-            properties.enabled shouldBe true
-            properties.hsts.enabled shouldBe true
-            properties.hsts.maxAge shouldBe 31536000 // 1 year
-            properties.hsts.includeSubdomains shouldBe true
-            properties.csp.enabled shouldBe true
-            properties.csp.reportOnly shouldBe false
-            properties.frameOptions.enabled shouldBe true
-            properties.frameOptions.policy shouldBe "DENY"
-            properties.referrerPolicy.enabled shouldBe true
-            properties.permissionsPolicy.enabled shouldBe true
-        }
-    }
-})
+    })

@@ -9,13 +9,13 @@ import io.github.resilience4j.retry.RetryRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.binder.BaseUnits
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import jakarta.annotation.PostConstruct
 
 /**
  * Auto-configuration for Resilience4j patterns.
@@ -35,7 +35,6 @@ import jakarta.annotation.PostConstruct
 @AutoConfiguration
 @ConditionalOnClass(CircuitBreaker::class)
 class ResilienceAutoConfiguration {
-
     private val logger = LoggerFactory.getLogger(ResilienceAutoConfiguration::class.java)
 
     /**
@@ -50,8 +49,10 @@ class ResilienceAutoConfiguration {
     @ConditionalOnBean(MeterRegistry::class)
     class CircuitBreakerMetricsConfiguration(
         private val meterRegistry: MeterRegistry,
-        private val circuitBreakerRegistry: CircuitBreakerRegistry
+        private val circuitBreakerRegistry: CircuitBreakerRegistry,
     ) {
+        private val logger = LoggerFactory.getLogger(CircuitBreakerMetricsConfiguration::class.java)
+
         @PostConstruct
         fun registerCircuitBreakerMetrics() {
             circuitBreakerRegistry.allCircuitBreakers.forEach { circuitBreaker ->
@@ -61,55 +62,58 @@ class ResilienceAutoConfiguration {
                 meterRegistry.gauge(
                     "resilience4j.circuitbreaker.state",
                     tags,
-                    circuitBreaker
+                    circuitBreaker,
                 ) { it.state.order.toDouble() }
 
                 // Failure rate gauge
                 meterRegistry.gauge(
                     "resilience4j.circuitbreaker.failure_rate",
                     tags.and("unit", BaseUnits.PERCENT),
-                    circuitBreaker
+                    circuitBreaker,
                 ) { it.metrics.failureRate.toDouble() }
 
                 // Event listeners
                 circuitBreaker.eventPublisher
                     .onSuccess { event ->
-                        meterRegistry.counter(
-                            "resilience4j.circuitbreaker.calls",
-                            tags.and("result", "success")
-                        ).increment()
-                    }
-                    .onError { event ->
-                        meterRegistry.counter(
-                            "resilience4j.circuitbreaker.calls",
-                            tags.and("result", "error")
-                                .and("exception", event.throwable.javaClass.simpleName)
-                        ).increment()
-                    }
-                    .onCallNotPermitted { event ->
-                        meterRegistry.counter(
-                            "resilience4j.circuitbreaker.calls",
-                            tags.and("result", "rejected")
-                        ).increment()
-                    }
-                    .onStateTransition { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.circuitbreaker.calls",
+                                tags.and("result", "success"),
+                            ).increment()
+                    }.onError { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.circuitbreaker.calls",
+                                tags
+                                    .and("result", "error")
+                                    .and("exception", event.throwable.javaClass.simpleName),
+                            ).increment()
+                    }.onCallNotPermitted { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.circuitbreaker.calls",
+                                tags.and("result", "rejected"),
+                            ).increment()
+                    }.onStateTransition { event ->
                         logger.warn(
                             "Circuit breaker state transition: {} -> {} (name: {})",
                             event.stateTransition.fromState,
                             event.stateTransition.toState,
-                            circuitBreaker.name
+                            circuitBreaker.name,
                         )
-                        meterRegistry.counter(
-                            "resilience4j.circuitbreaker.transitions",
-                            tags.and("from", event.stateTransition.fromState.name)
-                                .and("to", event.stateTransition.toState.name)
-                        ).increment()
+                        meterRegistry
+                            .counter(
+                                "resilience4j.circuitbreaker.transitions",
+                                tags
+                                    .and("from", event.stateTransition.fromState.name)
+                                    .and("to", event.stateTransition.toState.name),
+                            ).increment()
                     }
 
                 logger.info(
                     "Registered circuit breaker metrics: name={}, config={}",
                     circuitBreaker.name,
-                    circuitBreaker.circuitBreakerConfig
+                    circuitBreaker.circuitBreakerConfig,
                 )
             }
         }
@@ -127,8 +131,10 @@ class ResilienceAutoConfiguration {
     @ConditionalOnBean(MeterRegistry::class)
     class RetryMetricsConfiguration(
         private val meterRegistry: MeterRegistry,
-        private val retryRegistry: RetryRegistry
+        private val retryRegistry: RetryRegistry,
     ) {
+        private val logger = LoggerFactory.getLogger(RetryMetricsConfiguration::class.java)
+
         @PostConstruct
         fun registerRetryMetrics() {
             retryRegistry.allRetries.forEach { retry ->
@@ -136,38 +142,42 @@ class ResilienceAutoConfiguration {
 
                 retry.eventPublisher
                     .onRetry { event ->
-                        meterRegistry.counter(
-                            "resilience4j.retry.calls",
-                            tags.and("attempt", event.numberOfRetryAttempts.toString())
-                                .and("result", "retry")
-                        ).increment()
-                    }
-                    .onSuccess { event ->
-                        meterRegistry.counter(
-                            "resilience4j.retry.calls",
-                            tags.and("result", "success")
-                                .and("retries", event.numberOfRetryAttempts.toString())
-                        ).increment()
-                    }
-                    .onError { event ->
-                        meterRegistry.counter(
-                            "resilience4j.retry.calls",
-                            tags.and("result", "exhausted")
-                                .and("exception", event.lastThrowable.javaClass.simpleName)
-                        ).increment()
+                        meterRegistry
+                            .counter(
+                                "resilience4j.retry.calls",
+                                tags
+                                    .and("attempt", event.numberOfRetryAttempts.toString())
+                                    .and("result", "retry"),
+                            ).increment()
+                    }.onSuccess { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.retry.calls",
+                                tags
+                                    .and("result", "success")
+                                    .and("retries", event.numberOfRetryAttempts.toString()),
+                            ).increment()
+                    }.onError { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.retry.calls",
+                                tags
+                                    .and("result", "exhausted")
+                                    .and("exception", event.lastThrowable.javaClass.simpleName),
+                            ).increment()
 
                         logger.warn(
                             "Retry exhausted: name={}, attempts={}, exception={}",
                             retry.name,
                             event.numberOfRetryAttempts,
-                            event.lastThrowable.message
+                            event.lastThrowable.message,
                         )
                     }
 
                 logger.info(
                     "Registered retry metrics: name={}, config={}",
                     retry.name,
-                    retry.retryConfig
+                    retry.retryConfig,
                 )
             }
         }
@@ -185,8 +195,10 @@ class ResilienceAutoConfiguration {
     @ConditionalOnBean(MeterRegistry::class)
     class BulkheadMetricsConfiguration(
         private val meterRegistry: MeterRegistry,
-        private val bulkheadRegistry: BulkheadRegistry
+        private val bulkheadRegistry: BulkheadRegistry,
     ) {
+        private val logger = LoggerFactory.getLogger(BulkheadMetricsConfiguration::class.java)
+
         @PostConstruct
         fun registerBulkheadMetrics() {
             bulkheadRegistry.allBulkheads.forEach { bulkhead ->
@@ -196,40 +208,41 @@ class ResilienceAutoConfiguration {
                 meterRegistry.gauge(
                     "resilience4j.bulkhead.available_concurrent_calls",
                     tags,
-                    bulkhead
+                    bulkhead,
                 ) { it.metrics.availableConcurrentCalls.toDouble() }
 
                 // Event listeners
                 bulkhead.eventPublisher
                     .onCallPermitted { event ->
-                        meterRegistry.counter(
-                            "resilience4j.bulkhead.calls",
-                            tags.and("result", "permitted")
-                        ).increment()
-                    }
-                    .onCallRejected { event ->
-                        meterRegistry.counter(
-                            "resilience4j.bulkhead.calls",
-                            tags.and("result", "rejected")
-                        ).increment()
+                        meterRegistry
+                            .counter(
+                                "resilience4j.bulkhead.calls",
+                                tags.and("result", "permitted"),
+                            ).increment()
+                    }.onCallRejected { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.bulkhead.calls",
+                                tags.and("result", "rejected"),
+                            ).increment()
 
                         logger.warn(
                             "Bulkhead rejected call: name={}, available={}",
                             bulkhead.name,
-                            bulkhead.metrics.availableConcurrentCalls
+                            bulkhead.metrics.availableConcurrentCalls,
                         )
-                    }
-                    .onCallFinished { event ->
-                        meterRegistry.counter(
-                            "resilience4j.bulkhead.calls",
-                            tags.and("result", "finished")
-                        ).increment()
+                    }.onCallFinished { event ->
+                        meterRegistry
+                            .counter(
+                                "resilience4j.bulkhead.calls",
+                                tags.and("result", "finished"),
+                            ).increment()
                     }
 
                 logger.info(
                     "Registered bulkhead metrics: name={}, config={}",
                     bulkhead.name,
-                    bulkhead.bulkheadConfig
+                    bulkhead.bulkheadConfig,
                 )
             }
         }
@@ -239,12 +252,11 @@ class ResilienceAutoConfiguration {
     fun resilientOperationExecutor(
         circuitBreakerRegistry: CircuitBreakerRegistry,
         retryRegistry: RetryRegistry,
-        bulkheadRegistry: BulkheadRegistry
-    ): ResilientOperationExecutor {
-        return ResilientOperationExecutor(
+        bulkheadRegistry: BulkheadRegistry,
+    ): ResilientOperationExecutor =
+        ResilientOperationExecutor(
             circuitBreakerRegistry,
             retryRegistry,
-            bulkheadRegistry
+            bulkheadRegistry,
         )
-    }
 }

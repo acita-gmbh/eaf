@@ -31,9 +31,8 @@ import reactor.core.publisher.Mono
 @ConditionalOnClass(WebClient::class)
 class SecureWebClient(
     private val ssrfProtection: SsrfProtection,
-    private val webClientBuilder: WebClient.Builder
+    private val webClientBuilder: WebClient.Builder,
 ) {
-
     /**
      * Create a GET request with SSRF protection.
      *
@@ -43,7 +42,8 @@ class SecureWebClient(
      */
     fun get(url: String): WebClient.RequestHeadersSpec<*> {
         validateUrl(url)
-        return webClientBuilder.build()
+        return webClientBuilder
+            .build()
             .get()
             .uri(url)
     }
@@ -57,7 +57,8 @@ class SecureWebClient(
      */
     fun post(url: String): WebClient.RequestBodySpec {
         validateUrl(url)
-        return webClientBuilder.build()
+        return webClientBuilder
+            .build()
             .post()
             .uri(url)
     }
@@ -71,7 +72,8 @@ class SecureWebClient(
      */
     fun put(url: String): WebClient.RequestBodySpec {
         validateUrl(url)
-        return webClientBuilder.build()
+        return webClientBuilder
+            .build()
             .put()
             .uri(url)
     }
@@ -85,7 +87,8 @@ class SecureWebClient(
      */
     fun delete(url: String): WebClient.RequestHeadersSpec<*> {
         validateUrl(url)
-        return webClientBuilder.build()
+        return webClientBuilder
+            .build()
             .delete()
             .uri(url)
     }
@@ -99,18 +102,14 @@ class SecureWebClient(
      */
     fun patch(url: String): WebClient.RequestBodySpec {
         validateUrl(url)
-        return webClientBuilder.build()
+        return webClientBuilder
+            .build()
             .patch()
             .uri(url)
     }
 
     private fun validateUrl(url: String) {
-        try {
-            ssrfProtection.validateUrl(url)
-        } catch (ex: SsrfException) {
-            // Re-throw as Mono.error for reactive compatibility
-            throw WebClientRequestException(ex, null, null, null)
-        }
+        ssrfProtection.validateUrl(url) // Let SsrfException propagate directly
     }
 }
 
@@ -120,9 +119,6 @@ class SecureWebClient(
 @org.springframework.boot.autoconfigure.AutoConfiguration
 @org.springframework.boot.context.properties.EnableConfigurationProperties(SsrfProtectionProperties::class)
 class SsrfProtectionAutoConfiguration {
-
     @org.springframework.context.annotation.Bean
-    fun ssrfProtection(properties: SsrfProtectionProperties): SsrfProtection {
-        return SsrfProtection(properties)
-    }
+    fun ssrfProtection(properties: SsrfProtectionProperties): SsrfProtection = SsrfProtection(properties)
 }

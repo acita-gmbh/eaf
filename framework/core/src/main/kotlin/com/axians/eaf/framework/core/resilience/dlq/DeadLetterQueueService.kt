@@ -24,10 +24,11 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @since 1.0.0
  */
+@Suppress("TooManyFunctions") // DLQ service requires comprehensive management API
 @Service
 class DeadLetterQueueService(
     private val objectMapper: ObjectMapper,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     private val logger = LoggerFactory.getLogger(DeadLetterQueueService::class.java)
 
@@ -46,6 +47,7 @@ class DeadLetterQueueService(
      * @param metadata Additional metadata
      * @return The created DLQ entry
      */
+    @Suppress("LongParameterList") // DLQ entry requires comprehensive failure context
     fun <T> storeFailed(
         operationType: OperationType,
         payload: T,
@@ -53,20 +55,21 @@ class DeadLetterQueueService(
         tenantId: String? = null,
         traceId: String? = null,
         retryCount: Int = 0,
-        metadata: Map<String, String> = emptyMap()
+        metadata: Map<String, String> = emptyMap(),
     ): DeadLetterQueueEntry {
-        val entry = DeadLetterQueueEntry(
-            operationType = operationType,
-            payloadType = payload!!::class.java.simpleName,
-            payload = serializePayload(payload),
-            exceptionType = exception::class.java.simpleName,
-            exceptionMessage = sanitizeExceptionMessage(exception.message),
-            stackTrace = exception.stackTraceToString(),
-            tenantId = tenantId,
-            traceId = traceId,
-            retryCount = retryCount,
-            metadata = metadata
-        )
+        val entry =
+            DeadLetterQueueEntry(
+                operationType = operationType,
+                payloadType = payload!!::class.java.simpleName,
+                payload = serializePayload(payload),
+                exceptionType = exception::class.java.simpleName,
+                exceptionMessage = sanitizeExceptionMessage(exception.message),
+                stackTrace = exception.stackTraceToString(),
+                tenantId = tenantId,
+                traceId = traceId,
+                retryCount = retryCount,
+                metadata = metadata,
+            )
 
         entries[entry.id] = entry
 
@@ -75,19 +78,24 @@ class DeadLetterQueueService(
             operationType,
             entry.payloadType,
             entry.exceptionType,
-            traceId
+            traceId,
         )
 
         // Record metrics
-        meterRegistry.counter(
-            "eaf.dlq.entries",
-            Tags.of(
-                "operation_type", operationType.name,
-                "payload_type", entry.payloadType,
-                "exception_type", entry.exceptionType,
-                "status", "created"
-            )
-        ).increment()
+        meterRegistry
+            .counter(
+                "eaf.dlq.entries",
+                Tags.of(
+                    "operation_type",
+                    operationType.name,
+                    "payload_type",
+                    entry.payloadType,
+                    "exception_type",
+                    entry.exceptionType,
+                    "status",
+                    "created",
+                ),
+            ).increment()
 
         return entry
     }
@@ -105,15 +113,14 @@ class DeadLetterQueueService(
         status: DLQStatus? = null,
         operationType: OperationType? = null,
         tenantId: String? = null,
-        since: Instant? = null
-    ): List<DeadLetterQueueEntry> {
-        return entries.values
+        since: Instant? = null,
+    ): List<DeadLetterQueueEntry> =
+        entries.values
             .filter { status == null || it.status == status }
             .filter { operationType == null || it.operationType == operationType }
             .filter { tenantId == null || it.tenantId == tenantId }
             .filter { since == null || it.timestamp.isAfter(since) }
             .sortedByDescending { it.timestamp }
-    }
 
     /**
      * Retrieve a single DLQ entry by ID.
@@ -121,9 +128,7 @@ class DeadLetterQueueService(
      * @param id The entry ID
      * @return The DLQ entry, or null if not found
      */
-    fun findById(id: UUID): DeadLetterQueueEntry? {
-        return entries[id]
-    }
+    fun findById(id: UUID): DeadLetterQueueEntry? = entries[id]
 
     /**
      * Mark an entry as replayed.
@@ -131,27 +136,30 @@ class DeadLetterQueueService(
      * @param id The entry ID
      * @return The updated entry, or null if not found
      */
-    fun markReplayed(id: UUID): DeadLetterQueueEntry? {
-        return entries[id]?.also { entry ->
+    fun markReplayed(id: UUID): DeadLetterQueueEntry? =
+        entries[id]?.also { entry ->
             entry.markReplayed()
 
             logger.info(
                 "Marked DLQ entry as replayed: id={}, payloadType={}, replayCount={}",
                 id,
                 entry.payloadType,
-                entry.replayCount
+                entry.replayCount,
             )
 
-            meterRegistry.counter(
-                "eaf.dlq.replays",
-                Tags.of(
-                    "operation_type", entry.operationType.name,
-                    "payload_type", entry.payloadType,
-                    "status", "success"
-                )
-            ).increment()
+            meterRegistry
+                .counter(
+                    "eaf.dlq.replays",
+                    Tags.of(
+                        "operation_type",
+                        entry.operationType.name,
+                        "payload_type",
+                        entry.payloadType,
+                        "status",
+                        "success",
+                    ),
+                ).increment()
         }
-    }
 
     /**
      * Mark an entry as replay failed.
@@ -159,27 +167,30 @@ class DeadLetterQueueService(
      * @param id The entry ID
      * @return The updated entry, or null if not found
      */
-    fun markReplayFailed(id: UUID): DeadLetterQueueEntry? {
-        return entries[id]?.also { entry ->
+    fun markReplayFailed(id: UUID): DeadLetterQueueEntry? =
+        entries[id]?.also { entry ->
             entry.markReplayFailed()
 
             logger.warn(
                 "Marked DLQ entry as replay failed: id={}, payloadType={}, replayCount={}",
                 id,
                 entry.payloadType,
-                entry.replayCount
+                entry.replayCount,
             )
 
-            meterRegistry.counter(
-                "eaf.dlq.replays",
-                Tags.of(
-                    "operation_type", entry.operationType.name,
-                    "payload_type", entry.payloadType,
-                    "status", "failed"
-                )
-            ).increment()
+            meterRegistry
+                .counter(
+                    "eaf.dlq.replays",
+                    Tags.of(
+                        "operation_type",
+                        entry.operationType.name,
+                        "payload_type",
+                        entry.payloadType,
+                        "status",
+                        "failed",
+                    ),
+                ).increment()
         }
-    }
 
     /**
      * Discard an entry (mark as won't be replayed).
@@ -187,26 +198,29 @@ class DeadLetterQueueService(
      * @param id The entry ID
      * @return The updated entry, or null if not found
      */
-    fun discard(id: UUID): DeadLetterQueueEntry? {
-        return entries[id]?.also { entry ->
+    fun discard(id: UUID): DeadLetterQueueEntry? =
+        entries[id]?.also { entry ->
             entry.markDiscarded()
 
             logger.info(
                 "Discarded DLQ entry: id={}, payloadType={}",
                 id,
-                entry.payloadType
+                entry.payloadType,
             )
 
-            meterRegistry.counter(
-                "eaf.dlq.entries",
-                Tags.of(
-                    "operation_type", entry.operationType.name,
-                    "payload_type", entry.payloadType,
-                    "status", "discarded"
-                )
-            ).increment()
+            meterRegistry
+                .counter(
+                    "eaf.dlq.entries",
+                    Tags.of(
+                        "operation_type",
+                        entry.operationType.name,
+                        "payload_type",
+                        entry.payloadType,
+                        "status",
+                        "discarded",
+                    ),
+                ).increment()
         }
-    }
 
     /**
      * Delete an entry from the DLQ.
@@ -220,7 +234,7 @@ class DeadLetterQueueService(
             logger.info(
                 "Deleted DLQ entry: id={}, payloadType={}",
                 id,
-                entry.payloadType
+                entry.payloadType,
             )
             return true
         }
@@ -232,36 +246,38 @@ class DeadLetterQueueService(
      *
      * @return Map of status to count
      */
-    fun getStatistics(): Map<DLQStatus, Long> {
-        return entries.values
+    fun getStatistics(): Map<DLQStatus, Long> =
+        entries.values
             .groupingBy { it.status }
             .eachCount()
             .mapValues { it.value.toLong() }
-    }
 
     /**
      * Get DLQ statistics by tenant.
      *
      * @return Map of tenant ID to statistics
      */
-    fun getStatisticsByTenant(): Map<String?, Map<DLQStatus, Long>> {
-        return entries.values
+    fun getStatisticsByTenant(): Map<String?, Map<DLQStatus, Long>> =
+        entries.values
             .groupBy { it.tenantId }
             .mapValues { (_, entries) ->
-                entries.groupingBy { it.status }
+                entries
+                    .groupingBy { it.status }
                     .eachCount()
                     .mapValues { it.value.toLong() }
             }
-    }
 
-    private fun <T> serializePayload(payload: T): String {
-        return try {
+    private fun <T> serializePayload(payload: T): String =
+        try {
             objectMapper.writeValueAsString(payload)
-        } catch (ex: Exception) {
+        } catch (
+            // Fallback for any serialization failure
+            @Suppress("TooGenericExceptionCaught")
+            ex: Exception,
+        ) {
             logger.error("Failed to serialize payload: {}", payload, ex)
             payload.toString()
         }
-    }
 
     private fun sanitizeExceptionMessage(message: String?): String {
         // Sanitize exception message to remove sensitive data

@@ -1,3 +1,9 @@
+@file:Suppress(
+    "NestedBlockDepth",
+    "TooGenericExceptionCaught",
+    "ThrowsCount",
+) // Security validation requires comprehensive checks
+
 package com.axians.eaf.framework.security.ssrf
 
 import org.slf4j.LoggerFactory
@@ -20,7 +26,7 @@ import java.net.UnknownHostException
  * @since 1.0.0
  */
 class SsrfProtection(
-    private val properties: SsrfProtectionProperties
+    private val properties: SsrfProtectionProperties,
 ) {
     private val logger = LoggerFactory.getLogger(SsrfProtection::class.java)
 
@@ -46,7 +52,6 @@ class SsrfProtection(
 
             // Resolve DNS and check IP address
             validateIpAddress(uri.host)
-
         } catch (ex: SsrfException) {
             logger.warn("SSRF protection blocked URL: url={}, reason={}", url, ex.message)
             throw ex
@@ -60,7 +65,7 @@ class SsrfProtection(
         val scheme = uri.scheme?.lowercase()
         if (scheme !in properties.allowedSchemes) {
             throw SsrfException(
-                "Scheme '$scheme' is not allowed. Allowed schemes: ${properties.allowedSchemes}"
+                "Scheme '$scheme' is not allowed. Allowed schemes: ${properties.allowedSchemes}",
             )
         }
     }
@@ -73,10 +78,11 @@ class SsrfProtection(
 
         // Check if host is in allowed list (if whitelist mode)
         if (properties.allowedHosts.isNotEmpty()) {
-            val isAllowed = properties.allowedHosts.any { allowedHost ->
-                host.equals(allowedHost, ignoreCase = true) ||
-                    (allowedHost.startsWith("*") && host.endsWith(allowedHost.substring(1)))
-            }
+            val isAllowed =
+                properties.allowedHosts.any { allowedHost ->
+                    host.equals(allowedHost, ignoreCase = true) ||
+                        (allowedHost.startsWith("*") && host.endsWith(allowedHost.substring(1)))
+                }
             if (!isAllowed) {
                 throw SsrfException("Host '$host' is not in allowed hosts list")
             }
@@ -98,7 +104,7 @@ class SsrfProtection(
                 // Check if IP is blocked
                 if (isBlockedIpAddress(ip)) {
                     throw SsrfException(
-                        "IP address '$ip' (resolved from '$host') is in a blocked range"
+                        "IP address '$ip' (resolved from '$host') is in a blocked range",
                     )
                 }
 
@@ -106,7 +112,7 @@ class SsrfProtection(
                 if (properties.allowedIpRanges.isNotEmpty()) {
                     if (!isIpInAllowedRanges(ip)) {
                         throw SsrfException(
-                            "IP address '$ip' (resolved from '$host') is not in allowed IP ranges"
+                            "IP address '$ip' (resolved from '$host') is not in allowed IP ranges",
                         )
                     }
                 }
@@ -152,20 +158,21 @@ class SsrfProtection(
         /**
          * Known cloud metadata service hosts.
          */
-        private val METADATA_SERVICE_HOSTS = setOf(
-            // AWS
-            "169.254.169.254",
-            "metadata.google.internal",
-            // Azure
-            "169.254.169.254",
-            // GCP
-            "metadata.google.internal",
-            "metadata",
-            // DigitalOcean
-            "169.254.169.254",
-            // Alibaba Cloud
-            "100.100.100.200"
-        )
+        private val METADATA_SERVICE_HOSTS =
+            setOf(
+                // AWS
+                "169.254.169.254",
+                "metadata.google.internal",
+                // Azure
+                "169.254.169.254",
+                // GCP
+                "metadata.google.internal",
+                "metadata",
+                // DigitalOcean
+                "169.254.169.254",
+                // Alibaba Cloud
+                "100.100.100.200",
+            )
     }
 }
 
@@ -179,46 +186,41 @@ data class SsrfProtectionProperties(
      * Default: true
      */
     val enabled: Boolean = true,
-
     /**
      * Allowed URL schemes.
      * Default: http, https
      */
     val allowedSchemes: Set<String> = setOf("http", "https"),
-
     /**
      * Explicitly blocked hosts (exact match or wildcard).
      * Example: ["localhost", "internal.company.com"]
      */
-    val blockedHosts: Set<String> = setOf(
-        "localhost",
-        "127.0.0.1",
-        "::1"
-    ),
-
+    val blockedHosts: Set<String> =
+        setOf(
+            "localhost",
+            "127.0.0.1",
+            "::1",
+        ),
     /**
      * Allowed hosts (whitelist mode - if not empty, only these hosts are allowed).
      * Supports wildcards: ["*.api.example.com", "public.service.com"]
      */
     val allowedHosts: Set<String> = emptySet(),
-
     /**
      * Allowed IP ranges in CIDR notation.
      * Example: ["203.0.113.0/24", "198.51.100.0/24"]
      */
     val allowedIpRanges: Set<String> = emptySet(),
-
     /**
      * Block cloud metadata services.
      * Default: true
      */
     val blockMetadataServices: Boolean = true,
-
     /**
      * Block private IP ranges (RFC 1918).
      * Default: true
      */
-    val blockPrivateIpRanges: Boolean = true
+    val blockPrivateIpRanges: Boolean = true,
 )
 
 /**
@@ -226,5 +228,5 @@ data class SsrfProtectionProperties(
  */
 class SsrfException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : SecurityException(message, cause)

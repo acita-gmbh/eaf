@@ -1,5 +1,8 @@
 package com.axians.eaf.framework.security.headers
 
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -11,9 +14,6 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter
 import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter
 import org.springframework.web.filter.OncePerRequestFilter
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 
 /**
  * Auto-configuration for security HTTP headers.
@@ -35,9 +35,8 @@ import jakarta.servlet.http.HttpServletResponse
 @ConditionalOnWebApplication
 @EnableConfigurationProperties(SecurityHeadersProperties::class)
 class SecurityHeadersConfiguration(
-    private val properties: SecurityHeadersProperties
+    private val properties: SecurityHeadersProperties,
 ) {
-
     /**
      * Filter that adds security headers to all HTTP responses.
      *
@@ -57,9 +56,7 @@ class SecurityHeadersConfiguration(
      * ```
      */
     @Bean
-    fun securityHeadersFilter(): SecurityHeadersFilter {
-        return SecurityHeadersFilter(properties)
-    }
+    fun securityHeadersFilter(): SecurityHeadersFilter = SecurityHeadersFilter(properties)
 }
 
 /**
@@ -72,37 +69,32 @@ data class SecurityHeadersProperties(
      * Default: true
      */
     val enabled: Boolean = true,
-
     /**
      * HTTP Strict Transport Security (HSTS) configuration.
      */
     val hsts: HstsProperties = HstsProperties(),
-
     /**
      * Content Security Policy (CSP) configuration.
      */
     val csp: CspProperties = CspProperties(),
-
     /**
      * X-Frame-Options configuration.
      */
     val frameOptions: FrameOptionsProperties = FrameOptionsProperties(),
-
     /**
      * Referrer-Policy configuration.
      */
     val referrerPolicy: ReferrerPolicyProperties = ReferrerPolicyProperties(),
-
     /**
      * Permissions-Policy configuration.
      */
-    val permissionsPolicy: PermissionsPolicyProperties = PermissionsPolicyProperties()
+    val permissionsPolicy: PermissionsPolicyProperties = PermissionsPolicyProperties(),
 ) {
     data class HstsProperties(
         val enabled: Boolean = true,
         val maxAge: Long = 31536000, // 1 year
         val includeSubdomains: Boolean = true,
-        val preload: Boolean = false
+        val preload: Boolean = false,
     )
 
     data class CspProperties(
@@ -116,16 +108,17 @@ data class SecurityHeadersProperties(
          * - Allow specific CDN: add CDN URL to script-src/style-src
          * - Allow data URIs: add 'data:' to img-src
          */
-        val policy: String = "default-src 'self'; " +
-            "script-src 'self'; " +
-            "style-src 'self'; " +
-            "img-src 'self' data:; " +
-            "font-src 'self'; " +
-            "connect-src 'self'; " +
-            "frame-ancestors 'none'; " +
-            "base-uri 'self'; " +
-            "form-action 'self'",
-        val reportOnly: Boolean = false
+        val policy: String =
+            "default-src 'self'; " +
+                "script-src 'self'; " +
+                "style-src 'self'; " +
+                "img-src 'self' data:; " +
+                "font-src 'self'; " +
+                "connect-src 'self'; " +
+                "frame-ancestors 'none'; " +
+                "base-uri 'self'; " +
+                "form-action 'self'",
+        val reportOnly: Boolean = false,
     )
 
     data class FrameOptionsProperties(
@@ -134,7 +127,7 @@ data class SecurityHeadersProperties(
          * X-Frame-Options value.
          * Options: DENY, SAMEORIGIN
          */
-        val policy: String = "DENY"
+        val policy: String = "DENY",
     )
 
     data class ReferrerPolicyProperties(
@@ -144,7 +137,7 @@ data class SecurityHeadersProperties(
          * Options: no-referrer, no-referrer-when-downgrade, origin, origin-when-cross-origin,
          *          same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
          */
-        val policy: String = "strict-origin-when-cross-origin"
+        val policy: String = "strict-origin-when-cross-origin",
     )
 
     data class PermissionsPolicyProperties(
@@ -153,7 +146,7 @@ data class SecurityHeadersProperties(
          * Permissions-Policy (formerly Feature-Policy).
          * Default: Disable all permission-gated features.
          */
-        val policy: String = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+        val policy: String = "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
     )
 }
 
@@ -161,13 +154,12 @@ data class SecurityHeadersProperties(
  * Filter that adds security headers to HTTP responses.
  */
 class SecurityHeadersFilter(
-    private val properties: SecurityHeadersProperties
+    private val properties: SecurityHeadersProperties,
 ) : OncePerRequestFilter() {
-
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
         if (properties.enabled) {
             addSecurityHeaders(response)
@@ -179,25 +171,27 @@ class SecurityHeadersFilter(
     private fun addSecurityHeaders(response: HttpServletResponse) {
         // Strict-Transport-Security (HSTS)
         if (properties.hsts.enabled) {
-            val hstsValue = buildString {
-                append("max-age=${properties.hsts.maxAge}")
-                if (properties.hsts.includeSubdomains) {
-                    append("; includeSubDomains")
+            val hstsValue =
+                buildString {
+                    append("max-age=${properties.hsts.maxAge}")
+                    if (properties.hsts.includeSubdomains) {
+                        append("; includeSubDomains")
+                    }
+                    if (properties.hsts.preload) {
+                        append("; preload")
+                    }
                 }
-                if (properties.hsts.preload) {
-                    append("; preload")
-                }
-            }
             response.setHeader("Strict-Transport-Security", hstsValue)
         }
 
         // Content-Security-Policy
         if (properties.csp.enabled) {
-            val headerName = if (properties.csp.reportOnly) {
-                "Content-Security-Policy-Report-Only"
-            } else {
-                "Content-Security-Policy"
-            }
+            val headerName =
+                if (properties.csp.reportOnly) {
+                    "Content-Security-Policy-Report-Only"
+                } else {
+                    "Content-Security-Policy"
+                }
             response.setHeader(headerName, properties.csp.policy)
         }
 

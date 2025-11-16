@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ThrowsCount:CommandInjectionProtection.kt$CommandInjectionProtection$fun sanitizeFilePath( path: String, baseDirectory: String? = null, ): String</ID>
+    <ID>ThrowsCount:CommandInjectionProtection.kt$CommandInjectionProtection$fun validateCommand(command: String)</ID>
+    <ID>ThrowsCount:CommandInjectionProtection.kt$CommandInjectionProtection$fun validateEnvironmentVariable( name: String, value: String, )</ID>
+    <ID>ThrowsCount:CommandInjectionProtection.kt$CommandInjectionProtection$fun validateParameter( parameterName: String, value: String, )</ID>
+    <ID>TooGenericExceptionCaught:CommandInjectionProtection.kt$CommandInjectionProtection$ex: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

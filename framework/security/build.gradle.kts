@@ -69,6 +69,7 @@ dependencies {
 
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webflux) // For SecureWebClient (SSRF Protection)
     implementation(libs.spring.boot.starter.data.redis)
     implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
     implementation(libs.spring.boot.starter.aop)
