@@ -1864,6 +1864,67 @@ configurer.registerDefaultListenerInvocationErrorHandler {
 }
 ```
 
+❌ **@ServiceConnection with Static Field + @EnableMethodSecurity** (timing conflict):
+```kotlin
+// FORBIDDEN - Race condition with method security early bean initialization
+@SpringBootTest
+@Testcontainers
+class BadTest : FunSpec() {
+    companion object {
+        @Container
+        @ServiceConnection
+        val postgres = PostgreSQLContainer<*>(...)  // Static field causes timing issue
+    }
+}
+
+@Configuration
+@EnableMethodSecurity  // Triggers early DataSource initialization
+class SecurityConfig { ... }
+// Result: "Connection to localhost:5432 refused" - container not ready
+```
+
+✅ **Container as Spring @Bean** (proper lifecycle control):
+```kotlin
+// CORRECT - Container initialized as Spring bean with proper lifecycle
+@TestConfiguration
+class TestContainersConfiguration {
+    @Bean
+    @ServiceConnection
+    fun postgresContainer(): PostgreSQLContainer<*> =
+        PostgreSQLContainer(DockerImageName.parse("postgres:16.10-alpine"))
+            .withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off")
+            .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+}
+
+@SpringBootTest
+@Import(TestContainersConfiguration::class)
+@ActiveProfiles("test")
+class GoodTest : FunSpec() {
+    // DataSource injected AFTER container bean is ready
+}
+```
+
+**Root Cause (Story 3.10 Investigation):**
+- @EnableMethodSecurity triggers early Spring Security bean initialization
+- Early initialization attempts DataSource connection before Testcontainers ready
+- Static @Container fields initialize in companion object, but Spring bean lifecycle unaware
+- Solution: Container as @Bean ensures Spring manages initialization order
+
+**Profile Isolation Pattern** (prevents bean conflicts):
+```kotlin
+// Security configuration excluded from test profiles
+@Configuration
+@EnableMethodSecurity
+@Profile("!(test | rbac-test)")  // Exclude from test profiles
+class SecurityConfig { ... }
+
+// Test-specific security configuration
+@TestConfiguration
+@EnableMethodSecurity
+@Profile("rbac-test")  // Only active in RBAC tests
+class RbacTestSecurityConfig { ... }
+```
+
 **Reference Implementation:**
 - `products/widget-demo/src/integration-test/.../AxonTestConfiguration.kt` - Test config with all patterns
 - `products/widget-demo/src/integration-test/.../SnapshotPerformanceTest.kt` - Performance optimization showcase
