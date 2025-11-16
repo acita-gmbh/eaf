@@ -1,0 +1,264 @@
+<story-context id="epic-4/story-4-7" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.7</storyId>
+    <title>Tenant Isolation Integration Test Suite</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.7-tenant-isolation-tests.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>comprehensive tenant isolation tests validating all 3 layers</iWant>
+    <soThat>I can prove multi-tenancy security is bulletproof</soThat>
+    <tasks>
+      - AC1: TenantIsolationIntegrationTest.kt validates all 3 layers
+      - AC2: Test scenarios - Layer 1: Missing tenant_id claim → 400 Bad Request
+      - AC2: Test scenarios - Layer 2: Command tenant mismatch → TenantIsolationException
+      - AC2: Test scenarios - Layer 3: Direct SQL query bypassing app → RLS blocks access
+      - AC3: Cross-tenant attack scenarios tested (JWT with wrong tenant_id)
+      - AC4: Test uses multiple Keycloak users with different tenant_id claims
+      - AC5: All isolation tests pass
+      - AC6: Test execution time &lt;3 minutes
+      - AC7: Test documented as security validation reference
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. TenantIsolationIntegrationTest.kt validates all 3 layers
+    2. Test scenarios:
+       - Layer 1: Missing tenant_id claim → 400 Bad Request
+       - Layer 2: Command tenant mismatch → TenantIsolationException
+       - Layer 3: Direct SQL query bypassing app → RLS blocks access
+    3. Cross-tenant attack scenarios tested (JWT with wrong tenant_id)
+    4. Test uses multiple Keycloak users with different tenant_id claims
+    5. All isolation tests pass
+    6. Test execution time &lt;3 minutes
+    7. Test documented as security validation reference
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-3-layer-validation">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - 3-Layer Tenant Isolation Validation</section>
+        <relevance>Comprehensive testing strategy for defense-in-depth multi-tenancy</relevance>
+        <snippet>
+          3-Layer Tenant Isolation Testing:
+          - Layer 1 Test: Missing tenant_id claim in JWT → 400 Bad Request (fail-closed)
+          - Layer 2 Test: Command tenant mismatch → TenantIsolationException (service validation)
+          - Layer 3 Test: Direct SQL bypassing application → RLS blocks access (database enforcement)
+          - Attack Scenarios: JWT with manipulated tenant_id, cross-tenant command injection
+          - Performance Target: Full test suite &lt;3 minutes execution time
+          - Security Reference: Test suite serves as validation for OWASP compliance
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-security-testing">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Security Fuzz Testing - Story 3.12</section>
+        <relevance>Security testing patterns from Epic 3</relevance>
+        <snippet>
+          Epic 3 Story 3.12: Security Fuzz Testing with Jazzer
+          - 3 fuzz targets: JwtFormatFuzzer, TokenExtractorFuzzer, RoleNormalizationFuzzer
+          - Comprehensive attack vector coverage (SQL, XSS, JNDI, Unicode, null bytes, CRLF)
+          - 9 corpus seed files + auto-persistence
+          - CI/CD integration (nightly pipeline)
+          Pattern: Systematic security validation with attack scenarios
+        </snippet>
+      </doc>
+      <doc id="prd-nfr002-security">
+        <path>docs/PRD.md</path>
+        <section>NFR002 - Security Compliance</section>
+        <relevance>Security compliance requirements for tenant isolation</relevance>
+        <snippet>
+          NFR002: Security compliance with OWASP ASVS Level 2 (50% target).
+          Multi-tenancy security is highest-risk area requiring comprehensive validation.
+          Defense-in-depth approach with independent layer testing.
+          Security validation serves as compliance evidence.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-7">
+        <path>docs/epics.md</path>
+        <section>Lines 885-903 - Story 4.7</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.7: Tenant Isolation Integration Test Suite
+          - TenantIsolationIntegrationTest.kt validates all 3 layers
+          - Cross-tenant attack scenarios tested (JWT with wrong tenant_id)
+          - Test uses multiple Keycloak users with different tenant_id claims
+          - Test execution time &lt;3 minutes
+          - Test documented as security validation reference
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-6-widget-multi-tenant">
+        <path>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/MultiTenantWidgetIntegrationTest.kt</path>
+        <kind>dependency</kind>
+        <reason>Story 4.6 multi-tenant Widget tests serve as foundation for comprehensive isolation tests</reason>
+      </artifact>
+      <artifact id="keycloak-integration-test">
+        <path>framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/test/KeycloakIntegrationTest.kt</path>
+        <kind>test-base</kind>
+        <reason>Epic 3 Keycloak test base for multi-user JWT generation</reason>
+      </artifact>
+      <artifact id="security-validation-tests">
+        <path>framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/validation/</path>
+        <kind>test-pattern</kind>
+        <reason>Epic 3 validation test patterns for attack scenarios</reason>
+      </artifact>
+      <artifact id="widget-controller-rbac">
+        <path>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/api/WidgetControllerRbacIntegrationTest.kt</path>
+        <kind>test-pattern</kind>
+        <reason>Epic 3 RBAC test patterns for authorization scenarios</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework (FunSpec for integration tests)" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="PostgreSQL, Keycloak containers" />
+      <dependency name="Spring Boot Test" version="3.5.7" purpose="@SpringBootTest for integration testing" />
+      <dependency name="MockMvc" version="from Spring Test" purpose="REST API testing" />
+      <dependency name="PostgreSQL JDBC" version="42.7.2" purpose="Direct JDBC for Layer 3 RLS testing" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="independent-layer-testing">
+      Test each layer INDEPENDENTLY to validate defense-in-depth.
+      Layer 1 failure should not prevent Layer 2/3 testing.
+      Each layer must enforce tenant isolation even if other layers fail.
+    </constraint>
+    <constraint id="attack-scenario-coverage">
+      Test realistic attack scenarios:
+      - JWT with manipulated tenant_id claim (Layer 1 bypass attempt)
+      - Command with mismatched tenantId field (Layer 2 validation)
+      - Direct SQL injection bypassing application (Layer 3 RLS enforcement)
+      - Cross-tenant aggregate modification attempts
+      - Missing tenant context at each layer (fail-closed validation)
+    </constraint>
+    <constraint id="multi-user-keycloak-setup">
+      Use Keycloak Testcontainers with multiple users:
+      - User 1: tenant_id = "tenant-a" (realm role: widget_user)
+      - User 2: tenant_id = "tenant-b" (realm role: widget_user)
+      - Generate JWTs for both users, validate isolation between tenants
+    </constraint>
+    <constraint id="performance-target">
+      Full test suite execution &lt;3 minutes (acceptance criteria).
+      Optimize with: parallel test execution, test data reuse, connection pooling.
+      Balance comprehensive coverage with fast feedback.
+    </constraint>
+    <constraint id="security-documentation">
+      Test suite serves as security validation reference.
+      Document test scenarios, attack patterns, and validation results.
+      Include in security compliance evidence for OWASP ASVS.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="layer-1-filter-test">
+      <name>Layer 1: TenantContextFilter Validation</name>
+      <description>
+        Test servlet filter extracts tenant_id and rejects missing claims.
+        Validate fail-closed behavior at HTTP request boundary.
+      </description>
+      <scenarios>
+        - Missing tenant_id claim in JWT → 400 Bad Request
+        - Valid tenant_id claim → TenantContext populated
+        - Invalid JWT format → filter bypassed (Layer 1 assumes valid JWT from Epic 3)
+      </scenarios>
+    </interface>
+    <interface id="layer-2-interceptor-test">
+      <name>Layer 2: Axon Command Interceptor Validation</name>
+      <description>
+        Test Axon interceptor validates tenant context matches command.
+        Validate service-level enforcement prevents cross-tenant commands.
+      </description>
+      <scenarios>
+        - Command.tenantId != TenantContext → TenantIsolationException
+        - Command.tenantId == TenantContext → command proceeds
+        - Missing TenantContext → TenantIsolationException (fail-closed)
+        - Tenant A attempts to modify Tenant B aggregate → rejected
+      </scenarios>
+    </interface>
+    <interface id="layer-3-rls-test">
+      <name>Layer 3: PostgreSQL RLS Validation</name>
+      <description>
+        Test PostgreSQL RLS blocks cross-tenant queries via direct SQL.
+        Validate database-level enforcement even bypassing application.
+      </description>
+      <pattern>
+        test("Layer 3 RLS blocks cross-tenant access via direct SQL") {
+          val tenantAConnection = dataSource.connection
+          tenantAConnection.createStatement().execute("SET LOCAL app.tenant_id = 'tenant-a'")
+
+          // Create widget for tenant-b via application
+          createWidgetForTenant("tenant-b", widgetId)
+
+          // Attempt direct SQL query as tenant-a → RLS blocks access
+          val rs = tenantAConnection.createStatement()
+            .executeQuery("SELECT * FROM widget_view WHERE id = '$widgetId'")
+
+          rs.next() shouldBe false // RLS blocks: no results for tenant-b widget
+        }
+      </pattern>
+    </interface>
+    <interface id="attack-scenario-test">
+      <name>Cross-Tenant Attack Scenarios</name>
+      <description>
+        Test realistic attack scenarios for tenant isolation violations.
+        Validate defense-in-depth prevents attacks at multiple layers.
+      </description>
+      <scenarios>
+        - JWT tenant_id manipulation: Generate JWT for tenant-a, modify claim to tenant-b → Layer 1 rejects (invalid signature)
+        - Command injection: Tenant-a user sends CreateWidgetCommand with tenantId="tenant-b" → Layer 2 rejects (context mismatch)
+        - SQL injection: Bypass app layer with direct SQL → Layer 3 RLS blocks (database enforcement)
+        - Aggregate hijacking: Tenant-a attempts PublishWidgetCommand on tenant-b widget → Layer 2 rejects
+      </scenarios>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Test suite serves as validation for Stories 4.1-4.6.
+        Comprehensive integration tests validate end-to-end tenant isolation.
+      </standard>
+      <standard id="kotest-spring-boot-integration">
+        Use Kotest FunSpec with @SpringBootTest for full integration testing.
+        Pattern: @Autowired field injection + init block (Epic 3 pattern).
+        Use @ActiveProfiles("test") for test-specific configuration.
+      </standard>
+      <standard id="testcontainers-multi-service">
+        Use Testcontainers for PostgreSQL + Keycloak multi-service setup.
+        @DynamicPropertySource for dynamic connection configuration.
+        Shared containers across test class for performance (&lt;3 min target).
+      </standard>
+      <standard id="security-validation-reference">
+        Document test suite as security validation reference.
+        Include test scenarios in security compliance documentation.
+        Test results serve as evidence for OWASP ASVS compliance.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/TenantIsolationIntegrationTest.kt</location>
+      <location>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/security/TenantIsolationSecurityTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC2 Layer 1: Missing tenant_id claim in JWT → 400 Bad Request</idea>
+      <idea>Test AC2 Layer 1: Valid tenant_id claim → TenantContext populated correctly</idea>
+      <idea>Test AC2 Layer 2: Command.tenantId != TenantContext → TenantIsolationException</idea>
+      <idea>Test AC2 Layer 2: Tenant A cannot modify Tenant B aggregate</idea>
+      <idea>Test AC2 Layer 3: Direct SQL query as Tenant A → cannot see Tenant B data (RLS)</idea>
+      <idea>Test AC2 Layer 3: RLS blocks cross-tenant UPDATE/DELETE operations</idea>
+      <idea>Test AC3: Cross-tenant attack - JWT tenant_id manipulation attempt</idea>
+      <idea>Test AC3: Cross-tenant attack - Command injection with wrong tenantId</idea>
+      <idea>Test AC3: Cross-tenant attack - SQL injection bypassing application</idea>
+      <idea>Test AC4: Multiple Keycloak users (tenant-a, tenant-b) with different JWTs</idea>
+      <idea>Test AC6: Full test suite execution time &lt;3 minutes (performance validation)</idea>
+      <idea>Test all 3 layers in single scenario: Create widget as tenant-a, attempt access as tenant-b → blocked at all layers</idea>
+      <idea>Test fail-closed behavior: Missing TenantContext at each layer → reject request</idea>
+    </ideas>
+  </tests>
+</story-context>

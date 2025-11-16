@@ -1,0 +1,256 @@
+<story-context id="epic-4/story-4-3" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.3</storyId>
+    <title>Axon Command Interceptor - Layer 2 Tenant Validation</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.3-axon-tenant-interceptor.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>Axon command interceptor that validates tenant context matches aggregate</iWant>
+    <soThat>commands cannot modify aggregates from other tenants (Layer 2)</soThat>
+    <tasks>
+      - AC1: TenantValidationInterceptor.kt implements CommandHandlerInterceptor
+      - AC2: Interceptor validates: TenantContext.get() matches command.tenantId
+      - AC3: All commands must include tenantId field
+      - AC4: Mismatch rejects command with TenantIsolationException
+      - AC5: Missing context rejects command (fail-closed)
+      - AC6: Integration test validates: tenant A cannot modify tenant B aggregates
+      - AC7: Validation metrics: tenant_validation_failures, tenant_mismatch_attempts
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. TenantValidationInterceptor.kt implements CommandHandlerInterceptor
+    2. Interceptor validates: TenantContext.get() matches command.tenantId
+    3. All commands must include tenantId field
+    4. Mismatch rejects command with TenantIsolationException
+    5. Missing context rejects command (fail-closed)
+    6. Integration test validates: tenant A cannot modify tenant B aggregates
+    7. Validation metrics: tenant_validation_failures, tenant_mismatch_attempts
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-multi-tenancy-layer2">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Layer 2: Service Validation</section>
+        <relevance>Defines Layer 2 of 3-layer tenant isolation: Axon command interceptor validation</relevance>
+        <snippet>
+          Layer 2: TenantValidationInterceptor (Axon CommandHandlerInterceptor)
+          - Validates TenantContext.getCurrentTenantId() matches command.tenantId
+          - All commands must include tenantId field (interface requirement)
+          - Mismatch → TenantIsolationException (fail-closed)
+          - Missing context → TenantIsolationException (fail-closed)
+          - Prevents tenant A from modifying tenant B aggregates
+          - Metrics: tenant_validation_failures, tenant_mismatch_attempts
+        </snippet>
+      </doc>
+      <doc id="architecture-axon-patterns">
+        <path>docs/architecture.md</path>
+        <section>Axon Testing Patterns</section>
+        <relevance>Axon interceptor patterns and command handling (Epic 2 action item)</relevance>
+        <snippet>
+          Axon MessageHandlerInterceptor pattern for cross-cutting concerns.
+          CommandHandlerInterceptor intercepts commands before handler execution.
+          UnitOfWork provides transactional command processing context.
+          InterceptorChain.proceed() continues command processing or throws to reject.
+          mode=subscribing for test event processors (Epic 2/3 pattern).
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-interceptor-pattern">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Template Method Pattern - Story 3.9</section>
+        <relevance>Template Method Pattern for metrics instrumentation</relevance>
+        <snippet>
+          Story 3.9: MeteredTokenValidator base class with automatic instrumentation.
+          Template Method Pattern eliminates boilerplate for metrics emission.
+          Per-layer metrics automatically emitted (295x better than target).
+          Apply same pattern to TenantValidationInterceptor for metrics.
+        </snippet>
+      </doc>
+      <doc id="prd-fr004-layer2">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Multi-Tenancy Layer 2</section>
+        <relevance>Business requirements for tenant validation at service layer</relevance>
+        <snippet>
+          Layer 2: Service-level validation prevents cross-tenant command execution.
+          Commands must include tenant context for validation.
+          Fail-closed: reject commands that violate tenant isolation.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-3">
+        <path>docs/epics.md</path>
+        <section>Lines 808-825 - Story 4.3</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.3: Axon Command Interceptor - Layer 2 Tenant Validation
+          - TenantValidationInterceptor.kt implements CommandHandlerInterceptor
+          - Interceptor validates: TenantContext.get() matches command.tenantId
+          - All commands must include tenantId field
+          - Mismatch rejects command with TenantIsolationException
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-2-tenant-context-filter">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantContextFilter.kt</path>
+        <kind>dependency</kind>
+        <reason>Story 4.2 populates TenantContext that this interceptor validates against</reason>
+      </artifact>
+      <artifact id="axon-configuration">
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt</path>
+        <kind>pattern</kind>
+        <reason>Axon Framework configuration patterns for registering interceptors</reason>
+      </artifact>
+      <artifact id="widget-aggregate">
+        <path>products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/domain/Widget.kt</path>
+        <kind>reference</kind>
+        <reason>Widget aggregate will be enhanced in Story 4.6 with tenantId field</reason>
+      </artifact>
+      <artifact id="widget-integration-tests">
+        <path>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/</path>
+        <kind>test-pattern</kind>
+        <reason>Integration test patterns for Axon command/event testing from Epic 2</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Axon Framework" version="4.12.1" purpose="CQRS/ES framework, CommandHandlerInterceptor" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework" />
+      <dependency name="Micrometer" version="1.15.5" purpose="Metrics (tenant_validation_failures, tenant_mismatch_attempts)" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="Integration tests with PostgreSQL" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="command-tenantid-field">
+      All commands MUST include tenantId: String field.
+      Create TenantAwareCommand interface for type safety.
+      Commands implement TenantAwareCommand to guarantee tenantId field.
+    </constraint>
+    <constraint id="fail-closed-validation">
+      Missing TenantContext → TenantIsolationException (fail-closed).
+      TenantContext.getCurrentTenantId() != command.tenantId → TenantIsolationException.
+      Do NOT use nullable current() - use fail-closed getCurrentTenantId().
+    </constraint>
+    <constraint id="interceptor-registration">
+      Register TenantValidationInterceptor with Axon Configuration.
+      Use @Component + ConfigurerModule pattern for automatic registration.
+      Interceptor runs BEFORE command handler execution.
+    </constraint>
+    <constraint id="generic-error-messages">
+      Generic error message for security (CWE-209 protection).
+      Message: "Access denied: tenant context mismatch"
+      Do NOT leak tenant IDs or internal details in error messages.
+    </constraint>
+    <constraint id="metrics-template-method">
+      Use Template Method Pattern from Epic 3 Story 3.9 for metrics.
+      Base class handles metrics emission, subclass implements validation logic.
+      Metrics: tenant_validation_failures (counter), tenant_mismatch_attempts (counter).
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="command-handler-interceptor">
+      <name>Axon CommandHandlerInterceptor</name>
+      <description>
+        Axon Framework interceptor for cross-cutting concerns on command handling.
+        Intercepts commands before handler execution, validates tenant context.
+      </description>
+      <pattern>
+        @Component
+        class TenantValidationInterceptor(
+          private val tenantContext: TenantContext,
+          private val meterRegistry: MeterRegistry
+        ) : MessageHandlerInterceptor&lt;CommandMessage&lt;*&gt;&gt; {
+
+          override fun handle(unitOfWork: UnitOfWork&lt;out CommandMessage&lt;*&gt;&gt;, chain: InterceptorChain): Any? {
+            val command = unitOfWork.message.payload
+            if (command is TenantAwareCommand) {
+              val currentTenant = tenantContext.getCurrentTenantId() // fail-closed
+              if (command.tenantId != currentTenant) {
+                throw TenantIsolationException("Access denied: tenant context mismatch")
+              }
+            }
+            return chain.proceed()
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="tenant-aware-command">
+      <name>TenantAwareCommand Interface</name>
+      <description>
+        Marker interface for commands that include tenant context.
+        All multi-tenant commands must implement this interface.
+      </description>
+      <pattern>
+        interface TenantAwareCommand {
+          val tenantId: String
+        }
+
+        data class CreateWidgetCommand(
+          val widgetId: UUID,
+          val name: String,
+          override val tenantId: String
+        ) : TenantAwareCommand
+      </pattern>
+    </interface>
+    <interface id="tenant-isolation-exception">
+      <name>TenantIsolationException</name>
+      <description>
+        Custom exception for tenant isolation violations.
+        Thrown when tenant context validation fails.
+      </description>
+      <pattern>
+        class TenantIsolationException(message: String) : RuntimeException(message)
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration test BEFORE interceptor implementation.
+        Test validates tenant A cannot modify tenant B aggregates.
+      </standard>
+      <standard id="kotest-axon-testing">
+        Use Kotest FunSpec with @SpringBootTest for Axon integration tests.
+        mode=subscribing for event processors (Epic 2/3 pattern).
+        Use @Autowired field injection + init block (NOT constructor injection).
+      </standard>
+      <standard id="multi-tenant-test-scenarios">
+        Test all validation scenarios:
+        - Tenant A modifies Tenant A aggregate → SUCCESS
+        - Tenant A attempts to modify Tenant B aggregate → TenantIsolationException
+        - Missing TenantContext → TenantIsolationException
+        - Command without tenantId field → bypasses validation (non-TenantAwareCommand)
+      </standard>
+      <standard id="metrics-validation">
+        Verify metrics emitted on validation failures.
+        Use TestMeterRegistry pattern from Epic 3 for metrics validation.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationInterceptorIntegrationTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationInterceptorTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC2: Validate TenantContext.getCurrentTenantId() matches command.tenantId</idea>
+      <idea>Test AC4: Tenant mismatch → TenantIsolationException with generic error message</idea>
+      <idea>Test AC5: Missing TenantContext → TenantIsolationException (fail-closed)</idea>
+      <idea>Test AC6: Integration test - Tenant A creates widget for Tenant A (success)</idea>
+      <idea>Test AC6: Integration test - Tenant A attempts to modify Tenant B widget (fails)</idea>
+      <idea>Test AC7: Verify tenant_validation_failures counter incremented on mismatch</idea>
+      <idea>Test AC7: Verify tenant_mismatch_attempts counter incremented on cross-tenant attempt</idea>
+      <idea>Test command without TenantAwareCommand interface → no validation (safe bypass)</idea>
+      <idea>Test interceptor order: runs BEFORE command handler execution</idea>
+      <idea>Test concurrent commands from different tenants → isolated validation</idea>
+    </ideas>
+  </tests>
+</story-context>

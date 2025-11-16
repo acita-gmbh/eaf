@@ -1,0 +1,246 @@
+<story-context id="epic-4/story-4-2" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.2</storyId>
+    <title>TenantContextFilter - Layer 1 Tenant Extraction</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.2-tenant-context-filter.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>a servlet filter that extracts tenant_id from JWT and populates TenantContext</iWant>
+    <soThat>tenant context is available for all subsequent processing (Layer 1)</soThat>
+    <tasks>
+      - AC1: TenantContextFilter.kt created as @Component with @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+      - AC2: Filter extracts tenant_id from JWT claim (after JWT validation in Epic 3)
+      - AC3: TenantContext.set(tenantId) populates ThreadLocal
+      - AC4: Missing tenant_id claim rejects request with 400 Bad Request
+      - AC5: Filter ensures cleanup in finally block (TenantContext.clear())
+      - AC6: Integration test validates tenant extraction from real Keycloak JWT
+      - AC7: Metrics emitted: tenant_context_extraction_duration, missing_tenant_failures
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. TenantContextFilter.kt created as @Component with @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+    2. Filter extracts tenant_id from JWT claim (after JWT validation in Epic 3)
+    3. TenantContext.set(tenantId) populates ThreadLocal
+    4. Missing tenant_id claim rejects request with 400 Bad Request
+    5. Filter ensures cleanup in finally block (TenantContext.clear())
+    6. Integration test validates tenant extraction from real Keycloak JWT
+    7. Metrics emitted: tenant_context_extraction_duration, missing_tenant_failures
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-multi-tenancy-layer1">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Layer 1: JWT Extraction</section>
+        <relevance>Defines Layer 1 of 3-layer tenant isolation: JWT extraction and ThreadLocal population</relevance>
+        <snippet>
+          Layer 1: TenantContextFilter (Servlet Filter)
+          - Runs after Spring Security JWT validation (Epic 3)
+          - Extracts tenant_id from validated JWT claims
+          - Populates TenantContext ThreadLocal
+          - Missing tenant_id → 400 Bad Request (fail-closed)
+          - Cleanup in finally block prevents ThreadLocal leaks
+          - @Order(Ordered.HIGHEST_PRECEDENCE + 10) ensures proper execution sequence
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-jwt-validation">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Epic 3 JWT Validation - 10-Layer System</section>
+        <relevance>Epic 3 JWT validation provides authenticated JWT with tenant_id claim</relevance>
+        <snippet>
+          Epic 3 Layer 4: Claims Schema Validation validates required claims (sub, iss, aud, exp, iat, tenant_id, roles).
+          JWT validation runs BEFORE TenantContextFilter in filter chain.
+          Spring Security populates SecurityContextHolder with authenticated JWT.
+          Filter pattern: try { extract + populate } finally { cleanup } to prevent leaks.
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-filter-stack">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Spring Boot Test Configuration - Filter Stack</section>
+        <relevance>Story 3.10 pattern for filter order and Spring Security integration</relevance>
+        <snippet>
+          Story 3.10: Filter-Stack vs MVC-Stack investigation (9.5 hours).
+          Pattern: Filters run in Filter-Stack BEFORE Spring Security.
+          @Order annotation controls filter execution sequence.
+          TenantContextFilter must run AFTER Spring Security JWT validation.
+          Use @Order(Ordered.HIGHEST_PRECEDENCE + 10) for post-security filters.
+        </snippet>
+      </doc>
+      <doc id="prd-fr004">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Multi-Tenancy Layer 1</section>
+        <relevance>Business requirements for tenant extraction</relevance>
+        <snippet>
+          Layer 1: Extract tenant_id from JWT and populate request context.
+          Fail-closed design: missing tenant_id rejects request immediately.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-2">
+        <path>docs/epics.md</path>
+        <section>Lines 789-806 - Story 4.2</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.2: TenantContextFilter - Layer 1 Tenant Extraction
+          - Filter extracts tenant_id from JWT claim (after JWT validation in Epic 3)
+          - Missing tenant_id claim rejects request with 400 Bad Request
+          - Filter ensures cleanup in finally block (TenantContext.clear())
+          - Metrics emitted: tenant_context_extraction_duration, missing_tenant_failures
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-1-tenant-context">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantContext.kt</path>
+        <kind>dependency</kind>
+        <reason>Story 4.1 TenantContext API for setCurrentTenantId() and clearCurrentTenant()</reason>
+      </artifact>
+      <artifact id="security-jwt-validation">
+        <path>framework/security/src/main/kotlin/com/axians/eaf/framework/security/validation/</path>
+        <kind>pattern</kind>
+        <reason>Epic 3 JWT validation patterns for extracting claims from authenticated JWT</reason>
+      </artifact>
+      <artifact id="security-integration-tests">
+        <path>framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/</path>
+        <kind>test-pattern</kind>
+        <reason>Epic 3 Keycloak integration test patterns with Testcontainers</reason>
+      </artifact>
+      <artifact id="keycloak-integration-test">
+        <path>framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/test/KeycloakIntegrationTest.kt</path>
+        <kind>test-base</kind>
+        <reason>Base class for Keycloak integration tests with JWT generation</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework, Servlet Filter support" />
+      <dependency name="Spring Security" version="6.x (from Spring Boot)" purpose="JWT validation and SecurityContextHolder" />
+      <dependency name="Micrometer" version="1.15.5" purpose="Metrics collection (tenant_context_extraction_duration)" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="Keycloak container for integration tests" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="filter-execution-order">
+      Filter must run AFTER Spring Security JWT validation (Epic 3).
+      Use @Order(Ordered.HIGHEST_PRECEDENCE + 10) to ensure proper sequence.
+      Spring Security runs at Ordered.HIGHEST_PRECEDENCE.
+      TenantContextFilter runs at HIGHEST_PRECEDENCE + 10 (after security, before business logic).
+    </constraint>
+    <constraint id="fail-closed-missing-tenant">
+      Missing tenant_id claim must reject request with 400 Bad Request (fail-closed).
+      Do NOT continue request processing without tenant context.
+      Clear, generic error message (CWE-209 protection): "Missing required tenant context".
+    </constraint>
+    <constraint id="mandatory-cleanup">
+      Filter MUST use finally block for cleanup: TenantContext.clear().
+      Prevents ThreadLocal leaks in pooled thread environments.
+      Cleanup happens even if exception occurs during filter processing.
+    </constraint>
+    <constraint id="jwt-claim-extraction">
+      Extract tenant_id from JWT.getClaimAsString("tenant_id").
+      JWT is already validated by Epic 3 (10-layer validation).
+      Assume JWT is valid and authenticated when filter runs.
+    </constraint>
+    <constraint id="metrics-emission">
+      Emit Micrometer metrics: tenant_context_extraction_duration (timer), missing_tenant_failures (counter).
+      Use MeteredTokenValidator pattern from Epic 3 Story 3.9 (Template Method Pattern).
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="servlet-filter-pattern">
+      <name>Spring Servlet Filter</name>
+      <description>
+        Standard Spring Boot servlet filter with @Component and @Order annotations.
+        Implements jakarta.servlet.Filter interface.
+      </description>
+      <pattern>
+        @Component
+        @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+        class TenantContextFilter : Filter {
+          override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
+            try {
+              // Extract tenant_id from JWT
+              // Populate TenantContext
+              chain.doFilter(request, response)
+            } finally {
+              TenantContext.clearCurrentTenant() // CRITICAL: cleanup
+            }
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="jwt-claim-extraction">
+      <name>JWT Claim Extraction</name>
+      <description>
+        Extract tenant_id from authenticated JWT in SecurityContextHolder.
+        JWT is already validated by Epic 3 Spring Security configuration.
+      </description>
+      <pattern>
+        val authentication = SecurityContextHolder.getContext().authentication as? JwtAuthenticationToken
+        val jwt = authentication?.token
+        val tenantId = jwt?.getClaimAsString("tenant_id")
+          ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing required tenant context")
+      </pattern>
+    </interface>
+    <interface id="metrics-emission">
+      <name>Micrometer Metrics</name>
+      <description>
+        Timer for filter execution duration, counter for missing tenant failures.
+        Follow Epic 3 Story 3.9 Template Method Pattern for metrics.
+      </description>
+      <metrics>
+        tenant_context_extraction_duration (Timer) - Filter execution time
+        missing_tenant_failures (Counter) - Count of missing tenant_id failures
+      </metrics>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Test-first development mandatory.
+        Integration test BEFORE filter implementation (Red-Green-Refactor).
+      </standard>
+      <standard id="kotest-spring-boot-test">
+        Use Kotest FunSpec with @SpringBootTest for integration tests.
+        Pattern from Epic 3: @Autowired field injection + init block (NOT constructor injection).
+        Plugin order: id("eaf.testing") BEFORE id("eaf.spring-boot") in build.gradle.kts.
+      </standard>
+      <standard id="testcontainers-keycloak">
+        Use Testcontainers for real Keycloak JWT generation.
+        Follow Epic 3 KeycloakIntegrationTest pattern for JWT creation.
+        Real JWTs ensure tenant_id claim extraction is production-realistic.
+      </standard>
+      <standard id="filter-chain-validation">
+        Validate filter runs AFTER Spring Security (order verification).
+        Test missing tenant_id → 400 Bad Request response.
+        Test successful extraction → TenantContext populated.
+        Test cleanup → ThreadLocal cleared after request.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/TenantContextFilterIntegrationTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantContextFilterTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC2: Extract tenant_id from real Keycloak JWT (use KeycloakIntegrationTest base)</idea>
+      <idea>Test AC3: Verify TenantContext.getCurrentTenantId() returns extracted tenant_id</idea>
+      <idea>Test AC4: Missing tenant_id claim → 400 Bad Request with error message</idea>
+      <idea>Test AC5: ThreadLocal cleanup - verify context cleared after request completes</idea>
+      <idea>Test AC6: Integration test with real Keycloak JWT containing tenant_id claim</idea>
+      <idea>Test AC7: Verify metrics emitted (tenant_context_extraction_duration timer incremented)</idea>
+      <idea>Test filter order: verify TenantContextFilter runs AFTER Spring Security JWT validation</idea>
+      <idea>Test exception during filter processing → cleanup still happens (finally block)</idea>
+      <idea>Test concurrent requests → each request has isolated tenant context (no cross-contamination)</idea>
+    </ideas>
+  </tests>
+</story-context>

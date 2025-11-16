@@ -1,0 +1,266 @@
+<story-context id="epic-4/story-4-5" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.5</storyId>
+    <title>Tenant Context Propagation to Async Event Processors</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.5-async-context-propagation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>tenant context propagated to async Axon event processors</iWant>
+    <soThat>projection updates and event handlers have tenant context available</soThat>
+    <tasks>
+      - AC1: AxonTenantInterceptor.kt implements EventMessageHandlerInterceptor
+      - AC2: Interceptor extracts tenant_id from event metadata
+      - AC3: TenantContext.set(tenantId) before event handler execution
+      - AC4: Context cleared after handler completion
+      - AC5: Event metadata enriched with tenant_id during command processing
+      - AC6: Integration test validates: dispatch command → event handler has tenant context
+      - AC7: Async event processors (TrackingEventProcessor) receive correct context
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. AxonTenantInterceptor.kt implements EventMessageHandlerInterceptor
+    2. Interceptor extracts tenant_id from event metadata
+    3. TenantContext.set(tenantId) before event handler execution
+    4. Context cleared after handler completion
+    5. Event metadata enriched with tenant_id during command processing
+    6. Integration test validates: dispatch command → event handler has tenant context
+    7. Async event processors (TrackingEventProcessor) receive correct context
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-context-propagation">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Context Propagation to Async Processors</section>
+        <relevance>Async event processors run on different threads, require context propagation via metadata</relevance>
+        <snippet>
+          Async Context Propagation for Multi-Tenancy:
+          - Async event processors (TrackingEventProcessor) run on separate threads
+          - ThreadLocal tenant context does NOT propagate automatically to async threads
+          - Solution: Enrich event metadata with tenant_id during command processing
+          - EventMessageHandlerInterceptor extracts tenant_id from metadata, restores to ThreadLocal
+          - Context cleanup after event handler execution prevents leaks
+          - Critical for: projection updates, saga event handlers, async domain event handlers
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-axon-patterns">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Story 4.0 Tasks - Axon ThreadLocal Propagation Patterns</section>
+        <relevance>Epic 3 retrospective identified need for Axon ThreadLocal propagation research</relevance>
+        <snippet>
+          Story 4.0 Task: Research Axon ThreadLocal Propagation Patterns (Charlie, ~4h)
+          - Investigate MessageHandlerInterceptor for context propagation
+          - Prototype ThreadLocal → async event processor pattern
+          - Document in architecture.md "Multi-Tenancy" section
+          - Prevents cross-tenant leaks in Story 4.5
+          Epic 2/3 Pattern: mode=subscribing for test event processors
+        </snippet>
+      </doc>
+      <doc id="architecture-axon-testing">
+        <path>docs/architecture.md</path>
+        <section>Axon Testing Patterns</section>
+        <relevance>Axon interceptor patterns and async event processing</relevance>
+        <snippet>
+          EventMessageHandlerInterceptor pattern for async event processors.
+          Interceptor runs BEFORE event handler on async processor thread.
+          UnitOfWork provides event processing context (metadata access).
+          MetaData.get(key) extracts custom metadata from events.
+          TrackingEventProcessor uses token store for async event replay.
+        </snippet>
+      </doc>
+      <doc id="prd-fr004-async">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Async Event Processing</section>
+        <relevance>Business requirement for tenant context in async processing</relevance>
+        <snippet>
+          Async event processors must maintain tenant isolation.
+          Projection updates require tenant context for RLS (Layer 3).
+          Event handlers must not leak context between tenants.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-5">
+        <path>docs/epics.md</path>
+        <section>Lines 846-863 - Story 4.5</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.5: Tenant Context Propagation to Async Event Processors
+          - AxonTenantInterceptor.kt implements EventMessageHandlerInterceptor
+          - Interceptor extracts tenant_id from event metadata
+          - TenantContext.set(tenantId) before event handler execution
+          - Context cleared after handler completion
+          - Event metadata enriched with tenant_id during command processing
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-3-tenant-validation">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationInterceptor.kt</path>
+        <kind>pattern</kind>
+        <reason>Story 4.3 CommandHandlerInterceptor pattern applies to EventMessageHandlerInterceptor</reason>
+      </artifact>
+      <artifact id="widget-event-handlers">
+        <path>products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/query/</path>
+        <kind>reference</kind>
+        <reason>Widget projection event handlers to receive tenant context</reason>
+      </artifact>
+      <artifact id="axon-configuration">
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt</path>
+        <kind>pattern</kind>
+        <reason>Axon configuration for registering event interceptors</reason>
+      </artifact>
+      <artifact id="widget-integration-tests">
+        <path>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/query/</path>
+        <kind>test-pattern</kind>
+        <reason>Widget projection integration tests with async event processing</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Axon Framework" version="4.12.1" purpose="CQRS/ES framework, EventMessageHandlerInterceptor" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="Integration tests with PostgreSQL, Axon Server" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="async-thread-isolation">
+      Async event processors run on different threads than command handlers.
+      ThreadLocal does NOT automatically propagate to async threads.
+      Must explicitly extract from event metadata and restore to ThreadLocal.
+    </constraint>
+    <constraint id="metadata-enrichment">
+      Enrich event metadata with tenant_id DURING command processing.
+      Use Axon MetaData.with("tenant_id", tenantId) when applying events.
+      Metadata propagates with event to async processors.
+    </constraint>
+    <constraint id="context-cleanup">
+      Clear TenantContext after event handler completes (try-finally pattern).
+      Prevents context leaks in async processor thread pool.
+      Cleanup critical for TrackingEventProcessor with long-running threads.
+    </constraint>
+    <constraint id="fail-safe-async">
+      Missing tenant_id in event metadata → log warning, continue processing.
+      Async processors may handle non-tenant events (system events).
+      Do NOT fail-closed for async processors (different failure mode than commands).
+    </constraint>
+    <constraint id="tracking-event-processor">
+      TrackingEventProcessor uses token store for async event replay.
+      Context must be restored correctly during replay scenarios.
+      Test replay with tenant context propagation.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="event-message-handler-interceptor">
+      <name>Axon EventMessageHandlerInterceptor</name>
+      <description>
+        Axon interceptor for async event handlers.
+        Extracts tenant_id from event metadata, restores to ThreadLocal.
+      </description>
+      <pattern>
+        @Component
+        class AxonTenantInterceptor(
+          private val tenantContext: TenantContext
+        ) : MessageHandlerInterceptor&lt;EventMessage&lt;*&gt;&gt; {
+
+          override fun handle(unitOfWork: UnitOfWork&lt;out EventMessage&lt;*&gt;&gt;, chain: InterceptorChain): Any? {
+            val tenantId = unitOfWork.message.metaData["tenant_id"] as? String
+            return if (tenantId != null) {
+              try {
+                tenantContext.setCurrentTenantId(tenantId)
+                chain.proceed()
+              } finally {
+                tenantContext.clearCurrentTenant()
+              }
+            } else {
+              // Log warning for missing tenant_id, continue processing
+              chain.proceed()
+            }
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="event-metadata-enrichment">
+      <name>Event Metadata Enrichment</name>
+      <description>
+        Enrich event metadata with tenant_id during command processing.
+        Metadata propagates to async event handlers.
+      </description>
+      <pattern>
+        @CommandHandler
+        constructor(command: CreateWidgetCommand) {
+          val tenantId = TenantContext().getCurrentTenantId()
+          apply(
+            WidgetCreatedEvent(...),
+            MetaData.with("tenant_id", tenantId)
+          )
+        }
+      </pattern>
+    </interface>
+    <interface id="async-context-validation">
+      <name>Async Context Validation</name>
+      <description>
+        Validate tenant context is available in async event handlers.
+        Use for projection updates requiring tenant context.
+      </description>
+      <pattern>
+        @EventHandler
+        fun on(event: WidgetCreatedEvent) {
+          val tenantId = TenantContext().getCurrentTenantId() // fail-closed validation
+          // Projection update with tenant context for RLS (Layer 3)
+          widgetViewRepository.save(WidgetView(..., tenantId))
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration test BEFORE interceptor implementation.
+        Test validates: dispatch command → event handler has tenant context.
+      </standard>
+      <standard id="async-event-testing">
+        Use mode=subscribing for test event processors (Epic 2/3 pattern).
+        Validate async TrackingEventProcessor receives tenant context.
+        Test event replay scenarios with context propagation.
+      </standard>
+      <standard id="kotest-async-testing">
+        Use Kotest eventually for async event processing validation.
+        Pattern: eventually(5.seconds) { projection should have tenant context }
+        Async processors may have latency, eventually pattern handles timing.
+      </standard>
+      <standard id="multi-tenant-async-scenarios">
+        Test scenarios:
+        - Tenant A command → Tenant A event handler (correct context)
+        - Concurrent tenant A + B commands → isolated event handlers
+        - Event without tenant_id metadata → handler continues (log warning)
+        - TrackingEventProcessor replay → context restored correctly
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/AxonTenantInterceptorIntegrationTest.kt</location>
+      <location>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/query/WidgetProjectionTenantContextTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC2: Extract tenant_id from event metadata in interceptor</idea>
+      <idea>Test AC3: Verify TenantContext.getCurrentTenantId() returns correct tenant in event handler</idea>
+      <idea>Test AC4: Context cleared after event handler completes (ThreadLocal cleanup)</idea>
+      <idea>Test AC5: Event metadata enriched with tenant_id during command processing</idea>
+      <idea>Test AC6: Dispatch CreateWidgetCommand → WidgetCreatedEvent handler has tenant context</idea>
+      <idea>Test AC7: TrackingEventProcessor receives tenant context for async event</idea>
+      <idea>Test concurrent multi-tenant events → isolated context per event</idea>
+      <idea>Test event without tenant_id metadata → handler continues, logs warning</idea>
+      <idea>Test event replay scenario → context restored correctly from metadata</idea>
+      <idea>Test projection update with tenant context → RLS Layer 3 enforces isolation</idea>
+    </ideas>
+  </tests>
+</story-context>
