@@ -84,7 +84,7 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4: Multi-Tenancy & Data Isolation (11 stories - Story 4.0 is preparation)
-  epic-4: backlog
+  epic-4: contexted
   4-0-epic-4-preparation: done
   4-1-tenant-context-threadlocal: drafted
   4-2-tenant-context-filter: drafted
