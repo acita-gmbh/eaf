@@ -60,6 +60,68 @@ class SecurityHeadersConfiguration(
 }
 
 /**
+ * X-Frame-Options policy values.
+ * Reference: RFC 7034
+ */
+enum class FrameOptionsPolicy(val value: String) {
+    /**
+     * The page cannot be displayed in a frame, regardless of the site attempting to do so.
+     */
+    DENY("DENY"),
+
+    /**
+     * The page can only be displayed in a frame on the same origin as the page itself.
+     */
+    SAMEORIGIN("SAMEORIGIN"),
+}
+
+/**
+ * Referrer-Policy values.
+ * Reference: W3C Referrer Policy (https://www.w3.org/TR/referrer-policy/)
+ */
+enum class ReferrerPolicy(val value: String) {
+    /**
+     * Never send the Referer header.
+     */
+    NO_REFERRER("no-referrer"),
+
+    /**
+     * Send full URL for same-origin, no referrer for cross-origin.
+     */
+    NO_REFERRER_WHEN_DOWNGRADE("no-referrer-when-downgrade"),
+
+    /**
+     * Send only the origin (scheme, host, port) for all requests.
+     */
+    ORIGIN("origin"),
+
+    /**
+     * Send full URL for same-origin, only origin for cross-origin.
+     */
+    ORIGIN_WHEN_CROSS_ORIGIN("origin-when-cross-origin"),
+
+    /**
+     * Send referrer only for same-origin requests.
+     */
+    SAME_ORIGIN("same-origin"),
+
+    /**
+     * Send origin when protocol security level stays same or improves (HTTPS→HTTPS, HTTP→HTTP/HTTPS).
+     */
+    STRICT_ORIGIN("strict-origin"),
+
+    /**
+     * Send full URL for same-origin, origin for cross-origin if protocol security level stays same.
+     */
+    STRICT_ORIGIN_WHEN_CROSS_ORIGIN("strict-origin-when-cross-origin"),
+
+    /**
+     * Always send full URL (insecure - not recommended).
+     */
+    UNSAFE_URL("unsafe-url"),
+}
+
+/**
  * Configuration properties for security headers.
  */
 @ConfigurationProperties(prefix = "eaf.security.headers")
@@ -95,7 +157,21 @@ data class SecurityHeadersProperties(
         val maxAge: Long = 31536000, // 1 year
         val includeSubdomains: Boolean = true,
         val preload: Boolean = false,
-    )
+    ) {
+        init {
+            // HSTS preload requirements (RFC 6797 + browser preload list requirements)
+            if (preload) {
+                require(maxAge >= 31536000) {
+                    "HSTS preload requires max-age >= 31536000 (1 year), but was $maxAge. " +
+                        "Set eaf.security.headers.hsts.max-age to at least 31536000."
+                }
+                require(includeSubdomains) {
+                    "HSTS preload requires includeSubdomains=true. " +
+                        "Set eaf.security.headers.hsts.include-subdomains=true."
+                }
+            }
+        }
+    }
 
     data class CspProperties(
         val enabled: Boolean = true,
@@ -124,20 +200,19 @@ data class SecurityHeadersProperties(
     data class FrameOptionsProperties(
         val enabled: Boolean = true,
         /**
-         * X-Frame-Options value.
-         * Options: DENY, SAMEORIGIN
+         * X-Frame-Options policy.
+         * Default: DENY (strongest protection - no framing allowed)
          */
-        val policy: String = "DENY",
+        val policy: FrameOptionsPolicy = FrameOptionsPolicy.DENY,
     )
 
     data class ReferrerPolicyProperties(
         val enabled: Boolean = true,
         /**
          * Referrer-Policy value.
-         * Options: no-referrer, no-referrer-when-downgrade, origin, origin-when-cross-origin,
-         *          same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+         * Default: STRICT_ORIGIN_WHEN_CROSS_ORIGIN (balanced security and functionality)
          */
-        val policy: String = "strict-origin-when-cross-origin",
+        val policy: ReferrerPolicy = ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
     )
 
     data class PermissionsPolicyProperties(
@@ -197,7 +272,7 @@ class SecurityHeadersFilter(
 
         // X-Frame-Options
         if (properties.frameOptions.enabled) {
-            response.setHeader("X-Frame-Options", properties.frameOptions.policy)
+            response.setHeader("X-Frame-Options", properties.frameOptions.policy.value)
         }
 
         // X-Content-Type-Options (always nosniff)
@@ -208,7 +283,7 @@ class SecurityHeadersFilter(
 
         // Referrer-Policy
         if (properties.referrerPolicy.enabled) {
-            response.setHeader("Referrer-Policy", properties.referrerPolicy.policy)
+            response.setHeader("Referrer-Policy", properties.referrerPolicy.policy.value)
         }
 
         // Permissions-Policy

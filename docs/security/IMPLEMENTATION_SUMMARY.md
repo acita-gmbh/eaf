@@ -187,7 +187,7 @@ test("should enforce security headers") {
   - Warns if default credentials in dev/test
 
 **Validation Results:**
-```
+```text
 ✅ Security configuration validation passed
 ⚠️ 2 warning(s):
   - SSL/TLS is disabled in development/test environment
@@ -197,7 +197,7 @@ test("should enforce security headers") {
 ```
 
 **Error Example (Production):**
-```
+```text
 ❌ Security configuration validation FAILED with 3 error(s):
   - SSL/TLS is DISABLED in production profile
   - Database uses default username 'postgres' in production
