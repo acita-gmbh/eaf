@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup CI Gradle Configuration
         run: cp .github/ci-gradle.properties gradle.properties
@@ -73,7 +73,7 @@ jobs:
         check: [ktlint, detekt]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup CI Gradle Configuration
         run: cp .github/ci-gradle.properties gradle.properties
@@ -115,7 +115,7 @@ jobs:
         test-type: [unit, integration]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup CI Gradle Configuration
         run: cp .github/ci-gradle.properties gradle.properties
@@ -160,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup CI Gradle Configuration
         run: cp .github/ci-gradle.properties gradle.properties
@@ -208,7 +208,7 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
