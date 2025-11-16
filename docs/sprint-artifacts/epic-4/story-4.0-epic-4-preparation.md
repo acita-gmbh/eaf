@@ -23,24 +23,24 @@ So that Epic 4 (Multi-Tenancy) starts with fresh context, documented patterns, a
 
 ## Tasks / Subtasks
 
-- [ ] **Phase 1: Process Improvements (Epic 2 Outstanding)**
-  - [ ] Add "Axon Testing Patterns" section to architecture.md (Charlie)
+- [x] **Phase 1: Process Improvements (Epic 2 Outstanding)**
+  - [x] Add "Axon Testing Patterns" section to architecture.md (Charlie)
     - Document mode=subscribing for tests
     - Document @ServiceConnection timing with @EnableMethodSecurity
     - Document Container as Spring @Bean pattern
     - Document PropagatingErrorHandler and aggregate caching
-  - [ ] Create Story Definition of Done checklist (Bob)
+  - [x] Create Story Definition of Done checklist (Bob)
     - Include: Continuous Story Context regeneration after each story
     - Include: AI review step before marking complete
     - Include: All quality gates (ktlint, Detekt, tests pass 100%)
     - Save to: docs/story-definition-of-done.md
 
-- [ ] **Phase 2: Continuous Context Process (Epic 3 Finding)**
-  - [ ] Document Continuous Story Context in CONTRIBUTING.md (Bob)
+- [x] **Phase 2: Continuous Context Process (Epic 3 Finding)**
+  - [x] Document Continuous Story Context in CONTRIBUTING.md (Bob)
     - Process: After Story X.Y completes → regenerate context for Story X.(Y+1)
     - Automation: Workflow reminder or Git hook suggestion
     - Rationale: Prevents context drift observed in Epic 3 Stories 3.7-3.10
-  - [ ] Add continuous context to Story DoD checklist
+  - [x] Add continuous context to Story DoD checklist
     - Ensure consistency across documentation
 
 - [ ] **Phase 3: Story Preparation (Critical Blockers)**
