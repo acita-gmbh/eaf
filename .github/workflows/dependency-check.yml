@@ -1,0 +1,113 @@
+# OWASP Dependency Check - Supply Chain Security (A03:2025)
+# Scans all dependencies for known vulnerabilities (CVEs)
+
+name: OWASP Dependency Check
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  dependency-check:
+    name: Scan Dependencies for Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run OWASP Dependency Check
+        run: |
+          ./gradlew dependencyCheckAnalyze \
+            --info \
+            --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx2g"
+        continue-on-error: true
+
+      - name: Upload Dependency Check Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: |
+            build/reports/dependency-check-report.html
+            build/reports/dependency-check-report.json
+            build/reports/dependency-check-report.xml
+          retention-days: 30
+
+      - name: Parse and Summarize Results
+        if: always()
+        run: |
+          if [ -f build/reports/dependency-check-report.json ]; then
+            echo "## 🔍 OWASP Dependency Check Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Count vulnerabilities by severity
+            CRITICAL=$(grep -o '"severity":"CRITICAL"' build/reports/dependency-check-report.json | wc -l || echo 0)
+            HIGH=$(grep -o '"severity":"HIGH"' build/reports/dependency-check-report.json | wc -l || echo 0)
+            MEDIUM=$(grep -o '"severity":"MEDIUM"' build/reports/dependency-check-report.json | wc -l || echo 0)
+            LOW=$(grep -o '"severity":"LOW"' build/reports/dependency-check-report.json | wc -l || echo 0)
+
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟢 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+            echo "**Total:** $TOTAL vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Dependency check report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail on CRITICAL or HIGH Vulnerabilities
+        run: |
+          if [ -f build/reports/dependency-check-report.json ]; then
+            CRITICAL=$(grep -o '"severity":"CRITICAL"' build/reports/dependency-check-report.json | wc -l || echo 0)
+            HIGH=$(grep -o '"severity":"HIGH"' build/reports/dependency-check-report.json | wc -l || echo 0)
+
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "::error::Found $CRITICAL CRITICAL and $HIGH HIGH severity vulnerabilities"
+              echo "::error::Please review the dependency-check-report.html artifact"
+              exit 1
+            else
+              echo "✅ No CRITICAL or HIGH severity vulnerabilities found"
+            fi
+          else
+            echo "::warning::Dependency check report not found - check may have failed"
+            exit 1
+          fi
+
+      - name: Upload to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: build/reports/dependency-check-report.sarif
+        continue-on-error: true

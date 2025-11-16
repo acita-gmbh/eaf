@@ -65,3 +65,35 @@ updates:
       - "automated"
     commit-message:
       prefix: "chore"
+
+  # NPM dependencies (shadcn-admin-kit frontend - Epic 9+)
+  - package-ecosystem: "npm"
+    directory: "/apps/admin"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "03:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "acita-gmbh/engineering"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      shadcn:
+        patterns:
+          - "@shadcn/ui"
+          - "@radix-ui/*"
+          - "class-variance-authority"
+          - "clsx"
+          - "tailwind-merge"
