@@ -1,0 +1,286 @@
+<story-context id="epic-4/story-4-6" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.6</storyId>
+    <title>Multi-Tenant Widget Demo Enhancement</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.6-multi-tenant-widget-demo.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>Widget aggregate enhanced with tenant context validation</iWant>
+    <soThat>the demo application demonstrates multi-tenancy correctly</soThat>
+    <tasks>
+      - AC1: Widget.kt commands include tenantId field
+      - AC2: CreateWidgetCommand includes tenant_id from TenantContext
+      - AC3: Command handler validates tenant context (Layer 2)
+      - AC4: Widget events include tenant_id in metadata
+      - AC5: widget_view projection table includes tenant_id column
+      - AC6: Integration test creates widgets for multiple tenants
+      - AC7: Cross-tenant access test validates isolation (tenant A cannot see tenant B widgets)
+      - AC8: All Widget tests pass with tenant context
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Widget.kt commands include tenantId field
+    2. CreateWidgetCommand includes tenant_id from TenantContext
+    3. Command handler validates tenant context (Layer 2)
+    4. Widget events include tenant_id in metadata
+    5. widget_view projection table includes tenant_id column
+    6. Integration test creates widgets for multiple tenants
+    7. Cross-tenant access test validates isolation (tenant A cannot see tenant B widgets)
+    8. All Widget tests pass with tenant context
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-multi-tenancy-example">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Multi-Tenancy Example</section>
+        <relevance>Widget aggregate serves as reference implementation for multi-tenancy patterns</relevance>
+        <snippet>
+          Widget Demo as Multi-Tenancy Reference Implementation:
+          - Demonstrates all 3 layers of tenant isolation
+          - Commands implement TenantAwareCommand interface with tenantId field
+          - Command handlers validate tenant context (Layer 2)
+          - Events enriched with tenant_id metadata for async processors (Story 4.5)
+          - Projection schema includes tenant_id column with RLS policies (Story 4.4)
+          - Integration tests validate cross-tenant isolation
+        </snippet>
+      </doc>
+      <doc id="epic-2-widget-patterns">
+        <path>docs/sprint-artifacts/retrospectives/epic-2-retro-2025-11-08.md</path>
+        <section>Epic 2 - CQRS Widget Implementation</section>
+        <relevance>Widget aggregate patterns from Epic 2 to be enhanced with multi-tenancy</relevance>
+        <snippet>
+          Epic 2 Widget Implementation:
+          - Widget aggregate with CreateWidgetCommand, PublishWidgetCommand
+          - WidgetCreatedEvent, WidgetPublishedEvent for event sourcing
+          - WidgetProjectionEventHandler for read model updates
+          - widget_view projection table with jOOQ repository
+          - Integration tests with Testcontainers PostgreSQL
+        </snippet>
+      </doc>
+      <doc id="prd-fr004-demo">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Multi-Tenant Demo Application</section>
+        <relevance>Business requirement for multi-tenant Widget demo</relevance>
+        <snippet>
+          Widget demo must demonstrate production-ready multi-tenancy.
+          All 3 layers of tenant isolation validated in demo application.
+          Cross-tenant isolation tests prove security guarantees.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-6">
+        <path>docs/epics.md</path>
+        <section>Lines 865-882 - Story 4.6</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.6: Multi-Tenant Widget Demo Enhancement
+          - Widget.kt commands include tenantId field
+          - CreateWidgetCommand includes tenant_id from TenantContext
+          - Command handler validates tenant context (Layer 2)
+          - Widget events include tenant_id in metadata
+          - widget_view projection table includes tenant_id column
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="widget-aggregate">
+        <path>products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/domain/Widget.kt</path>
+        <kind>primary</kind>
+        <reason>Widget aggregate to be enhanced with tenantId field and validation</reason>
+      </artifact>
+      <artifact id="widget-commands">
+        <path>shared/shared-api/src/main/kotlin/com/axians/eaf/shared/api/widget/</path>
+        <kind>primary</kind>
+        <reason>Widget commands to implement TenantAwareCommand interface</reason>
+      </artifact>
+      <artifact id="widget-events">
+        <path>shared/shared-api/src/main/kotlin/com/axians/eaf/shared/api/widget/</path>
+        <kind>primary</kind>
+        <reason>Widget events to include tenant_id in metadata</reason>
+      </artifact>
+      <artifact id="widget-projection">
+        <path>products/widget-demo/src/main/kotlin/com/axians/eaf/products/widget/query/</path>
+        <kind>primary</kind>
+        <reason>WidgetView projection to include tenant_id column</reason>
+      </artifact>
+      <artifact id="widget-migration">
+        <path>products/widget-demo/src/main/resources/db/migration/</path>
+        <kind>primary</kind>
+        <reason>Flyway migration to add tenant_id column to widget_view table</reason>
+      </artifact>
+      <artifact id="story-4-3-tenant-aware-command">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantAwareCommand.kt</path>
+        <kind>dependency</kind>
+        <reason>Story 4.3 TenantAwareCommand interface for commands</reason>
+      </artifact>
+      <artifact id="widget-integration-tests">
+        <path>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/</path>
+        <kind>test-pattern</kind>
+        <reason>Existing Widget integration tests to be enhanced with multi-tenant scenarios</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Axon Framework" version="4.12.1" purpose="CQRS/ES framework" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework" />
+      <dependency name="jOOQ" version="3.20.8" purpose="Widget projection repository" />
+      <dependency name="PostgreSQL" version="16.10" purpose="Database with RLS" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="Integration tests" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="backward-compatibility">
+      Enhance existing Widget aggregate WITHOUT breaking Epic 2 functionality.
+      Add tenantId field to commands, maintain existing behavior.
+      All Epic 2 Widget tests must still pass after enhancement.
+    </constraint>
+    <constraint id="tenant-aware-commands">
+      All Widget commands implement TenantAwareCommand interface (Story 4.3).
+      Commands: CreateWidgetCommand, PublishWidgetCommand, ArchiveWidgetCommand.
+      Each command includes override val tenantId: String field.
+    </constraint>
+    <constraint id="command-handler-validation">
+      Widget command handlers validate tenant context (Layer 2).
+      Pattern: require(command.tenantId == TenantContext.getCurrentTenantId())
+      Generic error message: "Access denied: tenant context mismatch"
+    </constraint>
+    <constraint id="event-metadata-enrichment">
+      Widget events enriched with tenant_id metadata (Story 4.5 pattern).
+      Use apply(event, MetaData.with("tenant_id", tenantId)) in aggregate.
+      Metadata propagates to async event handlers.
+    </constraint>
+    <constraint id="projection-schema-migration">
+      Add tenant_id column to widget_view projection table.
+      Migration: ALTER TABLE widget_view ADD COLUMN tenant_id VARCHAR(255) NOT NULL;
+      Apply RLS policy from Story 4.4: tenant_id = current_setting('app.tenant_id').
+    </constraint>
+    <constraint id="cross-tenant-isolation-tests">
+      Integration tests validate: tenant A cannot see tenant B widgets.
+      Test scenarios: create widget as tenant-a, query as tenant-b → no results.
+      Test all layers: API (Layer 1), Command (Layer 2), Database (Layer 3).
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="widget-tenant-aware-command">
+      <name>Widget TenantAware Commands</name>
+      <description>
+        Widget commands implement TenantAwareCommand interface with tenantId field.
+        Commands extract tenant_id from TenantContext at API layer.
+      </description>
+      <pattern>
+        data class CreateWidgetCommand(
+          val widgetId: UUID,
+          val name: String,
+          override val tenantId: String
+        ) : TenantAwareCommand
+
+        // API layer creates command with tenant context:
+        val tenantId = TenantContext().getCurrentTenantId()
+        val command = CreateWidgetCommand(
+          widgetId = UUID.randomUUID(),
+          name = request.name,
+          tenantId = tenantId
+        )
+      </pattern>
+    </interface>
+    <interface id="widget-command-handler-validation">
+      <name>Widget Command Handler Validation</name>
+      <description>
+        Widget aggregate validates tenant context in command handler (Layer 2).
+        Validation happens BEFORE event application.
+      </description>
+      <pattern>
+        @CommandHandler
+        constructor(command: CreateWidgetCommand) {
+          val currentTenant = TenantContext().getCurrentTenantId()
+          require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209)
+          }
+          apply(WidgetCreatedEvent(...), MetaData.with("tenant_id", command.tenantId))
+        }
+      </pattern>
+    </interface>
+    <interface id="widget-projection-tenant-column">
+      <name>Widget Projection with Tenant Column</name>
+      <description>
+        WidgetView projection includes tenant_id column for RLS enforcement.
+        Event handler extracts tenant from context for projection updates.
+      </description>
+      <pattern>
+        data class WidgetView(
+          val id: UUID,
+          val name: String,
+          val status: WidgetStatus,
+          val tenantId: String // New field for multi-tenancy
+        )
+
+        @EventHandler
+        fun on(event: WidgetCreatedEvent) {
+          val tenantId = TenantContext().getCurrentTenantId() // From Story 4.5 interceptor
+          widgetViewRepository.save(WidgetView(
+            id = event.widgetId,
+            name = event.name,
+            status = WidgetStatus.DRAFT,
+            tenantId = tenantId
+          ))
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration tests BEFORE Widget enhancement.
+        Test validates multi-tenant scenarios with all 3 layers.
+      </standard>
+      <standard id="multi-tenant-test-scenarios">
+        Test scenarios for comprehensive multi-tenancy validation:
+        - Tenant A creates widget → Tenant A can query widget
+        - Tenant B creates widget → Tenant B can query widget
+        - Tenant A queries → cannot see Tenant B widgets (isolation)
+        - Tenant A commands → cannot modify Tenant B aggregates (Layer 2)
+        - Direct SQL query as Tenant A → RLS blocks Tenant B data (Layer 3)
+      </standard>
+      <standard id="backward-compatibility-tests">
+        All Epic 2 Widget tests must pass after enhancement.
+        Verify no regression in existing Widget functionality.
+        Tests: WidgetAggregateTest, WidgetProjectionEventHandlerIntegrationTest, WidgetControllerIntegrationTest.
+      </standard>
+      <standard id="kotest-multi-tenant-keycloak">
+        Use Keycloak Testcontainers with multiple users for multi-tenant tests.
+        Generate JWTs for tenant-a and tenant-b with different tenant_id claims.
+        Follow Epic 3 KeycloakIntegrationTest pattern.
+      </standard>
+    </standards>
+    <locations>
+      <location>products/widget-demo/src/test/kotlin/com/axians/eaf/products/widget/domain/WidgetAggregateMultiTenantTest.kt</location>
+      <location>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/MultiTenantWidgetIntegrationTest.kt</location>
+      <location>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/api/WidgetControllerMultiTenantIntegrationTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC1: Verify Widget commands include tenantId field (TenantAwareCommand)</idea>
+      <idea>Test AC2: CreateWidgetCommand includes tenant_id from TenantContext</idea>
+      <idea>Test AC3: Command handler validates tenant context matches command.tenantId</idea>
+      <idea>Test AC4: Widget events enriched with tenant_id metadata</idea>
+      <idea>Test AC5: widget_view projection table includes tenant_id column (schema validation)</idea>
+      <idea>Test AC6: Create widgets for tenant-a and tenant-b (multi-tenant scenario)</idea>
+      <idea>Test AC7: Tenant A queries widgets → only sees tenant-a widgets (cross-tenant isolation)</idea>
+      <idea>Test AC8: All Epic 2 Widget tests still pass (backward compatibility)</idea>
+      <idea>Test Layer 2 validation: Tenant A command with tenant-b tenantId → TenantIsolationException</idea>
+      <idea>Test Layer 3 RLS: Direct SQL query as tenant-a → cannot see tenant-b widgets</idea>
+      <idea>Test concurrent multi-tenant widget creation → isolated contexts</idea>
+      <idea>Test projection event handler receives tenant context from metadata (Story 4.5)</idea>
+    </ideas>
+  </tests>
+</story-context>

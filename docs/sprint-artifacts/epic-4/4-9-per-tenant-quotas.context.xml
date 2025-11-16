@@ -1,0 +1,294 @@
+<story-context id="epic-4/story-4-9" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.9</storyId>
+    <title>Per-Tenant Resource Quotas</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.9-per-tenant-quotas.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>per-tenant resource quotas (event rate, storage, query limits)</iWant>
+    <soThat>one tenant cannot impact system performance for others</soThat>
+    <tasks>
+      - AC1: TenantQuotaManager.kt implements quota enforcement
+      - AC2: Quotas configurable per tenant: max_events_per_second, max_storage_mb, max_query_complexity
+      - AC3: Rate limiting using token bucket algorithm (Bucket4j or similar)
+      - AC4: Quota exceeded returns 429 Too Many Requests with retry-after header
+      - AC5: Quota usage tracked in Prometheus metrics per tenant
+      - AC6: Hot tenant detection (sustained quota violations)
+      - AC7: Integration test validates quota enforcement
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. TenantQuotaManager.kt implements quota enforcement
+    2. Quotas configurable per tenant: max_events_per_second, max_storage_mb, max_query_complexity
+    3. Rate limiting using token bucket algorithm (Bucket4j or similar)
+    4. Quota exceeded returns 429 Too Many Requests with retry-after header
+    5. Quota usage tracked in Prometheus metrics per tenant
+    6. Hot tenant detection (sustained quota violations)
+    7. Integration test validates quota enforcement
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-per-tenant-quotas">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Per-Tenant Resource Quotas</section>
+        <relevance>Resource quota enforcement prevents noisy neighbor problems in multi-tenant systems</relevance>
+        <snippet>
+          Per-Tenant Resource Quotas:
+          - Quotas: max_events_per_second (rate limiting), max_storage_mb (storage limits), max_query_complexity (query cost)
+          - Token Bucket Algorithm: Fair rate limiting with burst capacity (Bucket4j library)
+          - Quota Exceeded: 429 Too Many Requests with Retry-After header (RFC 6585)
+          - Hot Tenant Detection: Sustained quota violations (e.g., &gt;80% quota usage for &gt;5 minutes)
+          - Prometheus Metrics: Quota usage per tenant (current usage, limit, percentage)
+          - Configuration: Per-tenant quotas in database or configuration service
+        </snippet>
+      </doc>
+      <doc id="prd-fr004-quotas">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Per-Tenant Resource Quotas</section>
+        <relevance>Business requirements for resource quota management</relevance>
+        <snippet>
+          FR004 includes per-tenant resource quotas to prevent noisy neighbor problems.
+          Fair resource allocation ensures one tenant cannot degrade service for others.
+          Quotas enforce SLA boundaries and enable tiered pricing models.
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-owasp-resilience">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>PR #92 OWASP Top 10:2025 - Exception Handling</section>
+        <relevance>PR #92 identified need for circuit breakers and bulkheads for resource isolation</relevance>
+        <snippet>
+          PR #92 OWASP Gap: A10 Exception Handling - 60/100
+          - No circuit breakers (Resilience4j)
+          - No event processor retry strategies
+          - No bulkheads for resource isolation
+          Risk for Epic 4: One tenant's errors impact all tenants (cascading failures)
+          Solution: Resilience4j for circuit breakers, rate limiters, bulkheads
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-9">
+        <path>docs/epics.md</path>
+        <section>Lines 926-942 - Story 4.9</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.9: Per-Tenant Resource Quotas
+          - TenantQuotaManager.kt implements quota enforcement
+          - Quotas: max_events_per_second, max_storage_mb, max_query_complexity
+          - Rate limiting using token bucket algorithm (Bucket4j)
+          - Quota exceeded returns 429 Too Many Requests with retry-after header
+          - Hot tenant detection (sustained quota violations)
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-8-metrics">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/</path>
+        <kind>dependency</kind>
+        <reason>Story 4.8 metrics patterns for quota usage tracking</reason>
+      </artifact>
+      <artifact id="tenant-context">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantContext.kt</path>
+        <kind>dependency</kind>
+        <reason>TenantContext for per-tenant quota lookup</reason>
+      </artifact>
+      <artifact id="axon-command-interceptor">
+        <path>framework/cqrs/src/main/kotlin/com/axians/eaf/framework/cqrs/config/AxonConfiguration.kt</path>
+        <kind>pattern</kind>
+        <reason>Quota enforcement via Axon interceptor (command rate limiting)</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Bucket4j" version="8.x" purpose="Token bucket rate limiting library" />
+      <dependency name="Resilience4j" version="2.x" purpose="Circuit breaker, bulkhead, rate limiter (PR #92)" />
+      <dependency name="Micrometer" version="1.15.5" purpose="Quota usage metrics" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="quota-types">
+      Three quota types enforced per tenant:
+      1. max_events_per_second: Command rate limiting (prevents event storm)
+      2. max_storage_mb: Aggregate storage limits (prevents unbounded growth)
+      3. max_query_complexity: Query cost limits (prevents expensive queries)
+      Configurable per tenant via database or configuration service.
+    </constraint>
+    <constraint id="token-bucket-algorithm">
+      Token Bucket Algorithm for rate limiting (Bucket4j library):
+      - Refill rate: max_events_per_second tokens/second
+      - Burst capacity: 2x refill rate (allows short bursts)
+      - Token consumption: 1 token per command
+      - Quota exceeded: Block until tokens available OR reject with 429
+    </constraint>
+    <constraint id="http-429-response">
+      Quota exceeded returns HTTP 429 Too Many Requests (RFC 6585).
+      Include Retry-After header with seconds until quota resets.
+      Example: Retry-After: 60 (retry in 60 seconds)
+      Client-friendly error message with quota details (not internal limits).
+    </constraint>
+    <constraint id="hot-tenant-detection">
+      Hot Tenant Detection identifies sustained quota violations:
+      - Threshold: &gt;80% quota usage for &gt;5 consecutive minutes
+      - Alert: Prometheus alert for hot tenant (potential attack or misconfiguration)
+      - Action: Log warning, emit metric, trigger investigation
+      Do NOT auto-throttle (manual intervention for hot tenants).
+    </constraint>
+    <constraint id="quota-metrics">
+      Prometheus metrics per tenant (tagged with tenant_id):
+      - tenant_quota_usage_events (Gauge) - Current event rate
+      - tenant_quota_limit_events (Gauge) - Configured limit
+      - tenant_quota_rejected_total (Counter) - Rejected requests count
+      - tenant_quota_percentage (Gauge) - Usage percentage (0-100)
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="tenant-quota-manager">
+      <name>TenantQuotaManager Service</name>
+      <description>
+        Central service for per-tenant quota enforcement.
+        Integrates with Bucket4j for rate limiting.
+      </description>
+      <pattern>
+        @Service
+        class TenantQuotaManager(
+          private val tenantContext: TenantContext,
+          private val quotaConfig: TenantQuotaConfiguration,
+          private val meterRegistry: MeterRegistry
+        ) {
+          private val buckets = ConcurrentHashMap&lt;String, Bucket&gt;()
+
+          fun checkEventQuota(): Boolean {
+            val tenantId = tenantContext.getCurrentTenantId()
+            val bucket = getBucketForTenant(tenantId)
+            val consumed = bucket.tryConsume(1)
+
+            if (!consumed) {
+              meterRegistry.counter("tenant_quota_rejected_total", "tenant_id", tenantId).increment()
+            }
+
+            return consumed
+          }
+
+          private fun getBucketForTenant(tenantId: String): Bucket {
+            return buckets.computeIfAbsent(tenantId) { createBucket(tenantId) }
+          }
+
+          private fun createBucket(tenantId: String): Bucket {
+            val limit = quotaConfig.getEventLimit(tenantId)
+            return Bucket.builder()
+              .addLimit(Bandwidth.simple(limit, Duration.ofSeconds(1)))
+              .build()
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="quota-interceptor">
+      <name>Quota Enforcement Interceptor</name>
+      <description>
+        Axon command interceptor for quota enforcement.
+        Rejects commands when quota exceeded.
+      </description>
+      <pattern>
+        @Component
+        class QuotaEnforcementInterceptor(
+          private val quotaManager: TenantQuotaManager
+        ) : MessageHandlerInterceptor&lt;CommandMessage&lt;*&gt;&gt; {
+
+          override fun handle(unitOfWork: UnitOfWork&lt;out CommandMessage&lt;*&gt;&gt;, chain: InterceptorChain): Any? {
+            if (!quotaManager.checkEventQuota()) {
+              throw ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Quota exceeded"
+              ).also {
+                it.setHeader("Retry-After", quotaManager.getRetryAfterSeconds().toString())
+              }
+            }
+            return chain.proceed()
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="quota-configuration">
+      <name>Per-Tenant Quota Configuration</name>
+      <description>
+        Configuration service for per-tenant quota limits.
+        Stored in database for runtime updates.
+      </description>
+      <pattern>
+        @Configuration
+        class TenantQuotaConfiguration(
+          private val quotaRepository: TenantQuotaRepository
+        ) {
+          fun getEventLimit(tenantId: String): Long {
+            return quotaRepository.findByTenantId(tenantId)
+              ?.maxEventsPerSecond
+              ?: defaultEventLimit
+          }
+
+          companion object {
+            const val defaultEventLimit = 100L // Default: 100 events/second
+            const val defaultStorageLimitMb = 1000L // Default: 1GB storage
+          }
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration test validates quota enforcement.
+        Test BEFORE implementing quota manager.
+      </standard>
+      <standard id="rate-limiting-scenarios">
+        Test rate limiting scenarios:
+        - Below quota: Commands succeed
+        - At quota limit: Commands succeed until tokens exhausted
+        - Above quota: Commands rejected with 429 Too Many Requests
+        - Burst capacity: Short burst allowed (2x refill rate)
+        - Token refill: After waiting, quota resets and commands succeed
+      </standard>
+      <standard id="hot-tenant-detection">
+        Test hot tenant detection:
+        - Sustained high usage (&gt;80% for &gt;5 minutes) → alert triggered
+        - Spike usage (short burst) → no alert (transient)
+        - Metrics validate hot tenant detection logic
+      </standard>
+      <standard id="multi-tenant-quota-isolation">
+        Test quota isolation between tenants:
+        - Tenant A exceeds quota → Tenant B unaffected
+        - Concurrent quota enforcement → isolated per tenant
+        - Different quota limits per tenant → enforced correctly
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/TenantQuotaIntegrationTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantQuotaManagerTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC1: TenantQuotaManager.checkEventQuota() returns true when below quota</idea>
+      <idea>Test AC1: TenantQuotaManager.checkEventQuota() returns false when quota exceeded</idea>
+      <idea>Test AC2: Quota limits configurable per tenant (different limits for tenant-a, tenant-b)</idea>
+      <idea>Test AC3: Token bucket refills at configured rate (max_events_per_second)</idea>
+      <idea>Test AC3: Burst capacity allows short spikes (2x refill rate)</idea>
+      <idea>Test AC4: Quota exceeded → 429 Too Many Requests response</idea>
+      <idea>Test AC4: Retry-After header includes seconds until quota reset</idea>
+      <idea>Test AC5: Prometheus metrics track quota usage per tenant</idea>
+      <idea>Test AC5: tenant_quota_rejected_total counter incremented on rejection</idea>
+      <idea>Test AC6: Hot tenant detection - sustained &gt;80% usage triggers alert</idea>
+      <idea>Test AC6: Hot tenant detection - short spike does NOT trigger alert</idea>
+      <idea>Test AC7: Integration test - send 150 commands with 100/sec limit → last 50 rejected</idea>
+      <idea>Test multi-tenant isolation: Tenant A quota exceeded, Tenant B continues normally</idea>
+      <idea>Test quota reset: Wait for refill period → quota available again</idea>
+    </ideas>
+  </tests>
+</story-context>
