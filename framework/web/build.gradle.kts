@@ -22,6 +22,12 @@ dependencies {
     implementation(libs.bundles.arrow)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
+    // Spring Boot auto-configuration support (for @AutoConfiguration, @ConditionalOnClass, etc.)
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
+
+    // Jakarta annotations (for @PostConstruct, @PreDestroy, etc.)
+    compileOnly("jakarta.annotation:jakarta.annotation-api")
+
     // Jackson Kotlin Module for Kotlin data class support
     implementation(libs.jackson.module.kotlin)
 

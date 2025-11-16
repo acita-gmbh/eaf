@@ -76,6 +76,12 @@ dependencies {
     implementation(libs.jose4j)
     implementation(libs.jooq.core) // Story 9.2: Required for TenantDatabaseSessionInterceptor transaction participation
 
+    // Spring Boot auto-configuration support (for @AutoConfiguration, @ConditionalOnClass, etc.)
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
+
+    // Jakarta annotations (for @PostConstruct, @PreDestroy, etc.)
+    compileOnly("jakarta.annotation:jakarta.annotation-api")
+
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit") // Exclude JUnit 4

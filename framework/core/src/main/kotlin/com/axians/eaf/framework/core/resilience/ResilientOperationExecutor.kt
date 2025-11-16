@@ -14,10 +14,11 @@ import io.github.resilience4j.retry.RetryRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
 
 /**
  * Executor for resilient operations with circuit breaker, retry, and bulkhead patterns.
+ *
+ * Bean lifecycle managed by [ResilienceAutoConfiguration].
  *
  * Usage:
  * ```kotlin
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Component
  *
  * @since 1.0.0
  */
-@Component
 class ResilientOperationExecutor(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
     private val retryRegistry: RetryRegistry,

@@ -17,6 +17,12 @@ dependencies {
     // spring-boot-starter-web brings: spring-boot, spring-context, spring-web, jackson-databind
     implementation(libs.spring.boot.starter.web)
 
+    // Spring Boot auto-configuration support (for @AutoConfiguration, @ConditionalOnClass, etc.)
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
+
+    // Jakarta annotations (for @PostConstruct, @PreDestroy, etc.)
+    compileOnly("jakarta.annotation:jakarta.annotation-api")
+
     // Micrometer for metrics (resilience patterns)
     implementation(libs.micrometer.core)
 
