@@ -220,9 +220,12 @@ class TenantContextFilterIntegrationTest : FunSpec() {
                     .withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
                     .withEnv("KC_HTTP_ENABLED", "true")
                     .withCommand("start-dev")
-                    .waitingFor(Wait.forHttp("/health/ready").forPort(8080))
+                    .waitingFor(Wait.forListeningPort())
                     .withStartupTimeout(Duration.ofMinutes(3))
             keycloakContainer.start()
+
+            // Give Keycloak additional time to fully start after port opens
+            Thread.sleep(10000)
 
             val keycloakUrl = "http://${keycloakContainer.host}:${keycloakContainer.firstMappedPort}"
 
