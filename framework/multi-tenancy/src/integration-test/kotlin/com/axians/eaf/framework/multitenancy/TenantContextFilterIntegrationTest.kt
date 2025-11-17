@@ -44,7 +44,7 @@ import org.springframework.test.web.servlet.get
     ],
 )
 @AutoConfigureMockMvc
-@ActiveProfiles("test", "keycloak-test")
+@ActiveProfiles("keycloak-test")
 class TenantContextFilterIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc

@@ -10,13 +10,15 @@ import org.springframework.web.bind.annotation.RestController
  * Test controller for validating tenant context extraction.
  * Used by TenantContextFilterIntegrationTest.
  *
- * **SECURITY NOTE:** @Profile("test") prevents production deployment.
+ * **SECURITY NOTE:** @Profile("keycloak-test") prevents production deployment.
+ *
+ * Uses keycloak-test profile to align with Epic 3 Keycloak integration test pattern.
  *
  * Epic 4, Story 4.2: Integration test infrastructure
  */
 @RestController
 @RequestMapping("/test")
-@Profile("test")
+@Profile("keycloak-test")
 class TenantTestController {
     /**
      * Test endpoint that returns current tenant context.

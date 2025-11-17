@@ -8,18 +8,25 @@ import org.springframework.context.annotation.ComponentScan
 /**
  * Test application for Multi-Tenancy Framework integration tests.
  *
- * Loads Multi-Tenancy module configuration for testing:
- * - TenantContext (ThreadLocal API from Story 4.1)
- * - TenantContextFilter (Layer 1 from Story 4.2)
- * - TenantTestController (Test infrastructure)
+ * Loads configuration for testing:
+ * - Multi-Tenancy: TenantContext, TenantContextFilter, TenantTestController
+ * - Security: JWT validation (required for tenant extraction from JWTs)
  *
  * Provides test-specific beans:
  * - SimpleMeterRegistry for metrics (TenantContextFilter dependency)
  *
+ * Note: Security module is required because TenantContextFilter extracts
+ * tenant_id from JWTs validated by Spring Security (Epic 3).
+ *
  * Epic 4, Story 4.2: Integration test infrastructure
  */
 @SpringBootApplication
-@ComponentScan(basePackages = ["com.axians.eaf.framework.multitenancy"])
+@ComponentScan(
+    basePackages = [
+        "com.axians.eaf.framework.multitenancy",
+        "com.axians.eaf.framework.security",
+    ],
+)
 open class MultiTenancyTestApplication {
     /**
      * Provide SimpleMeterRegistry for TenantContextFilter metrics.

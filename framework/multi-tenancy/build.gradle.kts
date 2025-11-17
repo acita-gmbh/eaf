@@ -32,6 +32,10 @@ dependencies {
     }
     testImplementation(project(":shared:testing"))
 
+    // Integration test dependencies
+    // Required for JWT validation in TenantContextFilter tests
+    integrationTestImplementation(project(":framework:security"))
+
     // Ensure only JUnit 5 for Pitest
     configurations.named("testRuntimeClasspath") {
         exclude(group = "junit", module = "junit")
