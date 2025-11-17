@@ -44,7 +44,7 @@ pitest-tool = "1.17.4"    # Pitest tool version (latest 1.17.x that exists)
 pitest-junit5 = "1.2.1"    # Pitest JUnit 5 plugin version
 kover = "0.9.3"           # Kotlin-native code coverage (Story 8.6: replaces JaCoCo)
 # jacoco = "0.8.12"       # Story 8.6: Replaced with Kover for better Kotlin support
-dependency-check = "12.1.8" # Supply chain scanning
+dependency-check = "12.1.9" # Supply chain scanning
 cyclonedx = "3.0.2"       # SBOM generation (CycloneDX Gradle plugin) - CVE-2025-64518 fix
 
 # Documentation
