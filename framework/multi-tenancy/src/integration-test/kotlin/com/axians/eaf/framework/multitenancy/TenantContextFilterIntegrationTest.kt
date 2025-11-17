@@ -7,6 +7,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -55,7 +57,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
     private lateinit var mockMvc: MockMvc
 
     init {
-        extension(SpringExtension)
+        extension(SpringExtension())
 
         test("AC2+AC3: Extract tenant_id from JWT and populate TenantContext") {
             // Given: Real Keycloak JWT with tenant_id claim
@@ -76,9 +78,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
             // Then: Request succeeds and tenant context is populated
             result.andExpect {
                 status { isOk() }
-                content {
-                    string { shouldContain(tenantId) }
-                }
+                content { string(containsString(tenantId)) }
             }
         }
 
@@ -99,9 +99,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
             // Then: Request is rejected with 400 Bad Request
             result.andExpect {
                 status { isBadRequest() }
-                content {
-                    string { shouldContain("Missing required tenant context") }
-                }
+                content { string(containsString("Missing required tenant context")) }
             }
         }
 
@@ -138,8 +136,8 @@ class TenantContextFilterIntegrationTest : FunSpec() {
                 }.andExpect {
                     status { isOk() }
                     content {
-                        string { shouldContain("tenant-gamma") }
-                        string { shouldNotContain(tenantId) } // Old tenant NOT present
+                        string(containsString("tenant-gamma"))
+                        string(not(containsString(tenantId)))
                     }
                 }
         }
@@ -165,12 +163,12 @@ class TenantContextFilterIntegrationTest : FunSpec() {
             // Then: Each request has correct isolated tenant context
             result1.andExpect {
                 status { isOk() }
-                content { string { shouldContain(tenant1) } }
+                content { string(containsString(tenant1)) }
             }
 
             result2.andExpect {
                 status { isOk() }
-                content { string { shouldContain(tenant2) } }
+                content { string(containsString(tenant2)) }
             }
         }
 
