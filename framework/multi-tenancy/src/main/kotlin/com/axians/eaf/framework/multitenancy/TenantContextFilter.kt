@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.multitenancy
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import jakarta.servlet.Filter
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 class TenantContextFilter(
     private val meterRegistry: MeterRegistry,
+    private val objectMapper: ObjectMapper,
 ) : Filter {
     private val extractionTimer: Timer =
         Timer
@@ -149,10 +151,10 @@ class TenantContextFilter(
                     "missing_claim",
                 ).increment()
 
-            httpResponse.status = HttpStatus.BAD_REQUEST.value()
-            httpResponse.contentType = "application/json"
-            httpResponse.writer.write(
-                """{"error":"Missing required tenant context","status":400}""",
+            writeErrorResponse(
+                httpResponse,
+                "Missing required tenant context",
+                HttpStatus.BAD_REQUEST.value(),
             )
             return "missing"
         }
@@ -173,14 +175,39 @@ class TenantContextFilter(
                     "invalid_format",
                 ).increment()
 
-            httpResponse.status = HttpStatus.BAD_REQUEST.value()
-            httpResponse.contentType = "application/json"
-            httpResponse.writer.write(
-                """{"error":"Invalid tenant context format","status":400}""",
+            writeErrorResponse(
+                httpResponse,
+                "Invalid tenant context format",
+                HttpStatus.BAD_REQUEST.value(),
             )
             return "invalid"
         }
 
         return null
     }
+
+    /**
+     * Write error response as JSON using ObjectMapper.
+     * Ensures consistent JSON formatting and prevents manual string construction issues.
+     */
+    private fun writeErrorResponse(
+        httpResponse: HttpServletResponse,
+        errorMessage: String,
+        status: Int,
+    ) {
+        httpResponse.status = status
+        httpResponse.contentType = "application/json"
+        objectMapper.writeValue(
+            httpResponse.writer,
+            ErrorResponse(error = errorMessage, status = status),
+        )
+    }
+
+    /**
+     * Error response DTO for consistent JSON error formatting.
+     */
+    private data class ErrorResponse(
+        val error: String,
+        val status: Int,
+    )
 }

@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.multitenancy
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.doubles.shouldBeGreaterThan
@@ -34,6 +35,7 @@ class TenantContextFilterTest :
     FunSpec({
 
         lateinit var meterRegistry: SimpleMeterRegistry
+        lateinit var objectMapper: ObjectMapper
         lateinit var filter: TenantContextFilter
         lateinit var request: MockHttpServletRequest
         lateinit var response: MockHttpServletResponse
@@ -41,7 +43,8 @@ class TenantContextFilterTest :
 
         beforeTest {
             meterRegistry = SimpleMeterRegistry()
-            filter = TenantContextFilter(meterRegistry)
+            objectMapper = ObjectMapper()
+            filter = TenantContextFilter(meterRegistry, objectMapper)
 
             // Use Spring mock request/response
             request = MockHttpServletRequest()
