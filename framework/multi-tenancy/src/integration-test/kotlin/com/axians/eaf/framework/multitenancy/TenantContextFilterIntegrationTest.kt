@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.instanceOf
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -167,7 +168,7 @@ class TenantContextFilterIntegrationTest : FunSpec() {
             // Verify isolation: second request has correct tenant, not first
             response2.statusCode shouldBe HttpStatus.OK
             response2.body shouldContain "tenant-test-002"
-            response2.body?.shouldContain("tenant-test-001") shouldBe false
+            response2.body shouldNotContain "tenant-test-001" // Cleanup verified
         }
 
         test("AC6: Concurrent requests have isolated tenant contexts") {
