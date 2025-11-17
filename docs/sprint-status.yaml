@@ -89,7 +89,7 @@ development_status:
   4-1-tenant-context-threadlocal: done
   4-2-tenant-context-filter: done
   4-3-axon-tenant-interceptor: done
-  4-4-postgresql-rls: ready-for-dev
+  4-4-postgresql-rls: done
   4-5-async-context-propagation: ready-for-dev
   4-6-multi-tenant-widget-demo: ready-for-dev
   4-7-tenant-isolation-tests: ready-for-dev
