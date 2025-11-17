@@ -13,6 +13,7 @@ import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -26,6 +27,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
 import org.springframework.security.web.SecurityFilterChain
 
 /**
@@ -39,17 +41,22 @@ import org.springframework.security.web.SecurityFilterChain
  * - Stateless session management (no HTTP sessions)
  * - JWKS caching with configurable duration (Story 3.2)
  *
- * Note: @Profile("!test", "!rbac-test") isolates this configuration from test profiles where
- * security is configured separately for integration testing convenience.
+ * **Profile Strategy (Story 4.2):**
+ * - Active when: NOT test profile OR keycloak-test profile
+ * - This allows both:
+ *   1. keycloak-test: Full security for Keycloak integration tests (Epic 3, Story 4.2)
+ *   2. !test: Production and non-test environments
+ * - Tests using "test" profile get security disabled (existing Epic 3 behavior)
  *
  * Story 3.1: Spring Security OAuth2 Resource Server Foundation
  * Story 3.2: Keycloak OIDC Discovery and JWKS Integration
  * Story 3.10: Extended to exclude "rbac-test" profile
+ * Story 4.2: Profile expression refined to support both test scenarios
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("!(test | rbac-test)")
+@Profile("(!test & !rbac-test) | keycloak-test")
 open class SecurityConfiguration {
     // Suppress VarCouldBeVal: lateinit properties must be declared as var (Kotlin language requirement)
     @Suppress("VarCouldBeVal")
@@ -59,6 +66,14 @@ open class SecurityConfiguration {
     @Suppress("VarCouldBeVal")
     @Autowired
     private lateinit var roleNormalizer: RoleNormalizer
+
+    // Story 4.2: TenantContextFilter (optional - may not be present if multi-tenancy module not loaded)
+    // Cannot import com.axians.eaf.framework.multitenancy.TenantContextFilter (circular dependency)
+    // Using jakarta.servlet.Filter type with @Qualifier to select specific bean
+    @Suppress("VarCouldBeVal")
+    @Autowired(required = false)
+    @Qualifier("tenantContextFilter")
+    private var tenantContextFilter: jakarta.servlet.Filter? = null
 
     // Story 3.9: Auto-configured validators (all created as @Component beans)
     @Suppress("VarCouldBeVal")
@@ -120,6 +135,13 @@ open class SecurityConfiguration {
             .sessionManagement { session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
+
+        // Story 4.2: Add TenantContextFilter to SecurityFilterChain
+        // Must run AFTER BearerTokenAuthenticationFilter (populates SecurityContextHolder)
+        // @Order annotation doesn't work for Spring Security filter ordering
+        tenantContextFilter?.let { filter ->
+            http.addFilterAfter(filter, BearerTokenAuthenticationFilter::class.java)
+        }
 
         return http.build()
     }

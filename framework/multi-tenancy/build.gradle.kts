@@ -11,6 +11,17 @@ dependencies {
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.arrow)
 
+    // Spring Framework dependencies
+    implementation(libs.spring.boot.starter.web) // For Filter, HttpServletRequest/Response
+    implementation(libs.jakarta.servlet.api) // For Filter interface
+    implementation(libs.spring.security.core) // For SecurityContextHolder (lightweight)
+    // For JwtAuthenticationToken, JWT (includes security-core transitively)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
+
+    // Metrics
+    implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
+    implementation(libs.spring.boot.starter.actuator) // Provides MeterRegistry auto-configuration
+
     // Spring Modulith for module boundary enforcement
     implementation(libs.spring.modulith.api)
     testImplementation(libs.spring.modulith.test)
@@ -22,6 +33,10 @@ dependencies {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(project(":shared:testing"))
+
+    // Integration test dependencies
+    // Required for JWT validation in TenantContextFilter tests
+    integrationTestImplementation(project(":framework:security"))
 
     // Ensure only JUnit 5 for Pitest
     configurations.named("testRuntimeClasspath") {

@@ -92,6 +92,7 @@ gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
+jakarta-servlet-api = "6.0.0"  # Jakarta Servlet API for Filter interface
 
 [libraries]
 # Kotlin and JVM
@@ -107,6 +108,7 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
+spring-security-core = { module = "org.springframework.security:spring-security-core", version.ref = "spring-boot" } # Version managed by Spring Boot BOM
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "spring-boot" }
@@ -213,6 +215,7 @@ gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-hig
 
 # Jakarta JSON Bind
 jakarta-json-bind-api = { module = "jakarta.json.bind:jakarta.json.bind-api", version.ref = "jakarta-json-bind" }
+jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "jakarta-servlet-api" }
 
 # Gradle plugins for build-logic
 gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

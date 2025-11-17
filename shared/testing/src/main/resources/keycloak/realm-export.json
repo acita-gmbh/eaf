@@ -40,6 +40,20 @@
       "attributes": {
         "tenant_id": ["tenant-test-002"]
       }
+    },
+    {
+      "username": "no-tenant",
+      "enabled": true,
+      "email": "no-tenant@eaf.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": ["WIDGET_VIEWER"],
+      "attributes": {}
     }
   ],
   "roles": {
@@ -63,7 +77,23 @@
       "directAccessGrantsEnabled": true,
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
-      "serviceAccountsEnabled": false
+      "serviceAccountsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "tenant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
     }
   ]
 }
