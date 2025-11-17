@@ -20,7 +20,7 @@ import org.springframework.context.annotation.ComponentScan
  */
 @SpringBootApplication
 @ComponentScan(basePackages = ["com.axians.eaf.framework.multitenancy"])
-class MultiTenancyTestApplication {
+open class MultiTenancyTestApplication {
     /**
      * Provide SimpleMeterRegistry for TenantContextFilter metrics.
      * Simpler than full Actuator for integration tests.
