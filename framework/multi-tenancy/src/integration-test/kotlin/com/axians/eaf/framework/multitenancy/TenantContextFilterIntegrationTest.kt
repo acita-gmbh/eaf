@@ -1,5 +1,6 @@
 package com.axians.eaf.framework.multitenancy
 
+import com.axians.eaf.framework.multitenancy.test.MultiTenancyTestApplication
 import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -40,6 +41,7 @@ import java.time.Duration
  * Epic 4, Story 4.2: AC6 (Integration test validates tenant extraction from real Keycloak JWT)
  */
 @SpringBootTest(
+    classes = [MultiTenancyTestApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=\${keycloak.issuer-uri}",
