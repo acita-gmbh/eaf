@@ -18,6 +18,9 @@ dependencies {
     // For JwtAuthenticationToken, JWT (includes security-core transitively)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
 
+    // Axon Framework (for TenantValidationInterceptor - Story 4.3)
+    implementation(libs.bundles.axon.framework)
+
     // Metrics
     implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
     implementation(libs.spring.boot.starter.actuator) // Provides MeterRegistry auto-configuration
