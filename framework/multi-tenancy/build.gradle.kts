@@ -19,6 +19,7 @@ dependencies {
 
     // Metrics
     implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
+    implementation(libs.spring.boot.starter.actuator) // Provides MeterRegistry auto-configuration
 
     // Spring Modulith for module boundary enforcement
     implementation(libs.spring.modulith.api)
