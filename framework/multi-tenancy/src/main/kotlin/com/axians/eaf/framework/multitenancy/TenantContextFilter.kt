@@ -87,6 +87,14 @@ class TenantContextFilter(
             // AC2: Extract tenant_id from JWT (validated by Spring Security in Epic 3)
             val authentication = SecurityContextHolder.getContext().authentication
 
+            // DEBUG: Log authentication type for troubleshooting
+            println("🔍 TenantContextFilter - Authentication type: ${authentication?.javaClass?.simpleName ?: "NULL"}")
+            if (authentication is JwtAuthenticationToken) {
+                println("✅ JWT Authentication found - proceeding with tenant extraction")
+            } else {
+                println("⚠️ Non-JWT authentication - skipping tenant extraction")
+            }
+
             // Skip tenant extraction for non-JWT requests (e.g., actuator endpoints)
             if (authentication !is JwtAuthenticationToken) {
                 chain.doFilter(request, response)
