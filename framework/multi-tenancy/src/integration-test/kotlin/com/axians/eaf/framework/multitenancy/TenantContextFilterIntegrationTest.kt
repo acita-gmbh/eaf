@@ -2,13 +2,8 @@ package com.axians.eaf.framework.multitenancy
 
 import com.axians.eaf.framework.multitenancy.test.MultiTenancyTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.springframework.beans.factory.annotation.Autowired

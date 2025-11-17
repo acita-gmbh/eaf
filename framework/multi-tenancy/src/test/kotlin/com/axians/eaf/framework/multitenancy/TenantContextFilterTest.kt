@@ -50,15 +50,8 @@ class TenantContextFilterTest :
             request = MockHttpServletRequest()
             response = MockHttpServletResponse()
 
-            // Simple filter chain that just records if it was called
-            var chainCalled = false
-            filterChain =
-                FilterChain { _: ServletRequest, _: ServletResponse ->
-                    chainCalled = true
-                }
-
-            // Store chain called state in request attribute for verification
-            request.setAttribute("chainCalled", chainCalled)
+            // Simple filter chain (no-op for basic tests)
+            filterChain = FilterChain { _: ServletRequest, _: ServletResponse -> }
 
             // Clear SecurityContextHolder before each test
             SecurityContextHolder.clearContext()
