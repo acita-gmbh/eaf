@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.instanceOf
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,8 +52,19 @@ class TenantContextFilterIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
+    @Autowired
+    private lateinit var tenantContextFilter: TenantContextFilter
+
     init {
         extension(SpringExtension())
+
+        test("DIAGNOSTIC: Verify TenantContextFilter bean loaded") {
+            // Verify filter is registered as Spring bean
+            tenantContextFilter shouldBe
+                io.kotest.matchers.types
+                    .instanceOf<TenantContextFilter>()
+            println("✅ TenantContextFilter loaded: ${tenantContextFilter::class.simpleName}")
+        }
 
         test("DIAGNOSTIC: Verify JWT contains tenant_id claim") {
             // Given: Real Keycloak JWT
