@@ -50,6 +50,7 @@ import java.time.Duration
         "eaf.security.keycloak.client-id=eaf-client",
         "eaf.security.role-whitelist=user,admin,widget_read,widget_write",
         "logging.level.com.axians.eaf=DEBUG",
+        "spring.modulith.events.jdbc.schema-initialization.enabled=false",
     ],
 )
 @AutoConfigureMockMvc
