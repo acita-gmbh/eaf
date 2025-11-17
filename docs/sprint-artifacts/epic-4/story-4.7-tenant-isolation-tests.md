@@ -12,6 +12,8 @@ As a framework developer,
 I want comprehensive tenant isolation tests validating all 3 layers,
 So that I can prove multi-tenancy security is bulletproof.
 
+**Note:** This story also completes **Story 4.4 AC4-6** (RLS testing deferred from infrastructure story).
+
 ---
 
 ## Acceptance Criteria
@@ -20,11 +22,11 @@ So that I can prove multi-tenancy security is bulletproof.
 2. ✅ Test scenarios:
    - Layer 1: Missing tenant_id claim → 400 Bad Request
    - Layer 2: Command tenant mismatch → TenantIsolationException
-   - Layer 3: Direct SQL query bypassing app → RLS blocks access
+   - Layer 3: Direct SQL query bypassing app → RLS blocks access **(Story 4.4 AC4)**
 3. ✅ Cross-tenant attack scenarios tested (JWT with wrong tenant_id)
 4. ✅ Test uses multiple Keycloak users with different tenant_id claims
-5. ✅ All isolation tests pass
-6. ✅ Test execution time <3 minutes
+5. ✅ All isolation tests pass **(Story 4.4 AC5)**
+6. ✅ Test execution time <3 minutes **(Story 4.4 AC6 - RLS performance)**
 7. ✅ Test documented as security validation reference
 
 ---
@@ -58,6 +60,14 @@ So that I can prove multi-tenancy security is bulletproof.
 - Uses real Keycloak JWTs with different tenant_id claims
 - Validates fail-closed behavior at all layers
 - Performance target: <3 minutes execution time
+
+**Story 4.4 Continuation:**
+This story completes the deferred acceptance criteria from Story 4.4:
+- **AC4:** RLS policies tested - cross-tenant query returns empty result
+- **AC5:** Integration test validates Layer 3 blocks unauthorized access
+- **AC6:** Performance impact measured (<2ms overhead per query)
+
+The architectural decision to defer RLS testing from 4.4 (infrastructure) to 4.7 (comprehensive testing) provides cleaner separation of concerns and allows testing the complete multi-tenancy stack after Stories 4.1-4.6 are integrated.
 
 ### Agent Model Used
 
