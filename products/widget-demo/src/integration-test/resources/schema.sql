@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS dead_letter_entry (
 );
 
 -- Widget Projection Table (Story 2.7)
+-- Note: Story 4.4 adds RLS to production via V101 migration
+-- Test schema remains simple - RLS testing deferred to Story 4.7
 CREATE TABLE IF NOT EXISTS widget_projection (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

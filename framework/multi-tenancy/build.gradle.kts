@@ -21,6 +21,9 @@ dependencies {
     // Axon Framework (for TenantValidationInterceptor - Story 4.3)
     implementation(libs.bundles.axon.framework)
 
+    // jOOQ (for TenantContextExecuteListener - Story 4.4)
+    implementation(libs.bundles.jooq)
+
     // Metrics
     implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
     implementation(libs.spring.boot.starter.actuator) // Provides MeterRegistry auto-configuration
