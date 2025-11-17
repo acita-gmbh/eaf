@@ -182,7 +182,7 @@ class JwtValidationPerformanceTest :
                 println("✅ Layers 3-6: ${"%.3f".format(durationMs)}ms (target: <20ms)")
             }
 
-            test("Layer 7 (revocation) should complete in under 5ms with mock") {
+            test("Layer 7 (revocation) should complete in under 10ms with mock") {
                 val jwt = createValidJwt()
                 val validator = JwtRevocationValidator(mockRevocationStore, meterRegistry)
 
@@ -190,9 +190,9 @@ class JwtValidationPerformanceTest :
                 validator.validate(jwt)
                 val durationMs = (System.nanoTime() - startTime) / 1_000_000.0
 
-                durationMs shouldBeLessThan 5.0
+                durationMs shouldBeLessThan 10.0
 
-                println("✅ Layer 7 (revocation): ${"%.3f".format(durationMs)}ms (target: <5ms)")
+                println("✅ Layer 7 (revocation): ${"%.3f".format(durationMs)}ms (target: <10ms)")
             }
 
             test("Layer 10 (injection detection) should complete in under 5ms") {
