@@ -1,6 +1,7 @@
 package com.axians.eaf.framework.multitenancy
 
 import com.axians.eaf.framework.multitenancy.test.MultiTenancyTestApplication
+import com.axians.eaf.testing.keycloak.KeycloakTestContainer
 import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -19,11 +20,6 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.utility.DockerImageName
-import java.time.Duration
 
 /**
  * Integration test for TenantContextFilter (Layer 1 tenant extraction).
@@ -44,17 +40,16 @@ import java.time.Duration
     classes = [MultiTenancyTestApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
-        "spring.security.oauth2.resourceserver.jwt.issuer-uri=\${keycloak.issuer-uri}",
-        "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${keycloak.jwk-set-uri}",
-        "eaf.security.keycloak.realm=eaf-test",
-        "eaf.security.keycloak.client-id=eaf-client",
-        "eaf.security.role-whitelist=user,admin,widget_read,widget_write",
+        "spring.security.oauth2.resourceserver.jwt.issuer-uri=\${eaf.security.jwt.issuer-uri}",
+        "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${eaf.security.jwt.jwks-uri}",
+        "eaf.security.jwt.audience=eaf-api",
+        "eaf.security.role-whitelist=WIDGET_ADMIN,WIDGET_VIEWER,ADMIN",
         "logging.level.com.axians.eaf=DEBUG",
         "spring.modulith.events.jdbc.schema-initialization.enabled=false",
     ],
 )
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles("keycloak-test")
 class TenantContextFilterIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -63,14 +58,9 @@ class TenantContextFilterIntegrationTest : FunSpec() {
         extension(SpringExtension())
 
         test("AC2+AC3: Extract tenant_id from JWT and populate TenantContext") {
-            // Given: Real Keycloak JWT with tenant_id claim
-            val tenantId = "tenant-alpha"
-            val jwt =
-                generateKeycloakJwt(
-                    subject = "user123",
-                    tenantId = tenantId,
-                    roles = listOf("user", "widget_read"),
-                )
+            // Given: Real Keycloak JWT with tenant_id claim (admin user has tenant-test-001)
+            val expectedTenant = "tenant-test-001"
+            val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
             // When: Make authenticated request
             val result =
@@ -81,22 +71,18 @@ class TenantContextFilterIntegrationTest : FunSpec() {
             // Then: Request succeeds and tenant context is populated
             result.andExpect {
                 status { isOk() }
-                content { string(containsString(tenantId)) }
+                content { string(containsString(expectedTenant)) }
             }
         }
 
         test("AC4: Missing tenant_id claim rejects request with 400 Bad Request") {
-            // Given: JWT WITHOUT tenant_id claim
-            val jwtWithoutTenant =
-                generateKeycloakJwtWithoutTenant(
-                    subject = "user456",
-                    roles = listOf("user"),
-                )
+            // Given: Real Keycloak JWT WITHOUT tenant_id claim (no-tenant user has no attributes)
+            val jwt = KeycloakTestContainer.generateToken("no-tenant", "password")
 
             // When: Make authenticated request
             val result =
                 mockMvc.get("/test/tenant-info") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwtWithoutTenant")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt")
                 }
 
             // Then: Request is rejected with 400 Bad Request
@@ -107,82 +93,64 @@ class TenantContextFilterIntegrationTest : FunSpec() {
         }
 
         test("AC5: ThreadLocal cleanup after request - context cleared") {
-            // Given: Real Keycloak JWT with tenant_id
-            val tenantId = "tenant-beta"
-            val jwt =
-                generateKeycloakJwt(
-                    subject = "user789",
-                    tenantId = tenantId,
-                    roles = listOf("admin"),
-                )
+            // Given: Real Keycloak JWTs with different tenant_ids
+            // admin = tenant-test-001, viewer = tenant-test-002
+            val jwt1 = KeycloakTestContainer.generateToken("admin", "password")
+            val jwt2 = KeycloakTestContainer.generateToken("viewer", "password")
 
-            // When: Make authenticated request
+            // When: Make first authenticated request
             mockMvc
                 .get("/test/tenant-info") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt1")
                 }.andExpect {
                     status { isOk() }
                 }
 
             // Then: After request completes, ThreadLocal should be cleared
-            // (Verified by making second request and checking isolation)
-            val secondJwt =
-                generateKeycloakJwt(
-                    subject = "user999",
-                    tenantId = "tenant-gamma",
-                    roles = listOf("user"),
-                )
-
+            // (Verified by making second request with different tenant and checking isolation)
             mockMvc
                 .get("/test/tenant-info") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $secondJwt")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt2")
                 }.andExpect {
                     status { isOk() }
                     content {
-                        string(containsString("tenant-gamma"))
-                        string(not(containsString(tenantId)))
+                        string(containsString("tenant-test-002"))
+                        string(not(containsString("tenant-test-001")))
                     }
                 }
         }
 
         test("AC6: Concurrent requests have isolated tenant contexts") {
-            // Given: Two different tenants
-            val tenant1 = "tenant-concurrent-1"
-            val tenant2 = "tenant-concurrent-2"
-            val jwt1 = generateKeycloakJwt("user1", tenant1, listOf("user"))
-            val jwt2 = generateKeycloakJwt("user2", tenant2, listOf("user"))
+            // Given: Two different tenants (admin and viewer)
+            val jwtAdmin = KeycloakTestContainer.generateToken("admin", "password")
+            val jwtViewer = KeycloakTestContainer.generateToken("viewer", "password")
 
             // When: Make concurrent requests
             val result1 =
                 mockMvc.get("/test/tenant-info") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt1")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwtAdmin")
                 }
 
             val result2 =
                 mockMvc.get("/test/tenant-info") {
-                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwt2")
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $jwtViewer")
                 }
 
             // Then: Each request has correct isolated tenant context
             result1.andExpect {
                 status { isOk() }
-                content { string(containsString(tenant1)) }
+                content { string(containsString("tenant-test-001")) }
             }
 
             result2.andExpect {
                 status { isOk() }
-                content { string(containsString(tenant2)) }
+                content { string(containsString("tenant-test-002")) }
             }
         }
 
         test("AC7: Metrics emitted - tenant_context_extraction_duration timer") {
             // Given: Real Keycloak JWT
-            val jwt =
-                generateKeycloakJwt(
-                    subject = "metrics-user",
-                    tenantId = "tenant-metrics",
-                    roles = listOf("user"),
-                )
+            val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
             // When: Make authenticated request
             mockMvc
@@ -199,69 +167,19 @@ class TenantContextFilterIntegrationTest : FunSpec() {
     }
 
     companion object {
-        private lateinit var keycloakContainer: GenericContainer<*>
-        private lateinit var postgresContainer: PostgreSQLContainer<*>
-
         @JvmStatic
         @DynamicPropertySource
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Start PostgreSQL for application data
-            postgresContainer =
-                PostgreSQLContainer(DockerImageName.parse("postgres:16.10"))
-                    .withDatabaseName("eaf_test")
-                    .withUsername("eaf")
-                    .withPassword("eaf123")
-            postgresContainer.start()
+            // Start KeycloakTestContainer (shared singleton from Epic 3)
+            KeycloakTestContainer.start()
 
-            // Start Keycloak for JWT generation
-            keycloakContainer =
-                GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:26.0.7"))
-                    .withExposedPorts(8080)
-                    .withEnv("KEYCLOAK_ADMIN", "admin")
-                    .withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
-                    .withEnv("KC_HTTP_ENABLED", "true")
-                    .withCommand("start-dev")
-                    .waitingFor(Wait.forListeningPort())
-                    .withStartupTimeout(Duration.ofMinutes(3))
-            keycloakContainer.start()
-
-            // Give Keycloak additional time to fully start after port opens
-            Thread.sleep(10000)
-
-            val keycloakUrl = "http://${keycloakContainer.host}:${keycloakContainer.firstMappedPort}"
-
-            // Configure Spring properties
-            registry.add("spring.datasource.url") { postgresContainer.jdbcUrl }
-            registry.add("spring.datasource.username") { postgresContainer.username }
-            registry.add("spring.datasource.password") { postgresContainer.password }
-            registry.add("keycloak.issuer-uri") { "$keycloakUrl/realms/eaf-test" }
-            registry.add("keycloak.jwk-set-uri") { "$keycloakUrl/realms/eaf-test/protocol/openid-connect/certs" }
-        }
-
-        /**
-         * Generate real Keycloak JWT with tenant_id claim.
-         * Uses Keycloak Admin API to create user and generate token.
-         */
-        private fun generateKeycloakJwt(
-            subject: String,
-            tenantId: String,
-            roles: List<String>,
-        ): String {
-            // TODO: Implement Keycloak Admin API call to generate JWT
-            // Pattern from Epic 3 Story 3.2: KeycloakIntegrationTest
-            // For now, return mock JWT (to be implemented)
-            return "mock-jwt-with-tenant-$tenantId"
-        }
-
-        /**
-         * Generate real Keycloak JWT WITHOUT tenant_id claim (for negative testing).
-         */
-        private fun generateKeycloakJwtWithoutTenant(
-            subject: String,
-            roles: List<String>,
-        ): String {
-            // TODO: Implement Keycloak Admin API call to generate JWT without tenant_id
-            return "mock-jwt-without-tenant"
+            // Configure Spring Security OAuth2 properties
+            registry.add("eaf.security.jwt.issuer-uri") {
+                KeycloakTestContainer.getIssuerUri()
+            }
+            registry.add("eaf.security.jwt.jwks-uri") {
+                KeycloakTestContainer.getJwksUri()
+            }
         }
     }
 }
