@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.get
  */
 @SpringBootTest(
     classes = [MultiTenancyTestApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
     properties = [
         "spring.security.oauth2.resourceserver.jwt.issuer-uri=\${eaf.security.jwt.issuer-uri}",
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\${eaf.security.jwt.jwks-uri}",
@@ -46,7 +46,7 @@ import org.springframework.test.web.servlet.get
         "spring.modulith.events.jdbc.schema-initialization.enabled=false",
     ],
 )
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = true)
 @ActiveProfiles("keycloak-test")
 class TenantContextFilterIntegrationTest : FunSpec() {
     @Autowired
