@@ -20,6 +20,10 @@ open class TenantTestController {
     /**
      * Test endpoint that returns current tenant context.
      * Used to verify TenantContextFilter properly populates ThreadLocal.
+     *
+     * **No @PreAuthorize:** Authorization intentionally omitted for testing.
+     * This controller is in integration-test source set (never packaged in production JAR).
+     * Tests validate tenant extraction logic, not authorization rules.
      */
     @GetMapping("/tenant-info")
     open fun getTenantInfo(): ResponseEntity<Map<String, String>> {

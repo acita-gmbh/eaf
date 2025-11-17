@@ -27,9 +27,14 @@ import org.springframework.stereotype.Component
  * - Cleanup in finally block prevents ThreadLocal leaks
  *
  * **Execution Order:**
- * - Spring Security: @Order(Ordered.HIGHEST_PRECEDENCE) - JWT validation
- * - TenantContextFilter: @Order(Ordered.HIGHEST_PRECEDENCE + 10) - Tenant extraction
+ * - Spring Security: BearerTokenAuthenticationFilter - JWT validation
+ * - TenantContextFilter: Positioned via SecurityConfiguration.addFilterAfter()
  * - Business logic: Default order
+ *
+ * **Note on @Order Annotation:**
+ * The @Order annotation below does NOT control Spring Security filter chain ordering.
+ * Actual ordering is managed by SecurityConfiguration.addFilterAfter() (line 143).
+ * The annotation is retained for documentation of intended priority only.
  *
  * **Metrics Emitted:**
  * - tenant_context_extraction_duration (Timer) - Filter execution time

@@ -1,5 +1,17 @@
 # Deep Research Prompt: TenantContextFilter Integration Test Failure (Story 4.2)
 
+> **⚠️ HISTORICAL DEBUGGING DOCUMENTATION**
+>
+> **Status:** RESOLVED - Story 4.2 completed successfully
+> **Date Created:** 2025-11-17
+> **Purpose:** This document was created during Story 4.2 implementation to facilitate external AI debugging of the "Two Filter Chain" problem. It documents 19 debugging commits and the complete investigation process.
+>
+> **Resolution:** The issue was resolved via dual AI analysis identifying filter auto-registration and SimpleMeterRegistry bean conflicts. Complete solution implemented with FilterRegistrationBean(enabled=false) + SecurityConfiguration.addFilterAfter().
+>
+> **Why Preserved:** Valuable reference for future Spring Security filter integration challenges and demonstrates systematic debugging approach for complex Spring Boot/Security issues.
+
+---
+
 ## Problem Statement
 
 Spring Boot integration tests for `TenantContextFilter` (Layer 1 of 3-layer tenant isolation) consistently fail with `TenantContext` returning NULL, despite all diagnostic tests passing. After 19 commits and extensive debugging, the root cause remains unidentified.

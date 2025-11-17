@@ -67,10 +67,8 @@ class TenantContextFilterIntegrationTest : FunSpec() {
         extension(SpringExtension())
 
         test("DIAGNOSTIC: Verify TenantContextFilter bean loaded") {
-            // Verify filter is registered as Spring bean
-            tenantContextFilter shouldBe
-                io.kotest.matchers.types
-                    .instanceOf<TenantContextFilter>()
+            // Verify filter is registered as Spring bean (autowiring confirms bean exists)
+            tenantContextFilter.javaClass.simpleName shouldBe "TenantContextFilter"
             println("✅ TenantContextFilter loaded: ${tenantContextFilter::class.simpleName}")
         }
 

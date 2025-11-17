@@ -14,8 +14,9 @@ dependencies {
     // Spring Framework dependencies
     implementation(libs.spring.boot.starter.web) // For Filter, HttpServletRequest/Response
     implementation(libs.jakarta.servlet.api) // For Filter interface
-    implementation(libs.spring.boot.starter.security) // For SecurityContextHolder
-    implementation(libs.spring.boot.starter.oauth2.resource.server) // For JwtAuthenticationToken, JWT
+    implementation(libs.spring.security.core) // For SecurityContextHolder (lightweight)
+    // For JwtAuthenticationToken, JWT (includes security-core transitively)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
 
     // Metrics
     implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
