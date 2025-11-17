@@ -10,10 +10,10 @@ import io.kotest.matchers.string.shouldContain
  *
  * Epic 4, Story 4.1: AC2 - TenantId.kt value object with validation
  * Tests validate:
- * - Valid tenant IDs (alphanumeric, hyphens, underscores)
+ * - Valid tenant IDs (lowercase alphanumeric and hyphens)
  * - Blank ID rejection
- * - Invalid character rejection
- * - Length constraints (1-255 characters)
+ * - Invalid character rejection (uppercase, underscores, special chars)
+ * - Length constraints (1-64 characters)
  *
  * @since 1.0.0
  */

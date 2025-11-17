@@ -33,7 +33,6 @@ dependencies {
 configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
     targetClasses.set(setOf("com.axians.eaf.*"))
     targetTests.set(setOf("com.axians.eaf.*"))
-    testPlugin.set(null as String?)
     junit5PluginVersion.set("1.2.1")
     useClasspathFile.set(true)
     verbose.set(true)

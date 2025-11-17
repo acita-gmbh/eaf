@@ -72,10 +72,10 @@ No debugging required - implementation followed Story Context patterns with TDD
 - Proper module dependencies (core, spring-modulith-api)
 
 ✅ **AC2:** TenantId.kt value object with comprehensive validation
-- Alphanumeric + hyphens/underscores validation (Regex)
-- Length constraints (1-255 characters)
+- Lowercase alphanumeric + hyphens validation (Regex: ^[a-z0-9-]{1,64}$)
+- Length constraints (1-64 characters)
 - Blank check with init block
-- 11 unit tests covering all validation scenarios
+- 13 unit tests covering all validation scenarios and equality
 
 ✅ **AC3:** TenantContext.kt with stack-based ThreadLocal storage
 - ArrayDeque for nested context support
@@ -108,7 +108,7 @@ No debugging required - implementation followed Story Context patterns with TDD
 - Multiple cleanup calls safe (idempotent)
 
 **Test Results:** 21/21 tests passed ✅
-- TenantId: 13 tests (added uppercase/underscore rejection tests)
+- TenantId: 13 tests (validation, edge cases, uppercase/underscore rejection, equality)
 - TenantContext: 8 tests
 - Build successful in 19s
 
@@ -194,11 +194,11 @@ Story 4.1 delivers a production-quality ThreadLocal-based tenant context managem
 | AC# | Description | Status | Evidence |
 |-----|-------------|--------|----------|
 | AC1 | framework/multi-tenancy module created | ✅ IMPLEMENTED | build.gradle.kts:1-44, MultiTenancyModule.kt:1-21, settings.gradle.kts:77 |
-| AC2 | TenantId.kt value object with validation | ✅ IMPLEMENTED | TenantId.kt:20-29, TenantIdTest.kt (11 tests) |
+| AC2 | TenantId.kt value object with validation | ✅ IMPLEMENTED | TenantId.kt:20-26, TenantIdTest.kt (13 tests) |
 | AC3 | TenantContext.kt manages ThreadLocal storage | ✅ IMPLEMENTED | TenantContext.kt:40-136, ArrayDeque stack |
 | AC4 | TenantContextHolder.kt provides static access | ✅ IMPLEMENTED | TenantContext.kt:78-135 (object with 4 methods) |
 | AC5 | WeakReference for memory safety | ✅ IMPLEMENTED | TenantContext.kt:48-49, ThreadLocal.remove():133 |
-| AC6 | Unit tests: set → retrieve → clear | ✅ IMPLEMENTED | TenantContextTest.kt (19 tests, all passed) |
+| AC6 | Unit tests: set → retrieve → clear | ✅ IMPLEMENTED | TenantContextTest.kt (8 tests, all passed) |
 | AC7 | Thread isolation validated | ✅ IMPLEMENTED | TenantContextTest.kt:102-149 (3 concurrent threads) |
 | AC8 | Context cleanup after request | ✅ IMPLEMENTED | TenantContext.kt:123-135, cleanup tests |
 
@@ -222,14 +222,14 @@ Story 4.1 delivers a production-quality ThreadLocal-based tenant context managem
 ### Test Coverage and Gaps
 
 **Test Coverage:** ✅ **Excellent**
-- TenantId: 11 tests (validation scenarios, edge cases, equality)
+- TenantId: 13 tests (validation scenarios, edge cases, equality)
 - TenantContext: 8 tests (set/get/clear, fail-closed, thread isolation, cleanup)
-- Total: 19/19 tests passed (100% success rate)
+- Total: 21/21 tests passed (100% success rate)
 - Build time: 12s
 
 **Coverage by AC:**
 - ✅ AC1: Module structure (validated by Spring Modulith)
-- ✅ AC2: TenantId validation (11 tests)
+- ✅ AC2: TenantId validation (13 tests)
 - ✅ AC3: ThreadLocal storage (8 tests)
 - ✅ AC4: Static access (all methods tested)
 - ✅ AC5: WeakReference (implicit validation)
