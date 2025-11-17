@@ -92,6 +92,7 @@ gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
+jakarta-servlet-api = "6.0.0"  # Jakarta Servlet API for Filter interface
 
 [libraries]
 # Kotlin and JVM
@@ -213,6 +214,7 @@ gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-hig
 
 # Jakarta JSON Bind
 jakarta-json-bind-api = { module = "jakarta.json.bind:jakarta.json.bind-api", version.ref = "jakarta-json-bind" }
+jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "jakarta-servlet-api" }
 
 # Gradle plugins for build-logic
 gradlePlugin-kotlin-jvm = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

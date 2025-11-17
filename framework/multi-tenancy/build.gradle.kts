@@ -11,6 +11,15 @@ dependencies {
     implementation(libs.bundles.kotlin)
     implementation(libs.bundles.arrow)
 
+    // Spring Framework dependencies
+    implementation(libs.spring.boot.starter.web) // For Filter, HttpServletRequest/Response
+    implementation(libs.jakarta.servlet.api) // For Filter interface
+    implementation(libs.spring.boot.starter.security) // For SecurityContextHolder
+    implementation(libs.spring.boot.starter.oauth2.resource.server) // For JwtAuthenticationToken, JWT
+
+    // Metrics
+    implementation(libs.micrometer.core) // For MeterRegistry, Timer, Counter
+
     // Spring Modulith for module boundary enforcement
     implementation(libs.spring.modulith.api)
     testImplementation(libs.spring.modulith.test)
