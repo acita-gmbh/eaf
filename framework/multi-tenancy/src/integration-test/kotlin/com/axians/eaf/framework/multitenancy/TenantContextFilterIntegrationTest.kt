@@ -4,6 +4,8 @@ import com.axians.eaf.framework.multitenancy.test.MultiTenancyTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,6 +53,28 @@ class TenantContextFilterIntegrationTest : FunSpec() {
 
     init {
         extension(SpringExtension())
+
+        test("DIAGNOSTIC: Verify JWT contains tenant_id claim") {
+            // Given: Real Keycloak JWT
+            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+
+            // Decode JWT and check claims
+            val parts = jwt.split(".")
+            parts.size shouldBe 3
+
+            // Decode payload (Base64 URL encoded)
+            val payload =
+                String(
+                    java.util.Base64
+                        .getUrlDecoder()
+                        .decode(parts[1]),
+                )
+            println("JWT Payload: $payload")
+
+            // Then: Verify tenant_id claim exists
+            payload shouldContain "tenant_id"
+            payload shouldContain "tenant-test-001"
+        }
 
         test("AC2+AC3: Extract tenant_id from JWT and populate TenantContext") {
             // Given: Real Keycloak JWT with tenant_id claim (admin user has tenant-test-001)
