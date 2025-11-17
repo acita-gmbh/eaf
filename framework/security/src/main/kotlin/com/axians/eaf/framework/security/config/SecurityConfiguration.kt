@@ -13,6 +13,7 @@ import com.axians.eaf.framework.security.validation.JwtTimeBasedValidator
 import com.axians.eaf.framework.security.validation.JwtUserValidator
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -64,9 +65,10 @@ open class SecurityConfiguration {
 
     // Story 4.2: TenantContextFilter (optional - may not be present if multi-tenancy module not loaded)
     // Cannot import com.axians.eaf.framework.multitenancy.TenantContextFilter (circular dependency)
-    // Using jakarta.servlet.Filter type with runtime check
+    // Using jakarta.servlet.Filter type with @Qualifier to select specific bean
     @Suppress("VarCouldBeVal")
     @Autowired(required = false)
+    @Qualifier("tenantContextFilter")
     private var tenantContextFilter: jakarta.servlet.Filter? = null
 
     // Story 3.9: Auto-configured validators (all created as @Component beans)
@@ -130,9 +132,9 @@ open class SecurityConfiguration {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
 
-        // Story 4.2: Add TenantContextFilter to SecurityFilterChain (if present)
-        // Must run AFTER BearerTokenAuthenticationFilter (which populates SecurityContextHolder)
-        // @Order annotation doesn't work for positioning relative to Spring Security filters
+        // Story 4.2: Add TenantContextFilter to SecurityFilterChain
+        // Must run AFTER BearerTokenAuthenticationFilter (populates SecurityContextHolder)
+        // @Order annotation doesn't work for Spring Security filter ordering
         tenantContextFilter?.let { filter ->
             http.addFilterAfter(filter, BearerTokenAuthenticationFilter::class.java)
         }
