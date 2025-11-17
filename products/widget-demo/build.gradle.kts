@@ -2,7 +2,7 @@
 // Implements complete CQRS/ES vertical slice with Axon Framework
 
 plugins {
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.3: Complete rollout - migrated to v2
     id("eaf.spring-boot")
     alias(libs.plugins.gatling)
 }
@@ -66,6 +66,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.axon.test)
+    testImplementation(libs.hamcrest) // Required by Axon Test Framework
 
     // Integration Testing (Story 2.7)
     integrationTestImplementation(libs.bundles.testcontainers)
@@ -76,6 +77,9 @@ dependencies {
     integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation("org.springframework:spring-jdbc")
+
+    // Spring Security Test Support (Story 3.10)
+    integrationTestImplementation(libs.spring.security.test)
 }
 
 // ============================================================================

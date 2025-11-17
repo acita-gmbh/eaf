@@ -10,39 +10,47 @@ import java.util.UUID
 class RoleNormalizationFuzzer {
     private val normalizer = RoleNormalizer(KeycloakOidcConfiguration(audience = "eaf-api"))
 
-    @FuzzTest(maxDuration = "30s")
-    fun fuzzRoleNormalization(data: FuzzedDataProvider) {
-        val jwt = randomJwt(data, allowNullClaims = false, allowMalformedResourceAccess = false, injectionSeed = null)
+    /**
+     * Story 3.12: Main role normalization fuzz test with comprehensive coverage.
+     * Covers valid structures, null claims, and malformed resource_access formats.
+     * AC #3: 2.5 minutes for balanced coverage.
+     */
+    @FuzzTest(maxDuration = "2m30s")
+    fun fuzzRoleNormalizationComprehensive(data: FuzzedDataProvider) {
+        val allowNullClaims = data.consumeBoolean()
+        val allowMalformedResourceAccess = data.consumeBoolean()
+        val jwt = randomJwt(data, allowNullClaims, allowMalformedResourceAccess, injectionSeed = null)
 
         assertDoesNotThrow { normalizer.normalize(jwt) }
     }
 
-    @FuzzTest(maxDuration = "30s")
-    fun fuzzRoleNormalizationWithNull(data: FuzzedDataProvider) {
-        val jwt = randomJwt(data, allowNullClaims = true, allowMalformedResourceAccess = true, injectionSeed = null)
+    /**
+     * Story 3.12: Security-focused role normalization fuzz test.
+     * Tests injection patterns (XSS, SQL, Command Injection) and Unicode attacks.
+     * AC #3: 2.5 minutes for security scenario coverage.
+     */
+    @FuzzTest(maxDuration = "2m30s")
+    fun fuzzRoleNormalizationSecurityAttacks(data: FuzzedDataProvider) {
+        val injectionPayloads = listOf(
+            "<script>alert('x')</script>",
+            "${'$'}(rm -rf /)",
+            "admin' OR '1'='1",
+            "ROLE_SUPER_ADMIN",
+            "${'\u0000'}ADMIN", // Null byte injection
+        )
 
-        assertDoesNotThrow { normalizer.normalize(jwt) }
-    }
-
-    @FuzzTest(maxDuration = "30s")
-    fun fuzzRoleNormalizationInjectionPatterns(data: FuzzedDataProvider) {
-        val payloads = listOf("<script>alert('x')</script>", "${'$'}(rm -rf /)", "admin' OR '1'='1", "ROLE_SUPER_ADMIN")
-        val seed = payloads[data.consumeInt(0, payloads.lastIndex)]
-        val jwt = randomJwt(data, allowNullClaims = true, allowMalformedResourceAccess = true, injectionSeed = seed)
-
-        assertDoesNotThrow { normalizer.normalize(jwt) }
-    }
-
-    @FuzzTest(maxDuration = "30s")
-    fun fuzzRoleNormalizationUnicodeAttacks(data: FuzzedDataProvider) {
-        val unicodeSeed =
+        val injectionSeed = if (data.consumeBoolean()) {
+            injectionPayloads[data.consumeInt(0, injectionPayloads.lastIndex)]
+        } else {
+            // Unicode attack
             buildString {
                 repeat(data.consumeInt(1, 8)) {
                     appendCodePoint(data.consumeInt(0x20, 0x2FFF))
                 }
             }
-        val jwt =
-            randomJwt(data, allowNullClaims = true, allowMalformedResourceAccess = true, injectionSeed = unicodeSeed)
+        }
+
+        val jwt = randomJwt(data, allowNullClaims = true, allowMalformedResourceAccess = true, injectionSeed)
 
         assertDoesNotThrow { normalizer.normalize(jwt) }
     }

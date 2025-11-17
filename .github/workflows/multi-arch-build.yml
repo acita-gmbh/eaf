@@ -1,0 +1,165 @@
+name: Multi-Architecture Build - ppc64le
+
+# Validates ppc64le Docker images build successfully
+# Runs on: Pull requests affecting multi-arch files, manual trigger
+# Platform: Linux (QEMU works correctly on Linux, not macOS)
+
+on:
+  pull_request:
+    paths:
+      - 'docker/keycloak/Dockerfile.ppc64le'
+      - 'scripts/build-keycloak-ppc64le.sh'
+      - 'docker-compose.ppc64le.yml'
+      - '.github/workflows/multi-arch-build.yml'
+  workflow_dispatch:
+    inputs:
+      push_to_registry:
+        description: 'Push image to GitHub Container Registry after build'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ppc64le-keycloak:
+    name: Build Keycloak ppc64le Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/ppc64le
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/ppc64le
+
+      - name: Verify ppc64le Support
+        run: |
+          echo "🔍 Verifying ppc64le platform support..."
+          docker buildx inspect
+          docker buildx inspect | grep "linux/ppc64le" && echo "✅ ppc64le support confirmed" || exit 1
+
+      - name: Test Build Script (Dry Run)
+        run: |
+          echo "🧪 Testing build script with dry-run..."
+          chmod +x scripts/build-keycloak-ppc64le.sh
+          ./scripts/build-keycloak-ppc64le.sh --dry-run
+
+      - name: Build ppc64le Keycloak Image
+        run: |
+          echo "🏗️ Building Keycloak 26.4.2 for ppc64le..."
+          ./scripts/build-keycloak-ppc64le.sh --version 26.4.2
+        timeout-minutes: 20
+
+      - name: Verify Image Built
+        run: |
+          echo "✅ Verifying image was built successfully..."
+          docker images keycloak:26.4.2-ppc64le
+
+          # Check image exists
+          if docker images keycloak:26.4.2-ppc64le --format "{{.Repository}}" | grep -q "keycloak"; then
+            echo "✅ Image found: keycloak:26.4.2-ppc64le"
+          else
+            echo "❌ Image not found"
+            exit 1
+          fi
+
+          # Show image size
+          SIZE=$(docker images keycloak:26.4.2-ppc64le --format "{{.Size}}")
+          echo "📦 Image size: ${SIZE}"
+
+      - name: Test Image Architecture
+        run: |
+          echo "🔍 Verifying image architecture..."
+          ARCH=$(docker image inspect keycloak:26.4.2-ppc64le --format='{{.Architecture}}')
+          echo "Architecture: ${ARCH}"
+
+          if [[ "${ARCH}" == "ppc64le" ]]; then
+            echo "✅ Correct architecture: ppc64le"
+          else
+            echo "❌ Wrong architecture: ${ARCH} (expected ppc64le)"
+            exit 1
+          fi
+
+      - name: Log in to GitHub Container Registry
+        if: github.event.inputs.push_to_registry == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to GitHub Container Registry
+        if: github.event.inputs.push_to_registry == 'true'
+        run: |
+          echo "📤 Pushing image to GitHub Container Registry..."
+          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/keycloak:26.4.2-ppc64le"
+
+          docker tag keycloak:26.4.2-ppc64le "${IMAGE_TAG}"
+          docker push "${IMAGE_TAG}"
+
+          echo "✅ Image pushed: ${IMAGE_TAG}"
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## Multi-Architecture Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** keycloak:26.4.2-ppc64le" >> $GITHUB_STEP_SUMMARY
+          echo "**Architecture:** ppc64le" >> $GITHUB_STEP_SUMMARY
+          echo "**Base Image:** registry.access.redhat.com/ubi9/openjdk-21:1.23" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Platform:** ubuntu-latest (Linux)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if docker images keycloak:26.4.2-ppc64le &>/dev/null; then
+            SIZE=$(docker images keycloak:26.4.2-ppc64le --format "{{.Size}}" || echo "Unknown")
+            echo "**Image Size:** ${SIZE}" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** ✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** ❌ Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  verify-docker-compose:
+    name: Verify docker-compose.ppc64le.yml
+    runs-on: ubuntu-latest
+    needs: build-ppc64le-keycloak
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Validate docker-compose Syntax
+        run: |
+          echo "✅ Validating docker-compose.ppc64le.yml syntax..."
+          docker compose -f docker-compose.ppc64le.yml config > /dev/null
+          echo "✅ docker-compose.ppc64le.yml is valid"
+
+      - name: Verify Services Configuration
+        run: |
+          echo "🔍 Verifying services use ppc64le platform..."
+
+          # Check keycloak service uses custom ppc64le image
+          if grep -q "image: keycloak:26.4.2-ppc64le" docker-compose.ppc64le.yml; then
+            echo "✅ Keycloak service uses custom ppc64le image"
+          else
+            echo "❌ Keycloak service image mismatch"
+            exit 1
+          fi
+
+          # Check platform specifications
+          if grep -q "platform: linux/ppc64le" docker-compose.ppc64le.yml; then
+            echo "✅ Platform specifications found"
+          else
+            echo "⚠️  No platform specifications (may use default)"
+          fi

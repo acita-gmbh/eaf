@@ -78,23 +78,24 @@ development_status:
   3-7-redis-revocation-cache: done
   3-8-user-injection-detection: done
   3-9-complete-jwt-integration: done
-  3-10-rbac-api-endpoints: ready-for-dev
-  3-11-keycloak-ppc64le: ready-for-dev
-  3-12-security-fuzz-testing: ready-for-dev
-  epic-3-retrospective: optional
+  3-10-rbac-api-endpoints: done
+  3-11-keycloak-ppc64le: done
+  3-12-security-fuzz-testing: done
+  epic-3-retrospective: done
 
-  # Epic 4: Multi-Tenancy & Data Isolation (10 stories)
-  epic-4: backlog
-  4-1-tenant-context-threadlocal: drafted
-  4-2-tenant-context-filter: drafted
-  4-3-axon-tenant-interceptor: drafted
-  4-4-postgresql-rls: drafted
-  4-5-async-context-propagation: drafted
-  4-6-multi-tenant-widget-demo: drafted
-  4-7-tenant-isolation-tests: drafted
-  4-8-tenant-leak-detection: drafted
-  4-9-per-tenant-quotas: drafted
-  4-10-litmuskt-concurrency-testing: drafted
+  # Epic 4: Multi-Tenancy & Data Isolation (11 stories - Story 4.0 is preparation)
+  epic-4: contexted
+  4-0-epic-4-preparation: done
+  4-1-tenant-context-threadlocal: done
+  4-2-tenant-context-filter: ready-for-dev
+  4-3-axon-tenant-interceptor: ready-for-dev
+  4-4-postgresql-rls: ready-for-dev
+  4-5-async-context-propagation: ready-for-dev
+  4-6-multi-tenant-widget-demo: ready-for-dev
+  4-7-tenant-isolation-tests: ready-for-dev
+  4-8-tenant-leak-detection: ready-for-dev
+  4-9-per-tenant-quotas: ready-for-dev
+  4-10-litmuskt-concurrency-testing: ready-for-dev
   epic-4-retrospective: optional
 
   # Epic 5: Observability & Monitoring (8 stories)

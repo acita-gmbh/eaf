@@ -1,0 +1,540 @@
+# ============================================================================
+# GitLab CI - Nightly Deep Validation Pipeline
+# ============================================================================
+# Multi-architecture support: x86_64 (amd64), aarch64 (arm64), ppc64le
+# GitHub Actions doesn't support ppc64le self-hosted runners, so GitLab CI
+# is used for comprehensive multi-arch testing.
+#
+# Equivalent to: .github/workflows/nightly.yml
+# ============================================================================
+
+# Global variables
+variables:
+  # Gradle configuration
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
+  GRADLE_USER_HOME: "${CI_PROJECT_DIR}/.gradle"
+
+  # Application configuration
+  KEYCLOAK_ISSUER_URI: "http://localhost:8080/realms/eaf"
+  KEYCLOAK_JWKS_URI: "http://localhost:8080/realms/eaf/protocol/openid-connect/certs"
+
+  # Infrastructure configuration
+  DOCKER_DRIVER: overlay2
+  COMPOSE_PROJECT_NAME: "eaf-ci-${CI_PIPELINE_ID}"
+
+# Pipeline will run on schedule (nightly) or manual trigger
+workflow:
+  rules:
+    # Run on schedules (configure in GitLab: Settings > CI/CD > Schedules)
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Allow manual pipeline runs
+    - if: $CI_PIPELINE_SOURCE == "web"
+    # Allow merge request pipelines (optional - comment out if nightly-only)
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+
+# Pipeline stages
+stages:
+  - setup
+  - build
+  - test-performance
+  - test-nightly
+  - test-mutation
+  - cleanup
+
+# ============================================================================
+# Reusable Templates
+# ============================================================================
+
+# Base template for all jobs
+.base_template:
+  # Image with JDK 21 pre-installed (adjust based on your GitLab registry)
+  image: eclipse-temurin:21-jdk
+
+  # Timeout: 8 hours for comprehensive validation
+  timeout: 8h
+
+  # Cache Gradle dependencies and wrapper
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}-${ARCH}"
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches
+
+  # Clean GRADLE_USER_HOME before each job (prevents stale configs)
+  before_script:
+    - echo "🔧 Pipeline ID: ${CI_PIPELINE_ID}"
+    - echo "🏗️  Architecture: ${ARCH:-x86_64}"
+    - echo "🗑️  Cleaning stale Gradle configs..."
+    - rm -f ${GRADLE_USER_HOME}/gradle.properties || true
+    - cp .github/ci-gradle.properties gradle.properties
+    - echo "✅ CI Gradle configuration applied"
+
+# Architecture-specific runner selection
+.arch_x86_64:
+  tags:
+    - linux
+    - x86_64
+    - nightly
+  variables:
+    ARCH: "x86_64"
+
+.arch_arm64:
+  tags:
+    - linux
+    - arm64
+    - nightly
+  variables:
+    ARCH: "arm64"
+
+.arch_ppc64le:
+  tags:
+    - linux
+    - ppc64le
+    - nightly
+  variables:
+    ARCH: "ppc64le"
+
+# Infrastructure setup template (Docker Compose)
+.infrastructure_template:
+  services:
+    - docker:dind
+
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+
+  before_script:
+    - !reference [.base_template, before_script]
+    - echo "🐳 Setting up Docker Compose infrastructure..."
+    - apk add --no-cache docker-compose curl bash || apt-get update && apt-get install -y docker-compose curl
+
+    # Clean up previous runs
+    - docker compose down -v --remove-orphans || true
+
+    # Start infrastructure services
+    - docker compose up -d postgres redis keycloak
+    - echo "🚀 Infrastructure services started"
+
+    # Wait for PostgreSQL
+    - |
+      echo "⏳ Waiting for PostgreSQL..."
+      timeout 60 bash -c 'until docker exec eaf-postgres pg_isready -U eaf_user -d eaf 2>/dev/null; do sleep 2; done'
+      echo "✅ PostgreSQL is ready!"
+
+    # Wait for Redis
+    - |
+      echo "⏳ Waiting for Redis..."
+      timeout 30 bash -c 'until docker exec eaf-redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 2; done'
+      echo "✅ Redis is ready!"
+
+    # Wait for Keycloak
+    - |
+      echo "⏳ Waiting for Keycloak..."
+      timeout 120 bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} eaf-keycloak 2>/dev/null)" = "healthy" ]; do sleep 5; done'
+      echo "✅ Keycloak health check passed!"
+
+    # Verify Keycloak realm
+    - |
+      echo "⏳ Verifying Keycloak realm import..."
+      timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf 2>/dev/null | grep -q "eaf"; do sleep 3; done'
+      echo "✅ Keycloak realm 'eaf' is available!"
+
+    # Verify Keycloak JWKS endpoint
+    - |
+      echo "⏳ Verifying Keycloak JWKS endpoint..."
+      timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf/protocol/openid-connect/certs 2>/dev/null | grep -q "keys"; do sleep 3; done'
+      echo "✅ Keycloak JWKS endpoint is responding!"
+
+    - echo "🎉 All infrastructure services are healthy!"
+
+  after_script:
+    - echo "🧹 Cleaning up infrastructure..."
+    - docker compose down -v || true
+
+# ============================================================================
+# Stage 1: Setup & Build
+# ============================================================================
+
+# Build job for each architecture
+build:x86_64:
+  extends:
+    - .base_template
+    - .arch_x86_64
+    - .infrastructure_template
+
+  stage: build
+
+  script:
+    - echo "🏗️  Building Widget Demo Application (x86_64)..."
+    - ./gradlew :products:widget-demo:assemble --no-daemon --build-cache --stacktrace
+    - echo "✅ Build successful!"
+
+  artifacts:
+    name: "build-x86_64-$CI_PIPELINE_ID"
+    expire_in: 1 day
+    paths:
+      - products/widget-demo/build/libs/
+
+build:arm64:
+  extends:
+    - .base_template
+    - .arch_arm64
+    - .infrastructure_template
+
+  stage: build
+
+  script:
+    - echo "🏗️  Building Widget Demo Application (arm64)..."
+    - ./gradlew :products:widget-demo:assemble --no-daemon --build-cache --stacktrace
+    - echo "✅ Build successful!"
+
+  artifacts:
+    name: "build-arm64-$CI_PIPELINE_ID"
+    expire_in: 1 day
+    paths:
+      - products/widget-demo/build/libs/
+
+build:ppc64le:
+  extends:
+    - .base_template
+    - .arch_ppc64le
+    - .infrastructure_template
+
+  stage: build
+
+  script:
+    - echo "🏗️  Building Widget Demo Application (ppc64le)..."
+    - ./gradlew :products:widget-demo:assemble --no-daemon --build-cache --stacktrace
+    - echo "✅ Build successful!"
+
+  artifacts:
+    name: "build-ppc64le-$CI_PIPELINE_ID"
+    expire_in: 1 day
+    paths:
+      - products/widget-demo/build/libs/
+
+# ============================================================================
+# Stage 2: Performance Testing
+# ============================================================================
+
+# Performance tests template (runs on all architectures)
+.performance_tests:
+  extends:
+    - .base_template
+    - .infrastructure_template
+
+  stage: test-performance
+
+  script:
+    # Start Widget Demo Application
+    - |
+      echo "🚀 Starting Widget Demo Application..."
+      nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' > app.log 2>&1 &
+      echo $! > app.pid
+      echo "🚀 Started application with PID $(cat app.pid)"
+
+    # Wait for application startup
+    - |
+      echo "⏳ Waiting for application to be ready..."
+      TIMEOUT=120
+      ELAPSED=0
+      while [ $ELAPSED -lt $TIMEOUT ]; do
+        if curl -f http://localhost:8090/actuator/health 2>/dev/null; then
+          echo "✅ Application is ready!"
+          break
+        fi
+
+        if [ -f app.log ]; then
+          echo "=== Last 10 lines of app.log ==="
+          tail -10 app.log
+          echo "================================"
+        fi
+
+        echo "⏳ Waiting for application... ($ELAPSED/$TIMEOUT seconds elapsed)"
+        sleep 5
+        ELAPSED=$((ELAPSED + 5))
+      done
+
+      if [ $ELAPSED -ge $TIMEOUT ]; then
+        echo "❌ ERROR: Application failed to start within $TIMEOUT seconds"
+        echo "=== Full application log ==="
+        cat app.log || echo "No log file found"
+        exit 1
+      fi
+
+    # Run Gatling performance tests
+    - |
+      echo "⚡ Running Gatling performance baseline tests..."
+      ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
+
+    # Run snapshot performance tests
+    - |
+      echo "📸 Running snapshot performance tests..."
+      ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
+
+  after_script:
+    # Stop application
+    - |
+      if [ -f app.pid ]; then
+        APP_PID=$(cat app.pid)
+        echo "🛑 Stopping application (PID: $APP_PID)"
+        kill $APP_PID || true
+        timeout 30 bash -c "while kill -0 $APP_PID 2>/dev/null; do sleep 1; done" || kill -9 $APP_PID || true
+        rm app.pid
+      fi
+
+    # Stop infrastructure
+    - docker compose down -v || true
+
+  artifacts:
+    name: "performance-${ARCH}-$CI_PIPELINE_ID"
+    expire_in: 90 days
+    when: always
+    paths:
+      - app.log
+      - products/widget-demo/build/reports/gatling/
+      - products/widget-demo/build/reports/tests/integrationTest/
+    reports:
+      junit: products/widget-demo/build/test-results/integrationTest/*.xml
+
+performance:x86_64:
+  extends:
+    - .performance_tests
+    - .arch_x86_64
+  needs:
+    - build:x86_64
+
+performance:arm64:
+  extends:
+    - .performance_tests
+    - .arch_arm64
+  needs:
+    - build:arm64
+
+performance:ppc64le:
+  extends:
+    - .performance_tests
+    - .arch_ppc64le
+  needs:
+    - build:ppc64le
+
+# ============================================================================
+# Stage 3: Nightly Comprehensive Test Suite (Framework Modules Only)
+# ============================================================================
+
+# Nightly tests template
+.nightly_tests:
+  extends:
+    - .base_template
+    - .infrastructure_template
+
+  stage: test-nightly
+
+  # Nightly tests are long-running (property, fuzz, concurrency, mutation, perf)
+  timeout: 8h
+
+  script:
+    # Phase 2 V2: Consolidated nightlyTest suite
+    # IMPORTANT: nightlyTest task only exists for framework modules (EafTestingV2Plugin.kt:113-117)
+    # Must explicitly specify framework modules - global task execution would fail
+    - |
+      echo "🌙 Running Nightly Comprehensive Test Suite (V2)..."
+      echo "   - @Tag(\"Property\"): Kotest property-based testing"
+      echo "   - @Tag(\"Fuzz\"): Jazzer fuzz testing (30 min/target)"
+      echo "   - @Tag(\"Concurrency\"): LitmusKt concurrency tests (Epic 8)"
+      echo "   - @Tag(\"Mutation\"): Pitest mutation coverage"
+      echo "   - @Tag(\"Performance\"): Benchmark/performance tests"
+      echo "   - @Tag(\"Nightly\"): General nightly tests"
+
+      ./gradlew \
+        :framework:core:nightlyTest \
+        :framework:security:nightlyTest \
+        :framework:cqrs:nightlyTest \
+        :framework:persistence:nightlyTest \
+        :framework:web:nightlyTest \
+        :framework:observability:nightlyTest \
+        :framework:multi-tenancy:nightlyTest \
+        :framework:workflow:nightlyTest \
+        :shared:testing:nightlyTest \
+        :shared:shared-api:nightlyTest \
+        :shared:shared-types:nightlyTest \
+        -PnightlyBuild --no-daemon --stacktrace --continue
+
+  artifacts:
+    name: "nightly-${ARCH}-$CI_PIPELINE_ID"
+    expire_in: 30 days
+    when: always
+    paths:
+      - "**/build/reports/tests/nightlyTest/"
+      - "**/build/test-results/nightlyTest/"
+    reports:
+      junit: "**/build/test-results/nightlyTest/*.xml"
+
+nightly:x86_64:
+  extends:
+    - .nightly_tests
+    - .arch_x86_64
+  needs:
+    - build:x86_64
+    - performance:x86_64
+
+nightly:arm64:
+  extends:
+    - .nightly_tests
+    - .arch_arm64
+  needs:
+    - build:arm64
+    - performance:arm64
+
+nightly:ppc64le:
+  extends:
+    - .nightly_tests
+    - .arch_ppc64le
+  needs:
+    - build:ppc64le
+    - performance:ppc64le
+
+# ============================================================================
+# Stage 4: Mutation Testing (Pitest)
+# ============================================================================
+
+# Mutation testing template
+.mutation_tests:
+  extends:
+    - .base_template
+
+  stage: test-mutation
+
+  # Mutation testing is CPU-intensive
+  timeout: 4h
+
+  script:
+    # Mutation Testing (Pitest - separate from nightlyTest suite)
+    # TODO: Integrate with nightlyTest in Phase 2.5
+    - |
+      echo "🧬 Running Mutation Testing (Pitest - Framework Modules)..."
+      ./gradlew \
+        :framework:core:pitest \
+        :framework:security:pitest \
+        :framework:cqrs:pitest \
+        --no-daemon --stacktrace
+
+  artifacts:
+    name: "mutation-${ARCH}-$CI_PIPELINE_ID"
+    expire_in: 90 days
+    when: always
+    paths:
+      - "**/build/reports/pitest/"
+
+mutation:x86_64:
+  extends:
+    - .mutation_tests
+    - .arch_x86_64
+  needs:
+    - nightly:x86_64
+
+mutation:arm64:
+  extends:
+    - .mutation_tests
+    - .arch_arm64
+  needs:
+    - nightly:arm64
+
+mutation:ppc64le:
+  extends:
+    - .mutation_tests
+    - .arch_ppc64le
+  needs:
+    - nightly:ppc64le
+
+# ============================================================================
+# Stage 5: Cleanup & Reporting
+# ============================================================================
+
+# Aggregate reports from all architectures
+aggregate_reports:
+  extends:
+    - .base_template
+    - .arch_x86_64  # Run on x86_64 for aggregation
+
+  stage: cleanup
+
+  when: always
+
+  needs:
+    - mutation:x86_64
+    - mutation:arm64
+    - mutation:ppc64le
+
+  script:
+    - echo "📊 Aggregating test reports from all architectures..."
+    - echo "   x86_64, arm64, ppc64le"
+    - echo "✅ Pipeline complete!"
+    - |
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        echo "::error::Nightly deep validation failed on one or more architectures."
+        echo "Review uploaded artifacts for details."
+      fi
+
+  artifacts:
+    name: "aggregate-reports-$CI_PIPELINE_ID"
+    expire_in: 90 days
+    when: always
+    paths:
+      - "**/build/reports/"
+      - "**/build/test-results/"
+
+# ============================================================================
+# Optional: Manual Jobs
+# ============================================================================
+
+# Manual cleanup job (in case of stuck infrastructure)
+manual_cleanup:
+  extends:
+    - .base_template
+
+  stage: cleanup
+
+  when: manual
+
+  allow_failure: true
+
+  script:
+    - echo "🧹 Performing manual infrastructure cleanup..."
+    - docker compose down -v --remove-orphans || true
+    - docker system prune -af --volumes || true
+    - echo "✅ Cleanup complete!"
+
+# ============================================================================
+# Notes:
+# ============================================================================
+# 1. GitLab CI Schedule Configuration (Settings > CI/CD > Schedules):
+#    - Create a schedule with cron: "0 2 * * *" (2 AM UTC daily)
+#    - Target branch: main or master
+#    - Variables: Set any environment-specific variables
+#
+# 2. GitLab Runner Tags:
+#    - Ensure runners are tagged appropriately:
+#      * x86_64: tags = ["linux", "x86_64", "nightly"]
+#      * arm64:  tags = ["linux", "arm64", "nightly"]
+#      * ppc64le: tags = ["linux", "ppc64le", "nightly"]
+#
+# 3. Docker Compose:
+#    - Ensure docker-compose.yml is in repository root
+#    - Services: postgres, redis, keycloak
+#
+# 4. Artifacts Retention:
+#    - Performance reports: 90 days
+#    - Nightly test reports: 30 days
+#    - Mutation test reports: 90 days
+#    - Application logs: 7 days (from performance jobs)
+#
+# 5. Multi-Architecture Support:
+#    - GitHub Actions: x86_64 only (no ppc64le support)
+#    - GitLab CI: x86_64, arm64, ppc64le (comprehensive)
+#
+# 6. Equivalent to GitHub Actions workflow:
+#    - .github/workflows/nightly.yml (x86_64 only)
+#    - This GitLab CI config adds arm64 and ppc64le coverage
+# ============================================================================

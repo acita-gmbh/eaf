@@ -1,0 +1,237 @@
+<story-context id="epic-4/story-4-1" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.1</storyId>
+    <title>TenantContext and ThreadLocal Management</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.1-tenant-context-threadlocal.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>ThreadLocal-based tenant context storage</iWant>
+    <soThat>tenant ID is available throughout request processing without parameter passing</soThat>
+    <tasks>
+      - AC1: framework/multi-tenancy module created
+      - AC2: TenantId.kt value object with validation
+      - AC3: TenantContext.kt manages ThreadLocal storage with stack-based context
+      - AC4: TenantContextHolder.kt provides static access (get/set/clear methods)
+      - AC5: WeakReference used for memory safety (prevent ThreadLocal leaks)
+      - AC6: Unit tests validate: set context → retrieve → clear
+      - AC7: Thread isolation validated (context not shared between threads)
+      - AC8: Context cleared after request completion (filter cleanup)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. framework/multi-tenancy module created
+    2. TenantId.kt value object with validation
+    3. TenantContext.kt manages ThreadLocal storage with stack-based context
+    4. TenantContextHolder.kt provides static access (get/set/clear methods)
+    5. WeakReference used for memory safety (prevent ThreadLocal leaks)
+    6. Unit tests validate: set context → retrieve → clear
+    7. Thread isolation validated (context not shared between threads)
+    8. Context cleared after request completion (filter cleanup)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-multi-tenancy">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Multi-Tenancy (3-Layer Isolation - Layer 1)</section>
+        <relevance>Defines 3-layer tenant isolation architecture and ThreadLocal management patterns</relevance>
+        <snippet>
+          Layer 1: TenantContextFilter extracts tenant_id from JWT → ThreadLocal
+          - ThreadLocal-based storage with stack-based context for nested scenarios
+          - WeakReference for memory safety (prevent ThreadLocal leaks)
+          - Fail-closed design: missing tenant context rejects request
+        </snippet>
+      </doc>
+      <doc id="prd-fr004">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Multi-Tenancy with Isolation and Quotas</section>
+        <relevance>Business requirements for tenant isolation and context management</relevance>
+        <snippet>
+          Multi-tenant architecture with complete data isolation between tenants.
+          Defense-in-depth approach with 3 layers of tenant validation.
+        </snippet>
+      </doc>
+      <doc id="tech-spec-fr004">
+        <path>docs/tech-spec.md</path>
+        <section>Section 3 (FR004), Section 7.2</section>
+        <relevance>Technical specification for multi-tenancy implementation</relevance>
+        <snippet>
+          TenantContext API provides fail-closed getCurrentTenantId() and nullable current()
+          Stack-based context allows nested tenant scenarios for testing
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Lessons Learned - JWT Patterns</section>
+        <relevance>Recent patterns from Epic 3 JWT validation</relevance>
+        <snippet>
+          Epic 3 completed 10-layer JWT validation with tenant_id claim extraction.
+          JWT validation extracts tenant_id from claims (Layer 4: Claims Schema Validation).
+          All Epic 3 tests use Kotest + Testcontainers with real Keycloak.
+        </snippet>
+      </doc>
+      <doc id="epics-epic4">
+        <path>docs/epics.md</path>
+        <section>Lines 760-787 - Epic 4, Story 4.1</section>
+        <relevance>Epic-level context and story details</relevance>
+        <snippet>
+          Epic 4 implements comprehensive multi-tenancy with defense-in-depth isolation through three layers.
+          Story 4.1: TenantContext and ThreadLocal Management with WeakReference for memory safety.
+          TenantContext.kt manages ThreadLocal storage with stack-based context.
+          Thread isolation validated (context not shared between threads).
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="security-module">
+        <path>framework/security/src/main/kotlin/com/axians/eaf/framework/security/</path>
+        <kind>module</kind>
+        <reason>Reference for module structure and Spring configuration patterns from Epic 3</reason>
+      </artifact>
+      <artifact id="jwt-validators">
+        <path>framework/security/src/main/kotlin/com/axians/eaf/framework/security/validation/</path>
+        <kind>pattern</kind>
+        <reason>Epic 3 validation patterns for extracting claims from JWT (tenant_id extraction model)</reason>
+      </artifact>
+      <artifact id="value-objects">
+        <path>framework/core/src/main/kotlin/com/axians/eaf/framework/core/domain/</path>
+        <kind>pattern</kind>
+        <reason>Domain value object patterns for TenantId implementation</reason>
+      </artifact>
+      <artifact id="kotest-unit-tests">
+        <path>framework/security/src/test/kotlin/com/axians/eaf/framework/security/</path>
+        <kind>test-pattern</kind>
+        <reason>Kotest FunSpec patterns from Epic 3 for unit testing</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Spring Boot" version="3.5.7" purpose="Application framework" />
+      <dependency name="Spring Modulith" version="1.4.4" purpose="Module boundaries and @ApplicationModule" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework (FunSpec for unit tests)" />
+      <dependency name="Arrow" version="2.1.2" purpose="Either&lt;Error,Success&gt; for domain error handling" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="fail-closed-design">
+      Fail-closed design: Missing or invalid tenant context must result in immediate rejection.
+      TenantContext.getCurrentTenantId() throws exception if missing (fail-closed).
+      TenantContext.current() returns null if missing (nullable, for defensive checks).
+    </constraint>
+    <constraint id="threadlocal-safety">
+      ThreadLocal must use WeakReference for memory safety to prevent ThreadLocal leaks.
+      Context must be cleared after request completion (handled by filter in Story 4.2).
+      Thread isolation: context must not leak between threads.
+    </constraint>
+    <constraint id="stack-based-context">
+      Stack-based context allows nested tenant scenarios (useful for testing).
+      Context can be pushed/popped for test scenarios requiring tenant switching.
+    </constraint>
+    <constraint id="no-wildcard-imports">
+      Zero-tolerance policy: NO wildcard imports. Every import must be explicit (ktlint enforced).
+    </constraint>
+    <constraint id="kotest-only">
+      Use Kotest ONLY for all tests. JUnit is explicitly forbidden.
+      Never mix JUnit and Kotest annotations (JUnit @Disabled has no effect on Kotest tests).
+    </constraint>
+    <constraint id="value-object-validation">
+      TenantId.kt must validate tenant ID format (alphanumeric, reasonable length).
+      Use data class with init block for validation.
+      Throw IllegalArgumentException for invalid tenant IDs.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="tenant-context-api">
+      <name>TenantContext API</name>
+      <description>
+        Primary API for tenant context management in multi-tenant applications.
+        Two access patterns: fail-closed (getCurrentTenantId) and nullable (current).
+      </description>
+      <methods>
+        <method>
+          fun getCurrentTenantId(): String
+          // Fail-closed: throws exception if tenant context missing
+          // Use in: command handlers, service methods
+        </method>
+        <method>
+          fun current(): String?
+          // Nullable: returns null if tenant context missing
+          // Use in: defensive checks, optional tenant context
+        </method>
+        <method>
+          fun setCurrentTenantId(tenantId: String)
+          // Stack operation: push tenant context (handled by Layer 1 filter)
+        </method>
+        <method>
+          fun clearCurrentTenant()
+          // Stack operation: pop tenant context (handled by Layer 1 filter cleanup)
+        </method>
+      </methods>
+    </interface>
+    <interface id="tenant-id-value-object">
+      <name>TenantId Value Object</name>
+      <description>
+        Validated value object for tenant identifiers.
+        Ensures type safety and validation for tenant IDs.
+      </description>
+      <pattern>
+        data class TenantId(val value: String) {
+          init {
+            require(value.isNotBlank()) { "Tenant ID cannot be blank" }
+            require(value.matches(Regex("[a-zA-Z0-9_-]+"))) { "Tenant ID must be alphanumeric" }
+            require(value.length in 1..255) { "Tenant ID length must be 1-255 characters" }
+          }
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Test-first development mandatory (Red-Green-Refactor cycle).
+        All production code must be preceded by failing tests.
+        Coverage targets: 85% line coverage, 60-70% mutation coverage.
+      </standard>
+      <standard id="kotest-funspec">
+        Use Kotest FunSpec for unit tests (NOT JUnit).
+        Test structure: test("should do X when Y") { ... }
+        Use io.kotest.matchers.shouldBe for assertions.
+      </standard>
+      <standard id="nullable-pattern">
+        Use Nullable Design Pattern for fast unit tests.
+        No infrastructure dependencies in unit tests.
+        Integration tests use Testcontainers for real dependencies.
+      </standard>
+      <standard id="thread-isolation-testing">
+        Thread isolation must be validated with concurrent test execution.
+        Multiple threads must not share tenant context.
+        Use Kotlin coroutines or java.util.concurrent for thread testing.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantContextTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantIdTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantContextHolderTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC6: set context → retrieve → clear cycle</idea>
+      <idea>Test AC7: Thread isolation - spawn multiple threads, verify contexts don't leak</idea>
+      <idea>Test AC8: Context cleanup - verify ThreadLocal cleared after use</idea>
+      <idea>Test nested context scenarios: push context A, push context B, pop B → context A restored</idea>
+      <idea>Test TenantId validation: blank ID, invalid characters, too long, valid ID</idea>
+      <idea>Test getCurrentTenantId() fail-closed behavior: throws exception when missing</idea>
+      <idea>Test current() nullable behavior: returns null when missing</idea>
+      <idea>Property-based test for TenantId validation with Kotest Arb generators</idea>
+    </ideas>
+  </tests>
+</story-context>

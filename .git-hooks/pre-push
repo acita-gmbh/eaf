@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# EAF v1.0 Pre-Push Hook - Comprehensive Quality Gates
+# Story 1.4: Testing Infrastructure Modernization - 2-Stage Validation
+#
+# Philosophy: Comprehensive validation on ALL files before CI
+# Runtime: 2-5min (full project validation)
+#
+# Checks:
+# 1. ktlintCheck - Verify ALL modules properly formatted
+# 2. detekt - Static analysis on ALL modules
+# 3. test - Unit tests on ALL modules
+#
+# Note: Integration tests run in CI (not in pre-push for speed)
+
 if command -v tput >/dev/null 2>&1; then
   BLUE="$(tput setaf 4)"
   GREEN="$(tput setaf 2)"
@@ -21,9 +34,29 @@ warn()  { printf "%s⚠️ %s %s\n" "$YELLOW" "$RESET" "$1"; }
 fail()  { printf "%s❌%s %s\n" "$RED" "$RESET" "$1"; }
 
 echo ""
-info "Running pre-push quality gate (Detekt + tests)"
+info "Pre-push validation (comprehensive, all files)"
+echo ""
 
-info "Detekt static analysis"
+# ============================================================================
+# 1. ktlintCheck - Verify ALL modules properly formatted
+# ============================================================================
+
+info "Running ktlintCheck on all modules..."
+if ! ./gradlew ktlintCheck --quiet; then
+  echo ""
+  fail "ktlint violations detected in project"
+  warn "Some files may not be properly formatted"
+  warn "Fix with: ./gradlew ktlintFormat"
+  warn "Bypass (not recommended): git push --no-verify"
+  exit 1
+fi
+success "ktlint passed (all modules)"
+
+# ============================================================================
+# 2. detekt - Static analysis on ALL modules
+# ============================================================================
+
+info "Running detekt on all modules..."
 if ! ./gradlew detekt --quiet; then
   echo ""
   fail "Detekt violations detected"
@@ -32,9 +65,20 @@ if ! ./gradlew detekt --quiet; then
   warn "Bypass (not recommended): git push --no-verify"
   exit 1
 fi
+success "Detekt passed (all modules)"
 
-info "Unit test suite (ciTests - avoids Kotest XML Reporter bug)"
-if ! ./gradlew ciTests --quiet; then
+# ============================================================================
+# 3. test - Unit tests on ALL modules
+# ============================================================================
+
+info "Running unit test suite (all modules)..."
+echo ""
+warn "ℹ️  Integration tests skipped (run manually or wait for CI)"
+warn "   To run locally: ./gradlew integrationTest"
+warn "   CI will run full validation (test + integrationTest + security)"
+echo ""
+
+if ! ./gradlew test --quiet; then
   echo ""
   fail "Unit tests failed"
   warn "Fix failing tests before pushing"
@@ -42,5 +86,7 @@ if ! ./gradlew ciTests --quiet; then
   exit 1
 fi
 
-success "All quality gates passed"
+echo ""
+success "✨ All pre-push gates passed - CI will validate fully!"
+echo ""
 exit 0

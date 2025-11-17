@@ -1,6 +1,6 @@
 // Shared Testing Module - Test utilities and nullable implementations
 plugins {
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.2: Migrated to v2
     id("eaf.kotlin-common")
 }
 

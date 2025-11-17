@@ -1,0 +1,276 @@
+<story-context id="epic-4/story-4-8" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.8</storyId>
+    <title>Tenant Context Leak Detection and Monitoring</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.8-tenant-leak-detection.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>monitoring and alerting for tenant context leaks</iWant>
+    <soThat>isolation violations are detected immediately</soThat>
+    <tasks>
+      - AC1: Metrics emitted: tenant_context_missing, tenant_context_mismatch, cross_tenant_access_attempts
+      - AC2: Security audit log for all tenant isolation violations
+      - AC3: Structured JSON log includes: violation_type, user_id, attempted_tenant, actual_tenant, trace_id
+      - AC4: Alerting rules configured in Prometheus for isolation violations
+      - AC5: Dashboard query templates for tenant isolation monitoring
+      - AC6: Integration test validates metrics are emitted on violations
+      - AC7: Leak detection documented in docs/reference/security-monitoring.md
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Metrics emitted: tenant_context_missing, tenant_context_mismatch, cross_tenant_access_attempts
+    2. Security audit log for all tenant isolation violations
+    3. Structured JSON log includes: violation_type, user_id, attempted_tenant, actual_tenant, trace_id
+    4. Alerting rules configured in Prometheus for isolation violations
+    5. Dashboard query templates for tenant isolation monitoring
+    6. Integration test validates metrics are emitted on violations
+    7. Leak detection documented in docs/reference/security-monitoring.md
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-leak-detection">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Tenant Leak Detection, Section 17 - Monitoring</section>
+        <relevance>Monitoring and alerting strategy for tenant isolation violations</relevance>
+        <snippet>
+          Tenant Leak Detection and Monitoring:
+          - Prometheus metrics: tenant_context_missing, tenant_context_mismatch, cross_tenant_access_attempts
+          - Security audit log with structured JSON for SIEM integration
+          - Log fields: violation_type, user_id, attempted_tenant, actual_tenant, trace_id, timestamp
+          - Alerting rules: Immediate alert on any cross-tenant access attempt
+          - Dashboard: Real-time tenant isolation monitoring
+          - Integration with observability stack (Micrometer, Logback, OpenTelemetry)
+        </snippet>
+      </doc>
+      <doc id="prd-fr005-observability">
+        <path>docs/PRD.md</path>
+        <section>FR005 - Observability & Monitoring</section>
+        <relevance>Business requirements for comprehensive observability</relevance>
+        <snippet>
+          FR005: Comprehensive observability with structured logging, metrics, and tracing.
+          Security monitoring for tenant isolation violations.
+          Real-time alerting for security incidents.
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-metrics-pattern">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Template Method Pattern - Story 3.9</section>
+        <relevance>Metrics instrumentation patterns from Epic 3</relevance>
+        <snippet>
+          Story 3.9: Template Method Pattern for Metrics
+          - MeteredTokenValidator base class with automatic instrumentation
+          - Per-layer metrics automatically emitted (295x better than target)
+          - Clean code, zero boilerplate, exceptional performance
+          Apply same pattern to tenant leak detection for metrics emission.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-8">
+        <path>docs/epics.md</path>
+        <section>Lines 907-924 - Story 4.8</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.8: Tenant Context Leak Detection and Monitoring
+          - Metrics: tenant_context_missing, tenant_context_mismatch, cross_tenant_access_attempts
+          - Security audit log with structured JSON
+          - Alerting rules in Prometheus for isolation violations
+          - Dashboard query templates for monitoring
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-3-tenant-validation">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationInterceptor.kt</path>
+        <kind>primary</kind>
+        <reason>Story 4.3 interceptor to be enhanced with metrics and security logging</reason>
+      </artifact>
+      <artifact id="story-4-2-tenant-filter">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantContextFilter.kt</path>
+        <kind>primary</kind>
+        <reason>Story 4.2 filter to emit metrics for missing tenant context</reason>
+      </artifact>
+      <artifact id="security-metrics">
+        <path>framework/security/src/main/kotlin/com/axians/eaf/framework/security/validation/MeteredTokenValidator.kt</path>
+        <kind>pattern</kind>
+        <reason>Epic 3 Story 3.9 Template Method Pattern for metrics</reason>
+      </artifact>
+      <artifact id="test-meter-registry">
+        <path>framework/security/src/integration-test/kotlin/com/axians/eaf/framework/security/config/TestMeterRegistryConfig.kt</path>
+        <kind>test-pattern</kind>
+        <reason>Epic 3 test pattern for metrics validation</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="Micrometer" version="1.15.5" purpose="Prometheus metrics collection" />
+      <dependency name="Logback" version="1.5.19" purpose="Structured JSON logging" />
+      <dependency name="Logstash Encoder" version="8.0" purpose="JSON log formatting" />
+      <dependency name="Prometheus" version="from Micrometer" purpose="Metrics scraping and alerting" />
+      <dependency name="Spring Boot Actuator" version="3.5.7" purpose="Metrics endpoint exposure" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="metrics-emission-points">
+      Emit metrics at all tenant isolation enforcement points:
+      - tenant_context_missing: TenantContextFilter (Layer 1), command interceptor (Layer 2)
+      - tenant_context_mismatch: TenantValidationInterceptor (Layer 2)
+      - cross_tenant_access_attempts: All layers when isolation violated
+      Use Micrometer Counter for counts, Timer for latency tracking.
+    </constraint>
+    <constraint id="security-audit-log">
+      Security audit log for ALL tenant isolation violations (CWE-778 compliance).
+      Structured JSON log with fields: violation_type, user_id, attempted_tenant, actual_tenant, trace_id, timestamp.
+      Log level: WARN for violations (not ERROR - violations are expected attack attempts).
+      Integration with SIEM via structured JSON format.
+    </constraint>
+    <constraint id="prometheus-alerting-rules">
+      Prometheus alerting rules for tenant isolation violations:
+      - Alert: TenantContextMissing (any missing context in production)
+      - Alert: TenantContextMismatch (any mismatch attempt)
+      - Alert: CrossTenantAccessAttempt (sustained attack pattern: &gt;10 attempts/min)
+      Severity: Critical (immediate investigation required).
+    </constraint>
+    <constraint id="dashboard-templates">
+      Grafana dashboard query templates for tenant isolation monitoring:
+      - Panel: Tenant isolation violation rate (per tenant, per time period)
+      - Panel: Top violators (user_id with most violation attempts)
+      - Panel: Violation types breakdown (missing, mismatch, cross-tenant)
+      Real-time monitoring for security operations center (SOC).
+    </constraint>
+    <constraint id="pii-protection">
+      Do NOT log sensitive data in violation logs (CWE-209 protection).
+      Generic messages: "Access denied: tenant context mismatch"
+      Log tenant IDs (not PII) for security analysis, not user details.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="metrics-emission">
+      <name>Tenant Isolation Metrics</name>
+      <description>
+        Micrometer metrics for tenant isolation monitoring.
+        Counters for violation counts, timers for validation latency.
+      </description>
+      <metrics>
+        tenant_context_missing (Counter) - Count of missing tenant context violations
+        tenant_context_mismatch (Counter) - Count of tenant context mismatch violations
+        cross_tenant_access_attempts (Counter) - Count of cross-tenant access attempts
+        tenant_validation_duration (Timer) - Latency of tenant validation operations
+      </metrics>
+      <pattern>
+        @Component
+        class TenantValidationInterceptor(
+          private val meterRegistry: MeterRegistry
+        ) {
+          private val mismatchCounter = meterRegistry.counter("tenant_context_mismatch")
+
+          override fun handle(...): Any? {
+            if (command.tenantId != currentTenant) {
+              mismatchCounter.increment()
+              // Log security violation
+              throw TenantIsolationException(...)
+            }
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="security-audit-log">
+      <name>Security Audit Logging</name>
+      <description>
+        Structured JSON security audit log for tenant isolation violations.
+        Integration with SIEM via Logback JSON encoder.
+      </description>
+      <pattern>
+        logger.warn(
+          StructuredArguments.kv("event_type", "tenant_isolation_violation"),
+          StructuredArguments.kv("violation_type", "context_mismatch"),
+          StructuredArguments.kv("user_id", userId),
+          StructuredArguments.kv("attempted_tenant", command.tenantId),
+          StructuredArguments.kv("actual_tenant", currentTenant),
+          StructuredArguments.kv("trace_id", traceId),
+          "Access denied: tenant context mismatch"
+        )
+      </pattern>
+    </interface>
+    <interface id="prometheus-alerting">
+      <name>Prometheus Alerting Rules</name>
+      <description>
+        Prometheus alerting rules for tenant isolation violations.
+        Configuration in prometheus.yml or alerting rules file.
+      </description>
+      <pattern>
+        groups:
+          - name: tenant_isolation_alerts
+            rules:
+              - alert: TenantContextMismatch
+                expr: rate(tenant_context_mismatch_total[5m]) > 0
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Tenant context mismatch detected"
+                  description: "{{ $value }} tenant context mismatches in last 5 minutes"
+
+              - alert: CrossTenantAccessAttempt
+                expr: rate(cross_tenant_access_attempts_total[1m]) > 10
+                for: 2m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Sustained cross-tenant access attempts"
+                  description: "{{ $value }} cross-tenant access attempts per minute"
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration test validates metrics emitted on violations.
+        Test BEFORE implementing metrics instrumentation.
+      </standard>
+      <standard id="metrics-validation">
+        Use TestMeterRegistry pattern from Epic 3 for metrics validation.
+        Verify counter increments, timer recordings on violation scenarios.
+        Pattern: TestMeterRegistry + Kotest assertions.
+      </standard>
+      <standard id="security-log-validation">
+        Validate structured JSON log contains all required fields.
+        Parse JSON log output, verify violation_type, user_id, tenant IDs, trace_id.
+        Use Logback test appender or log capture for validation.
+      </standard>
+      <standard id="integration-with-story-4-7">
+        Reuse Story 4.7 tenant isolation test scenarios.
+        Enhance tests to validate metrics and logging on violations.
+        Verify metrics emitted for all 3 layers of isolation.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/TenantLeakDetectionIntegrationTest.kt</location>
+      <location>framework/multi-tenancy/src/test/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationMetricsTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC1: Verify tenant_context_missing counter incremented on missing context</idea>
+      <idea>Test AC1: Verify tenant_context_mismatch counter incremented on mismatch</idea>
+      <idea>Test AC1: Verify cross_tenant_access_attempts counter incremented on cross-tenant attempt</idea>
+      <idea>Test AC2: Security audit log emitted on tenant isolation violation</idea>
+      <idea>Test AC3: Structured JSON log includes all required fields (violation_type, user_id, tenants, trace_id)</idea>
+      <idea>Test AC3: Parse JSON log output, validate field values</idea>
+      <idea>Test AC6: Integration test - trigger violation → verify metrics incremented</idea>
+      <idea>Test AC6: Integration test - Layer 1 violation → missing context metric</idea>
+      <idea>Test AC6: Integration test - Layer 2 violation → mismatch metric</idea>
+      <idea>Test AC6: Integration test - Layer 3 violation → cross-tenant access metric</idea>
+      <idea>Test metrics emission performance: &lt;1ms overhead for instrumentation</idea>
+      <idea>Test concurrent violations → metrics accurate under load</idea>
+      <idea>Test log rotation and retention (7-day target from Epic 5)</idea>
+    </ideas>
+  </tests>
+</story-context>

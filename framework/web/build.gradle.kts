@@ -1,6 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.2: Migrated to v2
 }
 
 description = "EAF Web Framework - REST controllers and global advice"

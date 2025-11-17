@@ -18,13 +18,13 @@
 - Path: `.bmad/bmm/workflows/1-analysis/research/workflow.yaml`
 - Adaptive research workflow supporting multiple research types: market research, deep research prompt generation, technical/architecture evaluation, competitive intelligence, user research, and domain analysis
 
+**create-epics-and-stories**
+- Path: `.bmad/bmm/workflows/2-plan-workflows/create-epics-and-stories/workflow.yaml`
+- Transform PRD requirements into bite-sized stories organized into deliverable functional epics. This workflow takes a Product Requirements Document (PRD) and breaks it down into epics and user stories that can be easily assigned to development teams. It ensures that all functional requirements are captured in a structured format, making it easier for teams to understand and implement the necessary features.
+
 **create-ux-design**
 - Path: `.bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.yaml`
 - Collaborative UX design facilitation workflow that creates exceptional user experiences through visual exploration and informed decision-making. Unlike template-driven approaches, this workflow facilitates discovery, generates visual options, and collaboratively designs the UX with the user at every step.
-
-**create-epics-and-stories**
-- Path: `.bmad/bmm/workflows/2-plan-workflows/prd/create-epics-and-stories/workflow.yaml`
-- Transform PRD requirements into bite-sized stories organized into deliverable functional epics. This workflow takes a Product Requirements Document (PRD) and breaks it down into epics and user stories that can be easily assigned to development teams. It ensures that all functional requirements are captured in a structured format, making it easier for teams to understand and implement the necessary features.
 
 **prd**
 - Path: `.bmad/bmm/workflows/2-plan-workflows/prd/workflow.yaml`
@@ -38,9 +38,9 @@
 - Path: `.bmad/bmm/workflows/3-solutioning/architecture/workflow.yaml`
 - Collaborative architectural decision facilitation for AI-agent consistency. Replaces template-driven architecture with intelligent, adaptive conversation that produces a decision-focused architecture document optimized for preventing agent conflicts.
 
-**solutioning-gate-check**
-- Path: `.bmad/bmm/workflows/3-solutioning/solutioning-gate-check/workflow.yaml`
-- Systematically validate that all planning and solutioning phases are complete and properly aligned before transitioning to Phase 4 implementation. Ensures PRD, architecture, and stories are cohesive with no gaps or contradictions.
+**implementation-readiness**
+- Path: `.bmad/bmm/workflows/3-solutioning/implementation-readiness/workflow.yaml`
+- Validate that PRD, UX Design, Architecture, Epics and Stories are complete and aligned before Phase 4 implementation. Ensures all artifacts cover the MVP requirements with no gaps or contradictions.
 
 **code-review**
 - Path: `.bmad/bmm/workflows/4-implementation/code-review/workflow.yaml`
@@ -85,6 +85,22 @@
 **document-project**
 - Path: `.bmad/bmm/workflows/document-project/workflow.yaml`
 - Analyzes and documents brownfield projects by scanning codebase, architecture, and patterns to create comprehensive reference documentation for AI-assisted development
+
+**create-dataflow**
+- Path: `.bmad/bmm/workflows/frame-expert/create-dataflow/workflow.yaml`
+- Create data flow diagrams (DFD) in Excalidraw format
+
+**create-diagram**
+- Path: `.bmad/bmm/workflows/frame-expert/create-diagram/workflow.yaml`
+- Create system architecture diagrams, ERDs, UML diagrams, or general technical diagrams in Excalidraw format
+
+**create-flowchart**
+- Path: `.bmad/bmm/workflows/frame-expert/create-flowchart/workflow.yaml`
+- Create a flowchart visualization in Excalidraw format for processes, pipelines, or logic flows
+
+**create-wireframe**
+- Path: `.bmad/bmm/workflows/frame-expert/create-wireframe/workflow.yaml`
+- Create website or app wireframes in Excalidraw format
 
 **workflow-init**
 - Path: `.bmad/bmm/workflows/workflow-status/init/workflow.yaml`

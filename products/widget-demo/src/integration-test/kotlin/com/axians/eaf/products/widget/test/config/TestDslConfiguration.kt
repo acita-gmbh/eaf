@@ -9,6 +9,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import org.springframework.context.annotation.Profile
 import org.springframework.core.env.Environment
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.PlatformTransactionManager
@@ -16,8 +17,18 @@ import javax.sql.DataSource
 
 /**
  * Provides a Testcontainers-backed DataSource plus DSLContext for integration tests.
+ *
+ * **Active ONLY for "test" profile** (Story 3.10).
+ *
+ * **Why "rbac-test" is excluded:**
+ * - "rbac-test" uses RbacTestContainersConfig with Spring-managed container bean
+ * - @ServiceConnection creates JdbcConnectionDetails → DataSourceAutoConfiguration
+ * - Manual DataSource bean is INCOMPATIBLE with @ServiceConnection (Spring Boot Issue #44046)
+ * - Isolation prevents bean competition and timing race conditions
+ * - Zero regression for existing "test" profile tests
  */
 @TestConfiguration
+@Profile("test")
 open class TestDslConfiguration(
     private val environment: Environment,
 ) {

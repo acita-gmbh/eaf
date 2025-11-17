@@ -39,16 +39,17 @@ import org.springframework.security.web.SecurityFilterChain
  * - Stateless session management (no HTTP sessions)
  * - JWKS caching with configurable duration (Story 3.2)
  *
- * Note: @Profile("!test") isolates this configuration from test profile where
- * security is disabled for integration testing convenience.
+ * Note: @Profile("!test", "!rbac-test") isolates this configuration from test profiles where
+ * security is configured separately for integration testing convenience.
  *
  * Story 3.1: Spring Security OAuth2 Resource Server Foundation
  * Story 3.2: Keycloak OIDC Discovery and JWKS Integration
+ * Story 3.10: Extended to exclude "rbac-test" profile
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("!test")
+@Profile("!(test | rbac-test)")
 open class SecurityConfiguration {
     // Suppress VarCouldBeVal: lateinit properties must be declared as var (Kotlin language requirement)
     @Suppress("VarCouldBeVal")

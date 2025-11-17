@@ -1,0 +1,314 @@
+<story-context id="epic-4/story-4-10" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.10</storyId>
+    <title>LitmusKt Concurrency Testing for TenantContext</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.10-litmuskt-concurrency-testing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>concurrency stress tests for TenantContext ThreadLocal management</iWant>
+    <soThat>race conditions and memory model violations are detected</soThat>
+    <tasks>
+      - AC1: LitmusKt dependency added (version TBD, JetBrains Research)
+      - AC2: Concurrency test - TenantContextIsolationTest.kt (validates no cross-thread context leakage)
+      - AC2: Concurrency test - EventProcessorPropagationTest.kt (validates async propagation correctness)
+      - AC2: Concurrency test - ConnectionPoolContextTest.kt (validates context with pooled connections)
+      - AC3: Tests run with multiple thread scenarios (2, 4, 8, 16 threads)
+      - AC4: Memory model violations detected and prevented
+      - AC5: Tests integrated into nightly CI/CD
+      - AC6: All concurrency tests pass without race conditions
+      - AC7: LitmusKt testing documented
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. LitmusKt dependency added (version TBD, JetBrains Research)
+    2. Concurrency tests in litmusTest/kotlin/ source set:
+       - TenantContextIsolationTest.kt (validates no cross-thread context leakage)
+       - EventProcessorPropagationTest.kt (validates async propagation correctness)
+       - ConnectionPoolContextTest.kt (validates context with pooled connections)
+    3. Tests run with multiple thread scenarios (2, 4, 8, 16 threads)
+    4. Memory model violations detected and prevented
+    5. Tests integrated into nightly CI/CD
+    6. All concurrency tests pass without race conditions
+    7. LitmusKt testing documented
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-litmuskt">
+        <path>docs/architecture.md</path>
+        <section>ADR-008 - LitmusKt Concurrency Testing, Section 11</section>
+        <relevance>LitmusKt framework for systematic concurrency testing on Kotlin/JVM</relevance>
+        <snippet>
+          ADR-008: LitmusKt Concurrency Testing
+          - LitmusKt provides systematic concurrency testing for Kotlin/JVM
+          - Detects race conditions, memory model violations, atomicity issues
+          - Tests ThreadLocal context across multiple thread scenarios (2, 4, 8, 16 threads)
+          - Validates no cross-thread context leakage
+          - Tests async event processor propagation correctness
+          - Integrated into nightly CI/CD (not fast CI - long execution time)
+          - JetBrains Research project for Kotlin concurrency validation
+        </snippet>
+      </doc>
+      <doc id="tech-spec-litmuskt">
+        <path>docs/tech-spec.md</path>
+        <section>Section 2.2 (LitmusKt), Section 9.1 (Concurrency Testing layer)</section>
+        <relevance>Technical specification for LitmusKt integration</relevance>
+        <snippet>
+          LitmusKt Concurrency Testing (Layer 7 of 7-layer testing defense):
+          - Source set: litmusTest/kotlin/
+          - Execution: Nightly CI/CD only (not fast feedback loop)
+          - Coverage: ThreadLocal management, async propagation, connection pooling
+          - Memory model: Validates Java Memory Model (JMM) correctness
+          - Thread scenarios: 2, 4, 8, 16 threads for stress testing
+        </snippet>
+      </doc>
+      <doc id="prd-fr014-concurrency">
+        <path>docs/PRD.md</path>
+        <section>FR014 - Data Consistency (Concurrency Control)</section>
+        <relevance>Business requirements for concurrency control and data consistency</relevance>
+        <snippet>
+          FR014: Data consistency with concurrency control.
+          Multi-tenant systems require thread-safe context management.
+          Race conditions in tenant context → cross-tenant data leaks (catastrophic).
+          Systematic concurrency testing prevents production incidents.
+        </snippet>
+      </doc>
+      <doc id="epic-3-retro-story-4-0-litmuskt">
+        <path>docs/sprint-artifacts/retrospectives/epic-3-retro-2025-11-16.md</path>
+        <section>Story 4.0 - Setup LitmusKt Framework Early</section>
+        <relevance>Epic 3 retrospective identified need for early LitmusKt setup</relevance>
+        <snippet>
+          Story 4.0 Task: Setup LitmusKt Framework Early (Dana + Charlie, ~3h)
+          - Extract from Story 4.10 scope
+          - Add to framework/multi-tenancy test dependencies
+          - Create example concurrency test for TenantContext
+          - Enable concurrency testing from Story 4.1 (not Story 4.10)
+          Rationale: Early setup enables concurrency validation throughout Epic 4.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-10">
+        <path>docs/epics.md</path>
+        <section>Lines 945-963 - Story 4.10</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.10: LitmusKt Concurrency Testing for TenantContext
+          - LitmusKt dependency added (JetBrains Research)
+          - Concurrency tests: TenantContextIsolationTest, EventProcessorPropagationTest, ConnectionPoolContextTest
+          - Tests run with multiple thread scenarios (2, 4, 8, 16 threads)
+          - Memory model violations detected and prevented
+          - Tests integrated into nightly CI/CD
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-1-tenant-context">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantContext.kt</path>
+        <kind>primary</kind>
+        <reason>Story 4.1 TenantContext ThreadLocal implementation to be validated for concurrency</reason>
+      </artifact>
+      <artifact id="story-4-5-async-propagation">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/AxonTenantInterceptor.kt</path>
+        <kind>primary</kind>
+        <reason>Story 4.5 async event processor propagation to be validated for race conditions</reason>
+      </artifact>
+      <artifact id="tenant-context-thread-safety-test">
+        <path>framework/cqrs/src/integration-test/kotlin/com/axians/eaf/framework/cqrs/interceptors/TenantContextThreadSafetyIntegrationTest.kt</path>
+        <kind>reference</kind>
+        <reason>Existing thread safety integration test to be enhanced with LitmusKt</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="LitmusKt" version="TBD (JetBrains Research)" purpose="Concurrency testing framework" />
+      <dependency name="Kotlin" version="2.2.21" purpose="Primary language" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework (may integrate with LitmusKt)" />
+      <dependency name="JUnit Platform" version="5.x" purpose="Test runner for LitmusKt tests" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="litmuskt-dependency">
+      LitmusKt dependency from JetBrains Research (version TBD - verify availability).
+      Repository: Maven Central or JetBrains Space
+      If LitmusKt unavailable: Use alternative concurrency testing (Lincheck, JCStress)
+      Document version and availability in gradle/libs.versions.toml.
+    </constraint>
+    <constraint id="litmus-test-source-set">
+      Dedicated source set: litmusTest/kotlin/
+      Build configuration: id("eaf.litmus-testing") convention plugin
+      Execution: Nightly CI/CD ONLY (not fast CI - long execution time ~30-60 min)
+      Isolation: LitmusKt tests run separately from unit/integration tests.
+    </constraint>
+    <constraint id="thread-scenarios">
+      Test with multiple thread scenarios: 2, 4, 8, 16 threads.
+      Validates context isolation under various concurrency levels.
+      Higher thread counts increase probability of detecting race conditions.
+      Execution time increases with thread count (balance coverage vs performance).
+    </constraint>
+    <constraint id="memory-model-validation">
+      LitmusKt validates Java Memory Model (JMM) correctness.
+      Detects: race conditions, atomicity violations, visibility issues, ordering violations.
+      ThreadLocal must be thread-safe with no cross-thread leakage.
+      Async propagation must correctly restore context without data races.
+    </constraint>
+    <constraint id="nightly-ci-integration">
+      Integrate LitmusKt tests into nightly CI/CD pipeline (NOT fast CI).
+      Execution: After unit, integration, property, fuzz tests (~2.5h total nightly).
+      Failure: Critical alert (indicates concurrency bug in multi-tenancy).
+      Fast feedback loop uses unit/integration tests; nightly validates concurrency.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="tenant-context-isolation-test">
+      <name>TenantContextIsolationTest</name>
+      <description>
+        LitmusKt test validates no cross-thread context leakage.
+        Multiple threads with different tenant contexts must remain isolated.
+      </description>
+      <pattern>
+        @LitmusKtTest
+        class TenantContextIsolationTest {
+          @Scenario(threads = [2, 4, 8, 16])
+          fun `tenant context isolated between threads`() {
+            // Thread 1: Set tenant-a context
+            thread1 {
+              TenantContext.setCurrentTenantId("tenant-a")
+              val retrieved = TenantContext.getCurrentTenantId()
+              assert(retrieved == "tenant-a")
+            }
+
+            // Thread 2: Set tenant-b context
+            thread2 {
+              TenantContext.setCurrentTenantId("tenant-b")
+              val retrieved = TenantContext.getCurrentTenantId()
+              assert(retrieved == "tenant-b")
+            }
+
+            // Validate: No cross-thread contamination
+            // LitmusKt detects if contexts leak between threads
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="event-processor-propagation-test">
+      <name>EventProcessorPropagationTest</name>
+      <description>
+        LitmusKt test validates async event processor propagation correctness.
+        Event metadata → ThreadLocal restoration must be race-free.
+      </description>
+      <pattern>
+        @LitmusKtTest
+        class EventProcessorPropagationTest {
+          @Scenario(threads = [4, 8])
+          fun `async event processors receive correct tenant context`() {
+            // Thread 1: Dispatch event for tenant-a
+            thread1 {
+              val event = createEventWithMetadata("tenant-a")
+              eventBus.publish(event)
+            }
+
+            // Thread 2: Dispatch event for tenant-b
+            thread2 {
+              val event = createEventWithMetadata("tenant-b")
+              eventBus.publish(event)
+            }
+
+            // Async Processor: Validate correct context restored
+            asyncProcessor {
+              val tenantId = TenantContext.getCurrentTenantId()
+              // LitmusKt validates: tenantId matches event metadata (no race)
+            }
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="connection-pool-context-test">
+      <name>ConnectionPoolContextTest</name>
+      <description>
+        LitmusKt test validates tenant context with pooled database connections.
+        Connection reuse must not leak tenant context between requests.
+      </description>
+      <pattern>
+        @LitmusKtTest
+        class ConnectionPoolContextTest {
+          @Scenario(threads = [8, 16])
+          fun `connection pool does not leak tenant context`() {
+            // Multiple threads use pooled connections
+            parallel(threads = 8) { threadId ->
+              val tenantId = "tenant-$threadId"
+              TenantContext.setCurrentTenantId(tenantId)
+
+              // Execute query (uses pooled connection)
+              val widgets = widgetRepository.findAll()
+
+              // Validate: Query filtered by current tenant (no leak)
+              widgets.forEach { widget ->
+                assert(widget.tenantId == tenantId)
+              }
+
+              TenantContext.clearCurrentTenant()
+            }
+
+            // LitmusKt detects: Connection pool leaking context between threads
+          }
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="litmuskt-framework">
+        LitmusKt framework for systematic concurrency testing.
+        Tests run with multiple thread scenarios (2, 4, 8, 16 threads).
+        Memory model violations detected and reported.
+      </standard>
+      <standard id="concurrency-test-coverage">
+        Coverage areas:
+        - ThreadLocal isolation (no cross-thread leakage)
+        - Async event processor propagation (metadata → ThreadLocal)
+        - Connection pool context isolation (pooled connections)
+        - Stack-based context (nested tenant scenarios)
+        - Cleanup correctness (ThreadLocal cleared after use)
+      </standard>
+      <standard id="nightly-execution">
+        LitmusKt tests run ONLY in nightly CI/CD (not fast feedback).
+        Execution time: ~30-60 minutes (long-running stress tests).
+        Critical failures trigger immediate alert (concurrency bugs).
+      </standard>
+      <standard id="alternative-fallback">
+        If LitmusKt unavailable: Use alternative concurrency testing.
+        Options: Lincheck (JetBrains), JCStress (OpenJDK), custom stress tests.
+        Document chosen alternative and rationale.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/litmusTest/kotlin/com/axians/eaf/framework/multitenancy/TenantContextIsolationTest.kt</location>
+      <location>framework/multi-tenancy/src/litmusTest/kotlin/com/axians/eaf/framework/multitenancy/EventProcessorPropagationTest.kt</location>
+      <location>framework/multi-tenancy/src/litmusTest/kotlin/com/axians/eaf/framework/multitenancy/ConnectionPoolContextTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC1: Verify LitmusKt dependency added to gradle/libs.versions.toml</idea>
+      <idea>Test AC2: TenantContextIsolationTest validates no cross-thread context leakage</idea>
+      <idea>Test AC2: EventProcessorPropagationTest validates async propagation correctness</idea>
+      <idea>Test AC2: ConnectionPoolContextTest validates context with pooled connections</idea>
+      <idea>Test AC3: Run tests with 2, 4, 8, 16 thread scenarios</idea>
+      <idea>Test AC4: Memory model violations detected (atomicity, visibility, ordering)</idea>
+      <idea>Test AC5: Nightly CI/CD includes LitmusKt tests (not fast CI)</idea>
+      <idea>Test AC6: All concurrency tests pass without race conditions</idea>
+      <idea>Test stack-based context: Nested tenant scenarios with concurrent access</idea>
+      <idea>Test cleanup correctness: ThreadLocal cleared after use (no leaks)</idea>
+      <idea>Test stress scenario: 1000 concurrent requests with random tenant contexts</idea>
+      <idea>Test connection pool scenario: Reused connections do not leak tenant context</idea>
+      <idea>Test async event processor: Concurrent events with different tenants remain isolated</idea>
+      <idea>If LitmusKt unavailable: Implement alternative with Lincheck or JCStress</idea>
+    </ideas>
+  </tests>
+</story-context>

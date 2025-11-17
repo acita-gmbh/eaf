@@ -12,6 +12,17 @@ import org.gradle.api.plugins.JavaPlugin
 
 // Removed gradle-versions plugin due to ConcurrentModificationException with Gradle 8.14
 
+// SBOM Generation (CycloneDX) - Week 2 Enhancement
+plugins {
+    alias(libs.plugins.cyclonedx) apply true
+
+    // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
+    // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.spring) apply false
+    alias(libs.plugins.kotlin.jpa) apply false
+}
+
 group = "com.axians.eaf"
 version = "0.1.0-SNAPSHOT"
 
@@ -38,8 +49,25 @@ gradle.projectsEvaluated {
     }
 }
 
+// SBOM Generation Configuration (CycloneDX 3.0)
+// In 3.0+: cyclonedxBom aggregates BOMs from all subprojects
+// API changed in 3.0: use task configuration instead of extension block
+tasks.cyclonedxBom {
+    // Output location: JSON only (standard for supply chain tools)
+    jsonOutput = file("build/reports/bom.json")
+    // XML output disabled (only JSON is generated when xmlOutput is not set)
+
+    // License information
+    includeLicenseText = false
+}
+
 subprojects {
     val catalog = rootProject.extra["eaf.libs"] as VersionCatalog
+
+    // Dependency Locking (improves build performance and reproducibility)
+    configurations.configureEach {
+        resolutionStrategy.activateDependencyLocking()
+    }
 
     configurations.configureEach {
         resolutionStrategy.eachDependency {
@@ -83,6 +111,11 @@ subprojects {
                 "io.netty" to "netty-transport-native-unix-common" -> {
                     useVersion(catalog.findVersion("netty").get().requiredVersion)
                     because("Story 1.9: Fix CVE-2025-55163, CVE-2025-58056, CVE-2025-58057")
+                }
+
+                "io.grpc" to "grpc-netty-shaded" -> {
+                    useVersion(catalog.findVersion("grpc-netty-shaded").get().requiredVersion)
+                    because("Fix CVE-2025-55163 in grpc-netty-shaded (requires >= 1.75.0)")
                 }
             }
         }

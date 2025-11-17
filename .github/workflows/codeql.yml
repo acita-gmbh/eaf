@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '30 1 * * 0' # Weekly on Sunday at 01:30 UTC
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # Only cancel PRs, not scheduled/main builds
+
 jobs:
   analyze:
     name: Analyze (java-kotlin)
@@ -21,28 +25,38 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # CRITICAL: Set up Java 21 BEFORE CodeQL init
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      # CRITICAL: Set up Gradle and Java 21 BEFORE CodeQL init
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x ./gradlew
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
 
-      - name: Build Project (Manual Build for CodeQL)
-        run: ./gradlew assemble --no-daemon --stacktrace
+      # Two-stage build for composite builds: build-logic first, then main project
+      - name: Build Convention Plugins (build-logic)
+        run: ./gradlew :build-logic:assemble --no-daemon --no-build-cache --stacktrace
+
+      - name: Build Main Project
+        run: ./gradlew assemble --no-daemon --no-build-cache --stacktrace
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:java-kotlin"

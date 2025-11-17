@@ -1,0 +1,88 @@
+name: SBOM Generation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gradle/libs.versions.toml'
+      - '**/*.gradle.kts'
+      - 'settings.gradle.kts'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'gradle/libs.versions.toml'
+      - '**/*.gradle.kts'
+      - 'settings.gradle.kts'
+  schedule:
+    - cron: '0 3 * * 1'  # Weekly on Monday at 3 AM UTC (after nightly tests)
+  workflow_dispatch:  # Allow manual trigger
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # Only cancel PRs, not scheduled/main builds
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          cache-cleanup: always
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Generate SBOM (CycloneDX)
+        run: ./gradlew cyclonedxBom --no-daemon --stacktrace
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: sbom-cyclonedx-${{ github.run_number }}
+          path: '**/build/reports/bom.json'
+          retention-days: 365  # Long retention for compliance
+          if-no-files-found: error
+
+      - name: SBOM Summary
+        if: always()
+        run: |
+          echo "## SBOM Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Format:** CycloneDX 1.6 (JSON)" >> $GITHUB_STEP_SUMMARY
+          echo "**Standard:** OWASP CycloneDX" >> $GITHUB_STEP_SUMMARY
+          echo "**Compliance:** EU Cyber Resilience Act, EO 14028" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "build/reports/bom.json" ]; then
+            COMPONENT_COUNT=$(jq '.components | length' build/reports/bom.json)
+            echo "**Components:** $COMPONENT_COUNT dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ SBOM generated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ SBOM generation failed - no bom.json found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Optional: Upload to Dependency-Track (requires server setup)
+      # - name: Upload SBOM to Dependency-Track
+      #   if: github.ref == 'refs/heads/main'
+      #   run: |
+      #     curl -X POST "${{ secrets.DEPENDENCY_TRACK_URL }}/api/v1/bom" \
+      #       -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+      #       -F "projectName=EAF" \
+      #       -F "projectVersion=${{ github.sha }}" \
+      #       -F "bom=@build/reports/bom.json"

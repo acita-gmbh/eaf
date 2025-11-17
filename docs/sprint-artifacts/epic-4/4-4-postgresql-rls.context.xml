@@ -1,0 +1,262 @@
+<story-context id="epic-4/story-4-4" v="1.0">
+  <metadata>
+    <epicId>epic-4</epicId>
+    <storyId>4.4</storyId>
+    <title>PostgreSQL Row-Level Security Policies - Layer 3</title>
+    <status>TODO</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/epic-4/story-4.4-postgresql-rls.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>framework developer</asA>
+    <iWant>PostgreSQL RLS policies enforcing tenant isolation at database level</iWant>
+    <soThat>even SQL injection or bugs cannot breach tenant boundaries (Layer 3)</soThat>
+    <tasks>
+      - AC1: Flyway migration V004__rls_policies.sql enables RLS on all tenant-scoped tables
+      - AC2: RLS policies created: widget_view table requires tenant_id = current_setting('app.tenant_id')
+      - AC3: PostgreSQL session variable set by JooqConfiguration before queries
+      - AC4: RLS policies tested: attempt cross-tenant query → returns empty result
+      - AC5: Integration test validates Layer 3 blocks unauthorized access
+      - AC6: Performance impact measured (&lt;2ms overhead per query)
+      - AC7: RLS policies documented in docs/reference/multi-tenancy.md
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Flyway migration V004__rls_policies.sql enables RLS on all tenant-scoped tables
+    2. RLS policies created: widget_view table requires tenant_id = current_setting('app.tenant_id')
+    3. PostgreSQL session variable set by JooqConfiguration before queries
+    4. RLS policies tested: attempt cross-tenant query → returns empty result
+    5. Integration test validates Layer 3 blocks unauthorized access
+    6. Performance impact measured (&lt;2ms overhead per query)
+    7. RLS policies documented in docs/reference/multi-tenancy.md
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc id="architecture-multi-tenancy-layer3">
+        <path>docs/architecture.md</path>
+        <section>Section 16 - Layer 3: PostgreSQL RLS</section>
+        <relevance>Defines Layer 3 of 3-layer tenant isolation: database-level enforcement with Row-Level Security</relevance>
+        <snippet>
+          Layer 3: PostgreSQL Row-Level Security (Database Enforcement)
+          - Enable RLS on all tenant-scoped tables (ALTER TABLE ... ENABLE ROW LEVEL SECURITY)
+          - Create RLS policies: CREATE POLICY tenant_isolation ON table FOR ALL USING (tenant_id = current_setting('app.tenant_id'))
+          - Session variable app.tenant_id set by jOOQ configuration before each query
+          - Even SQL injection cannot bypass RLS (PostgreSQL kernel enforcement)
+          - Performance target: &lt;2ms overhead per query (BRIN indexes for tenant_id)
+          - RLS provides defense against application bugs and injection attacks
+        </snippet>
+      </doc>
+      <doc id="tech-spec-rls">
+        <path>docs/tech-spec.md</path>
+        <section>Section 3 (FR004 - RLS), Section 4.2 (Projection Schema with RLS)</section>
+        <relevance>Technical specification for RLS implementation</relevance>
+        <snippet>
+          PostgreSQL RLS policies enforce tenant isolation at database level.
+          Session variable app.tenant_id propagated from TenantContext via jOOQ.
+          Projection tables (widget_view) include tenant_id column with RLS policies.
+          Performance: BRIN indexes on tenant_id for time-series query optimization.
+        </snippet>
+      </doc>
+      <doc id="architecture-postgresql-optimization">
+        <path>docs/architecture.md</path>
+        <section>PostgreSQL Performance Requirements</section>
+        <relevance>BRIN indexes and partitioning for event store performance</relevance>
+        <snippet>
+          Mandatory PostgreSQL optimizations:
+          - BRIN Indexes: Time-based indexing for event streams and tenant_id
+          - Time-based Partitioning: Monthly partitions on domain_event_entry table
+          - Connection Pooling: HikariCP with optimal settings
+          - Performance Targets: API p95 &lt;200ms, query overhead &lt;2ms
+        </snippet>
+      </doc>
+      <doc id="prd-fr004-layer3">
+        <path>docs/PRD.md</path>
+        <section>FR004 - Multi-Tenancy Layer 3</section>
+        <relevance>Business requirements for database-level tenant isolation</relevance>
+        <snippet>
+          Layer 3: Database-level enforcement prevents data leaks even with application bugs.
+          PostgreSQL RLS provides kernel-level isolation guarantees.
+          Defense against SQL injection and application vulnerabilities.
+        </snippet>
+      </doc>
+      <doc id="epics-story-4-4">
+        <path>docs/epics.md</path>
+        <section>Lines 827-844 - Story 4.4</section>
+        <relevance>Story details and acceptance criteria</relevance>
+        <snippet>
+          Story 4.4: PostgreSQL Row-Level Security Policies - Layer 3
+          - Flyway migration V004__rls_policies.sql enables RLS on all tenant-scoped tables
+          - RLS policies: widget_view table requires tenant_id = current_setting('app.tenant_id')
+          - PostgreSQL session variable set by JooqConfiguration before queries
+          - Performance impact measured (&lt;2ms overhead per query)
+        </snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact id="story-4-3-tenant-validation">
+        <path>framework/multi-tenancy/src/main/kotlin/com/axians/eaf/framework/multitenancy/TenantValidationInterceptor.kt</path>
+        <kind>dependency</kind>
+        <reason>Story 4.3 validates at service layer; Story 4.4 adds database layer</reason>
+      </artifact>
+      <artifact id="flyway-migrations">
+        <path>products/widget-demo/src/main/resources/db/migration/</path>
+        <kind>pattern</kind>
+        <reason>Existing Flyway migrations for V001, V002, V003 from Epic 1/2</reason>
+      </artifact>
+      <artifact id="jooq-configuration">
+        <path>framework/persistence/src/main/kotlin/com/axians/eaf/framework/persistence/</path>
+        <kind>pattern</kind>
+        <reason>jOOQ configuration for setting PostgreSQL session variables</reason>
+      </artifact>
+      <artifact id="widget-projection-schema">
+        <path>products/widget-demo/src/main/resources/db/migration/</path>
+        <kind>reference</kind>
+        <reason>widget_view projection table to be enhanced with tenant_id column + RLS</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <dependency name="PostgreSQL" version="16.10" purpose="Database with Row-Level Security support" />
+      <dependency name="Flyway" version="10.x (from Spring Boot)" purpose="Database migrations" />
+      <dependency name="jOOQ" version="3.20.8" purpose="SQL query builder with session variable support" />
+      <dependency name="Kotest" version="6.0.4" purpose="Testing framework" />
+      <dependency name="Testcontainers" version="1.21.3" purpose="PostgreSQL container for integration tests" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="rls-enable-all-tables">
+      Enable RLS on ALL tenant-scoped tables: widget_view, future projection tables.
+      Use: ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+      Apply to projection tables (read models), NOT event store (single-tenant per aggregate).
+    </constraint>
+    <constraint id="rls-policy-pattern">
+      RLS policy pattern for all tables:
+      CREATE POLICY tenant_isolation ON table_name FOR ALL
+      USING (tenant_id = current_setting('app.tenant_id'));
+      Policy applies to SELECT, INSERT, UPDATE, DELETE operations.
+    </constraint>
+    <constraint id="session-variable-propagation">
+      Set app.tenant_id session variable BEFORE every query.
+      Use jOOQ ExecuteListener or DSLContext configuration.
+      Session variable: SET LOCAL app.tenant_id = '&lt;tenant-id&gt;';
+      Extract tenant_id from TenantContext.getCurrentTenantId().
+    </constraint>
+    <constraint id="performance-target">
+      RLS overhead must be &lt;2ms per query.
+      Use BRIN indexes on tenant_id column for optimization.
+      Measure with performance tests (baseline vs RLS-enabled).
+    </constraint>
+    <constraint id="fail-safe-rls">
+      Missing app.tenant_id session variable → RLS returns empty result (fail-safe).
+      PostgreSQL current_setting('app.tenant_id') throws error if not set.
+      Use current_setting('app.tenant_id', true) for null-safe default.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface id="flyway-rls-migration">
+      <name>Flyway RLS Migration</name>
+      <description>
+        SQL migration to enable RLS and create tenant isolation policies.
+        Migration file: V004__rls_policies.sql
+      </description>
+      <pattern>
+        -- Enable RLS on widget_view projection table
+        ALTER TABLE widget_view ENABLE ROW LEVEL SECURITY;
+
+        -- Create tenant isolation policy
+        CREATE POLICY tenant_isolation ON widget_view
+        FOR ALL
+        USING (tenant_id = current_setting('app.tenant_id', true));
+
+        -- Create BRIN index for performance
+        CREATE INDEX idx_widget_view_tenant_id ON widget_view USING BRIN (tenant_id);
+      </pattern>
+    </interface>
+    <interface id="jooq-session-variable">
+      <name>jOOQ Session Variable Configuration</name>
+      <description>
+        jOOQ ExecuteListener to set PostgreSQL session variable before queries.
+        Extracts tenant_id from TenantContext and propagates to database.
+      </description>
+      <pattern>
+        @Component
+        class TenantContextExecuteListener(
+          private val tenantContext: TenantContext
+        ) : DefaultExecuteListener() {
+
+          override fun start(ctx: ExecuteContext) {
+            val tenantId = tenantContext.current() ?: return // nullable for non-tenant queries
+            ctx.dsl().execute("SET LOCAL app.tenant_id = ?", tenantId)
+          }
+        }
+      </pattern>
+    </interface>
+    <interface id="rls-testing-pattern">
+      <name>RLS Integration Testing</name>
+      <description>
+        Integration test pattern to validate RLS blocks cross-tenant access.
+        Use direct JDBC queries to bypass application layer.
+      </description>
+      <pattern>
+        test("RLS blocks cross-tenant access via direct SQL") {
+          // Set session variable for Tenant A
+          dataSource.connection.use { conn ->
+            conn.createStatement().execute("SET LOCAL app.tenant_id = 'tenant-a'")
+
+            // Query should only return Tenant A widgets
+            val rs = conn.createStatement().executeQuery("SELECT * FROM widget_view")
+            // Verify: only tenant-a widgets returned, tenant-b widgets blocked by RLS
+          }
+        }
+      </pattern>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard id="constitutional-tdd">
+        Constitutional TDD: Integration test BEFORE RLS implementation.
+        Test validates database-level tenant isolation with direct SQL.
+      </standard>
+      <standard id="rls-validation-scenarios">
+        Test all RLS scenarios:
+        - Tenant A queries with app.tenant_id='tenant-a' → sees only Tenant A data
+        - Tenant A queries with app.tenant_id='tenant-b' → sees only Tenant B data
+        - Query without app.tenant_id set → returns empty result (fail-safe)
+        - Direct SQL bypassing application → RLS still enforces isolation
+      </standard>
+      <standard id="performance-testing">
+        Performance test: measure query latency with/without RLS.
+        Baseline: query without RLS
+        RLS-enabled: same query with RLS policy
+        Validate: overhead &lt;2ms (acceptance criteria)
+      </standard>
+      <standard id="testcontainers-postgresql">
+        Use Testcontainers PostgreSQL for integration tests.
+        Real PostgreSQL with RLS support (not H2 - H2 explicitly forbidden).
+        Apply Flyway migrations including V004__rls_policies.sql.
+      </standard>
+    </standards>
+    <locations>
+      <location>framework/multi-tenancy/src/integration-test/kotlin/com/axians/eaf/framework/multitenancy/PostgreSqlRlsIntegrationTest.kt</location>
+      <location>products/widget-demo/src/integration-test/kotlin/com/axians/eaf/products/widget/projection/WidgetViewRlsIntegrationTest.kt</location>
+    </locations>
+    <ideas>
+      <idea>Test AC1: Verify RLS enabled on widget_view (pg_catalog.pg_tables query)</idea>
+      <idea>Test AC2: Verify RLS policy exists (pg_policies system catalog)</idea>
+      <idea>Test AC3: Verify session variable set before queries (jOOQ ExecuteListener)</idea>
+      <idea>Test AC4: Direct SQL cross-tenant query → empty result (RLS enforcement)</idea>
+      <idea>Test AC5: Integration test - create widgets for tenant-a, query as tenant-b → no results</idea>
+      <idea>Test AC6: Performance test - measure query latency baseline vs RLS-enabled</idea>
+      <idea>Test missing session variable → empty result (fail-safe with current_setting null-safe)</idea>
+      <idea>Test BRIN index performance on tenant_id column</idea>
+      <idea>Test RLS with concurrent multi-tenant queries (thread safety)</idea>
+      <idea>Property-based test: random tenant IDs, verify isolation invariant</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,6 +1,6 @@
 plugins {
     id("eaf.kotlin-common")
-    id("eaf.testing")
+    id("eaf.testing-v2") // Story 2.2: Migrated to v2
     alias(libs.plugins.jooq.codegen)
 }
 
@@ -22,6 +22,24 @@ sourceSets {
         // Committed generated jOOQ sources (available in CI without DB)
         // Path contains 'generated' to match ktlint exclude pattern
         java.srcDir("src/main/generated-kotlin/jooq")
+    }
+}
+
+// CRITICAL: Only configure nightlyTest for Nightly builds to avoid CI overhead
+val isNightlyBuild = project.hasProperty("nightlyBuild")
+
+if (isNightlyBuild) {
+    // CRITICAL: Configuration cache compatibility - lazy evaluation with afterEvaluate
+    afterEvaluate {
+        val testOutput = sourceSets.test.get().output
+
+        sourceSets {
+            // nightlyTest source-set (created by eaf.testing-v2 convention plugin) needs test source-set access
+            named("nightlyTest") {
+                compileClasspath += testOutput
+                runtimeClasspath += testOutput
+            }
+        }
     }
 }
 
@@ -60,6 +78,19 @@ dependencies {
     jooqCodegen(libs.jooq.codegen)
 }
 
+// Performance test dependencies - only for Nightly builds
+if (isNightlyBuild) {
+    dependencies {
+        "nightlyTestImplementation"(libs.bundles.kotest)
+        "nightlyTestImplementation"(libs.spring.boot.starter.test)
+        "nightlyTestImplementation"(libs.bundles.testcontainers)
+        // Required for @Testcontainers, @Container annotations
+        "nightlyTestImplementation"(libs.testcontainers.junit.jupiter)
+        "nightlyTestImplementation"(project(":framework:cqrs"))
+        "nightlyTestImplementation"(project(":shared:testing"))
+    }
+}
+
 // jOOQ Code Generation Configuration
 jooq {
     configuration {
@@ -86,4 +117,14 @@ jooq {
             }
         }
     }
+}
+
+// ============================================================================
+// Performance-Critical Test Configuration
+// ============================================================================
+// Persistence tests validate event store performance (<200ms with 100K events)
+// Parallel test execution increases disk I/O contention → invalidates performance measurements
+// Solution: Run all persistence tests sequentially for accurate performance validation
+tasks.withType<Test>().configureEach {
+    maxParallelForks = 1 // Sequential execution for accurate event store performance measurements
 }

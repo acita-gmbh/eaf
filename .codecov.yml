@@ -1,0 +1,83 @@
+# Codecov Configuration for EAF Project
+# See: https://docs.codecov.com/docs/codecov-yaml
+
+# Coverage targets
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"  # Yellow zone 70-100%, red below 70%
+
+  # Status checks on pull requests
+  status:
+    project:
+      default:
+        target: 85%  # Architecture requirement: 85%+ line coverage
+        threshold: 1%  # Allow 1% drop
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: 80%  # New code should be well-tested
+        threshold: 5%
+
+# Flag definitions (matching ci.yml upload)
+flags:
+  unittests:
+    carryforward: true  # Use previous if missing
+    paths:
+      - framework/
+      - shared/
+    ignore:
+      - "**/*IntegrationTest.kt"
+      - "**/integration/**"
+
+  integrationtests:
+    carryforward: true
+    paths:
+      - products/
+      - framework/
+    ignore:
+      - "**/*Test.kt"  # Ignore unit tests
+      - "!**/*IntegrationTest.kt"  # But include integration tests
+
+# Comment configuration on PRs
+comment:
+  layout: "header, diff, flags, components"
+  behavior: default
+  require_changes: true  # Only comment when coverage changes
+  require_base: true     # Only comment when base branch has coverage
+  require_head: true     # Only comment when PR has coverage
+
+# GitHub PR annotations
+github_checks:
+  annotations: true
+
+# Ignore paths from coverage
+ignore:
+  - "build-logic/**"
+  - "tools/eaf-cli/**"
+  - "apps/**"
+  - "**/*Test.kt"
+  - "**/*Spec.kt"
+  - "**/test/**"
+  - "**/build/**"
+  - "**/*.gradle.kts"
+  - "**/generated/**"
+
+# Component definitions (for modular coverage)
+component_management:
+  individual_components:
+    - component_id: framework
+      name: Framework Modules
+      paths:
+        - framework/**
+
+    - component_id: products
+      name: Product Applications
+      paths:
+        - products/**
+
+    - component_id: shared
+      name: Shared Libraries
+      paths:
+        - shared/**

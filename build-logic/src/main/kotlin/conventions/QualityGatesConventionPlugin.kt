@@ -15,7 +15,8 @@ import org.owasp.dependencycheck.reporting.ReportGenerator
 
 /**
  * Convention plugin for quality gates in EAF.
- * Ensures ktlintCheck, detekt, konsistTest, pitest integrate into check lifecycle.
+ * Ensures ktlintCheck, detekt, test, kover, integrationTest integrate into check lifecycle.
+ * V2: konsistTest removed - architecture tests now run in 'test' suite.
  */
 class QualityGatesConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -125,7 +126,8 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 // dependsOn("dependencyCheckAnalyze")
 
                 // Story 1.9: pitest excluded from check task (too slow for CI, runs in nightly only)
-                listOf("konsistTest", "integrationTest").forEach { taskName ->
+                // Story 2.3: konsistTest removed - Konsist now runs in 'test' suite (V2)
+                listOf("integrationTest").forEach { taskName ->
                     if (this@with.tasks.findByName(taskName) != null) {
                         dependsOn(taskName)
                     }
@@ -136,7 +138,7 @@ class QualityGatesConventionPlugin : Plugin<Project> {
                 }
 
                 doLast {
-                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest → konsistTest).")
+                    logger.lifecycle("✅ Constitutional TDD stack complete (ktlint → detekt → test → kover → integrationTest).")
                 }
             }
 

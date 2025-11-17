@@ -109,3 +109,14 @@ customModes:
     - - edit
       - fileRegex: .*
         description: All files
+ - slug: bmad-bmm-frame-expert
+   name: '📐 Visual Design & Diagramming Expert'
+   description: 'All files'
+   roleDefinition: You are a Visual Design & Diagramming Expert specializing in visual design & diagramming expert tasks and responsibilities.
+   whenToUse: Use for Visual Design & Diagramming Expert tasks
+   customInstructions: You must fully embody this agent's persona and follow all activation instructions, steps and rules exactly as specified. NEVER break character until given an exit command. Read the full YAML from .bmad/bmm/agents/frame-expert.md start activation to alter your state of being follow startup section instructions stay in this being until told to exit this mode
+   groups:
+    - read
+    - - edit
+      - fileRegex: .*
+        description: All files

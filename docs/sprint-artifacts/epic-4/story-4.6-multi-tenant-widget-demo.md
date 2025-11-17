@@ -33,6 +33,51 @@ So that the demo application demonstrates multi-tenancy correctly.
 
 ---
 
+## Tasks / Subtasks
+
+- [ ] AC1: Widget.kt commands include tenantId field
+- [ ] AC2: CreateWidgetCommand includes tenant_id from TenantContext
+- [ ] AC3: Command handler validates tenant context (Layer 2)
+- [ ] AC4: Widget events include tenant_id in metadata
+- [ ] AC5: widget_view projection table includes tenant_id column
+- [ ] AC6: Integration test creates widgets for multiple tenants
+- [ ] AC7: Cross-tenant access test validates isolation (tenant A cannot see tenant B widgets)
+- [ ] AC8: All Widget tests pass with tenant context
+
+---
+
+## Dev Agent Record
+
+### Context Reference
+
+- Widget aggregate serves as reference implementation for multi-tenancy
+- Demonstrates all 3 layers of tenant isolation
+- Commands extract tenant_id from TenantContext
+- Events include tenant_id in metadata for async processors
+- Projection schema includes tenant_id column with RLS policies
+
+### Agent Model Used
+
+claude-sonnet-4-5-20250929
+
+### Debug Log References
+
+To be populated during implementation
+
+### Completion Notes List
+
+To be populated during implementation
+
+### File List
+
+To be populated during implementation
+
+### Change Log
+
+To be populated during implementation
+
+---
+
 ## References
 
 - PRD: FR004

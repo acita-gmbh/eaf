@@ -10,9 +10,14 @@ import org.springframework.context.annotation.Profile
 /**
  * Removes JPA auto-configuration artifacts from the test profile to ensure Modulith/JPA
  * infrastructure doesn't start when we only need Testcontainers + jOOQ.
+ *
+ * **Active for "test" and "rbac-test" profiles** (Story 3.10).
+ *
+ * NOTE: RbacTestContainersConfig duplicates this logic in its own disableJpaBeans() bean,
+ * but keeping this active for "rbac-test" provides defense-in-depth.
  */
 @TestConfiguration
-@Profile("test")
+@Profile("test", "rbac-test")
 open class TestJpaBypassConfiguration {
     @Bean
     open fun disableJpaBeans(): BeanFactoryPostProcessor =

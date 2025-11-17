@@ -5,91 +5,264 @@ on:
     - cron: '0 2 * * *'  # 2 AM UTC daily
   workflow_dispatch:  # Allow manual trigger
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel long-running nightly builds
+
 jobs:
   deep-validation:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180  # 3 hours max (target ~2.5h)
+    runs-on: [self-hosted, Linux, X64, nightly]  # Story 1.5: Self-hosted runner
+    timeout-minutes: 480  # 8 hours max (Story 1.5: Extended for 30min fuzzing)
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Setup CI Gradle Configuration
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-cleanup: always
+
+      - name: Clean Stale Gradle User Home Config
+        run: |
+          # Clean GRADLE_USER_HOME to prevent stale configs on self-hosted runner
+          # The gradle/actions/setup-gradle action sets GRADLE_USER_HOME
+          # Remove any gradle.properties that might have invalid inline comments
+          if [ -f "$GRADLE_USER_HOME/gradle.properties" ]; then
+            echo "🧹 Removing stale $GRADLE_USER_HOME/gradle.properties"
+            rm -f "$GRADLE_USER_HOME/gradle.properties"
+          fi
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x ./gradlew
+      # ========================================================================
+      # Infrastructure Lifecycle Management (from PR #59)
+      # ========================================================================
 
-      - name: Performance Baseline Tests
+      - name: Clean Up Previous Infrastructure
+        run: |
+          echo "🧹 Starting infrastructure cleanup..."
+
+          # Step 1: Stop all containers (wait for graceful shutdown)
+          docker compose down --remove-orphans || true
+          sleep 3
+
+          # Step 2: Force remove containers if still running
+          docker rm -f eaf-postgres eaf-redis eaf-keycloak 2>/dev/null || true
+
+          # Step 3: Remove volumes explicitly (after containers are gone)
+          # CRITICAL: Ensures fresh database for each run, prevents Flyway migration conflicts
+          docker volume rm eaf_postgres_data 2>/dev/null || true
+          docker volume rm eaf_redis_data 2>/dev/null || true
+          docker volume rm eaf-postgres-data 2>/dev/null || true  # Fallback
+          docker volume rm eaf-redis-data 2>/dev/null || true     # Fallback
+
+          # Step 4: Prune all orphaned volumes
+          docker volume prune -f
+
+          # Step 5: Verify volumes are removed
+          echo "📋 Remaining EAF volumes:"
+          docker volume ls --filter name=eaf_ --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}" || echo "   ✅ None (all cleaned)"
+
+          # Step 6: Verify containers are removed
+          echo "📋 Remaining EAF containers:"
+          docker ps -a --filter name=eaf- --format "table {{.Names}}\t{{.Status}}" || echo "   ✅ None (all cleaned)"
+
+          echo "✅ Infrastructure cleanup complete"
+
+      - name: Start Infrastructure Services
+        run: |
+          # Start essential services for tests (skip prometheus/grafana for speed)
+          docker compose up -d postgres redis keycloak
+          echo "🚀 Infrastructure services started"
+
+      - name: Wait for Infrastructure Services
+        run: |
+          echo "⏳ Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until docker exec eaf-postgres pg_isready -U eaf_user -d eaf 2>/dev/null; do sleep 2; done'
+          echo "✅ PostgreSQL is ready!"
+
+          echo "⏳ Waiting for Redis..."
+          timeout 30 bash -c 'until docker exec eaf-redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 2; done'
+          echo "✅ Redis is ready!"
+
+          echo "⏳ Waiting for Keycloak..."
+          timeout 120 bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} eaf-keycloak 2>/dev/null)" = "healthy" ]; do sleep 5; done'
+          echo "✅ Keycloak health check passed!"
+
+          echo "⏳ Verifying Keycloak realm import..."
+          timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf 2>/dev/null | grep -q "eaf"; do sleep 3; done'
+          echo "✅ Keycloak realm 'eaf' is available!"
+
+          echo "⏳ Verifying Keycloak JWKS endpoint..."
+          timeout 60 bash -c 'until curl -f http://localhost:8080/realms/eaf/protocol/openid-connect/certs 2>/dev/null | grep -q "keys"; do sleep 3; done'
+          echo "✅ Keycloak JWKS endpoint is responding!"
+
+          echo "🎉 All infrastructure services are healthy!"
+
+      - name: Build Widget Demo Application
+        run: ./gradlew :products:widget-demo:assemble --no-daemon --build-cache
+
+      - name: Start Widget Demo Application
+        env:
+          KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/eaf
+          KEYCLOAK_JWKS_URI: http://localhost:8080/realms/eaf/protocol/openid-connect/certs
+        run: |
+          nohup ./gradlew :products:widget-demo:bootRun --args='--server.port=8090' --stacktrace > app.log 2>&1 &
+          echo $! > app.pid
+          echo "🚀 Started application with PID $(cat app.pid)"
+
+      - name: Wait for Application Startup
+        run: |
+          echo "⏳ Waiting for application to be ready..."
+          TIMEOUT=120
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if Gradle bootRun process failed
+            if [ -f app.pid ]; then
+              APP_PID=$(cat app.pid)
+              if ! kill -0 $APP_PID 2>/dev/null; then
+                echo "❌ ERROR: Application process ($APP_PID) has terminated!"
+                echo "=== Full application log ==="
+                cat app.log || echo "No log file found"
+                exit 1
+              fi
+            fi
+
+            # Try health check
+            if curl -f http://localhost:8090/actuator/health 2>/dev/null; then
+              echo "✅ Application is ready!"
+              exit 0
+            fi
+
+            # Show last 20 lines of log for debugging (increased from 10)
+            if [ -f app.log ]; then
+              echo "=== Last 20 lines of app.log ==="
+              tail -20 app.log
+              echo "================================"
+            fi
+
+            echo "⏳ Waiting for application... ($ELAPSED/$TIMEOUT seconds elapsed)"
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+          echo "❌ ERROR: Application failed to start within $TIMEOUT seconds"
+          echo "=== Full application log (last 200 lines) ==="
+          tail -200 app.log || echo "No log file found"
+          exit 1
+
+      # ========================================================================
+      # Performance & Deep Validation Tests
+      # ========================================================================
+
+      - name: Performance Baseline Tests (Gatling)
         run: ./gradlew :products:widget-demo:gatlingRun --no-daemon --stacktrace
         continue-on-error: false  # Fail build if performance targets not met
 
       - name: Snapshot Performance Tests
         run: ./gradlew :products:widget-demo:integrationTest --tests "SnapshotPerformanceTest" --no-daemon --stacktrace
 
-      - name: Property-Based Tests
-        run: ./gradlew propertyTest --no-daemon --stacktrace
+      # Phase 2 V2: Consolidated nightlyTest suite (replaces propertyTest, fuzzTest, perfTest)
+      # nightlyTest includes all comprehensive test types via @Tags:
+      # - @Tag("Property"): Kotest property-based testing
+      # - @Tag("Fuzz"): Jazzer fuzz testing (30 min/target)
+      # - @Tag("Concurrency"): LitmusKt concurrency tests (Epic 8)
+      # - @Tag("Mutation"): Pitest mutation coverage
+      # - @Tag("Performance"): Benchmark/performance tests
+      # - @Tag("Nightly"): General nightly tests
+      #
+      # IMPORTANT: nightlyTest task only exists for framework modules (EafTestingV2Plugin.kt:113-117)
+      # Must explicitly specify framework modules - global task execution would fail
+      - name: Nightly Comprehensive Test Suite (V2)
+        run: |
+          ./gradlew \
+            :framework:core:nightlyTest \
+            :framework:security:nightlyTest \
+            :framework:cqrs:nightlyTest \
+            :framework:persistence:nightlyTest \
+            :framework:web:nightlyTest \
+            :framework:observability:nightlyTest \
+            :framework:multi-tenancy:nightlyTest \
+            :framework:workflow:nightlyTest \
+            :shared:testing:nightlyTest \
+            :shared:shared-api:nightlyTest \
+            :shared:shared-types:nightlyTest \
+            -PnightlyBuild --no-daemon --stacktrace --continue
+        timeout-minutes: 480  # 8 hours for comprehensive validation
 
-      - name: Fuzz Tests (Jazzer)
-        run: ./gradlew fuzzTest --no-daemon --stacktrace
+      # Mutation Testing (Pitest - separate from nightlyTest suite)
+      # TODO: Integrate with nightlyTest in Phase 2.5
+      - name: Mutation Testing (Pitest - Framework Modules)
+        run: ./gradlew :framework:core:pitest :framework:security:pitest :framework:cqrs:pitest --no-daemon --stacktrace
 
-      # TODO(Epic 8 Story 4.10): Enable LitmusKt concurrency tests
-      # - name: Concurrency Tests (LitmusKt)
-      #   run: ./gradlew litmusTest --no-daemon --stacktrace
+      # ========================================================================
+      # Cleanup & Artifact Upload
+      # ========================================================================
 
-      - name: Mutation Testing (Pitest)
-        run: ./gradlew pitest --no-daemon --stacktrace
-
-      - name: Upload Property Test Reports
+      - name: Stop Widget Demo Application
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: property-test-reports
-          path: |
-            **/build/reports/tests/propertyTest/
-          retention-days: 14
+        run: |
+          if [ -f app.pid ]; then
+            APP_PID=$(cat app.pid)
+            echo "🛑 Stopping application (PID: $APP_PID)"
+            kill $APP_PID || true
+            # Wait for graceful shutdown
+            timeout 30 bash -c "while kill -0 $APP_PID 2>/dev/null; do sleep 1; done" || kill -9 $APP_PID || true
+            rm app.pid
+          fi
 
-      - name: Upload Fuzz Test Reports
+      - name: Stop Infrastructure Services
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fuzz-test-reports
-          path: |
-            **/build/reports/tests/fuzzTest/
-          retention-days: 14
+        run: |
+          docker compose down -v
+          echo "✅ Infrastructure services stopped"
 
-      # TODO(Epic 8 Story 4.10): Enable LitmusKt test report upload
-      # - name: Upload Concurrency Test Reports
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: concurrency-test-reports
-      #     path: |
-      #       **/build/reports/tests/litmusTest/
-      #     retention-days: 14
+      - name: Upload Application Logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: application-logs-${{ github.run_number }}
+          path: |
+            app.log
+          retention-days: 7
+
+      - name: Upload Nightly Test Reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: nightly-test-reports-${{ github.run_number }}
+          path: |
+            **/build/reports/tests/nightlyTest/
+            **/build/test-results/nightlyTest/
+          retention-days: 30
 
       - name: Upload Performance Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: performance-test-reports
+          name: performance-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/gatling/
             **/build/reports/tests/integrationTest/
-          retention-days: 30
+          retention-days: 90
 
       - name: Upload Mutation Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: mutation-test-reports
+          name: mutation-test-reports-${{ github.run_number }}
           path: |
             **/build/reports/pitest/
-          retention-days: 30
+          retention-days: 90
 
       - name: Notify on Failure
         if: failure()

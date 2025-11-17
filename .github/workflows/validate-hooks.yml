@@ -20,7 +20,7 @@ jobs:
   quality-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
@@ -31,22 +31,30 @@ jobs:
           shellcheck .git-hooks/pre-push
           shellcheck scripts/install-git-hooks.sh
 
-      - name: Verify command parity
+      - name: Verify command parity (Story 1.5 - Updated for 2-stage hooks)
         run: |
-          grep -q './gradlew ktlintCheck --quiet' .git-hooks/pre-commit
-          grep -q './gradlew detekt --quiet' .git-hooks/pre-push
-          grep -q './gradlew ciTests --quiet' .git-hooks/pre-push
+          # Pre-commit: ktlintFormat (not check), detekt, shellcheck
+          grep -q './gradlew ktlintFormat' .git-hooks/pre-commit
+          grep -q 'detekt' .git-hooks/pre-commit
+          grep -q 'shellcheck' .git-hooks/pre-commit
+
+          # Pre-push: ktlintCheck, detekt, test (not ciTests!)
+          grep -q './gradlew ktlintCheck' .git-hooks/pre-push
+          grep -q './gradlew detekt' .git-hooks/pre-push
+          grep -q './gradlew test --quiet' .git-hooks/pre-push
+
           grep -q '.git-hooks' scripts/install-git-hooks.sh
 
       - name: Ensure Gradle task copies templates
         run: |
           grep -q '.git-hooks' build-logic/src/main/kotlin/conventions/PreCommitHooksConventionPlugin.kt
 
-      - name: Validate CI pipeline contains quality gates
+      - name: Validate CI pipeline uses unified test task
         run: |
           grep -q 'ktlintCheck' .github/workflows/ci.yml
           grep -q 'detekt' .github/workflows/ci.yml
-          if ! grep -q 'ciTests' .github/workflows/ci.yml; then
-            echo "Gradle ciTests command not found in CI workflow"
+          # Story 1.5: CI now uses 'test' instead of 'ciTests'
+          if ! grep -q './gradlew test' .github/workflows/ci.yml; then
+            echo "Gradle test command not found in CI workflow"
             exit 1
           fi
