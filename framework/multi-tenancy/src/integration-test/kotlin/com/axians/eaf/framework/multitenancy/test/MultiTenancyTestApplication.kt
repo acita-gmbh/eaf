@@ -24,7 +24,9 @@ open class MultiTenancyTestApplication {
     /**
      * Provide SimpleMeterRegistry for TenantContextFilter metrics.
      * Simpler than full Actuator for integration tests.
+     *
+     * Note: open modifier required for Spring CGLIB proxies.
      */
     @Bean
-    fun meterRegistry() = SimpleMeterRegistry()
+    open fun meterRegistry() = SimpleMeterRegistry()
 }
