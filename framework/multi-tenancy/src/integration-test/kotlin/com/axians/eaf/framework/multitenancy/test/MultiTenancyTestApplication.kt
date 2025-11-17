@@ -1,9 +1,9 @@
 package com.axians.eaf.framework.multitenancy.test
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import com.axians.eaf.framework.security.config.SecurityConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Import
 
 /**
  * Test application for Multi-Tenancy Framework integration tests.
@@ -12,11 +12,16 @@ import org.springframework.context.annotation.ComponentScan
  * - Multi-Tenancy: TenantContext, TenantContextFilter, TenantTestController
  * - Security: JWT validation (required for tenant extraction from JWTs)
  *
- * Provides test-specific beans:
- * - SimpleMeterRegistry for metrics (TenantContextFilter dependency)
+ * **CRITICAL FIX (Story 4.2):**
+ * - Removed SimpleMeterRegistry bean (conflicted with auto-configuration)
+ * - Added @Import(SecurityConfiguration) for explicit security loading
+ * - Spring Boot's SimpleMetricsExportAutoConfiguration now provides MeterRegistry
  *
- * Note: Security module is required because TenantContextFilter extracts
- * tenant_id from JWTs validated by Spring Security (Epic 3).
+ * **Why SimpleMeterRegistry was removed:**
+ * Custom MeterRegistry bean satisfied @ConditionalOnMissingBean, disabling
+ * Spring Boot's metrics auto-configuration. This had cascading effects that
+ * prevented SecurityAutoConfiguration and OAuth2ResourceServerAutoConfiguration
+ * from loading, resulting in no JWT validation and empty SecurityContextHolder.
  *
  * Epic 4, Story 4.2: Integration test infrastructure
  */
@@ -27,13 +32,6 @@ import org.springframework.context.annotation.ComponentScan
         "com.axians.eaf.framework.security",
     ],
 )
-open class MultiTenancyTestApplication {
-    /**
-     * Provide SimpleMeterRegistry for TenantContextFilter metrics.
-     * Simpler than full Actuator for integration tests.
-     *
-     * Note: open modifier required for Spring CGLIB proxies.
-     */
-    @Bean
-    open fun meterRegistry() = SimpleMeterRegistry()
-}
+@Import(SecurityConfiguration::class)
+open class MultiTenancyTestApplication
+// No custom beans needed - rely on Spring Boot auto-configuration

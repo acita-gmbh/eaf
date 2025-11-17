@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
@@ -52,6 +53,10 @@ class TenantContextFilter(
             .tags("layer", "1-jwt-extraction")
             .register(meterRegistry)
 
+    companion object {
+        private val log = LoggerFactory.getLogger(TenantContextFilter::class.java)
+    }
+
     /**
      * Extract tenant_id from JWT and populate TenantContext.
      *
@@ -87,19 +92,19 @@ class TenantContextFilter(
             // AC2: Extract tenant_id from JWT (validated by Spring Security in Epic 3)
             val authentication = SecurityContextHolder.getContext().authentication
 
-            // DEBUG: Log authentication type for troubleshooting
-            println("🔍 TenantContextFilter - Authentication type: ${authentication?.javaClass?.simpleName ?: "NULL"}")
-            if (authentication is JwtAuthenticationToken) {
-                println("✅ JWT Authentication found - proceeding with tenant extraction")
-            } else {
-                println("⚠️ Non-JWT authentication - skipping tenant extraction")
-            }
+            log.debug(
+                "TenantContextFilter executing. Authentication type: {}",
+                authentication?.javaClass?.simpleName ?: "NULL",
+            )
 
             // Skip tenant extraction for non-JWT requests (e.g., actuator endpoints)
             if (authentication !is JwtAuthenticationToken) {
+                log.debug("Non-JWT or NULL authentication found, skipping tenant extraction")
                 chain.doFilter(request, response)
                 return
             }
+
+            log.debug("JWT Authentication found, proceeding with tenant extraction")
 
             val jwt = authentication.token
             val tenantId = jwt?.getClaimAsString("tenant_id")
