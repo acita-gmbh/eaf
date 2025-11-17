@@ -1,0 +1,46 @@
+# ============================================================================
+# Keycloak Test Profile Configuration (Story 4.2)
+# ============================================================================
+# Configuration for multi-tenancy integration tests using Keycloak JWT tokens.
+# Follows Epic 3 pattern for keycloak-test profile.
+# ============================================================================
+
+spring:
+  # Disable JMX for tests
+  jmx:
+    enabled: false
+
+  # Allow bean overriding for test flexibility
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Spring Modulith Events (not needed for tenant context tests)
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: false
+
+# Disable Management/Actuator for tests
+management:
+  endpoints:
+    enabled-by-default: false
+
+# EAF Security Configuration (set dynamically via @DynamicPropertySource)
+# eaf.security.jwt.issuer-uri: <from KeycloakTestContainer>
+# eaf.security.jwt.jwks-uri: <from KeycloakTestContainer>
+# eaf.security.jwt.audience: eaf-api
+
+# Logging level for tests
+logging:
+  level:
+    root: WARN
+    com.axians.eaf: DEBUG
+    org.springframework.security: DEBUG
+    org.testcontainers: INFO
+    dasniko.testcontainers: DEBUG
+
+eaf:
+  security:
+    revocation:
+      fail-closed: false
