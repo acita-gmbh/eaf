@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.products.widget.domain.WidgetId
 import org.axonframework.queryhandling.QueryHandler
@@ -17,6 +18,11 @@ import java.util.UUID
  *
  * Provides read-only access to the widget_projection table using jOOQ.
  * Implements cursor-based pagination for stable, consistent results.
+ *
+ * **Multi-Tenancy (Story 4.6):**
+ * - All queries filter by tenant_id from TenantContext
+ * - Enforces Layer 3 tenant isolation at query layer
+ * - Returns null/empty for cross-tenant access attempts
  *
  * **Performance Targets (FR011):**
  * - Single widget query: <50ms
@@ -40,19 +46,26 @@ class WidgetQueryHandler(
         private val PUBLISHED_FIELD = DSL.field("published", Boolean::class.java)
         private val CREATED_AT_FIELD = DSL.field("created_at", OffsetDateTime::class.java)
         private val UPDATED_AT_FIELD = DSL.field("updated_at", OffsetDateTime::class.java)
+        private val TENANT_ID_FIELD = DSL.field("tenant_id", String::class.java)
     }
 
     /**
      * Handles FindWidgetQuery to retrieve a single widget by ID.
      *
-     * Returns null if widget does not exist in projection.
+     * Returns null if widget does not exist in projection OR if widget belongs to different tenant.
+     * Enforces tenant isolation at query layer (Story 4.6).
      *
      * @param query Query containing the widget ID to find
-     * @return Widget projection if found, null otherwise
+     * @return Widget projection if found and belongs to current tenant, null otherwise
      */
     @QueryHandler
     fun handle(query: FindWidgetQuery): WidgetProjection? {
-        logger.debug("Handling FindWidgetQuery for widgetId={}", query.widgetId.value)
+        val tenantId = TenantContext.getCurrentTenantId()
+        logger.debug(
+            "Handling FindWidgetQuery for widgetId={}, tenantId={}",
+            query.widgetId.value,
+            tenantId,
+        )
 
         return dsl
             .select(
@@ -62,8 +75,11 @@ class WidgetQueryHandler(
                 CREATED_AT_FIELD,
                 UPDATED_AT_FIELD,
             ).from(WIDGET_PROJECTION_TABLE)
-            .where(ID_FIELD.eq(UUID.fromString(query.widgetId.value)))
-            .fetchOne { record ->
+            .where(
+                ID_FIELD
+                    .eq(UUID.fromString(query.widgetId.value))
+                    .and(TENANT_ID_FIELD.eq(tenantId)),
+            ).fetchOne { record ->
                 WidgetProjection(
                     id = WidgetId(record[ID_FIELD].toString()),
                     name = record[NAME_FIELD],
@@ -79,13 +95,20 @@ class WidgetQueryHandler(
      *
      * Fetches limit+1 rows to determine hasMore flag efficiently.
      * Results ordered by created_at DESC (newest first).
+     * Enforces tenant isolation - only returns widgets for current tenant (Story 4.6).
      *
      * @param query Query containing limit and optional cursor
-     * @return Paginated response with widgets, nextCursor, and hasMore flag
+     * @return Paginated response with widgets for current tenant, nextCursor, and hasMore flag
      */
     @QueryHandler
     fun handle(query: ListWidgetsQuery): PaginatedWidgetResponse {
-        logger.debug("Handling ListWidgetsQuery with limit={}, cursor={}", query.limit, query.cursor)
+        val tenantId = TenantContext.getCurrentTenantId()
+        logger.debug(
+            "Handling ListWidgetsQuery with limit={}, cursor={}, tenantId={}",
+            query.limit,
+            query.cursor,
+            tenantId,
+        )
 
         // Validate limit bounds (max 100)
         val safeLimit = query.limit.coerceIn(1, 100)
@@ -93,10 +116,12 @@ class WidgetQueryHandler(
         // Decode cursor to get timestamp filter
         val cursorTimestamp = query.cursor?.let { CursorPaginationSupport.decodeCursor(it) }
 
-        // Build WHERE condition for cursor-based pagination
-        val whereCondition: Condition =
+        // Build WHERE condition for cursor-based pagination + tenant isolation
+        val cursorCondition: Condition =
             cursorTimestamp?.let { CREATED_AT_FIELD.lt(it.atOffset(ZoneOffset.UTC)) }
                 ?: DSL.noCondition()
+
+        val whereCondition = TENANT_ID_FIELD.eq(tenantId).and(cursorCondition)
 
         // Fetch limit+1 to detect hasMore
         val records =

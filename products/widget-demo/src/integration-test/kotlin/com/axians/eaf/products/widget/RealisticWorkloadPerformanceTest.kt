@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -18,10 +19,10 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.UUID
@@ -54,7 +55,6 @@ import kotlin.time.measureTime
  *
  * Story 2.13: Performance Baseline and Monitoring - Phase 2
  */
-@Testcontainers
 @SpringBootTest(
     classes = [WidgetDemoApplication::class],
     properties = [
@@ -81,6 +81,14 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        beforeEach {
+            TenantContext.setCurrentTenantId("test-tenant-integration")
+        }
+
+        afterEach {
+            TenantContext.clearCurrentTenant()
+        }
+
         context("Realistic mixed workload (50 aggregates × 10 commands)") {
             test("should handle mixed cold/warm cache workload efficiently").config(timeout = 60.seconds) {
                 val table = DSL.table("widget_projection")
@@ -106,7 +114,11 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                             val createTime =
                                 measureTime {
                                     commandGateway.sendAndWait<Unit>(
-                                        CreateWidgetCommand(widgetId, "Widget $aggregateIndex"),
+                                        CreateWidgetCommand(
+                                            widgetId,
+                                            "Widget $aggregateIndex",
+                                            "test-tenant-integration",
+                                        ),
                                     )
                                 }
                             createTimes.add(createTime.inWholeMilliseconds)
@@ -116,7 +128,11 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                                 val updateTime =
                                     measureTime {
                                         commandGateway.sendAndWait<Unit>(
-                                            UpdateWidgetCommand(widgetId, "Update $updateIndex"),
+                                            UpdateWidgetCommand(
+                                                widgetId,
+                                                "Update $updateIndex",
+                                                "test-tenant-integration",
+                                            ),
                                         )
                                     }
                                 updateTimes.add(updateTime.inWholeMilliseconds)
@@ -190,8 +206,7 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
     }
 
     companion object {
-        @Container
-        @ServiceConnection
+        @JvmStatic
         val postgres: PostgreSQLContainer<*> =
             PostgreSQLContainer(
                 DockerImageName.parse("postgres:16.10-alpine"),
@@ -207,6 +222,16 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                     "-c",
                     "full_page_writes=off",
                 ).withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+                .also { it.start() } // Manual start for Kotest compatibility
+
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.datasource.url") { postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { postgres.username }
+            registry.add("spring.datasource.password") { postgres.password }
+            registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
+        }
     }
 }
 

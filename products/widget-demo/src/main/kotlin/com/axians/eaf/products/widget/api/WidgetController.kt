@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
@@ -109,9 +110,16 @@ class WidgetController(
     ): WidgetResponse {
         val widgetId = WidgetId(UUID.randomUUID())
 
+        // Story 4.6: Extract tenant_id from TenantContext (set by TenantContextFilter)
+        val tenantId = TenantContext.getCurrentTenantId()
+
         // Synchronous command execution (CQRS write path)
         commandGateway.sendAndWait<Any>(
-            CreateWidgetCommand(widgetId, request.name),
+            CreateWidgetCommand(
+                widgetId = widgetId,
+                name = request.name,
+                tenantId = tenantId,
+            ),
             COMMAND_TIMEOUT_SECONDS,
             TimeUnit.SECONDS,
         )
@@ -316,10 +324,17 @@ class WidgetController(
         @Valid @RequestBody request: UpdateWidgetRequest,
         @Parameter(hidden = true) @AuthenticationPrincipal jwt: Jwt?,
     ): WidgetResponse {
+        // Story 4.6: Extract tenant_id from TenantContext
+        val tenantId = TenantContext.getCurrentTenantId()
+
         // Synchronous command execution (CQRS write path)
         // Let exceptions propagate to ProblemDetailExceptionHandler
         commandGateway.sendAndWait<Any>(
-            UpdateWidgetCommand(WidgetId(id), request.name),
+            UpdateWidgetCommand(
+                widgetId = WidgetId(id),
+                name = request.name,
+                tenantId = tenantId,
+            ),
             COMMAND_TIMEOUT_SECONDS,
             TimeUnit.SECONDS,
         )

@@ -36,6 +36,10 @@ class WidgetProjectionEventHandler(
     /**
      * Projects WidgetCreatedEvent into widget_projection table.
      *
+     * **Multi-Tenancy (Story 4.6):**
+     * - Inserts tenant_id from event payload for Layer 3 isolation
+     * - TenantContext available from Story 4.5 context propagation
+     *
      * Inserts a new row with initial state: published=false.
      */
     @EventHandler
@@ -46,12 +50,14 @@ class WidgetProjectionEventHandler(
                     .insertInto(WIDGET_PROJECTION_TABLE)
                     .columns(
                         DSL.field("id"),
+                        DSL.field("tenant_id"),
                         DSL.field("name"),
                         DSL.field("published"),
                         DSL.field("created_at"),
                         DSL.field("updated_at"),
                     ).values(
                         UUID.fromString(event.widgetId.value),
+                        event.tenantId,
                         event.name,
                         false,
                         event.occurredAt.atOffset(ZoneOffset.UTC),

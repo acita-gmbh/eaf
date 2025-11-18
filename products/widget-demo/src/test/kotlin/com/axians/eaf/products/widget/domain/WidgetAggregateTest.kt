@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.domain
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -26,6 +27,13 @@ class WidgetAggregateTest :
 
         beforeTest {
             fixture = AggregateTestFixture(Widget::class.java)
+            // Set up TenantContext for Axon tests (Widget command handlers validate tenant context)
+            TenantContext.setCurrentTenantId("test-tenant-123")
+        }
+
+        afterTest {
+            // Clean up TenantContext after each test
+            TenantContext.clearCurrentTenant()
         }
 
         context("CreateWidgetCommand") {
@@ -35,7 +43,7 @@ class WidgetAggregateTest :
 
                 fixture
                     .givenNoPriorActivity()
-                    .`when`(CreateWidgetCommand(widgetId, "Test Widget"))
+                    .`when`(CreateWidgetCommand(widgetId, "Test Widget", "test-tenant-123"))
                     .expectEventsMatching(
                         Matchers.payloadsMatching(
                             Matchers.exactSequenceOf(
@@ -52,7 +60,7 @@ class WidgetAggregateTest :
 
                 fixture
                     .givenNoPriorActivity()
-                    .`when`(CreateWidgetCommand(widgetId, ""))
+                    .`when`(CreateWidgetCommand(widgetId, "", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
 
@@ -61,7 +69,7 @@ class WidgetAggregateTest :
 
                 fixture
                     .givenNoPriorActivity()
-                    .`when`(CreateWidgetCommand(widgetId, "   "))
+                    .`when`(CreateWidgetCommand(widgetId, "   ", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
         }
@@ -72,8 +80,8 @@ class WidgetAggregateTest :
                 val widgetId = WidgetId(UUID.randomUUID())
 
                 fixture
-                    .given(WidgetCreatedEvent(widgetId, "Original Name"))
-                    .`when`(UpdateWidgetCommand(widgetId, "Updated Name"))
+                    .given(WidgetCreatedEvent(widgetId, "Original Name", "test-tenant-123"))
+                    .`when`(UpdateWidgetCommand(widgetId, "Updated Name", "test-tenant-123"))
                     .expectEventsMatching(
                         Matchers.payloadsMatching(
                             Matchers.exactSequenceOf(
@@ -90,9 +98,9 @@ class WidgetAggregateTest :
 
                 fixture
                     .given(
-                        WidgetCreatedEvent(widgetId, "Test"),
-                        WidgetPublishedEvent(widgetId),
-                    ).`when`(UpdateWidgetCommand(widgetId, "New Name"))
+                        WidgetCreatedEvent(widgetId, "Test", "test-tenant-123"),
+                        WidgetPublishedEvent(widgetId, "test-tenant-123"),
+                    ).`when`(UpdateWidgetCommand(widgetId, "New Name", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
 
@@ -100,8 +108,8 @@ class WidgetAggregateTest :
                 val widgetId = WidgetId(UUID.randomUUID())
 
                 fixture
-                    .given(WidgetCreatedEvent(widgetId, "Original Name"))
-                    .`when`(UpdateWidgetCommand(widgetId, ""))
+                    .given(WidgetCreatedEvent(widgetId, "Original Name", "test-tenant-123"))
+                    .`when`(UpdateWidgetCommand(widgetId, "", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
 
@@ -109,8 +117,8 @@ class WidgetAggregateTest :
                 val widgetId = WidgetId(UUID.randomUUID())
 
                 fixture
-                    .given(WidgetCreatedEvent(widgetId, "Original Name"))
-                    .`when`(UpdateWidgetCommand(widgetId, "   "))
+                    .given(WidgetCreatedEvent(widgetId, "Original Name", "test-tenant-123"))
+                    .`when`(UpdateWidgetCommand(widgetId, "   ", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
         }
@@ -121,8 +129,8 @@ class WidgetAggregateTest :
                 val widgetId = WidgetId(UUID.randomUUID())
 
                 fixture
-                    .given(WidgetCreatedEvent(widgetId, "Test"))
-                    .`when`(PublishWidgetCommand(widgetId))
+                    .given(WidgetCreatedEvent(widgetId, "Test", "test-tenant-123"))
+                    .`when`(PublishWidgetCommand(widgetId, "test-tenant-123"))
                     .expectEventsMatching(
                         Matchers.payloadsMatching(
                             Matchers.exactSequenceOf(
@@ -139,9 +147,9 @@ class WidgetAggregateTest :
 
                 fixture
                     .given(
-                        WidgetCreatedEvent(widgetId, "Test"),
-                        WidgetPublishedEvent(widgetId),
-                    ).`when`(PublishWidgetCommand(widgetId))
+                        WidgetCreatedEvent(widgetId, "Test", "test-tenant-123"),
+                        WidgetPublishedEvent(widgetId, "test-tenant-123"),
+                    ).`when`(PublishWidgetCommand(widgetId, "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
         }
@@ -152,8 +160,8 @@ class WidgetAggregateTest :
                 val widgetId = WidgetId(UUID.randomUUID())
 
                 fixture
-                    .given(WidgetCreatedEvent(widgetId, "Initial Widget"))
-                    .`when`(PublishWidgetCommand(widgetId))
+                    .given(WidgetCreatedEvent(widgetId, "Initial Widget", "test-tenant-123"))
+                    .`when`(PublishWidgetCommand(widgetId, "test-tenant-123"))
                     .expectEventsMatching(
                         Matchers.payloadsMatching(
                             Matchers.exactSequenceOf(
@@ -170,9 +178,9 @@ class WidgetAggregateTest :
 
                 fixture
                     .given(
-                        WidgetCreatedEvent(widgetId, "Original"),
-                        WidgetUpdatedEvent(widgetId, "Updated"),
-                    ).`when`(PublishWidgetCommand(widgetId))
+                        WidgetCreatedEvent(widgetId, "Original", "test-tenant-123"),
+                        WidgetUpdatedEvent(widgetId, "Updated", "test-tenant-123"),
+                    ).`when`(PublishWidgetCommand(widgetId, "test-tenant-123"))
                     .expectEventsMatching(
                         Matchers.payloadsMatching(
                             Matchers.exactSequenceOf(
@@ -189,9 +197,9 @@ class WidgetAggregateTest :
 
                 fixture
                     .given(
-                        WidgetCreatedEvent(widgetId, "Test"),
-                        WidgetPublishedEvent(widgetId),
-                    ).`when`(UpdateWidgetCommand(widgetId, "New Name"))
+                        WidgetCreatedEvent(widgetId, "Test", "test-tenant-123"),
+                        WidgetPublishedEvent(widgetId, "test-tenant-123"),
+                    ).`when`(UpdateWidgetCommand(widgetId, "New Name", "test-tenant-123"))
                     .expectException(IllegalArgumentException::class.java)
             }
         }

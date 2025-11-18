@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -18,10 +19,10 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.UUID
@@ -49,7 +50,6 @@ import kotlin.time.measureTime
  * Story 2.13: Performance Baseline and Monitoring
  * Original Story: 2.4 - Snapshot Support
  */
-@Testcontainers
 @SpringBootTest(
     classes = [WidgetDemoApplication::class],
     properties = [
@@ -76,6 +76,14 @@ class SnapshotPerformanceTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        beforeEach {
+            TenantContext.setCurrentTenantId("test-tenant-integration")
+        }
+
+        afterEach {
+            TenantContext.clearCurrentTenant()
+        }
+
         context("Snapshot threshold validation (250 events)") {
             test("should process 250 commands successfully").config(timeout = 60.seconds) {
                 val widgetId = WidgetId(UUID.randomUUID())
@@ -86,14 +94,18 @@ class SnapshotPerformanceTest : FunSpec() {
                 val totalTime =
                     measureTime {
                         // Create widget (command 1, event 0)
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test"))
+                        commandGateway.sendAndWait<Unit>(
+                            CreateWidgetCommand(widgetId, "Snapshot Test", "test-tenant-integration"),
+                        )
 
                         // 249 updates (total: 250 commands, events 0-249)
                         repeat(249) { index ->
                             if (index % 50 == 0 && index > 0) {
                                 println("   Dispatched ${index + 1}/249 updates...")
                             }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                            commandGateway.sendAndWait<Unit>(
+                                UpdateWidgetCommand(widgetId, "Update $index", "test-tenant-integration"),
+                            )
                         }
                     }
 
@@ -140,13 +152,17 @@ class SnapshotPerformanceTest : FunSpec() {
                 // Measure 1000 command throughput
                 val totalTime =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test"))
+                        commandGateway.sendAndWait<Unit>(
+                            CreateWidgetCommand(widgetId, "Performance Test", "test-tenant-integration"),
+                        )
 
                         repeat(999) { index ->
                             if (index % 100 == 0 && index > 0) {
                                 println("   Dispatched ${index + 1}/999 updates...")
                             }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                            commandGateway.sendAndWait<Unit>(
+                                UpdateWidgetCommand(widgetId, "Update $index", "test-tenant-integration"),
+                            )
                         }
                     }
 
@@ -179,7 +195,9 @@ class SnapshotPerformanceTest : FunSpec() {
                 // Measure single create command
                 val createTime =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test"))
+                        commandGateway.sendAndWait<Unit>(
+                            CreateWidgetCommand(widgetId, "Baseline Test", "test-tenant-integration"),
+                        )
                     }
 
                 println("📊 Command Performance Baseline:")
@@ -200,7 +218,9 @@ class SnapshotPerformanceTest : FunSpec() {
                 repeat(10) { index ->
                     val time =
                         measureTime {
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index"))
+                            commandGateway.sendAndWait<Unit>(
+                                UpdateWidgetCommand(widgetId, "Baseline $index", "test-tenant-integration"),
+                            )
                         }
                     updateTimes.add(time.inWholeMilliseconds)
                 }
@@ -234,8 +254,7 @@ class SnapshotPerformanceTest : FunSpec() {
     }
 
     companion object {
-        @Container
-        @ServiceConnection
+        @JvmStatic
         val postgres: PostgreSQLContainer<*> =
             PostgreSQLContainer(
                 DockerImageName.parse("postgres:16.10-alpine"),
@@ -251,6 +270,16 @@ class SnapshotPerformanceTest : FunSpec() {
                     "-c",
                     "full_page_writes=off",
                 ).withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+                .also { it.start() } // Manual start for Kotest compatibility
+
+        @DynamicPropertySource
+        @JvmStatic
+        fun configureProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.datasource.url") { postgres.jdbcUrl }
+            registry.add("spring.datasource.username") { postgres.username }
+            registry.add("spring.datasource.password") { postgres.password }
+            registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.testing.nullable.createNullableDSLContext
@@ -25,8 +26,13 @@ class WidgetQueryHandlerTest :
         lateinit var handler: WidgetQueryHandler
 
         beforeEach {
+            TenantContext.setCurrentTenantId("test-tenant")
             val dsl = createNullableDSLContext()
             handler = WidgetQueryHandler(dsl)
+        }
+
+        afterEach {
+            TenantContext.clearCurrentTenant()
         }
 
         context("FindWidgetQuery with Nullable DSLContext") {
