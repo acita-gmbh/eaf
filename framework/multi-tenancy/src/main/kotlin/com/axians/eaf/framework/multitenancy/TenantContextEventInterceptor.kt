@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component
  * - **Nullable handling:** Events without tenant_id (system events) are allowed
  * - **Fail-safe:** Missing metadata does NOT fail event processing
  * - **Cleanup guaranteed:** try-finally ensures ThreadLocal cleanup
- * - **Metrics:** Emit propagation failures for monitoring
+ * - **Metrics:** Emit propagation success/skipped for monitoring
  *
  * **Example Event Processing:**
  * ```kotlin

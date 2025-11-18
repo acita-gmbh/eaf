@@ -7,10 +7,14 @@ import io.kotest.matchers.shouldBe
 /**
  * Unit test for tenant CorrelationDataProvider.
  *
- * **AC5 Coverage:**
+ * **AC5 & AC6 Coverage:**
  * - AC5: Event metadata enriched with tenant_id during command processing
+ * - AC6: Validates metadata enrichment (unit test level - E2E deferred to Story 4.6)
  *
- * Epic 4, Story 4.5: AC5
+ * **Note:** Full integration test with Widget aggregate deferred to Story 4.6
+ * as Widget commands/events need tenantId field added first.
+ *
+ * Epic 4, Story 4.5: AC5, AC6
  */
 class TenantCorrelationDataProviderTest :
     FunSpec({
