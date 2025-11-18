@@ -87,7 +87,7 @@ jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
 # See architecture.md lines 2044-2208 for setup documentation
 
 # Performance Testing (Story 2.13)
-gatling = "3.14.0"        # Load testing framework
+gatling = "3.14.9"        # Load testing framework
 gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
