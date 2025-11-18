@@ -92,7 +92,7 @@ gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
-jakarta-servlet-api = "6.0.0"  # Jakarta Servlet API for Filter interface
+jakarta-servlet-api = "6.1.0"  # Jakarta Servlet API for Filter interface
 
 [libraries]
 # Kotlin and JVM

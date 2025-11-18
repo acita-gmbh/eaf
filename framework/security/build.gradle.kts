@@ -70,7 +70,7 @@ dependencies {
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)
-    implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
+    implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation(libs.spring.boot.starter.aop)
     implementation(libs.jose4j)
     implementation(libs.jooq.core) // Story 9.2: Required for TenantDatabaseSessionInterceptor transaction participation
