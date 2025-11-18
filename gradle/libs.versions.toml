@@ -26,7 +26,7 @@ grpc-netty-shaded = "1.75.0" # CVE-2025-55163 fix (gRPC Netty DoS vulnerability)
 commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursion)
 
 # Testing framework (MANDATORY)
-kotest = "6.0.4"          # Primary testing framework (JUnit forbidden)
+kotest = "6.0.5"          # Primary testing framework (JUnit forbidden)
 kotest-plugin = "6.0.4"   # Kotest Gradle plugin for hybrid test execution (native + JUnit Platform)
 kotest-assertions-arrow = "2.0.0"  # Kotest Arrow assertions extension
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
