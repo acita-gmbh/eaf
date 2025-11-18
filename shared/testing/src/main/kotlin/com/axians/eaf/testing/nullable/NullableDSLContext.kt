@@ -75,10 +75,12 @@ object NullableDSLContext {
         val dsl = DSL.using(connection, SQLDialect.H2)
 
         // Initialize minimal schema for widget_projection
+        // Story 4.6: Added tenant_id column for multi-tenancy testing
         dsl.execute(
             """
             CREATE TABLE IF NOT EXISTS widget_projection (
                 id UUID PRIMARY KEY,
+                tenant_id VARCHAR(64) NOT NULL DEFAULT 'test-tenant',
                 name VARCHAR(255) NOT NULL,
                 published BOOLEAN NOT NULL DEFAULT false,
                 created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -93,12 +95,14 @@ object NullableDSLContext {
             .insertInto(DSL.table("widget_projection"))
             .columns(
                 DSL.field("id"),
+                DSL.field("tenant_id"),
                 DSL.field("name"),
                 DSL.field("published"),
                 DSL.field("created_at"),
                 DSL.field("updated_at"),
             ).values(
                 UUID.randomUUID(),
+                "test-tenant",
                 "Nullable Test Widget",
                 false,
                 now,

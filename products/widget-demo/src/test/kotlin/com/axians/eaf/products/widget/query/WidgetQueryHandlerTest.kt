@@ -38,34 +38,48 @@ class WidgetQueryHandlerTest :
         context("FindWidgetQuery with Nullable DSLContext") {
 
             test("returns widget projection from mock data") {
-                // Given: Nullable DSLContext with pre-inserted test data
-                // Query using ListWidgetsQuery to find the test widget ID first
-                val listResult = handler.handle(ListWidgetsQuery(limit = 1))
-                val testWidgetId = listResult.widgets.first().id
+                // Ensure tenant context is set (defensive check)
+                TenantContext.setCurrentTenantId("test-tenant")
 
-                // When: Execute FindWidgetQuery with actual test widget ID
-                val query = FindWidgetQuery(testWidgetId)
-                val result = handler.handle(query)
+                try {
+                    // Given: Nullable DSLContext with pre-inserted test data
+                    // Query using ListWidgetsQuery to find the test widget ID first
+                    val listResult = handler.handle(ListWidgetsQuery(limit = 1))
+                    val testWidgetId = listResult.widgets.first().id
 
-                // Then: Widget projection returned from in-memory H2
-                result.shouldNotBeNull()
-                result.name shouldBe "Nullable Test Widget"
-                result.published shouldBe false
+                    // When: Execute FindWidgetQuery with actual test widget ID
+                    val query = FindWidgetQuery(testWidgetId)
+                    val result = handler.handle(query)
+
+                    // Then: Widget projection returned from in-memory H2
+                    result.shouldNotBeNull()
+                    result.name shouldBe "Nullable Test Widget"
+                    result.published shouldBe false
+                } finally {
+                    TenantContext.clearCurrentTenant()
+                }
             }
         }
 
         context("ListWidgetsQuery with Nullable DSLContext") {
 
             test("returns paginated response from mock data") {
-                // Given: Nullable DSLContext
-                val query = ListWidgetsQuery(limit = 50)
+                // Ensure tenant context is set
+                TenantContext.setCurrentTenantId("test-tenant")
 
-                // When: Execute query
-                val result = handler.handle(query)
+                try {
+                    // Given: Nullable DSLContext
+                    val query = ListWidgetsQuery(limit = 50)
 
-                // Then: Mock data structure validated
-                result.shouldNotBeNull()
-                result.widgets.shouldNotBeNull()
+                    // When: Execute query
+                    val result = handler.handle(query)
+
+                    // Then: Mock data structure validated
+                    result.shouldNotBeNull()
+                    result.widgets.shouldNotBeNull()
+                } finally {
+                    TenantContext.clearCurrentTenant()
+                }
             }
         }
 
