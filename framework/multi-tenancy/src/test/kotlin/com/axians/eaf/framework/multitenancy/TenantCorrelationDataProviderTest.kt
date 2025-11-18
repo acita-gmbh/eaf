@@ -2,9 +2,7 @@ package com.axians.eaf.framework.multitenancy
 
 import com.axians.eaf.framework.multitenancy.config.TenantEventProcessingConfiguration
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.maps.shouldContain
 import io.kotest.matchers.shouldBe
-import org.axonframework.eventhandling.GenericEventMessage
 
 /**
  * Unit test for tenant CorrelationDataProvider.
@@ -16,9 +14,6 @@ import org.axonframework.eventhandling.GenericEventMessage
  */
 class TenantCorrelationDataProviderTest :
     FunSpec({
-        val config = TenantEventProcessingConfiguration()
-        val provider = config.tenantCorrelationDataProvider()
-
         afterEach {
             // Ensure context is always cleared after each test
             @Suppress("SwallowedException")
@@ -35,25 +30,62 @@ class TenantCorrelationDataProviderTest :
                 val tenantId = "tenant-test-123"
                 TenantContext.setCurrentTenantId(tenantId)
 
-                // When - Provider generates correlation data
-                val message = GenericEventMessage.asEventMessage<String>("test-event")
+                // When - Create provider and generate correlation data
+                val config = TenantEventProcessingConfiguration()
+                val provider = config.tenantCorrelationDataProvider()
+
+                val message =
+                    object : org.axonframework.messaging.Message<String> {
+                        override fun getIdentifier() = "test-event-id"
+
+                        override fun getMetaData() =
+                            org.axonframework.messaging.MetaData
+                                .emptyInstance()
+
+                        override fun getPayload() = "test-event-payload"
+
+                        override fun getPayloadType(): Class<String> = String::class.java
+
+                        override fun withMetaData(metaData: MutableMap<String, *>) = this
+
+                        override fun andMetaData(metaData: MutableMap<String, *>) = this
+                    }
+
                 val correlationData = provider.correlationDataFor(message)
 
                 // Then - AC5: tenant_id added to metadata
-                correlationData shouldContain ("tenant_id" to tenantId)
+                correlationData.containsKey("tenant_id") shouldBe true
+                correlationData["tenant_id"] shouldBe tenantId
             }
 
             test("Do NOT add tenant_id when TenantContext is not set") {
                 // Given - NO TenantContext set (system event)
 
-                // When - Provider generates correlation data
-                val message = GenericEventMessage.asEventMessage<String>("system-event")
+                // When - Create provider and generate correlation data
+                val config = TenantEventProcessingConfiguration()
+                val provider = config.tenantCorrelationDataProvider()
+
+                val message =
+                    object : org.axonframework.messaging.Message<String> {
+                        override fun getIdentifier() = "system-event-id"
+
+                        override fun getMetaData() =
+                            org.axonframework.messaging.MetaData
+                                .emptyInstance()
+
+                        override fun getPayload() = "system-event-payload"
+
+                        override fun getPayloadType(): Class<String> = String::class.java
+
+                        override fun withMetaData(metaData: MutableMap<String, *>) = this
+
+                        override fun andMetaData(metaData: MutableMap<String, *>) = this
+                    }
+
                 val correlationData = provider.correlationDataFor(message)
 
                 // Then - No tenant_id in metadata (empty map)
-                @Suppress("UNCHECKED_CAST")
-                val dataMap = correlationData as Map<String, Any>
-                dataMap.containsKey("tenant_id") shouldBe false
+                correlationData.containsKey("tenant_id") shouldBe false
                 correlationData.size shouldBe 0
             }
         }
