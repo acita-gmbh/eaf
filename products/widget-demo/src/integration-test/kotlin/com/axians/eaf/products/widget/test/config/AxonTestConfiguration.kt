@@ -3,6 +3,8 @@ package com.axians.eaf.products.widget.test.config
 import com.axians.eaf.framework.multitenancy.TenantAwareCommand
 import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
+import jakarta.annotation.PostConstruct
+import org.axonframework.commandhandling.CommandBus
 import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache

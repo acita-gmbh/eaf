@@ -82,7 +82,10 @@ open class RbacTestSecurityConfig {
     @Primary
     fun rbacTestSecurityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
-            .csrf { it.disable() }
+            .addFilterBefore(
+                TestTenantContextFilter(),
+                org.springframework.security.web.context.SecurityContextHolderFilter::class.java,
+            ).csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 // CRITICAL: authenticated() enables ExceptionTranslationFilter

@@ -86,11 +86,15 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val request = CreateWidgetRequest(name = "Admin Widget")
                 val requestBody = objectMapper.writeValueAsString(request)
 
-                // When - POST create widget with ADMIN JWT
+                // When - POST create widget with ADMIN JWT (with tenant_id claim)
                 val result =
                     mockMvc
                         .post("/api/v1/widgets") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             contentType = MediaType.APPLICATION_JSON
                             content = requestBody
                         }.andExpect {
@@ -117,7 +121,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 // When/Then - POST with VIEWER role returns 403
                 mockMvc
                     .post("/api/v1/widgets") {
-                        with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                        with(
+                            jwt()
+                                .authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER"))
+                                .jwt { it.claim("tenant_id", "test-tenant") },
+                        )
                         contentType = MediaType.APPLICATION_JSON
                         content = requestBody
                     }.andExpect {
@@ -158,7 +166,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val createResult =
                     mockMvc
                         .post("/api/v1/widgets") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             contentType = MediaType.APPLICATION_JSON
                             content = createBody
                         }.andReturn()
@@ -173,7 +185,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val result =
                     mockMvc
                         .get("/api/v1/widgets/${createdWidget.id}") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             accept = MediaType.APPLICATION_JSON
                         }.andExpect {
                             status { isOk() }
@@ -215,7 +231,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val createResult =
                     mockMvc
                         .post("/api/v1/widgets") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             contentType = MediaType.APPLICATION_JSON
                             content = createBody
                         }.andReturn()
@@ -233,7 +253,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val updateResult =
                     mockMvc
                         .put("/api/v1/widgets/${createdWidget.id}") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             contentType = MediaType.APPLICATION_JSON
                             content = updateBody
                         }.andExpect {
@@ -260,7 +284,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
                 val createResult =
                     mockMvc
                         .post("/api/v1/widgets") {
-                            with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                            with(
+                                jwt()
+                                    .authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN"))
+                                    .jwt { it.claim("tenant_id", "test-tenant") },
+                            )
                             contentType = MediaType.APPLICATION_JSON
                             content = createBody
                         }.andReturn()
@@ -277,7 +305,11 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
 
                 mockMvc
                     .put("/api/v1/widgets/${createdWidget.id}") {
-                        with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                        with(
+                            jwt()
+                                .authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER"))
+                                .jwt { it.claim("tenant_id", "test-tenant") },
+                        )
                         contentType = MediaType.APPLICATION_JSON
                         content = updateBody
                     }.andExpect {

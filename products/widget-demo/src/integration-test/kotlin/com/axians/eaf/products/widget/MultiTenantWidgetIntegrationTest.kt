@@ -195,7 +195,7 @@ class MultiTenantWidgetIntegrationTest : FunSpec() {
                         .query(FindWidgetQuery(widgetA), WidgetProjection::class.java)
                         .get()
                 resultA.shouldNotBeNull()
-                resultA.id shouldBe widgetA.value
+                resultA.id shouldBe widgetA
 
                 // Query tenant B's widget while in tenant A context - should return null
                 val resultB =
@@ -211,7 +211,7 @@ class MultiTenantWidgetIntegrationTest : FunSpec() {
                         .get()
 
                 allWidgets.widgets shouldHaveSize 1
-                allWidgets.widgets[0].id shouldBe widgetA.value
+                allWidgets.widgets[0].id shouldBe widgetA
 
                 // When/Then - Switch to tenant B context
                 TenantContext.clearCurrentTenant()
@@ -223,7 +223,7 @@ class MultiTenantWidgetIntegrationTest : FunSpec() {
                         .query(FindWidgetQuery(widgetB), WidgetProjection::class.java)
                         .get()
                 resultB2.shouldNotBeNull()
-                resultB2.id shouldBe widgetB.value
+                resultB2.id shouldBe widgetB
 
                 // Tenant B should NOT see tenant A's widget
                 val resultA2 =
@@ -239,7 +239,7 @@ class MultiTenantWidgetIntegrationTest : FunSpec() {
                         .get()
 
                 allWidgetsB.widgets shouldHaveSize 1
-                allWidgetsB.widgets[0].id shouldBe widgetB.value
+                allWidgetsB.widgets[0].id shouldBe widgetB
             }
 
             test("Database projection enforces tenant_id for all widgets") {
