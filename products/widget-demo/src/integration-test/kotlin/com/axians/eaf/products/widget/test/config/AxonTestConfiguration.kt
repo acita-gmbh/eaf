@@ -1,14 +1,21 @@
 package com.axians.eaf.products.widget.test.config
 
+import com.axians.eaf.framework.multitenancy.TenantAwareCommand
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
+import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.config.EventProcessingConfigurer
 import org.axonframework.eventhandling.PropagatingErrorHandler
+import org.axonframework.messaging.InterceptorChain
+import org.axonframework.messaging.MessageHandlerInterceptor
+import org.axonframework.messaging.unitofwork.UnitOfWork
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 
 /**
@@ -28,11 +35,11 @@ import org.springframework.context.annotation.Profile
  * Story 2.13: Performance Baseline and Monitoring - Phase 2
  *
  * **Story 3.10: Profile Isolation**
- * - Active ONLY for "test" profile (rbac-test uses RbacTestContainersConfig)
- * - Prevents @ServiceConnection timing race condition
+ * - Active for "test" and "rbac-test" profiles
+ * - Provides test interceptor for tenant context propagation
  */
 @TestConfiguration
-@Profile("test")
+@Profile("test | rbac-test")
 @Import(TestDslConfiguration::class, TestJpaBypassConfiguration::class, PostgresEventStoreConfiguration::class)
 class AxonTestConfiguration {
     /**
@@ -68,4 +75,35 @@ class AxonTestConfiguration {
      */
     @Bean
     fun aggregateCache(): Cache = WeakReferenceCache()
+
+    /**
+     * Test interceptor that sets tenant context from command payload for tests.
+     *
+     * **Story 4.6:** Multi-tenancy tests need tenant context propagation to command handlers.
+     * Since commands execute in Axon threads (not HTTP request threads), we extract
+     * the tenant ID from the command payload and set it in TenantContext before
+     * the command handler executes.
+     *
+     * This replaces the production TenantValidationInterceptor which expects the
+     * tenant to already be set in TenantContext (from HTTP filter).
+     *
+     * @return Test-specific command interceptor
+     */
+    @Bean
+    fun testTenantContextInterceptor(): MessageHandlerInterceptor<CommandMessage<*>> =
+        MessageHandlerInterceptor { unitOfWork, chain ->
+            val command = unitOfWork.message.payload
+
+            // Extract tenant from command and set in TenantContext for handler execution
+            if (command is TenantAwareCommand) {
+                TenantContext.setCurrentTenantId(command.tenantId)
+                try {
+                    chain.proceed()
+                } finally {
+                    TenantContext.clearCurrentTenant()
+                }
+            } else {
+                chain.proceed()
+            }
+        }
 }

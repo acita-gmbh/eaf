@@ -65,18 +65,15 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var queryGateway: QueryGateway
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private lateinit var tenantContext: TenantContext
-
     init {
         extension(SpringExtension())
 
         beforeEach {
-            tenantContext.setCurrentTenantId("test-tenant-integration")
+            TenantContext.setCurrentTenantId("test-tenant-integration")
         }
 
         afterEach {
-            tenantContext.clearCurrentTenant()
+            TenantContext.clearCurrentTenant()
         }
 
         context("FindWidgetQuery") {
