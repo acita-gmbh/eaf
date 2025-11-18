@@ -1,7 +1,7 @@
 # Story 4.6: Multi-Tenant Widget Demo Enhancement
 
 **Epic:** Epic 4 - Multi-Tenancy & Data Isolation
-**Status:** in-progress
+**Status:** review
 **Related Requirements:** FR004
 
 ---
