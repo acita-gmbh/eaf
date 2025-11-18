@@ -6,7 +6,6 @@ import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.messaging.InterceptorChain
 import org.axonframework.messaging.MessageHandlerInterceptor
 import org.axonframework.messaging.unitofwork.UnitOfWork
-import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 /**
@@ -43,15 +42,10 @@ import org.springframework.stereotype.Component
  *
  * Epic 4, Story 4.3: AC1, AC2, AC4, AC5, AC7
  *
- * **Story 4.6 Note:** Disabled for "test" and "rbac-test" profiles.
- * Integration tests use TestTenantContextInterceptor which sets tenant context
- * from command payload instead of expecting it to be pre-set from HTTP filter.
- *
  * @param meterRegistry Micrometer registry for validation failure metrics
  * @since 1.0.0
  */
 @Component
-@Profile("!test & !rbac-test")
 class TenantValidationInterceptor(
     private val meterRegistry: MeterRegistry,
 ) : MessageHandlerInterceptor<CommandMessage<*>> {
