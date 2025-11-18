@@ -8,7 +8,7 @@ gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.prope
 
 # Framework stack (UPDATED for compatibility)
 spring-boot = "3.5.7"     # Current GA (released 2025-10-23)
-spring-framework = "6.2.12" # Spring Framework core - CVE-2025-24928 fix
+spring-framework = "7.0.0" # Spring Framework core - CVE-2025-24928 fix
 spring-modulith = "1.4.4" # Updated from 1.3.0 (tested compatible)
 spring-dependency-management = "1.1.7"
 
