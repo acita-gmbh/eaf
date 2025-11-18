@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.domain.WidgetCreatedEvent
 import com.axians.eaf.products.widget.domain.WidgetPublishedEvent
 import com.axians.eaf.products.widget.domain.WidgetUpdatedEvent
@@ -37,10 +38,14 @@ class WidgetProjectionEventHandler(
      * Projects WidgetCreatedEvent into widget_projection table.
      *
      * Inserts a new row with initial state: published=false.
+     * Includes tenant_id for multi-tenant isolation (Story 4.6, AC5).
      */
     @EventHandler
     fun on(event: WidgetCreatedEvent) {
         try {
+            // Extract tenant_id from TenantContext (restored by TenantContextEventInterceptor)
+            val tenantId = TenantContext.getCurrentTenantId()
+
             val insertedRows =
                 dsl
                     .insertInto(WIDGET_PROJECTION_TABLE)
@@ -48,12 +53,14 @@ class WidgetProjectionEventHandler(
                         DSL.field("id"),
                         DSL.field("name"),
                         DSL.field("published"),
+                        DSL.field("tenant_id"),
                         DSL.field("created_at"),
                         DSL.field("updated_at"),
                     ).values(
                         UUID.fromString(event.widgetId.value),
                         event.name,
                         false,
+                        tenantId,
                         event.occurredAt.atOffset(ZoneOffset.UTC),
                         event.occurredAt.atOffset(ZoneOffset.UTC),
                     ).onConflictDoNothing()

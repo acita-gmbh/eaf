@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.domain
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
@@ -37,6 +38,7 @@ class Widget : Serializable {
 
     private lateinit var name: String
     private var published: Boolean = false
+    private lateinit var tenantId: String
 
     /**
      * Required no-arg constructor for Axon Framework.
@@ -52,13 +54,20 @@ class Widget : Serializable {
      *
      * **Validation:**
      * - Name must not be blank
+     * - Tenant context must match command tenant ID (Layer 2 validation, Story 4.6)
      *
-     * @param command CreateWidgetCommand with widget ID and name
-     * @throws IllegalArgumentException if name is blank
+     * @param command CreateWidgetCommand with widget ID, name, and tenant ID
+     * @throws IllegalArgumentException if name is blank or tenant context mismatch
      */
     @CommandHandler
     constructor(command: CreateWidgetCommand) {
         require(command.name.isNotBlank()) { "Widget name cannot be blank" }
+
+        // Layer 2: Tenant context validation (Story 4.6, AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209 protection)
+        }
 
         AggregateLifecycle.apply(
             WidgetCreatedEvent(command.widgetId, command.name),
@@ -71,14 +80,24 @@ class Widget : Serializable {
      * **Validation:**
      * - Widget must not be published
      * - Name must not be blank
+     * - Tenant context must match command tenant ID (Layer 2 validation, Story 4.6)
      *
-     * @param command UpdateWidgetCommand with new name
-     * @throws IllegalArgumentException if widget is already published or name is blank
+     * @param command UpdateWidgetCommand with new name and tenant ID
+     * @throws IllegalArgumentException if widget is already published, name is blank, or tenant context mismatch
      */
     @CommandHandler
     fun handle(command: UpdateWidgetCommand) {
         require(!published) { "Cannot update published widget" }
         require(command.name.isNotBlank()) { "Widget name cannot be blank" }
+
+        // Layer 2: Tenant context validation (Story 4.6, AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209 protection)
+        }
+        require(this.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209 protection)
+        }
 
         AggregateLifecycle.apply(
             WidgetUpdatedEvent(widgetId, command.name),
@@ -90,13 +109,23 @@ class Widget : Serializable {
      *
      * **Validation:**
      * - Widget must not already be published
+     * - Tenant context must match command tenant ID (Layer 2 validation, Story 4.6)
      *
-     * @param command PublishWidgetCommand
-     * @throws IllegalArgumentException if widget is already published
+     * @param command PublishWidgetCommand with tenant ID
+     * @throws IllegalArgumentException if widget is already published or tenant context mismatch
      */
     @CommandHandler
     fun handle(command: PublishWidgetCommand) {
         require(!published) { "Widget already published" }
+
+        // Layer 2: Tenant context validation (Story 4.6, AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209 protection)
+        }
+        require(this.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // Generic message (CWE-209 protection)
+        }
 
         AggregateLifecycle.apply(
             WidgetPublishedEvent(widgetId),
@@ -116,6 +145,9 @@ class Widget : Serializable {
         this.widgetId = event.widgetId
         this.name = event.name
         this.published = false
+        // Extract tenant_id from event metadata (Story 4.6, AC4)
+        // TenantCorrelationDataProvider automatically enriches event metadata
+        this.tenantId = TenantContext.getCurrentTenantId()
     }
 
     /**
