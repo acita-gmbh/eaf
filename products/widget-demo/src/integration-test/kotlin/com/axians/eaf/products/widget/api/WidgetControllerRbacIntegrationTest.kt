@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.RbacTestContainersConfig
@@ -78,6 +79,17 @@ class WidgetControllerRbacIntegrationTest : FunSpec() {
 
     init {
         extension(SpringExtension())
+
+        beforeTest {
+            // CRITICAL: Set tenant context for RBAC tests
+            // MockMvc with .with(jwt()) does NOT trigger TenantContextFilter
+            // Tests manually set tenant to match JWT claim "tenant_id"
+            TenantContext.setCurrentTenantId("test-tenant")
+        }
+
+        afterTest {
+            TenantContext.clearCurrentTenant()
+        }
 
         context("POST /api/v1/widgets - Create Widget with @PreAuthorize('hasRole(WIDGET_ADMIN)')") {
 

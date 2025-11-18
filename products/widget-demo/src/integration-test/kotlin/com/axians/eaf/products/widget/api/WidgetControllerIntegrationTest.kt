@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
@@ -79,6 +80,18 @@ class WidgetControllerIntegrationTest : FunSpec() {
 
     init {
         extension(SpringExtension())
+
+        beforeTest {
+            // Set default tenant context for HTTP request tests
+            // Widget REST Controller extracts tenant from TenantContext in production (via HTTP filter)
+            // In tests, we manually set it here to simulate the production behavior
+            TenantContext.setCurrentTenantId("test-tenant")
+        }
+
+        afterTest {
+            // Cleanup tenant context
+            TenantContext.clearCurrentTenant()
+        }
 
         context("POST /api/v1/widgets - Create Widget") {
 

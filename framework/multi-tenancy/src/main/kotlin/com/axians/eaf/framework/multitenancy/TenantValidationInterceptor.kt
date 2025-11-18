@@ -93,16 +93,16 @@ class TenantValidationInterceptor(
      * @throws TenantIsolationException if validation fails
      */
     private fun validateTenantContext(command: TenantAwareCommand) {
-        // Defensive: Check if TenantContext is set, if not set it from command (test scenarios)
+        // AC5: Fail-closed - getCurrentTenantId() throws IllegalStateException if context not set
+        // We wrap it in TenantIsolationException for consistent security error handling
         val currentTenant =
-            @Suppress("SwallowedException") // Intentional: Use command tenantId if context not set
+            @Suppress("SwallowedException") // Intentional: Wrap in security exception for consistent error handling
             try {
                 TenantContext.getCurrentTenantId()
             } catch (e: IllegalStateException) {
-                // TenantContext not set (test scenario without HTTP filter)
-                // Defensively set it from command payload
-                TenantContext.setCurrentTenantId(command.tenantId)
-                command.tenantId
+                // AC5: Missing TenantContext → reject with generic error (fail-closed)
+                meterRegistry.counter("tenant.validation.failures").increment()
+                throw TenantIsolationException("Tenant context not set")
             }
 
         // AC2: Validate command.tenantId matches current tenant

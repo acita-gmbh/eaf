@@ -17,8 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
+import org.springframework.stereotype.Component
 
 /**
  * Axon Framework test configuration.
@@ -77,36 +77,57 @@ class AxonTestConfiguration {
      */
     @Bean
     fun aggregateCache(): Cache = WeakReferenceCache()
+}
 
-    /**
-     * Test interceptor that sets tenant context from command payload for tests.
-     *
-     * **Story 4.6:** Multi-tenancy tests need tenant context propagation to command handlers.
-     * Since commands execute in Axon threads (not HTTP request threads), we extract
-     * the tenant ID from the command payload and set it in TenantContext before
-     * the command handler executes.
-     *
-     * This replaces the production TenantValidationInterceptor which expects the
-     * tenant to already be set in TenantContext (from HTTP filter).
-     *
-     * @return Test-specific command interceptor
-     */
-    @Bean
-    @Primary // Higher priority than production TenantValidationInterceptor
-    fun testTenantContextInterceptor(): MessageHandlerInterceptor<CommandMessage<*>> =
-        MessageHandlerInterceptor { unitOfWork, chain ->
-            val command = unitOfWork.message.payload
+/**
+ * Component that registers tenant context interceptor EARLY in the interceptor chain.
+ *
+ * **Story 4.6 - Test Infrastructure:**
+ * This interceptor MUST run BEFORE TenantValidationInterceptor to set TenantContext
+ * from command payload. Using @PostConstruct + CommandBus.registerHandlerInterceptor()
+ * ensures early registration (before component scanning finds TenantValidationInterceptor).
+ *
+ * **Smart Behavior:**
+ * - If TenantContext already set (manual test setup) → Don't override, use existing
+ * - If TenantContext NOT set → Extract from command.tenantId (auto-propagation)
+ *
+ * **This allows two test patterns:**
+ * 1. Auto-propagation: Performance/REST tests (CommandGateway dispatches to Axon thread pool → ThreadLocal doesn't propagate → interceptor sets from command)
+ * 2. Manual control: TenantValidationInterceptor tests (explicit beforeTest setup validates strict fail-closed)
+ *
+ * **CRITICAL:** Must be @Component (not @Bean) to use @PostConstruct for early registration.
+ */
+@Component
+@Profile("test | rbac-test")
+class TenantContextTestInterceptor(
+    private val commandBus: CommandBus,
+) {
+    @PostConstruct
+    fun registerInterceptor() {
+        // Register interceptor programmatically to guarantee execution BEFORE other interceptors
+        commandBus.registerHandlerInterceptor(
+            MessageHandlerInterceptor { unitOfWork, chain ->
+                val command = unitOfWork.message.payload
 
-            // Extract tenant from command and set in TenantContext for handler execution
-            if (command is TenantAwareCommand) {
-                TenantContext.setCurrentTenantId(command.tenantId)
-                try {
+                if (command is TenantAwareCommand) {
+                    // Only set context if NOT already set (allows manual override in tests)
+                    val existingTenant = TenantContext.current()
+                    if (existingTenant == null) {
+                        // Auto-propagation: Set context from command
+                        TenantContext.setCurrentTenantId(command.tenantId)
+                        try {
+                            chain.proceed()
+                        } finally {
+                            TenantContext.clearCurrentTenant()
+                        }
+                    } else {
+                        // Manual control: Context already set, don't override
+                        chain.proceed()
+                    }
+                } else {
                     chain.proceed()
-                } finally {
-                    TenantContext.clearCurrentTenant()
                 }
-            } else {
-                chain.proceed()
-            }
-        }
+            },
+        )
+    }
 }
