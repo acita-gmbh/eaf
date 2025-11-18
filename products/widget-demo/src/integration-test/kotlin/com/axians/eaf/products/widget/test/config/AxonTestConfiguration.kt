@@ -92,6 +92,7 @@ class AxonTestConfiguration {
      * @return Test-specific command interceptor
      */
     @Bean
+    @Primary // Higher priority than production TenantValidationInterceptor
     fun testTenantContextInterceptor(): MessageHandlerInterceptor<CommandMessage<*>> =
         MessageHandlerInterceptor { unitOfWork, chain ->
             val command = unitOfWork.message.payload
