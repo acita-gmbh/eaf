@@ -42,7 +42,12 @@ import org.springframework.stereotype.Component
  */
 @TestConfiguration
 @Profile("test | rbac-test")
-@Import(TestDslConfiguration::class, TestJpaBypassConfiguration::class, PostgresEventStoreConfiguration::class)
+@Import(
+    TestDslConfiguration::class,
+    TestJpaBypassConfiguration::class,
+    PostgresEventStoreConfiguration::class,
+    TenantContextTestInterceptor::class, // Explicit import for component scanning
+)
 class AxonTestConfiguration {
     /**
      * Registers PropagatingErrorHandler as default for all event processors.

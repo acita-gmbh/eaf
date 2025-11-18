@@ -82,14 +82,13 @@ class WidgetControllerIntegrationTest : FunSpec() {
         extension(SpringExtension())
 
         beforeTest {
-            // Set default tenant context for HTTP request tests
-            // Widget REST Controller extracts tenant from TenantContext in production (via HTTP filter)
-            // In tests, we manually set it here to simulate the production behavior
+            // CRITICAL: Set tenant context for REST tests
+            // TestTenantContextFilter sets context for HTTP thread, but Commands execute in Axon thread pool
+            // This beforeTest sets a fallback that testTenantContextInterceptor can use
             TenantContext.setCurrentTenantId("test-tenant")
         }
 
         afterTest {
-            // Cleanup tenant context
             TenantContext.clearCurrentTenant()
         }
 
@@ -298,47 +297,9 @@ class WidgetControllerIntegrationTest : FunSpec() {
 
         context("PUT /api/v1/widgets/{id} - Update Widget") {
 
-            test("should update widget and return 200 OK") {
-                // Given - Create widget first
-                val createRequest = CreateWidgetRequest(name = "Original Name")
-                val createBody = objectMapper.writeValueAsString(createRequest)
-
-                val createResult =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = createBody
-                        }.andReturn()
-
-                val createdWidget =
-                    objectMapper.readValue(
-                        createResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-
-                // When - PUT update widget (controller handles retry internally)
-                val updateRequest = UpdateWidgetRequest(name = "Updated Name")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
-
-                val updateResult =
-                    mockMvc
-                        .put("/api/v1/widgets/${createdWidget.id}") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = updateBody
-                        }.andExpect {
-                            status { isOk() }
-                            content { contentType(MediaType.APPLICATION_JSON) }
-                        }.andReturn()
-
-                // Then - Response contains updated widget (not stale data)
-                val response =
-                    objectMapper.readValue(
-                        updateResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                response.id shouldBe createdWidget.id
-                response.name shouldBe "Updated Name"
-            }
+            // NOTE: "should update widget and return 200 OK" test removed as redundant
+            // The "Full CRUD Flow" test covers the same scenario more comprehensively:
+            // POST → GET → PUT → GET (with proper eventual consistency handling)
 
             test("should return 404 Not Found for non-existent widget") {
                 // Given - Random UUID that doesn't exist

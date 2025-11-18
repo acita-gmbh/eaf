@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.api.CreateWidgetRequest
 import com.axians.eaf.products.widget.api.PaginatedResponse
@@ -94,6 +95,16 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
 
     init {
         extension(SpringExtension())
+
+        beforeTest {
+            // CRITICAL: Set tenant context for all HTTP/Command tests
+            // TestTenantContextFilter sets for HTTP thread, testTenantContextInterceptor propagates to Axon threads
+            TenantContext.setCurrentTenantId("test-tenant")
+        }
+
+        afterTest {
+            TenantContext.clearCurrentTenant()
+        }
 
         context("Walking Skeleton - Complete CQRS Flow") {
 
