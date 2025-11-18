@@ -1,0 +1,24 @@
+# Test configuration for TenantValidationInterceptor integration tests
+# Epic 4, Story 4.3
+
+spring:
+  application:
+    name: tenant-validation-test
+
+# Axon Framework test configuration
+axon:
+  # Use subscribing event processors for synchronous testing (fast)
+  axonserver:
+    enabled: false
+
+  # In-memory event store (no PostgreSQL required)
+  eventhandling:
+    processors:
+      default:
+        mode: subscribing
+
+# Logging for debugging
+logging:
+  level:
+    com.axians.eaf.framework.multitenancy: DEBUG
+    org.axonframework: INFO
