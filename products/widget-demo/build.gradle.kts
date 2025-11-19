@@ -35,6 +35,7 @@ dependencies {
     // Framework modules
     implementation(project(":framework:core"))
     implementation(project(":framework:cqrs"))
+    implementation(project(":framework:multi-tenancy")) // Story 4.6: Multi-tenant widget demo
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
     implementation(project(":framework:security"))
