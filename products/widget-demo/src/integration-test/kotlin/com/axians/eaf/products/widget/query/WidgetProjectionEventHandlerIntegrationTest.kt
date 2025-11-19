@@ -173,6 +173,8 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant"
+
         @Container
         @ServiceConnection
         @JvmStatic
@@ -181,10 +183,6 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
                 .withDatabaseName("eaf_test")
                 .withUsername("test")
                 .withPassword("test")
-    }
-
-    companion object {
-        private const val TEST_TENANT_ID = "test-tenant"
     }
 }
 

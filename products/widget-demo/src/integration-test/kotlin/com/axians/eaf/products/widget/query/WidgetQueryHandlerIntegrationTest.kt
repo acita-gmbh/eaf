@@ -68,14 +68,12 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        val tenantContext = TenantContext()
-
         beforeTest {
-            tenantContext.setCurrentTenantId(TEST_TENANT_ID)
+            TenantContext.setCurrentTenantId(TEST_TENANT_ID)
         }
 
         afterTest {
-            tenantContext.clearCurrentTenant()
+            TenantContext.clearCurrentTenant()
         }
 
         context("FindWidgetQuery") {
