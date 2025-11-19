@@ -5,10 +5,9 @@ import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.query.FindWidgetQuery
 import com.axians.eaf.products.widget.query.WidgetProjection
-import com.axians.eaf.shared.testing.IntegrationTest
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -19,7 +18,6 @@ import org.axonframework.queryhandling.QueryGateway
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.extension.spring.SpringExtension
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -37,7 +35,6 @@ import java.util.concurrent.TimeUnit
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@IntegrationTest
 class WidgetMultiTenantIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var commandGateway: CommandGateway
@@ -45,9 +42,8 @@ class WidgetMultiTenantIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var queryGateway: QueryGateway
 
-    override fun extensions(): List<Extension> = listOf(SpringExtension)
-
     init {
+        extension(SpringExtension)
         test("AC6: Create widgets for multiple tenants successfully") {
             val tenantAId = "tenant-a"
             val tenantBId = "tenant-b"

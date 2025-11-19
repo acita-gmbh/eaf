@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -76,6 +77,16 @@ class SnapshotPerformanceTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        val tenantContext = TenantContext()
+
+        beforeTest {
+            tenantContext.setCurrentTenantId(TEST_TENANT_ID)
+        }
+
+        afterTest {
+            tenantContext.clearCurrentTenant()
+        }
+
         context("Snapshot threshold validation (250 events)") {
             test("should process 250 commands successfully").config(timeout = 60.seconds) {
                 val widgetId = WidgetId(UUID.randomUUID())
@@ -86,14 +97,14 @@ class SnapshotPerformanceTest : FunSpec() {
                 val totalTime =
                     measureTime {
                         // Create widget (command 1, event 0)
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test"))
+                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test", TEST_TENANT_ID))
 
                         // 249 updates (total: 250 commands, events 0-249)
                         repeat(249) { index ->
                             if (index % 50 == 0 && index > 0) {
                                 println("   Dispatched ${index + 1}/249 updates...")
                             }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index", TEST_TENANT_ID))
                         }
                     }
 
@@ -140,13 +151,13 @@ class SnapshotPerformanceTest : FunSpec() {
                 // Measure 1000 command throughput
                 val totalTime =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test"))
+                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test", TEST_TENANT_ID))
 
                         repeat(999) { index ->
                             if (index % 100 == 0 && index > 0) {
                                 println("   Dispatched ${index + 1}/999 updates...")
                             }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index", TEST_TENANT_ID))
                         }
                     }
 
@@ -179,7 +190,7 @@ class SnapshotPerformanceTest : FunSpec() {
                 // Measure single create command
                 val createTime =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test"))
+                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test", TEST_TENANT_ID))
                     }
 
                 println("📊 Command Performance Baseline:")
@@ -200,7 +211,7 @@ class SnapshotPerformanceTest : FunSpec() {
                 repeat(10) { index ->
                     val time =
                         measureTime {
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index"))
+                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index", TEST_TENANT_ID))
                         }
                     updateTimes.add(time.inWholeMilliseconds)
                 }
@@ -234,6 +245,8 @@ class SnapshotPerformanceTest : FunSpec() {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant"
+
         @Container
         @ServiceConnection
         val postgres: PostgreSQLContainer<*> =

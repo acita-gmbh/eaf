@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
@@ -59,6 +60,16 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        beforeTest {
+            // Set up tenant context for multi-tenant tests (Story 4.6)
+            TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+        }
+
+        afterTest {
+            // Clean up tenant context to prevent leaks (Story 4.6)
+            TenantContext.clearCurrentTenant()
+        }
+
         context("WidgetCreatedEvent projection") {
             test("CreateWidgetCommand → widget_projection INSERT") {
                 // Given
@@ -67,7 +78,7 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
 
                 // When - Dispatch command
                 val startTime = System.currentTimeMillis()
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName, TEST_TENANT_ID))
 
                 // Then - Verify projection updated (eventually pattern for async)
                 eventually(Duration.ofSeconds(10)) {
@@ -94,7 +105,7 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
             test("UpdateWidgetCommand → widget_projection UPDATE") {
                 // Given - Widget exists
                 val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name", TEST_TENANT_ID))
 
                 eventually(Duration.ofSeconds(10)) {
                     val table = DSL.table("widget_projection")
@@ -108,7 +119,7 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
 
                 // When - Update widget
                 val updatedName = "Updated Name"
-                commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName))
+                commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName, TEST_TENANT_ID))
 
                 // Then - Verify projection updated
                 eventually(Duration.ofSeconds(10)) {
@@ -130,7 +141,7 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
             test("PublishWidgetCommand → widget_projection published=true") {
                 // Given - Widget exists
                 val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget", TEST_TENANT_ID))
 
                 eventually(Duration.ofSeconds(10)) {
                     val table = DSL.table("widget_projection")
@@ -143,7 +154,7 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
                 }
 
                 // When - Publish widget
-                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
+                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId, TEST_TENANT_ID))
 
                 // Then - Verify published flag set
                 eventually(Duration.ofSeconds(10)) {
@@ -170,6 +181,10 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
                 .withDatabaseName("eaf_test")
                 .withUsername("test")
                 .withPassword("test")
+    }
+
+    companion object {
+        private const val TEST_TENANT_ID = "test-tenant"
     }
 }
 

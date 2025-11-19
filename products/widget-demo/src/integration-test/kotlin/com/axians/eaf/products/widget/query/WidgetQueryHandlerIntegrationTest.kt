@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
@@ -67,13 +68,23 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        val tenantContext = TenantContext()
+
+        beforeTest {
+            tenantContext.setCurrentTenantId(TEST_TENANT_ID)
+        }
+
+        afterTest {
+            tenantContext.clearCurrentTenant()
+        }
+
         context("FindWidgetQuery") {
 
             test("returns widget projection after command execution") {
                 // Given - Create widget via command
                 val widgetId = WidgetId(UUID.randomUUID())
                 val widgetName = "Query Test Widget"
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName, TEST_TENANT_ID))
 
                 // Wait for projection to complete
                 eventually(Duration.ofSeconds(10)) {
@@ -135,8 +146,8 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
             test("reflects published state after PublishWidgetCommand") {
                 // Given - Create and publish widget
                 val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Publish Test"))
-                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Publish Test", TEST_TENANT_ID))
+                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId, TEST_TENANT_ID))
 
                 // Wait for projection to complete
                 eventually(Duration.ofSeconds(10)) {
@@ -194,11 +205,11 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val widget2Id = WidgetId(UUID.randomUUID())
                 val widget3Id = WidgetId(UUID.randomUUID())
 
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget1Id, "$testPrefix-First"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget1Id, "$testPrefix-First", TEST_TENANT_ID))
                 delay(100) // Ensure different timestamps
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget2Id, "$testPrefix-Second"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget2Id, "$testPrefix-Second", TEST_TENANT_ID))
                 delay(100)
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget3Id, "$testPrefix-Third"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget3Id, "$testPrefix-Third", TEST_TENANT_ID))
 
                 // Wait for all projections
                 eventually(Duration.ofSeconds(10)) {
@@ -244,7 +255,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val widgetIds =
                     (1..5).map { i ->
                         val widgetId = WidgetId(UUID.randomUUID())
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "$testPrefix-Widget-$i"))
+                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "$testPrefix-Widget-$i", TEST_TENANT_ID))
                         delay(50) // Ensure different timestamps
                         widgetId
                     }
@@ -310,6 +321,8 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant"
+
         @Container
         @ServiceConnection
         @JvmStatic

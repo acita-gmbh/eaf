@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -81,6 +82,16 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
     init {
         extension(SpringExtension())
 
+        val tenantContext = TenantContext()
+
+        beforeTest {
+            tenantContext.setCurrentTenantId(TEST_TENANT_ID)
+        }
+
+        afterTest {
+            tenantContext.clearCurrentTenant()
+        }
+
         context("Realistic mixed workload (50 aggregates × 10 commands)") {
             test("should handle mixed cold/warm cache workload efficiently").config(timeout = 60.seconds) {
                 val table = DSL.table("widget_projection")
@@ -106,7 +117,7 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                             val createTime =
                                 measureTime {
                                     commandGateway.sendAndWait<Unit>(
-                                        CreateWidgetCommand(widgetId, "Widget $aggregateIndex"),
+                                        CreateWidgetCommand(widgetId, "Widget $aggregateIndex", TEST_TENANT_ID),
                                     )
                                 }
                             createTimes.add(createTime.inWholeMilliseconds)
@@ -116,7 +127,7 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                                 val updateTime =
                                     measureTime {
                                         commandGateway.sendAndWait<Unit>(
-                                            UpdateWidgetCommand(widgetId, "Update $updateIndex"),
+                                            UpdateWidgetCommand(widgetId, "Update $updateIndex", TEST_TENANT_ID),
                                         )
                                     }
                                 updateTimes.add(updateTime.inWholeMilliseconds)
@@ -190,6 +201,8 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant"
+
         @Container
         @ServiceConnection
         val postgres: PostgreSQLContainer<*> =
