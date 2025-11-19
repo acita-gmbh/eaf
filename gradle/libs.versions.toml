@@ -78,7 +78,7 @@ picocli = "4.7.7"         # CLI framework (Story 7.1) - latest stable
 mustache = "0.9.14"       # Logic-less template engine (Story 7.1)
 
 # Fuzz Testing (Story 8.6)
-jazzer = "0.26.2"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
+jazzer = "0.27.0"         # Coverage-guided fuzzing for JVM (Google OSS-Fuzz standard)
 
 # Concurrency Testing (Story 4.0/4.10)
 jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
