@@ -2368,7 +2368,7 @@ Epic 11 creates an interactive Docusaurus-based documentation portal that transf
 
 ---
 
-**Story 11.1: Docusaurus Infrastructure and Configuration**
+### Story 11.1: Docusaurus Infrastructure and Configuration
 
 As a framework developer,
 I want Docusaurus configured with EAF branding and structure,
@@ -2383,12 +2383,15 @@ So that I have the foundation for the documentation portal.
 6. Local development server: `npm run start --prefix docs/docusaurus`
 7. Production build: `npm run build --prefix docs/docusaurus` generates static site
 8. Build integrates into root Gradle build (./gradlew buildDocs)
+   - **Approach:** Gradle Exec task invoking `npm run build` (simple wrapper, no deep integration)
+   - **CI/CD:** GitHub Actions runs npm commands directly (not via Gradle)
+   - **Rationale:** Keep Node.js toolchain separate from Gradle; Gradle task for developer convenience only
 
 **Prerequisites:** Epic 10 complete
 
 ---
 
-**Story 11.2: Documentation Structure and Navigation**
+### Story 11.2: Documentation Structure and Navigation
 
 As a framework developer,
 I want logical documentation structure with intuitive navigation,
@@ -2413,7 +2416,7 @@ So that developers can easily discover and navigate content.
 
 ---
 
-**Story 11.3: Getting Started Section Migration**
+### Story 11.3: Getting Started Section Migration
 
 As a new EAF developer,
 I want Getting Started guides migrated to Docusaurus with enhanced visuals,
@@ -2437,14 +2440,18 @@ So that I can quickly learn the fundamentals.
 
 ---
 
-**Story 11.4: Architecture Decision Records (ADR) Portal**
+### Story 11.4: Architecture Decision Records (ADR) Portal
 
 As an EAF developer,
 I want architecture decisions presented in searchable, categorized format,
 So that I can understand the "why" behind technical choices.
 
 **Acceptance Criteria:**
-1. ADR section created with 89 decisions extracted from architecture.md
+1. ADR section created with 20-30 prioritized decisions extracted from architecture.md (MVP scope)
+   - Priority 1: Security decisions (10-layer JWT, 3-layer multi-tenancy, OWASP ASVS)
+   - Priority 2: Core architecture decisions (Hexagonal, CQRS/ES, Spring Modulith)
+   - Priority 3: Technology choices (Kotlin 2.2.21, Axon 4.12.1, PostgreSQL 16.10)
+   - **Post-MVP:** Remaining ~60 ADRs added incrementally in Story 11.15 backlog
 2. Each ADR presented as individual page with template:
    - Title, Status (Accepted/Superseded), Date
    - Context, Decision, Consequences, Alternatives Considered
@@ -2459,7 +2466,7 @@ So that I can understand the "why" behind technical choices.
 
 ---
 
-**Story 11.5: SDK Reference Documentation Extraction**
+### Story 11.5: SDK Reference Documentation Extraction
 
 As an EAF developer,
 I want SDK reference documentation for all 8 framework modules,
@@ -2478,15 +2485,19 @@ So that I can quickly look up APIs and usage patterns.
 2. Each module page includes: Overview, Key Components, Common Patterns, Configuration Options
 3. API tables with: Component Name, Purpose, Key Methods, Example Usage
 4. Code examples for each major API
-5. Links to source code on GitHub
-6. Version compatibility matrix
-7. Migration guides between versions (future-proofing)
+5. **Documentation Methodology:** Manual curation (not auto-generated from KDoc)
+   - **Rationale:** KDoc serves code-level documentation; portal provides higher-level patterns, integration examples, and usage guidance
+   - **Future Enhancement:** Consider Dokka integration for API reference in Epic 11 backlog (post-MVP)
+   - **Sources:** architecture.md, CLAUDE.md, Epic 1-10 implementation code
+6. Links to source code on GitHub
+7. Version compatibility matrix
+8. Migration guides between versions (future-proofing)
 
 **Prerequisites:** Story 11.2
 
 ---
 
-**Story 11.6: Interactive Tutorials with Step Validation**
+### Story 11.6: Interactive Tutorials with Step Validation
 
 As a new EAF developer,
 I want interactive tutorials with validation checkpoints,
@@ -2499,20 +2510,24 @@ So that I can confirm I'm following steps correctly.
    - Production Aggregate (Milestone 3, 2-3 days)
 2. Each tutorial includes:
    - Learning objectives upfront
-   - Step-by-step instructions with validation commands
-   - Checkpoint sections: "Verify Your Progress" with expected outputs
+   - Step-by-step instructions with validation commands (e.g., `./gradlew test`, `./gradlew check`)
+   - Checkpoint sections: "Verify Your Progress" with expected outputs (shell commands + sample output)
    - Troubleshooting callouts for common issues
-3. Code snippets downloadable as complete files
-4. Git branch references for tutorial checkpoints
-5. Completion badges/certificates (optional gamification)
-6. Estimated time remaining indicator
-7. Feedback form at tutorial end
+3. **Validation Mechanism:** Shell commands with expected output verification
+   - Example: "Run `./gradlew :products:order:test` → Expected: `15 tests passed, BUILD SUCCESSFUL`"
+   - User manually compares command output against documented expected output
+   - **Future Enhancement:** Interactive validation script (post-MVP) that programmatically verifies checkpoint completion
+4. Code snippets downloadable as complete files (ZIP or copy-to-clipboard)
+5. Git branch references for tutorial checkpoints (e.g., `git checkout tutorial/milestone-1-complete`)
+6. Completion badges/certificates (optional gamification)
+7. Estimated time remaining indicator
+8. Feedback form at tutorial end
 
 **Prerequisites:** Story 11.3
 
 ---
 
-**Story 11.7: How-To Recipe Library**
+### Story 11.7: How-To Recipe Library
 
 As an EAF developer,
 I want searchable How-To guides for common tasks,
@@ -2542,7 +2557,7 @@ So that I can quickly solve specific problems.
 
 ---
 
-**Story 11.8: API Documentation Integration (OpenAPI)**
+### Story 11.8: API Documentation Integration (OpenAPI)
 
 As an API consumer,
 I want auto-generated REST API documentation in the portal,
@@ -2564,7 +2579,7 @@ So that I don't need to run Swagger UI locally.
 
 ---
 
-**Story 11.9: Code Examples Repository**
+### Story 11.9: Code Examples Repository
 
 As an EAF developer,
 I want complete, runnable code examples,
@@ -2572,37 +2587,44 @@ So that I can quickly copy and adapt proven patterns.
 
 **Acceptance Criteria:**
 1. Examples section with 8 complete, buildable examples:
-   - simple-widget/ (minimal CQRS from Getting Started)
-   - multi-tenant-order/ (standard aggregate with all features)
-   - saga-payment/ (workflow with saga and compensation)
-   - custom-security/ (custom JWT validation layer)
-   - advanced-projection/ (complex read model with materialized views)
-   - bpmn-workflow/ (Flowable integration)
-   - nullable-testing/ (Nullable Design Pattern showcase)
-   - multi-module-app/ (Spring Modulith boundaries)
-2. Each example includes:
+   - **Location:** `examples/` directory in monorepo root
+   - **Structure:** Each example has independent Gradle subproject with own build.gradle.kts
+   - **Dependencies:** Examples depend on framework modules (not standalone projects)
+   - **Examples:**
+     - simple-widget/ (minimal CQRS from Getting Started)
+     - multi-tenant-order/ (standard aggregate with all features)
+     - saga-payment/ (workflow with saga and compensation)
+     - custom-security/ (custom JWT validation layer)
+     - advanced-projection/ (complex read model with materialized views)
+     - bpmn-workflow/ (Flowable integration)
+     - nullable-testing/ (Nullable Design Pattern showcase)
+     - multi-module-app/ (Spring Modulith boundaries)
+2. **Build Integration:**
+   - Examples included in root settings.gradle.kts
+   - CI/CD runs `./gradlew :examples:*:test` to validate examples
+   - Each example buildable independently: `./gradlew :examples:simple-widget:build`
+3. Each example includes:
    - README with: Purpose, Architecture, Running Instructions
    - Fully commented source code
    - Comprehensive tests (unit + integration)
    - docker-compose.yml for dependencies
    - Deployment instructions
-3. Examples buildable: ./gradlew :examples:<name>:test
-4. Examples pass all quality gates
-5. Download as ZIP functionality
-6. Live demo links (if hosted)
+4. Examples pass all quality gates (ktlint, Detekt, Konsist, tests)
+5. Download as ZIP functionality (for offline use)
+6. Live demo links (if hosted on demo environment)
 
 **Prerequisites:** Story 11.2
 
 ---
 
-**Story 11.10: Search and Discovery Features**
+### Story 11.10: Search and Discovery Features
 
 As an EAF developer,
 I want powerful search to quickly find documentation,
 So that I can discover solutions without manual navigation.
 
 **Acceptance Criteria:**
-1. Algolia DocSearch integration (or local search alternative)
+1. Algolia DocSearch integration (primary), with fallback to docusaurus-search-local or Pagefind if Algolia unavailable (licensing or approval constraints)
 2. Search indexes all content: docs, ADRs, API references, examples
 3. Search results categorized by content type
 4. Search shortcuts (keyboard: Ctrl+K or Cmd+K)
@@ -2617,7 +2639,7 @@ So that I can discover solutions without manual navigation.
 
 ---
 
-**Story 11.11: Visual Diagrams and Interactive Flows**
+### Story 11.11: Visual Diagrams and Interactive Flows
 
 As an EAF developer,
 I want visual architecture diagrams and interactive flows,
@@ -2646,19 +2668,21 @@ So that I can quickly understand complex patterns.
 
 ---
 
-**Story 11.12: Video Tutorials and Screencasts**
+### Story 11.12: Video Tutorials and Screencasts
 
 As a visual learner,
 I want video tutorials demonstrating complex workflows,
 So that I can watch experts walk through implementations.
 
 **Acceptance Criteria:**
-1. Video tutorials created for key workflows (5 videos minimum):
-   - "Your First Aggregate in 15 Minutes" (screencast)
-   - "Multi-Tenancy Setup Deep Dive" (30 min)
-   - "Debugging Event Sourcing Issues" (20 min)
-   - "CLI Scaffolding Workflow" (10 min)
-   - "Production Deployment Walkthrough" (45 min)
+1. Video tutorials created for key workflows (3 MVP, 5 stretch goal):
+   - **MVP (Required):**
+     - "Your First Aggregate in 15 Minutes" (screencast)
+     - "Multi-Tenancy Setup Deep Dive" (30 min)
+     - "Debugging Event Sourcing Issues" (20 min)
+   - **Stretch Goal (Optional):**
+     - "CLI Scaffolding Workflow" (10 min)
+     - "Production Deployment Walkthrough" (45 min)
 2. Videos hosted on platform (YouTube, Vimeo, or self-hosted)
 3. Video player embedded in documentation pages
 4. Transcripts provided for accessibility
@@ -2672,7 +2696,7 @@ So that I can watch experts walk through implementations.
 
 ---
 
-**Story 11.13: Migration Guide from Legacy ACCI EAF**
+### Story 11.13: Migration Guide from Legacy ACCI EAF
 
 As a developer familiar with legacy ACCI EAF,
 I want migration guide comparing patterns,
@@ -2700,7 +2724,7 @@ So that I can transition to EAF v1.0 efficiently.
 
 ---
 
-**Story 11.14: Documentation Portal Deployment and Hosting**
+### Story 11.14: Documentation Portal Deployment and Hosting
 
 As a framework maintainer,
 I want automated deployment of documentation portal,
@@ -2708,16 +2732,30 @@ So that docs stay current with code changes.
 
 **Acceptance Criteria:**
 1. CI/CD pipeline for documentation builds:
-   - Build triggered on docs/ changes
-   - Quality checks: broken links, spelling, lighthouse scores
-   - Preview deployments for PRs
+   - Build triggered on docs/ changes (GitHub Actions workflow)
+   - **Quality Checks:**
+     - **Link Validation:** markdown-link-check or lychee validates all internal/external links
+     - **Spelling:** cSpell checks markdown content
+     - **Lighthouse Scores:** Performance >90, Accessibility >90, SEO >90, Best Practices >90
+     - **Code Snippet Compilation:** Extract Kotlin code blocks → compile with kotlinc (validates syntax)
+     - **Build Success:** Docusaurus build must succeed (broken references fail build)
+   - Preview deployments for PRs (Netlify Deploy Previews or surge.sh)
    - Production deployment on main branch merge
-2. Hosting platform configured (GitHub Pages, Netlify, or Vercel)
-3. Custom domain configured: docs.eaf.axians.com (or similar)
-4. HTTPS enforced with automatic certificate renewal
-5. CDN for global performance (<2s page load worldwide)
+2. **Hosting Platform:** GitHub Pages (recommended) or Netlify/Vercel (alternatives)
+   - **GitHub Pages Advantages:** Free, integrated with repository, automatic deployment via GitHub Actions
+   - **CDN:** Built-in Cloudflare CDN (GitHub Pages) or platform-native CDN
+3. **Custom Domain:** docs.eaf.axians.com (or similar, requires Axians IT approval)
+   - **DNS Ownership:** Axians IT department manages DNS records
+   - **CNAME Configuration:** DNS points docs.eaf.axians.com → <username>.github.io
+   - **Fallback:** Use <username>.github.io/eaf/ if custom domain unavailable
+4. HTTPS enforced with automatic certificate renewal (Let's Encrypt via GitHub Pages)
+5. **Multi-Region Performance:** GitHub Pages CDN provides global edge caching (<2s page load target)
+   - **No multi-region failover required:** Static site deployment, CDN handles availability
 6. Version selector for multiple EAF releases (v1.0, v1.1, etc.)
-7. Monitoring: uptime checks, page load analytics, search queries
+7. **Monitoring:**
+   - Uptime checks: GitHub Actions scheduled workflow (hourly ping)
+   - Page load analytics: Plausible Analytics (Story 11.15)
+   - Search queries: Algolia DocSearch dashboard
 8. Rollback capability for broken deployments
 9. Deployment status badge in repository README
 
@@ -2725,7 +2763,7 @@ So that docs stay current with code changes.
 
 ---
 
-**Story 11.15: Documentation Quality Metrics and Feedback**
+### Story 11.15: Documentation Quality Metrics and Feedback
 
 As a documentation maintainer,
 I want metrics tracking documentation effectiveness,

@@ -25,24 +25,24 @@ Epic 11 transforms EAF v1.0's comprehensive markdown documentation into an inter
 
 ### What Made the Legacy Portal Effective
 
-After reviewing https://broccode.github.io/acci_eaf/, several strengths emerged:
+After reviewing the [legacy ACCI EAF Docusaurus portal](https://broccode.github.io/acci_eaf/), several strengths emerged:
 
-**1. Progressive Onboarding**
+### 1. Progressive Onboarding
 - 7-step tutorial with clear time expectations ("30 minutes to working environment")
 - Hello World example (User Profile Management)
 - Concrete learning outcomes at each step
 
-**2. Clear Navigation Hierarchy**
+### 2. Clear Navigation Hierarchy
 - Getting Started → Architecture → SDK → Services → Tools → UI
 - Each section builds on previous knowledge
 - Interactive sidebar with visual hierarchy
 
-**3. Interactive Elements**
+### 3. Interactive Elements
 - Storybook for UI components (localhost:4400)
 - Component library exploration
 - Live code examples
 
-**4. Practical Focus**
+### 4. Practical Focus
 - Real-world examples (User Profile Management)
 - CLI usage patterns
 - Development workflow documentation
@@ -51,19 +51,19 @@ After reviewing https://broccode.github.io/acci_eaf/, several strengths emerged:
 
 Despite comprehensive technical depth (159 KB architecture.md), current docs lack:
 
-**Discoverability Issues:**
+### Discoverability Issues
 - ❌ No visual navigation hierarchy
 - ❌ Content buried in long markdown files
 - ❌ No progressive learning path
 - ❌ Missing "30-minute quick start"
 
-**Missing Interactive Elements:**
+### Missing Interactive Elements
 - ❌ No interactive API explorer
 - ❌ No visual architecture diagrams
 - ❌ No code playground
 - ❌ No video tutorials
 
-**Onboarding Friction:**
+### Onboarding Friction
 - ❌ Steep learning curve for new developers
 - ❌ No Hello World equivalent
 - ❌ Missing time estimates for tutorials
@@ -157,7 +157,7 @@ Epic 11 accelerates:
 | 11.1 | Docusaurus Infrastructure | Foundation | Working portal with EAF branding |
 | 11.2 | Documentation Structure | Navigation | 6-section sidebar hierarchy |
 | 11.3 | Getting Started Migration | Onboarding | 5 enhanced guides with diagrams |
-| 11.4 | ADR Portal | Architecture | 89 searchable decision records |
+| 11.4 | ADR Portal | Architecture | 20-30 prioritized ADRs (MVP) |
 | 11.5 | SDK Reference | API Docs | 8 module reference pages |
 | 11.6 | Interactive Tutorials | Learning | 3 tiered tutorials with validation |
 | 11.7 | How-To Recipe Library | Problem-Solving | 25+ searchable guides |
@@ -165,7 +165,7 @@ Epic 11 accelerates:
 | 11.9 | Code Examples | Patterns | 8 complete runnable examples |
 | 11.10 | Search & Discovery | Discoverability | Algolia DocSearch integration |
 | 11.11 | Visual Diagrams | Understanding | Mermaid.js interactive diagrams |
-| 11.12 | Video Tutorials | Visual Learning | 5 screencasts for key workflows |
+| 11.12 | Video Tutorials | Visual Learning | 3 MVP screencasts (5 stretch) |
 | 11.13 | Migration Guide | Legacy Transition | ACCI EAF → EAF v1.0 guide |
 | 11.14 | Deployment & Hosting | Operations | CI/CD with preview deployments |
 | 11.15 | Quality Metrics | Continuous Improvement | Analytics + feedback system |
@@ -207,11 +207,13 @@ Epic 11 will be considered successful when:
 
 ### Prerequisites
 - **Epic 9 (Golden Path Documentation)** MUST be complete
-  - Provides source content for migration
-  - Tutorials, How-To guides, Reference docs
-- **Epic 10 (Reference Application)** SHOULD be complete
-  - Widget demo provides concrete examples
-  - Validates documentation accuracy
+  - **Blocking:** Stories 11.3-11.7 require Epic 9 content as source material
+  - Provides: Tutorials, How-To guides, Reference docs, Getting Started guides
+- **Epic 10 (Reference Application)** SHOULD be complete (recommended but not blocking)
+  - **If complete:** Widget demo provides concrete examples for Story 11.9 (Code Examples)
+  - **If incomplete:** Stories 11.1-11.8, 11.10-11.15 can proceed independently
+  - **Workaround:** Use placeholder examples from Epic 2 (Walking Skeleton) if needed
+  - Epic 10 validates documentation accuracy and provides realistic use cases
 
 ### Sequencing Within Epic 11
 
@@ -240,8 +242,11 @@ Epic 11 will be considered successful when:
 - Deployment automation
 - Quality metrics
 
-**Total Duration:** 7 weeks (35 days) with single developer
-**Parallel Work:** Stories 11.11 (diagrams) and 11.12 (videos) can run concurrently
+**Total Duration:** 8-9 weeks (40-45 days) with single developer
+- **Base Estimate:** 7 weeks (35 days) for sequential story completion
+- **Contingency Buffer:** 15-20% added for scope adjustments, reviews, and iterations
+- **FTE Allocation:** Single dedicated developer (full-time)
+- **Parallel Work Opportunities:** Stories 11.11 (diagrams) and 11.12 (videos) can run concurrently with 11.9 (code examples), potentially reducing timeline by 3-5 days if resources available
 
 ---
 
@@ -255,7 +260,9 @@ Epic 11 will be considered successful when:
 ### Plugins & Extensions
 - **docusaurus-plugin-openapi-docs** - OpenAPI integration (Story 11.8)
 - **@docusaurus/plugin-pwa** - Offline support
-- **docusaurus-search-algolia** - Search (Story 11.10)
+- **docusaurus-search-algolia** - Search (Story 11.10, primary)
+  - **Note:** Algolia DocSearch free tier for open-source projects; requires application approval
+  - **Fallback:** `docusaurus-search-local` or Pagefind for local search if Algolia unavailable
 - **@docusaurus/theme-mermaid** - Diagrams (Story 11.11)
 
 ### Infrastructure
@@ -295,9 +302,10 @@ Epic 11 will be considered successful when:
 **Problem:** Story 11.12 video tutorials time-consuming
 
 **Mitigation:**
-- Start with 3 essential videos (MVP)
-- Community contributions for additional videos
-- Loom/QuickTime screencasts (no professional production)
+- MVP scope: 3 essential videos (Your First Aggregate, Multi-Tenancy, Debugging)
+- Stretch goal: Additional 2 videos if time/resources permit
+- Community contributions encouraged for specialized topics
+- Loom/QuickTime screencasts (no professional production required)
 - Transcripts auto-generated (YouTube captioning)
 
 ### Risk 4: Maintenance Burden
@@ -397,7 +405,7 @@ Epic 11 will be considered successful when:
 
 ## Appendix: Documentation Structure Outline
 
-```
+```text
 docs.eaf.axians.com/
 ├── Welcome & Overview
 │   ├── Introduction to EAF v1.0
