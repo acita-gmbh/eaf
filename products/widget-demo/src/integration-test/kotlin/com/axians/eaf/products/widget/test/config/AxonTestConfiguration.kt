@@ -10,15 +10,16 @@ import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.config.EventProcessingConfigurer
 import org.axonframework.eventhandling.PropagatingErrorHandler
-import org.axonframework.messaging.InterceptorChain
+import org.axonframework.messaging.MessageDispatchInterceptor
 import org.axonframework.messaging.MessageHandlerInterceptor
-import org.axonframework.messaging.unitofwork.UnitOfWork
+import org.axonframework.messaging.correlation.CorrelationDataProvider
+import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Profile
-import org.springframework.stereotype.Component
+import java.util.function.BiFunction
 
 /**
  * Axon Framework test configuration.
@@ -83,6 +84,28 @@ class AxonTestConfiguration {
     fun aggregateCache(): Cache = WeakReferenceCache()
 
     /**
+     * Correlation data provider for automatic metadata propagation from commands to events.
+     *
+     * **Story 4.6 - Event Context Propagation:**
+     *
+     * Ensures that tenantId metadata attached to commands is automatically copied to
+     * resulting events. This maintains tenant context through the entire CQRS/ES flow
+     * without manual intervention in event sourcing handlers.
+     *
+     * **Propagation Chain:**
+     * Command (tenantId metadata) → Event (tenantId metadata) → Event Handler (via interceptor)
+     *
+     * **Why This Matters:**
+     * - Events are processed asynchronously in different threads
+     * - Metadata ensures tenant context survives thread boundaries
+     * - Event handlers can access tenant context via same interceptor pattern
+     *
+     * @return SimpleCorrelationDataProvider configured for tenantId
+     */
+    @Bean
+    fun tenantCorrelationProvider(): CorrelationDataProvider = SimpleCorrelationDataProvider("tenantId")
+
+    /**
      * Tenant context interceptor registrar for CI-stable test execution.
      *
      * **Story 4.6 - CI-Stable Test Infrastructure Fix:**
@@ -124,37 +147,78 @@ class AxonTestConfiguration {
 }
 
 /**
- * Registrar component that sets up tenant context propagation in Axon command handlers.
+ * Registrar component that sets up CI-stable tenant context propagation.
  *
- * Managed as explicit @Bean (not @Component) for deterministic lifecycle timing.
- * The @PostConstruct method registers the interceptor with CommandBus during Spring
- * context initialization, before any tests can dispatch commands.
+ * **Story 4.6 - Thread-Safe Metadata-Based Solution:**
+ *
+ * **THE PROBLEM (ThreadLocal Approach):**
+ * - ThreadLocal doesn't propagate across Axon's thread pools
+ * - beforeTest sets context in test thread, but handlers run in different threads
+ * - Timing-dependent: works locally (warm JVM) but fails on CI (fresh JVM, different scheduling)
+ *
+ * **THE SOLUTION (Metadata Approach):**
+ * Uses Axon Framework's built-in metadata propagation mechanism instead of ThreadLocal:
+ * 1. DispatchInterceptor: Captures TenantContext in CALLER's thread (where it exists!)
+ * 2. Attaches as message metadata (thread-agnostic transport)
+ * 3. HandlerInterceptor: Reads metadata in HANDLER's thread, sets ThreadLocal there
+ *
+ * **Why This Is Robust:**
+ * - DispatchInterceptor runs in test/HTTP thread (ThreadLocal available)
+ * - Metadata travels with message across thread boundaries (Axon handles transport)
+ * - No timing dependencies or race conditions
+ * - Works identically on local, CI, distributed Axon Server
+ *
+ * **References:**
+ * - Axon Docs: "Dispatch Interceptor runs in thread that dispatches the command"
+ * - 3 AI Agent consensus: Use metadata for cross-thread context propagation
  */
 class TenantContextInterceptorRegistrar(
     private val commandBus: CommandBus,
 ) {
     @PostConstruct
-    fun registerInterceptor() {
-        // Register interceptor to propagate tenant context from commands to handler threads
+    fun registerInterceptors() {
+        // STEP 1: Dispatch Interceptor - Capture ThreadLocal in CALLER's thread
+        // This runs in the test thread or HTTP thread where TenantContext is set by beforeTest
+        commandBus.registerDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<*>> { messages ->
+                BiFunction { _: Int, message: CommandMessage<*> ->
+                    val command = message.payload
+
+                    // Capture tenant ID from command payload OR ThreadLocal (beforeTest/beforeEach sets this)
+                    val tenantId =
+                        when (command) {
+                            is TenantAwareCommand -> command.tenantId
+                            else -> TenantContext.current() // Works here - we're in caller's thread!
+                        }
+
+                    // Attach as metadata for Axon to transport across thread boundaries
+                    if (tenantId != null) {
+                        message.andMetaData(mapOf("tenantId" to tenantId))
+                    } else {
+                        message // No tenant context available, pass message as-is
+                    }
+                }
+            },
+        )
+
+        // STEP 2: Handler Interceptor - Read metadata and set ThreadLocal in HANDLER's thread
+        // This runs in Axon's command handler thread pool
         commandBus.registerHandlerInterceptor(
             MessageHandlerInterceptor { unitOfWork, chain ->
-                val command = unitOfWork.message.payload
+                // Read tenant ID from metadata (transported by Axon from dispatch thread)
+                val tenantId = unitOfWork.message.metaData["tenantId"] as? String
 
-                if (command is TenantAwareCommand) {
-                    // CRITICAL: Always set context authoritatively for THIS command
-                    // Do NOT check if context already exists - that creates race conditions
-                    // in high-throughput scenarios where threads are reused with stale context
-                    TenantContext.setCurrentTenantId(command.tenantId)
+                if (tenantId != null) {
+                    // Set ThreadLocal for THIS handler thread
+                    TenantContext.setCurrentTenantId(tenantId)
                     try {
                         chain.proceed()
                     } finally {
-                        // CRITICAL: Always cleanup ThreadLocal to prevent:
-                        // - State leakage between commands on same thread
-                        // - Stale context when thread is reused from pool
+                        // CRITICAL: Always cleanup ThreadLocal
                         TenantContext.clearCurrentTenant()
                     }
                 } else {
-                    // Not a tenant-aware command, proceed without tenant context
+                    // No tenant context in metadata, proceed without setting
                     chain.proceed()
                 }
             },
