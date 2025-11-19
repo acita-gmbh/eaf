@@ -82,14 +82,12 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
     init {
         extension(SpringExtension())
 
-        val tenantContext = TenantContext()
-
         beforeTest {
-            tenantContext.setCurrentTenantId(TEST_TENANT_ID)
+            TenantContext.setCurrentTenantId(TEST_TENANT_ID)
         }
 
         afterTest {
-            tenantContext.clearCurrentTenant()
+            TenantContext.clearCurrentTenant()
         }
 
         context("Realistic mixed workload (50 aggregates × 10 commands)") {
