@@ -43,7 +43,7 @@ class WidgetMultiTenantIntegrationTest : FunSpec() {
     private lateinit var queryGateway: QueryGateway
 
     init {
-        extension(SpringExtension)
+        extension(SpringExtension())
         test("AC6: Create widgets for multiple tenants successfully") {
             val tenantAId = "tenant-a"
             val tenantBId = "tenant-b"
