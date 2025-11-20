@@ -7,6 +7,7 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.longs.shouldBeLessThan

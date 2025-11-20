@@ -29,6 +29,39 @@ sourceSets {
     named("integrationTest") {
         resources.srcDir("src/integration-test/resources")
     }
+
+    // Story 4.6: Performance test source set (excluded from fast CI)
+    val perfTest =
+        create("perfTest") {
+            compileClasspath += sourceSets["main"].output + sourceSets["test"].output
+            runtimeClasspath += output + compileClasspath
+            java.srcDirs("src/perf-test/kotlin")
+            resources.srcDirs("src/perf-test/resources")
+        }
+}
+
+// Story 4.6: Configure perfTest dependencies
+configurations {
+    named("perfTestImplementation") {
+        extendsFrom(configurations["integrationTestImplementation"])
+    }
+    named("perfTestRuntimeOnly") {
+        extendsFrom(configurations["integrationTestRuntimeOnly"])
+    }
+}
+
+// Story 4.6: Register perfTest task (nightly builds only)
+tasks.register<Test>("perfTest") {
+    description = "Runs performance tests (nightly only - excluded from fast CI)"
+    group = "verification"
+    testClassesDirs = sourceSets["perfTest"].output.classesDirs
+    classpath = sourceSets["perfTest"].runtimeClasspath
+
+    useJUnitPlatform()
+    shouldRunAfter(tasks.named("integrationTest"))
+
+    // Performance tests need sequential execution for accurate measurements
+    maxParallelForks = 1
 }
 
 dependencies {
