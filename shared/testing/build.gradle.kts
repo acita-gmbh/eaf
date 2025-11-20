@@ -6,8 +6,10 @@ plugins {
 
 dependencies {
     // Testing frameworks (provided to dependents)
-    api(libs.kotest.runner.junit5.jvm)
-    api(libs.kotest.assertions.core.jvm)
+    api(libs.junit.jupiter.api)
+    api(libs.junit.jupiter.params)
+    api(libs.assertj.core)
+    api(libs.assertj.kotlin)
     api(libs.testcontainers.postgresql)
     api(libs.testcontainers.keycloak)
 
