@@ -15,7 +15,7 @@ This is the **Enterprise Application Framework (EAF) v1.0** - a modern, Kotlin-b
 - **Data**: PostgreSQL 16.10 (event store + projections), jOOQ 3.20.8 for read projections
 - **Security**: Keycloak 26.4.2 OIDC + 10-layer JWT validation, 3-layer tenant isolation
 - **Multi-Tenancy**: Defense-in-depth with request filter, service validation, PostgreSQL RLS
-- **Testing**: Kotest 6.0.4 + Testcontainers, Nullable Design Pattern, Pitest 1.19.0 mutation testing
+- **Testing**: JUnit 6.0.1 + AssertJ 3.27.3 + Testcontainers, Nullable Design Pattern, Pitest 1.19.0 mutation testing
 - **DevEx**: Gradle 9.1.0 monorepo, one-command onboarding, Picocli scaffolding CLI
 - **Ops**: Docker Compose on-prem, multi-arch support (amd64, arm64, ppc64le optional)
 
@@ -76,12 +76,11 @@ See the full design in **docs/architecture.md** (159 KB, 89 architectural decisi
 
 1. **NO wildcard imports** - Every import must be explicit
 2. **NO generic exceptions** - Always use specific exception types (except infrastructure interceptors - see coding standards)
-3. **Use Kotest, NEVER JUnit** - All tests must use Kotest 6.0.4 framework
-4. **CRITICAL**: Never mix JUnit and Kotest annotations - JUnit `@Disabled` has no effect on Kotest tests
-5. **Integration tests preferred** - Use Testcontainers for real dependencies
-6. **Version Catalog Required** - All versions in `gradle/libs.versions.toml`
-7. **Use Arrow for error handling** - Either<Error,Success> in domain, "check and throw" at boundaries
-8. **Spring Modulith compliance** - ModuleMetadata classes with @ApplicationModule
+3. **Use JUnit 6 + AssertJ** - All tests must use JUnit 6.0.1 with AssertJ 3.27.3 for assertions
+4. **Integration tests preferred** - Use Testcontainers for real dependencies
+5. **Version Catalog Required** - All versions in `gradle/libs.versions.toml`
+6. **Use Arrow for error handling** - Either<Error,Success> in domain, "check and throw" at boundaries
+7. **Spring Modulith compliance** - ModuleMetadata classes with @ApplicationModule
 
 ### Advanced Patterns
 - **Nullable Design Pattern**: Fast infrastructure substitutes with factory pattern (`createNull()`)
@@ -129,7 +128,7 @@ eaf-v1/
 **For comprehensive testing strategy, see:** [Test Strategy](docs/architecture/test-strategy.md)
 
 ### Framework & Philosophy
-- **Primary**: Kotest (FunSpec, BehaviorSpec) - **JUnit forbidden**
+- **Primary**: JUnit 6.0.1 with AssertJ 3.27.3 - Modern, Kotlin-friendly testing framework
 - **Core Strategy**: Constitutional TDD - test-first mandatory
 - **7-Layer Defense**: Static → Unit → Integration → Property → Fuzz → Concurrency → Mutation
 - **Nullable Pattern**: 100-1000x performance improvement for business logic testing
@@ -137,70 +136,12 @@ eaf-v1/
 - **Testing Pyramid**: 40-50% unit (nullable), 30-40% integration (Testcontainers), 10-20% E2E
 
 ### Critical Testing Rules
-- **NEVER mix JUnit and Kotest annotations** - JUnit `@Disabled` is completely ignored by Kotest
 - **Use Testcontainers for stateful dependencies** - PostgreSQL, Redis, Keycloak (H2 explicitly forbidden)
 - **Use Nullable Design Pattern for stateless dependencies** - Infrastructure adapters
-- **@SpringBootTest Pattern**: Use `@Autowired` field injection + `init` block (NOT constructor injection)
+- **@SpringBootTest Pattern**: Use `@Autowired` field injection + `@BeforeEach` setup (standard JUnit 6 pattern)
 - **Plugin Order**: `id("eaf.testing")` BEFORE `id("eaf.spring-boot")` in product modules
-- **Async Testing**: Use `eventually` polling pattern for asynchronous tests
-
-### Known Issue: Kotest XML Reporter Bug (Spring Boot Modules Only)
-
-**Symptom:**
-```bash
-./gradlew :products:widget-demo:test
-  Tests:   15 passed, 0 failed, 0 ignored ✅
-  Time:    1s
-  BUILD FAILED ❌ (AbstractMethodError in XML reporter)
-```
-
-**When It Occurs:**
-- **ONLY** in `products/*` modules with Spring Boot (`id("eaf.spring-boot")`)
-- **NEVER** in `framework/*` modules (no Spring Boot)
-- Happens **AFTER** all tests complete successfully
-- Root cause: kotlinx-serialization-bom:1.6.3 conflict via Spring Boot dependencies
-
-**How to Recognize:**
-1. Test output shows "X passed, 0 failed" ✅
-2. Immediately followed by "BUILD FAILED" ❌
-3. Error mentions: `AbstractMethodError: typeParametersSerializers()` or `kotlinx.serialization`
-4. Error occurs in `io.kotest.engine.reports.JUnitXmlReportGenerator`
-
-**Correct Interpretation:**
-- ✅ **Tests are SUCCESSFUL** - All assertions passed
-- ✅ **Code is CORRECT** - No test failures
-- ❌ **XML Reporter crashed** - Non-functional issue, not a test problem
-- **DO NOT** attempt to fix tests - they are already passing!
-
-**Workarounds:**
-
-**Option 1: Use ciTest Task (Recommended for Verification)**
-```bash
-./gradlew :products:widget-demo:ciTest
-# → BUILD SUCCESSFUL ✅ (Uses JUnit Platform XML - no bug)
-```
-
-**Option 2: Ignore BUILD FAILED (Acceptable for Development)**
-```bash
-./gradlew :products:widget-demo:test
-# Tests passed ✅ → Story complete
-# BUILD FAILED ❌ → Ignore (XML reporter bug)
-```
-
-**When to Be Concerned:**
-- ❌ **Concern:** "Tests: X passed, **Y failed**" - Real test failures!
-- ❌ **Concern:** Tests throw exceptions during execution
-- ✅ **Not a concern:** "Tests: X passed, 0 failed" + BUILD FAILED (XML reporter)
-
-**CI/CD Behavior:**
-- GitHub Actions uses `ciTests` task (JUnit Platform) - **always succeeds** ✅
-- Local `./gradlew test` may show BUILD FAILED - **this is expected and safe**
-- Story is complete when: Tests pass ✅, even if BUILD FAILED due to XML reporter
-
-**References:**
-- Issue tracked in `gradle/libs.versions.toml:4`
-- CI workaround in `.github/workflows/ci.yml` (uses `ciTests` instead of `test`)
-- Root cause: https://github.com/Kotlin/kotlinx.serialization/issues/2968
+- **Async Testing**: Use polling/await patterns for asynchronous tests (e.g., `Awaitility` library)
+- **AssertJ Assertions**: Use fluent AssertJ API for all assertions - clear, readable, Kotlin-friendly
 
 ### Nullable Design Pattern
 - **Factory Pattern**: `createNull()` convention for all nullable implementations
@@ -343,7 +284,8 @@ eaf scaffold ra-resource <Domain> --fields id,name,status
 - **Spring Modulith 1.4.4** - Current stable (released 2025-10-27)
 - **Axon Framework 4.12.1** - Production stable (released 2025-01-06, maintained until Axon 5.x migration Q3-Q4 2026)
 - **Gradle 9.1.0** - Current stable
-- **Kotest 6.0.4** - Current stable
+- **JUnit 6.0.1** - Current stable (released 2025-09-30)
+- **AssertJ 3.27.3** - Current stable assertion library
 
 ### Version Catalog Enforcement
 **MANDATORY**: All dependency versions MUST be centralized in `gradle/libs.versions.toml`.
@@ -375,7 +317,7 @@ These requirements are **MANDATORY** and violations will cause build failures:
 
 1. **NO wildcard imports** - Every import must be explicit
 2. **NO generic exceptions** - Always use specific exception types *except* in infrastructure interceptors (see Infrastructure Interceptor Exception Pattern)
-3. **Kotest ONLY** - JUnit is explicitly forbidden
+3. **JUnit 6 + AssertJ REQUIRED** - All tests must use JUnit 6.0.1 with AssertJ 3.27.3
 4. **Version Catalog REQUIRED** - All versions in `gradle/libs.versions.toml`
 5. **Zero violations** - ktlint, Detekt, and Konsist must pass without warnings
 
@@ -486,32 +428,29 @@ class CommandMetricsInterceptor(
 1. **Static Analysis**: ktlint, Detekt, Konsist (instant feedback)
 2. **Unit Tests**: Business logic with Nullable Pattern (<10s execution)
 3. **Integration Tests**: Testcontainers with real dependencies (<3min)
-4. **Property-Based Tests**: Kotest property testing for invariants (nightly)
+4. **Property-Based Tests**: JUnit 6 compatible property testing for invariants (nightly)
 5. **Fuzz Testing**: Jazzer 0.25.1 for security vulnerabilities (nightly)
 6. **Concurrency Tests**: LitmusKt for race conditions (Epic 8, nightly)
 7. **Mutation Testing**: Pitest 1.19.0 for test effectiveness (nightly, 60-70% target)
 
 ### Spring Boot Integration Test Pattern (MANDATORY - Story 4.6)
 
-**Use @Autowired field injection + init block for @SpringBootTest tests**:
+**Use @Autowired field injection with JUnit 6**:
 
 ```kotlin
 @SpringBootTest
 @ActiveProfiles("test")
-class WidgetIntegrationTest : FunSpec() {
+class WidgetIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
-
-        test("should create widget via REST API") {
-            // mockMvc available here
-            mockMvc.perform(post("/api/widgets")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Test Widget"}"""))
-                .andExpect(status().isCreated())
-        }
+    @Test
+    fun `should create widget via REST API`() {
+        // mockMvc available here
+        mockMvc.perform(post("/api/widgets")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{"name":"Test Widget"}"""))
+            .andExpect(status().isCreated())
     }
 
     companion object {
@@ -531,22 +470,36 @@ class WidgetIntegrationTest : FunSpec() {
 }
 ```
 
-**ANTI-PATTERN: Constructor Injection (DO NOT USE)**
+**Test Lifecycle Hooks**:
 
 ```kotlin
-// ❌ FORBIDDEN - Causes circular dependency compilation errors
-@SpringBootTest
-class BadIntegrationTest(
-    private val mockMvc: MockMvc,  // Compilation fails
-) : FunSpec({
-    test("will not compile") { }
-})
+@BeforeEach
+fun beforeEach() {
+    // Runs before each test
+}
+
+@AfterEach
+fun afterEach() {
+    // Runs after each test
+}
+
+@BeforeAll
+@JvmStatic
+fun beforeAll() {
+    // Runs once before all tests (must be in companion object)
+}
+
+@AfterAll
+@JvmStatic
+fun afterAll() {
+    // Runs once after all tests (must be in companion object)
+}
 ```
 
 **CRITICAL**: Plugin order matters for product modules. In build.gradle.kts:
 ```kotlin
 plugins {
-    id("eaf.testing")     // FIRST - Kotest setup
+    id("eaf.testing")     // FIRST - Testing setup (JUnit 6 + AssertJ)
     id("eaf.spring-boot") // SECOND - Spring Boot
 }
 ```
@@ -578,11 +531,11 @@ class SecurityModule
 ## Critical Implementation Anti-Patterns
 
 ### Testing Anti-Patterns (PROHIBITED)
-- ❌ **JUnit/Kotest Mixing**: JUnit annotations completely ignored by Kotest
 - ❌ **Domain Logic Mocking**: Never mock business logic - only infrastructure
 - ❌ **H2 Usage**: PostgreSQL Testcontainers only (H2 explicitly forbidden)
 - ❌ **Security Mocking**: Real cryptography required, never mock JWT validation
-- ❌ **Constructor Injection + @SpringBootTest**: Causes lifecycle timing conflict
+- ❌ **Wildcard Assertions**: Use specific AssertJ assertions, not generic `isTrue()`/`isFalse()` when better options exist
+- ❌ **Test Interdependence**: Tests must be independent and order-agnostic
 
 ### Code Anti-Patterns (PROHIBITED)
 - ❌ **Wildcard Imports**: Every import must be explicit (ktlint enforced)
