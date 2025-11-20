@@ -29,6 +29,7 @@ commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursi
 junit = "6.0.1"           # JUnit 6 - Primary testing framework (migrated from Kotest 2025-11-20)
 assertj = "3.27.3"        # AssertJ - Fluent assertion library
 assertj-kotlin = "0.2.1"  # AssertJ Kotlin extensions for idiomatic assertions
+awaitility = "4.2.2"      # Awaitility - Async/eventual consistency assertions
 mockk = "1.13.14"         # MockK for Kotlin mocking (when needed)
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
@@ -157,6 +158,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 assertj-kotlin = { module = "net.thauvin.erik:assertj-kotlin", version.ref = "assertj-kotlin" }
+awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin", version.ref = "awaitility" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
