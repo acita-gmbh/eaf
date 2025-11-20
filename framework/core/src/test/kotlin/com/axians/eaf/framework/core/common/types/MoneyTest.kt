@@ -6,16 +6,27 @@ import java.math.BigDecimal
 import java.util.Currency
 
 /**
- * Unit tests for Money value object.
+ * Unit tests for Money value object - currency-aware monetary values.
  *
- * Validates:
- * - Creation with amount and currency
- * - Structural equality (amount + currency)
- * - Immutability (data class)
- * - BigDecimal precision
- * - Zero and negative amounts
+ * Validates the Money value object used for all financial calculations in EAF, ensuring
+ * currency safety, precision handling, and proper value object semantics.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Creation with BigDecimal amount and Currency
+ * - Structural equality (amount + currency must both match)
+ * - Immutability (data class semantics)
+ * - BigDecimal precision preservation (no floating-point errors)
+ * - Zero and negative amounts (refunds, credits)
+ * - Currency mismatch detection
+ *
+ * **DDD Patterns:**
+ * - Value Object (no identity, compared by value)
+ * - Currency safety (prevents EUR + USD errors)
+ * - Precision handling (BigDecimal for monetary calculations)
+ *
+ * @see Money Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class MoneyTest {
 

@@ -4,14 +4,25 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * Unit tests for Identifier interface implementations.
+ * Unit tests for Identifier interface implementations - type-safe domain identifiers.
  *
- * Validates:
- * - Value-based equality
- * - Type-safety across different identifier types
- * - Collections behavior
+ * Validates the Identifier marker interface used throughout EAF for strongly-typed entity IDs.
+ * Ensures value-based equality, type safety, and proper collection behavior for domain identifiers.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Value-based equality (two IDs with same value are equal)
+ * - Type-safety across different identifier types (OrderId != CustomerId)
+ * - Collections behavior (Set deduplication, Map key usage)
+ * - Hash code consistency with equality
+ *
+ * **DDD Patterns:**
+ * - Strongly-typed identifiers (not primitives)
+ * - Value Object semantics for IDs
+ * - Type-safe domain model
+ *
+ * @see Identifier Primary interface under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class IdentifierTest {
 

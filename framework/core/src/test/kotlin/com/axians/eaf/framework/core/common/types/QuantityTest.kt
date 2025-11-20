@@ -5,17 +5,28 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
 /**
- * Unit tests for Quantity value object.
+ * Unit tests for Quantity value object - unit-aware measurements.
  *
- * Validates:
- * - Creation with value and unit
- * - Structural equality (value + unit)
- * - Immutability (data class)
- * - BigDecimal precision
- * - Various unit types
+ * Validates the Quantity value object used for measurements throughout EAF, ensuring unit
+ * safety, precision handling, and proper value object semantics.
+ *
+ * **Test Coverage:**
+ * - Creation with BigDecimal value and unit string
+ * - Structural equality (value + unit must both match)
+ * - Immutability (data class semantics)
+ * - BigDecimal precision preservation
+ * - Various unit types (kg, meters, liters, etc.)
  * - Zero quantities
+ * - Unit mismatch detection (5 kg ≠ 5 liters)
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **DDD Patterns:**
+ * - Value Object (no identity, compared by value)
+ * - Unit safety (prevents kg + liters errors)
+ * - Domain-specific measurements
+ *
+ * @see Quantity Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class QuantityTest {
 

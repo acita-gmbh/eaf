@@ -7,16 +7,28 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Unit tests for AggregateRoot base class.
+ * Unit tests for AggregateRoot base class - the foundation of Domain-Driven Design in EAF.
  *
- * Validates:
- * - Event registration
- * - Event retrieval (immutable copy)
- * - Event clearing
- * - Multiple event handling
- * - Event ordering preservation
+ * Validates core DDD aggregate functionality including event sourcing patterns, immutability
+ * guarantees, and proper event lifecycle management.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Event registration via protected methods
+ * - Event retrieval (immutable copy to prevent external modification)
+ * - Event clearing after persistence
+ * - Multiple event handling and ordering
+ * - Event sequence preservation (FIFO order)
+ *
+ * **DDD Patterns Validated:**
+ * - Aggregate Root as consistency boundary
+ * - Domain events as first-class citizens
+ * - Event sourcing readiness (event collection)
+ * - Immutability of event history
+ *
+ * @see AggregateRoot Primary class under test
+ * @see DomainEvent Event base class
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class AggregateRootTest {
 
