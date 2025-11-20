@@ -5,16 +5,29 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 /**
- * Unit tests for EAF exception hierarchy.
+ * Unit tests for EAF exception hierarchy - standardized error handling.
  *
- * Validates:
- * - Exception creation with message and cause
- * - Inheritance relationships
- * - Polymorphic exception handling
- * - Message and cause propagation
- * - Stack trace preservation
+ * Validates the custom exception types in EAF's exception hierarchy, ensuring proper
+ * exception construction, inheritance relationships, and cause chain propagation.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Exception creation with message and optional cause
+ * - Inheritance relationships (DomainException, ValidationException, etc.)
+ * - Polymorphic exception handling (catch by base type)
+ * - Message and cause propagation through exception chain
+ * - Stack trace preservation for debugging
+ * - Exception type discrimination
+ *
+ * **Exception Patterns:**
+ * - Domain exceptions for business rule violations
+ * - Technical exceptions for infrastructure failures
+ * - Validation exceptions for input validation
+ * - Proper exception chaining (cause preservation)
+ *
+ * @see DomainException Base exception for domain errors
+ * @see ValidationException Input validation failures
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class ExceptionsTest {
 

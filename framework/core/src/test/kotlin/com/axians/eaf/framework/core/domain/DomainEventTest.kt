@@ -6,15 +6,28 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Unit tests for DomainEvent interface implementations.
+ * Unit tests for DomainEvent interface implementations - event sourcing foundation.
  *
- * Validates:
- * - Required metadata (occurredAt, eventId)
- * - Timestamp preservation
- * - Event ID uniqueness
- * - Polymorphic collection usage
+ * Validates the DomainEvent marker interface that all domain events must implement in EAF's
+ * CQRS/Event Sourcing architecture. Ensures proper metadata tracking and event identity.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Required metadata fields (occurredAt timestamp, eventId UUID)
+ * - Timestamp preservation and immutability
+ * - Event ID uniqueness (each event has unique identifier)
+ * - Polymorphic collection usage (List<DomainEvent>)
+ * - Event identity semantics
+ *
+ * **Event Sourcing Patterns:**
+ * - Domain events as first-class citizens
+ * - Immutable event records with metadata
+ * - Event stream reconstruction capability
+ * - Temporal event ordering via occurredAt
+ *
+ * @see DomainEvent Primary interface under test
+ * @see AggregateRoot Event publisher
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class DomainEventTest {
 

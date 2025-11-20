@@ -5,15 +5,28 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * Unit tests for Entity base class.
+ * Unit tests for Entity base class - identity-based domain objects.
  *
- * Validates:
- * - Identity-based equality (same ID = equal)
- * - HashCode consistency based on ID
- * - Collections behavior (HashSet, HashMap)
- * - Different instances with same ID are equal
+ * Validates the Entity abstraction in DDD, ensuring entities are compared by identity (ID)
+ * rather than attribute values, unlike value objects which use structural equality.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Identity-based equality (entities with same ID are equal regardless of attributes)
+ * - HashCode consistency based on ID (required for collections)
+ * - Collections behavior (HashSet deduplication, HashMap key usage)
+ * - Different instances with same ID are equal (entity identity principle)
+ * - Entities with different IDs are not equal even if attributes match
+ *
+ * **DDD Patterns:**
+ * - Entity identity (ID-based equality, not structural)
+ * - Entities vs Value Objects distinction
+ * - Lifecycle independence (mutable entities with stable identity)
+ * - Collection safety (consistent hashCode/equals)
+ *
+ * @see Entity Primary class under test
+ * @see Identifier Entity identity type
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class EntityTest {
 

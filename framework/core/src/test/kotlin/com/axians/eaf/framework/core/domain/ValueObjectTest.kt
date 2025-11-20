@@ -4,15 +4,29 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * Unit tests for ValueObject base class.
+ * Unit tests for ValueObject base class - structural equality domain objects.
  *
- * Validates:
- * - Structural equality (all properties)
- * - Immutability (data class pattern)
- * - HashCode consistency
- * - Usage as Map keys
+ * Validates the ValueObject marker interface in DDD, ensuring value objects are compared
+ * by their attribute values (structural equality) rather than identity, unlike entities.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Structural equality (value objects with same properties are equal)
+ * - Immutability (data class pattern prevents modification)
+ * - HashCode consistency with equality
+ * - Usage as Map keys (immutable keys required)
+ * - Different instances with same values are equal
+ * - Value object semantics (no identity, just values)
+ *
+ * **DDD Patterns:**
+ * - Value Object (attribute-based equality, not identity)
+ * - Immutability requirement (value objects cannot change)
+ * - Entities vs Value Objects distinction
+ * - Safe collection usage (immutable keys/elements)
+ *
+ * @see ValueObject Primary interface under test
+ * @see Entity Contrasting pattern (identity-based)
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class ValueObjectTest {
 
