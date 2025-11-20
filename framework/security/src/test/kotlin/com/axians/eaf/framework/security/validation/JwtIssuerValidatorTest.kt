@@ -1,59 +1,61 @@
 package com.axians.eaf.framework.security.validation
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
-class JwtIssuerValidatorTest :
-    FunSpec({
-        val expectedIssuer = "http://keycloak:8080/realms/eaf"
+/**
+ * Unit tests for JwtIssuerValidator.
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
+ */
+class JwtIssuerValidatorTest {
 
-        test("valid issuer should pass validation") {
-            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
-            val jwt = createJwt().claim("iss", expectedIssuer).build()
+    private val expectedIssuer = "http://keycloak:8080/realms/eaf"
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `valid issuer should pass validation`() {
+        val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
+        val jwt = createJwt().claim("iss", expectedIssuer).build()
 
-        test("issuer with trailing slash still matches") {
-            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
-            val jwt = createJwt().claim("iss", "$expectedIssuer/").build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `issuer with trailing slash still matches`() {
+        val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
+        val jwt = createJwt().claim("iss", "$expectedIssuer/").build()
 
-        test("missing issuer claim should fail") {
-            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
-            val jwt = createJwt().build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `missing issuer claim should fail`() {
+        val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
+        val jwt = createJwt().build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT missing issuer (iss) claim")
-        }
+        val result = validator.validate(jwt)
 
-        test("mismatched issuer should fail") {
-            val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
-            val jwt = createJwt().claim("iss", "http://evil-issuer/realms/root").build()
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description).isEqualTo("JWT missing issuer (iss) claim")
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `mismatched issuer should fail`() {
+        val validator = JwtIssuerValidator(expectedIssuer, SimpleMeterRegistry())
+        val jwt = createJwt().claim("iss", "http://evil-issuer/realms/root").build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors.first().description.shouldBe(
-                "Invalid issuer: http://evil-issuer/realms/root (expected: $expectedIssuer)",
-            )
-        }
-    })
+        val result = validator.validate(jwt)
 
-private fun createJwt(): Jwt.Builder =
-    Jwt
-        .withTokenValue("token")
-        .header("alg", "RS256")
-        .claim("sub", "user")
-        .claim("jti", "issuer-test-jti")
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description).isEqualTo(
+            "Invalid issuer: http://evil-issuer/realms/root (expected: $expectedIssuer)",
+        )
+    }
+}
+
+private fun createJwt(): Jwt.Builder = Jwt.withTokenValue("token")
+    .header("alg", "RS256")
+    .claim("sub", "user")
+    .claim("jti", "issuer-test-jti")

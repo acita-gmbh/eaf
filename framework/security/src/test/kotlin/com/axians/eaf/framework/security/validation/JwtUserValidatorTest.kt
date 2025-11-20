@@ -4,114 +4,107 @@ import com.axians.eaf.framework.security.config.KeycloakOidcConfiguration
 import com.axians.eaf.framework.security.user.UserDirectory
 import com.axians.eaf.framework.security.user.UserRecord
 import com.axians.eaf.framework.security.user.UserValidationException
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
-class JwtUserValidatorTest :
-    FunSpec({
-        fun jwt(subject: String? = "user-123"): Jwt =
-            Jwt
-                .withTokenValue("token")
-                .header("alg", "RS256")
-                .apply {
-                    subject?.let { claim("sub", it) }
-                    claim("aud", "test-api")
-                }.build()
+/**
+ * Unit tests for JwtUserValidator.
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
+ */
+class JwtUserValidatorTest {
 
-        test("skips validation when feature disabled") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = false),
-                    AcceptAllDirectory(),
-                    SimpleMeterRegistry(),
-                )
+    private fun jwt(subject: String? = "user-123"): Jwt = Jwt.withTokenValue("token")
+        .header("alg", "RS256")
+        .apply {
+            subject?.let { claim("sub", it) }
+            claim("aud", "test-api")
+        }.build()
 
-            validator.validate(jwt(null)).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `skips validation when feature disabled`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = false),
+            AcceptAllDirectory(),
+            SimpleMeterRegistry(),
+        )
 
-        test("fails when subject missing") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = true),
-                    AcceptAllDirectory(),
-                    SimpleMeterRegistry(),
-                )
+        assertThat(validator.validate(jwt(null)).hasErrors()).isFalse()
+    }
 
-            val result = validator.validate(jwt(subject = null))
+    @Test
+    fun `fails when subject missing`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = true),
+            AcceptAllDirectory(),
+            SimpleMeterRegistry(),
+        )
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT missing subject (sub) claim required for user validation.")
-        }
+        val result = validator.validate(jwt(subject = null))
 
-        test("fails when user directory reports missing user") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = true),
-                    MissingUserDirectory(),
-                    SimpleMeterRegistry(),
-                )
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("JWT missing subject (sub) claim required for user validation.")
+    }
 
-            val result = validator.validate(jwt())
+    @Test
+    fun `fails when user directory reports missing user`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = true),
+            MissingUserDirectory(),
+            SimpleMeterRegistry(),
+        )
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT subject user is invalid (Layer 9)")
-        }
+        val result = validator.validate(jwt())
 
-        test("fails when user inactive") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = true),
-                    InactiveUserDirectory(),
-                    SimpleMeterRegistry(),
-                )
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("JWT subject user is invalid (Layer 9)")
+    }
 
-            val result = validator.validate(jwt())
+    @Test
+    fun `fails when user inactive`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = true),
+            InactiveUserDirectory(),
+            SimpleMeterRegistry(),
+        )
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT subject user is invalid (Layer 9)")
-        }
+        val result = validator.validate(jwt())
 
-        test("propagates directory failures as validation errors") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = true),
-                    ThrowingDirectory(),
-                    SimpleMeterRegistry(),
-                )
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("JWT subject user is invalid (Layer 9)")
+    }
 
-            val result = validator.validate(jwt())
+    @Test
+    fun `propagates directory failures as validation errors`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = true),
+            ThrowingDirectory(),
+            SimpleMeterRegistry(),
+        )
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("Unable to validate JWT subject user at this time. Please retry later.")
-        }
+        val result = validator.validate(jwt())
 
-        test("passes when user exists and active") {
-            val validator =
-                JwtUserValidator(
-                    KeycloakOidcConfiguration(validateUser = true),
-                    AcceptAllDirectory(),
-                    SimpleMeterRegistry(),
-                )
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("Unable to validate JWT subject user at this time. Please retry later.")
+    }
 
-            validator.validate(jwt()).hasErrors().shouldBeFalse()
-        }
-    })
+    @Test
+    fun `passes when user exists and active`() {
+        val validator = JwtUserValidator(
+            KeycloakOidcConfiguration(validateUser = true),
+            AcceptAllDirectory(),
+            SimpleMeterRegistry(),
+        )
+
+        assertThat(validator.validate(jwt()).hasErrors()).isFalse()
+    }
+}
 
 private class AcceptAllDirectory : UserDirectory {
     override fun findById(userId: String): UserRecord = UserRecord(userId, active = true)
