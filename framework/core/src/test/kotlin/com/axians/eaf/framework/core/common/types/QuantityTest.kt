@@ -1,8 +1,7 @@
 package com.axians.eaf.framework.core.common.types
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
 /**
@@ -15,106 +14,119 @@ import java.math.BigDecimal
  * - BigDecimal precision
  * - Various unit types
  * - Zero quantities
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
  */
-class QuantityTest :
-    FunSpec({
+class QuantityTest {
 
-        test("should create Quantity with value and unit") {
-            val quantity = Quantity(value = BigDecimal("10.5"), unit = "kg")
+    @Test
+    fun `should create Quantity with value and unit`() {
+        val quantity = Quantity(value = BigDecimal("10.5"), unit = "kg")
 
-            quantity.value shouldBe BigDecimal("10.5")
-            quantity.unit shouldBe "kg"
-        }
+        assertThat(quantity.value).isEqualTo(BigDecimal("10.5"))
+        assertThat(quantity.unit).isEqualTo("kg")
+    }
 
-        test("should be equal when value and unit equal") {
-            val quantity1 = Quantity(value = BigDecimal("100"), unit = "items")
-            val quantity2 = Quantity(value = BigDecimal("100"), unit = "items")
+    @Test
+    fun `should be equal when value and unit equal`() {
+        val quantity1 = Quantity(value = BigDecimal("100"), unit = "items")
+        val quantity2 = Quantity(value = BigDecimal("100"), unit = "items")
 
-            quantity1 shouldBe quantity2
-        }
+        assertThat(quantity1).isEqualTo(quantity2)
+    }
 
-        test("should not be equal when value differs") {
-            val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
-            val quantity2 = Quantity(value = BigDecimal("20"), unit = "kg")
+    @Test
+    fun `should not be equal when value differs`() {
+        val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
+        val quantity2 = Quantity(value = BigDecimal("20"), unit = "kg")
 
-            quantity1 shouldNotBe quantity2
-        }
+        assertThat(quantity1).isNotEqualTo(quantity2)
+    }
 
-        test("should not be equal when unit differs") {
-            val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
-            val quantity2 = Quantity(value = BigDecimal("10"), unit = "liters")
+    @Test
+    fun `should not be equal when unit differs`() {
+        val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
+        val quantity2 = Quantity(value = BigDecimal("10"), unit = "liters")
 
-            quantity1 shouldNotBe quantity2
-        }
+        assertThat(quantity1).isNotEqualTo(quantity2)
+    }
 
-        test("should preserve BigDecimal precision") {
-            val preciseValue = BigDecimal("123.456789")
-            val quantity = Quantity(value = preciseValue, unit = "meters")
+    @Test
+    fun `should preserve BigDecimal precision`() {
+        val preciseValue = BigDecimal("123.456789")
+        val quantity = Quantity(value = preciseValue, unit = "meters")
 
-            quantity.value shouldBe preciseValue
-            quantity.value.scale() shouldBe 6
-        }
+        assertThat(quantity.value).isEqualTo(preciseValue)
+        assertThat(quantity.value.scale()).isEqualTo(6)
+    }
 
-        test("should handle various unit types") {
-            val quantities =
-                listOf(
-                    Quantity(value = BigDecimal("10"), unit = "kg"),
-                    Quantity(value = BigDecimal("5"), unit = "liters"),
-                    Quantity(value = BigDecimal("100"), unit = "items"),
-                    Quantity(value = BigDecimal("25.5"), unit = "meters"),
-                    Quantity(value = BigDecimal("3"), unit = "boxes"),
-                )
+    @Test
+    fun `should handle various unit types`() {
+        val quantities =
+            listOf(
+                Quantity(value = BigDecimal("10"), unit = "kg"),
+                Quantity(value = BigDecimal("5"), unit = "liters"),
+                Quantity(value = BigDecimal("100"), unit = "items"),
+                Quantity(value = BigDecimal("25.5"), unit = "meters"),
+                Quantity(value = BigDecimal("3"), unit = "boxes"),
+            )
 
-            quantities[0].unit shouldBe "kg"
-            quantities[1].unit shouldBe "liters"
-            quantities[2].unit shouldBe "items"
-            quantities[3].unit shouldBe "meters"
-            quantities[4].unit shouldBe "boxes"
-        }
+        assertThat(quantities[0].unit).isEqualTo("kg")
+        assertThat(quantities[1].unit).isEqualTo("liters")
+        assertThat(quantities[2].unit).isEqualTo("items")
+        assertThat(quantities[3].unit).isEqualTo("meters")
+        assertThat(quantities[4].unit).isEqualTo("boxes")
+    }
 
-        test("should handle zero quantities") {
-            val quantity = Quantity(value = BigDecimal.ZERO, unit = "items")
+    @Test
+    fun `should handle zero quantities`() {
+        val quantity = Quantity(value = BigDecimal.ZERO, unit = "items")
 
-            quantity.value shouldBe BigDecimal.ZERO
-        }
+        assertThat(quantity.value).isEqualTo(BigDecimal.ZERO)
+    }
 
-        test("should have consistent hashCode for same values") {
-            val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
-            val quantity2 = Quantity(value = BigDecimal("10"), unit = "kg")
+    @Test
+    fun `should have consistent hashCode for same values`() {
+        val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
+        val quantity2 = Quantity(value = BigDecimal("10"), unit = "kg")
 
-            quantity1.hashCode() shouldBe quantity2.hashCode()
-        }
+        assertThat(quantity1.hashCode()).isEqualTo(quantity2.hashCode())
+    }
 
-        test("should work as Map keys") {
-            val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
-            val quantity2 = Quantity(value = BigDecimal("10"), unit = "kg")
+    @Test
+    fun `should work as Map keys`() {
+        val quantity1 = Quantity(value = BigDecimal("10"), unit = "kg")
+        val quantity2 = Quantity(value = BigDecimal("10"), unit = "kg")
 
-            val map = mutableMapOf<Quantity, String>()
-            map[quantity1] = "first"
-            map[quantity2] = "second"
+        val map = mutableMapOf<Quantity, String>()
+        map[quantity1] = "first"
+        map[quantity2] = "second"
 
-            map.size shouldBe 1
-            map[quantity1] shouldBe "second"
-        }
+        assertThat(map).hasSize(1)
+        assertThat(map[quantity1]).isEqualTo("second")
+    }
 
-        test("should support copy() with modifications") {
-            val original = Quantity(value = BigDecimal("10"), unit = "kg")
-            val modified = original.copy(value = BigDecimal("20"))
+    @Test
+    fun `should support copy() with modifications`() {
+        val original = Quantity(value = BigDecimal("10"), unit = "kg")
+        val modified = original.copy(value = BigDecimal("20"))
 
-            original.value shouldBe BigDecimal("10")
-            modified.value shouldBe BigDecimal("20")
-            modified.unit shouldBe "kg"
-        }
+        assertThat(original.value).isEqualTo(BigDecimal("10"))
+        assertThat(modified.value).isEqualTo(BigDecimal("20"))
+        assertThat(modified.unit).isEqualTo("kg")
+    }
 
-        test("should handle fractional quantities") {
-            val quantity = Quantity(value = BigDecimal("0.5"), unit = "kg")
+    @Test
+    fun `should handle fractional quantities`() {
+        val quantity = Quantity(value = BigDecimal("0.5"), unit = "kg")
 
-            quantity.value shouldBe BigDecimal("0.5")
-        }
+        assertThat(quantity.value).isEqualTo(BigDecimal("0.5"))
+    }
 
-        test("should support negative quantities (e.g., stock adjustments)") {
-            val quantity = Quantity(value = BigDecimal("-10"), unit = "items")
+    @Test
+    fun `should support negative quantities (e.g., stock adjustments)`() {
+        val quantity = Quantity(value = BigDecimal("-10"), unit = "items")
 
-            quantity.value shouldBe BigDecimal("-10")
-        }
-    })
+        assertThat(quantity.value).isEqualTo(BigDecimal("-10"))
+    }
+}
