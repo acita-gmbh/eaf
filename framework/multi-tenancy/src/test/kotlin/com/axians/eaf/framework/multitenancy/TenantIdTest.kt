@@ -5,18 +5,32 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 /**
- * Unit tests for TenantId value object.
+ * Unit tests for TenantId value object - validated tenant identifiers.
  *
- * Epic 4, Story 4.1: AC2 - TenantId.kt value object with validation
- * Tests validate:
+ * Validates the TenantId value object used throughout EAF's multi-tenancy system, ensuring
+ * tenant identifiers follow strict format rules to prevent injection attacks and maintain
+ * consistency across the system.
+ *
+ * **Test Coverage:**
  * - Valid tenant IDs (lowercase alphanumeric and hyphens)
- * - Blank ID rejection
+ * - Blank/empty ID rejection (fail-closed security)
  * - Invalid character rejection (uppercase, underscores, special chars)
- * - Length constraints (1-64 characters)
+ * - Length constraints (1-64 characters for database compatibility)
+ * - Format validation (lowercase-alphanumeric-hyphen pattern)
+ * - Value object equality semantics
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Security Patterns:**
+ * - Input validation at value object construction
+ * - SQL injection prevention (strict character whitelist)
+ * - Format consistency for all tenant operations
+ * - Fail-closed validation (reject invalid, don't silently fix)
  *
- * @since 1.0.0
+ * **Acceptance Criteria:** Story 4.1 AC2 - TenantId value object with validation
+ *
+ * @see TenantId Primary class under test
+ * @see TenantContext Tenant context management
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class TenantIdTest {
 

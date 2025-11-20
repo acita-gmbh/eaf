@@ -9,15 +9,54 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 /**
- * Unit tests for WidgetQueryHandler using Nullable Design Pattern.
+ * Unit tests for WidgetQueryHandler - CQRS query side with Nullable Design Pattern.
  *
- * Tests query handler business logic with fast, zero-latency Nullable DSLContext.
- * Validates cursor encoding/decoding, limit validation, and edge cases without database overhead.
+ * Validates query handler business logic using fast, zero-latency Nullable DSLContext (in-memory
+ * H2) for widget projections, cursor-based pagination, and limit validation. Demonstrates 100-1000x
+ * performance improvement over integration tests with Testcontainers PostgreSQL.
  *
- * **Nullable Pattern:** 100-1000x performance improvement over integration tests.
- * **Contract Testing:** Integration tests validate behavioral parity with real database.
+ * **Test Coverage:**
+ * - FindWidgetQuery (widget projection retrieval from in-memory H2)
+ * - ListWidgetsQuery (paginated response structure validation)
+ * - Cursor encoding/decoding (Base64 timestamp round-trip)
+ * - Invalid cursor handling (malformed Base64, invalid timestamp)
+ * - Limit validation (clamping to 1-100 range, negative handling)
+ * - Edge cases (limit 0, limit 500, negative limits)
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Nullable Design Pattern Benefits:**
+ * - 100-1000x faster than integration tests (no Testcontainers PostgreSQL)
+ * - Zero-latency DSLContext (in-memory H2 with pre-inserted test data)
+ * - Fast feedback loop for TDD (subsecond test execution)
+ * - Real business logic validation (no mocks of query handling)
+ * - Contract testing: Integration tests validate behavioral parity
+ *
+ * **Cursor Pagination Pattern:**
+ * - Cursor = Base64(ISO-8601 timestamp) for stable pagination
+ * - Encoding: Timestamp → ISO-8601 String → Base64
+ * - Decoding: Base64 → ISO-8601 String → Instant
+ * - Error handling: Invalid Base64 or malformed timestamp = IllegalArgumentException
+ *
+ * **Limit Validation:**
+ * - Minimum: 1 (prevent empty pages)
+ * - Maximum: 100 (prevent excessive database load)
+ * - Clamping: coerceIn(1, 100) for safe range enforcement
+ *
+ * **Testing Strategy:**
+ * - createNullableDSLContext: In-memory H2 with test data
+ * - CursorPaginationSupport: Shared cursor utilities
+ * - Exception testing: Invalid cursor handling
+ * - Boundary testing: Limit edge cases (0, negative, oversized)
+ *
+ * **Acceptance Criteria:**
+ * - Query handlers return correct projection structure
+ * - Cursor encoding/decoding round-trip successful
+ * - Limit validation prevents invalid pagination parameters
+ *
+ * @see WidgetQueryHandler Primary class under test
+ * @see createNullableDSLContext Nullable jOOQ DSLContext factory
+ * @see CursorPaginationSupport Cursor utilities
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class WidgetQueryHandlerTest {
 

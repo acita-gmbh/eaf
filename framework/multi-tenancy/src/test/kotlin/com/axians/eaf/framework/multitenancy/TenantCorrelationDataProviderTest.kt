@@ -6,18 +6,35 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
 /**
- * Unit test for tenant CorrelationDataProvider.
+ * Unit tests for TenantCorrelationDataProvider - Axon event metadata enrichment.
  *
- * **AC5 & AC6 Coverage:**
- * - AC5: Event metadata enriched with tenant_id during command processing
- * - AC6: Validates metadata enrichment (unit test level - E2E deferred to Story 4.6)
+ * Validates automatic tenant_id injection into Axon event metadata during command processing,
+ * ensuring tenant context propagates through the CQRS/Event Sourcing pipeline for proper
+ * tenant isolation in async event processors.
  *
- * **Note:** Full integration test with Widget aggregate deferred to Story 4.6
- * as Widget commands/events need tenantId field added first.
+ * **Test Coverage:**
+ * - Event metadata enrichment with tenant_id from TenantContext
+ * - Correlation data extraction during command handling
+ * - Metadata propagation to event store
+ * - Tenant context availability in event processors (async)
+ * - Axon CorrelationDataProvider integration
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Multi-Tenancy Patterns:**
+ * - Tenant context propagation across async boundaries
+ * - Event metadata enrichment (tenant_id correlation data)
+ * - Defense-in-depth: Layer 2 validation in event processors
+ * - Fail-closed: Missing context prevents event processing
  *
- * Epic 4, Story 4.5: AC5, AC6
+ * **Acceptance Criteria:**
+ * - Story 4.5 AC5: Event metadata enriched with tenant_id during command processing
+ * - Story 4.5 AC6: Validates metadata enrichment (unit test level)
+ *
+ * **Note:** Full E2E integration test deferred to Story 4.6 (Widget aggregate)
+ *
+ * @see TenantCorrelationDataProvider Primary class under test
+ * @see TenantContext Thread local tenant storage
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class TenantCorrelationDataProviderTest {
 

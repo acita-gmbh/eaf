@@ -6,9 +6,37 @@ import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
- * Unit tests for JwtIssuerValidator.
+ * Unit tests for JwtIssuerValidator - Layer 6 of 10-layer JWT validation system.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates JWT issuer (iss) claim enforcement to ensure tokens originate from trusted
+ * Keycloak realm and prevent token substitution attacks from untrusted identity providers.
+ *
+ * **Test Coverage:**
+ * - Valid issuer acceptance (exact match)
+ * - Trailing slash normalization (issuer with/without trailing slash)
+ * - Missing issuer claim rejection
+ * - Mismatched issuer rejection (untrusted issuer)
+ * - Trust boundary enforcement (only configured issuer accepted)
+ *
+ * **Security Patterns:**
+ * - Trust boundary enforcement (only Keycloak realm accepted)
+ * - Token substitution attack prevention (foreign tokens rejected)
+ * - Fail-closed validation (missing/invalid issuer = rejection)
+ * - URL normalization (trailing slash tolerance)
+ * - Generic error messages (CWE-209 protection)
+ *
+ * **Testing Strategy:**
+ * - Nullable Pattern: No Spring context, fast unit tests
+ * - SimpleMeterRegistry for metrics validation
+ * - Comprehensive issuer mismatch scenarios
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.5: Issuer claim validation (iss matches configured Keycloak realm)
+ * - Trust boundary enforcement (foreign issuers rejected)
+ *
+ * @see JwtIssuerValidator Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtIssuerValidatorTest {
 

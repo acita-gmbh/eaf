@@ -22,9 +22,48 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 /**
- * Unit tests for KeycloakUserDirectory.
+ * Unit tests for KeycloakUserDirectory - Keycloak Admin API user lookup with caching.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates user existence and active status lookups via Keycloak Admin API with client
+ * credentials flow, implementing two-tier caching (positive and negative results) to
+ * minimize Keycloak Admin API calls while ensuring deleted/disabled users are detected.
+ *
+ * **Test Coverage:**
+ * - Active user lookup and caching (positive cache, 60s TTL default)
+ * - Missing user handling and negative caching (negative cache, 30s TTL default)
+ * - Admin token reuse across lookups (token cached until expiry)
+ * - MockRestServiceServer for deterministic HTTP testing
+ * - Client credentials flow (Keycloak Admin API authentication)
+ * - Fixed Clock for deterministic time-based tests
+ *
+ * **Security Patterns:**
+ * - Two-tier caching (positive cache longer than negative for performance)
+ * - Token expiry handling (admin token cached with expiry tracking)
+ * - Client credentials flow (secure service-to-service authentication)
+ * - User active status validation (enabled field check)
+ * - Fail-closed behavior (Keycloak unavailable = validation fails)
+ *
+ * **Caching Strategy:**
+ * - Positive cache: 60s TTL (configurable) - reduces Keycloak load
+ * - Negative cache: 30s TTL (configurable) - faster invalidation for deleted users
+ * - Admin token cache: Until expiry (tokenExpirySkew buffer)
+ * - Cache invalidation: TTL-based, no manual invalidation required
+ *
+ * **Testing Strategy:**
+ * - MockRestServiceServer: Spring HTTP client mocking
+ * - Fixed Clock: Deterministic time-based behavior
+ * - Expectation verification: Ensures correct API calls
+ * - Cache hit validation: Verify second call doesn't hit API
+ *
+ * **Acceptance Criteria:**
+ * - Layer 9: User validation via Keycloak Admin API
+ * - Positive and negative caching (configurable TTLs)
+ * - Admin token reuse (until expiry)
+ *
+ * @see KeycloakUserDirectory Primary class under test
+ * @see UserDirectory Interface
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class KeycloakUserDirectoryTest {
 

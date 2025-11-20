@@ -10,9 +10,42 @@ import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
- * Unit tests for JwtUserValidator.
+ * Unit tests for JwtUserValidator - Layer 9 of 10-layer JWT validation system.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates JWT subject (sub) claim against Keycloak user directory, ensuring the user exists
+ * and is active. This layer prevents deleted/disabled user accounts from accessing the system
+ * even with valid, non-expired tokens. Configurable (can be disabled for performance).
+ *
+ * **Test Coverage:**
+ * - Feature toggle (validateUser=false skips validation)
+ * - Missing subject claim rejection (sub required when validation enabled)
+ * - User existence validation (UserDirectory lookup)
+ * - Active status validation (inactive users rejected)
+ * - UserDirectory error handling (fail-closed on directory unavailable)
+ * - Test user directory implementations (Accept, Missing, Inactive, Throwing)
+ *
+ * **Security Patterns:**
+ * - Deleted user protection (user removed from Keycloak = token invalid)
+ * - Disabled user enforcement (inactive accounts cannot authenticate)
+ * - Fail-closed validation (UserDirectory unavailable = reject)
+ * - Generic error messages (CWE-209 protection)
+ * - Optional validation (configurable for performance vs security tradeoff)
+ *
+ * **Testing Strategy:**
+ * - Test UserDirectory implementations (nullable pattern)
+ * - Feature toggle testing (validateUser true/false)
+ * - Error propagation testing (exceptions become validation failures)
+ * - SimpleMeterRegistry for metrics validation
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.8: User validation (sub matches active Keycloak user)
+ * - Story 3.8: Configurable validation (validateUser feature toggle)
+ * - Story 3.8: Fail-closed behavior (directory unavailable = reject)
+ *
+ * @see JwtUserValidator Primary class under test
+ * @see UserDirectory Keycloak user lookup interface
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtUserValidatorTest {
 

@@ -7,20 +7,42 @@ import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
 /**
- * Unit test for JwtAlgorithmValidator using Nullable Design Pattern.
+ * Unit tests for JwtAlgorithmValidator - Layer 3 of 10-layer JWT validation system.
  *
- * Tests JWT algorithm validation logic (Layer 3) without Spring context.
- * Fast execution (<10ms) compared to integration tests (~30s with Keycloak).
+ * Validates JWT algorithm header enforcement (RS256 only) to prevent algorithm confusion
+ * attacks (CVE-2018-0114) where attackers downgrade cryptographic strength or bypass
+ * signature verification entirely using 'none' algorithm.
  *
- * Nullable Pattern Benefits:
- * - 100-1000x performance improvement over integration tests
- * - Tests business logic in isolation
- * - No external dependencies (Keycloak, Spring context)
- * - Fast feedback loop for TDD
+ * **Test Coverage:**
+ * - RS256 algorithm acceptance (only allowed algorithm)
+ * - Forbidden algorithm rejection (HS256, HS384, HS512, 'none')
+ * - Algorithm confusion attack prevention (symmetric vs asymmetric)
+ * - Unsupported algorithm detection (RS384, RS512, ES256)
+ * - Missing algorithm header detection
+ * - Case sensitivity enforcement (rs256 rejected)
+ * - Performance validation (1000 validations <100ms)
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Security Patterns:**
+ * - Algorithm whitelist enforcement (RS256 only, fail-closed)
+ * - CVE-2018-0114 mitigation ('none' algorithm bypass prevention)
+ * - Algorithm confusion attack protection (reject symmetric algorithms)
+ * - Strict header validation (no defaults, explicit rejection)
+ * - Nullable Design Pattern for fast security validation
  *
- * Story 3.4: JWT Format and Signature Validation (Layers 1-2)
+ * **Testing Strategy:**
+ * - Nullable Pattern: No Spring context, no Keycloak (100-1000x faster)
+ * - SimpleMeterRegistry for metrics validation
+ * - Performance baseline: <0.1ms per validation
+ * - Comprehensive attack vector coverage
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.4 AC3: RS256 algorithm enforcement (only RS256 allowed)
+ * - Story 3.4: Algorithm confusion attack prevention
+ *
+ * @see JwtAlgorithmValidator Primary class under test
+ * @see <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-0114">CVE-2018-0114</a>
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtAlgorithmValidatorTest {
 

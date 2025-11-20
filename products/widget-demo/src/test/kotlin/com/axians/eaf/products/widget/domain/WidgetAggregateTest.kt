@@ -14,12 +14,54 @@ import java.io.Serializable
 import java.util.UUID
 
 /**
- * Axon Test Fixtures tests for Widget aggregate.
+ * Unit tests for Widget aggregate - CQRS/Event Sourcing with Axon Test Fixtures.
  *
- * Verifies CQRS command handling, event sourcing, and business logic validation
- * using Given-When-Then BDD style with Axon fixtures.
+ * Validates Widget aggregate command handling, event sourcing state reconstruction, and
+ * business rule enforcement using Axon's Given-When-Then BDD testing fixtures. Demonstrates
+ * EAF's CQRS/Event Sourcing patterns with comprehensive aggregate lifecycle testing.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - CreateWidgetCommand (valid name, blank name rejection, whitespace rejection)
+ * - UpdateWidgetCommand (unpublished widget update, published widget immutability, name validation)
+ * - PublishWidgetCommand (unpublished widget publishing, idempotency prevention)
+ * - Event sourcing state reconstruction (WidgetCreatedEvent, WidgetUpdatedEvent, WidgetPublishedEvent)
+ * - Snapshot support serialization (Widget and WidgetId Serializable verification)
+ * - Business rule enforcement (published widgets cannot be updated)
+ *
+ * **CQRS/Event Sourcing Patterns:**
+ * - Aggregate Root (Widget as consistency boundary)
+ * - Command handling (@CommandHandler methods)
+ * - Event sourcing (state reconstructed from event stream)
+ * - Business rule validation (fail-fast, domain exceptions)
+ * - Axon Test Fixtures (Given-When-Then BDD style)
+ * - Event sequence validation (Matchers.exactSequenceOf)
+ *
+ * **Business Rules:**
+ * - Widget name cannot be blank or whitespace-only
+ * - Published widgets are immutable (cannot be updated)
+ * - Widgets can only be published once (idempotency)
+ *
+ * **Snapshot Support (Story 2.4 Deferred):**
+ * - Widget implements Serializable for Axon snapshots
+ * - WidgetId implements Serializable for snapshot support
+ * - Java serialization round-trip validation
+ *
+ * **Testing Strategy:**
+ * - AggregateTestFixture: Fast, in-memory aggregate testing
+ * - Matchers.payloadsMatching: Event verification
+ * - Exception expectation: Business rule validation
+ * - Serialization testing: Snapshot support prerequisites
+ *
+ * **Acceptance Criteria:**
+ * - Widget aggregate command handlers functional
+ * - Event sourcing state reconstruction validated
+ * - Business rules enforced (name validation, published immutability)
+ * - Snapshot support prerequisites verified
+ *
+ * @see Widget Primary aggregate under test
+ * @see AggregateTestFixture Axon testing framework
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class WidgetAggregateTest {
 

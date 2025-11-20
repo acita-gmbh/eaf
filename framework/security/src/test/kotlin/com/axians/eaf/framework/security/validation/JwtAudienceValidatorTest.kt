@@ -6,9 +6,39 @@ import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
- * Unit tests for JwtAudienceValidator.
+ * Unit tests for JwtAudienceValidator - Layer 6 of 10-layer JWT validation system.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates JWT audience (aud) claim enforcement to ensure tokens are intended for this
+ * application and prevent token replay attacks from other services in the same Keycloak realm.
+ *
+ * **Test Coverage:**
+ * - Audience array containing expected value (multi-audience support)
+ * - Audience as single string (aud: "eaf-api")
+ * - Authorized party (azp) fallback when aud missing
+ * - Missing audience claim rejection
+ * - Audience missing expected value rejection
+ * - Multi-audience token validation (token for multiple services)
+ *
+ * **Security Patterns:**
+ * - Token replay attack prevention (tokens for other services rejected)
+ * - Audience whitelist enforcement (only "eaf-api" accepted)
+ * - Fail-closed validation (missing/invalid audience = rejection)
+ * - Authorized party (azp) fallback (OIDC compliance)
+ * - Generic error messages (CWE-209 protection)
+ *
+ * **Testing Strategy:**
+ * - Nullable Pattern: No Spring context, fast unit tests
+ * - SimpleMeterRegistry for metrics validation
+ * - Comprehensive audience mismatch scenarios
+ * - OIDC spec compliance (aud as string or array, azp fallback)
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.5: Audience claim validation (aud contains "eaf-api")
+ * - Token replay attack prevention (foreign audience rejected)
+ *
+ * @see JwtAudienceValidator Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtAudienceValidatorTest {
 

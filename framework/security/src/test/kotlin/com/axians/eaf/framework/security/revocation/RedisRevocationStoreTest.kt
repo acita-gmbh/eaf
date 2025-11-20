@@ -13,9 +13,50 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 /**
- * Unit tests for RedisRevocationStore.
+ * Unit tests for RedisRevocationStore - Redis-backed JWT revocation tracking.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates Redis-based token blacklist implementation for Layer 7 revocation validation,
+ * including TTL management aligned with JWT expiration, fail-open/fail-closed behavior
+ * when Redis is unavailable, and key prefix isolation (jwt:revoked:*).
+ *
+ * **Test Coverage:**
+ * - Revoked token detection (Redis key exists = token revoked)
+ * - Cache miss handling (no Redis key = token active)
+ * - Fail-open behavior (Redis unavailable + failClosed=false = allow)
+ * - Fail-closed behavior (Redis unavailable + failClosed=true = throw SecurityException)
+ * - TTL calculation from JWT expiration (token expires at 15min = 15min TTL)
+ * - Default TTL fallback (null expiration or past expiration = 10min default)
+ * - Key prefix isolation (jwt:revoked:{jti})
+ *
+ * **Security Patterns:**
+ * - Token revocation enforcement (logout, password reset, breach response)
+ * - Configurable fail-open/fail-closed (availability vs security tradeoff)
+ * - TTL alignment with JWT expiration (auto-cleanup when token expires)
+ * - Default TTL for expired tokens (10min default, configurable)
+ * - Key prefix isolation (prevents Redis key collisions)
+ * - Redis unavailability handling (graceful degradation or strict enforcement)
+ *
+ * **TTL Strategy:**
+ * - Calculated TTL: JWT exp time - current time (auto-cleanup)
+ * - Default TTL: 10 minutes (when exp missing or already expired)
+ * - Minimum TTL: Max(calculated, default) - prevents negative TTL
+ * - Redis auto-expiry: Keys automatically removed after TTL
+ *
+ * **Testing Strategy:**
+ * - TestRedisAccessor: In-memory nullable Redis implementation
+ * - Fixed Clock: Deterministic time-based TTL calculations
+ * - Fail-open/fail-closed simulation (throwOnHasKey flag)
+ * - TTL verification (lastSetTtl helper)
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.7: Redis-backed revocation store
+ * - Story 3.7: Configurable fail-open/fail-closed behavior
+ * - TTL alignment with JWT expiration
+ *
+ * @see RedisRevocationStore Primary class under test
+ * @see TokenRevocationStore Interface
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class RedisRevocationStoreTest {
 

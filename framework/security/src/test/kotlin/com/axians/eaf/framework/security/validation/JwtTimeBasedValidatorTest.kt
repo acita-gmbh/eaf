@@ -10,14 +10,42 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * Unit tests for JwtTimeBasedValidator (Layer 5: Time-Based Validation).
+ * Unit tests for JwtTimeBasedValidator - Layer 5 of 10-layer JWT validation system.
  *
- * Tests validate exp, iat, and nbf claims with 30-second clock skew tolerance,
- * ensuring tokens are not expired, not issued in the future, and not used before valid time.
+ * Validates JWT time-based claims (exp, iat, nbf) with configurable clock skew tolerance
+ * (default 30 seconds) to prevent token replay attacks, expired token usage, and future
+ * token acceptance while accommodating reasonable time synchronization differences.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Test Coverage:**
+ * - Expiration validation (exp) with clock skew tolerance
+ * - Issued-at validation (iat) preventing future-issued tokens
+ * - Not-before validation (nbf) enforcing delayed token activation
+ * - Clock skew tolerance (within/beyond 30-second threshold)
+ * - Optional claim handling (exp, iat, nbf may be missing)
+ * - Custom clock skew configuration (configurable tolerance)
+ * - Fixed clock testing (deterministic time-based tests)
  *
- * Story 3.5: JWT Claims Schema and Time-Based Validation (Layers 3-5)
+ * **Security Patterns:**
+ * - Token replay attack prevention (expired tokens rejected)
+ * - Future token rejection (iat in future beyond skew = rejection)
+ * - Delayed activation support (nbf enforces "not valid before" time)
+ * - Clock skew tolerance (30s default to accommodate NTP drift)
+ * - Fail-closed validation (invalid time = rejection)
+ * - Time synchronization resilience (tolerates reasonable drift)
+ *
+ * **Testing Strategy:**
+ * - Fixed Clock: Deterministic time-based testing (no flakiness)
+ * - Boundary testing: Within/beyond clock skew (29s vs 31s)
+ * - SimpleMeterRegistry for metrics validation
+ * - Nullable Pattern: No Spring context, fast unit tests
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.5: Time-based claim validation (exp, iat, nbf)
+ * - Story 3.5: Clock skew tolerance (30-second default)
+ *
+ * @see JwtTimeBasedValidator Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtTimeBasedValidatorTest {
 

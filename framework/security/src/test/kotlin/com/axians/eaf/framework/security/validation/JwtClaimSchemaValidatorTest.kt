@@ -7,19 +7,41 @@ import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
 /**
- * Unit tests for JwtClaimSchemaValidator (Layer 4: Claim Schema Validation).
+ * Unit tests for JwtClaimSchemaValidator - Layer 4 of 10-layer JWT validation system.
  *
- * Tests enforce that core required claims (sub, iss, exp, iat) are present
- * and that critical claims (sub, tenant_id) are non-blank when present.
+ * Validates JWT claim schema enforcement, ensuring required claims (sub, iss, exp, iat, jti)
+ * are present and critical claims (sub, tenant_id) are non-blank to prevent identity bypass
+ * and multi-tenancy violations.
  *
- * Note: aud, tenant_id, and roles are optional (validated by other layers):
- * - aud: Validated by Spring Security's default audience validator (Epic 3.6)
- * - tenant_id: Optional until Epic 4 (multi-tenancy), must be non-blank if present
+ * **Test Coverage:**
+ * - Required claim presence (sub, iss, exp, iat, jti)
+ * - Optional claim handling (tenant_id, roles, aud)
+ * - Non-blank validation for critical claims (sub, tenant_id)
+ * - Multiple missing claims reporting (sorted alphabetically)
+ * - Multiple invalid claims reporting (sorted alphabetically)
+ * - Empty list handling (roles: [] is valid)
+ * - Blank vs missing distinction (blank is invalid, missing may be valid)
+ *
+ * **Security Patterns:**
+ * - Fail-closed validation (missing required claims = rejection)
+ * - Identity bypass prevention (blank 'sub' rejected)
+ * - Multi-tenancy bypass prevention (blank 'tenant_id' rejected)
+ * - Revocation support (jti required for token blacklisting)
+ * - Defense-in-depth (claim schema validated separately from business logic)
+ *
+ * **Layer Coordination:**
+ * - aud: Validated by Layer 6 (JwtAudienceValidator)
+ * - tenant_id: Optional until Epic 4 (multi-tenancy), enforced when present
  * - roles: Optional until Epic 3.6+ (role validation layer)
+ * - exp/iat: Presence validated here, values validated by Layer 5 (JwtTimeBasedValidator)
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Acceptance Criteria:**
+ * - Story 3.5: Required claim enforcement (sub, iss, exp, iat, jti)
+ * - Story 3.5: Non-blank validation for critical claims
  *
- * Story 3.5: JWT Claims Schema and Time-Based Validation (Layers 3-5)
+ * @see JwtClaimSchemaValidator Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class JwtClaimSchemaValidatorTest {
 

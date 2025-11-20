@@ -7,9 +7,45 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 
 /**
- * Unit tests for InjectionDetector.
+ * Unit tests for InjectionDetector - pattern-based attack detection engine.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates regex-based detection of injection attack patterns (SQL, XSS, JNDI, Expression
+ * Injection, Path Traversal) across all string claim values. Shared by Layer 10 (JWT validation)
+ * and input validation (command/query DTOs).
+ *
+ * **Test Coverage:**
+ * - SQL injection patterns (--comments, semicolons, UNION SELECT)
+ * - XSS patterns (<script>, javascript: protocol)
+ * - JNDI injection (jndi:, ldap:, rmi: - Log4Shell protection)
+ * - Expression Language injection (${...} patterns)
+ * - Path traversal (../, ..\ patterns)
+ * - False positive prevention (O'Malley, legitimate apostrophes)
+ * - Safe special characters (emails, descriptions, hyphens)
+ * - Non-string claim handling (numbers, booleans ignored)
+ * - InjectionDetectedException extends EafException
+ *
+ * **Security Patterns:**
+ * - OWASP Injection attack prevention (SQL, XSS, JNDI, Expression, Path Traversal)
+ * - Log4Shell protection (JNDI pattern detection)
+ * - Pattern-based detection (regex matching for attack signatures)
+ * - Fail-closed validation (detected pattern = throw exception)
+ * - False positive minimization (legitimate text must pass)
+ * - Shared detection engine (JWT claims and input validation)
+ *
+ * **Testing Strategy:**
+ * - Comprehensive attack vector coverage (OWASP Top 10 relevant patterns)
+ * - False positive prevention (O'Malley, user+tag@example.com)
+ * - Exception type verification (InjectionDetectedException)
+ * - Pattern disclosure in exception (for debugging, not user-facing)
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.8: Injection pattern detection (SQL, XSS, JNDI, Expression, Path Traversal)
+ * - False positive prevention (legitimate text passes)
+ *
+ * @see InjectionDetector Primary class under test
+ * @see JwtInjectionValidator Layer 10 consumer
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class InjectionDetectorTest {
 

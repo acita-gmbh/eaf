@@ -19,18 +19,45 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import java.time.Instant
 
 /**
- * Unit tests for TenantContextFilter (Layer 1 tenant extraction).
+ * Unit tests for TenantContextFilter - Layer 1 tenant extraction from JWT claims.
+ *
+ * Validates the first defense layer of EAF's 3-layer multi-tenancy enforcement system,
+ * ensuring tenant_id is properly extracted from JWT tokens and propagated through the
+ * request lifecycle with fail-closed security and comprehensive error handling.
+ *
+ * **Test Coverage:**
+ * - JWT tenant_id claim extraction and TenantContext population
+ * - Fail-closed behavior (missing tenant_id = 400 Bad Request, no chain execution)
+ * - ThreadLocal cleanup in finally block (success and exception cases)
+ * - Metrics emission (extraction duration timer, error counters)
+ * - Non-JWT request handling (skip tenant extraction gracefully)
+ * - SecurityContextHolder integration with JwtAuthenticationToken
+ *
+ * **Multi-Tenancy Patterns:**
+ * - Layer 1: JWT-based tenant extraction (request filter)
+ * - Fail-closed security (missing tenant blocks request immediately)
+ * - ThreadLocal context with guaranteed cleanup (finally block)
+ * - Defense-in-depth integration with Layer 2 (service validation) and Layer 3 (PostgreSQL RLS)
+ * - Generic error messages (CWE-209 protection)
  *
  * **Test Strategy:**
- * - Use Spring MockHttpServletRequest/Response (no mocking framework needed)
+ * - Spring MockHttpServletRequest/Response (no mocking framework)
  * - Real SecurityContextHolder with JwtAuthenticationToken
- * - Verify tenant extraction logic
- * - Verify cleanup in finally block
- * - Verify metrics emission
+ * - SimpleMeterRegistry for metrics validation
+ * - FilterChain capture pattern for mid-execution assertions
+ * - Exception propagation verification (cleanup despite errors)
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Acceptance Criteria:**
+ * - Story 4.2 AC2: JWT tenant_id claim extracted to TenantContext
+ * - Story 4.2 AC3: TenantContext populated during request lifecycle
+ * - Story 4.2 AC4: Missing tenant_id returns 400 Bad Request
+ * - Story 4.2 AC5: ThreadLocal cleanup in finally block
+ * - Story 4.2 AC7: Metrics emitted for extraction duration and failures
  *
- * Epic 4, Story 4.2: Unit tests for filter logic
+ * @see TenantContextFilter Primary class under test
+ * @see TenantContext ThreadLocal tenant storage
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class TenantContextFilterTest {
 

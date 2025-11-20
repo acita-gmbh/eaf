@@ -7,9 +7,46 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
- * Unit tests for RoleNormalizer.
+ * Unit tests for RoleNormalizer - Keycloak role claim extraction and normalization.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * Validates extraction of Keycloak roles from realm_access and resource_access JWT claims,
+ * normalizing them to Spring Security GrantedAuthority format with ROLE_ prefix for realm
+ * roles and preserving resource role format (e.g., widget:create).
+ *
+ * **Test Coverage:**
+ * - Realm role extraction with ROLE_ prefix (realm_access.roles)
+ * - Resource role extraction without prefix (resource_access.[clientId].roles)
+ * - Existing ROLE_ prefix preservation (idempotent)
+ * - Blank role filtering (whitespace roles ignored)
+ * - Deduplication (same role from multiple sources = single authority)
+ * - Nested structure flattening (lists within lists, arrays)
+ * - Hyphenated role preservation (eaf-admin, widget:read)
+ * - Other client filtering (only configured clientId roles extracted)
+ *
+ * **Security Patterns:**
+ * - Client isolation (roles from other clients ignored)
+ * - Consistent normalization (ROLE_ prefix for realm, no prefix for resource)
+ * - Deduplication (prevents duplicate authority checks)
+ * - Blank filtering (prevents empty role vulnerabilities)
+ * - Spring Security integration (GrantedAuthority format)
+ *
+ * **Keycloak Role Structure:**
+ * - Realm roles: Global roles across all clients (e.g., WIDGET_ADMIN)
+ * - Resource roles: Client-specific roles (e.g., widget:create, widget:read)
+ * - Normalization: Realm roles get ROLE_ prefix, resource roles preserve format
+ *
+ * **Testing Strategy:**
+ * - Comprehensive role source coverage (realm, resource)
+ * - Edge case handling (blank, nested, duplicates, hyphens)
+ * - Client isolation verification (other client roles ignored)
+ *
+ * **Acceptance Criteria:**
+ * - Layer 8: Role normalization (realm roles prefixed, resource roles preserved)
+ * - Client isolation (only configured clientId roles extracted)
+ *
+ * @see RoleNormalizer Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class RoleNormalizerTest {
 
