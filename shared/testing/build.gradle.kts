@@ -9,7 +9,6 @@ dependencies {
     api(libs.junit.jupiter.api)
     api(libs.junit.jupiter.params)
     api(libs.assertj.core)
-    api(libs.assertj.kotlin)
     api(libs.testcontainers.postgresql)
     api(libs.testcontainers.keycloak)
 

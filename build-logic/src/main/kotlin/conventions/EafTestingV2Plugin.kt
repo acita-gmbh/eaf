@@ -182,7 +182,6 @@ class EafTestingV2Plugin : Plugin<Project> {
                         "junit-jupiter-api",
                         "junit-jupiter-params",
                         "assertj-core",
-                        "assertj-kotlin",
                         "awaitility-kotlin",
                         "mockk",
                         "kotlinx-serialization-json",
