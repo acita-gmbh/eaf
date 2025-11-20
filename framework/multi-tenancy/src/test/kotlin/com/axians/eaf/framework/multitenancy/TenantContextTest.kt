@@ -6,21 +6,29 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 
 /**
  * Unit tests for TenantContext ThreadLocal management.
  *
- * Epic 4, Story 4.1: AC3, AC6, AC7, AC8
- * Tests validate:
- * - AC3: ThreadLocal storage with stack-based context
- * - AC6: set context → retrieve → clear cycle
- * - AC7: Thread isolation (contexts don't leak between threads)
- * - AC8: Context cleanup after request completion
+ * Validates tenant context isolation, stack-based behavior, and thread safety for multi-tenant applications.
+ * The TenantContext uses ThreadLocal storage to ensure tenant data never leaks between concurrent requests.
  *
- * Migrated from Kotest to JUnit 6 on 2025-11-20
+ * **Acceptance Criteria Covered:**
+ * - AC3: Fail-closed behavior (getCurrentTenantId() throws when missing, current() returns null)
+ * - AC6: Stack-based nested contexts (push/pop behavior)
+ * - AC7: Thread isolation (ThreadLocal prevents cross-thread contamination)
+ * - AC8: Context cleanup (clearCurrentTenant() removes all context)
  *
- * @since 1.0.0
+ * **Testing Strategy:**
+ * - Thread isolation tests use CyclicBarrier for deterministic concurrent execution
+ * - Stack tests verify last-in-first-out behavior for nested contexts
+ * - Fail-closed tests verify IllegalStateException on missing context
+ *
+ * @see TenantContext Primary class under test
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
 class TenantContextTest {
 
@@ -111,6 +119,7 @@ class TenantContextTest {
     fun `tenant context should not leak between threads`() {
         // Given
         val executor = Executors.newFixedThreadPool(3)
+        val barrier = CyclicBarrier(3) // Synchronize all 3 threads at once
         val latch = CountDownLatch(3)
         val results = mutableMapOf<String, String?>()
 
@@ -118,7 +127,7 @@ class TenantContextTest {
         executor.execute {
             try {
                 TenantContext.setCurrentTenantId("tenant-thread-1")
-                Thread.sleep(50) // Allow other threads to potentially interfere
+                barrier.await() // All threads reach here before proceeding (deterministic)
                 results["thread-1"] = TenantContext.current()
             } finally {
                 TenantContext.clearCurrentTenant()
@@ -129,7 +138,7 @@ class TenantContextTest {
         executor.execute {
             try {
                 TenantContext.setCurrentTenantId("tenant-thread-2")
-                Thread.sleep(50)
+                barrier.await() // Synchronization point
                 results["thread-2"] = TenantContext.current()
             } finally {
                 TenantContext.clearCurrentTenant()
@@ -140,7 +149,7 @@ class TenantContextTest {
         executor.execute {
             try {
                 TenantContext.setCurrentTenantId("tenant-thread-3")
-                Thread.sleep(50)
+                barrier.await() // Synchronization point
                 results["thread-3"] = TenantContext.current()
             } finally {
                 TenantContext.clearCurrentTenant()
@@ -151,7 +160,7 @@ class TenantContextTest {
         latch.await()
         executor.shutdown()
 
-        // Then - each thread sees its own context
+        // Then - each thread sees its own context (ThreadLocal isolation verified)
         assertThat(results["thread-1"]).isEqualTo("tenant-thread-1")
         assertThat(results["thread-2"]).isEqualTo("tenant-thread-2")
         assertThat(results["thread-3"]).isEqualTo("tenant-thread-3")
