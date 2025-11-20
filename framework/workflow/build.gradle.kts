@@ -68,14 +68,11 @@ dependencies {
     implementation(libs.jsch) // Java SSH client
     // Note: Jackson provided transitively by spring-boot-starter-web
 
-    testImplementation(libs.bundles.kotest)
-
     // Integration test dependencies (Story 6.1 - Flowable only)
     integrationTestImplementation(libs.spring.boot.starter.test)
     integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation(libs.postgresql)
     integrationTestImplementation(libs.testcontainers.postgresql)
-    integrationTestImplementation(libs.kotest.runner.junit5.jvm) // Required for custom source sets
 
     // Story 6.2: Axon integration test dependencies (separate source set)
     // Framework tests use framework-local test types (TestEntity) - NO products dependency
@@ -89,6 +86,5 @@ dependencies {
     "axonIntegrationTestImplementation"(project(":framework:observability"))
     "axonIntegrationTestImplementation"(libs.postgresql)
     "axonIntegrationTestImplementation"(libs.testcontainers.postgresql)
-    "axonIntegrationTestImplementation"(libs.kotest.runner.junit5.jvm)
     // Note: framework:observability in test scope only (provides CustomMetrics for AxonIntegrationTestConfig)
 }

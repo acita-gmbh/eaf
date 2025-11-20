@@ -33,7 +33,6 @@ dependencies {
     testImplementation(libs.spring.modulith.test)
 
     // Testing dependencies
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit") // Exclude JUnit 4
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

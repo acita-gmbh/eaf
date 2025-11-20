@@ -75,7 +75,6 @@ dependencies {
     implementation(libs.jose4j)
     implementation(libs.jooq.core) // Story 9.2: Required for TenantDatabaseSessionInterceptor transaction participation
 
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit") // Exclude JUnit 4
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine") // Exclude JUnit 4 engine
@@ -120,7 +119,6 @@ if (isNightlyBuild) {
         "fuzzTestImplementation"(libs.jazzer.api)
 
         // Performance test dependencies (same as integration tests)
-        "nightlyTestImplementation"(libs.bundles.kotest)
         "nightlyTestImplementation"(libs.spring.boot.starter.test)
         "nightlyTestImplementation"(libs.bundles.testcontainers)
         // Required for @Testcontainers, @Container annotations

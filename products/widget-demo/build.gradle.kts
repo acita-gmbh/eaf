@@ -72,8 +72,6 @@ dependencies {
     integrationTestImplementation(libs.bundles.testcontainers)
     integrationTestImplementation(libs.testcontainers.junit.jupiter)
     integrationTestImplementation(libs.spring.boot.starter.test)
-    integrationTestImplementation(libs.bundles.kotest)
-    integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation("org.springframework:spring-jdbc")

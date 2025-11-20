@@ -16,7 +16,6 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
 
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.opentelemetry.sdk.testing)
 
     // Exclude JUnit 4 to prevent pitest minion crash
