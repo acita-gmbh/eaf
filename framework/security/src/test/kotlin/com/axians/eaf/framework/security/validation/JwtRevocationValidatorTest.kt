@@ -1,76 +1,76 @@
 package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.revocation.TokenRevocationStore
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
+import java.time.Instant
 
-class JwtRevocationValidatorTest :
-    FunSpec({
-        fun validator(
-            store: TestTokenRevocationStore = TestTokenRevocationStore(),
-        ): Pair<JwtRevocationValidator, TestTokenRevocationStore> =
-            JwtRevocationValidator(store, SimpleMeterRegistry()) to store
+/**
+ * Unit tests for JwtRevocationValidator.
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
+ */
+class JwtRevocationValidatorTest {
 
-        test("missing jti fails validation") {
-            val (validator, store) = validator()
-            val jwt = jwtBuilder(withJti = false).build()
+    private fun validator(
+        store: TestTokenRevocationStore = TestTokenRevocationStore(),
+    ): Pair<JwtRevocationValidator, TestTokenRevocationStore> =
+        JwtRevocationValidator(store, SimpleMeterRegistry()) to store
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `missing jti fails validation`() {
+        val (validator, store) = validator()
+        val jwt = jwtBuilder(withJti = false).build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT missing JTI (jti) claim required for revocation.")
-            store.queries.shouldBe(emptyList())
-        }
+        val result = validator.validate(jwt)
 
-        test("revoked token fails validation") {
-            val store = TestTokenRevocationStore().apply { revoked += "dead-beef" }
-            val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
-            val jwt = jwtBuilder().claim("jti", "dead-beef").build()
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("JWT missing JTI (jti) claim required for revocation.")
+        assertThat(store.queries).isEmpty()
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `revoked token fails validation`() {
+        val store = TestTokenRevocationStore().apply { revoked += "dead-beef" }
+        val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
+        val jwt = jwtBuilder().claim("jti", "dead-beef").build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT has been revoked and may not be used.")
-        }
+        val result = validator.validate(jwt)
 
-        test("active token passes validation") {
-            val validator = JwtRevocationValidator(TestTokenRevocationStore(), SimpleMeterRegistry())
-            val jwt = jwtBuilder().claim("jti", "alive").build()
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("JWT has been revoked and may not be used.")
+    }
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `active token passes validation`() {
+        val validator = JwtRevocationValidator(TestTokenRevocationStore(), SimpleMeterRegistry())
+        val jwt = jwtBuilder().claim("jti", "alive").build()
 
-        test("fail-closed propagates as validation failure") {
-            val store = TestTokenRevocationStore().apply { throwFor = "locked" }
-            val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
-            val jwt = jwtBuilder().claim("jti", "locked").build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `fail-closed propagates as validation failure`() {
+        val store = TestTokenRevocationStore().apply { throwFor = "locked" }
+        val validator = JwtRevocationValidator(store, SimpleMeterRegistry())
+        val jwt = jwtBuilder().claim("jti", "locked").build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("Token revocation status unavailable. Please retry later.")
-        }
-    })
+        val result = validator.validate(jwt)
+
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description)
+            .isEqualTo("Token revocation status unavailable. Please retry later.")
+    }
+}
 
 private fun jwtBuilder(withJti: Boolean = true): Jwt.Builder {
-    val builder =
-        Jwt
-            .withTokenValue("token")
-            .header("alg", "RS256")
-            .claim("sub", "user")
+    val builder = Jwt.withTokenValue("token")
+        .header("alg", "RS256")
+        .claim("sub", "user")
 
     return if (withJti) {
         builder.claim("jti", "jti-default")
@@ -92,10 +92,7 @@ private class TestTokenRevocationStore : TokenRevocationStore {
         return revoked.contains(jti)
     }
 
-    override fun revoke(
-        jti: String,
-        expiresAt: java.time.Instant?,
-    ) {
+    override fun revoke(jti: String, expiresAt: Instant?) {
         revoked += jti
     }
 }

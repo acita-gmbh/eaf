@@ -1,73 +1,71 @@
 package com.axians.eaf.framework.security.validation
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 
-class JwtAudienceValidatorTest :
-    FunSpec({
-        val expected = "eaf-api"
+/**
+ * Unit tests for JwtAudienceValidator.
+ *
+ * Migrated from Kotest to JUnit 6 on 2025-11-20
+ */
+class JwtAudienceValidatorTest {
 
-        test("audience containing expected value should pass validation") {
-            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-            val jwt = createJwt().audience(listOf("eaf-api", "eaf-console")).build()
+    private val expected = "eaf-api"
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `audience containing expected value should pass validation`() {
+        val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
+        val jwt = createJwt().audience(listOf("eaf-api", "eaf-console")).build()
 
-        test("audience expressed as string should be supported") {
-            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-            val jwt =
-                createJwt()
-                    .claim("aud", "eaf-api")
-                    .build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `audience expressed as string should be supported`() {
+        val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
+        val jwt = createJwt()
+            .claim("aud", "eaf-api")
+            .build()
 
-        test("authorized party (azp) should be used as fallback for audience") {
-            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-            val jwt =
-                createJwt()
-                    .claim("azp", "eaf-api")
-                    .build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            validator.validate(jwt).hasErrors().shouldBeFalse()
-        }
+    @Test
+    fun `authorized party (azp) should be used as fallback for audience`() {
+        val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
+        val jwt = createJwt()
+            .claim("azp", "eaf-api")
+            .build()
 
-        test("missing audience claim should fail") {
-            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-            val jwt = createJwt().build()
+        assertThat(validator.validate(jwt).hasErrors()).isFalse()
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `missing audience claim should fail`() {
+        val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
+        val jwt = createJwt().build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT missing audience (aud) claim")
-        }
+        val result = validator.validate(jwt)
 
-        test("audience missing expected value should fail") {
-            val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-            val jwt = createJwt().audience(listOf("eaf-console")).build()
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description).isEqualTo("JWT missing audience (aud) claim")
+    }
 
-            val result = validator.validate(jwt)
+    @Test
+    fun `audience missing expected value should fail`() {
+        val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
+        val jwt = createJwt().audience(listOf("eaf-console")).build()
 
-            result.hasErrors().shouldBeTrue()
-            result.errors
-                .first()
-                .description
-                .shouldBe("JWT audience missing expected value: $expected")
-        }
-    })
+        val result = validator.validate(jwt)
 
-private fun createJwt(): Jwt.Builder =
-    Jwt
-        .withTokenValue("token")
-        .header("alg", "RS256")
-        .claim("sub", "user")
-        .claim("jti", "aud-test-jti")
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().description).isEqualTo("JWT audience missing expected value: $expected")
+    }
+}
+
+private fun createJwt(): Jwt.Builder = Jwt.withTokenValue("token")
+    .header("alg", "RS256")
+    .claim("sub", "user")
+    .claim("jti", "aud-test-jti")
