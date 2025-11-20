@@ -116,18 +116,15 @@ dependencies {
         implementation("${library.module}:${library.version}")
     }
 
-    // Add Kotest plugin for native test execution
-    implementation("io.kotest:io.kotest.gradle.plugin:${catalog.version("kotest-plugin")}")
-
-    // Add Kotlin serialization plugin for Kotest XML reports
+    // Add Kotlin serialization plugin for data serialization
     implementation("org.jetbrains.kotlin:kotlin-serialization:${catalog.version("kotlin")}")
 
-    // Kotest 6.0.3 JVM-specific dependencies for testing build-logic
-    testImplementation("io.kotest:kotest-framework-engine-jvm:${catalog.version("kotest")}")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:${catalog.version("kotest")}")
-    testImplementation("io.kotest:kotest-property-jvm:${catalog.version("kotest")}")
+    // JUnit 6 for testing build-logic
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${catalog.version("junit")}")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:${catalog.version("junit")}")
+    testImplementation("org.assertj:assertj-core:${catalog.version("assertj")}")
     testImplementation(gradleTestKit())
-    testRuntimeOnly("io.kotest:kotest-runner-junit5-jvm:${catalog.version("kotest")}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${catalog.version("junit")}")
 }
 
 tasks.withType<Test> {
@@ -175,4 +172,4 @@ gradlePlugin {
     }
 }
 
-// Kotest tests executed via JUnit Platform (kotest-runner-junit5)
+// JUnit 6 tests executed via JUnit Platform
