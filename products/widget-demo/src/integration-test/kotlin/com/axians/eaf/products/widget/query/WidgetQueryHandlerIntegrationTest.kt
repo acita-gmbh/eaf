@@ -66,11 +66,6 @@ class WidgetQueryHandlerIntegrationTest {
 
     @Nested
     inner class `FindWidgetQuery` {
-        // Placeholder
-    }
-
-    @Nested
-    inner class `FindWidgetQuery` {
 
             @Test
 
@@ -107,11 +102,11 @@ class WidgetQueryHandlerIntegrationTest {
 
                 // Then - Widget returned with correct data
                 assertThat(projection).isNotNull()
-                projection.assertThat(id).isEqualTo(widgetId)
-                projection.assertThat(name).isEqualTo(widgetName)
-                projection.assertThat(published).isEqualTo(false)
-                projection.assertThat(createdAt).isNotNull()
-                projection.assertThat(updatedAt).isNotNull()
+                assertThat(projection!!.id).isEqualTo(widgetId)
+                assertThat(projection.name).isEqualTo(widgetName)
+                assertThat(projection.published).isEqualTo(false)
+                assertThat(projection.createdAt).isNotNull()
+                assertThat(projection.updatedAt).isNotNull()
 
                 // Performance validation (FR011: <50ms production target, <100ms CI threshold)
                 // Note: CI runners may exceed production targets due to shared resources
@@ -161,7 +156,7 @@ class WidgetQueryHandlerIntegrationTest {
                             .orElse(null)
 
                     assertThat(projection).isNotNull()
-                    projection.assertThat(published).isEqualTo(true)
+                    assertThat(projection!!.published).isEqualTo(true)
                 }
 
                 // When - Query for published widget
@@ -175,7 +170,7 @@ class WidgetQueryHandlerIntegrationTest {
 
                 // Then - Published flag is true
                 assertThat(projection).isNotNull()
-                projection.assertThat(published).isEqualTo(true)
+                assertThat(projection!!.published).isEqualTo(true)
             }
         }
 
@@ -199,9 +194,9 @@ class WidgetQueryHandlerIntegrationTest {
 
                 // Then - Response structure valid (regardless of widget count)
                 assertThat(response).isNotNull()
-                response.hasMore shouldBe (response.widgets.size >= 50)
+                assertThat(response.hasMore).isEqualTo(response.widgets.size >= 50)
                 if (response.hasMore) {
-                    response.assertThat(nextCursor).isNotNull()
+                    assertThat(response.nextCursor).isNotNull()
                 }
             }
 
@@ -230,7 +225,7 @@ class WidgetQueryHandlerIntegrationTest {
                                 ResponseTypes.instanceOf(PaginatedWidgetResponse::class.java),
                             ).join()
                     val testWidgets = allWidgets.widgets.filter { it.name.startsWith(testPrefix) }
-                    testWidgets.assertThat(size).isEqualTo(3)
+                    assertThat(testWidgets.size).isEqualTo(3)
                 }
 
                 // When - List all widgets and filter to test widgets (measure performance)
@@ -248,8 +243,8 @@ class WidgetQueryHandlerIntegrationTest {
 
                 // Then - Test widgets returned in descending order (newest first)
                 assertThat(testWidgets).hasSize(3)
-                testWidgets[0].assertThat(name).isEqualTo("$testPrefix-Third") // Newest
-                testWidgets[2].assertThat(name).isEqualTo("$testPrefix-First") // Oldest
+                assertThat(testWidgets[0].name).isEqualTo("$testPrefix-Third") // Newest
+                assertThat(testWidgets[2].name).isEqualTo("$testPrefix-First") // Oldest
 
                 // Performance validation (FR011: <200ms production target, <500ms CI threshold)
                 // Note: CI runners may exceed production targets due to shared resources
@@ -269,7 +264,7 @@ class WidgetQueryHandlerIntegrationTest {
                     (1..5).map { i ->
                         val widgetId = WidgetId(UUID.randomUUID())
                         commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "$testPrefix-Widget-$i"))
-                        delay(50) // Ensure different timestamps
+                        Thread.sleep(50) // Ensure different timestamps
                         widgetId
                     }
 
@@ -282,7 +277,7 @@ class WidgetQueryHandlerIntegrationTest {
                                 ResponseTypes.instanceOf(PaginatedWidgetResponse::class.java),
                             ).join()
                     val testWidgets = response.widgets.filter { it.name.startsWith(testPrefix) }
-                    testWidgets.assertThat(size).isEqualTo(5)
+                    assertThat(testWidgets.size).isEqualTo(5)
                 }
 
                 // When - Query first page with large limit to get all our test widgets
@@ -307,11 +302,11 @@ class WidgetQueryHandlerIntegrationTest {
                         ).join()
 
                 // Then - Limited response should respect limit
-                limitedResponse.assertThat(widgets).hasSize(2)
+                assertThat(limitedResponse.widgets).hasSize(2)
                 // hasMore depends on total widgets in DB (may be true if other tests created data)
                 if (limitedResponse.hasMore) {
-                    limitedResponse.assertThat(nextCursor).isNotNull()
-                    limitedResponse.nextCursor!!.shouldNotBeBlank()
+                    assertThat(limitedResponse.nextCursor).isNotNull()
+                    assertThat(limitedResponse.nextCursor).isNotBlank()
                 }
             }
 

@@ -80,12 +80,7 @@ class WidgetControllerIntegrationTest {
     private lateinit var objectMapper: ObjectMapper
 
     @Nested
-    inner class `POST apiwidgets - Create Widget` {
-        // Placeholder
-    }
-
-    @Nested
-    inner class `POST /api/v1/widgets - Create Widget` {
+    inner class `POST api-v1-widgets - Create Widget` {
 
             @Test
 
@@ -112,9 +107,9 @@ class WidgetControllerIntegrationTest {
                         result.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.assertThat(name).isEqualTo("Test Widget")
-                response.assertThat(published).isEqualTo(false)
-                response.assertThat(id).isNotEqualTo(null)
+                assertThat(response.name).isEqualTo("Test Widget")
+                assertThat(response.published).isEqualTo(false)
+                assertThat(response.id).isNotNull()
             }
 
             @Test
@@ -135,7 +130,7 @@ class WidgetControllerIntegrationTest {
 
                 // Then - Verify 400 Bad Request with ProblemDetail
                 // Note: Bean Validation (@NotBlank) should catch empty string
-                result.response.assertThat(status).isEqualTo(400)
+                assertThat(result.response.status).isEqualTo(400)
             }
 
             @Test
@@ -201,8 +196,8 @@ class WidgetControllerIntegrationTest {
                         result.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.assertThat(id).isEqualTo(createdWidget).id
-                response.assertThat(name).isEqualTo("Findable Widget")
+                assertThat(response.id).isEqualTo(createdWidget.id)
+                assertThat(response.name).isEqualTo("Findable Widget")
             }
 
             @Test
@@ -259,14 +254,14 @@ class WidgetControllerIntegrationTest {
 
                     // Then - Response contains paginated list
                     val response = objectMapper.readTree(result.response.contentAsString)
-                    response.has("data") shouldBe true
-                    response.has("nextCursor") shouldBe true
-                    response.has("hasMore") shouldBe true
+                    assertThat(response.has("data")).isTrue()
+                    assertThat(response.has("nextCursor")).isTrue()
+                    assertThat(response.has("hasMore")).isTrue()
 
                     val widgets = response.get("data")
-                    widgets.assertThat(isArray).isEqualTo(true)
+                    assertThat(widgets.isArray).isTrue()
                     // At least 3 widgets (may be more from other tests in same context)
-                    (widgets.size() >= 3) shouldBe true
+                    assertThat(widgets.size() >= 3).isTrue()
                 }
             }
 
@@ -294,8 +289,8 @@ class WidgetControllerIntegrationTest {
 
                 val firstPage = objectMapper.readTree(firstPageResult.response.contentAsString)
                 val firstPageData = firstPage.get("data")
-                firstPageData.size() shouldBe 2
-                firstPage.get("hasMore").asBoolean() shouldBe true
+                assertThat(firstPageData.size()).isEqualTo(2)
+                assertThat(firstPage.get("hasMore").asBoolean()).isTrue()
 
                 val cursor = firstPage.get("nextCursor")?.asText()
                 assertThat(cursor).isNotBlank()
@@ -311,7 +306,7 @@ class WidgetControllerIntegrationTest {
 
                 val secondPage = objectMapper.readTree(secondPageResult.response.contentAsString)
                 val secondPageData = secondPage.get("data")
-                secondPageData.size() shouldBe 2
+                assertThat(secondPageData.size()).isEqualTo(2)
             }
         }
 
@@ -361,8 +356,8 @@ class WidgetControllerIntegrationTest {
                         updateResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.assertThat(id).isEqualTo(createdWidget).id
-                response.assertThat(name).isEqualTo("Updated Name")
+                assertThat(response.id).isEqualTo(createdWidget.id)
+                assertThat(response.name).isEqualTo("Updated Name")
             }
 
             @Test
@@ -449,7 +444,7 @@ class WidgetControllerIntegrationTest {
                         createResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                createdWidget.assertThat(name).isEqualTo("CRUD Flow Widget")
+                assertThat(createdWidget.name).isEqualTo("CRUD Flow Widget")
 
                 // Step 2: Read widget (with retry for eventual consistency)
                 val readResult =
@@ -465,8 +460,8 @@ class WidgetControllerIntegrationTest {
                         readResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                readWidget.assertThat(id).isEqualTo(createdWidget).id
-                readWidget.assertThat(name).isEqualTo("CRUD Flow Widget")
+                assertThat(readWidget.id).isEqualTo(createdWidget.id)
+                assertThat(readWidget.name).isEqualTo("CRUD Flow Widget")
 
                 // Step 3: Update widget
                 val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
@@ -487,8 +482,8 @@ class WidgetControllerIntegrationTest {
                         updateResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                verifiedWidget.assertThat(name).isEqualTo("Updated CRUD Widget")
-                verifiedWidget.assertThat(updatedAt).isNotEqualTo(verifiedWidget).createdAt
+                assertThat(verifiedWidget.name).isEqualTo("Updated CRUD Widget")
+                assertThat(verifiedWidget.updatedAt).isNotEqualTo(verifiedWidget.createdAt)
             }
         }
     }

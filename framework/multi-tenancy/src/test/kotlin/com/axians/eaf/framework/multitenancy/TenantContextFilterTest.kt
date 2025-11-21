@@ -189,11 +189,12 @@ class TenantContextFilterTest {
         assertThat(TenantContext.current()).isNull()
 
         // Verify error counter incremented
-        val errorCounter = meterRegistry.counter(
-            "tenant_context_extraction_errors",
-            "error_type",
-            "TestFilterException",
-        )
+        val errorCounter =
+            meterRegistry.counter(
+                "tenant_context_extraction_errors",
+                "error_type",
+                "TestFilterException",
+            )
         assertThat(errorCounter.count()).isEqualTo(1.0)
     }
 
