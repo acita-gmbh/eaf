@@ -38,6 +38,7 @@ class WidgetQueryHandler(
         private val ID_FIELD = DSL.field("id", UUID::class.java)
         private val NAME_FIELD = DSL.field("name", String::class.java)
         private val PUBLISHED_FIELD = DSL.field("published", Boolean::class.java)
+        private val TENANT_ID_FIELD = DSL.field("tenant_id", String::class.java) // Story 4.6 AC5
         private val CREATED_AT_FIELD = DSL.field("created_at", OffsetDateTime::class.java)
         private val UPDATED_AT_FIELD = DSL.field("updated_at", OffsetDateTime::class.java)
     }
@@ -59,6 +60,7 @@ class WidgetQueryHandler(
                 ID_FIELD,
                 NAME_FIELD,
                 PUBLISHED_FIELD,
+                TENANT_ID_FIELD,
                 CREATED_AT_FIELD,
                 UPDATED_AT_FIELD,
             ).from(WIDGET_PROJECTION_TABLE)
@@ -68,6 +70,7 @@ class WidgetQueryHandler(
                     id = WidgetId(record[ID_FIELD].toString()),
                     name = record[NAME_FIELD],
                     published = record[PUBLISHED_FIELD],
+                    tenantId = record[TENANT_ID_FIELD],
                     createdAt = record[CREATED_AT_FIELD].toInstant(),
                     updatedAt = record[UPDATED_AT_FIELD].toInstant(),
                 )
@@ -105,6 +108,7 @@ class WidgetQueryHandler(
                     ID_FIELD,
                     NAME_FIELD,
                     PUBLISHED_FIELD,
+                    TENANT_ID_FIELD,
                     CREATED_AT_FIELD,
                     UPDATED_AT_FIELD,
                 ).from(WIDGET_PROJECTION_TABLE)
@@ -116,6 +120,7 @@ class WidgetQueryHandler(
                         id = WidgetId(record[ID_FIELD].toString()),
                         name = record[NAME_FIELD],
                         published = record[PUBLISHED_FIELD],
+                        tenantId = record[TENANT_ID_FIELD],
                         createdAt = record[CREATED_AT_FIELD].toInstant(),
                         updatedAt = record[UPDATED_AT_FIELD].toInstant(),
                     )

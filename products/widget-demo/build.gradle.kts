@@ -48,6 +48,7 @@ dependencies {
     implementation(project(":framework:persistence"))
     implementation(project(":framework:web"))
     implementation(project(":framework:security"))
+    implementation(project(":framework:multi-tenancy")) // Story 4.6: Multi-tenancy support
 
     // Spring Boot starters
     // Bean validation for API DTOs (Story 2.10)

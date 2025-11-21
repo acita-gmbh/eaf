@@ -1,7 +1,9 @@
 package com.axians.eaf.products.widget.domain
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
+import org.axonframework.messaging.MetaData
 import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.spring.stereotype.Aggregate
@@ -52,16 +54,26 @@ class Widget : Serializable {
      *
      * **Validation:**
      * - Name must not be blank
+     * - Tenant context must match command tenantId (Layer 2 - Story 4.6)
      *
-     * @param command CreateWidgetCommand with widget ID and name
+     * @param command CreateWidgetCommand with widget ID, name, and tenantId
      * @throws IllegalArgumentException if name is blank
+     * @throws IllegalStateException if tenant context is missing or mismatched
      */
     @CommandHandler
     constructor(command: CreateWidgetCommand) {
+        // Layer 2: Tenant Context Validation (Story 4.6 AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // CWE-209 compliant generic message
+        }
+
         require(command.name.isNotBlank()) { "Widget name cannot be blank" }
 
+        // AC4: Enrich event with tenant_id metadata for async processors (Story 4.5)
         AggregateLifecycle.apply(
             WidgetCreatedEvent(command.widgetId, command.name),
+            MetaData.with("tenant_id", command.tenantId),
         )
     }
 
@@ -69,19 +81,29 @@ class Widget : Serializable {
      * Command handler for widget updates.
      *
      * **Validation:**
+     * - Tenant context must match command tenantId (Layer 2 - Story 4.6)
      * - Widget must not be published
      * - Name must not be blank
      *
-     * @param command UpdateWidgetCommand with new name
+     * @param command UpdateWidgetCommand with new name and tenantId
+     * @throws IllegalStateException if tenant context is missing or mismatched
      * @throws IllegalArgumentException if widget is already published or name is blank
      */
     @CommandHandler
     fun handle(command: UpdateWidgetCommand) {
+        // Layer 2: Tenant Context Validation (Story 4.6 AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // CWE-209 compliant generic message
+        }
+
         require(!published) { "Cannot update published widget" }
         require(command.name.isNotBlank()) { "Widget name cannot be blank" }
 
+        // AC4: Enrich event with tenant_id metadata for async processors (Story 4.5)
         AggregateLifecycle.apply(
             WidgetUpdatedEvent(widgetId, command.name),
+            MetaData.with("tenant_id", command.tenantId),
         )
     }
 
@@ -89,17 +111,27 @@ class Widget : Serializable {
      * Command handler for widget publishing.
      *
      * **Validation:**
+     * - Tenant context must match command tenantId (Layer 2 - Story 4.6)
      * - Widget must not already be published
      *
-     * @param command PublishWidgetCommand
+     * @param command PublishWidgetCommand with tenantId
+     * @throws IllegalStateException if tenant context is missing or mismatched
      * @throws IllegalArgumentException if widget is already published
      */
     @CommandHandler
     fun handle(command: PublishWidgetCommand) {
+        // Layer 2: Tenant Context Validation (Story 4.6 AC3)
+        val currentTenant = TenantContext.getCurrentTenantId()
+        require(command.tenantId == currentTenant) {
+            "Access denied: tenant context mismatch" // CWE-209 compliant generic message
+        }
+
         require(!published) { "Widget already published" }
 
+        // AC4: Enrich event with tenant_id metadata for async processors (Story 4.5)
         AggregateLifecycle.apply(
             WidgetPublishedEvent(widgetId),
+            MetaData.with("tenant_id", command.tenantId),
         )
     }
 
