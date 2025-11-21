@@ -2,12 +2,8 @@ package com.axians.eaf.framework.multitenancy
 
 import com.axians.eaf.framework.multitenancy.test.MultiTenancyTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import io.kotest.matchers.types.instanceOf
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -53,7 +49,7 @@ import org.springframework.test.context.DynamicPropertySource
     ],
 )
 @ActiveProfiles("keycloak-test")
-class TenantContextFilterIntegrationTest : FunSpec() {
+class TenantContextFilterIntegrationTest {
     @LocalServerPort
     private var port: Int = 0
 
@@ -63,162 +59,165 @@ class TenantContextFilterIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var tenantContextFilter: TenantContextFilter
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `DIAGNOSTIC - Verify TenantContextFilter bean loaded`() {
+        // Verify filter is registered as Spring bean (autowiring confirms bean exists)
+        assertThat(tenantContextFilter.javaClass.simpleName).isEqualTo("TenantContextFilter")
+        println("✅ TenantContextFilter loaded: ${tenantContextFilter::class.simpleName}")
+    }
 
-        test("DIAGNOSTIC: Verify TenantContextFilter bean loaded") {
-            // Verify filter is registered as Spring bean (autowiring confirms bean exists)
-            tenantContextFilter.javaClass.simpleName shouldBe "TenantContextFilter"
-            println("✅ TenantContextFilter loaded: ${tenantContextFilter::class.simpleName}")
-        }
+    @Test
+    fun `DIAGNOSTIC - Verify JWT contains tenant_id claim`() {
+        // Given: Real Keycloak JWT
+        val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
-        test("DIAGNOSTIC: Verify JWT contains tenant_id claim") {
-            // Given: Real Keycloak JWT
-            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+        // Decode JWT and check claims
+        val parts = jwt.split(".")
+        assertThat(parts).hasSize(3)
 
-            // Decode JWT and check claims
-            val parts = jwt.split(".")
-            parts.size shouldBe 3
+        // Decode payload (Base64 URL encoded)
+        val payload =
+            String(
+                java.util.Base64
+                    .getUrlDecoder()
+                    .decode(parts[1]),
+            )
+        println("JWT Payload: $payload")
 
-            // Decode payload (Base64 URL encoded)
-            val payload =
-                String(
-                    java.util.Base64
-                        .getUrlDecoder()
-                        .decode(parts[1]),
-                )
-            println("JWT Payload: $payload")
+        // Then: Verify tenant_id claim exists
+        assertThat(payload).contains("tenant_id")
+        assertThat(payload).contains("tenant-test-001")
+    }
 
-            // Then: Verify tenant_id claim exists
-            payload shouldContain "tenant_id"
-            payload shouldContain "tenant-test-001"
-        }
+    @Test
+    fun `AC2+AC3 - Extract tenant_id from JWT and populate TenantContext`() {
+        // Given: Real Keycloak JWT with tenant_id claim (admin user has tenant-test-001)
+        val expectedTenant = "tenant-test-001"
+        val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
-        test("AC2+AC3: Extract tenant_id from JWT and populate TenantContext") {
-            // Given: Real Keycloak JWT with tenant_id claim (admin user has tenant-test-001)
-            val expectedTenant = "tenant-test-001"
-            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+        // When: Make authenticated HTTP request via real server
+        val headers = HttpHeaders()
+        headers.setBearerAuth(jwt)
+        val request = HttpEntity<Void>(headers)
 
-            // When: Make authenticated HTTP request via real server
-            val headers = HttpHeaders()
-            headers.setBearerAuth(jwt)
-            val request = HttpEntity<Void>(headers)
-
-            val response =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    request,
-                    String::class.java,
-                )
-
-            // Then: Request succeeds and tenant context is populated
-            response.statusCode shouldBe HttpStatus.OK
-            response.body shouldContain expectedTenant
-        }
-
-        test("AC4: Missing tenant_id claim rejects request with 400 Bad Request") {
-            // Given: Real Keycloak JWT WITHOUT tenant_id claim (no-tenant user)
-            val jwt = KeycloakTestContainer.generateToken("no-tenant", "password")
-
-            // When: Make authenticated request
-            val headers = HttpHeaders()
-            headers.setBearerAuth(jwt)
-            val request = HttpEntity<Void>(headers)
-
-            val response =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    request,
-                    String::class.java,
-                )
-
-            // Then: Request is rejected with 400 Bad Request
-            response.statusCode shouldBe HttpStatus.BAD_REQUEST
-            response.body shouldContain "Missing required tenant context"
-        }
-
-        test("AC5: ThreadLocal cleanup after request - context cleared") {
-            // Given: Real Keycloak JWTs with different tenant_ids
-            val jwt1 = KeycloakTestContainer.generateToken("admin", "password")
-            val jwt2 = KeycloakTestContainer.generateToken("viewer", "password")
-
-            // When: Make first authenticated request
-            val headers1 = HttpHeaders().apply { setBearerAuth(jwt1) }
+        val response =
             restTemplate.exchange(
                 "http://localhost:$port/test/tenant-info",
                 HttpMethod.GET,
-                HttpEntity<Void>(headers1),
+                request,
                 String::class.java,
             )
 
-            // Then: Make second request with different tenant
-            val headers2 = HttpHeaders().apply { setBearerAuth(jwt2) }
-            val response2 =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    HttpEntity<Void>(headers2),
-                    String::class.java,
-                )
+        // Then: Request succeeds and tenant context is populated
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body).contains(expectedTenant)
+    }
 
-            // Verify isolation: second request has correct tenant, not first
-            response2.statusCode shouldBe HttpStatus.OK
-            response2.body shouldContain "tenant-test-002"
-            response2.body shouldNotContain "tenant-test-001" // Cleanup verified
-        }
+    @Test
+    fun `AC4 - Missing tenant_id claim rejects request with 400 Bad Request`() {
+        // Given: Real Keycloak JWT WITHOUT tenant_id claim (no-tenant user)
+        val jwt = KeycloakTestContainer.generateToken("no-tenant", "password")
 
-        test("AC6: Concurrent requests have isolated tenant contexts") {
-            // Given: Two different tenants
-            val jwtAdmin = KeycloakTestContainer.generateToken("admin", "password")
-            val jwtViewer = KeycloakTestContainer.generateToken("viewer", "password")
+        // When: Make authenticated request
+        val headers = HttpHeaders()
+        headers.setBearerAuth(jwt)
+        val request = HttpEntity<Void>(headers)
 
-            // When: Make requests
-            val headersAdmin = HttpHeaders().apply { setBearerAuth(jwtAdmin) }
-            val headersViewer = HttpHeaders().apply { setBearerAuth(jwtViewer) }
+        val response =
+            restTemplate.exchange(
+                "http://localhost:$port/test/tenant-info",
+                HttpMethod.GET,
+                request,
+                String::class.java,
+            )
 
-            val response1 =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    HttpEntity<Void>(headersAdmin),
-                    String::class.java,
-                )
+        // Then: Request is rejected with 400 Bad Request
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+        assertThat(response.body).contains("Missing required tenant context")
+    }
 
-            val response2 =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    HttpEntity<Void>(headersViewer),
-                    String::class.java,
-                )
+    @Test
+    fun `AC5 - ThreadLocal cleanup after request - context cleared`() {
+        // Given: Real Keycloak JWTs with different tenant_ids
+        val jwt1 = KeycloakTestContainer.generateToken("admin", "password")
+        val jwt2 = KeycloakTestContainer.generateToken("viewer", "password")
 
-            // Then: Each request has correct isolated tenant context
-            response1.statusCode shouldBe HttpStatus.OK
-            response1.body shouldContain "tenant-test-001"
+        // When: Make first authenticated request
+        val headers1 = HttpHeaders().apply { setBearerAuth(jwt1) }
+        restTemplate.exchange(
+            "http://localhost:$port/test/tenant-info",
+            HttpMethod.GET,
+            HttpEntity<Void>(headers1),
+            String::class.java,
+        )
 
-            response2.statusCode shouldBe HttpStatus.OK
-            response2.body shouldContain "tenant-test-002"
-        }
+        // Then: Make second request with different tenant
+        val headers2 = HttpHeaders().apply { setBearerAuth(jwt2) }
+        val response2 =
+            restTemplate.exchange(
+                "http://localhost:$port/test/tenant-info",
+                HttpMethod.GET,
+                HttpEntity<Void>(headers2),
+                String::class.java,
+            )
 
-        test("AC7: Metrics emitted - tenant_context_extraction_duration timer") {
-            // Given: Real Keycloak JWT
-            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+        // Verify isolation: second request has correct tenant, not first
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response2.body).contains("tenant-test-002")
+        assertThat(response2.body).doesNotContain("tenant-test-001") // Cleanup verified
+    }
 
-            // When: Make authenticated request
-            val headers = HttpHeaders().apply { setBearerAuth(jwt) }
-            val response =
-                restTemplate.exchange(
-                    "http://localhost:$port/test/tenant-info",
-                    HttpMethod.GET,
-                    HttpEntity<Void>(headers),
-                    String::class.java,
-                )
+    @Test
+    fun `AC6 - Concurrent requests have isolated tenant contexts`() {
+        // Given: Two different tenants
+        val jwtAdmin = KeycloakTestContainer.generateToken("admin", "password")
+        val jwtViewer = KeycloakTestContainer.generateToken("viewer", "password")
 
-            // Then: Request succeeds (metrics verified via filter metrics bean)
-            response.statusCode shouldBe HttpStatus.OK
-        }
+        // When: Make requests
+        val headersAdmin = HttpHeaders().apply { setBearerAuth(jwtAdmin) }
+        val headersViewer = HttpHeaders().apply { setBearerAuth(jwtViewer) }
+
+        val response1 =
+            restTemplate.exchange(
+                "http://localhost:$port/test/tenant-info",
+                HttpMethod.GET,
+                HttpEntity<Void>(headersAdmin),
+                String::class.java,
+            )
+
+        val response2 =
+            restTemplate.exchange(
+                "http://localhost:$port/test/tenant-info",
+                HttpMethod.GET,
+                HttpEntity<Void>(headersViewer),
+                String::class.java,
+            )
+
+        // Then: Each request has correct isolated tenant context
+        assertThat(response1.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response1.body).contains("tenant-test-001")
+
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response2.body).contains("tenant-test-002")
+    }
+
+    @Test
+    fun `AC7 - Metrics emitted - tenant_context_extraction_duration timer`() {
+        // Given: Real Keycloak JWT
+        val jwt = KeycloakTestContainer.generateToken("admin", "password")
+
+        // When: Make authenticated request
+        val headers = HttpHeaders().apply { setBearerAuth(jwt) }
+        val response =
+            restTemplate.exchange(
+                "http://localhost:$port/test/tenant-info",
+                HttpMethod.GET,
+                HttpEntity<Void>(headers),
+                String::class.java,
+            )
+
+        // Then: Request succeeds (metrics verified via filter metrics bean)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
 
     companion object {

@@ -6,14 +6,11 @@ import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotBeBlank
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -70,141 +67,145 @@ import java.time.Duration
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class WidgetControllerIntegrationTest : FunSpec() {
+class WidgetControllerIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `POST api v1 widgets - Create Widget` {
+        @Test
+        fun `should create widget and return 201 Created`() {
+            // Given - Create widget request
+            val request = CreateWidgetRequest(name = "Test Widget")
+            val requestBody = objectMapper.writeValueAsString(request)
 
-        context("POST /api/v1/widgets - Create Widget") {
-
-            test("should create widget and return 201 Created") {
-                // Given - Create widget request
-                val request = CreateWidgetRequest(name = "Test Widget")
-                val requestBody = objectMapper.writeValueAsString(request)
-
-                // When - POST create widget
-                val result =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = requestBody
-                        }.andExpect {
-                            status { isCreated() }
-                            content { contentType(MediaType.APPLICATION_JSON) }
-                        }.andReturn()
-
-                // Then - Response contains created widget
-                val response =
-                    objectMapper.readValue(
-                        result.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                response.name shouldBe "Test Widget"
-                response.published shouldBe false
-                response.id shouldNotBe null
-            }
-
-            test("should return 400 Bad Request for blank name") {
-                // Given - Invalid request with blank name
-                val request = mapOf("name" to "")
-                val requestBody = objectMapper.writeValueAsString(request)
-
-                // When - POST with blank name
-                val result =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = requestBody
-                        }.andReturn()
-
-                // Then - Verify 400 Bad Request with ProblemDetail
-                // Note: Bean Validation (@NotBlank) should catch empty string
-                result.response.status shouldBe 400
-            }
-
-            test("should return 400 Bad Request for name exceeding 255 characters") {
-                // Given - Invalid request with name too long
-                val request = CreateWidgetRequest(name = "a".repeat(256))
-                val requestBody = objectMapper.writeValueAsString(request)
-
-                // When/Then - POST returns 400 with ProblemDetail
+            // When - POST create widget
+            val result =
                 mockMvc
                     .post("/api/v1/widgets") {
                         contentType = MediaType.APPLICATION_JSON
                         content = requestBody
                     }.andExpect {
-                        status { isBadRequest() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(400) }
-                    }
-            }
+                        status { isCreated() }
+                        content { contentType(MediaType.APPLICATION_JSON) }
+                    }.andReturn()
+
+            // Then - Response contains created widget
+            val response =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(response.name).isEqualTo("Test Widget")
+            assertThat(response.published).isFalse()
+            assertThat(response.id).isNotNull()
         }
 
-        context("GET /api/v1/widgets/{id} - Find Widget") {
+        @Test
+        fun `should return 400 Bad Request for blank name`() {
+            // Given - Invalid request with blank name
+            val request = mapOf("name" to "")
+            val requestBody = objectMapper.writeValueAsString(request)
 
-            test("should return widget by ID with 200 OK") {
-                // Given - Create widget first
-                val createRequest = CreateWidgetRequest(name = "Findable Widget")
-                val createBody = objectMapper.writeValueAsString(createRequest)
-
-                val createResult =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = createBody
-                        }.andReturn()
-
-                val createdWidget =
-                    objectMapper.readValue(
-                        createResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-
-                // When - GET widget by ID
-                val result =
-                    mockMvc
-                        .get("/api/v1/widgets/${createdWidget.id}") {
-                            accept = MediaType.APPLICATION_JSON
-                        }.andExpect {
-                            status { isOk() }
-                            content { contentType(MediaType.APPLICATION_JSON) }
-                        }.andReturn()
-
-                // Then - Response contains correct widget
-                val response =
-                    objectMapper.readValue(
-                        result.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                response.id shouldBe createdWidget.id
-                response.name shouldBe "Findable Widget"
-            }
-
-            test("should return 404 Not Found for non-existent widget") {
-                // Given - Random UUID that doesn't exist
-                val nonExistentId = "00000000-0000-0000-0000-000000000001"
-
-                // When/Then - GET returns 404 with ProblemDetail
+            // When - POST with blank name
+            val result =
                 mockMvc
-                    .get("/api/v1/widgets/$nonExistentId") {
+                    .post("/api/v1/widgets") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = requestBody
+                    }.andReturn()
+
+            // Then - Verify 400 Bad Request with ProblemDetail
+            // Note: Bean Validation (@NotBlank) should catch empty string
+            assertThat(result.response.status).isEqualTo(400)
+        }
+
+        @Test
+        fun `should return 400 Bad Request for name exceeding 255 characters`() {
+            // Given - Invalid request with name too long
+            val request = CreateWidgetRequest(name = "a".repeat(256))
+            val requestBody = objectMapper.writeValueAsString(request)
+
+            // When/Then - POST returns 400 with ProblemDetail
+            mockMvc
+                .post("/api/v1/widgets") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = requestBody
+                }.andExpect {
+                    status { isBadRequest() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(400) }
+                }
+        }
+    }
+
+    @Nested
+    inner class `GET api v1 widgets id - Find Widget` {
+        @Test
+        fun `should return widget by ID with 200 OK`() {
+            // Given - Create widget first
+            val createRequest = CreateWidgetRequest(name = "Findable Widget")
+            val createBody = objectMapper.writeValueAsString(createRequest)
+
+            val createResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = createBody
+                    }.andReturn()
+
+            val createdWidget =
+                objectMapper.readValue(
+                    createResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+
+            // When - GET widget by ID
+            val result =
+                mockMvc
+                    .get("/api/v1/widgets/${createdWidget.id}") {
                         accept = MediaType.APPLICATION_JSON
                     }.andExpect {
-                        status { isNotFound() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(404) }
-                        jsonPath("$.title") { exists() }
-                    }
-            }
+                        status { isOk() }
+                        content { contentType(MediaType.APPLICATION_JSON) }
+                    }.andReturn()
+
+            // Then - Response contains correct widget
+            val response =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(response.id).isEqualTo(createdWidget.id)
+            assertThat(response.name).isEqualTo("Findable Widget")
         }
 
-        context("GET /api/v1/widgets - List Widgets") {
+        @Test
+        fun `should return 404 Not Found for non-existent widget`() {
+            // Given - Random UUID that doesn't exist
+            val nonExistentId = "00000000-0000-0000-0000-000000000001"
 
-            test("should return paginated widget list with 200 OK") {
+            // When/Then - GET returns 404 with ProblemDetail
+            mockMvc
+                .get("/api/v1/widgets/$nonExistentId") {
+                    accept = MediaType.APPLICATION_JSON
+                }.andExpect {
+                    status { isNotFound() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(404) }
+                    jsonPath("$.title") { exists() }
+                }
+        }
+    }
+
+    @Nested
+    inner class `GET api v1 widgets - List Widgets` {
+        @Test
+        fun `should return paginated widget list with 200 OK`() =
+            runBlocking {
                 // Given - Create multiple widgets
                 repeat(3) { index ->
                     val request = CreateWidgetRequest(name = "List Widget $index")
@@ -230,216 +231,220 @@ class WidgetControllerIntegrationTest : FunSpec() {
 
                     // Then - Response contains paginated list
                     val response = objectMapper.readTree(result.response.contentAsString)
-                    response.has("data") shouldBe true
-                    response.has("nextCursor") shouldBe true
-                    response.has("hasMore") shouldBe true
+                    assertThat(response.has("data")).isTrue()
+                    assertThat(response.has("nextCursor")).isTrue()
+                    assertThat(response.has("hasMore")).isTrue()
 
                     val widgets = response.get("data")
-                    widgets.isArray shouldBe true
+                    assertThat(widgets.isArray).isTrue()
                     // At least 3 widgets (may be more from other tests in same context)
-                    (widgets.size() >= 3) shouldBe true
+                    assertThat(widgets.size() >= 3).isTrue()
                 }
             }
 
-            test("should support cursor-based pagination") {
-                // Given - Create 5 widgets
-                repeat(5) { index ->
-                    val request = CreateWidgetRequest(name = "Pagination Widget $index")
-                    val body = objectMapper.writeValueAsString(request)
-                    mockMvc.post("/api/v1/widgets") {
-                        contentType = MediaType.APPLICATION_JSON
-                        content = body
-                    }
+        @Test
+        fun `should support cursor-based pagination`() {
+            // Given - Create 5 widgets
+            repeat(5) { index ->
+                val request = CreateWidgetRequest(name = "Pagination Widget $index")
+                val body = objectMapper.writeValueAsString(request)
+                mockMvc.post("/api/v1/widgets") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = body
                 }
-
-                // When - GET first page with limit 2
-                val firstPageResult =
-                    mockMvc
-                        .get("/api/v1/widgets") {
-                            accept = MediaType.APPLICATION_JSON
-                            param("limit", "2")
-                        }.andReturn()
-
-                val firstPage = objectMapper.readTree(firstPageResult.response.contentAsString)
-                val firstPageData = firstPage.get("data")
-                firstPageData.size() shouldBe 2
-                firstPage.get("hasMore").asBoolean() shouldBe true
-
-                val cursor = firstPage.get("nextCursor")?.asText()
-                cursor.shouldNotBeBlank()
-
-                // Then - GET second page with cursor
-                val secondPageResult =
-                    mockMvc
-                        .get("/api/v1/widgets") {
-                            accept = MediaType.APPLICATION_JSON
-                            param("limit", "2")
-                            param("cursor", cursor!!)
-                        }.andReturn()
-
-                val secondPage = objectMapper.readTree(secondPageResult.response.contentAsString)
-                val secondPageData = secondPage.get("data")
-                secondPageData.size() shouldBe 2
-            }
-        }
-
-        context("PUT /api/v1/widgets/{id} - Update Widget") {
-
-            test("should update widget and return 200 OK") {
-                // Given - Create widget first
-                val createRequest = CreateWidgetRequest(name = "Original Name")
-                val createBody = objectMapper.writeValueAsString(createRequest)
-
-                val createResult =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = createBody
-                        }.andReturn()
-
-                val createdWidget =
-                    objectMapper.readValue(
-                        createResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-
-                // When - PUT update widget (controller handles retry internally)
-                val updateRequest = UpdateWidgetRequest(name = "Updated Name")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
-
-                val updateResult =
-                    mockMvc
-                        .put("/api/v1/widgets/${createdWidget.id}") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = updateBody
-                        }.andExpect {
-                            status { isOk() }
-                            content { contentType(MediaType.APPLICATION_JSON) }
-                        }.andReturn()
-
-                // Then - Response contains updated widget (not stale data)
-                val response =
-                    objectMapper.readValue(
-                        updateResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                response.id shouldBe createdWidget.id
-                response.name shouldBe "Updated Name"
             }
 
-            test("should return 404 Not Found for non-existent widget") {
-                // Given - Random UUID that doesn't exist
-                val nonExistentId = "00000000-0000-0000-0000-000000000002"
-                val updateRequest = UpdateWidgetRequest(name = "Cannot Update")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
-
-                // When/Then - PUT returns 404 (Axon AggregateNotFoundException → handler → 404)
-                // CRITICAL: Must use andExpect(), not andReturn() for error responses
+            // When - GET first page with limit 2
+            val firstPageResult =
                 mockMvc
-                    .put("/api/v1/widgets/$nonExistentId") {
+                    .get("/api/v1/widgets") {
+                        accept = MediaType.APPLICATION_JSON
+                        param("limit", "2")
+                    }.andReturn()
+
+            val firstPage = objectMapper.readTree(firstPageResult.response.contentAsString)
+            val firstPageData = firstPage.get("data")
+            assertThat(firstPageData.size()).isEqualTo(2)
+            assertThat(firstPage.get("hasMore").asBoolean()).isTrue()
+
+            val cursor = firstPage.get("nextCursor")?.asText()
+            assertThat(cursor).isNotBlank()
+
+            // Then - GET second page with cursor
+            val secondPageResult =
+                mockMvc
+                    .get("/api/v1/widgets") {
+                        accept = MediaType.APPLICATION_JSON
+                        param("limit", "2")
+                        param("cursor", cursor!!)
+                    }.andReturn()
+
+            val secondPage = objectMapper.readTree(secondPageResult.response.contentAsString)
+            val secondPageData = secondPage.get("data")
+            assertThat(secondPageData.size()).isEqualTo(2)
+        }
+    }
+
+    @Nested
+    inner class `PUT api v1 widgets id - Update Widget` {
+        @Test
+        fun `should update widget and return 200 OK`() {
+            // Given - Create widget first
+            val createRequest = CreateWidgetRequest(name = "Original Name")
+            val createBody = objectMapper.writeValueAsString(createRequest)
+
+            val createResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
                         contentType = MediaType.APPLICATION_JSON
-                        content = updateBody
-                    }.andExpect {
-                        status { isNotFound() }
-                    }
-            }
+                        content = createBody
+                    }.andReturn()
 
-            test("should return 400 Bad Request for invalid update") {
-                // Given - Create widget first
-                val createRequest = CreateWidgetRequest(name = "Widget to Update")
-                val createBody = objectMapper.writeValueAsString(createRequest)
+            val createdWidget =
+                objectMapper.readValue(
+                    createResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
 
-                val createResult =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = createBody
-                        }.andReturn()
+            // When - PUT update widget (controller handles retry internally)
+            val updateRequest = UpdateWidgetRequest(name = "Updated Name")
+            val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                val createdWidget =
-                    objectMapper.readValue(
-                        createResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-
-                // When/Then - PUT with blank name returns 400
-                val updateRequest = mapOf("name" to "")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
-
+            val updateResult =
                 mockMvc
                     .put("/api/v1/widgets/${createdWidget.id}") {
                         contentType = MediaType.APPLICATION_JSON
                         content = updateBody
                     }.andExpect {
-                        status { isBadRequest() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(400) }
-                    }
-            }
+                        status { isOk() }
+                        content { contentType(MediaType.APPLICATION_JSON) }
+                    }.andReturn()
+
+            // Then - Response contains updated widget (not stale data)
+            val response =
+                objectMapper.readValue(
+                    updateResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(response.id).isEqualTo(createdWidget.id)
+            assertThat(response.name).isEqualTo("Updated Name")
         }
 
-        context("Full CRUD Flow Integration Test") {
+        @Test
+        fun `should return 404 Not Found for non-existent widget`() {
+            // Given - Random UUID that doesn't exist
+            val nonExistentId = "00000000-0000-0000-0000-000000000002"
+            val updateRequest = UpdateWidgetRequest(name = "Cannot Update")
+            val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-            test("should complete full lifecycle: POST → GET → PUT → GET") {
-                // Step 1: Create widget
-                val createRequest = CreateWidgetRequest(name = "CRUD Flow Widget")
-                val createBody = objectMapper.writeValueAsString(createRequest)
+            // When/Then - PUT returns 404 (Axon AggregateNotFoundException → handler → 404)
+            // CRITICAL: Must use andExpect(), not andReturn() for error responses
+            mockMvc
+                .put("/api/v1/widgets/$nonExistentId") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = updateBody
+                }.andExpect {
+                    status { isNotFound() }
+                }
+        }
 
-                val createResult =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = createBody
-                        }.andExpect {
-                            status { isCreated() }
-                        }.andReturn()
+        @Test
+        fun `should return 400 Bad Request for invalid update`() {
+            // Given - Create widget first
+            val createRequest = CreateWidgetRequest(name = "Widget to Update")
+            val createBody = objectMapper.writeValueAsString(createRequest)
 
-                val createdWidget =
-                    objectMapper.readValue(
-                        createResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                createdWidget.name shouldBe "CRUD Flow Widget"
+            val createResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = createBody
+                    }.andReturn()
 
-                // Step 2: Read widget (with retry for eventual consistency)
-                val readResult =
-                    mockMvc
-                        .get("/api/v1/widgets/${createdWidget.id}") {
-                            accept = MediaType.APPLICATION_JSON
-                        }.andExpect {
-                            status { isOk() }
-                        }.andReturn()
+            val createdWidget =
+                objectMapper.readValue(
+                    createResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
 
-                val readWidget =
-                    objectMapper.readValue(
-                        readResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                readWidget.id shouldBe createdWidget.id
-                readWidget.name shouldBe "CRUD Flow Widget"
+            // When/Then - PUT with blank name returns 400
+            val updateRequest = mapOf("name" to "")
+            val updateBody = objectMapper.writeValueAsString(updateRequest)
 
-                // Step 3: Update widget
-                val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
-                val updateBody = objectMapper.writeValueAsString(updateRequest)
+            mockMvc
+                .put("/api/v1/widgets/${createdWidget.id}") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = updateBody
+                }.andExpect {
+                    status { isBadRequest() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(400) }
+                }
+        }
+    }
 
-                val updateResult =
-                    mockMvc
-                        .put("/api/v1/widgets/${createdWidget.id}") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = updateBody
-                        }.andExpect {
-                            status { isOk() }
-                        }.andReturn()
+    @Nested
+    inner class `Full CRUD Flow Integration Test` {
+        @Test
+        fun `should complete full lifecycle - POST to GET to PUT to GET`() {
+            // Step 1: Create widget
+            val createRequest = CreateWidgetRequest(name = "CRUD Flow Widget")
+            val createBody = objectMapper.writeValueAsString(createRequest)
 
-                // Step 4: Verify updated widget (updateWidget now waits for consistent projection)
-                val verifiedWidget =
-                    objectMapper.readValue(
-                        updateResult.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                verifiedWidget.name shouldBe "Updated CRUD Widget"
-                verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
-            }
+            val createResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = createBody
+                    }.andExpect {
+                        status { isCreated() }
+                    }.andReturn()
+
+            val createdWidget =
+                objectMapper.readValue(
+                    createResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(createdWidget.name).isEqualTo("CRUD Flow Widget")
+
+            // Step 2: Read widget (with retry for eventual consistency)
+            val readResult =
+                mockMvc
+                    .get("/api/v1/widgets/${createdWidget.id}") {
+                        accept = MediaType.APPLICATION_JSON
+                    }.andExpect {
+                        status { isOk() }
+                    }.andReturn()
+
+            val readWidget =
+                objectMapper.readValue(
+                    readResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(readWidget.id).isEqualTo(createdWidget.id)
+            assertThat(readWidget.name).isEqualTo("CRUD Flow Widget")
+
+            // Step 3: Update widget
+            val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
+            val updateBody = objectMapper.writeValueAsString(updateRequest)
+
+            val updateResult =
+                mockMvc
+                    .put("/api/v1/widgets/${createdWidget.id}") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = updateBody
+                    }.andExpect {
+                        status { isOk() }
+                    }.andReturn()
+
+            // Step 4: Verify updated widget (updateWidget now waits for consistent projection)
+            val verifiedWidget =
+                objectMapper.readValue(
+                    updateResult.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(verifiedWidget.name).isEqualTo("Updated CRUD Widget")
+            assertThat(verifiedWidget.updatedAt).isNotEqualTo(verifiedWidget.createdAt)
         }
     }
 

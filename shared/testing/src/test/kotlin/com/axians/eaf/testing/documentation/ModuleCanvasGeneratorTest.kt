@@ -1,6 +1,7 @@
 package com.axians.eaf.testing.documentation
 
-import io.kotest.core.spec.style.FunSpec
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 /**
  * Spring Modulith Module Canvas Generator
@@ -13,30 +14,31 @@ import io.kotest.core.spec.style.FunSpec
  * Note: Requires a Spring Boot application class to analyze modules.
  * Currently uses a minimal test application for documentation purposes.
  */
-class ModuleCanvasGeneratorTest :
-    FunSpec({
+class ModuleCanvasGeneratorTest {
+    @Test
+    @Disabled("Module Canvas generation deferred to Epic 10 (widget-demo application)")
+    fun `generate module canvas documentation`() {
+        // Note: This test is disabled because we don't have a real Application class yet
+        // Module Canvas will be generated in Epic 10 when widget-demo application is implemented
 
-        xtest("generate module canvas documentation").config(enabled = false) {
-            // Note: This test is disabled because we don't have a real Application class yet
-            // Module Canvas will be generated in Epic 10 when widget-demo application is implemented
+        // Placeholder for future implementation:
+        // val modules = ApplicationModules.of(WidgetDemoApplication::class.java)
+        // Documenter(modules).writeModuleCanvases()
 
-            // Placeholder for future implementation:
-            // val modules = ApplicationModules.of(WidgetDemoApplication::class.java)
-            // Documenter(modules).writeModuleCanvases()
+        println("Module Canvas generation deferred to Epic 10 (widget-demo application)")
+        println("AC5 will be satisfied when widget-demo Spring Boot application is created")
+    }
 
-            println("Module Canvas generation deferred to Epic 10 (widget-demo application)")
-            println("AC5 will be satisfied when widget-demo Spring Boot application is created")
-        }
+    @Test
+    fun `verify module canvas can be generated (documentation test)`() {
+        // This test documents the expected approach for future module canvas generation
+        println("Module Canvas documentation will be generated to: build/spring-modulith-docs")
 
-        test("verify module canvas can be generated (documentation test)") {
-            // This test documents the expected approach for future module canvas generation
-            println("Module Canvas documentation will be generated to: build/spring-modulith-docs")
-
-            // Future implementation (Epic 10):
-            // val modules = ApplicationModules.of(WidgetDemoApplication::class.java)
-            // Documenter(modules)
-            //     .writeModuleCanvases()
-            //     .writeModulesAsPlantUml()
-            //     .writeIndividualModulesAsPlantUml()
-        }
-    })
+        // Future implementation (Epic 10):
+        // val modules = ApplicationModules.of(WidgetDemoApplication::class.java)
+        // Documenter(modules)
+        //     .writeModuleCanvases()
+        //     .writeModulesAsPlantUml()
+        //     .writeIndividualModulesAsPlantUml()
+    }
+}

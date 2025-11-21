@@ -2,22 +2,18 @@ package com.axians.eaf.products.widget
 
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.api.CreateWidgetRequest
-import com.axians.eaf.products.widget.api.PaginatedResponse
 import com.axians.eaf.products.widget.api.UpdateWidgetRequest
 import com.axians.eaf.products.widget.api.WidgetResponse
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.comparables.shouldBeLessThan
-import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -82,7 +78,7 @@ import java.util.UUID
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class WalkingSkeletonIntegrationTest : FunSpec() {
+class WalkingSkeletonIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
@@ -92,12 +88,11 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
-
-        context("Walking Skeleton - Complete CQRS Flow") {
-
-            test("complete CQRS flow: POST → Command → Event → Projection → GET validates end-to-end architecture") {
+    @Nested
+    inner class `Walking Skeleton - Complete CQRS Flow` {
+        @Test
+        fun `complete CQRS flow - POST to Command to Event to Projection to GET validates end-to-end architecture`() =
+            runBlocking {
                 // =====================================================================
                 // Step 0: Warmup call to avoid cold-start penalty
                 // First API call includes Spring context initialization overhead
@@ -137,12 +132,12 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: API latency <500ms (AC4) after warmup; CI runners are slower than local dev
-                createLatency shouldBeLessThan 500L
+                assertThat(createLatency).isLessThan(500L)
 
                 // VALIDATION: Widget created with correct data
-                createdWidget.name shouldBe "Walking Skeleton Widget"
-                createdWidget.published shouldBe false
-                createdWidget.id shouldNotBe null
+                assertThat(createdWidget.name).isEqualTo("Walking Skeleton Widget")
+                assertThat(createdWidget.published).isFalse()
+                assertThat(createdWidget.id).isNotNull()
 
                 val widgetId = UUID.fromString(createdWidget.id)
 
@@ -167,13 +162,13 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                             ).fetchOne()
 
                     // VALIDATION: Projection must exist
-                    projection shouldNotBe null
+                    assertThat(projection).isNotNull()
                 }
 
                 val projectionLag = System.currentTimeMillis() - projectionStartTime
 
                 // VALIDATION: Projection lag <10s (AC4)
-                projectionLag shouldBeLessThan 10_000L
+                assertThat(projectionLag).isLessThan(10_000L)
 
                 // =====================================================================
                 // Step 3: RETRIEVE Widget via REST API
@@ -195,9 +190,9 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: Query retrieval returns correct data (AC3)
-                retrievedWidget.id shouldBe createdWidget.id
-                retrievedWidget.name shouldBe "Walking Skeleton Widget"
-                retrievedWidget.published shouldBe false
+                assertThat(retrievedWidget.id).isEqualTo(createdWidget.id)
+                assertThat(retrievedWidget.name).isEqualTo("Walking Skeleton Widget")
+                assertThat(retrievedWidget.published).isFalse()
 
                 // =====================================================================
                 // Step 4: UPDATE Widget (additional CQRS cycle)
@@ -223,8 +218,8 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: Update command processed successfully
-                updatedWidget.name shouldBe "Updated Skeleton"
-                updatedWidget.updatedAt shouldNotBe updatedWidget.createdAt
+                assertThat(updatedWidget.name).isEqualTo("Updated Skeleton")
+                assertThat(updatedWidget.updatedAt).isNotEqualTo(updatedWidget.createdAt)
 
                 // =====================================================================
                 // Step 5: LIST Widgets (pagination query)
@@ -244,51 +239,52 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     val paginatedResponse = objectMapper.readTree(listResult.response.contentAsString)
 
                     // VALIDATION: Paginated response structure
-                    paginatedResponse.has("data") shouldBe true
-                    paginatedResponse.has("nextCursor") shouldBe true
-                    paginatedResponse.has("hasMore") shouldBe true
+                    assertThat(paginatedResponse.has("data")).isTrue()
+                    assertThat(paginatedResponse.has("nextCursor")).isTrue()
+                    assertThat(paginatedResponse.has("hasMore")).isTrue()
 
                     val widgets = paginatedResponse.get("data")
-                    widgets.isArray shouldBe true
+                    assertThat(widgets.isArray).isTrue()
 
                     // VALIDATION: At least our widget appears in list
-                    widgets.size() shouldBeGreaterThan 0
+                    assertThat(widgets.size()).isGreaterThan(0)
                 }
             }
 
-            test("validation failure returns 400 Bad Request with RFC 7807 ProblemDetail") {
-                // Given - Invalid request with blank name (violates @NotBlank)
-                val invalidRequest = mapOf("name" to "")
-                val requestBody = objectMapper.writeValueAsString(invalidRequest)
+        @Test
+        fun `validation failure returns 400 Bad Request with RFC 7807 ProblemDetail`() {
+            // Given - Invalid request with blank name (violates @NotBlank)
+            val invalidRequest = mapOf("name" to "")
+            val requestBody = objectMapper.writeValueAsString(invalidRequest)
 
-                // When/Then - POST returns 400 with ProblemDetail
-                mockMvc
-                    .post("/api/v1/widgets") {
-                        contentType = MediaType.APPLICATION_JSON
-                        content = requestBody
-                    }.andExpect {
-                        status { isBadRequest() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(400) }
-                        jsonPath("$.title") { exists() }
-                    }
-            }
+            // When/Then - POST returns 400 with ProblemDetail
+            mockMvc
+                .post("/api/v1/widgets") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = requestBody
+                }.andExpect {
+                    status { isBadRequest() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(400) }
+                    jsonPath("$.title") { exists() }
+                }
+        }
 
-            test("not found scenario returns 404 Not Found with RFC 7807 ProblemDetail") {
-                // Given - Non-existent widget ID
-                val nonExistentId = "00000000-0000-0000-0000-000000000999"
+        @Test
+        fun `not found scenario returns 404 Not Found with RFC 7807 ProblemDetail`() {
+            // Given - Non-existent widget ID
+            val nonExistentId = "00000000-0000-0000-0000-000000000999"
 
-                // When/Then - GET returns 404 with ProblemDetail
-                mockMvc
-                    .get("/api/v1/widgets/$nonExistentId") {
-                        accept = MediaType.APPLICATION_JSON
-                    }.andExpect {
-                        status { isNotFound() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(404) }
-                        jsonPath("$.title") { exists() }
-                    }
-            }
+            // When/Then - GET returns 404 with ProblemDetail
+            mockMvc
+                .get("/api/v1/widgets/$nonExistentId") {
+                    accept = MediaType.APPLICATION_JSON
+                }.andExpect {
+                    status { isNotFound() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(404) }
+                    jsonPath("$.title") { exists() }
+                }
         }
     }
 

@@ -173,7 +173,7 @@ jobs:
 
       # Phase 2 V2: Consolidated nightlyTest suite (replaces propertyTest, fuzzTest, perfTest)
       # nightlyTest includes all comprehensive test types via @Tags:
-      # - @Tag("Property"): Kotest property-based testing
+      # - @Tag("Property"): Property-based testing (JUnit 6 compatible)
       # - @Tag("Fuzz"): Jazzer fuzz testing (30 min/target)
       # - @Tag("Concurrency"): LitmusKt concurrency tests (Epic 8)
       # - @Tag("Mutation"): Pitest mutation coverage

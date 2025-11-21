@@ -1,40 +1,42 @@
 package com.axians.eaf.framework.security.role
 
 import com.axians.eaf.framework.security.config.KeycloakOidcConfiguration
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 import java.util.UUID
 
 @Tag("PBT")
-class RoleNormalizationPropertyTest :
-    FunSpec({
-        val targetClientId = "eaf-api"
-        val normalizer = RoleNormalizer(KeycloakOidcConfiguration(audience = targetClientId))
+class RoleNormalizationPropertyTest {
+    private val targetClientId = "eaf-api"
+    private val normalizer = RoleNormalizer(KeycloakOidcConfiguration(audience = targetClientId))
 
-        val roleStringArb = Arb.stringPattern("[A-Za-z:_-]{0,12}")
-        val realmRolesArb = Arb.list(roleStringArb, 0..6)
-        val targetResourceRolesArb = Arb.list(roleStringArb, 0..5)
-        val otherResourceEntryArb =
-            Arb.list(
-                Arb.pair(Arb.stringPattern("[a-z]{3,8}"), Arb.list(roleStringArb, 0..4)),
-                0..3,
-            )
+    private val roleStringArb = Arb.stringPattern("[A-Za-z:_-]{0,12}")
+    private val realmRolesArb = Arb.list(roleStringArb, 0..6)
+    private val targetResourceRolesArb = Arb.list(roleStringArb, 0..5)
+    private val otherResourceEntryArb =
+        Arb.list(
+            Arb.pair(Arb.stringPattern("[a-z]{3,8}"), Arb.list(roleStringArb, 0..4)),
+            0..3,
+        )
 
-        val includeRealmArb = Arb.boolean()
-        val includeResourceArb = Arb.boolean()
-        val nestedRealmArb = Arb.boolean()
-        val nestedResourceArb = Arb.boolean()
-        val omitRolesKeyArb = Arb.boolean()
+    private val includeRealmArb = Arb.boolean()
+    private val includeResourceArb = Arb.boolean()
+    private val nestedRealmArb = Arb.boolean()
+    private val nestedResourceArb = Arb.boolean()
+    private val omitRolesKeyArb = Arb.boolean()
 
-        test("normalized authorities should match spec for random nested inputs") {
+    @Test
+    fun `normalized authorities should match spec for random nested inputs`() =
+        runBlocking {
             checkAll(
                 realmRolesArb,
                 targetResourceRolesArb,
@@ -70,10 +72,10 @@ class RoleNormalizationPropertyTest :
 
                 val expected = expectedAuthorities(realmClaim.roles, resourceClaim.roles)
 
-                normalizedAuthorities.shouldBe(expected)
+                assertThat(normalizedAuthorities).isEqualTo(expected)
             }
         }
-    })
+}
 
 data class RealmClaim(
     val claim: Any?,

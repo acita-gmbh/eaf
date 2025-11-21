@@ -1,23 +1,24 @@
 package conventions
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
+import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Test
 
-class TestingConventionPluginFunctionalTest : FunSpec({
-    test("1.2-UNIT-001: testing convention registers integration and konsist tasks") {
+class TestingConventionPluginFunctionalTest {
+    @Test
+    fun `1_2-UNIT-001 - testing convention registers integration and konsist tasks`() {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project)
 
         val result = project.gradle(":app:check").build()
 
-        result.task(":app:integrationTest")?.outcome shouldBe TaskOutcome.SUCCESS
-        result.task(":app:konsistTest")?.outcome shouldBe TaskOutcome.SUCCESS
+        assertThat(result.task(":app:integrationTest")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+        assertThat(result.task(":app:konsistTest")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
     }
 
-    test("1.2-UNIT-002: dependency version drift fails fast") {
+    @Test
+    fun `1_2-UNIT-002 - dependency version drift fails fast`() {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeTestingOnlySources(project, extraAppBuildContent = """
@@ -28,6 +29,6 @@ class TestingConventionPluginFunctionalTest : FunSpec({
         """)
 
         val result = project.gradle(":app:check").buildAndFail()
-        result.output.shouldContain("Version drift detected")
+        assertThat(result.output).contains("Version drift detected")
     }
-})
+}

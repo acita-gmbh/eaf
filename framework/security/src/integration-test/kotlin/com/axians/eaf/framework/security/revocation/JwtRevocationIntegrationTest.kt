@@ -2,8 +2,7 @@ package com.axians.eaf.framework.security.revocation
 
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -22,7 +21,7 @@ import org.testcontainers.utility.DockerImageName
 @SpringBootTest(classes = [SecurityTestApplication::class])
 @AutoConfigureMockMvc
 @ActiveProfiles("keycloak-test")
-class JwtRevocationIntegrationTest : FunSpec() {
+class JwtRevocationIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
@@ -32,29 +31,26 @@ class JwtRevocationIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var jwtDecoder: JwtDecoder
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `revoked token is rejected with 401`() {
+        val token = KeycloakTestContainer.generateToken("admin", "password")
 
-        test("revoked token is rejected with 401") {
-            val token = KeycloakTestContainer.generateToken("admin", "password")
+        mockMvc
+            .get("/api/widgets") {
+                header("Authorization", "Bearer $token")
+            }.andExpect {
+                status { isOk() }
+            }
 
-            mockMvc
-                .get("/api/widgets") {
-                    header("Authorization", "Bearer $token")
-                }.andExpect {
-                    status { isOk() }
-                }
+        val decoded = jwtDecoder.decode(token)
+        revocationStore.revoke(decoded.id, decoded.expiresAt)
 
-            val decoded = jwtDecoder.decode(token)
-            revocationStore.revoke(decoded.id, decoded.expiresAt)
-
-            mockMvc
-                .get("/api/widgets") {
-                    header("Authorization", "Bearer $token")
-                }.andExpect {
-                    status { isUnauthorized() }
-                }
-        }
+        mockMvc
+            .get("/api/widgets") {
+                header("Authorization", "Bearer $token")
+            }.andExpect {
+                status { isUnauthorized() }
+            }
     }
 
     companion object {

@@ -69,7 +69,6 @@ dependencies {
 
     testImplementation(project(":framework:security"))
     testImplementation(project(":shared:testing"))
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.spring.boot.starter.test)
 
@@ -81,7 +80,6 @@ dependencies {
 // Performance test dependencies - only for Nightly builds
 if (isNightlyBuild) {
     dependencies {
-        "nightlyTestImplementation"(libs.bundles.kotest)
         "nightlyTestImplementation"(libs.spring.boot.starter.test)
         "nightlyTestImplementation"(libs.bundles.testcontainers)
         // Required for @Testcontainers, @Container annotations

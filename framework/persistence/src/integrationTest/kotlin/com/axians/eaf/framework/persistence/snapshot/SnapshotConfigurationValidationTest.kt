@@ -2,13 +2,10 @@ package com.axians.eaf.framework.persistence.snapshot
 
 import com.axians.eaf.framework.cqrs.config.AxonConfiguration
 import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.types.shouldBeInstanceOf
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition
 import org.axonframework.eventsourcing.Snapshotter
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -32,7 +29,7 @@ import javax.sql.DataSource
  * when the Widget aggregate is available for more realistic testing.
  */
 @SpringBootTest(classes = [SnapshotConfigurationValidationTest.TestConfiguration::class])
-class SnapshotConfigurationValidationTest : FunSpec() {
+class SnapshotConfigurationValidationTest {
     @Autowired
     private lateinit var snapshotTriggerDefinition: SnapshotTriggerDefinition
 
@@ -42,51 +39,51 @@ class SnapshotConfigurationValidationTest : FunSpec() {
     @Autowired
     private lateinit var dataSource: DataSource
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `AC1 - SnapshotTriggerDefinition bean is configured`() {
+        assertThat(snapshotTriggerDefinition).isInstanceOf(SnapshotTriggerDefinition::class.java)
+    }
 
-        test("AC1: SnapshotTriggerDefinition bean is configured") {
-            snapshotTriggerDefinition.shouldBeInstanceOf<SnapshotTriggerDefinition>()
-        }
+    @Test
+    fun `AC2 - Snapshotter bean is configured`() {
+        assertThat(snapshotter).isInstanceOf(Snapshotter::class.java)
+    }
 
-        test("AC2: Snapshotter bean is configured") {
-            snapshotter.shouldBeInstanceOf<Snapshotter>()
-        }
+    @Test
+    fun `AC3 - snapshot_entry table exists with correct Axon schema`() {
+        // Verify snapshot_event_entry table created by V001 migration
+        dataSource.connection.use { conn ->
+            val stmt =
+                conn.prepareStatement(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'snapshot_event_entry'
+                    ORDER BY ordinal_position
+                    """.trimIndent(),
+                )
 
-        test("AC3: snapshot_entry table exists with correct Axon schema") {
-            // Verify snapshot_event_entry table created by V001 migration
-            dataSource.connection.use { conn ->
-                val stmt =
-                    conn.prepareStatement(
-                        """
-                        SELECT column_name
-                        FROM information_schema.columns
-                        WHERE table_name = 'snapshot_event_entry'
-                        ORDER BY ordinal_position
-                        """.trimIndent(),
-                    )
-
-                val rs = stmt.executeQuery()
-                val columnNames = mutableListOf<String>()
-                while (rs.next()) {
-                    columnNames.add(rs.getString("column_name"))
-                }
-
-                // Verify essential Axon snapshot columns exist (snake_case)
-                columnNames.any { it == "aggregate_identifier" } shouldBe true
-                columnNames.any { it == "sequence_number" } shouldBe true
-                columnNames.any { it == "payload" } shouldBe true
-                columnNames.any { it == "payload_type" } shouldBe true
-                columnNames.any { it == "time_stamp" } shouldBe true
+            val rs = stmt.executeQuery()
+            val columnNames = mutableListOf<String>()
+            while (rs.next()) {
+                columnNames.add(rs.getString("column_name"))
             }
-        }
 
-        test("Configuration: Snapshotter and SnapshotTriggerDefinition can work together") {
-            // Smoke test: Verify beans are wired correctly
-            // Full functional testing with 250+ events will be done in Story 2.5 (Widget Aggregate)
-            snapshotTriggerDefinition.shouldBeInstanceOf<SnapshotTriggerDefinition>()
-            snapshotter.shouldBeInstanceOf<Snapshotter>()
+            // Verify essential Axon snapshot columns exist (snake_case)
+            assertThat(columnNames.any { it == "aggregate_identifier" }).isTrue()
+            assertThat(columnNames.any { it == "sequence_number" }).isTrue()
+            assertThat(columnNames.any { it == "payload" }).isTrue()
+            assertThat(columnNames.any { it == "payload_type" }).isTrue()
+            assertThat(columnNames.any { it == "time_stamp" }).isTrue()
         }
+    }
+
+    @Test
+    fun `Configuration - Snapshotter and SnapshotTriggerDefinition can work together`() {
+        // Smoke test: Verify beans are wired correctly
+        // Full functional testing with 250+ events will be done in Story 2.5 (Widget Aggregate)
+        assertThat(snapshotTriggerDefinition).isInstanceOf(SnapshotTriggerDefinition::class.java)
+        assertThat(snapshotter).isInstanceOf(Snapshotter::class.java)
     }
 
     @Configuration

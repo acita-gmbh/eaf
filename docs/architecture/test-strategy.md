@@ -1,9 +1,11 @@
 # Testing Strategy and Standards
 
 **Enterprise Application Framework (EAF) v1.0**
-**Last Updated:** 2025-11-01
-**Framework:** Kotest 6.0.4 (MANDATORY - JUnit forbidden)
+**Last Updated:** 2025-11-20
+**Framework:** JUnit 6.0.1 + AssertJ 3.27.3 (MANDATORY)
 **Coverage Targets:** 85% line coverage (Kover), 60-70% mutation coverage (Pitest)
+
+**Migration Note (2025-11-20):** This project has migrated from Kotest 6.0.4 to JUnit 6.0.1 + AssertJ 3.27.3. All 28 test files (~252 tests) have been successfully converted. Code examples in this document may still reference Kotest patterns and should be interpreted as conceptual guidance. See `docs/JUNIT-6-MIGRATION-GUIDE.md` for JUnit 6 equivalent patterns.
 
 ---
 
@@ -49,9 +51,9 @@ The EAF v1.0 testing strategy implements **Constitutional TDD** (Test-Driven Dev
 | Layer | Type | Tools | Execution | Coverage Target |
 |-------|------|-------|-----------|----------------|
 | **1. Static Analysis** | Code quality | ktlint 1.7.1, Detekt 1.23.8, Konsist 0.17.3 | Pre-commit, CI | 100% (zero violations) |
-| **2. Unit Tests** | Business logic | Kotest 6.0.4 + Nullable Pattern | Local, CI | 40-50% of test suite |
-| **3. Integration Tests** | System integration | Kotest + Testcontainers 1.21.3 | Local, CI | 30-40% of test suite |
-| **4. Property-Based Tests** | Invariant validation | Kotest Property | Nightly CI | Selected invariants |
+| **2. Unit Tests** | Business logic | JUnit 6.0.1 + AssertJ + Nullable Pattern | Local, CI | 40-50% of test suite |
+| **3. Integration Tests** | System integration | JUnit 6 + AssertJ + Testcontainers 1.21.3 | Local, CI | 30-40% of test suite |
+| **4. Property-Based Tests** | Invariant validation | JUnit 6 compatible property testing | Nightly CI | Selected invariants |
 | **5. Fuzz Testing** | Security vulnerabilities | Jazzer 0.25.1 | Nightly CI | 7 targets × 5 min |
 | **6. Concurrency Tests** | Race conditions | LitmusKt | Epic 8, Nightly | Critical paths |
 | **7. Mutation Testing** | Test effectiveness | Pitest 1.19.0 | Nightly CI | 60-70% mutation score |
@@ -100,96 +102,200 @@ graph TD
 
 ---
 
-## Kotest 6.0.4 Framework (MANDATORY)
+## JUnit 6.0.1 + AssertJ 3.27.3 Framework (MANDATORY)
 
-### Critical Rule: JUnit is Forbidden
+### Framework Overview
 
-**⚠️ CRITICAL**: JUnit is explicitly **FORBIDDEN** as a testing framework. All tests must use Kotest 6.0.4.
+**Primary Testing Stack:**
+- **JUnit 6.0.1**: Modern testing framework with native Kotlin suspend support (released 2025-09-30)
+- **AssertJ 3.27.3**: Fluent assertion library with Kotlin-friendly API
+- **AssertJ-Kotlin 0.2.1**: Kotlin-specific AssertJ extensions
+- **MockK 1.13.14**: Kotlin-native mocking framework (use sparingly per Zero-Mocks Policy)
 
+### JUnit 6 Critical Features & Requirements
+
+**NEW in JUnit 6 (vs JUnit 5):**
+- **Native Kotlin Suspend Support**: Test and lifecycle methods can use `suspend fun` directly without runBlocking/runTest wrappers
+- **@TestInstance(PER_CLASS) REQUIRED**: MUST add to classes using `suspend fun` with `@Nested` inner classes for stable coroutine continuations
+- **Deterministic @Nested Ordering**: @Nested classes have consistent discovery order (not alphabetical, but stable across runs)
+- **@TestMethodOrder Inheritance**: Ordering annotations on parent classes are inherited by @Nested inner classes recursively
+- **Java 17 Baseline**: Minimum Java version raised from 8 to 17 (EAF uses Java 21 ✅)
+- **Kotlin 2.2 Baseline**: Minimum Kotlin version raised to 2.2 (EAF uses 2.2.21 ✅)
+
+**Breaking Changes from JUnit 5:**
+- Kotlin assertTimeout contract changed from EXACTLY_ONCE to AT_MOST_ONCE (may cause compilation errors)
+- junit-platform-runner module removed
+- CSV parsing migrated to FastCSV (stricter validation)
+- **Unified Versioning Requirement:** Platform + Jupiter must both be 6.0.1 (transitive deps may conflict - see below)
+
+**CRITICAL - Dependency Resolution for Products:**
 ```kotlin
-// ❌ NEVER USE THESE - JUnit annotations are COMPLETELY IGNORED by Kotest
-@Test            // Ignored by Kotest runner - test will NOT execute
-@Disabled        // Has NO effect in Kotest - test will still run
-@BeforeEach      // Not recognized by Kotest
-@AfterEach       // Not recognized by Kotest
-@ExtendWith      // JUnit extension mechanism - doesn't work with Kotest
-
-// ✅ USE THESE INSTEAD - Kotest equivalents
-class MyTest : FunSpec({
-    test("should do something") { /* test logic */ }
-
-    beforeTest { /* setup before each test */ }
-    afterTest { /* cleanup after each test */ }
-
-    beforeSpec { /* setup before all tests */ }
-    afterSpec { /* cleanup after all tests */ }
-})
+// In products/* build.gradle.kts - Force Platform version to match Jupiter
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.junit.platform") {
+            useVersion("6.0.1")
+            because("JUnit 6 unified versioning requirement")
+        }
+    }
+}
 ```
 
-**Reference**: Coding Standards (Testing Standards), Story 8.8 (TDD Compliance)
+**Example - Suspend Functions:**
+```kotlin
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)  // REQUIRED for suspend + @Nested
+@SpringBootTest
+class AsyncIntegrationTest {
+    @Test
+    suspend fun `native suspend support`() {
+        val result = suspendingService.fetchData()
+        assertThat(result).isNotNull()
+    }
+
+    @Nested
+    inner class `Async Scenarios` {
+        @Test
+        suspend fun `nested suspend test`() {
+            // JUnit 6 handles coroutines automatically
+        }
+    }
+}
+```
+
+### Core Test Structure
+
+```kotlin
+class WidgetServiceTest {
+    @Test
+    fun `should create widget with valid data`() {
+        // Given
+        val command = CreateWidgetCommand(name = "Test Widget")
+
+        // When
+        val result = service.createWidget(command)
+
+        // Then
+        assertThat(result.isRight()).isTrue()
+        assertThat(result.getOrNull()?.name).isEqualTo("Test Widget")
+    }
+}
+```
+
+### Test Lifecycle Hooks
+
+```kotlin
+class WidgetTest {
+    @BeforeEach
+    fun beforeEach() {
+        // Runs before each test
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Runs after each test
+    }
+
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        fun beforeAll() {
+            // Runs once before all tests
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun afterAll() {
+            // Runs once after all tests
+        }
+    }
+}
+```
+
+**Reference**: Coding Standards (Testing Standards), JUNIT-6-MIGRATION-GUIDE.md
 
 ---
 
-### Kotest Test Specs
+### AssertJ Assertion Patterns
 
-**Available Spec Styles:**
+**Core Assertions:**
 
 ```kotlin
-// FunSpec - Simple functional tests
-class WidgetServiceTest : FunSpec({
-    test("should create widget") {
-        // Test logic
-    }
+// Equality assertions
+assertThat(widget.name).isEqualTo("Test Widget")
+assertThat(widget.published).isFalse()
 
-    context("when widget exists") {
-        test("should update widget") {
-            // Test logic
-        }
-    }
-})
+// Collection assertions
+assertThat(events).hasSize(3)
+assertThat(events).contains(event1, event2)
+assertThat(events).extracting("message").containsExactly("Event 1", "Event 2")
 
-// BehaviorSpec - BDD-style Given-When-Then
-class WidgetBehaviorTest : BehaviorSpec({
-    Given("a widget service with valid dependencies") {
-        val service = WidgetService(repository)
+// Null assertions
+assertThat(result).isNotNull()
+assertThat(optionalValue).isNull()
 
-        When("creating a widget with valid data") {
-            val result = service.createWidget(validCommand)
+// Exception assertions
+assertThrows<DomainException> {
+    service.invalidOperation()
+}
 
-            Then("widget should be created successfully") {
-                result.shouldBeRight()
-            }
-        }
-    }
-})
+// Arrow Either assertions
+assertThat(result.isRight()).isTrue()
+assertThat(result.isLeft()).isTrue()
+assertThat(result.getOrNull()).isEqualTo(expectedValue)
 
-// StringSpec - Simplest for quick tests
-class WidgetStringTest : StringSpec({
-    "should create widget" {
-        // Test logic
-    }
-})
+// Numeric assertions
+assertThat(price.amount).isGreaterThan(BigDecimal.ZERO)
+assertThat(quantity).isBetween(1, 100)
 
-// DescribeSpec - Jasmine-style describe/it
-class WidgetDescribeTest : DescribeSpec({
-    describe("WidgetService") {
-        it("should create widget") {
-            // Test logic
-        }
-    }
-})
+// String assertions
+assertThat(name).isNotBlank()
+assertThat(id).startsWith("widget-")
+assertThat(message).contains("success")
 ```
 
-**Recommendation:**
-- **BehaviorSpec**: Business logic tests (readable Given-When-Then)
-- **FunSpec**: Integration tests (clear context grouping)
-- **StringSpec**: Simple unit tests with minimal boilerplate
+**BDD-Style Test Organization:**
+
+```kotlin
+class WidgetServiceTest {
+    @Test
+    fun `given valid command when creating widget then widget is created`() {
+        // Given
+        val command = CreateWidgetCommand(name = "Test")
+
+        // When
+        val result = service.createWidget(command)
+
+        // Then
+        assertThat(result.isRight()).isTrue()
+    }
+}
+```
+
+**Nested Test Classes (Optional):**
+
+```kotlin
+class WidgetServiceTest {
+    @Nested
+    @DisplayName("Widget Creation")
+    inner class WidgetCreation {
+        @Test
+        fun `should create widget with valid data`() {
+            // Test logic
+        }
+
+        @Test
+        fun `should reject widget with blank name`() {
+            // Test logic
+        }
+    }
+}
+```
 
 ---
 
 ### Spring Boot Integration Test Pattern (MANDATORY)
 
-**Rule**: Use `@Autowired` field injection + `init` block for @SpringBootTest with Kotest.
+**Rule**: Use `@Autowired` field injection with JUnit 6 for @SpringBootTest.
 
 **Story 4.6 Critical Lessons - Plugin Order Matters:**
 
@@ -197,16 +303,9 @@ class WidgetDescribeTest : DescribeSpec({
 // products/widget-demo/build.gradle.kts
 // CRITICAL: Plugin order prevents TestingConventionPlugin conflicts
 plugins {
-    id("eaf.testing")     // FIRST - Establishes Kotest DSL before Spring Boot
-    id("eaf.spring-boot") // SECOND - After Kotest setup complete
+    id("eaf.testing")     // FIRST - Establishes testing framework
+    id("eaf.spring-boot") // SECOND - After testing setup complete
     id("eaf.quality-gates")
-}
-
-dependencies {
-    // Explicit Kotest dependencies to override Spring Boot BOM
-    integrationTestImplementation("io.kotest:kotest-runner-junit5:6.0.4")
-    integrationTestImplementation("io.kotest:kotest-assertions-core:6.0.4")
-    integrationTestImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
 }
 ```
 
@@ -222,10 +321,10 @@ dependencies {
 **Correct Pattern:**
 
 ```kotlin
-// ✅ CORRECT - @Autowired field injection + init block
+// ✅ CORRECT - @Autowired field injection with JUnit 6
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-class WidgetIntegrationTest : FunSpec() {
+class WidgetIntegrationTest {
 
     @Autowired
     private lateinit var commandGateway: CommandGateway
@@ -236,53 +335,52 @@ class WidgetIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `should create widget via command gateway`() {
+        // Given
+        val command = CreateWidgetCommand(
+            widgetId = UUID.randomUUID().toString(),
+            tenantId = "test-tenant",
+            name = "Integration Test Widget",
+            category = WidgetCategory.PREMIUM
+        )
 
-        test("4.6-INT-001: should create widget via command gateway") {
-            // Given
-            val command = CreateWidgetCommand(
-                widgetId = UUID.randomUUID().toString(),
-                tenantId = "test-tenant",
-                name = "Integration Test Widget",
-                category = WidgetCategory.PREMIUM
-            )
+        // When
+        val result = commandGateway.sendAndWait<String>(command, Duration.ofSeconds(5))
 
-            // When
-            val result = commandGateway.sendAndWait<String>(command, Duration.ofSeconds(5))
+        // Then
+        assertThat(result).isEqualTo(command.widgetId)
 
-            // Then
-            result shouldBe command.widgetId
+        // And projection should be updated (eventual consistency)
+        await().atMost(Duration.ofSeconds(10)).untilAsserted {
+            val query = FindWidgetByIdQuery(command.widgetId, command.tenantId)
+            val widget = queryGateway.query(query, WidgetProjection::class.java).join()
 
-            // And projection should be updated (eventual consistency)
-            eventually(Duration.ofSeconds(10)) {
-                val query = FindWidgetByIdQuery(command.widgetId, command.tenantId)
-                val widget = queryGateway.query(query, WidgetProjection::class.java).join()
-
-                widget.shouldNotBeNull()
-                widget.name shouldBe command.name
-                widget.category shouldBe command.category
-                widget.tenantId shouldBe command.tenantId
-            }
+            assertThat(widget).isNotNull()
+            assertThat(widget.name).isEqualTo(command.name)
+            assertThat(widget.category).isEqualTo(command.category)
+            assertThat(widget.tenantId).isEqualTo(command.tenantId)
         }
+    }
 
-        test("4.6-INT-002: should expose widget via REST API") {
-            // Test using mockMvc
-            val jwtToken = TestJwtBuilder()
-                .withTenantId("test-tenant")
-                .withRole("USER")
-                .build()
+    @Test
+    fun `should expose widget via REST API`() {
+        // Given
+        val jwtToken = TestJwtBuilder()
+            .withTenantId("test-tenant")
+            .withRole("USER")
+            .build()
 
-            mockMvc.perform(
-                post("/api/v1/widgets")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"API Test Widget","category":"STANDARD"}""")
-                    .header("Authorization", "Bearer $jwtToken")
-            )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("API Test Widget"))
-                .andExpect(jsonPath("$.category").value("STANDARD"))
-        }
+        // When/Then
+        mockMvc.perform(
+            post("/api/v1/widgets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"API Test Widget","category":"STANDARD"}""")
+                .header("Authorization", "Bearer $jwtToken")
+        )
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("API Test Widget"))
+            .andExpect(jsonPath("$.category").value("STANDARD"))
     }
 
     companion object {
@@ -313,28 +411,31 @@ class WidgetIntegrationTest : FunSpec() {
 }
 ```
 
-**ANTI-PATTERN: Constructor Injection (DO NOT USE)**
+**Best Practices:**
 
 ```kotlin
-// ❌ FORBIDDEN - Constructor injection causes lifecycle timing conflict → 150+ compilation errors
-@SpringBootTest
-class BadIntegrationTest(
-    private val commandGateway: CommandGateway,  // ← Required before Spring context ready
-    private val mockMvc: MockMvc
-) : FunSpec({
-    test("will not compile") {
-        // Compilation error: Unresolved reference: commandGateway
+// ✅ Use @BeforeEach for test-specific setup
+@BeforeEach
+fun setUp() {
+    // Setup code that runs before each test
+}
+
+// ✅ Use companion object for static setup
+companion object {
+    @BeforeAll
+    @JvmStatic
+    fun setUpClass() {
+        // One-time setup for all tests
     }
-})
+}
+
+// ✅ Use Awaitility for async assertions (eventual consistency)
+await().atMost(Duration.ofSeconds(10)).untilAsserted {
+    assertThat(condition).isTrue()
+}
 ```
 
-**Why Constructor Injection Fails:**
-- Kotest instantiates test class before Spring context initialization
-- Constructor parameters required immediately
-- Spring context not yet available to inject dependencies
-- Results in circular dependency → compilation failure
-
-**Reference**: Story 4.6 (Multi-Tenant Widget Demo Integration Tests)
+**Reference**: Story 4.6 (Multi-Tenant Widget Demo Integration Tests), JUNIT-6-MIGRATION-GUIDE.md
 
 ---
 

@@ -3,11 +3,9 @@ package com.axians.eaf.products.widget.query
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
+import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.ApplicationContext
@@ -37,27 +35,25 @@ import org.testcontainers.utility.DockerImageName
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class WidgetProjectionContextTest : FunSpec() {
+class WidgetProjectionContextTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var applicationContext: ApplicationContext
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `Spring context loads successfully`() {
+        assertThat(applicationContext).isNotNull()
+    }
 
-        test("Spring context loads successfully") {
-            applicationContext shouldNotBe null
-        }
+    @Test
+    fun `widget_projection table exists`() {
+        val dsl = applicationContext.getBean(DSLContext::class.java)
+        val tableExists =
+            dsl
+                .fetchOne(
+                    "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'widget_projection')",
+                )?.get(0, Boolean::class.java)
 
-        test("widget_projection table exists") {
-            val dsl = applicationContext.getBean(DSLContext::class.java)
-            val tableExists =
-                dsl
-                    .fetchOne(
-                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'widget_projection')",
-                    )?.get(0, Boolean::class.java)
-
-            tableExists shouldBe true
-        }
+        assertThat(tableExists).isEqualTo(true)
     }
 
     companion object {

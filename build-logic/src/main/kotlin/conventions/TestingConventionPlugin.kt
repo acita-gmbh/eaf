@@ -13,7 +13,8 @@ import org.gradle.kotlin.dsl.withType
 
 /**
  * Convention plugin for testing in EAF.
- * Configures Kotest, Nullable pattern helpers, and Testcontainers integration tests.
+ * Configures JUnit 6, AssertJ assertions, and Testcontainers integration tests.
+ * Migrated from Kotest to JUnit 6 on 2025-11-20.
  */
 class TestingConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -27,19 +28,16 @@ class TestingConventionPlugin : Plugin<Project> {
         with(target) {
             with(pluginManager) {
                 apply("eaf.kotlin-common")
-                // Story 1.2: Removed io.kotest native plugin - using JUnit Platform instead
                 apply("org.jetbrains.kotlin.plugin.serialization") // Keep for other serialization needs
             }
 
-            // Story 1.2: Enable standard test task with JUnit Platform
-            // This uses kotest-runner-junit5-jvm to run Kotest tests via JUnit Platform
+            // JUnit 6 Platform configuration
             tasks.named<Test>("test") {
                 useJUnitPlatform()
-                description = "Runs unit tests via JUnit Platform (Kotest engine)"
+                description = "Runs unit tests via JUnit 6 Jupiter"
                 group = "verification"
             }
 
-            // Story 1.2: Update check to depend on test (not jvmKotest)
             tasks.named("check") {
                 dependsOn("test")
             }
@@ -108,20 +106,24 @@ class TestingConventionPlugin : Plugin<Project> {
                     "testImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
-                        "kotest-extensions-pitest",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
+                        "mockk",
                         "kotlinx-serialization-json",
                         "kotlinx-serialization-core",
                         "konsist",
                     ),
                 )
 
-                // Add JUnit runner for ciTest task only
-                val junit5Runner = catalog.library("kotest-runner-junit5-jvm")
-                add("testRuntimeOnly", "${junit5Runner.module}:${junit5Runner.version}")
+                // Add JUnit 6 engine for test execution
+                val jupiterEngine = catalog.library("junit-jupiter-engine")
+                add("testRuntimeOnly", "${jupiterEngine.module}:${jupiterEngine.version}")
+
+                val platformLauncher = catalog.library("junit-platform-launcher")
+                add("testRuntimeOnly", "${platformLauncher.module}:${platformLauncher.version}")
 
                 val sharedTestingProject = rootProject.findProject(":shared:testing")
                 if (sharedTestingProject != null) {
@@ -132,18 +134,22 @@ class TestingConventionPlugin : Plugin<Project> {
                     "integrationTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-runner-junit5-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
-                        "kotest-extensions-testcontainers",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
+                        "mockk",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak",
+                        "testcontainers-junit-jupiter",
                         "spring-boot-starter-security",
                         "spring-boot-starter-oauth2-resource-server",
                     ),
                 )
+
+                add("integrationTestRuntimeOnly", "${jupiterEngine.module}:${jupiterEngine.version}")
+                add("integrationTestRuntimeOnly", "${platformLauncher.module}:${platformLauncher.version}")
 
                 val testcontainersBom = catalog.library("testcontainers-bom")
                 add("integrationTestImplementation", platform("${testcontainersBom.module}:${testcontainersBom.version}"))
@@ -157,14 +163,17 @@ class TestingConventionPlugin : Plugin<Project> {
                     "konsistTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-runner-junit5-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
                         "konsist",
                     ),
                 )
+
+                add("konsistTestRuntimeOnly", "${jupiterEngine.module}:${jupiterEngine.version}")
+                add("konsistTestRuntimeOnly", "${platformLauncher.module}:${platformLauncher.version}")
 
                 // Story 8.3: Performance test dependencies (similar to integration tests) - ONLY for Nightly builds
                 if (isNightlyBuild) {
@@ -172,17 +181,19 @@ class TestingConventionPlugin : Plugin<Project> {
                         "perfTestImplementation",
                         listOf(
                             "kotlin-test",
-                            "kotest-framework-engine-jvm",
-                            "kotest-runner-junit5-jvm",
-                            "kotest-assertions-core-jvm",
-                            "kotest-property-jvm",
-                            "kotest-extensions-spring",
-                            "kotest-extensions-testcontainers",
+                            "junit-jupiter-api",
+                            "junit-jupiter-params",
+                            "assertj-core",
+                            "assertj-kotlin",
+                            "mockk",
                             "testcontainers-postgresql",
+                            "testcontainers-junit-jupiter",
                             "spring-boot-starter-security",
                         ),
                     )
 
+                    add("perfTestRuntimeOnly", "${jupiterEngine.module}:${jupiterEngine.version}")
+                    add("perfTestRuntimeOnly", "${platformLauncher.module}:${platformLauncher.version}")
                     add("perfTestImplementation", platform("${testcontainersBom.module}:${testcontainersBom.version}"))
 
                     if (sharedTestingProject != null) {
@@ -192,13 +203,10 @@ class TestingConventionPlugin : Plugin<Project> {
                 }
             }
 
-            // Create test tasks for custom source sets
-            // For now, use Test tasks with useJUnitPlatform until native Kotest plugin
-            // supports custom source sets better
-
+            // Create test tasks for custom source sets using JUnit 6 Platform
             val integrationTestTask =
                 tasks.register("integrationTest", Test::class.java) {
-                    description = "Runs integration tests with Testcontainers."
+                    description = "Runs integration tests with Testcontainers and JUnit 6."
                     group = "verification"
 
                     // Configuration cache compatible: capture values at configuration time
@@ -283,10 +291,7 @@ class TestingConventionPlugin : Plugin<Project> {
                 // Note: perfTest not in check by default (opt-in for performance validation)
             }
 
-            // Story 1.2: Removed all ci* tasks (ciTest, ciIntegrationTest, ciKonsistTest, ciPerfTest, ciTests)
-            // All test tasks now use JUnit Platform directly via useJUnitPlatform()
-            // This eliminates the dual execution mode and the Kotest XML reporter bug workaround
-
+            // All test tasks use JUnit 6 Platform directly via useJUnitPlatform()
             // Configure parallel test execution for all Test tasks
             tasks.withType<Test>().configureEach {
                 // Parallel test execution: cores/2 (minimum 1)
@@ -328,10 +333,12 @@ class TestingConventionPlugin : Plugin<Project> {
                     "testImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
+                        "mockk",
                         "konsist",
                     ),
                     catalog,
@@ -341,13 +348,15 @@ class TestingConventionPlugin : Plugin<Project> {
                     "integrationTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
-                        "kotest-extensions-testcontainers",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
+                        "mockk",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak",
+                        "testcontainers-junit-jupiter",
                     ),
                     catalog,
                 )
@@ -356,10 +365,11 @@ class TestingConventionPlugin : Plugin<Project> {
                     "konsistTestImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "assertj-kotlin",
+                        "awaitility-kotlin",
                         "konsist",
                     ),
                     catalog,

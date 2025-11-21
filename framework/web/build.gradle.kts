@@ -25,6 +25,5 @@ dependencies {
     // Jackson Kotlin Module for Kotlin data class support
     implementation(libs.jackson.module.kotlin)
 
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
 }

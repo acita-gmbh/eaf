@@ -75,7 +75,6 @@ dependencies {
     implementation(libs.jose4j)
     implementation(libs.jooq.core) // Story 9.2: Required for TenantDatabaseSessionInterceptor transaction participation
 
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit") // Exclude JUnit 4
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine") // Exclude JUnit 4 engine
@@ -120,7 +119,6 @@ if (isNightlyBuild) {
         "fuzzTestImplementation"(libs.jazzer.api)
 
         // Performance test dependencies (same as integration tests)
-        "nightlyTestImplementation"(libs.bundles.kotest)
         "nightlyTestImplementation"(libs.spring.boot.starter.test)
         "nightlyTestImplementation"(libs.bundles.testcontainers)
         // Required for @Testcontainers, @Container annotations
@@ -197,13 +195,13 @@ if (isNightlyBuild) {
     }
 }
 
-// Pitest configuration - override targetClasses and configure for Kotest
-// Per Kotest docs: With PIT 1.6.7+, kotest-extensions-pitest on classpath is enough
+// Pitest configuration - override targetClasses and configure for JUnit 6
 configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
     targetClasses.set(setOf("com.axians.eaf.*"))
     targetTests.set(setOf("com.axians.eaf.*"))
     testPlugin.set(null as String?) // Disable deprecated testPlugin
-    junit5PluginVersion.set("1.2.1") // Use JUnit 5 platform (Kotest runs on JUnit Platform)
+    // JUnit 6 runs on JUnit Platform (junit5PluginVersion refers to platform, not Jupiter version)
+    junit5PluginVersion.set("1.2.1")
     useClasspathFile.set(true)
     verbose.set(true)
     outputFormats.set(setOf("XML", "HTML"))

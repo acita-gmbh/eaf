@@ -3,8 +3,7 @@ package com.axians.eaf.products.widget.api.auth
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -26,52 +25,50 @@ import org.testcontainers.utility.DockerImageName
 )
 @AutoConfigureMockMvc
 @ActiveProfiles("keycloak-test")
-class AuthControllerIntegrationTest : FunSpec() {
+class AuthControllerIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `admin can revoke token and revoked token is rejected`() {
+        val adminToken = KeycloakTestContainer.generateToken("admin", "password")
+        val payload = objectMapper.writeValueAsString(mapOf("token" to adminToken))
 
-        test("admin can revoke token and revoked token is rejected") {
-            val adminToken = KeycloakTestContainer.generateToken("admin", "password")
-            val payload = objectMapper.writeValueAsString(mapOf("token" to adminToken))
+        mockMvc
+            .post("/auth/revoke") {
+                header("Authorization", "Bearer $adminToken")
+                contentType = MediaType.APPLICATION_JSON
+                content = payload
+            }.andExpect {
+                status { isNoContent() }
+            }
 
-            mockMvc
-                .post("/auth/revoke") {
-                    header("Authorization", "Bearer $adminToken")
-                    contentType = MediaType.APPLICATION_JSON
-                    content = payload
-                }.andExpect {
-                    status { isNoContent() }
-                }
+        mockMvc
+            .post("/auth/revoke") {
+                header("Authorization", "Bearer $adminToken")
+                contentType = MediaType.APPLICATION_JSON
+                content = payload
+            }.andExpect {
+                status { isUnauthorized() }
+            }
+    }
 
-            mockMvc
-                .post("/auth/revoke") {
-                    header("Authorization", "Bearer $adminToken")
-                    contentType = MediaType.APPLICATION_JSON
-                    content = payload
-                }.andExpect {
-                    status { isUnauthorized() }
-                }
-        }
+    @Test
+    fun `non-admin user receives 403 when invoking revoke endpoint`() {
+        val viewerToken = KeycloakTestContainer.generateToken("viewer", "password")
+        val payload = objectMapper.writeValueAsString(mapOf("token" to viewerToken))
 
-        test("non-admin user receives 403 when invoking revoke endpoint") {
-            val viewerToken = KeycloakTestContainer.generateToken("viewer", "password")
-            val payload = objectMapper.writeValueAsString(mapOf("token" to viewerToken))
-
-            mockMvc
-                .post("/auth/revoke") {
-                    header("Authorization", "Bearer $viewerToken")
-                    contentType = MediaType.APPLICATION_JSON
-                    content = payload
-                }.andExpect {
-                    status { isForbidden() }
-                }
-        }
+        mockMvc
+            .post("/auth/revoke") {
+                header("Authorization", "Bearer $viewerToken")
+                contentType = MediaType.APPLICATION_JSON
+                content = payload
+            }.andExpect {
+                status { isForbidden() }
+            }
     }
 
     companion object {

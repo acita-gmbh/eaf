@@ -2,8 +2,7 @@ package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -22,26 +21,19 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
 @TestPropertySource(properties = ["eaf.security.jwt.audience=eaf-console"])
-class JwtAudienceValidationIntegrationTest : FunSpec() {
+class JwtAudienceValidationIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `should reject JWT missing expected audience value`() {
+        val validJwt = KeycloakTestContainer.generateToken("admin", "password")
 
-        beforeSpec {
-            KeycloakTestContainer.start()
-        }
-
-        test("should reject JWT missing expected audience value") {
-            val validJwt = KeycloakTestContainer.generateToken("admin", "password")
-
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $validJwt"),
-                ).andExpect(status().isUnauthorized())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $validJwt"),
+            ).andExpect(status().isUnauthorized())
     }
 
     companion object {

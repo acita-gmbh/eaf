@@ -25,10 +25,11 @@ netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025
 grpc-netty-shaded = "1.75.0" # CVE-2025-55163 fix (gRPC Netty DoS vulnerability)
 commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursion)
 
-# Testing framework (MANDATORY)
-kotest = "6.0.4"          # Primary testing framework (JUnit forbidden)
-kotest-plugin = "6.0.4"   # Kotest Gradle plugin for hybrid test execution (native + JUnit Platform)
-kotest-assertions-arrow = "2.0.0"  # Kotest Arrow assertions extension
+# Testing framework (MANDATORY - JUnit 6 Migration)
+junit = "6.0.1"           # JUnit 6 - Primary testing framework (migrated from Kotest 2025-11-20)
+assertj = "3.27.3"        # AssertJ - Fluent assertion library (works natively with Kotlin)
+awaitility = "4.2.2"      # Awaitility - Async/eventual consistency assertions
+mockk = "1.13.14"         # MockK for Kotlin mocking (when needed)
 testcontainers = "1.21.3" # Integration testing with real dependencies (stability updates)
 testcontainers-keycloak = "3.9.0"  # Testcontainers Keycloak module
 h2 = "2.4.240"            # ONLY for Nullable Pattern unit tests (Story 2.8) - Integration tests MUST use Testcontainers PostgreSQL
@@ -148,15 +149,15 @@ jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 # JSON processing
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 
-# Testing
-kotest-framework-engine-jvm = { module = "io.kotest:kotest-framework-engine-jvm", version.ref = "kotest" }
-kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
-kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
-kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-assertions-arrow" }
-kotest-property-jvm = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
-kotest-extensions-spring = { module = "io.kotest:kotest-extensions-spring", version.ref = "kotest" }
-kotest-extensions-pitest = { module = "io.kotest:kotest-extensions-pitest", version.ref = "kotest" }
-kotest-extensions-testcontainers = { module = "io.kotest:kotest-extensions-testcontainers", version.ref = "kotest" }
+# Testing - JUnit 6 + AssertJ
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin", version.ref = "awaitility" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
@@ -240,8 +241,9 @@ axon-framework = ["axon-spring-boot-starter"]
 arrow = ["arrow-core", "arrow-fx-coroutines"]
 database = ["postgresql", "spring-boot-starter-data-jpa"]
 jooq = ["jooq-core", "jooq-kotlin"]
-kotest = ["kotest-framework-engine-jvm", "kotest-assertions-core-jvm", "kotest-assertions-arrow", "kotest-property-jvm", "kotest-extensions-spring"]
-testcontainers = ["testcontainers-postgresql", "testcontainers-keycloak"]
+junit = ["junit-jupiter-api", "junit-jupiter-engine", "junit-jupiter-params"]
+assertj = ["assertj-core"]
+testcontainers = ["testcontainers-postgresql", "testcontainers-keycloak", "testcontainers-junit-jupiter"]
 observability = ["micrometer-core", "micrometer-registry-prometheus"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp", "opentelemetry-semconv", "opentelemetry-instrumentation-spring-boot"]
 
@@ -264,8 +266,6 @@ pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependency-check" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
-kotest-plugin = { id = "io.kotest", version.ref = "kotest-plugin" }
-
 # Documentation
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 

@@ -62,7 +62,6 @@ dependencyResolutionManagement {
                 includeGroup("org.jetbrains.kotlinx.kover")
                 includeGroup("org.owasp")
                 includeGroup("org.cyclonedx")
-                includeGroup("io.kotest")
                 includeGroup("org.jooq")
                 includeGroup("io.gatling.gradle")
             }

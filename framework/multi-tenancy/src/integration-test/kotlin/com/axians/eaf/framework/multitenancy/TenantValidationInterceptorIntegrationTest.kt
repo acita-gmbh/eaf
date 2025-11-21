@@ -4,15 +4,16 @@ import com.axians.eaf.framework.core.exceptions.TenantIsolationException
 import com.axians.eaf.framework.multitenancy.test.TenantValidationTestApplication
 import com.axians.eaf.framework.multitenancy.test.TestAggregate
 import com.axians.eaf.framework.multitenancy.test.TestCommand
-import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.config.EventProcessingConfigurer
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
@@ -34,183 +35,194 @@ import java.util.UUID
  */
 @SpringBootTest(classes = [TenantValidationTestApplication::class])
 @ActiveProfiles("test")
-class TenantValidationInterceptorIntegrationTest : FunSpec() {
+class TenantValidationInterceptorIntegrationTest {
     @Autowired
     private lateinit var commandGateway: CommandGateway
 
     @Autowired
     private lateinit var meterRegistry: MeterRegistry
 
-    init {
-        extension(SpringExtension())
+    @BeforeEach
+    fun beforeEach() {
+        // Clear tenant context before each test
+        TenantContext.clearCurrentTenant()
 
-        beforeTest {
-            // Clear tenant context before each test
-            TenantContext.clearCurrentTenant()
+        // Reset metrics
+        if (meterRegistry is SimpleMeterRegistry) {
+            meterRegistry.clear()
+        }
+    }
 
-            // Reset metrics
-            if (meterRegistry is SimpleMeterRegistry) {
-                meterRegistry.clear()
-            }
+    @AfterEach
+    fun afterEach() {
+        // Cleanup tenant context
+        TenantContext.clearCurrentTenant()
+    }
+
+    @Nested
+    inner class `AC2 & AC4 - Tenant context validation` {
+        @Test
+        fun `should allow command when tenant context matches command tenantId`() {
+            // Given: Tenant A context is set
+            TenantContext.setCurrentTenantId("tenant-a")
+            val aggregateId = UUID.randomUUID().toString()
+            val command =
+                TestCommand(
+                    aggregateId = aggregateId,
+                    name = "Test Widget",
+                    tenantId = "tenant-a",
+                )
+
+            // When: Command is sent with matching tenant
+            val result = commandGateway.sendAndWait<String>(command)
+
+            // Then: Command succeeds
+            assertThat(result).isEqualTo(aggregateId)
         }
 
-        afterTest {
-            // Cleanup tenant context
-            TenantContext.clearCurrentTenant()
-        }
+        @Test
+        fun `should reject command when tenant context MISMATCHES command tenantId`() {
+            // Given: Tenant A context is set
+            TenantContext.setCurrentTenantId("tenant-a")
+            val command =
+                TestCommand(
+                    aggregateId = UUID.randomUUID().toString(),
+                    name = "Test Widget",
+                    tenantId = "tenant-b", // Mismatch!
+                )
 
-        context("AC2 & AC4: Tenant context validation") {
-            test("should allow command when tenant context matches command tenantId") {
-                // Given: Tenant A context is set
-                TenantContext.setCurrentTenantId("tenant-a")
-                val aggregateId = UUID.randomUUID().toString()
-                val command =
-                    TestCommand(
-                        aggregateId = aggregateId,
-                        name = "Test Widget",
-                        tenantId = "tenant-a",
-                    )
-
-                // When: Command is sent with matching tenant
-                val result = commandGateway.sendAndWait<String>(command)
-
-                // Then: Command succeeds
-                result shouldBe aggregateId
-            }
-
-            test("should reject command when tenant context MISMATCHES command tenantId") {
-                // Given: Tenant A context is set
-                TenantContext.setCurrentTenantId("tenant-a")
-                val command =
-                    TestCommand(
-                        aggregateId = UUID.randomUUID().toString(),
-                        name = "Test Widget",
-                        tenantId = "tenant-b", // Mismatch!
-                    )
-
-                // When/Then: Command is rejected with TenantIsolationException
-                val exception =
-                    shouldThrow<TenantIsolationException> {
-                        commandGateway.sendAndWait<String>(command)
-                    }
-
-                // AC4: Generic error message (CWE-209 protection)
-                exception.message shouldContain "Access denied: tenant context mismatch"
-            }
-        }
-
-        context("AC5: Fail-closed validation for missing context") {
-            test("should reject command when TenantContext is NOT set") {
-                // Given: NO tenant context is set
-                // TenantContext.clearCurrentTenant() already called in beforeTest
-
-                val command =
-                    TestCommand(
-                        aggregateId = UUID.randomUUID().toString(),
-                        name = "Test Widget",
-                        tenantId = "tenant-a",
-                    )
-
-                // When/Then: Command is rejected
-                val exception =
-                    shouldThrow<TenantIsolationException> {
-                        commandGateway.sendAndWait<String>(command)
-                    }
-
-                // AC5: Fail-closed with generic error
-                exception.message shouldContain "Tenant context not set"
-            }
-        }
-
-        context("AC6: Cross-tenant command isolation") {
-            test("tenant A should successfully modify tenant A aggregates") {
-                // Given: Tenant A context
-                TenantContext.setCurrentTenantId("tenant-a")
-                val aggregateId = UUID.randomUUID().toString()
-
-                // When: Tenant A creates an aggregate
-                val command =
-                    TestCommand(
-                        aggregateId = aggregateId,
-                        name = "Tenant A Widget",
-                        tenantId = "tenant-a",
-                    )
-                val result = commandGateway.sendAndWait<String>(command)
-
-                // Then: Command succeeds
-                result shouldBe aggregateId
-            }
-
-            test("tenant A should FAIL to modify tenant B aggregates") {
-                // Given: Tenant B context is set
-                TenantContext.setCurrentTenantId("tenant-b")
-                val aggregateId = UUID.randomUUID().toString()
-
-                // When: Attempt to execute command for Tenant A
-                val command =
-                    TestCommand(
-                        aggregateId = aggregateId,
-                        name = "Cross-tenant Attack",
-                        tenantId = "tenant-a", // Different tenant!
-                    )
-
-                // Then: Command is rejected
-                shouldThrow<TenantIsolationException> {
-                    commandGateway.sendAndWait<String>(command)
-                }
-            }
-        }
-
-        context("AC7: Validation metrics") {
-            test("should increment tenant_validation_failures counter on mismatch") {
-                // Given: Tenant A context
-                TenantContext.setCurrentTenantId("tenant-a")
-                val command =
-                    TestCommand(
-                        aggregateId = UUID.randomUUID().toString(),
-                        name = "Test",
-                        tenantId = "tenant-b",
-                    )
-
-                // When: Command with mismatch is attempted
-                shouldThrow<TenantIsolationException> {
+            // When/Then: Command is rejected with TenantIsolationException
+            val exception =
+                assertThrows<TenantIsolationException> {
                     commandGateway.sendAndWait<String>(command)
                 }
 
-                // Then: Metric is incremented
-                val counter = meterRegistry.counter("tenant.validation.failures")
-                counter.count() shouldBe 1.0
-            }
+            // AC4: Generic error message (CWE-209 protection)
+            assertThat(exception.message).contains("Access denied: tenant context mismatch")
+        }
+    }
 
-            test("should increment tenant_mismatch_attempts counter on cross-tenant attempt") {
-                // Given: Tenant B context
-                TenantContext.setCurrentTenantId("tenant-b")
-                val command =
-                    TestCommand(
-                        aggregateId = UUID.randomUUID().toString(),
-                        name = "Test",
-                        tenantId = "tenant-a",
-                    )
+    @Nested
+    inner class `AC5 - Fail-closed validation for missing context` {
+        @Test
+        fun `should reject command when TenantContext is NOT set`() {
+            // Given: NO tenant context is set
+            // TenantContext.clearCurrentTenant() already called in beforeEach
 
-                // When: Cross-tenant command is attempted
-                shouldThrow<TenantIsolationException> {
+            val command =
+                TestCommand(
+                    aggregateId = UUID.randomUUID().toString(),
+                    name = "Test Widget",
+                    tenantId = "tenant-a",
+                )
+
+            // When/Then: Command is rejected
+            val exception =
+                assertThrows<TenantIsolationException> {
                     commandGateway.sendAndWait<String>(command)
                 }
 
-                // Then: Metric is incremented
-                val counter = meterRegistry.counter("tenant.mismatch.attempts")
-                counter.count() shouldBe 1.0
-            }
+            // AC5: Fail-closed with generic error
+            assertThat(exception.message).contains("Tenant context not set")
+        }
+    }
+
+    @Nested
+    inner class `AC6 - Cross-tenant command isolation` {
+        @Test
+        fun `tenant A should successfully modify tenant A aggregates`() {
+            // Given: Tenant A context
+            TenantContext.setCurrentTenantId("tenant-a")
+            val aggregateId = UUID.randomUUID().toString()
+
+            // When: Tenant A creates an aggregate
+            val command =
+                TestCommand(
+                    aggregateId = aggregateId,
+                    name = "Tenant A Widget",
+                    tenantId = "tenant-a",
+                )
+            val result = commandGateway.sendAndWait<String>(command)
+
+            // Then: Command succeeds
+            assertThat(result).isEqualTo(aggregateId)
         }
 
-        context("Commands without TenantAwareCommand interface") {
-            test("should bypass validation for non-tenant-aware commands") {
-                // This test verifies that commands NOT implementing TenantAwareCommand
-                // are not validated (safe bypass for system commands)
-                //
-                // This scenario will be tested once we have system commands in Epic 5+
-                // For now, we document the expected behavior
+        @Test
+        fun `tenant A should FAIL to modify tenant B aggregates`() {
+            // Given: Tenant B context is set
+            TenantContext.setCurrentTenantId("tenant-b")
+            val aggregateId = UUID.randomUUID().toString()
+
+            // When: Attempt to execute command for Tenant A
+            val command =
+                TestCommand(
+                    aggregateId = aggregateId,
+                    name = "Cross-tenant Attack",
+                    tenantId = "tenant-a", // Different tenant!
+                )
+
+            // Then: Command is rejected
+            assertThrows<TenantIsolationException> {
+                commandGateway.sendAndWait<String>(command)
             }
+        }
+    }
+
+    @Nested
+    inner class `AC7 - Validation metrics` {
+        @Test
+        fun `should increment tenant_validation_failures counter on mismatch`() {
+            // Given: Tenant A context
+            TenantContext.setCurrentTenantId("tenant-a")
+            val command =
+                TestCommand(
+                    aggregateId = UUID.randomUUID().toString(),
+                    name = "Test",
+                    tenantId = "tenant-b",
+                )
+
+            // When: Command with mismatch is attempted
+            assertThrows<TenantIsolationException> {
+                commandGateway.sendAndWait<String>(command)
+            }
+
+            // Then: Metric is incremented
+            val counter = meterRegistry.counter("tenant.validation.failures")
+            assertThat(counter.count()).isEqualTo(1.0)
+        }
+
+        @Test
+        fun `should increment tenant_mismatch_attempts counter on cross-tenant attempt`() {
+            // Given: Tenant B context
+            TenantContext.setCurrentTenantId("tenant-b")
+            val command =
+                TestCommand(
+                    aggregateId = UUID.randomUUID().toString(),
+                    name = "Test",
+                    tenantId = "tenant-a",
+                )
+
+            // When: Cross-tenant command is attempted
+            assertThrows<TenantIsolationException> {
+                commandGateway.sendAndWait<String>(command)
+            }
+
+            // Then: Metric is incremented
+            val counter = meterRegistry.counter("tenant.mismatch.attempts")
+            assertThat(counter.count()).isEqualTo(1.0)
+        }
+    }
+
+    @Nested
+    inner class `Commands without TenantAwareCommand interface` {
+        @Test
+        fun `should bypass validation for non-tenant-aware commands`() {
+            // This test verifies that commands NOT implementing TenantAwareCommand
+            // are not validated (safe bypass for system commands)
+            //
+            // This scenario will be tested once we have system commands in Epic 5+
+            // For now, we document the expected behavior
         }
     }
 }

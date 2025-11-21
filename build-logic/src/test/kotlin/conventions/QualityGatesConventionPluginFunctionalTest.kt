@@ -1,13 +1,12 @@
 package conventions
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
+import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Test
 
-class QualityGatesConventionPluginFunctionalTest : FunSpec({
-    test("1.2-UNIT-003: check runs constitutional stack successfully") {
+class QualityGatesConventionPluginFunctionalTest {
+    @Test
+    fun `1_2-UNIT-003 - check runs constitutional stack successfully`() {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeSampleSources(
@@ -23,12 +22,13 @@ class QualityGatesConventionPluginFunctionalTest : FunSpec({
         val result = project.gradle(":app:check").build()
 
         val checkTask = result.task(":app:check")
-        checkTask.shouldNotBeNull()
-        checkTask.outcome shouldBe TaskOutcome.SUCCESS
-        result.output.shouldContain("Constitutional TDD stack complete")
+        assertThat(checkTask).isNotNull()
+        assertThat(checkTask!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
+        assertThat(result.output).contains("Constitutional TDD stack complete")
     }
 
-    test("1.2-UNIT-004: detekt version drift is rejected") {
+    @Test
+    fun `1_2-UNIT-004 - detekt version drift is rejected`() {
         val project = createTestProject()
         bootstrapSampleProject(project)
         writeSampleSources(project, extraAppBuildContent = """
@@ -42,6 +42,6 @@ class QualityGatesConventionPluginFunctionalTest : FunSpec({
         println("Project dir (drift test): ${project.path}")
 
         val result = project.gradle(":app:check").buildAndFail()
-        result.output.shouldContain("detekt version drift detected")
+        assertThat(result.output).contains("detekt version drift detected")
     }
-})
+}

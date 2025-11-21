@@ -26,7 +26,7 @@ import org.gradle.kotlin.dsl.withType
  * 6. ✅ Reduced code complexity (~30% smaller than v1)
  *
  * TEST SUITES:
- * - test: Unit tests + architecture tests (Kotest + Konsist)
+ * - test: Unit tests + architecture tests (JUnit 6 + AssertJ + Konsist)
  * - integrationTest: Testcontainers integration tests
  * - nightlyTest: Long-running tests (property, fuzz, concurrency, mutation, perf)
  */
@@ -179,19 +179,19 @@ class EafTestingV2Plugin : Plugin<Project> {
                     "testImplementation",
                     listOf(
                         "kotlin-test",
-                        "kotest-framework-engine-jvm",
-                        "kotest-assertions-core-jvm",
-                        "kotest-property-jvm",
-                        "kotest-extensions-spring",
-                        "kotest-extensions-pitest",
+                        "junit-jupiter-api",
+                        "junit-jupiter-params",
+                        "assertj-core",
+                        "awaitility-kotlin",
+                        "mockk",
                         "kotlinx-serialization-json",
                         "kotlinx-serialization-core",
                         "konsist"
                     )
                 )
 
-                val junit5Runner = catalog.library("kotest-runner-junit5-jvm")
-                add("testRuntimeOnly", "${junit5Runner.module}:${junit5Runner.version}")
+                val junitEngine = catalog.library("junit-jupiter-engine")
+                add("testRuntimeOnly", "${junitEngine.module}:${junitEngine.version}")
 
                 val sharedTestingProject = rootProject.findProject(":shared:testing")
                 if (sharedTestingProject != null) {
@@ -202,7 +202,6 @@ class EafTestingV2Plugin : Plugin<Project> {
                 DependencyHandlerScope_addAll(
                     "integrationTestImplementation",
                     listOf(
-                        "kotest-extensions-testcontainers",
                         "testcontainers-postgresql",
                         "testcontainers-keycloak",
                         "spring-boot-starter-security",
@@ -226,7 +225,6 @@ class EafTestingV2Plugin : Plugin<Project> {
                     DependencyHandlerScope_addAll(
                         "nightlyTestImplementation",
                         listOf(
-                            "kotest-extensions-testcontainers",
                             "testcontainers-postgresql",
                             "spring-boot-starter-security"
                         )

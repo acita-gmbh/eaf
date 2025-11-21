@@ -22,7 +22,6 @@ dependencies {
     // jOOQ for TenantQueryHandlerInterceptor (optional - conditionally loaded)
     compileOnly(libs.bundles.jooq)
 
-    testImplementation(libs.bundles.kotest)
     testImplementation(libs.axon.test)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.opentelemetry.sdk.testing)
@@ -34,7 +33,6 @@ dependencies {
 
     integrationTestImplementation(project(":framework:security"))
     integrationTestImplementation(project(":framework:persistence"))
-    integrationTestImplementation(libs.bundles.kotest)
     integrationTestImplementation(libs.bundles.testcontainers)
     integrationTestImplementation(libs.spring.boot.starter.test)
     integrationTestImplementation(libs.spring.boot.starter.data.redis)

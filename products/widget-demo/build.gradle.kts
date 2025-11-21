@@ -10,6 +10,16 @@ plugins {
 group = "com.axians.eaf.products"
 description = "Widget Demo - Reference implementation validating EAF framework capabilities"
 
+// JUnit 6 Unified Versioning: Force all Platform components to match Jupiter 6.0.1
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.junit.platform") {
+            useVersion("6.0.1")
+            because("JUnit 6 requires unified versioning - Platform + Jupiter must both be 6.0.1")
+        }
+    }
+}
+
 configurations.configureEach {
     exclude(group = "org.springframework.modulith", module = "spring-modulith-events-jpa")
     exclude(group = "org.springframework.modulith", module = "spring-modulith-starter-jpa")
@@ -72,11 +82,10 @@ dependencies {
     integrationTestImplementation(libs.bundles.testcontainers)
     integrationTestImplementation(libs.testcontainers.junit.jupiter)
     integrationTestImplementation(libs.spring.boot.starter.test)
-    integrationTestImplementation(libs.bundles.kotest)
-    integrationTestImplementation(libs.kotest.extensions.spring)
     integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation("org.springframework:spring-jdbc")
+    integrationTestImplementation(libs.kotlin.coroutines.core)
 
     // Spring Security Test Support (Story 3.10)
     integrationTestImplementation(libs.spring.security.test)

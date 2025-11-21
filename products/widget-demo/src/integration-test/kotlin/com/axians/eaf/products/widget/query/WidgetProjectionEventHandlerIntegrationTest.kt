@@ -7,13 +7,12 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
@@ -49,114 +48,116 @@ import java.util.UUID
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
+class WidgetProjectionEventHandlerIntegrationTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `WidgetCreatedEvent projection` {
+        @Test
+        fun `CreateWidgetCommand widget_projection INSERT`() {
+            // Given
+            val widgetId = WidgetId(UUID.randomUUID())
+            val widgetName = "Test Widget"
 
-        context("WidgetCreatedEvent projection") {
-            test("CreateWidgetCommand → widget_projection INSERT") {
-                // Given
-                val widgetId = WidgetId(UUID.randomUUID())
-                val widgetName = "Test Widget"
+            // When - Dispatch command
+            val startTime = System.currentTimeMillis()
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
 
-                // When - Dispatch command
-                val startTime = System.currentTimeMillis()
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
+            // Then - Verify projection updated (eventually pattern for async)
+            eventually(Duration.ofSeconds(10)) {
+                val table = DSL.table("widget_projection")
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
 
-                // Then - Verify projection updated (eventually pattern for async)
-                eventually(Duration.ofSeconds(10)) {
-                    val table = DSL.table("widget_projection")
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo(widgetName)
+                assertThat(projection[DSL.field("published", Boolean::class.java)]).isEqualTo(false)
+            }
 
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("name", String::class.java)] shouldBe widgetName
-                    projection[DSL.field("published", Boolean::class.java)] shouldBe false
-                }
+            // Measure projection lag (target <10s per FR011)
+            val projectionLag = System.currentTimeMillis() - startTime
+            println("✅ Projection lag: ${projectionLag}ms (target: <10000ms)")
+            assertThat(projectionLag).isLessThan(10000)
+        }
+    }
 
-                // Measure projection lag (target <10s per FR011)
-                val projectionLag = System.currentTimeMillis() - startTime
-                println("✅ Projection lag: ${projectionLag}ms (target: <10000ms)")
-                (projectionLag < 10000) shouldBe true
+    @Nested
+    inner class `WidgetUpdatedEvent projection` {
+        @Test
+        fun `UpdateWidgetCommand widget_projection UPDATE`() {
+            // Given - Widget exists
+            val widgetId = WidgetId(UUID.randomUUID())
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name"))
+
+            eventually(Duration.ofSeconds(10)) {
+                val table = DSL.table("widget_projection")
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
+                assertThat(projection).isNotNull()
+            }
+
+            // When - Update widget
+            val updatedName = "Updated Name"
+            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName))
+
+            // Then - Verify projection updated
+            eventually(Duration.ofSeconds(10)) {
+                val table = DSL.table("widget_projection")
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
+
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo(updatedName)
+                assertThat(projection[DSL.field("published", Boolean::class.java)]).isEqualTo(false)
             }
         }
+    }
 
-        context("WidgetUpdatedEvent projection") {
-            test("UpdateWidgetCommand → widget_projection UPDATE") {
-                // Given - Widget exists
-                val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name"))
+    @Nested
+    inner class `WidgetPublishedEvent projection` {
+        @Test
+        fun `PublishWidgetCommand widget_projection published=true`() {
+            // Given - Widget exists
+            val widgetId = WidgetId(UUID.randomUUID())
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget"))
 
-                eventually(Duration.ofSeconds(10)) {
-                    val table = DSL.table("widget_projection")
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-                    projection.shouldNotBeNull()
-                }
-
-                // When - Update widget
-                val updatedName = "Updated Name"
-                commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName))
-
-                // Then - Verify projection updated
-                eventually(Duration.ofSeconds(10)) {
-                    val table = DSL.table("widget_projection")
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("name", String::class.java)] shouldBe updatedName
-                    projection[DSL.field("published", Boolean::class.java)] shouldBe false
-                }
+            eventually(Duration.ofSeconds(10)) {
+                val table = DSL.table("widget_projection")
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
+                assertThat(projection).isNotNull()
             }
-        }
 
-        context("WidgetPublishedEvent projection") {
-            test("PublishWidgetCommand → widget_projection published=true") {
-                // Given - Widget exists
-                val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget"))
+            // When - Publish widget
+            commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
 
-                eventually(Duration.ofSeconds(10)) {
-                    val table = DSL.table("widget_projection")
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-                    projection.shouldNotBeNull()
-                }
+            // Then - Verify published flag set
+            eventually(Duration.ofSeconds(10)) {
+                val table = DSL.table("widget_projection")
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
 
-                // When - Publish widget
-                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
-
-                // Then - Verify published flag set
-                eventually(Duration.ofSeconds(10)) {
-                    val table = DSL.table("widget_projection")
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("published", Boolean::class.java)] shouldBe true
-                }
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("published", Boolean::class.java)]).isEqualTo(true)
             }
         }
     }
@@ -178,9 +179,9 @@ class WidgetProjectionEventHandlerIntegrationTest : FunSpec() {
  *
  * Repeatedly executes assertion block until it succeeds or timeout is reached.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -191,7 +192,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            kotlinx.coroutines.delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 

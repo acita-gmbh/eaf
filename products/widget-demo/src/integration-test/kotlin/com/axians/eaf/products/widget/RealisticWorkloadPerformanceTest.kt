@@ -6,14 +6,13 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
@@ -71,121 +70,120 @@ import kotlin.time.measureTime
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class RealisticWorkloadPerformanceTest : FunSpec() {
+class RealisticWorkloadPerformanceTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `Realistic mixed workload (50 aggregates × 10 commands)` {
+        @Test
+        @Timeout(60)
+        fun `should handle mixed cold warm cache workload efficiently`() {
+            val table = DSL.table("widget_projection")
+            val aggregateCount = 50
+            val updatesPerAggregate = 9
+            val totalCommands = aggregateCount * (1 + updatesPerAggregate) // CREATE + UPDATEs
 
-        context("Realistic mixed workload (50 aggregates × 10 commands)") {
-            test("should handle mixed cold/warm cache workload efficiently").config(timeout = 60.seconds) {
-                val table = DSL.table("widget_projection")
-                val aggregateCount = 50
-                val updatesPerAggregate = 9
-                val totalCommands = aggregateCount * (1 + updatesPerAggregate) // CREATE + UPDATEs
+            // Track performance per aggregate
+            val createTimes = mutableListOf<Long>()
+            val updateTimes = mutableListOf<Long>()
 
-                // Track performance per aggregate
-                val createTimes = mutableListOf<Long>()
-                val updateTimes = mutableListOf<Long>()
+            println(
+                "\n📊 Realistic Workload Test: $aggregateCount aggregates × ${updatesPerAggregate + 1} commands = $totalCommands total",
+            )
 
-                println(
-                    "\n📊 Realistic Workload Test: $aggregateCount aggregates × ${updatesPerAggregate + 1} commands = $totalCommands total",
-                )
+            // Measure total time for mixed workload
+            val totalTime =
+                measureTime {
+                    repeat(aggregateCount) { aggregateIndex ->
+                        val widgetId = WidgetId(UUID.randomUUID())
 
-                // Measure total time for mixed workload
-                val totalTime =
-                    measureTime {
-                        repeat(aggregateCount) { aggregateIndex ->
-                            val widgetId = WidgetId(UUID.randomUUID())
+                        // CREATE (cold cache - new aggregate)
+                        val createTime =
+                            measureTime {
+                                commandGateway.sendAndWait<Unit>(
+                                    CreateWidgetCommand(widgetId, "Widget $aggregateIndex"),
+                                )
+                            }
+                        createTimes.add(createTime.inWholeMilliseconds)
 
-                            // CREATE (cold cache - new aggregate)
-                            val createTime =
+                        // UPDATEs (warm cache - aggregate already in memory)
+                        repeat(updatesPerAggregate) { updateIndex ->
+                            val updateTime =
                                 measureTime {
                                     commandGateway.sendAndWait<Unit>(
-                                        CreateWidgetCommand(widgetId, "Widget $aggregateIndex"),
+                                        UpdateWidgetCommand(widgetId, "Update $updateIndex"),
                                     )
                                 }
-                            createTimes.add(createTime.inWholeMilliseconds)
+                            updateTimes.add(updateTime.inWholeMilliseconds)
+                        }
 
-                            // UPDATEs (warm cache - aggregate already in memory)
-                            repeat(updatesPerAggregate) { updateIndex ->
-                                val updateTime =
-                                    measureTime {
-                                        commandGateway.sendAndWait<Unit>(
-                                            UpdateWidgetCommand(widgetId, "Update $updateIndex"),
-                                        )
-                                    }
-                                updateTimes.add(updateTime.inWholeMilliseconds)
-                            }
-
-                            // Progress update every 10 aggregates
-                            if ((aggregateIndex + 1) % 10 == 0) {
-                                println("   Processed ${aggregateIndex + 1}/$aggregateCount aggregates...")
-                            }
+                        // Progress update every 10 aggregates
+                        if ((aggregateIndex + 1) % 10 == 0) {
+                            println("   Processed ${aggregateIndex + 1}/$aggregateCount aggregates...")
                         }
                     }
-
-                println("\n⏱️  $totalCommands commands dispatched in: ${totalTime.inWholeSeconds}s")
-
-                // Calculate statistics
-                val avgCreateTime = createTimes.average()
-                val avgUpdateTime = updateTimes.average()
-                val avgCommandTime = (totalTime.inWholeMilliseconds.toDouble() / totalCommands)
-
-                val minCreateTime = createTimes.minOrNull() ?: 0L
-                val maxCreateTime = createTimes.maxOrNull() ?: 0L
-                val minUpdateTime = updateTimes.minOrNull() ?: 0L
-                val maxUpdateTime = updateTimes.maxOrNull() ?: 0L
-
-                println("\n📈 Performance Breakdown:")
-                println("   Overall:")
-                println(
-                    "     Throughput: ${String.format(
-                        "%.1f",
-                        totalCommands.toDouble() / totalTime.inWholeSeconds,
-                    )} cmd/sec",
-                )
-                println("     Average: ${String.format("%.1f", avgCommandTime)}ms per command")
-                println()
-                println("   CREATE commands ($aggregateCount total) - Cold Cache:")
-                println("     Average: ${String.format("%.1f", avgCreateTime)}ms")
-                println("     Min: ${minCreateTime}ms, Max: ${maxCreateTime}ms")
-                println()
-                println("   UPDATE commands (${updateTimes.size} total) - Warm Cache:")
-                println("     Average: ${String.format("%.1f", avgUpdateTime)}ms")
-                println("     Min: ${minUpdateTime}ms, Max: ${maxUpdateTime}ms")
-                println()
-                println(
-                    "   Cache Benefit: ${String.format(
-                        "%.1fx",
-                        avgCreateTime / avgUpdateTime,
-                    )} faster for cached aggregates",
-                )
-
-                // Verify all aggregates were created and updated
-                eventually(Duration.ofSeconds(10)) {
-                    val projectionCount =
-                        dsl
-                            .selectCount()
-                            .from(table)
-                            .fetchOne(0, Int::class.java)
-
-                    projectionCount.shouldNotBeNull()
-                    projectionCount shouldBe aggregateCount
                 }
 
-                // Performance assertions (relaxed for CI environment)
-                totalTime.inWholeSeconds shouldBeLessThan 15L // 500 commands in <15s (CI: slower hardware)
-                avgCommandTime.toLong() shouldBeLessThan 30L // Average <30ms per command (CI tolerance)
-                avgCreateTime.toLong() shouldBeLessThan 100L // CREATE (cold) <100ms (CI tolerance)
-                avgUpdateTime.toLong() shouldBeLessThan 30L // UPDATE (warm) <30ms (CI tolerance)
+            println("\n⏱️  $totalCommands commands dispatched in: ${totalTime.inWholeSeconds}s")
 
-                println("✅ Realistic workload test passed: $aggregateCount aggregates processed")
+            // Calculate statistics
+            val avgCreateTime = createTimes.average()
+            val avgUpdateTime = updateTimes.average()
+            val avgCommandTime = (totalTime.inWholeMilliseconds.toDouble() / totalCommands)
+
+            val minCreateTime = createTimes.minOrNull() ?: 0L
+            val maxCreateTime = createTimes.maxOrNull() ?: 0L
+            val minUpdateTime = updateTimes.minOrNull() ?: 0L
+            val maxUpdateTime = updateTimes.maxOrNull() ?: 0L
+
+            println("\n📈 Performance Breakdown:")
+            println("   Overall:")
+            println(
+                "     Throughput: ${String.format(
+                    "%.1f",
+                    totalCommands.toDouble() / totalTime.inWholeSeconds,
+                )} cmd/sec",
+            )
+            println("     Average: ${String.format("%.1f", avgCommandTime)}ms per command")
+            println()
+            println("   CREATE commands ($aggregateCount total) - Cold Cache:")
+            println("     Average: ${String.format("%.1f", avgCreateTime)}ms")
+            println("     Min: ${minCreateTime}ms, Max: ${maxCreateTime}ms")
+            println()
+            println("   UPDATE commands (${updateTimes.size} total) - Warm Cache:")
+            println("     Average: ${String.format("%.1f", avgUpdateTime)}ms")
+            println("     Min: ${minUpdateTime}ms, Max: ${maxUpdateTime}ms")
+            println()
+            println(
+                "   Cache Benefit: ${String.format(
+                    "%.1fx",
+                    avgCreateTime / avgUpdateTime,
+                )} faster for cached aggregates",
+            )
+
+            // Verify all aggregates were created and updated
+            eventually(Duration.ofSeconds(10)) {
+                val projectionCount =
+                    dsl
+                        .selectCount()
+                        .from(table)
+                        .fetchOne(0, Int::class.java)
+
+                assertThat(projectionCount).isNotNull()
+                assertThat(projectionCount).isEqualTo(aggregateCount)
             }
+
+            // Performance assertions (relaxed for CI environment)
+            assertThat(totalTime.inWholeSeconds).isLessThan(15L) // 500 commands in <15s (CI: slower hardware)
+            assertThat(avgCommandTime.toLong()).isLessThan(30L) // Average <30ms per command (CI tolerance)
+            assertThat(avgCreateTime.toLong()).isLessThan(100L) // CREATE (cold) <100ms (CI tolerance)
+            assertThat(avgUpdateTime.toLong()).isLessThan(30L) // UPDATE (warm) <30ms (CI tolerance)
+
+            println("✅ Realistic workload test passed: $aggregateCount aggregates processed")
         }
     }
 
@@ -216,9 +214,9 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
  * Retries block until success or timeout is reached.
  * Polls every 100ms until deadline.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -229,7 +227,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            kotlinx.coroutines.delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 
