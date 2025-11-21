@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
@@ -9,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -73,6 +76,18 @@ class WidgetControllerIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context (TestSecurityConfig bypasses TenantContextFilter)
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
 
     @Nested
     inner class `POST api v1 widgets - Create Widget` {
@@ -449,6 +464,8 @@ class WidgetControllerIntegrationTest {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant-controller"
+
         @Container
         @ServiceConnection
         @JvmStatic
