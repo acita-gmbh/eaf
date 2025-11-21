@@ -1,19 +1,21 @@
 package com.axians.eaf.products.widget.api
 
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotBeBlank
-import kotlinx.coroutines.delay
+
+
+
+
+
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -70,19 +72,25 @@ import java.time.Duration
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class WidgetControllerIntegrationTest : FunSpec() {
+class WidgetControllerIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `POST apiwidgets - Create Widget` {
+        // Placeholder
+    }
 
-        context("POST /api/v1/widgets - Create Widget") {
+    @Nested
+    inner class `POST /api/v1/widgets - Create Widget` {
 
-            test("should create widget and return 201 Created") {
+            @Test
+
+
+            fun `should create widget and return 201 Created`() {
                 // Given - Create widget request
                 val request = CreateWidgetRequest(name = "Test Widget")
                 val requestBody = objectMapper.writeValueAsString(request)
@@ -104,12 +112,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         result.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.name shouldBe "Test Widget"
-                response.published shouldBe false
-                response.id shouldNotBe null
+                response.assertThat(name).isEqualTo("Test Widget")
+                response.assertThat(published).isEqualTo(false)
+                response.assertThat(id).isNotEqualTo(null)
             }
 
-            test("should return 400 Bad Request for blank name") {
+            @Test
+
+
+            fun `should return 400 Bad Request for blank name`() {
                 // Given - Invalid request with blank name
                 val request = mapOf("name" to "")
                 val requestBody = objectMapper.writeValueAsString(request)
@@ -124,10 +135,13 @@ class WidgetControllerIntegrationTest : FunSpec() {
 
                 // Then - Verify 400 Bad Request with ProblemDetail
                 // Note: Bean Validation (@NotBlank) should catch empty string
-                result.response.status shouldBe 400
+                result.response.assertThat(status).isEqualTo(400)
             }
 
-            test("should return 400 Bad Request for name exceeding 255 characters") {
+            @Test
+
+
+            fun `should return 400 Bad Request for name exceeding 255 characters`() {
                 // Given - Invalid request with name too long
                 val request = CreateWidgetRequest(name = "a".repeat(256))
                 val requestBody = objectMapper.writeValueAsString(request)
@@ -145,9 +159,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
             }
         }
 
-        context("GET /api/v1/widgets/{id} - Find Widget") {
+        @Nested
 
-            test("should return widget by ID with 200 OK") {
+
+        inner class `GET /api/v1/widgets/{id} - Find Widget` {
+
+            @Test
+
+
+            fun `should return widget by ID with 200 OK`() {
                 // Given - Create widget first
                 val createRequest = CreateWidgetRequest(name = "Findable Widget")
                 val createBody = objectMapper.writeValueAsString(createRequest)
@@ -181,11 +201,14 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         result.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.id shouldBe createdWidget.id
-                response.name shouldBe "Findable Widget"
+                response.assertThat(id).isEqualTo(createdWidget).id
+                response.assertThat(name).isEqualTo("Findable Widget")
             }
 
-            test("should return 404 Not Found for non-existent widget") {
+            @Test
+
+
+            fun `should return 404 Not Found for non-existent widget`() {
                 // Given - Random UUID that doesn't exist
                 val nonExistentId = "00000000-0000-0000-0000-000000000001"
 
@@ -202,9 +225,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
             }
         }
 
-        context("GET /api/v1/widgets - List Widgets") {
+        @Nested
 
-            test("should return paginated widget list with 200 OK") {
+
+        inner class `GET /api/v1/widgets - List Widgets` {
+
+            @Test
+
+
+            fun `should return paginated widget list with 200 OK`() {
                 // Given - Create multiple widgets
                 repeat(3) { index ->
                     val request = CreateWidgetRequest(name = "List Widget $index")
@@ -235,13 +264,16 @@ class WidgetControllerIntegrationTest : FunSpec() {
                     response.has("hasMore") shouldBe true
 
                     val widgets = response.get("data")
-                    widgets.isArray shouldBe true
+                    widgets.assertThat(isArray).isEqualTo(true)
                     // At least 3 widgets (may be more from other tests in same context)
                     (widgets.size() >= 3) shouldBe true
                 }
             }
 
-            test("should support cursor-based pagination") {
+            @Test
+
+
+            fun `should support cursor-based pagination`() {
                 // Given - Create 5 widgets
                 repeat(5) { index ->
                     val request = CreateWidgetRequest(name = "Pagination Widget $index")
@@ -266,7 +298,7 @@ class WidgetControllerIntegrationTest : FunSpec() {
                 firstPage.get("hasMore").asBoolean() shouldBe true
 
                 val cursor = firstPage.get("nextCursor")?.asText()
-                cursor.shouldNotBeBlank()
+                assertThat(cursor).isNotBlank()
 
                 // Then - GET second page with cursor
                 val secondPageResult =
@@ -283,9 +315,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
             }
         }
 
-        context("PUT /api/v1/widgets/{id} - Update Widget") {
+        @Nested
 
-            test("should update widget and return 200 OK") {
+
+        inner class `PUT /api/v1/widgets/{id} - Update Widget` {
+
+            @Test
+
+
+            fun `should update widget and return 200 OK`() {
                 // Given - Create widget first
                 val createRequest = CreateWidgetRequest(name = "Original Name")
                 val createBody = objectMapper.writeValueAsString(createRequest)
@@ -323,11 +361,14 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         updateResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                response.id shouldBe createdWidget.id
-                response.name shouldBe "Updated Name"
+                response.assertThat(id).isEqualTo(createdWidget).id
+                response.assertThat(name).isEqualTo("Updated Name")
             }
 
-            test("should return 404 Not Found for non-existent widget") {
+            @Test
+
+
+            fun `should return 404 Not Found for non-existent widget`() {
                 // Given - Random UUID that doesn't exist
                 val nonExistentId = "00000000-0000-0000-0000-000000000002"
                 val updateRequest = UpdateWidgetRequest(name = "Cannot Update")
@@ -344,7 +385,10 @@ class WidgetControllerIntegrationTest : FunSpec() {
                     }
             }
 
-            test("should return 400 Bad Request for invalid update") {
+            @Test
+
+
+            fun `should return 400 Bad Request for invalid update`() {
                 // Given - Create widget first
                 val createRequest = CreateWidgetRequest(name = "Widget to Update")
                 val createBody = objectMapper.writeValueAsString(createRequest)
@@ -378,9 +422,15 @@ class WidgetControllerIntegrationTest : FunSpec() {
             }
         }
 
-        context("Full CRUD Flow Integration Test") {
+        @Nested
 
-            test("should complete full lifecycle: POST → GET → PUT → GET") {
+
+        inner class `Full CRUD Flow Integration Test` {
+
+            @Test
+
+
+            fun `should complete full lifecycle: POST → GET → PUT → GET`() {
                 // Step 1: Create widget
                 val createRequest = CreateWidgetRequest(name = "CRUD Flow Widget")
                 val createBody = objectMapper.writeValueAsString(createRequest)
@@ -399,7 +449,7 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         createResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                createdWidget.name shouldBe "CRUD Flow Widget"
+                createdWidget.assertThat(name).isEqualTo("CRUD Flow Widget")
 
                 // Step 2: Read widget (with retry for eventual consistency)
                 val readResult =
@@ -415,8 +465,8 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         readResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                readWidget.id shouldBe createdWidget.id
-                readWidget.name shouldBe "CRUD Flow Widget"
+                readWidget.assertThat(id).isEqualTo(createdWidget).id
+                readWidget.assertThat(name).isEqualTo("CRUD Flow Widget")
 
                 // Step 3: Update widget
                 val updateRequest = UpdateWidgetRequest(name = "Updated CRUD Widget")
@@ -437,8 +487,8 @@ class WidgetControllerIntegrationTest : FunSpec() {
                         updateResult.response.contentAsString,
                         WidgetResponse::class.java,
                     )
-                verifiedWidget.name shouldBe "Updated CRUD Widget"
-                verifiedWidget.updatedAt shouldNotBe verifiedWidget.createdAt
+                verifiedWidget.assertThat(name).isEqualTo("Updated CRUD Widget")
+                verifiedWidget.assertThat(updatedAt).isNotEqualTo(verifiedWidget).createdAt
             }
         }
     }
@@ -463,9 +513,9 @@ class WidgetControllerIntegrationTest : FunSpec() {
  *
  * Repeatedly executes assertion block until it succeeds or timeout is reached.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -476,7 +526,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 

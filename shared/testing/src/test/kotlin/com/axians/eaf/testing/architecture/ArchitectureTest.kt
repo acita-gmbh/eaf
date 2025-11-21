@@ -101,13 +101,17 @@ class ArchitectureTest {
         }
 
         @Test
-        @org.junit.jupiter.api.Disabled("Temporarily disabled - 15 files still need Kotest → JUnit 6 conversion")
-        fun `test classes must use JUnit 6 (NOT Kotest)`() {
+        fun `test classes must use JUnit 6 (NOT Kotest test framework)`() {
             testScope
                 .files
                 .assertFalse {
                     it.hasImport { import ->
-                        import.name.startsWith("io.kotest.")
+                        // Allow io.kotest.property (property-based testing library)
+                        // Block io.kotest.core (test framework), io.kotest.matchers, io.kotest.extensions
+                        import.name.startsWith("io.kotest.core") ||
+                            import.name.startsWith("io.kotest.matchers") ||
+                            import.name.startsWith("io.kotest.extensions") ||
+                            import.name.startsWith("io.kotest.assertions")
                     }
                 }
         }

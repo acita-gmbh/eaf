@@ -6,14 +6,13 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
@@ -66,18 +65,18 @@ import kotlin.time.measureTime
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class SnapshotPerformanceTest : FunSpec() {
+class SnapshotPerformanceTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
-
-        context("Snapshot threshold validation (250 events)") {
-            test("should process 250 commands successfully").config(timeout = 60.seconds) {
+    @Nested
+    inner class `Snapshot threshold validation (250 events)` {
+        @Test
+        @Timeout(60)
+        fun `should process 250 commands successfully`() {
                 val widgetId = WidgetId(UUID.randomUUID())
                 val table = DSL.table("widget_projection")
                 val snapshotTable = DSL.table("snapshot_event_entry")
@@ -108,8 +107,8 @@ class SnapshotPerformanceTest : FunSpec() {
                             .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
                             .fetchOne()
 
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("name", String::class.java)] shouldBe "Update 248"
+                    assertThat(projection).isNotNull()
+                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 248")
                 }
 
                 // Verify snapshot behavior (NOTE: Snapshots disabled in test profile via @Profile("!test"))
@@ -124,16 +123,19 @@ class SnapshotPerformanceTest : FunSpec() {
                 // Expected: 0 snapshots in test profile (disabled for 70x performance improvement)
                 // Production: 2 snapshots expected (threshold = 100 events)
                 println("   Snapshots created: ${snapshotCount ?: 0} (expected: 0 in test, 2 in production)")
-                snapshotCount shouldBe 0 // Verify snapshots correctly disabled in test profile
+                assertThat(snapshotCount).isEqualTo(0) // Verify snapshots correctly disabled in test profile
 
                 // Performance target: <30 seconds for 250 commands
-                totalTime.inWholeSeconds shouldBeLessThan 30L
+                assertThat(totalTime.inWholeSeconds).isLessThan(30L)
                 println("✅ 250 events processed (snapshots disabled in test for performance)")
-            }
         }
+    }
 
-        context("Large event set with snapshots (1000 events)") {
-            test("should process 1000 commands with snapshot benefit").config(timeout = 180.seconds) {
+    @Nested
+    inner class `Large event set with snapshots (1000 events)` {
+        @Test
+        @Timeout(180)
+        fun `should process 1000 commands with snapshot benefit`() {
                 val widgetId = WidgetId(UUID.randomUUID())
                 val table = DSL.table("widget_projection")
 
@@ -161,18 +163,21 @@ class SnapshotPerformanceTest : FunSpec() {
                             .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
                             .fetchOne()
 
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("name", String::class.java)] shouldBe "Update 998"
+                    assertThat(projection).isNotNull()
+                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 998")
                 }
 
                 // Performance target: <2 minutes for 1000 commands
-                totalTime.inWholeSeconds shouldBeLessThan 120L
+                assertThat(totalTime.inWholeSeconds).isLessThan(120L)
                 println("✅ 1000 events processed (snapshots expected at seq 100, 200, ..., 900)")
-            }
         }
+    }
 
-        context("Command performance baseline") {
-            test("measure individual command dispatch time").config(timeout = 60.seconds) {
+    @Nested
+    inner class `Command performance baseline` {
+        @Test
+        @Timeout(60)
+        fun `measure individual command dispatch time`() {
                 val widgetId = WidgetId(UUID.randomUUID())
                 val table = DSL.table("widget_projection")
 
@@ -192,7 +197,7 @@ class SnapshotPerformanceTest : FunSpec() {
                             .selectFrom(table)
                             .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
                             .fetchOne()
-                    projection.shouldNotBeNull()
+                    assertThat(projection).isNotNull()
                 }
 
                 // Measure 10 update commands
@@ -222,14 +227,13 @@ class SnapshotPerformanceTest : FunSpec() {
                             .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
                             .fetchOne()
 
-                    projection.shouldNotBeNull()
-                    projection[DSL.field("name", String::class.java)] shouldBe "Baseline 9"
+                    assertThat(projection).isNotNull()
+                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Baseline 9")
                 }
 
                 // Sanity: Commands should complete in reasonable time
-                avgTime.toLong() shouldBeLessThan 1000L
+                assertThat(avgTime.toLong()).isLessThan(1000L)
                 println("✅ Baseline measurements complete")
-            }
         }
     }
 
@@ -260,9 +264,9 @@ class SnapshotPerformanceTest : FunSpec() {
  * Retries block until success or timeout is reached.
  * Polls every 100ms until deadline.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -273,7 +277,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            kotlinx.coroutines.delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 

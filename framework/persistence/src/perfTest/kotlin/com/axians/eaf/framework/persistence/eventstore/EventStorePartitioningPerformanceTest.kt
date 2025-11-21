@@ -1,16 +1,14 @@
 package com.axians.eaf.framework.persistence.eventstore
 
-import io.kotest.core.annotation.Tags
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.eventhandling.DomainEventMessage
 import org.axonframework.eventhandling.GenericDomainEventMessage
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
 import org.axonframework.messaging.MetaData
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -26,9 +24,9 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
 import kotlin.system.measureTimeMillis
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Integration and performance tests for event store partitioning.
@@ -38,9 +36,9 @@ import kotlin.time.Duration.Companion.seconds
  *  - Events route to the correct partition based on time_stamp
  *  - Query performance for aggregate retrieval stays below 200ms with 100K events
  */
-@Tags("Performance") // Exclude from fast CI - run in nightly only
+@Tag("Performance") // Exclude from fast CI - run in nightly only
 @SpringBootTest(classes = [EventStorePartitioningPerformanceTest.TestConfiguration::class])
-class EventStorePartitioningPerformanceTest : FunSpec() {
+class EventStorePartitioningPerformanceTest {
     @Autowired
     private lateinit var dataSource: DataSource
 
@@ -49,246 +47,250 @@ class EventStorePartitioningPerformanceTest : FunSpec() {
 
     private lateinit var jdbcTemplate: JdbcTemplate
 
-    init {
-        extension(SpringExtension())
+    @BeforeAll
+    fun beforeAll() {
+        jdbcTemplate = JdbcTemplate(dataSource)
+    }
 
-        beforeSpec {
-            jdbcTemplate = JdbcTemplate(dataSource)
-        }
-
-        test("DomainEventEntry is partitioned by month") {
-            val partitions =
-                jdbcTemplate.queryForList(
-                    """
-                    SELECT child.relname
-                    FROM pg_inherits
-                    JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
-                    JOIN pg_class child ON child.oid = pg_inherits.inhrelid
-                    WHERE parent.relname = 'domain_event_entry'
-                    ORDER BY child.relname
-                    """.trimIndent(),
-                    String::class.java,
-                )
-
-            partitions.isEmpty() shouldBe false
-            partitions.count { it.startsWith("domain_event_entry_") } shouldBeGreaterThan 0
-        }
-
-        test("BRIN indexes exist on DomainEventEntry") {
-            val indexes =
-                jdbcTemplate.queryForList(
-                    """
-                    SELECT indexname, indexdef
-                    FROM pg_indexes
-                    WHERE tablename = 'domain_event_entry'
-                    AND indexdef LIKE '%USING brin%'
-                    ORDER BY indexname
-                    """.trimIndent(),
-                )
-
-            // Verify BRIN indexes exist
-            indexes.size shouldBeGreaterThan 0
-
-            val indexNames = indexes.map { (it["indexname"] as String).lowercase() }
-            indexNames.any { it.contains("time_stamp") && it.contains("brin") } shouldBe true
-            indexNames.any { it.contains("aggregate") && it.contains("brin") } shouldBe true
-        }
-
-        test("B-tree index exists for aggregate replay") {
-            val indexes =
-                jdbcTemplate.queryForList(
-                    """
-                    SELECT indexname, indexdef
-                    FROM pg_indexes
-                    WHERE tablename = 'domain_event_entry'
-                    AND indexdef LIKE '%aggregate_identifier%'
-                    AND indexdef LIKE '%sequence_number%'
-                    AND indexdef NOT LIKE '%USING brin%'
-                    ORDER BY indexname
-                    """.trimIndent(),
-                )
-
-            // Verify B-tree index for (aggregateIdentifier, sequenceNumber) exists
-            indexes.size shouldBeGreaterThan 0
-        }
-
-        test("Uniqueness constraint prevents duplicate eventIdentifier") {
-            truncateEvents()
-
-            val aggregateId = "uniqueness-test-event"
-            val eventId = UUID.randomUUID().toString()
-            val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
-
-            // Insert first event
-            insertEventDirect(
-                aggregateId = aggregateId,
-                sequence = 0L,
-                time_stamp = Instant.parse(timeStamp),
-                eventIdentifier = eventId,
+    @Test
+    fun `DomainEventEntry is partitioned by month`() {
+        val partitions =
+            jdbcTemplate.queryForList(
+                """
+                SELECT child.relname
+                FROM pg_inherits
+                JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
+                JOIN pg_class child ON child.oid = pg_inherits.inhrelid
+                WHERE parent.relname = 'domain_event_entry'
+                ORDER BY child.relname
+                """.trimIndent(),
+                String::class.java,
             )
 
-            // Attempt to insert duplicate eventIdentifier (should fail)
-            val exception =
-                kotlin
-                    .runCatching {
-                        insertEventDirect(
-                            aggregateId = "different-aggregate",
-                            sequence = 0L,
-                            time_stamp = Instant.parse(timeStamp),
-                            eventIdentifier = eventId, // Same eventId
-                        )
-                    }.exceptionOrNull()
+        assertThat(partitions).isNotEmpty
+        assertThat(partitions.count { it.startsWith("domain_event_entry_") }).isGreaterThan(0)
+    }
 
-            exception shouldNotBe null
-            (exception is org.springframework.dao.DataIntegrityViolationException) shouldBe true
-        }
-
-        test("Uniqueness constraint prevents duplicate (aggregateIdentifier, sequenceNumber)") {
-            truncateEvents()
-
-            val aggregateId = "uniqueness-test-sequence"
-            val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
-
-            // Insert first event
-            insertEventDirect(
-                aggregateId = aggregateId,
-                sequence = 0L,
-                time_stamp = Instant.parse(timeStamp),
+    @Test
+    fun `BRIN indexes exist on DomainEventEntry`() {
+        val indexes =
+            jdbcTemplate.queryForList(
+                """
+                SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE tablename = 'domain_event_entry'
+                AND indexdef LIKE '%USING brin%'
+                ORDER BY indexname
+                """.trimIndent(),
             )
 
-            // Attempt to insert duplicate (aggregateId, sequence) (should fail)
-            val exception =
-                kotlin
-                    .runCatching {
-                        insertEventDirect(
-                            aggregateId = aggregateId,
-                            sequence = 0L, // Same aggregateId + sequence
-                            time_stamp = Instant.parse(timeStamp),
-                            eventIdentifier = UUID.randomUUID().toString(), // Different eventId
-                        )
-                    }.exceptionOrNull()
+        // Verify BRIN indexes exist
+        assertThat(indexes.size).isGreaterThan(0)
 
-            exception shouldNotBe null
-            (exception is org.springframework.dao.DataIntegrityViolationException) shouldBe true
-        }
+        val indexNames = indexes.map { (it["indexname"] as String).lowercase() }
+        assertThat(indexNames.any { it.contains("time_stamp") && it.contains("brin") }).isTrue()
+        assertThat(indexNames.any { it.contains("aggregate") && it.contains("brin") }).isTrue()
+    }
 
-        test("Events route to correct monthly partition") {
-            truncateEvents()
-
-            val currentMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
-            val nextMonth = currentMonth.plusMonths(1)
-
-            val currentAggregate = "partition-test-current"
-            val nextAggregate = "partition-test-next"
-
-            insertEventDirect(
-                aggregateId = currentAggregate,
-                sequence = 0L,
-                time_stamp = currentMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
+    @Test
+    fun `B-tree index exists for aggregate replay`() {
+        val indexes =
+            jdbcTemplate.queryForList(
+                """
+                SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE tablename = 'domain_event_entry'
+                AND indexdef LIKE '%aggregate_identifier%'
+                AND indexdef LIKE '%sequence_number%'
+                AND indexdef NOT LIKE '%USING brin%'
+                ORDER BY indexname
+                """.trimIndent(),
             )
 
-            insertEventDirect(
-                aggregateId = nextAggregate,
-                sequence = 0L,
-                time_stamp = nextMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
-            )
+        // Verify B-tree index for (aggregateIdentifier, sequenceNumber) exists
+        assertThat(indexes.size).isGreaterThan(0)
+    }
 
-            val format = DateTimeFormatter.ofPattern("yyyy_MM")
+    @Test
+    fun `Uniqueness constraint prevents duplicate eventIdentifier`() {
+        truncateEvents()
 
-            val currentPartition =
-                jdbcTemplate.queryForObject(
-                    """
-                    SELECT tableoid::regclass::text
-                    FROM domain_event_entry
-                    WHERE aggregate_identifier = ? AND sequence_number = 0
-                    """.trimIndent(),
-                    String::class.java,
-                    currentAggregate,
-                )
+        val aggregateId = "uniqueness-test-event"
+        val eventId = UUID.randomUUID().toString()
+        val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
 
-            val nextPartition =
-                jdbcTemplate.queryForObject(
-                    """
-                    SELECT tableoid::regclass::text
-                    FROM domain_event_entry
-                    WHERE aggregate_identifier = ? AND sequence_number = 0
-                    """.trimIndent(),
-                    String::class.java,
-                    nextAggregate,
-                )
+        // Insert first event
+        insertEventDirect(
+            aggregateId = aggregateId,
+            sequence = 0L,
+            time_stamp = Instant.parse(timeStamp),
+            eventIdentifier = eventId,
+        )
 
-            val normalizedCurrent = requireNotNull(currentPartition).trim('"').lowercase()
-            val normalizedNext = requireNotNull(nextPartition).trim('"').lowercase()
-
-            normalizedCurrent shouldBe "domain_event_entry_${currentMonth.format(format)}"
-            normalizedNext shouldBe "domain_event_entry_${nextMonth.format(format)}"
-        }
-
-        test("Aggregate retrieval stays below 200ms with 100K events")
-            .config(timeout = 60.seconds) {
-                truncateEvents()
-
-                val totalAggregates = 100
-                val eventsPerAggregate = 1_000
-                val payload =
-                    PerformanceEvent(
-                        description = "event-store-partitioning-performance",
-                        recordedAt = Instant.now(),
+        // Attempt to insert duplicate eventIdentifier (should fail)
+        val exception =
+            kotlin
+                .runCatching {
+                    insertEventDirect(
+                        aggregateId = "different-aggregate",
+                        sequence = 0L,
+                        time_stamp = Instant.parse(timeStamp),
+                        eventIdentifier = eventId, // Same eventId
                     )
+                }.exceptionOrNull()
 
-                repeat(totalAggregates) { aggregateIndex ->
-                    val aggregateId = "perf-${aggregateIndex.toString().padStart(3, '0')}"
-                    val events =
-                        (0 until eventsPerAggregate).map { sequence ->
-                            newEvent(
-                                aggregateId = aggregateId,
-                                sequence = sequence.toLong(),
-                                payload = payload.copy(recordedAt = Instant.now()),
-                            )
-                        }
+        assertThat(exception).isNotNull()
+        assertThat(exception is org.springframework.dao.DataIntegrityViolationException).isTrue()
+    }
 
-                    eventStorageEngine.appendEvents(*events.toTypedArray())
+    @Test
+    fun `Uniqueness constraint prevents duplicate (aggregateIdentifier, sequenceNumber)`() {
+        truncateEvents()
+
+        val aggregateId = "uniqueness-test-sequence"
+        val timeStamp = Instant.now().atOffset(ZoneOffset.UTC).toString()
+
+        // Insert first event
+        insertEventDirect(
+            aggregateId = aggregateId,
+            sequence = 0L,
+            time_stamp = Instant.parse(timeStamp),
+        )
+
+        // Attempt to insert duplicate (aggregateId, sequence) (should fail)
+        val exception =
+            kotlin
+                .runCatching {
+                    insertEventDirect(
+                        aggregateId = aggregateId,
+                        sequence = 0L, // Same aggregateId + sequence
+                        time_stamp = Instant.parse(timeStamp),
+                        eventIdentifier = UUID.randomUUID().toString(), // Different eventId
+                    )
+                }.exceptionOrNull()
+
+        assertThat(exception).isNotNull()
+        assertThat(exception is org.springframework.dao.DataIntegrityViolationException).isTrue()
+    }
+
+    @Test
+    fun `Events route to correct monthly partition`() {
+        truncateEvents()
+
+        val currentMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
+        val nextMonth = currentMonth.plusMonths(1)
+
+        val currentAggregate = "partition-test-current"
+        val nextAggregate = "partition-test-next"
+
+        insertEventDirect(
+            aggregateId = currentAggregate,
+            sequence = 0L,
+            time_stamp = currentMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
+        )
+
+        insertEventDirect(
+            aggregateId = nextAggregate,
+            sequence = 0L,
+            time_stamp = nextMonth.atStartOfDay().toInstant(ZoneOffset.UTC),
+        )
+
+        val format = DateTimeFormatter.ofPattern("yyyy_MM")
+
+        val currentPartition =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT tableoid::regclass::text
+                FROM domain_event_entry
+                WHERE aggregate_identifier = ? AND sequence_number = 0
+                """.trimIndent(),
+                String::class.java,
+                currentAggregate,
+            )
+
+        val nextPartition =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT tableoid::regclass::text
+                FROM domain_event_entry
+                WHERE aggregate_identifier = ? AND sequence_number = 0
+                """.trimIndent(),
+                String::class.java,
+                nextAggregate,
+            )
+
+        val normalizedCurrent = requireNotNull(currentPartition).trim('"').lowercase()
+        val normalizedNext = requireNotNull(nextPartition).trim('"').lowercase()
+
+        assertThat(normalizedCurrent).isEqualTo("domain_event_entry_${currentMonth.format(format)}")
+        assertThat(normalizedNext).isEqualTo("domain_event_entry_${nextMonth.format(format)}")
+    }
+
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    fun `Aggregate retrieval stays below 200ms with 100K events`() {
+        truncateEvents()
+
+        val totalAggregates = 100
+        val eventsPerAggregate = 1_000
+        val payload =
+            PerformanceEvent(
+                description = "event-store-partitioning-performance",
+                recordedAt = Instant.now(),
+            )
+
+        repeat(totalAggregates) { aggregateIndex ->
+            val aggregateId = "perf-${aggregateIndex.toString().padStart(3, '0')}"
+            val events =
+                (0 until eventsPerAggregate).map { sequence ->
+                    newEvent(
+                        aggregateId = aggregateId,
+                        sequence = sequence.toLong(),
+                        payload = payload.copy(recordedAt = Instant.now()),
+                    )
                 }
 
-                jdbcTemplate.execute("ANALYZE domain_event_entry")
+            eventStorageEngine.appendEvents(*events.toTypedArray())
+        }
 
-                val targetAggregate = "perf-target"
-                val targetEvents =
-                    (0 until eventsPerAggregate).map { sequence ->
-                        newEvent(
-                            aggregateId = targetAggregate,
-                            sequence = sequence.toLong(),
-                            payload =
-                                PerformanceEvent(
-                                    description = "target-$sequence",
-                                    recordedAt = Instant.now(),
-                                ),
-                        )
-                    }
+        jdbcTemplate.execute("ANALYZE domain_event_entry")
 
-                eventStorageEngine.appendEvents(*targetEvents.toTypedArray())
-
-                val durationMillis =
-                    measureTimeMillis {
-                        val retrieved =
-                            eventStorageEngine
-                                .readEvents(targetAggregate)
-                                .asStream()
-                                .toList()
-
-                        retrieved.size shouldBe eventsPerAggregate
-                    }
-
-                println("Aggregate retrieval duration: $durationMillis ms")
-
-                durationMillis shouldBeLessThan 200L
+        val targetAggregate = "perf-target"
+        val targetEvents =
+            (0 until eventsPerAggregate).map { sequence ->
+                newEvent(
+                    aggregateId = targetAggregate,
+                    sequence = sequence.toLong(),
+                    payload =
+                        PerformanceEvent(
+                            description = "target-$sequence",
+                            recordedAt = Instant.now(),
+                        ),
+                )
             }
 
-        // NOTE: Partition script testing removed due to CI environment complexity
-        // (requires psql client, python3, and proper working directory setup).
-        // Script is validated manually and through operational documentation.
-        // Core partitioning functionality is covered by the 7 existing tests above.
+        eventStorageEngine.appendEvents(*targetEvents.toTypedArray())
+
+        val durationMillis =
+            measureTimeMillis {
+                val retrieved =
+                    eventStorageEngine
+                        .readEvents(targetAggregate)
+                        .asStream()
+                        .toList()
+
+                assertThat(retrieved.size).isEqualTo(eventsPerAggregate)
+            }
+
+        println("Aggregate retrieval duration: $durationMillis ms")
+
+        assertThat(durationMillis).isLessThan(200L)
     }
+
+    // NOTE: Partition script testing removed due to CI environment complexity
+    // (requires psql client, python3, and proper working directory setup).
+    // Script is validated manually and through operational documentation.
+    // Core partitioning functionality is covered by the 7 existing tests above.
 
     private fun truncateEvents() {
         jdbcTemplate.execute("TRUNCATE TABLE domain_event_entry RESTART IDENTITY CASCADE")

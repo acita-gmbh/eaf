@@ -6,14 +6,13 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
@@ -71,18 +70,18 @@ import kotlin.time.measureTime
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class RealisticWorkloadPerformanceTest : FunSpec() {
+class RealisticWorkloadPerformanceTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
-
-        context("Realistic mixed workload (50 aggregates × 10 commands)") {
-            test("should handle mixed cold/warm cache workload efficiently").config(timeout = 60.seconds) {
+    @Nested
+    inner class `Realistic mixed workload (50 aggregates × 10 commands)` {
+        @Test
+        @Timeout(60)
+        fun `should handle mixed cold warm cache workload efficiently`() {
                 val table = DSL.table("widget_projection")
                 val aggregateCount = 50
                 val updatesPerAggregate = 9
@@ -174,18 +173,17 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
                             .from(table)
                             .fetchOne(0, Int::class.java)
 
-                    projectionCount.shouldNotBeNull()
-                    projectionCount shouldBe aggregateCount
+                    assertThat(projectionCount).isNotNull()
+                    assertThat(projectionCount).isEqualTo(aggregateCount)
                 }
 
                 // Performance assertions (relaxed for CI environment)
-                totalTime.inWholeSeconds shouldBeLessThan 15L // 500 commands in <15s (CI: slower hardware)
-                avgCommandTime.toLong() shouldBeLessThan 30L // Average <30ms per command (CI tolerance)
-                avgCreateTime.toLong() shouldBeLessThan 100L // CREATE (cold) <100ms (CI tolerance)
-                avgUpdateTime.toLong() shouldBeLessThan 30L // UPDATE (warm) <30ms (CI tolerance)
+                assertThat(totalTime.inWholeSeconds).isLessThan(15L) // 500 commands in <15s (CI: slower hardware)
+                assertThat(avgCommandTime.toLong()).isLessThan(30L) // Average <30ms per command (CI tolerance)
+                assertThat(avgCreateTime.toLong()).isLessThan(100L) // CREATE (cold) <100ms (CI tolerance)
+                assertThat(avgUpdateTime.toLong()).isLessThan(30L) // UPDATE (warm) <30ms (CI tolerance)
 
                 println("✅ Realistic workload test passed: $aggregateCount aggregates processed")
-            }
         }
     }
 
@@ -216,9 +214,9 @@ class RealisticWorkloadPerformanceTest : FunSpec() {
  * Retries block until success or timeout is reached.
  * Polls every 100ms until deadline.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -229,7 +227,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            kotlinx.coroutines.delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 

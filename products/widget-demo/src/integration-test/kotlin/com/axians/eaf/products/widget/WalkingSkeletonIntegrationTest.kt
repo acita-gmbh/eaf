@@ -9,15 +9,10 @@ import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.comparables.shouldBeLessThan
-import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.longs.shouldBeLessThan
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.delay
+import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -82,7 +77,7 @@ import java.util.UUID
 @Sql("/schema.sql")
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-class WalkingSkeletonIntegrationTest : FunSpec() {
+class WalkingSkeletonIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
@@ -92,12 +87,11 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
     @Autowired
     private lateinit var dsl: DSLContext
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `Walking Skeleton - Complete CQRS Flow` {
 
-        context("Walking Skeleton - Complete CQRS Flow") {
-
-            test("complete CQRS flow: POST → Command → Event → Projection → GET validates end-to-end architecture") {
+        @Test
+        fun `complete CQRS flow POST Command Event Projection GET validates end-to-end architecture`() {
                 // =====================================================================
                 // Step 0: Warmup call to avoid cold-start penalty
                 // First API call includes Spring context initialization overhead
@@ -137,12 +131,12 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: API latency <500ms (AC4) after warmup; CI runners are slower than local dev
-                createLatency shouldBeLessThan 500L
+                assertThat(createLatency).isLessThan(500L)
 
                 // VALIDATION: Widget created with correct data
-                createdWidget.name shouldBe "Walking Skeleton Widget"
-                createdWidget.published shouldBe false
-                createdWidget.id shouldNotBe null
+                assertThat(createdWidget.name).isEqualTo("Walking Skeleton Widget")
+                assertThat(createdWidget.published).isEqualTo(false)
+                assertThat(createdWidget.id).isNotNull()
 
                 val widgetId = UUID.fromString(createdWidget.id)
 
@@ -167,13 +161,13 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                             ).fetchOne()
 
                     // VALIDATION: Projection must exist
-                    projection shouldNotBe null
+                    assertThat(projection).isNotNull()
                 }
 
                 val projectionLag = System.currentTimeMillis() - projectionStartTime
 
                 // VALIDATION: Projection lag <10s (AC4)
-                projectionLag shouldBeLessThan 10_000L
+                assertThat(projectionLag).isLessThan(10_000L)
 
                 // =====================================================================
                 // Step 3: RETRIEVE Widget via REST API
@@ -195,9 +189,9 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: Query retrieval returns correct data (AC3)
-                retrievedWidget.id shouldBe createdWidget.id
-                retrievedWidget.name shouldBe "Walking Skeleton Widget"
-                retrievedWidget.published shouldBe false
+                assertThat(retrievedWidget.id).isEqualTo(createdWidget.id)
+                assertThat(retrievedWidget.name).isEqualTo("Walking Skeleton Widget")
+                assertThat(retrievedWidget.published).isEqualTo(false)
 
                 // =====================================================================
                 // Step 4: UPDATE Widget (additional CQRS cycle)
@@ -223,8 +217,8 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     )
 
                 // VALIDATION: Update command processed successfully
-                updatedWidget.name shouldBe "Updated Skeleton"
-                updatedWidget.updatedAt shouldNotBe updatedWidget.createdAt
+                assertThat(updatedWidget.name).isEqualTo("Updated Skeleton")
+                assertThat(updatedWidget.updatedAt).isNotEqualTo(updatedWidget.createdAt)
 
                 // =====================================================================
                 // Step 5: LIST Widgets (pagination query)
@@ -244,19 +238,21 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                     val paginatedResponse = objectMapper.readTree(listResult.response.contentAsString)
 
                     // VALIDATION: Paginated response structure
-                    paginatedResponse.has("data") shouldBe true
-                    paginatedResponse.has("nextCursor") shouldBe true
-                    paginatedResponse.has("hasMore") shouldBe true
+                    assertThat(paginatedResponse.has("data")).isTrue()
+                    assertThat(paginatedResponse.has("nextCursor")).isTrue()
+                    assertThat(paginatedResponse.has("hasMore")).isTrue()
 
                     val widgets = paginatedResponse.get("data")
-                    widgets.isArray shouldBe true
+                    assertThat(widgets.isArray).isTrue()
 
                     // VALIDATION: At least our widget appears in list
-                    widgets.size() shouldBeGreaterThan 0
+                    assertThat(widgets.size()).isGreaterThan(0)
                 }
             }
+        }
 
-            test("validation failure returns 400 Bad Request with RFC 7807 ProblemDetail") {
+        @Test
+        fun `validation failure returns 400 Bad Request with RFC 7807 ProblemDetail`() {
                 // Given - Invalid request with blank name (violates @NotBlank)
                 val invalidRequest = mapOf("name" to "")
                 val requestBody = objectMapper.writeValueAsString(invalidRequest)
@@ -272,9 +268,10 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                         jsonPath("$.status") { value(400) }
                         jsonPath("$.title") { exists() }
                     }
-            }
+        }
 
-            test("not found scenario returns 404 Not Found with RFC 7807 ProblemDetail") {
+        @Test
+        fun `not found scenario returns 404 Not Found with RFC 7807 ProblemDetail`() {
                 // Given - Non-existent widget ID
                 val nonExistentId = "00000000-0000-0000-0000-000000000999"
 
@@ -288,7 +285,6 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
                         jsonPath("$.status") { value(404) }
                         jsonPath("$.title") { exists() }
                     }
-            }
         }
     }
 
@@ -320,22 +316,17 @@ class WalkingSkeletonIntegrationTest : FunSpec() {
  * This pattern ensures deterministic behavior with eventual consistency.
  *
  * **Design Decision:**
- * Custom implementation is used instead of Kotest's built-in eventually because:
- * - Kotest 6.0.4 `io.kotest.assertions.timing.eventually` not available in current dependencies
- * - Adding kotest-assertions-timing would require additional dependency
- * - Current implementation is lightweight, well-tested, and project-specific
+ * Custom implementation is used instead of external timing libraries:
+ * - Lightweight, well-tested, and project-specific
  * - 100ms polling interval is optimized for our projection lag requirements
- *
- * **Note:** CodeRabbit suggested using Kotest's built-in eventually. This is a valid
- * future enhancement when upgrading Kotest or adding the assertions-timing module.
  *
  * @param timeout Maximum time to wait for condition to be true
  * @param block Assertion block to execute repeatedly
  * @throws AssertionError if block does not succeed within timeout
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -346,7 +337,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 

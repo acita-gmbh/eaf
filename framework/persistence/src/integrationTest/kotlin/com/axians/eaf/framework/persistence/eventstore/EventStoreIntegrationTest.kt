@@ -1,16 +1,13 @@
 package com.axians.eaf.framework.persistence.eventstore
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.eventhandling.DomainEventMessage
 import org.axonframework.eventhandling.GenericDomainEventMessage
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine
 import org.axonframework.messaging.MetaData
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -34,8 +31,8 @@ import javax.sql.DataSource
  * - PostgreSQL Testcontainer provides real database for integration testing
  *
  * **Test Strategy:**
- * - Uses Kotest FunSpec (JUnit forbidden per EAF standards)
- * - Uses @SpringBootTest with field injection + init block pattern
+ * - Uses JUnit 6 with AssertJ
+ * - Uses @SpringBootTest with field injection
  * - Uses Testcontainers PostgreSQL for real database (H2 forbidden)
  * - Follows Constitutional TDD approach
  *
@@ -43,154 +40,154 @@ import javax.sql.DataSource
  * @see com.axians.eaf.framework.persistence.migration.V001__event_store_schema
  */
 @SpringBootTest(classes = [EventStoreIntegrationTest.TestConfiguration::class])
-class EventStoreIntegrationTest : FunSpec() {
+class EventStoreIntegrationTest {
     @Autowired
     private lateinit var eventStorageEngine: EventStorageEngine
 
     @Autowired
     private lateinit var dataSource: DataSource
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `Flyway migration should create event store tables`() {
+        // Verify Flyway executed successfully
+        val flyway =
+            Flyway
+                .configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .load()
 
-        test("Flyway migration should create event store tables") {
-            // Verify Flyway executed successfully
-            val flyway =
-                Flyway
-                    .configure()
-                    .dataSource(dataSource)
-                    .locations("classpath:db/migration")
-                    .load()
+        val info = flyway.info()
+        val appliedMigrations = info.all().filter { it.state.isApplied }
 
-            val info = flyway.info()
-            val appliedMigrations = info.all().filter { it.state.isApplied }
+        assertThat(appliedMigrations).isNotEmpty
+        assertThat(appliedMigrations.any { it.version == MigrationVersion.fromVersion("1") }).isTrue()
+    }
 
-            appliedMigrations shouldNotBe emptyList<Any>()
-            appliedMigrations.any { it.version == MigrationVersion.fromVersion("1") } shouldBe true
-        }
+    @Test
+    fun `EventStorageEngine should store and retrieve domain events`() {
+        // Given: A domain event
+        val aggregateId = UUID.randomUUID().toString()
+        val eventId = UUID.randomUUID()
+        val eventPayload =
+            TestEventPayload(
+                eventId = eventId,
+                message = "Test event for event store",
+            )
 
-        test("EventStorageEngine should store and retrieve domain events") {
-            // Given: A domain event
-            val aggregateId = UUID.randomUUID().toString()
-            val eventId = UUID.randomUUID()
-            val eventPayload =
-                TestEventPayload(
-                    eventId = eventId,
-                    message = "Test event for event store",
-                )
+        val domainEvent: DomainEventMessage<TestEventPayload> =
+            GenericDomainEventMessage(
+                "TestAggregate", // type
+                aggregateId, // aggregateIdentifier
+                0L, // sequenceNumber
+                eventPayload, // payload
+                MetaData.with("userId", "test-user"),
+            )
 
-            val domainEvent: DomainEventMessage<TestEventPayload> =
-                GenericDomainEventMessage(
-                    "TestAggregate", // type
-                    aggregateId, // aggregateIdentifier
-                    0L, // sequenceNumber
-                    eventPayload, // payload
-                    MetaData.with("userId", "test-user"),
-                )
+        // When: Storing the event
+        eventStorageEngine.appendEvents(domainEvent)
 
-            // When: Storing the event
-            eventStorageEngine.appendEvents(domainEvent)
+        // Then: Event can be retrieved
+        val storedEvents =
+            eventStorageEngine
+                .readEvents(aggregateId)
+                .asStream()
+                .toList()
 
-            // Then: Event can be retrieved
-            val storedEvents =
-                eventStorageEngine
-                    .readEvents(aggregateId)
-                    .asStream()
-                    .toList()
+        assertThat(storedEvents).hasSize(1)
+        val storedEvent = storedEvents[0]
+        assertThat(storedEvent.aggregateIdentifier).isEqualTo(aggregateId)
+        assertThat(storedEvent.sequenceNumber).isEqualTo(0L)
+        assertThat(storedEvent.type).isEqualTo("TestAggregate")
 
-            storedEvents shouldHaveSize 1
-            val storedEvent = storedEvents[0]
-            storedEvent.aggregateIdentifier shouldBe aggregateId
-            storedEvent.sequenceNumber shouldBe 0L
-            storedEvent.type shouldBe "TestAggregate"
+        val storedPayload = storedEvent.payload as TestEventPayload
+        assertThat(storedPayload.eventId).isEqualTo(eventId)
+        assertThat(storedPayload.message).isEqualTo("Test event for event store")
+    }
 
-            val storedPayload = storedEvent.payload as TestEventPayload
-            storedPayload.eventId shouldBe eventId
-            storedPayload.message shouldBe "Test event for event store"
-        }
+    @Test
+    fun `EventStorageEngine should store multiple events for same aggregate`() {
+        // Given: Multiple events for the same aggregate
+        val aggregateId = UUID.randomUUID().toString()
 
-        test("EventStorageEngine should store multiple events for same aggregate") {
-            // Given: Multiple events for the same aggregate
-            val aggregateId = UUID.randomUUID().toString()
+        val event1 =
+            GenericDomainEventMessage<TestEventPayload>(
+                "TestAggregate",
+                aggregateId,
+                0L,
+                TestEventPayload(UUID.randomUUID(), "First event"),
+            )
 
-            val event1 =
-                GenericDomainEventMessage<TestEventPayload>(
-                    "TestAggregate",
-                    aggregateId,
-                    0L,
-                    TestEventPayload(UUID.randomUUID(), "First event"),
-                )
+        val event2 =
+            GenericDomainEventMessage<TestEventPayload>(
+                "TestAggregate",
+                aggregateId,
+                1L,
+                TestEventPayload(UUID.randomUUID(), "Second event"),
+            )
 
-            val event2 =
-                GenericDomainEventMessage<TestEventPayload>(
-                    "TestAggregate",
-                    aggregateId,
-                    1L,
-                    TestEventPayload(UUID.randomUUID(), "Second event"),
-                )
+        val event3 =
+            GenericDomainEventMessage<TestEventPayload>(
+                "TestAggregate",
+                aggregateId,
+                2L,
+                TestEventPayload(UUID.randomUUID(), "Third event"),
+            )
 
-            val event3 =
-                GenericDomainEventMessage<TestEventPayload>(
-                    "TestAggregate",
-                    aggregateId,
-                    2L,
-                    TestEventPayload(UUID.randomUUID(), "Third event"),
-                )
+        // When: Storing multiple events
+        eventStorageEngine.appendEvents(event1, event2, event3)
 
-            // When: Storing multiple events
-            eventStorageEngine.appendEvents(event1, event2, event3)
+        // Then: All events can be retrieved in correct order
+        val storedEvents =
+            eventStorageEngine
+                .readEvents(aggregateId)
+                .asStream()
+                .toList()
 
-            // Then: All events can be retrieved in correct order
-            val storedEvents =
-                eventStorageEngine
-                    .readEvents(aggregateId)
-                    .asStream()
-                    .toList()
+        assertThat(storedEvents).hasSize(3)
+        assertThat(storedEvents[0].sequenceNumber).isEqualTo(0L)
+        assertThat(storedEvents[1].sequenceNumber).isEqualTo(1L)
+        assertThat(storedEvents[2].sequenceNumber).isEqualTo(2L)
 
-            storedEvents shouldHaveSize 3
-            storedEvents[0].sequenceNumber shouldBe 0L
-            storedEvents[1].sequenceNumber shouldBe 1L
-            storedEvents[2].sequenceNumber shouldBe 2L
+        assertThat((storedEvents[0].payload as TestEventPayload).message).isEqualTo("First event")
+        assertThat((storedEvents[1].payload as TestEventPayload).message).isEqualTo("Second event")
+        assertThat((storedEvents[2].payload as TestEventPayload).message).isEqualTo("Third event")
+    }
 
-            (storedEvents[0].payload as TestEventPayload).message shouldBe "First event"
-            (storedEvents[1].payload as TestEventPayload).message shouldBe "Second event"
-            (storedEvents[2].payload as TestEventPayload).message shouldBe "Third event"
-        }
+    @Test
+    fun `EventStorageEngine should handle metadata correctly`() {
+        // Given: An event with metadata
+        val aggregateId = UUID.randomUUID().toString()
+        val metadata =
+            MetaData
+                .with("userId", "test-user")
+                .and("correlationId", "test-correlation-123")
+                .and("timestamp", Instant.now().toString())
 
-        test("EventStorageEngine should handle metadata correctly") {
-            // Given: An event with metadata
-            val aggregateId = UUID.randomUUID().toString()
-            val metadata =
-                MetaData
-                    .with("userId", "test-user")
-                    .and("correlationId", "test-correlation-123")
-                    .and("timestamp", Instant.now().toString())
+        val domainEvent =
+            GenericDomainEventMessage(
+                "TestAggregate",
+                aggregateId,
+                0L,
+                TestEventPayload(UUID.randomUUID(), "Event with metadata"),
+                metadata,
+            )
 
-            val domainEvent =
-                GenericDomainEventMessage(
-                    "TestAggregate",
-                    aggregateId,
-                    0L,
-                    TestEventPayload(UUID.randomUUID(), "Event with metadata"),
-                    metadata,
-                )
+        // When: Storing the event
+        eventStorageEngine.appendEvents(domainEvent)
 
-            // When: Storing the event
-            eventStorageEngine.appendEvents(domainEvent)
+        // Then: Metadata is preserved
+        val storedEvents =
+            eventStorageEngine
+                .readEvents(aggregateId)
+                .asStream()
+                .toList()
 
-            // Then: Metadata is preserved
-            val storedEvents =
-                eventStorageEngine
-                    .readEvents(aggregateId)
-                    .asStream()
-                    .toList()
-
-            storedEvents shouldHaveSize 1
-            val storedMetadata = storedEvents[0].metaData
-            storedMetadata["userId"] shouldBe "test-user"
-            storedMetadata["correlationId"] shouldBe "test-correlation-123"
-            storedMetadata["timestamp"] shouldNotBe null
-        }
+        assertThat(storedEvents).hasSize(1)
+        val storedMetadata = storedEvents[0].metaData
+        assertThat(storedMetadata["userId"]).isEqualTo("test-user")
+        assertThat(storedMetadata["correlationId"]).isEqualTo("test-correlation-123")
+        assertThat(storedMetadata["timestamp"]).isNotNull()
     }
 
     /**

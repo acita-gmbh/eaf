@@ -1,5 +1,9 @@
 package com.axians.eaf.products.widget.query
 
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
@@ -7,15 +11,11 @@ import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
 import com.axians.eaf.products.widget.domain.WidgetId
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldNotBeBlank
-import kotlinx.coroutines.delay
+
+
+
+
+
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
@@ -57,19 +57,25 @@ import java.util.UUID
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
-class WidgetQueryHandlerIntegrationTest : FunSpec() {
+class WidgetQueryHandlerIntegrationTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var queryGateway: QueryGateway
 
-    init {
-        extension(SpringExtension())
+    @Nested
+    inner class `FindWidgetQuery` {
+        // Placeholder
+    }
 
-        context("FindWidgetQuery") {
+    @Nested
+    inner class `FindWidgetQuery` {
 
-            test("returns widget projection after command execution") {
+            @Test
+
+
+            fun `returns widget projection after command execution`() {
                 // Given - Create widget via command
                 val widgetId = WidgetId(UUID.randomUUID())
                 val widgetName = "Query Test Widget"
@@ -85,7 +91,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                             ).join()
                             .orElse(null)
 
-                    projection.shouldNotBeNull()
+                    assertThat(projection).isNotNull()
                 }
 
                 // When - Query for widget (measure performance)
@@ -100,22 +106,25 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val queryDuration = (System.nanoTime() - startTime) / 1_000_000 // ms
 
                 // Then - Widget returned with correct data
-                projection.shouldNotBeNull()
-                projection.id shouldBe widgetId
-                projection.name shouldBe widgetName
-                projection.published shouldBe false
-                projection.createdAt.shouldNotBeNull()
-                projection.updatedAt.shouldNotBeNull()
+                assertThat(projection).isNotNull()
+                projection.assertThat(id).isEqualTo(widgetId)
+                projection.assertThat(name).isEqualTo(widgetName)
+                projection.assertThat(published).isEqualTo(false)
+                projection.assertThat(createdAt).isNotNull()
+                projection.assertThat(updatedAt).isNotNull()
 
                 // Performance validation (FR011: <50ms production target, <100ms CI threshold)
                 // Note: CI runners may exceed production targets due to shared resources
                 println(
                     "✅ Single widget query performance: ${queryDuration}ms (production target: <50ms, CI threshold: <100ms)",
                 )
-                (queryDuration < 100) shouldBe true
+                assertThat(queryDuration).isLessThan(100)
             }
 
-            test("returns null for non-existent widget") {
+            @Test
+
+
+            fun `returns null for non-existent widget`() {
                 // Given - Non-existent widget ID
                 val nonExistentId = WidgetId(UUID.randomUUID())
 
@@ -129,10 +138,13 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                         .orElse(null)
 
                 // Then - Null returned
-                projection.shouldBeNull()
+                assertThat(projection).isNull()
             }
 
-            test("reflects published state after PublishWidgetCommand") {
+            @Test
+
+
+            fun `reflects published state after PublishWidgetCommand`() {
                 // Given - Create and publish widget
                 val widgetId = WidgetId(UUID.randomUUID())
                 commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Publish Test"))
@@ -148,8 +160,8 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                             ).join()
                             .orElse(null)
 
-                    projection.shouldNotBeNull()
-                    projection.published shouldBe true
+                    assertThat(projection).isNotNull()
+                    projection.assertThat(published).isEqualTo(true)
                 }
 
                 // When - Query for published widget
@@ -162,14 +174,20 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                         .orElse(null)
 
                 // Then - Published flag is true
-                projection.shouldNotBeNull()
-                projection.published shouldBe true
+                assertThat(projection).isNotNull()
+                projection.assertThat(published).isEqualTo(true)
             }
         }
 
-        context("ListWidgetsQuery") {
+        @Nested
 
-            test("returns widgets list (may include data from other tests)") {
+
+        inner class `ListWidgetsQuery` {
+
+            @Test
+
+
+            fun `returns widgets list (may include data from other tests)`() {
                 // Given - Database may contain widgets from previous tests
                 // When - Query for widgets
                 val response =
@@ -180,14 +198,17 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                         ).join()
 
                 // Then - Response structure valid (regardless of widget count)
-                response.shouldNotBeNull()
+                assertThat(response).isNotNull()
                 response.hasMore shouldBe (response.widgets.size >= 50)
                 if (response.hasMore) {
-                    response.nextCursor.shouldNotBeNull()
+                    response.assertThat(nextCursor).isNotNull()
                 }
             }
 
-            test("returns widgets in descending order by created_at") {
+            @Test
+
+
+            fun `returns widgets in descending order by created_at`() {
                 // Given - Create 3 widgets with unique names for this test
                 val testPrefix = "DescTest-${System.currentTimeMillis()}"
                 val widget1Id = WidgetId(UUID.randomUUID())
@@ -195,9 +216,9 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val widget3Id = WidgetId(UUID.randomUUID())
 
                 commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget1Id, "$testPrefix-First"))
-                delay(100) // Ensure different timestamps
+                Thread.sleep(100) // Ensure different timestamps
                 commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget2Id, "$testPrefix-Second"))
-                delay(100)
+                Thread.sleep(100)
                 commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget3Id, "$testPrefix-Third"))
 
                 // Wait for all projections
@@ -209,7 +230,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                                 ResponseTypes.instanceOf(PaginatedWidgetResponse::class.java),
                             ).join()
                     val testWidgets = allWidgets.widgets.filter { it.name.startsWith(testPrefix) }
-                    testWidgets.size shouldBe 3
+                    testWidgets.assertThat(size).isEqualTo(3)
                 }
 
                 // When - List all widgets and filter to test widgets (measure performance)
@@ -226,19 +247,22 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val testWidgets = response.widgets.filter { it.name.startsWith(testPrefix) }
 
                 // Then - Test widgets returned in descending order (newest first)
-                testWidgets shouldHaveSize 3
-                testWidgets[0].name shouldBe "$testPrefix-Third" // Newest
-                testWidgets[2].name shouldBe "$testPrefix-First" // Oldest
+                assertThat(testWidgets).hasSize(3)
+                testWidgets[0].assertThat(name).isEqualTo("$testPrefix-Third") // Newest
+                testWidgets[2].assertThat(name).isEqualTo("$testPrefix-First") // Oldest
 
                 // Performance validation (FR011: <200ms production target, <500ms CI threshold)
                 // Note: CI runners may exceed production targets due to shared resources
                 println(
                     "✅ Paginated list query performance: ${queryDuration}ms (production target: <200ms, CI threshold: <500ms)",
                 )
-                (queryDuration < 500) shouldBe true
+                assertThat(queryDuration).isLessThan(500)
             }
 
-            test("cursor pagination returns next page correctly") {
+            @Test
+
+
+            fun `cursor pagination returns next page correctly`() {
                 // Given - Create 5 widgets with unique names for this test
                 val testPrefix = "PageTest-${System.currentTimeMillis()}"
                 val widgetIds =
@@ -258,7 +282,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                                 ResponseTypes.instanceOf(PaginatedWidgetResponse::class.java),
                             ).join()
                     val testWidgets = response.widgets.filter { it.name.startsWith(testPrefix) }
-                    testWidgets.size shouldBe 5
+                    testWidgets.assertThat(size).isEqualTo(5)
                 }
 
                 // When - Query first page with large limit to get all our test widgets
@@ -272,7 +296,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                 val testWidgets = allTestWidgetsResponse.widgets.filter { it.name.startsWith(testPrefix) }
 
                 // Then - Verify we have our 5 test widgets
-                testWidgets shouldHaveSize 5
+                assertThat(testWidgets).hasSize(5)
 
                 // Verify pagination works: if we query with limit=2, we should see hasMore behavior
                 val limitedResponse =
@@ -283,15 +307,18 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                         ).join()
 
                 // Then - Limited response should respect limit
-                limitedResponse.widgets shouldHaveSize 2
+                limitedResponse.assertThat(widgets).hasSize(2)
                 // hasMore depends on total widgets in DB (may be true if other tests created data)
                 if (limitedResponse.hasMore) {
-                    limitedResponse.nextCursor.shouldNotBeNull()
+                    limitedResponse.assertThat(nextCursor).isNotNull()
                     limitedResponse.nextCursor!!.shouldNotBeBlank()
                 }
             }
 
-            test("enforces maximum limit of 100 items") {
+            @Test
+
+
+            fun `enforces maximum limit of 100 items`() {
                 // Given - Request excessive limit
                 val query = ListWidgetsQuery(limit = 500) // Exceeds max 100
 
@@ -304,7 +331,7 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
                         ).join()
 
                 // Then - No exception thrown (limit clamped internally to 100)
-                response.shouldNotBeNull()
+                assertThat(response).isNotNull()
             }
         }
     }
@@ -326,9 +353,9 @@ class WidgetQueryHandlerIntegrationTest : FunSpec() {
  *
  * Repeatedly executes assertion block until it succeeds or timeout is reached.
  */
-private suspend fun eventually(
+private fun eventually(
     timeout: Duration,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -339,7 +366,7 @@ private suspend fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            delay(100) // Poll every 100ms
+            Thread.sleep(100) // Poll every 100ms
         }
     }
 
