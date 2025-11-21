@@ -434,10 +434,27 @@ class CommandMetricsInterceptor(
 **Breaking Changes from JUnit 5:**
 - **Java 17 Baseline**: Minimum Java version raised from 8 to 17 (we use Java 21 ✅)
 - **Kotlin 2.2 Baseline**: Minimum Kotlin version raised to 2.2 (we use 2.2.21 ✅)
-- **Unified Versioning**: Platform + Jupiter share same version (6.0.1)
+- **Unified Versioning**: Platform + Jupiter share same version (6.0.1) - **CRITICAL: Must force Platform version to avoid conflicts**
 - **CSV Parsing**: Migrated to FastCSV (stricter validation, auto line-separator detection)
 - **Kotlin assertTimeout Contract**: Changed from EXACTLY_ONCE to AT_MOST_ONCE (may cause compilation errors)
 - **Removed Modules**: junit-platform-runner, junit-platform-jfr removed
+
+**CRITICAL - Force Platform Version:**
+Transitive dependencies may bring older Platform versions (e.g., 1.12.2) causing `NoClassDefFoundError`. Always force Platform 6.0.1:
+
+```kotlin
+// In module build.gradle.kts (especially products/*)
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.junit.platform") {
+            useVersion("6.0.1")
+            because("JUnit 6 unified versioning - Platform + Jupiter must match")
+        }
+    }
+}
+```
+
+Verify with: `./gradlew dependencies --configuration testRuntimeClasspath | grep junit-platform`
 
 **Example - Suspend Functions with @Nested:**
 ```kotlin
