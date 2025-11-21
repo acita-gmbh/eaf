@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.RbacTestContainersConfig
@@ -7,6 +8,8 @@ import com.axians.eaf.products.widget.test.config.RbacTestSecurityConfig
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -74,6 +77,22 @@ class WidgetControllerRbacIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    companion object {
+        private const val TEST_TENANT_ID = "test-tenant-rbac"
+    }
+
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context for command validation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
 
     @Nested
     inner class `POST api v1 widgets - Create Widget with PreAuthorize hasRole WIDGET_ADMIN` {

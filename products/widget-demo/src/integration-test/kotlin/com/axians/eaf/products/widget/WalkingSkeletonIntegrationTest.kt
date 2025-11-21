@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.api.CreateWidgetRequest
 import com.axians.eaf.products.widget.api.UpdateWidgetRequest
@@ -12,6 +13,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -87,6 +90,18 @@ class WalkingSkeletonIntegrationTest {
 
     @Autowired
     private lateinit var dsl: DSLContext
+
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context for command validation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
 
     @Nested
     inner class `Walking Skeleton - Complete CQRS Flow` {
@@ -289,6 +304,8 @@ class WalkingSkeletonIntegrationTest {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant-walking-skeleton"
+
         /**
          * PostgreSQL Testcontainer (AC5: Real database, not mocks).
          *
