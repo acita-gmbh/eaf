@@ -200,7 +200,8 @@ configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
     targetClasses.set(setOf("com.axians.eaf.*"))
     targetTests.set(setOf("com.axians.eaf.*"))
     testPlugin.set(null as String?) // Disable deprecated testPlugin
-    junit5PluginVersion.set("1.2.1") // JUnit 6 runs on JUnit Platform (junit5PluginVersion refers to platform, not Jupiter version)
+    // JUnit 6 runs on JUnit Platform (junit5PluginVersion refers to platform, not Jupiter version)
+    junit5PluginVersion.set("1.2.1")
     useClasspathFile.set(true)
     verbose.set(true)
     outputFormats.set(setOf("XML", "HTML"))

@@ -1,8 +1,8 @@
 package com.axians.eaf.framework.security.jwks
 
+import java.time.Duration
 import com.axians.eaf.framework.security.config.KeycloakOidcConfiguration
 import com.axians.eaf.framework.security.test.SecurityTestApplication
-import java.time.Duration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

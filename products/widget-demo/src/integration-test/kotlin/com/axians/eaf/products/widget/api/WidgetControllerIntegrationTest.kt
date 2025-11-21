@@ -155,9 +155,7 @@ class WidgetControllerIntegrationTest {
         }
 
         @Nested
-
-
-        inner class `GET /api/v1/widgets/{id} - Find Widget` {
+        inner class `GET api-v1-widgets-by-id - Find Widget` {
 
             @Test
 
@@ -223,7 +221,7 @@ class WidgetControllerIntegrationTest {
         @Nested
 
 
-        inner class `GET /api/v1/widgets - List Widgets` {
+        inner class `GET api-v1-widgets - List Widgets` {
 
             @Test
 
@@ -313,7 +311,7 @@ class WidgetControllerIntegrationTest {
         @Nested
 
 
-        inner class `PUT /api/v1/widgets/{id} - Update Widget` {
+        inner class `PUT api-v1-widgets-by-id - Update Widget` {
 
             @Test
 
@@ -425,7 +423,7 @@ class WidgetControllerIntegrationTest {
             @Test
 
 
-            fun `should complete full lifecycle: POST → GET → PUT → GET`() {
+            fun `should complete full lifecycle - POST then GET then PUT then GET`() {
                 // Step 1: Create widget
                 val createRequest = CreateWidgetRequest(name = "CRUD Flow Widget")
                 val createBody = objectMapper.writeValueAsString(createRequest)
