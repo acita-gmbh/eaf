@@ -126,6 +126,20 @@ graph TD
 - Kotlin assertTimeout contract changed from EXACTLY_ONCE to AT_MOST_ONCE (may cause compilation errors)
 - junit-platform-runner module removed
 - CSV parsing migrated to FastCSV (stricter validation)
+- **Unified Versioning Requirement:** Platform + Jupiter must both be 6.0.1 (transitive deps may conflict - see below)
+
+**CRITICAL - Dependency Resolution for Products:**
+```kotlin
+// In products/* build.gradle.kts - Force Platform version to match Jupiter
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.junit.platform") {
+            useVersion("6.0.1")
+            because("JUnit 6 unified versioning requirement")
+        }
+    }
+}
+```
 
 **Example - Suspend Functions:**
 ```kotlin
