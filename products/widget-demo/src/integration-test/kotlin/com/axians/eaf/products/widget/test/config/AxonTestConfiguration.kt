@@ -54,7 +54,7 @@ class AxonTestConfiguration {
         // Create both MeterRegistry and Interceptor inline to avoid circular dependencies
         val simpleMeterRegistry = SimpleMeterRegistry()
         val tenantContextEventInterceptor = TenantContextEventInterceptor(simpleMeterRegistry)
-        configurer.registerDefaultHandlerInterceptor { _, _ -> tenantContextEventInterceptor }
+        configurer.registerDefaultHandlerInterceptor { config, name -> tenantContextEventInterceptor }
     }
 
     /**
