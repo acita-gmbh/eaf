@@ -1,9 +1,7 @@
 name: CI - Quality Gate
 
 on:
-  pull_request:
-    branches:
-      - main
+  # Only run on main/release branches, NOT on PRs or feature branches
   push:
     branches:
       - main

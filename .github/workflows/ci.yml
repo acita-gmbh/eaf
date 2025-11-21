@@ -1,8 +1,7 @@
 name: CI - Fast Feedback (Optimized)
 
 on:
-  push:
-    branches: [main]
+  push:  # Run on EVERY commit to ANY branch
   pull_request:
     branches: [main]
 
