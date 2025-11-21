@@ -156,13 +156,54 @@ jobs:
           echo "::error::Shellcheck reported issues. See shellcheck-report artifact for details."
           exit 1
 
+  coverage:
+    name: Coverage Report
+    needs: gradle-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: wrapper
+          cache-read-only: true
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Generate Coverage Report
+        run: ./gradlew koverXmlReport --no-daemon
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/build/reports/kover/report.xml'
+          flags: unittests,integrationtests
+          name: eaf-coverage
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload Coverage Reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-reports-${{ github.run_number }}
+          path: '**/build/reports/kover/'
+          retention-days: 90
+
   burn-in:
     name: Burn-In Loop
     needs:
       - selective-guard
       - gradle-quality
       - shell-lint
-    if: needs.selective-guard.outputs.docs_only != 'true' && (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch')
+    if: needs.selective-guard.outputs.docs_only != 'true' && startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

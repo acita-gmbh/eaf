@@ -153,55 +153,7 @@ jobs:
             **/build/test-results/
           retention-days: 7
 
-  # Job 4: Coverage (runs after tests)
-  coverage:
-    needs: tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup CI Gradle Configuration
-        run: cp .github/ci-gradle.properties gradle.properties
-
-      - uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: wrapper
-          cache-read-only: true
-
-      - uses: actions/setup-java@v5
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Restore Build Cache
-        uses: actions/cache/restore@v4
-        with:
-          path: '**/build/'
-          key: build-${{ github.sha }}
-
-      - name: Generate Coverage Report
-        run: ./gradlew koverXmlReport --no-daemon
-
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: '**/build/reports/kover/report.xml'
-          flags: unittests,integrationtests
-          name: eaf-coverage
-          fail_ci_if_error: false
-          verbose: true
-
-      - name: Upload Coverage Reports
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-reports-${{ github.run_number }}
-          path: '**/build/reports/kover/'
-          retention-days: 90
-
-  # Job 5: Shell script analysis (scripts + git hooks)
+  # Job 4: Shell script analysis (scripts + git hooks)
   shellcheck:
     runs-on: ubuntu-latest
     timeout-minutes: 5
