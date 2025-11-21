@@ -31,7 +31,6 @@ import java.util.concurrent.Executors
  * @author EAF Testing Framework
  */
 class TenantContextTest {
-
     @BeforeEach
     fun beforeEach() {
         // AC8: Ensure context is cleared before each test
@@ -96,9 +95,10 @@ class TenantContextTest {
         // Given - no context set
 
         // When/Then
-        val exception = assertThrows<IllegalStateException> {
-            TenantContext.getCurrentTenantId()
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                TenantContext.getCurrentTenantId()
+            }
         assertThat(exception.message).contains("Tenant context not set")
     }
 

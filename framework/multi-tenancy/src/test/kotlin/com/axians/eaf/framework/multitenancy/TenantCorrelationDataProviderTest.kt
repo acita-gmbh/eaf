@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test
  * @author EAF Testing Framework
  */
 class TenantCorrelationDataProviderTest {
-
     @AfterEach
     fun afterEach() {
         // Ensure context is always cleared after each test
@@ -59,19 +58,22 @@ class TenantCorrelationDataProviderTest {
         val config = TenantEventProcessingConfiguration()
         val provider = config.tenantCorrelationDataProvider()
 
-        val message = object : org.axonframework.messaging.Message<String> {
-            override fun getIdentifier() = "test-event-id"
+        val message =
+            object : org.axonframework.messaging.Message<String> {
+                override fun getIdentifier() = "test-event-id"
 
-            override fun getMetaData() = org.axonframework.messaging.MetaData.emptyInstance()
+                override fun getMetaData() =
+                    org.axonframework.messaging.MetaData
+                        .emptyInstance()
 
-            override fun getPayload() = "test-event-payload"
+                override fun getPayload() = "test-event-payload"
 
-            override fun getPayloadType(): Class<String> = String::class.java
+                override fun getPayloadType(): Class<String> = String::class.java
 
-            override fun withMetaData(metaData: MutableMap<String, *>) = this
+                override fun withMetaData(metaData: MutableMap<String, *>) = this
 
-            override fun andMetaData(metaData: MutableMap<String, *>) = this
-        }
+                override fun andMetaData(metaData: MutableMap<String, *>) = this
+            }
 
         val correlationData = provider.correlationDataFor(message)
 
@@ -88,19 +90,22 @@ class TenantCorrelationDataProviderTest {
         val config = TenantEventProcessingConfiguration()
         val provider = config.tenantCorrelationDataProvider()
 
-        val message = object : org.axonframework.messaging.Message<String> {
-            override fun getIdentifier() = "system-event-id"
+        val message =
+            object : org.axonframework.messaging.Message<String> {
+                override fun getIdentifier() = "system-event-id"
 
-            override fun getMetaData() = org.axonframework.messaging.MetaData.emptyInstance()
+                override fun getMetaData() =
+                    org.axonframework.messaging.MetaData
+                        .emptyInstance()
 
-            override fun getPayload() = "system-event-payload"
+                override fun getPayload() = "system-event-payload"
 
-            override fun getPayloadType(): Class<String> = String::class.java
+                override fun getPayloadType(): Class<String> = String::class.java
 
-            override fun withMetaData(metaData: MutableMap<String, *>) = this
+                override fun withMetaData(metaData: MutableMap<String, *>) = this
 
-            override fun andMetaData(metaData: MutableMap<String, *>) = this
-        }
+                override fun andMetaData(metaData: MutableMap<String, *>) = this
+            }
 
         val correlationData = provider.correlationDataFor(message)
 

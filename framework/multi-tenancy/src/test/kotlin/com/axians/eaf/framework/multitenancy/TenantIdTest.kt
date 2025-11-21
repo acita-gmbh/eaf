@@ -33,7 +33,6 @@ import org.junit.jupiter.api.assertThrows
  * @author EAF Testing Framework
  */
 class TenantIdTest {
-
     // TenantId validation
 
     @Test
@@ -63,54 +62,60 @@ class TenantIdTest {
     @Test
     fun `should reject blank tenant ID`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("")
+            }
         assertThat(exception.message).contains("Tenant ID cannot be blank")
     }
 
     @Test
     fun `should reject tenant ID with only whitespace`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("   ")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("   ")
+            }
         assertThat(exception.message).contains("Tenant ID cannot be blank")
     }
 
     @Test
     fun `should reject tenant ID with invalid characters`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("tenant@123")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("tenant@123")
+            }
         assertThat(exception.message).contains("lowercase alphanumeric")
     }
 
     @Test
     fun `should reject tenant ID with uppercase letters`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("Tenant-123")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("Tenant-123")
+            }
         assertThat(exception.message).contains("lowercase alphanumeric")
     }
 
     @Test
     fun `should reject tenant ID with underscores`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("tenant_123")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("tenant_123")
+            }
         assertThat(exception.message).contains("lowercase alphanumeric")
     }
 
     @Test
     fun `should reject tenant ID with special characters`() {
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId("tenant!#$%")
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId("tenant!#$%")
+            }
         assertThat(exception.message).contains("lowercase alphanumeric")
     }
 
@@ -120,9 +125,10 @@ class TenantIdTest {
         val tooLong = "a".repeat(65)
 
         // When/Then
-        val exception = assertThrows<IllegalArgumentException> {
-            TenantId(tooLong)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                TenantId(tooLong)
+            }
         assertThat(exception.message).contains("1-64 characters")
     }
 

@@ -60,7 +60,6 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class TenantContextFilterTest {
-
     private lateinit var meterRegistry: SimpleMeterRegistry
     private lateinit var objectMapper: ObjectMapper
     private lateinit var filter: TenantContextFilter
@@ -96,17 +95,19 @@ class TenantContextFilterTest {
     fun `AC2+AC3 - Extract tenant_id from JWT and populate TenantContext`() {
         // Given: JWT with tenant_id claim
         val tenantId = "tenant-unit-test"
-        val jwt = createMockJwt(
-            subject = "user123",
-            tenantId = tenantId,
-        )
+        val jwt =
+            createMockJwt(
+                subject = "user123",
+                tenantId = tenantId,
+            )
         val authentication = JwtAuthenticationToken(jwt)
         SecurityContextHolder.getContext().authentication = authentication
 
         var contextDuringChain: String? = null
-        val chainWithCapture = FilterChain { _: ServletRequest, _: ServletResponse ->
-            contextDuringChain = TenantContext.current()
-        }
+        val chainWithCapture =
+            FilterChain { _: ServletRequest, _: ServletResponse ->
+                contextDuringChain = TenantContext.current()
+            }
 
         // When: Filter executes
         filter.doFilter(request, response, chainWithCapture)
@@ -126,9 +127,10 @@ class TenantContextFilterTest {
         SecurityContextHolder.getContext().authentication = authentication
 
         var chainCalled = false
-        val chainWithFlag = FilterChain { _: ServletRequest, _: ServletResponse ->
-            chainCalled = true
-        }
+        val chainWithFlag =
+            FilterChain { _: ServletRequest, _: ServletResponse ->
+                chainCalled = true
+            }
 
         // When: Filter executes
         filter.doFilter(request, response, chainWithFlag)
@@ -173,9 +175,10 @@ class TenantContextFilterTest {
         SecurityContextHolder.getContext().authentication = authentication
 
         // Filter chain that throws exception
-        val throwingChain = FilterChain { _: ServletRequest, _: ServletResponse ->
-            throw TestFilterException("Simulated error")
-        }
+        val throwingChain =
+            FilterChain { _: ServletRequest, _: ServletResponse ->
+                throw TestFilterException("Simulated error")
+            }
 
         // When: Filter executes and exception is thrown
         assertThrows<TestFilterException> {
@@ -205,11 +208,12 @@ class TenantContextFilterTest {
         filter.doFilter(request, response, filterChain)
 
         // Then: Timer should be incremented
-        val timer = meterRegistry.timer(
-            "tenant_context_extraction_duration",
-            "layer",
-            "1-jwt-extraction",
-        )
+        val timer =
+            meterRegistry.timer(
+                "tenant_context_extraction_duration",
+                "layer",
+                "1-jwt-extraction",
+            )
         assertThat(timer.count()).isEqualTo(1L)
         assertThat(timer.totalTime(java.util.concurrent.TimeUnit.NANOSECONDS)).isGreaterThan(0.0)
     }
@@ -220,9 +224,10 @@ class TenantContextFilterTest {
         SecurityContextHolder.getContext().authentication = null
 
         var chainCalled = false
-        val chainWithFlag = FilterChain { _: ServletRequest, _: ServletResponse ->
-            chainCalled = true
-        }
+        val chainWithFlag =
+            FilterChain { _: ServletRequest, _: ServletResponse ->
+                chainCalled = true
+            }
 
         // When: Filter executes
         filter.doFilter(request, response, chainWithFlag)
@@ -241,31 +246,35 @@ class TenantContextFilterTest {
 private fun createMockJwt(
     subject: String,
     tenantId: String,
-): Jwt = Jwt.withTokenValue("mock-token")
-    .header("alg", "RS256")
-    .header("typ", "JWT")
-    .claim("sub", subject)
-    .claim("tenant_id", tenantId)
-    .claim("iss", "https://keycloak.example.com/realms/eaf-test")
-    .claim("aud", "eaf-client")
-    .claim("exp", Instant.now().plusSeconds(3600))
-    .claim("iat", Instant.now())
-    .claim("roles", listOf("user"))
-    .build()
+): Jwt =
+    Jwt
+        .withTokenValue("mock-token")
+        .header("alg", "RS256")
+        .header("typ", "JWT")
+        .claim("sub", subject)
+        .claim("tenant_id", tenantId)
+        .claim("iss", "https://keycloak.example.com/realms/eaf-test")
+        .claim("aud", "eaf-client")
+        .claim("exp", Instant.now().plusSeconds(3600))
+        .claim("iat", Instant.now())
+        .claim("roles", listOf("user"))
+        .build()
 
 /**
  * Create mock JWT WITHOUT tenant_id claim (for negative testing).
  */
-private fun createMockJwtWithoutTenant(subject: String): Jwt = Jwt.withTokenValue("mock-token-no-tenant")
-    .header("alg", "RS256")
-    .header("typ", "JWT")
-    .claim("sub", subject)
-    .claim("iss", "https://keycloak.example.com/realms/eaf-test")
-    .claim("aud", "eaf-client")
-    .claim("exp", Instant.now().plusSeconds(3600))
-    .claim("iat", Instant.now())
-    .claim("roles", listOf("user"))
-    .build()
+private fun createMockJwtWithoutTenant(subject: String): Jwt =
+    Jwt
+        .withTokenValue("mock-token-no-tenant")
+        .header("alg", "RS256")
+        .header("typ", "JWT")
+        .claim("sub", subject)
+        .claim("iss", "https://keycloak.example.com/realms/eaf-test")
+        .claim("aud", "eaf-client")
+        .claim("exp", Instant.now().plusSeconds(3600))
+        .claim("iat", Instant.now())
+        .claim("roles", listOf("user"))
+        .build()
 
 /**
  * Specific exception for testing filter exception handling (avoids detekt TooGenericExceptionThrown).

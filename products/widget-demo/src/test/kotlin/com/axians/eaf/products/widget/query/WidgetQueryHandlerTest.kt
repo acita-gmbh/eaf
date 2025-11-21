@@ -83,7 +83,7 @@ class WidgetQueryHandlerTest {
 
         // Then: Widget projection returned from in-memory H2
         assertThat(result).isNotNull
-        assertThat(result.name).isEqualTo("Nullable Test Widget")
+        assertThat(result!!.name).isEqualTo("Nullable Test Widget")
         assertThat(result.published).isFalse()
     }
 
