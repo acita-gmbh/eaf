@@ -1,6 +1,5 @@
 package com.axians.eaf.framework.multitenancy
 
-import java.lang.ref.WeakReference
 import java.util.ArrayDeque
 import java.util.Deque
 
@@ -11,7 +10,7 @@ import java.util.Deque
  * - **Fail-closed**: `getCurrentTenantId()` throws exception if context missing
  * - **Nullable**: `current()` returns null if context missing (defensive checks)
  * - **Stack-based**: Supports nested contexts for testing scenarios
- * - **Memory-safe**: Uses WeakReference to prevent ThreadLocal leaks
+ * - **Memory-safe**: Explicit cleanup via clearCurrentTenant() and contextHolder.remove()
  * - **Thread-isolated**: Each thread maintains its own context stack
  *
  * **Access Patterns:**
@@ -40,31 +39,34 @@ import java.util.Deque
  */
 object TenantContext {
     /**
-     * ThreadLocal storage with WeakReference for memory safety.
+     * ThreadLocal storage for tenant context stack.
      * Stores a stack (Deque) of tenant IDs to support nested contexts.
      *
-     * AC5: WeakReference prevents ThreadLocal memory leaks when threads are pooled.
+     * **Memory Safety:** ThreadLocal leaks are prevented by explicit cleanup:
+     * - clearCurrentTenant() calls contextHolder.remove() when stack is empty
+     * - All interceptors use try-finally to guarantee cleanup
+     * - No WeakReference needed - explicit lifecycle management is more reliable
+     *
+     * **Story 4.6 Fix:** Removed WeakReference wrapper that caused GC-based data loss
+     * in CI environments with aggressive garbage collection.
      */
-    private val contextHolder: ThreadLocal<WeakReference<Deque<String>>> =
-        ThreadLocal<WeakReference<Deque<String>>>()
+    private val contextHolder: ThreadLocal<Deque<String>> = ThreadLocal()
 
     /**
      * Get the current tenant ID stack, creating it if necessary.
      *
+     * Null check ensures remove() actually clears the ThreadLocal.
+     * Without this, withInitial would recreate stack after remove().
+     *
      * @return The tenant ID stack for the current thread
      */
     private fun getContextStack(): Deque<String> {
-        val weakRef = contextHolder.get()
-        val stack = weakRef?.get()
-
-        return if (stack == null) {
-            // Create new stack if missing or GC'd
-            val newStack = ArrayDeque<String>()
-            contextHolder.set(WeakReference(newStack))
-            newStack
-        } else {
-            stack
+        var stack = contextHolder.get()
+        if (stack == null) {
+            stack = ArrayDeque()
+            contextHolder.set(stack)
         }
+        return stack
     }
 
     /**
