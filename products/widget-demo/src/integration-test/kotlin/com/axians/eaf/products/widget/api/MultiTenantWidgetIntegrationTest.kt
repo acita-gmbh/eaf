@@ -1,6 +1,7 @@
 package com.axians.eaf.products.widget.api
 
 import com.axians.eaf.framework.multitenancy.TenantContext
+import com.axians.eaf.framework.multitenancy.test.withTenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.query.PaginatedWidgetResponse
@@ -99,64 +100,54 @@ class MultiTenantWidgetIntegrationTest {
     inner class `AC6 - Multi-Tenant Widget Creation` {
         @Test
         fun `Tenant A can create widget with tenant-a context`() {
-            // Given - Set Tenant A context
-            TenantContext.setCurrentTenantId(TENANT_A)
-
+            // Given
             val request = CreateWidgetRequest(name = "Tenant A Widget")
             val requestBody = objectMapper.writeValueAsString(request)
 
-            try {
-                // When - POST widget creation
-                val result =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = requestBody
-                        }.andExpect {
-                            status { isCreated() }
-                        }.andReturn()
+            // When - POST widget creation WITH tenant context
+            val result =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        with(withTenantContext(TENANT_A)) // Set context in request thread
+                        contentType = MediaType.APPLICATION_JSON
+                        content = requestBody
+                    }.andExpect {
+                        status { isCreated() }
+                    }.andReturn()
 
-                // Then - Widget created successfully
-                val response =
-                    objectMapper.readValue(
-                        result.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                assertThat(response.name).isEqualTo("Tenant A Widget")
-            } finally {
-                TenantContext.clearCurrentTenant()
-            }
+            // Then - Widget created successfully
+            val response =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(response.name).isEqualTo("Tenant A Widget")
         }
 
         @Test
         fun `Tenant B can create widget with tenant-b context`() {
-            // Given - Set Tenant B context
-            TenantContext.setCurrentTenantId(TENANT_B)
-
+            // Given
             val request = CreateWidgetRequest(name = "Tenant B Widget")
             val requestBody = objectMapper.writeValueAsString(request)
 
-            try {
-                // When - POST widget creation
-                val result =
-                    mockMvc
-                        .post("/api/v1/widgets") {
-                            contentType = MediaType.APPLICATION_JSON
-                            content = requestBody
-                        }.andExpect {
-                            status { isCreated() }
-                        }.andReturn()
+            // When - POST widget creation WITH tenant context
+            val result =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        with(withTenantContext(TENANT_B)) // Set context in request thread
+                        contentType = MediaType.APPLICATION_JSON
+                        content = requestBody
+                    }.andExpect {
+                        status { isCreated() }
+                    }.andReturn()
 
-                // Then - Widget created successfully
-                val response =
-                    objectMapper.readValue(
-                        result.response.contentAsString,
-                        WidgetResponse::class.java,
-                    )
-                assertThat(response.name).isEqualTo("Tenant B Widget")
-            } finally {
-                TenantContext.clearCurrentTenant()
-            }
+            // Then - Widget created successfully
+            val response =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    WidgetResponse::class.java,
+                )
+            assertThat(response.name).isEqualTo("Tenant B Widget")
         }
     }
 
@@ -165,74 +156,75 @@ class MultiTenantWidgetIntegrationTest {
         @Test
         fun `Tenant A cannot see Tenant B widgets`() {
             // Given - Create widget for Tenant A
-            TenantContext.setCurrentTenantId(TENANT_A)
             val tenantARequest = CreateWidgetRequest(name = "Tenant A Secret")
-            mockMvc
-                .post("/api/v1/widgets") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content = objectMapper.writeValueAsString(tenantARequest)
-                }.andExpect {
-                    status { isCreated() }
-                }
-            TenantContext.clearCurrentTenant()
+            val tenantAResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        with(withTenantContext(TENANT_A)) // Set context in request thread
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(tenantARequest)
+                    }.andExpect {
+                        status { isCreated() }
+                    }.andReturn()
+
+            val tenantAWidgetId =
+                objectMapper
+                    .readValue(
+                        tenantAResult.response.contentAsString,
+                        WidgetResponse::class.java,
+                    ).id
 
             // And - Create widget for Tenant B
-            TenantContext.setCurrentTenantId(TENANT_B)
             val tenantBRequest = CreateWidgetRequest(name = "Tenant B Widget")
-            mockMvc
-                .post("/api/v1/widgets") {
-                    contentType = MediaType.APPLICATION_JSON
-                    content = objectMapper.writeValueAsString(tenantBRequest)
-                }.andExpect {
-                    status {
-                        isCreated()
+            val tenantBResult =
+                mockMvc
+                    .post("/api/v1/widgets") {
+                        with(withTenantContext(TENANT_B)) // Set context in request thread
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(tenantBRequest)
+                    }.andExpect {
+                        status { isCreated() }
+                    }.andReturn()
+
+            val tenantBWidgetId =
+                objectMapper
+                    .readValue(
+                        tenantBResult.response.contentAsString,
+                        WidgetResponse::class.java,
+                    ).id
+
+            // When/Then - Tenant A can see their own widget (eventual consistency)
+            runBlocking {
+                repeat(10) { attempt ->
+                    val result =
+                        mockMvc
+                            .get("/api/v1/widgets/$tenantAWidgetId") {
+                                with(withTenantContext(TENANT_A)) // Context in request thread
+                            }.andReturn()
+
+                    if (result.response.status == 200) {
+                        val widget =
+                            objectMapper.readValue(
+                                result.response.contentAsString,
+                                WidgetResponse::class.java,
+                            )
+                        assertThat(widget.name).isEqualTo("Tenant A Secret")
+                        return@runBlocking
+                    }
+
+                    if (attempt < 9) {
+                        delay(100)
                     }
                 }
-            TenantContext.clearCurrentTenant()
-
-            // When - Tenant A queries widgets (eventual consistency with retry)
-            TenantContext.setCurrentTenantId(TENANT_A)
-            var widgetNames = emptyList<String>()
-
-            try {
-                runBlocking {
-                    repeat(10) { attempt ->
-                        val result =
-                            mockMvc
-                                .get("/api/v1/widgets") {
-                                }.andReturn()
-
-                        if (result.response.status == 200 && result.response.contentLength > 0) {
-                            try {
-                                val response =
-                                    objectMapper.readValue(
-                                        result.response.contentAsString,
-                                        PaginatedWidgetResponse::class.java,
-                                    )
-                                widgetNames = response.widgets.map { it.name }
-
-                                // Stop if widget appeared
-                                if (widgetNames.isNotEmpty()) {
-                                    return@runBlocking
-                                }
-                            } catch (e: Exception) {
-                                // Parsing error, retry
-                            }
-                        }
-
-                        if (attempt < 9) {
-                            delay(100)
-                        }
-                    }
-                }
-
-                // Then - Tenant A ONLY sees their widget (not Tenant B's)
-                assertThat(widgetNames).isNotEmpty()
-                assertThat(widgetNames).contains("Tenant A Secret")
-                assertThat(widgetNames).doesNotContain("Tenant B Widget") // Cross-tenant isolation!
-            } finally {
-                TenantContext.clearCurrentTenant()
             }
+
+            // And - Tenant A CANNOT see Tenant B's widget (cross-tenant isolation!)
+            mockMvc
+                .get("/api/v1/widgets/$tenantBWidgetId") {
+                    with(withTenantContext(TENANT_A)) // Tenant A context
+                }.andExpect {
+                    status { isNotFound() } // 404 - Widget not visible to Tenant A!
+                }
         }
     }
 }

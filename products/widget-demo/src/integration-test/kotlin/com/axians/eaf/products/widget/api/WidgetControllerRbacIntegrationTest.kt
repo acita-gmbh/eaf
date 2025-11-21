@@ -1,6 +1,8 @@
 package com.axians.eaf.products.widget.api
 
 import com.axians.eaf.framework.multitenancy.TenantContext
+import com.axians.eaf.framework.multitenancy.test.TestTenantContextHolder
+import com.axians.eaf.framework.multitenancy.test.withTenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.RbacTestContainersConfig
@@ -84,14 +86,14 @@ class WidgetControllerRbacIntegrationTest {
 
     @BeforeEach
     fun beforeEach() {
-        // Story 4.6: Set tenant context for command validation
-        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+        // Story 4.6: Set test tenant ID for MockMvc request thread propagation
+        TestTenantContextHolder.setTestTenantId(TEST_TENANT_ID)
     }
 
     @AfterEach
     fun afterEach() {
-        // Story 4.6: Clean up tenant context
-        TenantContext.clearCurrentTenant()
+        // Story 4.6: Clean up test tenant context
+        TestTenantContextHolder.clearTestTenantId()
     }
 
     @Nested
@@ -178,6 +180,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .post("/api/v1/widgets") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID)) // Story 4.6: Tenant context for Query Handler
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -193,6 +196,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .get("/api/v1/widgets/${createdWidget.id}") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                        with(withTenantContext(TEST_TENANT_ID)) // Story 4.6: Tenant context for Query Handler
                         accept = MediaType.APPLICATION_JSON
                     }.andExpect {
                         status { isOk() }

@@ -1,6 +1,8 @@
 package com.axians.eaf.products.widget.test.config
 
+import com.axians.eaf.framework.multitenancy.TenantContextEventInterceptor
 import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.config.EventProcessingConfigurer
@@ -133,16 +135,23 @@ open class RbacTestContainersConfig {
         DataSourceTransactionManager(dataSource)
 
     /**
-     * Axon Framework PropagatingErrorHandler for fail-fast test behavior.
+     * Axon Framework configuration for fail-fast test behavior and tenant context propagation.
      *
-     * Ensures any exception in @EventHandler methods propagates back to sendAndWait(),
-     * fails the transaction, and fails the test (instead of silent logging).
+     * **PropagatingErrorHandler:** Ensures exceptions in @EventHandler propagate to tests
+     * **TenantContextEventInterceptor:** Restores tenant context in async event processors
+     *
+     * Story 4.6: Tenant context propagation for async event processing
      */
     @Autowired
     fun configureAxon(configurer: EventProcessingConfigurer) {
         configurer.registerDefaultListenerInvocationErrorHandler {
             PropagatingErrorHandler.INSTANCE
         }
+
+        // Story 4.6: Register tenant context interceptor (same as AxonTestConfiguration)
+        val simpleMeterRegistry = SimpleMeterRegistry()
+        val tenantContextEventInterceptor = TenantContextEventInterceptor(simpleMeterRegistry)
+        configurer.registerDefaultHandlerInterceptor { config, name -> tenantContextEventInterceptor }
     }
 
     /**
