@@ -134,7 +134,7 @@ class QuantityTest {
     }
 
     @Test
-    fun `should support negative quantities (e.g., stock adjustments)`() {
+    fun `should support negative quantities for stock adjustments`() {
         val quantity = Quantity(value = BigDecimal("-10"), unit = "items")
 
         assertThat(quantity.value).isEqualTo(BigDecimal("-10"))

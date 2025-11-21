@@ -1,10 +1,8 @@
 package com.axians.eaf.framework.security.test
 
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,70 +27,69 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest(classes = [SecurityTestApplication::class])
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
-class KeycloakIntegrationTest : FunSpec() {
+class KeycloakIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `should start Keycloak container successfully`() {
+        // AC7: Container reuse enabled for performance
+        val issuerUri = KeycloakTestContainer.getIssuerUri()
+        assertThat(issuerUri).contains("/realms/eaf")
+    }
 
-        beforeSpec {
-            KeycloakTestContainer.start()
-        }
+    @Test
+    fun `should provide JWKS endpoint URI`() {
+        val jwksUri = KeycloakTestContainer.getJwksUri()
+        assertThat(jwksUri).contains("/protocol/openid-connect/certs")
+    }
 
-        test("should start Keycloak container successfully") {
-            // AC7: Container reuse enabled for performance
-            val issuerUri = KeycloakTestContainer.getIssuerUri()
-            issuerUri shouldContain "/realms/eaf"
-        }
+    @Test
+    fun `should generate valid JWT token for admin user`() {
+        // AC8: Container-generated JWTs for authentication tests
+        val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
-        test("should provide JWKS endpoint URI") {
-            val jwksUri = KeycloakTestContainer.getJwksUri()
-            jwksUri shouldContain "/protocol/openid-connect/certs"
-        }
+        assertThat(jwt).contains(".") // JWT has 3 parts separated by dots
+        assertThat(jwt.split(".")).hasSize(3)
+    }
 
-        test("should generate valid JWT token for admin user") {
-            // AC8: Container-generated JWTs for authentication tests
-            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+    @Test
+    fun `should generate valid JWT token for viewer user`() {
+        val jwt = KeycloakTestContainer.generateToken("viewer", "password")
 
-            jwt shouldContain "." // JWT has 3 parts separated by dots
-            jwt.split(".").size shouldBe 3
-        }
+        assertThat(jwt).contains(".")
+        assertThat(jwt.split(".")).hasSize(3)
+    }
 
-        test("should generate valid JWT token for viewer user") {
-            val jwt = KeycloakTestContainer.generateToken("viewer", "password")
+    @Test
+    fun `should allow authenticated requests with valid JWT`() {
+        // AC9: All security integration tests pass using Testcontainers Keycloak
+        val jwt = KeycloakTestContainer.generateToken("admin", "password")
 
-            jwt shouldContain "."
-            jwt.split(".").size shouldBe 3
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $jwt"),
+            ).andExpect(status().isOk())
+    }
 
-        test("should allow authenticated requests with valid JWT") {
-            // AC9: All security integration tests pass using Testcontainers Keycloak
-            val jwt = KeycloakTestContainer.generateToken("admin", "password")
+    @Test
+    fun `should reject unauthenticated requests`() {
+        // Verify security is still enforced with Testcontainers config
+        mockMvc
+            .perform(get("/api/widgets"))
+            .andExpect(status().isUnauthorized())
+    }
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $jwt"),
-                ).andExpect(status().isOk())
-        }
+    @Test
+    fun `should reject requests with invalid JWT`() {
+        val invalidJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature"
 
-        test("should reject unauthenticated requests") {
-            // Verify security is still enforced with Testcontainers config
-            mockMvc
-                .perform(get("/api/widgets"))
-                .andExpect(status().isUnauthorized())
-        }
-
-        test("should reject requests with invalid JWT") {
-            val invalidJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature"
-
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $invalidJwt"),
-                ).andExpect(status().isUnauthorized())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $invalidJwt"),
+            ).andExpect(status().isUnauthorized())
     }
 
     companion object {
