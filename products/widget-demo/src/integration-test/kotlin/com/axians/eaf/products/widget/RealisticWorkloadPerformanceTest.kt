@@ -14,6 +14,7 @@ import org.jooq.impl.DSL
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.springframework.boot.test.context.SpringBootTest
@@ -73,6 +74,7 @@ import kotlin.time.measureTime
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
+@Tag("Performance") // Story 4.6: Exclude from normal integration tests (runs in nightly only)
 class RealisticWorkloadPerformanceTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
