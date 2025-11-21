@@ -173,11 +173,12 @@ class WidgetQueryHandlerIntegrationTest {
                 assertThat(projection!!.published).isEqualTo(true)
             }
         }
+    }
 
-        @Nested
+    @Nested
 
 
-        inner class `ListWidgetsQuery` {
+    inner class `ListWidgetsQuery` {
 
             @Test
 
