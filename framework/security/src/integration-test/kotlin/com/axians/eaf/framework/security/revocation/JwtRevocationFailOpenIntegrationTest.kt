@@ -2,8 +2,7 @@ package com.axians.eaf.framework.security.revocation
 
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -18,23 +17,20 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @SpringBootTest(classes = [SecurityTestApplication::class])
 @AutoConfigureMockMvc
 @ActiveProfiles("keycloak-test", "redis-failure")
-class JwtRevocationFailOpenIntegrationTest : FunSpec() {
+class JwtRevocationFailOpenIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `requests continue when Redis unavailable and failClosed disabled`() {
+        val token = KeycloakTestContainer.generateToken("admin", "password")
 
-        test("requests continue when Redis unavailable and failClosed disabled") {
-            val token = KeycloakTestContainer.generateToken("admin", "password")
-
-            mockMvc
-                .get("/api/widgets") {
-                    header("Authorization", "Bearer $token")
-                }.andExpect {
-                    status { isOk() }
-                }
-        }
+        mockMvc
+            .get("/api/widgets") {
+                header("Authorization", "Bearer $token")
+            }.andExpect {
+                status { isOk() }
+            }
     }
 
     companion object {

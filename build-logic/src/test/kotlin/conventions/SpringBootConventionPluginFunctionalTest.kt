@@ -1,10 +1,11 @@
 package conventions
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.string.shouldContain
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
-class SpringBootConventionPluginFunctionalTest : FunSpec({
-    test("1.2-UNIT-005: applies spring boot tasks") {
+class SpringBootConventionPluginFunctionalTest {
+    @Test
+    fun `1_2-UNIT-005 - applies spring boot tasks`() {
         withPluginTestProject(
             """
             plugins {
@@ -17,8 +18,8 @@ class SpringBootConventionPluginFunctionalTest : FunSpec({
             """.trimIndent()
         ) {
             val result = runGradle("tasks", "--all")
-            result.output.shouldContain("bootRun")
-            result.output.shouldContain("bootJar")
+            assertThat(result.output).contains("bootRun")
+            assertThat(result.output).contains("bootJar")
         }
     }
-})
+}

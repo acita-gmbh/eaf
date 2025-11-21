@@ -2,8 +2,7 @@ package com.axians.eaf.framework.security.validation
 
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import com.axians.eaf.testing.keycloak.KeycloakTestContainer
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.extensions.spring.SpringExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,102 +28,102 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest(classes = [SecurityTestApplication::class])
 @ActiveProfiles("keycloak-test")
 @AutoConfigureMockMvc
-class JwtFormatSignatureIntegrationTest : FunSpec() {
+class JwtFormatSignatureIntegrationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    init {
-        extension(SpringExtension())
+    @Test
+    fun `should accept valid JWT with correct format and RS256 signature`() {
+        // AC7: Integration test with real Keycloak tokens
+        val validJwt = KeycloakTestContainer.generateToken("admin", "password")
 
-        beforeSpec {
-            KeycloakTestContainer.start()
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $validJwt"),
+            ).andExpect(status().isOk())
+    }
 
-        test("should accept valid JWT with correct format and RS256 signature") {
-            // AC7: Integration test with real Keycloak tokens
-            val validJwt = KeycloakTestContainer.generateToken("admin", "password")
+    @Test
+    fun `should return 403 when user lacks required admin role`() {
+        val viewerJwt = KeycloakTestContainer.generateToken("viewer", "password")
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $validJwt"),
-                ).andExpect(status().isOk())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $viewerJwt"),
+            ).andExpect(status().isForbidden())
+    }
 
-        test("should return 403 when user lacks required admin role") {
-            val viewerJwt = KeycloakTestContainer.generateToken("viewer", "password")
+    @Test
+    fun `should reject JWT with invalid format (only 2 parts)`() {
+        // AC4: Invalid format tokens rejected with 401
+        val invalidFormatJwt = "header.payload" // Missing signature
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $viewerJwt"),
-                ).andExpect(status().isForbidden())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $invalidFormatJwt"),
+            ).andExpect(status().isUnauthorized())
+    }
 
-        test("should reject JWT with invalid format (only 2 parts)") {
-            // AC4: Invalid format tokens rejected with 401
-            val invalidFormatJwt = "header.payload" // Missing signature
+    @Test
+    fun `should reject JWT with invalid format (4 parts)`() {
+        // AC4: Invalid format tokens rejected with 401
+        val invalidFormatJwt = "header.payload.signature.extra"
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $invalidFormatJwt"),
-                ).andExpect(status().isUnauthorized())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $invalidFormatJwt"),
+            ).andExpect(status().isUnauthorized())
+    }
 
-        test("should reject JWT with invalid format (4 parts)") {
-            // AC4: Invalid format tokens rejected with 401
-            val invalidFormatJwt = "header.payload.signature.extra"
+    @Test
+    fun `should reject JWT with invalid signature`() {
+        // AC5: Invalid signature tokens rejected with 401
+        val validJwt = KeycloakTestContainer.generateToken("admin", "password")
+        val tamperedJwt = validJwt.replaceAfterLast(".", "invalid_signature")
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $invalidFormatJwt"),
-                ).andExpect(status().isUnauthorized())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $tamperedJwt"),
+            ).andExpect(status().isUnauthorized())
+    }
 
-        test("should reject JWT with invalid signature") {
-            // AC5: Invalid signature tokens rejected with 401
-            val validJwt = KeycloakTestContainer.generateToken("admin", "password")
-            val tamperedJwt = validJwt.replaceAfterLast(".", "invalid_signature")
+    @Test
+    fun `should reject JWT with HS256 algorithm`() {
+        // AC3: RS256 algorithm enforcement (reject HS256)
+        // HS256 token created with HMAC (algorithm confusion attack simulation)
+        val hs256Token =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+                "eyJzdWIiOiJ0ZXN0IiwiaXNzIjoiZXZpbCIsImV4cCI6OTk5OTk5OTk5OX0." +
+                "signature"
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $tamperedJwt"),
-                ).andExpect(status().isUnauthorized())
-        }
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "Bearer $hs256Token"),
+            ).andExpect(status().isUnauthorized())
+    }
 
-        test("should reject JWT with HS256 algorithm") {
-            // AC3: RS256 algorithm enforcement (reject HS256)
-            // HS256 token created with HMAC (algorithm confusion attack simulation)
-            val hs256Token =
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-                    "eyJzdWIiOiJ0ZXN0IiwiaXNzIjoiZXZpbCIsImV4cCI6OTk5OTk5OTk5OX0." +
-                    "signature"
+    @Test
+    fun `should reject request without Authorization header`() {
+        // AC2: Token extraction from Authorization Bearer header
+        mockMvc
+            .perform(get("/api/widgets"))
+            .andExpect(status().isUnauthorized())
+    }
 
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "Bearer $hs256Token"),
-                ).andExpect(status().isUnauthorized())
-        }
-
-        test("should reject request without Authorization header") {
-            // AC2: Token extraction from Authorization Bearer header
-            mockMvc
-                .perform(get("/api/widgets"))
-                .andExpect(status().isUnauthorized())
-        }
-
-        test("should reject request with malformed Authorization header") {
-            // AC2: Token extraction validation
-            mockMvc
-                .perform(
-                    get("/api/widgets")
-                        .header("Authorization", "NotBearer token"),
-                ).andExpect(status().isUnauthorized())
-        }
+    @Test
+    fun `should reject request with malformed Authorization header`() {
+        // AC2: Token extraction validation
+        mockMvc
+            .perform(
+                get("/api/widgets")
+                    .header("Authorization", "NotBearer token"),
+            ).andExpect(status().isUnauthorized())
     }
 
     companion object {
