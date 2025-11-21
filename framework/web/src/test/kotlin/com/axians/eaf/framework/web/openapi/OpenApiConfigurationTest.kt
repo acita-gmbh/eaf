@@ -46,7 +46,7 @@ class OpenApiConfigurationTest {
 
         val jwtScheme = securitySchemes["bearer-jwt"]
         assertThat(jwtScheme).isNotNull
-        assertThat(jwtScheme.type).isEqualTo(SecurityScheme.Type.HTTP)
+        assertThat(jwtScheme!!.type).isEqualTo(SecurityScheme.Type.HTTP)
         assertThat(jwtScheme.scheme).isEqualTo("bearer")
         assertThat(jwtScheme.bearerFormat).isEqualTo("JWT")
         assertThat(jwtScheme.description).isEqualTo("JWT Bearer token from Keycloak")

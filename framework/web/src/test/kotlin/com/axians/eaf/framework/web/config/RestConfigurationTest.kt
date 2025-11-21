@@ -139,7 +139,7 @@ class RestConfigurationTest {
 
             // Then
             assertThat(corsConfig).isNotNull
-            assertThat(corsConfig.allowedOrigins).isNotNull
+            assertThat(corsConfig!!.allowedOrigins).isNotNull
             assertThat(corsConfig.allowedOrigins!!).contains("http://localhost:3000")
         }
 
@@ -154,7 +154,7 @@ class RestConfigurationTest {
 
             // Then
             assertThat(corsConfig).isNotNull
-            assertThat(corsConfig.allowedMethods).isNotNull
+            assertThat(corsConfig!!.allowedMethods).isNotNull
             assertThat(corsConfig.allowedMethods!!).containsAll(listOf("GET", "POST", "PUT", "DELETE", "PATCH"))
         }
 
@@ -169,7 +169,7 @@ class RestConfigurationTest {
 
             // Then
             assertThat(corsConfig).isNotNull
-            assertThat(corsConfig.allowedHeaders).isNotNull
+            assertThat(corsConfig!!.allowedHeaders).isNotNull
             assertThat(corsConfig.allowedHeaders!!).contains("*")
         }
 
@@ -184,7 +184,7 @@ class RestConfigurationTest {
 
             // Then
             assertThat(corsConfig).isNotNull
-            assertThat(corsConfig.allowCredentials).isTrue()
+            assertThat(corsConfig!!.allowCredentials).isTrue()
         }
 
         @Test
@@ -200,7 +200,7 @@ class RestConfigurationTest {
                     }
                 val corsConfig = corsSource.getCorsConfiguration(request)
                 assertThat(corsConfig).isNotNull
-                assertThat(corsConfig.allowedOrigins).isNotNull
+                assertThat(corsConfig!!.allowedOrigins).isNotNull
                 assertThat(corsConfig.allowedOrigins!!).contains("http://localhost:3000")
             }
         }
