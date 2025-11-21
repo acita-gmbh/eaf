@@ -31,7 +31,6 @@ import java.util.UUID
  * @author EAF Testing Framework
  */
 class AggregateRootTest {
-
     // Test aggregate, identifier, and event implementations
     data class TestId(
         override val value: String,

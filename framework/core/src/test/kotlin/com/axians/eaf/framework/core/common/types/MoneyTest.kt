@@ -29,7 +29,6 @@ import java.util.Currency
  * @author EAF Testing Framework
  */
 class MoneyTest {
-
     @Test
     fun `should create Money with amount and currency`() {
         val money = Money(amount = BigDecimal("100.50"), currency = Currency.getInstance("USD"))

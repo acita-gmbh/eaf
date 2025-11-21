@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test
  * @author EAF Testing Framework
  */
 class ValueObjectTest {
-
     // Test value object implementations
     data class Address(
         val street: String,

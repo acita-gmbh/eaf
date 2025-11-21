@@ -30,7 +30,6 @@ import java.util.UUID
  * @author EAF Testing Framework
  */
 class DomainEventTest {
-
     // Test event implementation
     data class TestEvent(
         override val occurredAt: Instant,

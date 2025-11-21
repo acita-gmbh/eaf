@@ -30,7 +30,6 @@ import org.junit.jupiter.api.assertThrows
  * @author EAF Testing Framework
  */
 class ExceptionsTest {
-
     @Test
     fun `should create EafException with message`() {
         val exception = EafException("Test error")

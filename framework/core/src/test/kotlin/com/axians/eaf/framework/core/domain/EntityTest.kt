@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test
  * @author EAF Testing Framework
  */
 class EntityTest {
-
     // Test entity and identifier implementations
     data class TestId(
         override val value: String,

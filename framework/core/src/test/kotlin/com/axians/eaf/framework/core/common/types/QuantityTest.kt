@@ -29,7 +29,6 @@ import java.math.BigDecimal
  * @author EAF Testing Framework
  */
 class QuantityTest {
-
     @Test
     fun `should create Quantity with value and unit`() {
         val quantity = Quantity(value = BigDecimal("10.5"), unit = "kg")

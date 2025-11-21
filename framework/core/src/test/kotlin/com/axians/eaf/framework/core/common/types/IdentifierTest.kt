@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
  * @author EAF Testing Framework
  */
 class IdentifierTest {
-
     // Test identifier implementations
     data class OrderId(
         override val value: String,
