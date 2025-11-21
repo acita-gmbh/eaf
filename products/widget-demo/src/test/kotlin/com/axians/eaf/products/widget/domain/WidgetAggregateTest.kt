@@ -64,7 +64,6 @@ import java.util.UUID
  * @author EAF Testing Framework
  */
 class WidgetAggregateTest {
-
     private lateinit var fixture: FixtureConfiguration<Widget>
 
     @BeforeEach
@@ -264,18 +263,20 @@ class WidgetAggregateTest {
         assertThat(widget).isInstanceOf(Serializable::class.java)
 
         // Verify Java serialization works (used by Axon snapshots)
-        val serialized = ByteArrayOutputStream().use { baos ->
-            ObjectOutputStream(baos).use { oos ->
-                oos.writeObject(widget)
+        val serialized =
+            ByteArrayOutputStream().use { baos ->
+                ObjectOutputStream(baos).use { oos ->
+                    oos.writeObject(widget)
+                }
+                baos.toByteArray()
             }
-            baos.toByteArray()
-        }
 
-        val deserialized = ByteArrayInputStream(serialized).use { bais ->
-            ObjectInputStream(bais).use { ois ->
-                ois.readObject()
+        val deserialized =
+            ByteArrayInputStream(serialized).use { bais ->
+                ObjectInputStream(bais).use { ois ->
+                    ois.readObject()
+                }
             }
-        }
 
         assertThat(deserialized).isInstanceOf(Widget::class.java)
     }
@@ -287,18 +288,20 @@ class WidgetAggregateTest {
         assertThat(widgetId).isInstanceOf(Serializable::class.java)
 
         // Verify serialization round-trip
-        val serialized = ByteArrayOutputStream().use { baos ->
-            ObjectOutputStream(baos).use { oos ->
-                oos.writeObject(widgetId)
+        val serialized =
+            ByteArrayOutputStream().use { baos ->
+                ObjectOutputStream(baos).use { oos ->
+                    oos.writeObject(widgetId)
+                }
+                baos.toByteArray()
             }
-            baos.toByteArray()
-        }
 
-        val deserialized = ByteArrayInputStream(serialized).use { bais ->
-            ObjectInputStream(bais).use { ois ->
-                ois.readObject() as WidgetId
+        val deserialized =
+            ByteArrayInputStream(serialized).use { bais ->
+                ObjectInputStream(bais).use { ois ->
+                    ois.readObject() as WidgetId
+                }
             }
-        }
 
         assertThat(deserialized).isEqualTo(widgetId)
     }

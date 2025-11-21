@@ -41,7 +41,6 @@ import org.springframework.security.oauth2.jwt.Jwt
  * @author EAF Testing Framework
  */
 class JwtAudienceValidatorTest {
-
     private val expected = "eaf-api"
 
     @Test
@@ -55,9 +54,10 @@ class JwtAudienceValidatorTest {
     @Test
     fun `audience expressed as string should be supported`() {
         val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-        val jwt = createJwt()
-            .claim("aud", "eaf-api")
-            .build()
+        val jwt =
+            createJwt()
+                .claim("aud", "eaf-api")
+                .build()
 
         assertThat(validator.validate(jwt).hasErrors()).isFalse()
     }
@@ -65,9 +65,10 @@ class JwtAudienceValidatorTest {
     @Test
     fun `authorized party (azp) should be used as fallback for audience`() {
         val validator = JwtAudienceValidator(expected, SimpleMeterRegistry())
-        val jwt = createJwt()
-            .claim("azp", "eaf-api")
-            .build()
+        val jwt =
+            createJwt()
+                .claim("azp", "eaf-api")
+                .build()
 
         assertThat(validator.validate(jwt).hasErrors()).isFalse()
     }
@@ -95,7 +96,9 @@ class JwtAudienceValidatorTest {
     }
 }
 
-private fun createJwt(): Jwt.Builder = Jwt.withTokenValue("token")
-    .header("alg", "RS256")
-    .claim("sub", "user")
-    .claim("jti", "aud-test-jti")
+private fun createJwt(): Jwt.Builder =
+    Jwt
+        .withTokenValue("token")
+        .header("alg", "RS256")
+        .claim("sub", "user")
+        .claim("jti", "aud-test-jti")

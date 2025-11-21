@@ -77,57 +77,57 @@ class SnapshotPerformanceTest {
         @Test
         @Timeout(60)
         fun `should process 250 commands successfully`() {
-                val widgetId = WidgetId(UUID.randomUUID())
-                val table = DSL.table("widget_projection")
-                val snapshotTable = DSL.table("snapshot_event_entry")
+            val widgetId = WidgetId(UUID.randomUUID())
+            val table = DSL.table("widget_projection")
+            val snapshotTable = DSL.table("snapshot_event_entry")
 
-                // Measure command throughput
-                val totalTime =
-                    measureTime {
-                        // Create widget (command 1, event 0)
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test"))
+            // Measure command throughput
+            val totalTime =
+                measureTime {
+                    // Create widget (command 1, event 0)
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test"))
 
-                        // 249 updates (total: 250 commands, events 0-249)
-                        repeat(249) { index ->
-                            if (index % 50 == 0 && index > 0) {
-                                println("   Dispatched ${index + 1}/249 updates...")
-                            }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                    // 249 updates (total: 250 commands, events 0-249)
+                    repeat(249) { index ->
+                        if (index % 50 == 0 && index > 0) {
+                            println("   Dispatched ${index + 1}/249 updates...")
                         }
+                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
                     }
-
-                println("⏱️  250 commands dispatched in: ${totalTime.inWholeSeconds}s")
-                println("   Throughput: ${String.format("%.1f", 250.0 / totalTime.inWholeSeconds)} cmd/sec")
-
-                // Verify final projection (eventually pattern for async)
-                eventually(Duration.ofSeconds(10)) {
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-
-                    assertThat(projection).isNotNull()
-                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 248")
                 }
 
-                // Verify snapshot behavior (NOTE: Snapshots disabled in test profile via @Profile("!test"))
-                // This documents expected behavior: 0 in test, 2 in production (at seq 100, 200)
-                val snapshotCount =
+            println("⏱️  250 commands dispatched in: ${totalTime.inWholeSeconds}s")
+            println("   Throughput: ${String.format("%.1f", 250.0 / totalTime.inWholeSeconds)} cmd/sec")
+
+            // Verify final projection (eventually pattern for async)
+            eventually(Duration.ofSeconds(10)) {
+                val projection =
                     dsl
-                        .selectCount()
-                        .from(snapshotTable)
-                        .where(DSL.field("aggregate_identifier").eq(widgetId.value))
-                        .fetchOne(0, Int::class.java)
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
 
-                // Expected: 0 snapshots in test profile (disabled for 70x performance improvement)
-                // Production: 2 snapshots expected (threshold = 100 events)
-                println("   Snapshots created: ${snapshotCount ?: 0} (expected: 0 in test, 2 in production)")
-                assertThat(snapshotCount).isEqualTo(0) // Verify snapshots correctly disabled in test profile
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 248")
+            }
 
-                // Performance target: <30 seconds for 250 commands
-                assertThat(totalTime.inWholeSeconds).isLessThan(30L)
-                println("✅ 250 events processed (snapshots disabled in test for performance)")
+            // Verify snapshot behavior (NOTE: Snapshots disabled in test profile via @Profile("!test"))
+            // This documents expected behavior: 0 in test, 2 in production (at seq 100, 200)
+            val snapshotCount =
+                dsl
+                    .selectCount()
+                    .from(snapshotTable)
+                    .where(DSL.field("aggregate_identifier").eq(widgetId.value))
+                    .fetchOne(0, Int::class.java)
+
+            // Expected: 0 snapshots in test profile (disabled for 70x performance improvement)
+            // Production: 2 snapshots expected (threshold = 100 events)
+            println("   Snapshots created: ${snapshotCount ?: 0} (expected: 0 in test, 2 in production)")
+            assertThat(snapshotCount).isEqualTo(0) // Verify snapshots correctly disabled in test profile
+
+            // Performance target: <30 seconds for 250 commands
+            assertThat(totalTime.inWholeSeconds).isLessThan(30L)
+            println("✅ 250 events processed (snapshots disabled in test for performance)")
         }
     }
 
@@ -136,40 +136,40 @@ class SnapshotPerformanceTest {
         @Test
         @Timeout(180)
         fun `should process 1000 commands with snapshot benefit`() {
-                val widgetId = WidgetId(UUID.randomUUID())
-                val table = DSL.table("widget_projection")
+            val widgetId = WidgetId(UUID.randomUUID())
+            val table = DSL.table("widget_projection")
 
-                // Measure 1000 command throughput
-                val totalTime =
-                    measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test"))
+            // Measure 1000 command throughput
+            val totalTime =
+                measureTime {
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test"))
 
-                        repeat(999) { index ->
-                            if (index % 100 == 0 && index > 0) {
-                                println("   Dispatched ${index + 1}/999 updates...")
-                            }
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                    repeat(999) { index ->
+                        if (index % 100 == 0 && index > 0) {
+                            println("   Dispatched ${index + 1}/999 updates...")
                         }
+                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
                     }
-
-                println("⏱️  1000 commands dispatched in: ${totalTime.inWholeSeconds}s")
-                println("   Throughput: ${String.format("%.1f", 1000.0 / totalTime.inWholeSeconds)} cmd/sec")
-
-                // Verify final projection
-                eventually(Duration.ofSeconds(10)) {
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-
-                    assertThat(projection).isNotNull()
-                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 998")
                 }
 
-                // Performance target: <2 minutes for 1000 commands
-                assertThat(totalTime.inWholeSeconds).isLessThan(120L)
-                println("✅ 1000 events processed (snapshots expected at seq 100, 200, ..., 900)")
+            println("⏱️  1000 commands dispatched in: ${totalTime.inWholeSeconds}s")
+            println("   Throughput: ${String.format("%.1f", 1000.0 / totalTime.inWholeSeconds)} cmd/sec")
+
+            // Verify final projection
+            eventually(Duration.ofSeconds(10)) {
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
+
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Update 998")
+            }
+
+            // Performance target: <2 minutes for 1000 commands
+            assertThat(totalTime.inWholeSeconds).isLessThan(120L)
+            println("✅ 1000 events processed (snapshots expected at seq 100, 200, ..., 900)")
         }
     }
 
@@ -178,62 +178,62 @@ class SnapshotPerformanceTest {
         @Test
         @Timeout(60)
         fun `measure individual command dispatch time`() {
-                val widgetId = WidgetId(UUID.randomUUID())
-                val table = DSL.table("widget_projection")
+            val widgetId = WidgetId(UUID.randomUUID())
+            val table = DSL.table("widget_projection")
 
-                // Measure single create command
-                val createTime =
+            // Measure single create command
+            val createTime =
+                measureTime {
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test"))
+                }
+
+            println("📊 Command Performance Baseline:")
+            println("   CreateWidget: ${createTime.inWholeMilliseconds}ms")
+
+            // Verify projection
+            eventually(Duration.ofSeconds(10)) {
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
+                assertThat(projection).isNotNull()
+            }
+
+            // Measure 10 update commands
+            val updateTimes = mutableListOf<Long>()
+            repeat(10) { index ->
+                val time =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test"))
+                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index"))
                     }
+                updateTimes.add(time.inWholeMilliseconds)
+            }
 
-                println("📊 Command Performance Baseline:")
-                println("   CreateWidget: ${createTime.inWholeMilliseconds}ms")
+            val avgTime = updateTimes.average()
+            val minTime = updateTimes.minOrNull() ?: 0L
+            val maxTime = updateTimes.maxOrNull() ?: 0L
 
-                // Verify projection
-                eventually(Duration.ofSeconds(10)) {
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-                    assertThat(projection).isNotNull()
-                }
+            println("   UpdateWidget (10 samples):")
+            println("     Average: ${String.format("%.0f", avgTime)}ms")
+            println("     Min: ${minTime}ms, Max: ${maxTime}ms")
+            println("     Throughput: ${String.format("%.1f", 1000.0 / avgTime)} cmd/sec")
 
-                // Measure 10 update commands
-                val updateTimes = mutableListOf<Long>()
-                repeat(10) { index ->
-                    val time =
-                        measureTime {
-                            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index"))
-                        }
-                    updateTimes.add(time.inWholeMilliseconds)
-                }
+            // Verify all updates projected
+            eventually(Duration.ofSeconds(10)) {
+                val projection =
+                    dsl
+                        .selectFrom(table)
+                        .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
+                        .fetchOne()
 
-                val avgTime = updateTimes.average()
-                val minTime = updateTimes.minOrNull() ?: 0L
-                val maxTime = updateTimes.maxOrNull() ?: 0L
+                assertThat(projection).isNotNull()
+                assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Baseline 9")
+            }
 
-                println("   UpdateWidget (10 samples):")
-                println("     Average: ${String.format("%.0f", avgTime)}ms")
-                println("     Min: ${minTime}ms, Max: ${maxTime}ms")
-                println("     Throughput: ${String.format("%.1f", 1000.0 / avgTime)} cmd/sec")
-
-                // Verify all updates projected
-                eventually(Duration.ofSeconds(10)) {
-                    val projection =
-                        dsl
-                            .selectFrom(table)
-                            .where(DSL.field("id").eq(UUID.fromString(widgetId.value)))
-                            .fetchOne()
-
-                    assertThat(projection).isNotNull()
-                    assertThat(projection!![DSL.field("name", String::class.java)]).isEqualTo("Baseline 9")
-                }
-
-                // Sanity: Commands should complete in reasonable time
-                assertThat(avgTime.toLong()).isLessThan(1000L)
-                println("✅ Baseline measurements complete")
+            // Sanity: Commands should complete in reasonable time
+            assertThat(avgTime.toLong()).isLessThan(1000L)
+            println("✅ Baseline measurements complete")
         }
     }
 

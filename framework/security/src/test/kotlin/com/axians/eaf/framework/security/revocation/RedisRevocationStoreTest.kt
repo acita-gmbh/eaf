@@ -59,20 +59,20 @@ import java.time.ZoneOffset
  * @author EAF Testing Framework
  */
 class RedisRevocationStoreTest {
-
     private val meterRegistry = SimpleMeterRegistry()
     private val fixedClock = Clock.fixed(Instant.parse("2025-11-10T00:00:00Z"), ZoneOffset.UTC)
 
     private fun store(
         properties: RevocationProperties = RevocationProperties(),
         accessor: TestRedisAccessor = TestRedisAccessor(),
-    ): Pair<RedisRevocationStore, TestRedisAccessor> = RedisRevocationStore(
-        redisTemplate = StringRedisTemplate(),
-        properties = properties,
-        meterRegistry = meterRegistry,
-        clock = fixedClock,
-        redisAccessor = accessor,
-    ) to accessor
+    ): Pair<RedisRevocationStore, TestRedisAccessor> =
+        RedisRevocationStore(
+            redisTemplate = StringRedisTemplate(),
+            properties = properties,
+            meterRegistry = meterRegistry,
+            clock = fixedClock,
+            redisAccessor = accessor,
+        ) to accessor
 
     @Test
     fun `isRevoked returns true when Redis contains key`() {
@@ -140,7 +140,10 @@ private class TestRedisAccessor : RedisRevocationStore.RevocationRedisAccessor {
         return entries.containsKey(key)
     }
 
-    override fun setValue(key: String, ttl: Duration) {
+    override fun setValue(
+        key: String,
+        ttl: Duration,
+    ) {
         entries[key] = ttl
     }
 

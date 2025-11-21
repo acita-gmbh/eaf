@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
  * @author EAF Testing Framework
  */
 class PlaceholderTest {
-
     @Test
     fun `security module compiles successfully`() {
         // Placeholder test - real tests are in src/integration-test

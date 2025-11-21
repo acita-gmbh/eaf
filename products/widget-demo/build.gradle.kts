@@ -75,6 +75,7 @@ dependencies {
     integrationTestImplementation(libs.spring.boot.testcontainers)
     integrationTestImplementation(project(":shared:testing"))
     integrationTestImplementation("org.springframework:spring-jdbc")
+    integrationTestImplementation(libs.kotlin.coroutines.core)
 
     // Spring Security Test Support (Story 3.10)
     integrationTestImplementation(libs.spring.security.test)

@@ -107,8 +107,7 @@ class CursorPaginationSupportTest {
             // When/Then
             assertThatThrownBy {
                 CursorPaginationSupport.decodeCursor(invalidCursor)
-            }
-                .isInstanceOf(IllegalArgumentException::class.java)
+            }.isInstanceOf(IllegalArgumentException::class.java)
                 .hasMessageContaining("Invalid cursor format")
                 .hasMessageContaining("malformed Base64")
         }
@@ -125,8 +124,7 @@ class CursorPaginationSupportTest {
             // When/Then
             assertThatThrownBy {
                 CursorPaginationSupport.decodeCursor(cursor)
-            }
-                .isInstanceOf(IllegalArgumentException::class.java)
+            }.isInstanceOf(IllegalArgumentException::class.java)
                 .hasMessageContaining("Invalid cursor format")
                 .hasMessageContaining("malformed timestamp")
         }

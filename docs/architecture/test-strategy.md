@@ -107,10 +107,46 @@ graph TD
 ### Framework Overview
 
 **Primary Testing Stack:**
-- **JUnit 6.0.1**: Modern testing framework with excellent Kotlin support
+- **JUnit 6.0.1**: Modern testing framework with native Kotlin suspend support (released 2025-09-30)
 - **AssertJ 3.27.3**: Fluent assertion library with Kotlin-friendly API
 - **AssertJ-Kotlin 0.2.1**: Kotlin-specific AssertJ extensions
 - **MockK 1.13.14**: Kotlin-native mocking framework (use sparingly per Zero-Mocks Policy)
+
+### JUnit 6 Critical Features & Requirements
+
+**NEW in JUnit 6 (vs JUnit 5):**
+- **Native Kotlin Suspend Support**: Test and lifecycle methods can use `suspend fun` directly without runBlocking/runTest wrappers
+- **@TestInstance(PER_CLASS) REQUIRED**: MUST add to classes using `suspend fun` with `@Nested` inner classes for stable coroutine continuations
+- **Deterministic @Nested Ordering**: @Nested classes have consistent discovery order (not alphabetical, but stable across runs)
+- **@TestMethodOrder Inheritance**: Ordering annotations on parent classes are inherited by @Nested inner classes recursively
+- **Java 17 Baseline**: Minimum Java version raised from 8 to 17 (EAF uses Java 21 ✅)
+- **Kotlin 2.2 Baseline**: Minimum Kotlin version raised to 2.2 (EAF uses 2.2.21 ✅)
+
+**Breaking Changes from JUnit 5:**
+- Kotlin assertTimeout contract changed from EXACTLY_ONCE to AT_MOST_ONCE (may cause compilation errors)
+- junit-platform-runner module removed
+- CSV parsing migrated to FastCSV (stricter validation)
+
+**Example - Suspend Functions:**
+```kotlin
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)  // REQUIRED for suspend + @Nested
+@SpringBootTest
+class AsyncIntegrationTest {
+    @Test
+    suspend fun `native suspend support`() {
+        val result = suspendingService.fetchData()
+        assertThat(result).isNotNull()
+    }
+
+    @Nested
+    inner class `Async Scenarios` {
+        @Test
+        suspend fun `nested suspend test`() {
+            // JUnit 6 handles coroutines automatically
+        }
+    }
+}
+```
 
 ### Core Test Structure
 

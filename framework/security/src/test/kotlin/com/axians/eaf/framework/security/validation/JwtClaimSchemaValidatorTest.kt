@@ -44,22 +44,23 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class JwtClaimSchemaValidatorTest {
-
     private val validator = JwtClaimSchemaValidator(SimpleMeterRegistry())
 
     @Test
     fun `valid JWT with all required claims should pass validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "tenant-a",
-                "roles" to listOf("WIDGET_ADMIN"),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "tenant-a",
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -68,16 +69,18 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT missing 'sub' claim should fail validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "tenant-a",
-                "roles" to listOf("WIDGET_ADMIN"),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "tenant-a",
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -88,16 +91,18 @@ class JwtClaimSchemaValidatorTest {
     @Test
     fun `JWT missing optional 'tenant_id' claim should pass validation`() {
         // tenant_id is optional until Epic 4 (multi-tenancy implementation)
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                // tenant_id intentionally omitted
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        // tenant_id intentionally omitted
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -107,16 +112,18 @@ class JwtClaimSchemaValidatorTest {
     @Test
     fun `JWT missing optional 'roles' claim should pass validation`() {
         // roles is optional until Epic 3.6+ (role validation layer)
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                // roles intentionally omitted
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        // roles intentionally omitted
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -125,13 +132,15 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT missing required claims should list all missing claims in sorted order`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -145,16 +154,18 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT missing jti claim should fail validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-            ),
-            includeJti = false,
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                    ),
+                includeJti = false,
+            )
 
         val result = validator.validate(jwt)
 
@@ -164,17 +175,19 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT with blank tenant_id should fail validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "", // Blank tenant_id (multi-tenancy bypass attempt)
-                "roles" to listOf("WIDGET_ADMIN"),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "", // Blank tenant_id (multi-tenancy bypass attempt)
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -184,17 +197,19 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT with blank sub should fail validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "", // Blank subject (user identity bypass attempt)
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "tenant-a",
-                "roles" to listOf("WIDGET_ADMIN"),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "", // Blank subject (user identity bypass attempt)
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "tenant-a",
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -204,17 +219,19 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT with both blank tenant_id and sub should list both invalid claims`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "",
-                "iss" to "https://keycloak.example.com/realms/eaf",
-                "aud" to "eaf-api",
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "",
-                "roles" to listOf("WIDGET_ADMIN"),
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "",
+                        "iss" to "https://keycloak.example.com/realms/eaf",
+                        "aud" to "eaf-api",
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "",
+                        "roles" to listOf("WIDGET_ADMIN"),
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -225,17 +242,19 @@ class JwtClaimSchemaValidatorTest {
 
     @Test
     fun `JWT with non-critical empty claims should pass validation`() {
-        val jwt = createJwt(
-            claims = mapOf(
-                "sub" to "user-123",
-                "iss" to "", // Non-critical claim (validated separately by issuer validator)
-                "aud" to "", // Non-critical claim (validated separately by audience validator)
-                "exp" to Instant.now().plusSeconds(3600),
-                "iat" to Instant.now(),
-                "tenant_id" to "tenant-a",
-                "roles" to emptyList<String>(), // Empty list is valid (no-roles scenario)
-            ),
-        )
+        val jwt =
+            createJwt(
+                claims =
+                    mapOf(
+                        "sub" to "user-123",
+                        "iss" to "", // Non-critical claim (validated separately by issuer validator)
+                        "aud" to "", // Non-critical claim (validated separately by audience validator)
+                        "exp" to Instant.now().plusSeconds(3600),
+                        "iat" to Instant.now(),
+                        "tenant_id" to "tenant-a",
+                        "roles" to emptyList<String>(), // Empty list is valid (no-roles scenario)
+                    ),
+            )
 
         val result = validator.validate(jwt)
 
@@ -256,7 +275,8 @@ private fun createJwt(
     val exp = claims["exp"] as? Instant
     val iat = claims["iat"] as? Instant
 
-    return Jwt.withTokenValue(tokenValue)
+    return Jwt
+        .withTokenValue(tokenValue)
         .headers { h -> h.putAll(headers) }
         .claims { c ->
             c.putAll(claims)

@@ -39,7 +39,6 @@ import org.springframework.security.oauth2.jwt.Jwt
  * @author EAF Testing Framework
  */
 class JwtIssuerValidatorTest {
-
     private val expectedIssuer = "http://keycloak:8080/realms/eaf"
 
     @Test
@@ -83,7 +82,9 @@ class JwtIssuerValidatorTest {
     }
 }
 
-private fun createJwt(): Jwt.Builder = Jwt.withTokenValue("token")
-    .header("alg", "RS256")
-    .claim("sub", "user")
-    .claim("jti", "issuer-test-jti")
+private fun createJwt(): Jwt.Builder =
+    Jwt
+        .withTokenValue("token")
+        .header("alg", "RS256")
+        .claim("sub", "user")
+        .claim("jti", "issuer-test-jti")

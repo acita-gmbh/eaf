@@ -1,6 +1,5 @@
 package com.axians.eaf.framework.security.jwks
 
-import java.time.Duration
 import com.axians.eaf.framework.security.config.KeycloakOidcConfiguration
 import com.axians.eaf.framework.security.test.SecurityTestApplication
 import org.assertj.core.api.Assertions.assertThat
@@ -9,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
+import java.time.Duration
 
 /**
  * Integration test for KeycloakJwksProvider.

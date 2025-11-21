@@ -423,6 +423,46 @@ class CommandMetricsInterceptor(
 4. **Real Dependencies**: Testcontainers for stateful services (PostgreSQL, Keycloak, Redis)
 5. **Zero-Mocks Policy**: Never mock business logic, only infrastructure
 
+### JUnit 6 Critical Features & Breaking Changes (Released 2025-09-30)
+
+**CRITICAL for Kotlin + @Nested Classes:**
+- **Native Suspend Support**: Test and lifecycle methods can use `suspend fun` directly (no runBlocking wrapper needed)
+- **@TestInstance(PER_CLASS) REQUIRED**: MUST add `@TestInstance(TestInstance.Lifecycle.PER_CLASS)` to test classes using `suspend fun` with `@Nested` inner classes
+- **Deterministic @Nested Ordering**: @Nested classes now have consistent discovery order (non-alphabetical but stable)
+- **@TestMethodOrder Inheritance**: Ordering annotations inherited by @Nested classes recursively
+
+**Breaking Changes from JUnit 5:**
+- **Java 17 Baseline**: Minimum Java version raised from 8 to 17 (we use Java 21 ✅)
+- **Kotlin 2.2 Baseline**: Minimum Kotlin version raised to 2.2 (we use 2.2.21 ✅)
+- **Unified Versioning**: Platform + Jupiter share same version (6.0.1)
+- **CSV Parsing**: Migrated to FastCSV (stricter validation, auto line-separator detection)
+- **Kotlin assertTimeout Contract**: Changed from EXACTLY_ONCE to AT_MOST_ONCE (may cause compilation errors)
+- **Removed Modules**: junit-platform-runner, junit-platform-jfr removed
+
+**Example - Suspend Functions with @Nested:**
+```kotlin
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)  // REQUIRED for suspend + @Nested
+class MyIntegrationTest {
+    @Test
+    suspend fun `can use suspend directly`() {
+        val result = suspendingService.fetchData()
+        assertThat(result).isNotNull()
+    }
+
+    @Nested
+    inner class `Async Scenarios` {
+        @Test
+        suspend fun `nested test with suspend`() {
+            // JUnit 6 handles coroutine context automatically
+        }
+    }
+}
+```
+
+**Resources:**
+- Official Release Notes: https://docs.junit.org/6.0.0/release-notes/
+- Kotlin Suspend Guide: https://patodev.pl/posts/junit6-suspend/
+
 ### 7-Layer Testing Defense (Architecture Mandate)
 
 1. **Static Analysis**: ktlint, Detekt, Konsist (instant feedback)

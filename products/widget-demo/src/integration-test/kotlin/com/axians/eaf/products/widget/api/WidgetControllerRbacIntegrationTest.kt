@@ -77,7 +77,6 @@ class WidgetControllerRbacIntegrationTest {
 
     @Nested
     inner class `POST api v1 widgets - Create Widget with PreAuthorize hasRole WIDGET_ADMIN` {
-
         @Test
         fun `WIDGET_ADMIN can create widget - returns 201 Created`() {
             // Given - Create widget request with ADMIN role
@@ -150,7 +149,6 @@ class WidgetControllerRbacIntegrationTest {
 
     @Nested
     inner class `GET api v1 widgets id - Find Widget requires WIDGET_ADMIN or WIDGET_VIEWER role` {
-
         @Test
         fun `WIDGET_VIEWER can read widget by ID - returns 200 OK`() {
             // Given - Create widget first (with ADMIN)
@@ -210,7 +208,6 @@ class WidgetControllerRbacIntegrationTest {
 
     @Nested
     inner class `PUT api v1 widgets id - Update Widget with PreAuthorize hasRole WIDGET_ADMIN` {
-
         @Test
         fun `WIDGET_ADMIN can update widget - returns 200 OK`() {
             // Given - Create widget first

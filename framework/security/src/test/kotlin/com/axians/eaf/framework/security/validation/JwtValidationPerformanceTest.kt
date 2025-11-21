@@ -58,21 +58,25 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class JwtValidationPerformanceTest {
-
     private val meterRegistry = SimpleMeterRegistry()
 
     // Null implementations for fast testing
-    private val mockRevocationStore = object : TokenRevocationStore {
-        override fun isRevoked(jti: String): Boolean = false
+    private val mockRevocationStore =
+        object : TokenRevocationStore {
+            override fun isRevoked(jti: String): Boolean = false
 
-        override fun revoke(jti: String, expiresAt: Instant?) {
-            // No-op for performance test
+            override fun revoke(
+                jti: String,
+                expiresAt: Instant?,
+            ) {
+                // No-op for performance test
+            }
         }
-    }
 
-    private val mockUserDirectory = object : UserDirectory {
-        override fun findById(userId: String): UserRecord = UserRecord(userId, active = true)
-    }
+    private val mockUserDirectory =
+        object : UserDirectory {
+            override fun findById(userId: String): UserRecord = UserRecord(userId, active = true)
+        }
 
     private val mockConfig = KeycloakOidcConfiguration(validateUser = false)
     private val injectionDetector = InjectionDetector()
@@ -88,28 +92,31 @@ class JwtValidationPerformanceTest {
     private val injectionValidator = JwtInjectionValidator(injectionDetector, meterRegistry)
 
     // All 10 layers orchestrated
-    private val validator = DelegatingOAuth2TokenValidator(
-        JwtValidators.createDefault(), // Layers 1-2: Spring Security baseline
-        algorithmValidator, // Layer 3
-        claimSchemaValidator, // Layer 4
-        timeBasedValidator, // Layer 5
-        issuerValidator, // Layer 6
-        audienceValidator, // Layer 6
-        revocationValidator, // Layer 7
-        userValidator, // Layer 9
-        injectionValidator, // Layer 10
-    )
+    private val validator =
+        DelegatingOAuth2TokenValidator(
+            JwtValidators.createDefault(), // Layers 1-2: Spring Security baseline
+            algorithmValidator, // Layer 3
+            claimSchemaValidator, // Layer 4
+            timeBasedValidator, // Layer 5
+            issuerValidator, // Layer 6
+            audienceValidator, // Layer 6
+            revocationValidator, // Layer 7
+            userValidator, // Layer 9
+            injectionValidator, // Layer 10
+        )
 
-    private fun createValidJwt(): Jwt = Jwt.withTokenValue("test.token.value")
-        .header("alg", "RS256")
-        .claim("sub", "user-123")
-        .claim("iss", "http://keycloak:8080/realms/eaf")
-        .claim("aud", listOf("eaf-api"))
-        .claim("jti", "perf-test-jti")
-        .claim("roles", listOf("WIDGET_ADMIN"))
-        .issuedAt(Instant.now().minusSeconds(10))
-        .expiresAt(Instant.now().plusSeconds(3600))
-        .build()
+    private fun createValidJwt(): Jwt =
+        Jwt
+            .withTokenValue("test.token.value")
+            .header("alg", "RS256")
+            .claim("sub", "user-123")
+            .claim("iss", "http://keycloak:8080/realms/eaf")
+            .claim("aud", listOf("eaf-api"))
+            .claim("jti", "perf-test-jti")
+            .claim("roles", listOf("WIDGET_ADMIN"))
+            .issuedAt(Instant.now().minusSeconds(10))
+            .expiresAt(Instant.now().plusSeconds(3600))
+            .build()
 
     // Performance Validation Tests
 

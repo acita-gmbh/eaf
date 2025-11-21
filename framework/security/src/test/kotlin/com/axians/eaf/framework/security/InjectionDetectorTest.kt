@@ -48,7 +48,6 @@ import org.junit.jupiter.api.assertThrows
  * @author EAF Testing Framework
  */
 class InjectionDetectorTest {
-
     private val detector = InjectionDetector()
 
     // SQL Injection Patterns
@@ -143,20 +142,22 @@ class InjectionDetectorTest {
 
     @Test
     fun `should not flag safe strings`() {
-        val claims = mapOf(
-            "username" to "john.doe",
-            "email" to "john.doe@example.com",
-            "description" to "This is a normal description.",
-        )
+        val claims =
+            mapOf(
+                "username" to "john.doe",
+                "email" to "john.doe@example.com",
+                "description" to "This is a normal description.",
+            )
         assertDoesNotThrow { detector.scan(claims) }
     }
 
     @Test
     fun `should handle non-string claims gracefully`() {
-        val claims = mapOf(
-            "userId" to 123,
-            "isAdmin" to true,
-        )
+        val claims =
+            mapOf(
+                "userId" to 123,
+                "isAdmin" to true,
+            )
         assertDoesNotThrow { detector.scan(claims) }
     }
 

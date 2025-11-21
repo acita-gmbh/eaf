@@ -45,7 +45,6 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class JwtAlgorithmValidatorTest {
-
     private val validator = JwtAlgorithmValidator(SimpleMeterRegistry())
 
     /**
@@ -53,13 +52,15 @@ class JwtAlgorithmValidatorTest {
      * Uses Nullable Pattern - minimal valid JWT structure without real signature.
      */
     private fun createTestJwt(algorithm: String?): Jwt {
-        val headers = if (algorithm != null) {
-            mapOf("alg" to algorithm)
-        } else {
-            emptyMap()
-        }
+        val headers =
+            if (algorithm != null) {
+                mapOf("alg" to algorithm)
+            } else {
+                emptyMap()
+            }
 
-        return Jwt.withTokenValue("test.token.value")
+        return Jwt
+            .withTokenValue("test.token.value")
             .headers { it.putAll(headers) }
             .claim("sub", "test-user")
             .claim("jti", "alg-test-jti")
@@ -151,13 +152,15 @@ class JwtAlgorithmValidatorTest {
     @Test
     fun `should reject JWT with missing algorithm header`() {
         // Create JWT with typ header but no alg header (edge case)
-        val jwt = Jwt.withTokenValue("test.token.value")
-            .headers { it["typ"] = "JWT" } // Only typ, no alg
-            .claim("sub", "test-user")
-            .claim("jti", "alg-test-jti")
-            .issuedAt(Instant.now())
-            .expiresAt(Instant.now().plusSeconds(3600))
-            .build()
+        val jwt =
+            Jwt
+                .withTokenValue("test.token.value")
+                .headers { it["typ"] = "JWT" } // Only typ, no alg
+                .claim("sub", "test-user")
+                .claim("jti", "alg-test-jti")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build()
 
         val result = validator.validate(jwt)
 

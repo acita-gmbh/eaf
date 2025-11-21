@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test
  * Currently uses a minimal test application for documentation purposes.
  */
 class ModuleCanvasGeneratorTest {
-
     @Test
     @Disabled("Module Canvas generation deferred to Epic 10 (widget-demo application)")
     fun `generate module canvas documentation`() {

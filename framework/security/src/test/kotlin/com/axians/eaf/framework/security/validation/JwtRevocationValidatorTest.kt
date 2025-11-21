@@ -44,7 +44,6 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class JwtRevocationValidatorTest {
-
     private fun validator(
         store: TestTokenRevocationStore = TestTokenRevocationStore(),
     ): Pair<JwtRevocationValidator, TestTokenRevocationStore> =
@@ -99,9 +98,11 @@ class JwtRevocationValidatorTest {
 }
 
 private fun jwtBuilder(withJti: Boolean = true): Jwt.Builder {
-    val builder = Jwt.withTokenValue("token")
-        .header("alg", "RS256")
-        .claim("sub", "user")
+    val builder =
+        Jwt
+            .withTokenValue("token")
+            .header("alg", "RS256")
+            .claim("sub", "user")
 
     return if (withJti) {
         builder.claim("jti", "jti-default")
@@ -123,7 +124,10 @@ private class TestTokenRevocationStore : TokenRevocationStore {
         return revoked.contains(jti)
     }
 
-    override fun revoke(jti: String, expiresAt: Instant?) {
+    override fun revoke(
+        jti: String,
+        expiresAt: Instant?,
+    ) {
         revoked += jti
     }
 }

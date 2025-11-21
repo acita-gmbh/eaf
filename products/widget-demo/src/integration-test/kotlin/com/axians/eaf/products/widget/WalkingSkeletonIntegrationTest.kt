@@ -2,13 +2,14 @@ package com.axians.eaf.products.widget
 
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.api.CreateWidgetRequest
-import com.axians.eaf.products.widget.api.PaginatedResponse
 import com.axians.eaf.products.widget.api.UpdateWidgetRequest
 import com.axians.eaf.products.widget.api.WidgetResponse
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.axians.eaf.products.widget.test.config.TestSecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.jooq.DSLContext
 import org.junit.jupiter.api.Nested
@@ -89,9 +90,9 @@ class WalkingSkeletonIntegrationTest {
 
     @Nested
     inner class `Walking Skeleton - Complete CQRS Flow` {
-
         @Test
-        fun `complete CQRS flow POST Command Event Projection GET validates end-to-end architecture`() {
+        fun `complete CQRS flow - POST to Command to Event to Projection to GET validates end-to-end architecture`() =
+            runBlocking {
                 // =====================================================================
                 // Step 0: Warmup call to avoid cold-start penalty
                 // First API call includes Spring context initialization overhead
@@ -135,7 +136,7 @@ class WalkingSkeletonIntegrationTest {
 
                 // VALIDATION: Widget created with correct data
                 assertThat(createdWidget.name).isEqualTo("Walking Skeleton Widget")
-                assertThat(createdWidget.published).isEqualTo(false)
+                assertThat(createdWidget.published).isFalse()
                 assertThat(createdWidget.id).isNotNull()
 
                 val widgetId = UUID.fromString(createdWidget.id)
@@ -191,7 +192,7 @@ class WalkingSkeletonIntegrationTest {
                 // VALIDATION: Query retrieval returns correct data (AC3)
                 assertThat(retrievedWidget.id).isEqualTo(createdWidget.id)
                 assertThat(retrievedWidget.name).isEqualTo("Walking Skeleton Widget")
-                assertThat(retrievedWidget.published).isEqualTo(false)
+                assertThat(retrievedWidget.published).isFalse()
 
                 // =====================================================================
                 // Step 4: UPDATE Widget (additional CQRS cycle)
@@ -249,42 +250,41 @@ class WalkingSkeletonIntegrationTest {
                     assertThat(widgets.size()).isGreaterThan(0)
                 }
             }
-        }
 
         @Test
         fun `validation failure returns 400 Bad Request with RFC 7807 ProblemDetail`() {
-                // Given - Invalid request with blank name (violates @NotBlank)
-                val invalidRequest = mapOf("name" to "")
-                val requestBody = objectMapper.writeValueAsString(invalidRequest)
+            // Given - Invalid request with blank name (violates @NotBlank)
+            val invalidRequest = mapOf("name" to "")
+            val requestBody = objectMapper.writeValueAsString(invalidRequest)
 
-                // When/Then - POST returns 400 with ProblemDetail
-                mockMvc
-                    .post("/api/v1/widgets") {
-                        contentType = MediaType.APPLICATION_JSON
-                        content = requestBody
-                    }.andExpect {
-                        status { isBadRequest() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(400) }
-                        jsonPath("$.title") { exists() }
-                    }
+            // When/Then - POST returns 400 with ProblemDetail
+            mockMvc
+                .post("/api/v1/widgets") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = requestBody
+                }.andExpect {
+                    status { isBadRequest() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(400) }
+                    jsonPath("$.title") { exists() }
+                }
         }
 
         @Test
         fun `not found scenario returns 404 Not Found with RFC 7807 ProblemDetail`() {
-                // Given - Non-existent widget ID
-                val nonExistentId = "00000000-0000-0000-0000-000000000999"
+            // Given - Non-existent widget ID
+            val nonExistentId = "00000000-0000-0000-0000-000000000999"
 
-                // When/Then - GET returns 404 with ProblemDetail
-                mockMvc
-                    .get("/api/v1/widgets/$nonExistentId") {
-                        accept = MediaType.APPLICATION_JSON
-                    }.andExpect {
-                        status { isNotFound() }
-                        content { contentType("application/problem+json") }
-                        jsonPath("$.status") { value(404) }
-                        jsonPath("$.title") { exists() }
-                    }
+            // When/Then - GET returns 404 with ProblemDetail
+            mockMvc
+                .get("/api/v1/widgets/$nonExistentId") {
+                    accept = MediaType.APPLICATION_JSON
+                }.andExpect {
+                    status { isNotFound() }
+                    content { contentType("application/problem+json") }
+                    jsonPath("$.status") { value(404) }
+                    jsonPath("$.title") { exists() }
+                }
         }
     }
 
@@ -316,17 +316,22 @@ class WalkingSkeletonIntegrationTest {
  * This pattern ensures deterministic behavior with eventual consistency.
  *
  * **Design Decision:**
- * Custom implementation is used instead of external timing libraries:
- * - Lightweight, well-tested, and project-specific
+ * Custom implementation is used instead of Kotest's built-in eventually because:
+ * - Kotest 6.0.4 `io.kotest.assertions.timing.eventually` not available in current dependencies
+ * - Adding kotest-assertions-timing would require additional dependency
+ * - Current implementation is lightweight, well-tested, and project-specific
  * - 100ms polling interval is optimized for our projection lag requirements
+ *
+ * **Note:** CodeRabbit suggested using Kotest's built-in eventually. This is a valid
+ * future enhancement when upgrading Kotest or adding the assertions-timing module.
  *
  * @param timeout Maximum time to wait for condition to be true
  * @param block Assertion block to execute repeatedly
  * @throws AssertionError if block does not succeed within timeout
  */
-private fun eventually(
+private suspend fun eventually(
     timeout: Duration,
-    block: () -> Unit,
+    block: suspend () -> Unit,
 ) {
     val deadline = System.currentTimeMillis() + timeout.toMillis()
     var lastException: Throwable? = null
@@ -337,7 +342,7 @@ private fun eventually(
             return // Success!
         } catch (e: Throwable) {
             lastException = e
-            Thread.sleep(100) // Poll every 100ms
+            delay(100) // Poll every 100ms
         }
     }
 

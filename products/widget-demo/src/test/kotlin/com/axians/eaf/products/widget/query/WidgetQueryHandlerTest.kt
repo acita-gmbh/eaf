@@ -59,7 +59,6 @@ import java.time.Instant
  * @author EAF Testing Framework
  */
 class WidgetQueryHandlerTest {
-
     private lateinit var handler: WidgetQueryHandler
 
     @BeforeEach
@@ -133,11 +132,12 @@ class WidgetQueryHandlerTest {
     @Test
     fun `encodes and decodes cursor round-trip correctly`() {
         // Given: Various timestamps
-        val timestamps = listOf(
-            Instant.parse("2025-01-01T00:00:00Z"),
-            Instant.parse("2025-06-15T12:30:45Z"),
-            Instant.parse("2025-12-31T23:59:59Z"),
-        )
+        val timestamps =
+            listOf(
+                Instant.parse("2025-01-01T00:00:00Z"),
+                Instant.parse("2025-06-15T12:30:45Z"),
+                Instant.parse("2025-12-31T23:59:59Z"),
+            )
 
         timestamps.forEach { original ->
             // When: Encode then decode
@@ -155,9 +155,10 @@ class WidgetQueryHandlerTest {
         val invalidCursor = "not-valid-base64!!!"
 
         // When/Then: Decoding should fail gracefully
-        val exception = assertThrows<IllegalArgumentException> {
-            CursorPaginationSupport.decodeCursor(invalidCursor)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                CursorPaginationSupport.decodeCursor(invalidCursor)
+            }
 
         assertThat(exception.message).isNotNull()
     }
@@ -168,9 +169,10 @@ class WidgetQueryHandlerTest {
         val malformedCursor = "bm90LWEtdGltZXN0YW1w" // Base64("not-a-timestamp")
 
         // When/Then: Parsing should fail
-        val exception = assertThrows<IllegalArgumentException> {
-            CursorPaginationSupport.decodeCursor(malformedCursor)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                CursorPaginationSupport.decodeCursor(malformedCursor)
+            }
 
         assertThat(exception.message).isNotNull()
     }

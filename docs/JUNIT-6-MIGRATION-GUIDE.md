@@ -113,7 +113,47 @@ class MyTest {
 }
 ```
 
-### 3. Assertions
+### 3. JUnit 6 Kotlin Suspend Functions (NEW in JUnit 6)
+
+**JUnit 6 provides native support for Kotlin suspend functions!**
+
+**CRITICAL:** When using `suspend fun` with `@Nested` inner classes, you **MUST** add `@TestInstance(TestInstance.Lifecycle.PER_CLASS)` to ensure stable coroutine continuation:
+
+```kotlin
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle
+
+@TestInstance(Lifecycle.PER_CLASS)  // REQUIRED for suspend + @Nested
+@SpringBootTest
+class MyAsyncIntegrationTest {
+
+    @Test
+    suspend fun `can use suspend functions directly`() {
+        val result = suspendingService.fetchData()
+        assertThat(result).isNotNull()
+    }
+
+    @Nested
+    inner class `Async Scenarios` {
+        @Test
+        suspend fun `nested test also supports suspend`() {
+            // JUnit 6 handles coroutine context automatically
+            val data = repository.findAllSuspend()
+            assertThat(data).isNotEmpty()
+        }
+    }
+}
+```
+
+**Key Points:**
+- ✅ No `runBlocking` or `runTest` wrapper needed
+- ✅ JUnit 6 handles coroutine context automatically
+- ✅ Works with all JUnit lifecycle annotations (@BeforeEach, @AfterEach, etc.)
+- ⚠️ Requires Kotlin 2.2+ (we have 2.2.21 ✅) and Java 17+ (we have 21 ✅)
+
+**Note:** For advanced coroutine testing (virtual time, deterministic scheduling), still use kotlinx-coroutines-test library.
+
+### 4. Assertions
 
 | Kotest | AssertJ |
 |--------|---------|
