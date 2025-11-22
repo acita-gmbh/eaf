@@ -5,6 +5,7 @@ import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
+import org.axonframework.modelling.command.EntityCreator
 import org.axonframework.modelling.command.TargetAggregateIdentifier
 import org.axonframework.spring.stereotype.Aggregate
 
@@ -54,6 +55,7 @@ class TestAggregate() {
      * @return Aggregate ID on successful creation
      */
     @CommandHandler
+    @EntityCreator
     constructor(command: TestCommand) : this() {
         // TenantValidationInterceptor will validate BEFORE this handler executes
         AggregateLifecycle.apply(
