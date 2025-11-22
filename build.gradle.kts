@@ -16,9 +16,6 @@ import org.gradle.api.plugins.JavaPlugin
 plugins {
     alias(libs.plugins.cyclonedx) apply true
 
-    // OpenRewrite for Spring Boot 4.0 / Jackson 3.0 migration
-    id("org.openrewrite.rewrite") version "6.29.6"
-
     // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
     // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
     alias(libs.plugins.kotlin.jvm) apply false
@@ -197,17 +194,7 @@ tasks.register("uninstallGitHooks") {
     }
 }
 
-// OpenRewrite Configuration for Spring Boot 4.0 / Jackson 3.0 Migration
-rewrite {
-    activeRecipe(
-        "org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0",
-        "org.openrewrite.java.migrate.UpgradeToJava21"
-    )
-    exportDatatables = true
-}
-
-dependencies {
-    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:2.23.0"))
-    rewrite("org.openrewrite.recipe:rewrite-spring")
-    rewrite("org.openrewrite.recipe:rewrite-migrate-java")
-}
+// Note: OpenRewrite for Spring Boot 4.0 migration would be configured here,
+// but requires network access to Maven Central for dependency resolution.
+// Migration will be performed manually following guide in:
+// docs/spring-boot-4-migration-status.md
