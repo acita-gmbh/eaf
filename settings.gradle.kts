@@ -49,10 +49,10 @@ dependencyResolutionManagement {
             }
         }
 
-        // Spring Release Repository (fallback for new GA releases not yet synced to Maven Central)
-        // Spring Boot 4.0.0 announced 2025-11-20 but may have sync delay to Maven Central
+        // Spring Milestone Repository (public, no auth required)
+        // Spring Boot 4.0.0 may still be here before Maven Central sync completes
         maven {
-            url = uri("https://repo.spring.io/release")
+            url = uri("https://repo.spring.io/milestone")
             content {
                 includeGroup("org.springframework.boot")
                 includeGroup("org.springframework")
