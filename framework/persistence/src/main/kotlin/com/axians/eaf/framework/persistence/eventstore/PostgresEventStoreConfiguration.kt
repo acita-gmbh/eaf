@@ -1,6 +1,6 @@
 package com.axians.eaf.framework.persistence.eventstore
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import org.axonframework.common.jdbc.ConnectionProvider
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper
 import org.axonframework.eventhandling.tokenstore.TokenStore
