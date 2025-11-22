@@ -49,19 +49,6 @@ dependencyResolutionManagement {
             }
         }
 
-        // Spring Milestone Repository (public, no auth required)
-        // Spring Boot 4.0.0 may still be here before Maven Central sync completes
-        maven {
-            url = uri("https://repo.spring.io/milestone")
-            content {
-                includeGroup("org.springframework.boot")
-                includeGroup("org.springframework")
-                includeGroup("org.springframework.data")
-                includeGroup("org.springframework.security")
-                includeGroup("org.springframework.modulith")
-            }
-        }
-
         gradlePluginPortal() {
             content {
                 // Only Gradle plugins and build tools
