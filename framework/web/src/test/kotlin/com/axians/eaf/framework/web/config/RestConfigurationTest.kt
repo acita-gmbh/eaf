@@ -1,7 +1,7 @@
 package com.axians.eaf.framework.web.config
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.annotation.JsonInclude // Annotations stay at com.fasterxml.in Jackson 3.0
+import tools.jackson.databind.SerializationFeature
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

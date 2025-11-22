@@ -15,6 +15,7 @@ import org.gradle.api.plugins.JavaPlugin
 // SBOM Generation (CycloneDX) - Week 2 Enhancement
 plugins {
     alias(libs.plugins.cyclonedx) apply true
+    alias(libs.plugins.openrewrite) apply true
 
     // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
     // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
@@ -117,6 +118,16 @@ subprojects {
                     useVersion(catalog.findVersion("grpc-netty-shaded").get().requiredVersion)
                     because("Fix CVE-2025-55163 in grpc-netty-shaded (requires >= 1.75.0)")
                 }
+
+                // Spring Boot 4.0 / Spring Framework 7.0 upgrade - Force JUnit Platform 6.0.1
+                "org.junit.platform" to "junit-platform-commons",
+                "org.junit.platform" to "junit-platform-engine",
+                "org.junit.platform" to "junit-platform-launcher",
+                "org.junit.platform" to "junit-platform-suite",
+                "org.junit.platform" to "junit-platform-suite-api" -> {
+                    useVersion(catalog.findVersion("junit").get().requiredVersion)
+                    because("JUnit 6 unified versioning - Platform + Jupiter must match 6.0.1")
+                }
             }
         }
     }
@@ -182,4 +193,18 @@ tasks.register("uninstallGitHooks") {
         file(".git/hooks/commit-msg").delete()
         logger.lifecycle("✅ Hooks uninstalled")
     }
+}
+
+// OpenRewrite configuration for Spring Boot 4.0 / Axon 5.0 migration
+rewrite {
+    activeRecipe(
+        "org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0",
+        "org.openrewrite.java.migrate.jakarta.JavaxMigrationToJakarta"
+    )
+}
+
+// OpenRewrite dependencies for Spring Boot 4.0 recipes
+dependencies {
+    rewrite("org.openrewrite.recipe:rewrite-spring:5.24.0")
+    rewrite("org.openrewrite.recipe:rewrite-migrate-java:2.30.0")
 }

@@ -1,7 +1,7 @@
 package com.axians.eaf.products.widget.test.config
 
 import com.axians.eaf.framework.security.revocation.TokenRevocationStore
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean

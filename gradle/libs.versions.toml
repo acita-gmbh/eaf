@@ -6,21 +6,21 @@ kotlinx-coroutines = "1.10.2"  # Kotlin coroutines library
 java = "21"                # LTS requirement
 gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
-# Framework stack (UPDATED for compatibility)
-spring-boot = "3.5.7"     # Current GA (released 2025-10-23)
-spring-framework = "6.2.12" # Spring Framework core - CVE-2025-24928 fix
-spring-modulith = "1.4.4" # Updated from 1.3.0 (tested compatible)
+# Framework stack (UPDATED for Spring Boot 4.0 / Spring Framework 7.0)
+spring-boot = "4.0.0"         # GA (released 2025-11-20, now in Maven Central)
+spring-framework = "7.0.1"    # Latest patch version (released 2025-11-21, now in Maven Central)
+spring-modulith = "2.0.0"     # GA (released 2025-11-21, aligns with Spring Boot 4.0)
 spring-dependency-management = "1.1.7"
 
 # CQRS and Event Sourcing
-axon = "4.12.2"            # Latest stable, v5 migration planned
+axon = "5.0.0"            # MAJOR upgrade from 4.x - Complete API rewrite (see docs/axon-5-spring-boot-4-upgrade-plan.md)
 arrow = "2.2.0"            # Functional programming
 
 # Database and persistence
 postgresql = "42.7.8"      # PostgreSQL driver (security updates)
 flyway = "11.17.1"         # Database migration framework
 jooq = "3.20.9"           # SQL DSL for read projections (updated)
-jackson = "2.20.1"         # JSON processing (matches Spring Boot BOM)
+jackson = "3.0.0"         # JSON processing - MAJOR BREAKING UPGRADE from 2.x (Spring Boot 4.0 requirement)
 netty = "4.1.125.Final"    # Story 1.9: CVE-2025-55163, CVE-2025-58056, CVE-2025-58057 fixes
 grpc-netty-shaded = "1.75.0" # CVE-2025-55163 fix (gRPC Netty DoS vulnerability)
 commons-lang3 = "3.18.0"   # Story 1.9: CVE-2025-48924 fix (uncontrolled recursion)
@@ -91,6 +91,9 @@ jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
 gatling = "3.14.9"        # Load testing framework
 gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
+# Migration Tools
+openrewrite = "7.20.0"    # OpenRewrite for automated Spring Boot 4.0 / Axon 5.0 migration (latest as of 2025-11-04)
+
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
 jakarta-servlet-api = "6.1.0"  # Jakarta Servlet API for Filter interface
@@ -107,13 +110,14 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # Spring Boot starters
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient", version.ref = "spring-boot" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
 spring-security-core = { module = "org.springframework.security:spring-security-core", version.ref = "spring-boot" } # Version managed by Spring Boot BOM
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "spring-boot" }
-spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "spring-boot" }
+spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aspectj", version.ref = "spring-boot" }
 
 # Spring Testing (granular dependencies without JUnit)
 spring-boot-test = { module = "org.springframework.boot:spring-boot-test", version.ref = "spring-boot" }
@@ -274,6 +278,9 @@ jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
 
 # Performance Testing
 gatling = { id = "io.gatling.gradle", version.ref = "gatling-gradle-plugin" }
+
+# Migration Tools
+openrewrite = { id = "org.openrewrite.rewrite", version.ref = "openrewrite" }
 
 # Application
 application = { id = "application" }
