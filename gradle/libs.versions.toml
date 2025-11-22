@@ -13,7 +13,7 @@ spring-modulith = "2.0.0"     # GA (released 2025-11-21, aligns with Spring Boot
 spring-dependency-management = "1.1.7"
 
 # CQRS and Event Sourcing
-axon = "4.12.2"            # Latest stable, v5 migration planned
+axon = "5.0.0"            # MAJOR upgrade from 4.x - Complete API rewrite (see docs/axon-5-spring-boot-4-upgrade-plan.md)
 arrow = "2.2.0"            # Functional programming
 
 # Database and persistence
