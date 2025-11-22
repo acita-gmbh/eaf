@@ -87,13 +87,14 @@ CREATE TABLE IF NOT EXISTS dead_letter_entry (
     PRIMARY KEY (dead_letter_id, processing_group)
 );
 
--- Widget Projection Table (Story 2.7)
+-- Widget Projection Table (Story 2.7, enhanced Story 4.6)
 -- Note: Story 4.4 adds RLS to production via V101 migration
--- Test schema remains simple - RLS testing deferred to Story 4.7
+-- Story 4.6 adds tenant_id column for multi-tenancy support
 CREATE TABLE IF NOT EXISTS widget_projection (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     published BOOLEAN NOT NULL DEFAULT false,
+    tenant_id VARCHAR(64) NOT NULL, -- Story 4.6: Multi-tenant isolation
     category VARCHAR(100),
     description TEXT,
     value DECIMAL(10,2),
@@ -106,4 +107,5 @@ CREATE TABLE IF NOT EXISTS widget_projection (
 CREATE INDEX IF NOT EXISTS idx_domain_event_aggregate ON domain_event_entry(aggregate_identifier, sequence_number);
 CREATE INDEX IF NOT EXISTS idx_domain_event_timestamp ON domain_event_entry(time_stamp);
 CREATE INDEX IF NOT EXISTS idx_widget_projection_created_at ON widget_projection(created_at);
+CREATE INDEX IF NOT EXISTS idx_widget_projection_tenant_id ON widget_projection(tenant_id); -- Story 4.6
 

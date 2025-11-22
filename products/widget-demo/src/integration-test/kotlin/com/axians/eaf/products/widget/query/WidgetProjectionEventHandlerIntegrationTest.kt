@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
@@ -11,6 +12,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -55,6 +58,18 @@ class WidgetProjectionEventHandlerIntegrationTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
 
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context for command validation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
+
     @Nested
     inner class `WidgetCreatedEvent projection` {
         @Test
@@ -65,7 +80,7 @@ class WidgetProjectionEventHandlerIntegrationTest {
 
             // When - Dispatch command
             val startTime = System.currentTimeMillis()
-            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName, TEST_TENANT_ID))
 
             // Then - Verify projection updated (eventually pattern for async)
             eventually(Duration.ofSeconds(10)) {
@@ -94,7 +109,7 @@ class WidgetProjectionEventHandlerIntegrationTest {
         fun `UpdateWidgetCommand widget_projection UPDATE`() {
             // Given - Widget exists
             val widgetId = WidgetId(UUID.randomUUID())
-            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name"))
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Original Name", TEST_TENANT_ID))
 
             eventually(Duration.ofSeconds(10)) {
                 val table = DSL.table("widget_projection")
@@ -108,7 +123,7 @@ class WidgetProjectionEventHandlerIntegrationTest {
 
             // When - Update widget
             val updatedName = "Updated Name"
-            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName))
+            commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, updatedName, TEST_TENANT_ID))
 
             // Then - Verify projection updated
             eventually(Duration.ofSeconds(10)) {
@@ -132,7 +147,7 @@ class WidgetProjectionEventHandlerIntegrationTest {
         fun `PublishWidgetCommand widget_projection published=true`() {
             // Given - Widget exists
             val widgetId = WidgetId(UUID.randomUUID())
-            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget"))
+            commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Test Widget", TEST_TENANT_ID))
 
             eventually(Duration.ofSeconds(10)) {
                 val table = DSL.table("widget_projection")
@@ -145,7 +160,7 @@ class WidgetProjectionEventHandlerIntegrationTest {
             }
 
             // When - Publish widget
-            commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
+            commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId, TEST_TENANT_ID))
 
             // Then - Verify published flag set
             eventually(Duration.ofSeconds(10)) {
@@ -163,6 +178,8 @@ class WidgetProjectionEventHandlerIntegrationTest {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant-projection"
+
         @Container
         @ServiceConnection
         @JvmStatic

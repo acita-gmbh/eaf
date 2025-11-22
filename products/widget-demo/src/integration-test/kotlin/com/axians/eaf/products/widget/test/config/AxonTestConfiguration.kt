@@ -1,6 +1,9 @@
 package com.axians.eaf.products.widget.test.config
 
+import com.axians.eaf.framework.multitenancy.TenantContextEventInterceptor
 import com.axians.eaf.framework.persistence.eventstore.PostgresEventStoreConfiguration
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.axonframework.common.caching.Cache
 import org.axonframework.common.caching.WeakReferenceCache
 import org.axonframework.config.EventProcessingConfigurer
@@ -36,16 +39,22 @@ import org.springframework.context.annotation.Profile
 @Import(TestDslConfiguration::class, TestJpaBypassConfiguration::class, PostgresEventStoreConfiguration::class)
 class AxonTestConfiguration {
     /**
-     * Registers PropagatingErrorHandler as default for all event processors.
+     * Registers PropagatingErrorHandler and TenantContextEventInterceptor for tests.
      *
-     * This ensures test correctness by failing fast on any event handler exception,
-     * rolling back the transaction and propagating the error to the test.
+     * **PropagatingErrorHandler:** Fails fast on event handler exceptions (test correctness)
+     * **TenantContextEventInterceptor:** Restores tenant context from event metadata (Story 4.5)
      */
     @Autowired
     fun configure(configurer: EventProcessingConfigurer) {
         configurer.registerDefaultListenerInvocationErrorHandler {
             PropagatingErrorHandler.INSTANCE
         }
+
+        // Story 4.6: Register tenant context interceptor globally for all event processors
+        // Create both MeterRegistry and Interceptor inline to avoid circular dependencies
+        val simpleMeterRegistry = SimpleMeterRegistry()
+        val tenantContextEventInterceptor = TenantContextEventInterceptor(simpleMeterRegistry)
+        configurer.registerDefaultHandlerInterceptor { config, name -> tenantContextEventInterceptor }
     }
 
     /**

@@ -13,6 +13,7 @@ import org.springframework.boot.runApplication
     scanBasePackages = [
         "com.axians.eaf.products.widget",
         "com.axians.eaf.framework.security",
+        "com.axians.eaf.framework.multitenancy", // Story 4.6: Enable TenantContextFilter and interceptors
     ],
 )
 class WidgetDemoApplication

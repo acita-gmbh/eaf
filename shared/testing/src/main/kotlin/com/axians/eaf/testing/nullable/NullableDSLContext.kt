@@ -81,6 +81,7 @@ object NullableDSLContext {
                 id UUID PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 published BOOLEAN NOT NULL DEFAULT false,
+                tenant_id VARCHAR(64) NOT NULL,
                 created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
             )
@@ -95,12 +96,14 @@ object NullableDSLContext {
                 DSL.field("id"),
                 DSL.field("name"),
                 DSL.field("published"),
+                DSL.field("tenant_id"),
                 DSL.field("created_at"),
                 DSL.field("updated_at"),
             ).values(
                 UUID.randomUUID(),
                 "Nullable Test Widget",
                 false,
+                "test-tenant-123", // Story 4.6: Default test tenant for Nullable DSLContext
                 now,
                 now,
             ).execute()

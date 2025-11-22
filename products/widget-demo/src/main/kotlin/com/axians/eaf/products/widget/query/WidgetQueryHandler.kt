@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.products.widget.domain.WidgetId
 import org.axonframework.queryhandling.QueryHandler
@@ -38,6 +39,7 @@ class WidgetQueryHandler(
         private val ID_FIELD = DSL.field("id", UUID::class.java)
         private val NAME_FIELD = DSL.field("name", String::class.java)
         private val PUBLISHED_FIELD = DSL.field("published", Boolean::class.java)
+        private val TENANT_ID_FIELD = DSL.field("tenant_id", String::class.java) // Story 4.6 AC5
         private val CREATED_AT_FIELD = DSL.field("created_at", OffsetDateTime::class.java)
         private val UPDATED_AT_FIELD = DSL.field("updated_at", OffsetDateTime::class.java)
     }
@@ -45,29 +47,39 @@ class WidgetQueryHandler(
     /**
      * Handles FindWidgetQuery to retrieve a single widget by ID.
      *
-     * Returns null if widget does not exist in projection.
+     * Returns null if widget does not exist in projection OR does not belong to current tenant.
+     *
+     * **Story 4.6 AC7:** Filters by tenant_id for cross-tenant isolation
      *
      * @param query Query containing the widget ID to find
-     * @return Widget projection if found, null otherwise
+     * @return Widget projection if found and belongs to current tenant, null otherwise
      */
     @QueryHandler
     fun handle(query: FindWidgetQuery): WidgetProjection? {
         logger.debug("Handling FindWidgetQuery for widgetId={}", query.widgetId.value)
+
+        // Story 4.6 AC7: Get current tenant for isolation
+        val currentTenantId = TenantContext.getCurrentTenantId()
 
         return dsl
             .select(
                 ID_FIELD,
                 NAME_FIELD,
                 PUBLISHED_FIELD,
+                TENANT_ID_FIELD,
                 CREATED_AT_FIELD,
                 UPDATED_AT_FIELD,
             ).from(WIDGET_PROJECTION_TABLE)
-            .where(ID_FIELD.eq(UUID.fromString(query.widgetId.value)))
-            .fetchOne { record ->
+            .where(
+                ID_FIELD
+                    .eq(UUID.fromString(query.widgetId.value))
+                    .and(TENANT_ID_FIELD.eq(currentTenantId)), // Tenant isolation
+            ).fetchOne { record ->
                 WidgetProjection(
                     id = WidgetId(record[ID_FIELD].toString()),
                     name = record[NAME_FIELD],
                     published = record[PUBLISHED_FIELD],
+                    tenantId = record[TENANT_ID_FIELD],
                     createdAt = record[CREATED_AT_FIELD].toInstant(),
                     updatedAt = record[UPDATED_AT_FIELD].toInstant(),
                 )
@@ -79,6 +91,8 @@ class WidgetQueryHandler(
      *
      * Fetches limit+1 rows to determine hasMore flag efficiently.
      * Results ordered by created_at DESC (newest first).
+     *
+     * **Story 4.6 AC7:** Filters by tenant_id for cross-tenant isolation
      *
      * @param query Query containing limit and optional cursor
      * @return Paginated response with widgets, nextCursor, and hasMore flag
@@ -93,10 +107,17 @@ class WidgetQueryHandler(
         // Decode cursor to get timestamp filter
         val cursorTimestamp = query.cursor?.let { CursorPaginationSupport.decodeCursor(it) }
 
-        // Build WHERE condition for cursor-based pagination
+        // Story 4.6 AC7: Get current tenant for isolation
+        val currentTenantId = TenantContext.getCurrentTenantId()
+
+        // Build WHERE condition: tenant_id filter AND cursor pagination
         val whereCondition: Condition =
-            cursorTimestamp?.let { CREATED_AT_FIELD.lt(it.atOffset(ZoneOffset.UTC)) }
-                ?: DSL.noCondition()
+            TENANT_ID_FIELD
+                .eq(currentTenantId)
+                .and(
+                    cursorTimestamp?.let { CREATED_AT_FIELD.lt(it.atOffset(ZoneOffset.UTC)) }
+                        ?: DSL.noCondition(),
+                )
 
         // Fetch limit+1 to detect hasMore
         val records =
@@ -105,6 +126,7 @@ class WidgetQueryHandler(
                     ID_FIELD,
                     NAME_FIELD,
                     PUBLISHED_FIELD,
+                    TENANT_ID_FIELD,
                     CREATED_AT_FIELD,
                     UPDATED_AT_FIELD,
                 ).from(WIDGET_PROJECTION_TABLE)
@@ -116,6 +138,7 @@ class WidgetQueryHandler(
                         id = WidgetId(record[ID_FIELD].toString()),
                         name = record[NAME_FIELD],
                         published = record[PUBLISHED_FIELD],
+                        tenantId = record[TENANT_ID_FIELD],
                         createdAt = record[CREATED_AT_FIELD].toInstant(),
                         updatedAt = record[UPDATED_AT_FIELD].toInstant(),
                     )

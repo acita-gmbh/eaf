@@ -1,8 +1,10 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.framework.web.pagination.CursorPaginationSupport
 import com.axians.eaf.testing.nullable.createNullableDSLContext
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -63,8 +65,17 @@ class WidgetQueryHandlerTest {
 
     @BeforeEach
     fun beforeEach() {
+        // Story 4.6: Set tenant context for Query Handler filtering
+        TenantContext.setCurrentTenantId("test-tenant-123")
+
         val dsl = createNullableDSLContext()
         handler = WidgetQueryHandler(dsl)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
     }
 
     // FindWidgetQuery with Nullable DSLContext Tests

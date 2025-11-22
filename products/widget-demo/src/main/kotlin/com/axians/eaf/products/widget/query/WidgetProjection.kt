@@ -11,9 +11,14 @@ import java.time.Instant
  *
  * **Performance Target:** Single widget query <50ms (FR011)
  *
+ * **Multi-Tenancy (Story 4.6 AC5):**
+ * tenantId enables Layer 3 RLS enforcement at database level.
+ * Column protected by PostgreSQL RLS policy (V101 migration).
+ *
  * @property id Unique identifier of the widget
  * @property name Display name of the widget
  * @property published Whether the widget is publicly available
+ * @property tenantId Tenant identifier for multi-tenant isolation (Layer 3)
  * @property createdAt UTC timestamp when the widget was created
  * @property updatedAt UTC timestamp when the widget was last modified
  */
@@ -21,6 +26,7 @@ data class WidgetProjection(
     val id: WidgetId,
     val name: String,
     val published: Boolean,
+    val tenantId: String,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

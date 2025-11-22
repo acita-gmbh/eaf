@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget.query
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.PublishWidgetCommand
@@ -12,6 +13,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -60,6 +63,18 @@ class WidgetQueryHandlerIntegrationTest {
     @Autowired
     private lateinit var queryGateway: QueryGateway
 
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context for command validation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
+
     @Nested
     inner class FindWidgetQuery {
         @Test
@@ -68,7 +83,7 @@ class WidgetQueryHandlerIntegrationTest {
                 // Given - Create widget via command
                 val widgetId = WidgetId(UUID.randomUUID())
                 val widgetName = "Query Test Widget"
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, widgetName, TEST_TENANT_ID))
 
                 // Wait for projection to complete
                 eventually(Duration.ofSeconds(10)) {
@@ -136,8 +151,8 @@ class WidgetQueryHandlerIntegrationTest {
             runBlocking {
                 // Given - Create and publish widget
                 val widgetId = WidgetId(UUID.randomUUID())
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Publish Test"))
-                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Publish Test", TEST_TENANT_ID))
+                commandGateway.sendAndWait<Unit>(PublishWidgetCommand(widgetId, TEST_TENANT_ID))
 
                 // Wait for projection to complete
                 eventually(Duration.ofSeconds(10)) {
@@ -201,11 +216,11 @@ class WidgetQueryHandlerIntegrationTest {
                 val widget2Id = WidgetId(UUID.randomUUID())
                 val widget3Id = WidgetId(UUID.randomUUID())
 
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget1Id, "$testPrefix-First"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget1Id, "$testPrefix-First", TEST_TENANT_ID))
                 delay(100) // Ensure different timestamps
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget2Id, "$testPrefix-Second"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget2Id, "$testPrefix-Second", TEST_TENANT_ID))
                 delay(100)
-                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget3Id, "$testPrefix-Third"))
+                commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widget3Id, "$testPrefix-Third", TEST_TENANT_ID))
 
                 // Wait for all projections
                 eventually(Duration.ofSeconds(10)) {
@@ -255,7 +270,9 @@ class WidgetQueryHandlerIntegrationTest {
                 val widgetIds =
                     (1..5).map { i ->
                         val widgetId = WidgetId(UUID.randomUUID())
-                        commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "$testPrefix-Widget-$i"))
+                        commandGateway.sendAndWait<Unit>(
+                            CreateWidgetCommand(widgetId, "$testPrefix-Widget-$i", TEST_TENANT_ID),
+                        )
                         delay(50) // Ensure different timestamps
                         widgetId
                     }
@@ -326,6 +343,8 @@ class WidgetQueryHandlerIntegrationTest {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant-query"
+
         @Container
         @ServiceConnection
         @JvmStatic

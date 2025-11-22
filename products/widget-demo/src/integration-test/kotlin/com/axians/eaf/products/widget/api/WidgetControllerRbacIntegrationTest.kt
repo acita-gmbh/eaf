@@ -1,5 +1,7 @@
 package com.axians.eaf.products.widget.api
 
+import com.axians.eaf.framework.multitenancy.TenantContext
+import com.axians.eaf.framework.multitenancy.test.withTenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.RbacTestContainersConfig
@@ -7,6 +9,8 @@ import com.axians.eaf.products.widget.test.config.RbacTestSecurityConfig
 import com.axians.eaf.products.widget.test.config.TestAutoConfigurationOverrides
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -75,6 +79,22 @@ class WidgetControllerRbacIntegrationTest {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
+    companion object {
+        private const val TEST_TENANT_ID = "test-tenant-rbac"
+    }
+
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set test tenant ID for MockMvc request thread propagation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up test tenant context
+        TenantContext.clearCurrentTenant()
+    }
+
     @Nested
     inner class `POST api v1 widgets - Create Widget with PreAuthorize hasRole WIDGET_ADMIN` {
         @Test
@@ -88,6 +108,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .post("/api/v1/widgets") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = requestBody
                     }.andExpect {
@@ -116,6 +137,7 @@ class WidgetControllerRbacIntegrationTest {
             mockMvc
                 .post("/api/v1/widgets") {
                     with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = requestBody
                 }.andExpect {
@@ -139,6 +161,7 @@ class WidgetControllerRbacIntegrationTest {
             mockMvc
                 .post("/api/v1/widgets") {
                     // NO .with(jwt()) - unauthenticated!
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = requestBody
                 }.andExpect {
@@ -159,6 +182,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .post("/api/v1/widgets") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID)) // Story 4.6: Tenant context for Query Handler
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -174,6 +198,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .get("/api/v1/widgets/${createdWidget.id}") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                        with(withTenantContext(TEST_TENANT_ID)) // Story 4.6: Tenant context for Query Handler
                         accept = MediaType.APPLICATION_JSON
                     }.andExpect {
                         status { isOk() }
@@ -199,6 +224,7 @@ class WidgetControllerRbacIntegrationTest {
             mockMvc
                 .get("/api/v1/widgets/$nonExistentId") {
                     // NO .with(jwt()) - unauthenticated!
+                    with(withTenantContext(TEST_TENANT_ID))
                     accept = MediaType.APPLICATION_JSON
                 }.andExpect {
                     status { isUnauthorized() }
@@ -218,6 +244,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .post("/api/v1/widgets") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -236,6 +263,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .put("/api/v1/widgets/${createdWidget.id}") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = updateBody
                     }.andExpect {
@@ -264,6 +292,7 @@ class WidgetControllerRbacIntegrationTest {
                 mockMvc
                     .post("/api/v1/widgets") {
                         with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_ADMIN")))
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -281,6 +310,7 @@ class WidgetControllerRbacIntegrationTest {
             mockMvc
                 .put("/api/v1/widgets/${createdWidget.id}") {
                     with(jwt().authorities(SimpleGrantedAuthority("ROLE_WIDGET_VIEWER")))
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = updateBody
                 }.andExpect {
@@ -304,6 +334,7 @@ class WidgetControllerRbacIntegrationTest {
             mockMvc
                 .put("/api/v1/widgets/$nonExistentId") {
                     // NO .with(jwt()) - unauthenticated!
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = updateBody
                 }.andExpect {

@@ -32,6 +32,10 @@ dependencies {
     implementation(libs.spring.modulith.api)
     testImplementation(libs.spring.modulith.test)
 
+    // Test utilities (Story 4.6 AC7): RequestPostProcessor for MockMvc tenant context propagation
+    // compileOnly: Available at compile-time but not added to runtime classpath
+    compileOnly(libs.spring.boot.starter.test)
+
     // Testing dependencies
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "junit", module = "junit") // Exclude JUnit 4

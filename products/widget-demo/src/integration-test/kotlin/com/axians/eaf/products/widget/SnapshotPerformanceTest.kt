@@ -1,5 +1,6 @@
 package com.axians.eaf.products.widget
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.domain.CreateWidgetCommand
 import com.axians.eaf.products.widget.domain.UpdateWidgetCommand
@@ -10,7 +11,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.springframework.boot.test.context.SpringBootTest
@@ -65,12 +69,25 @@ import kotlin.time.measureTime
 @Import(AxonTestConfiguration::class)
 @Sql("/schema.sql")
 @ActiveProfiles("test")
+@Tag("Performance") // Story 4.6: Exclude from normal integration tests (runs in nightly only)
 class SnapshotPerformanceTest {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var commandGateway: CommandGateway
 
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var dsl: DSLContext
+
+    @BeforeEach
+    fun beforeEach() {
+        // Story 4.6: Set tenant context for command validation
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
+    }
+
+    @AfterEach
+    fun afterEach() {
+        // Story 4.6: Clean up tenant context
+        TenantContext.clearCurrentTenant()
+    }
 
     @Nested
     inner class `Snapshot threshold validation (250 events)` {
@@ -85,14 +102,14 @@ class SnapshotPerformanceTest {
             val totalTime =
                 measureTime {
                     // Create widget (command 1, event 0)
-                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test"))
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Snapshot Test", TEST_TENANT_ID))
 
                     // 249 updates (total: 250 commands, events 0-249)
                     repeat(249) { index ->
                         if (index % 50 == 0 && index > 0) {
                             println("   Dispatched ${index + 1}/249 updates...")
                         }
-                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index", TEST_TENANT_ID))
                     }
                 }
 
@@ -142,13 +159,13 @@ class SnapshotPerformanceTest {
             // Measure 1000 command throughput
             val totalTime =
                 measureTime {
-                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test"))
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Performance Test", TEST_TENANT_ID))
 
                     repeat(999) { index ->
                         if (index % 100 == 0 && index > 0) {
                             println("   Dispatched ${index + 1}/999 updates...")
                         }
-                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index"))
+                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Update $index", TEST_TENANT_ID))
                     }
                 }
 
@@ -184,7 +201,7 @@ class SnapshotPerformanceTest {
             // Measure single create command
             val createTime =
                 measureTime {
-                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test"))
+                    commandGateway.sendAndWait<Unit>(CreateWidgetCommand(widgetId, "Baseline Test", TEST_TENANT_ID))
                 }
 
             println("📊 Command Performance Baseline:")
@@ -205,7 +222,9 @@ class SnapshotPerformanceTest {
             repeat(10) { index ->
                 val time =
                     measureTime {
-                        commandGateway.sendAndWait<Unit>(UpdateWidgetCommand(widgetId, "Baseline $index"))
+                        commandGateway.sendAndWait<Unit>(
+                            UpdateWidgetCommand(widgetId, "Baseline $index", TEST_TENANT_ID),
+                        )
                     }
                 updateTimes.add(time.inWholeMilliseconds)
             }
@@ -238,6 +257,8 @@ class SnapshotPerformanceTest {
     }
 
     companion object {
+        private const val TEST_TENANT_ID = "test-tenant-snapshot"
+
         @Container
         @ServiceConnection
         val postgres: PostgreSQLContainer<*> =
