@@ -1,7 +1,7 @@
 package com.axians.eaf.products.widget
 
 import com.axians.eaf.framework.multitenancy.TenantContext
-import com.axians.eaf.framework.multitenancy.test.TestTenantContextHolder
+import com.axians.eaf.framework.multitenancy.test.withTenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.api.CreateWidgetRequest
 import com.axians.eaf.products.widget.api.UpdateWidgetRequest
@@ -95,13 +95,13 @@ class WalkingSkeletonIntegrationTest {
     @BeforeEach
     fun beforeEach() {
         // Story 4.6: Set test tenant ID for MockMvc request thread propagation
-        TestTenantContextHolder.setTestTenantId(TEST_TENANT_ID)
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
     }
 
     @AfterEach
     fun afterEach() {
         // Story 4.6: Clean up test tenant context
-        TestTenantContextHolder.clearTestTenantId()
+        TenantContext.clearCurrentTenant()
     }
 
     @Nested
@@ -116,6 +116,7 @@ class WalkingSkeletonIntegrationTest {
                 val warmupRequest = CreateWidgetRequest(name = "Warmup Widget")
                 val warmupBody = objectMapper.writeValueAsString(warmupRequest)
                 mockMvc.post("/api/v1/widgets") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = warmupBody
                 }
@@ -133,6 +134,7 @@ class WalkingSkeletonIntegrationTest {
                 val createResult =
                     mockMvc
                         .post("/api/v1/widgets") {
+                            with(withTenantContext(TEST_TENANT_ID))
                             contentType = MediaType.APPLICATION_JSON
                             content = createRequestBody
                         }.andExpect {
@@ -193,6 +195,7 @@ class WalkingSkeletonIntegrationTest {
                 val getResult =
                     mockMvc
                         .get("/api/v1/widgets/${createdWidget.id}") {
+                            with(withTenantContext(TEST_TENANT_ID))
                             accept = MediaType.APPLICATION_JSON
                         }.andExpect {
                             status { isOk() }
@@ -220,6 +223,7 @@ class WalkingSkeletonIntegrationTest {
                 val updateResult =
                     mockMvc
                         .put("/api/v1/widgets/${createdWidget.id}") {
+                            with(withTenantContext(TEST_TENANT_ID))
                             contentType = MediaType.APPLICATION_JSON
                             content = updateRequestBody
                         }.andExpect {
@@ -245,6 +249,7 @@ class WalkingSkeletonIntegrationTest {
                     val listResult =
                         mockMvc
                             .get("/api/v1/widgets") {
+                                with(withTenantContext(TEST_TENANT_ID))
                                 accept = MediaType.APPLICATION_JSON
                                 param("limit", "10")
                             }.andExpect {
@@ -276,6 +281,7 @@ class WalkingSkeletonIntegrationTest {
             // When/Then - POST returns 400 with ProblemDetail
             mockMvc
                 .post("/api/v1/widgets") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = requestBody
                 }.andExpect {
@@ -294,6 +300,7 @@ class WalkingSkeletonIntegrationTest {
             // When/Then - GET returns 404 with ProblemDetail
             mockMvc
                 .get("/api/v1/widgets/$nonExistentId") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     accept = MediaType.APPLICATION_JSON
                 }.andExpect {
                     status { isNotFound() }

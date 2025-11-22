@@ -1,7 +1,7 @@
 package com.axians.eaf.products.widget.api
 
 import com.axians.eaf.framework.multitenancy.TenantContext
-import com.axians.eaf.framework.multitenancy.test.TestTenantContextHolder
+import com.axians.eaf.framework.multitenancy.test.withTenantContext
 import com.axians.eaf.framework.web.rest.ProblemDetailExceptionHandler
 import com.axians.eaf.products.widget.WidgetDemoApplication
 import com.axians.eaf.products.widget.test.config.AxonTestConfiguration
@@ -81,13 +81,13 @@ class WidgetControllerIntegrationTest {
     @BeforeEach
     fun beforeEach() {
         // Story 4.6: Set test tenant ID for MockMvc request thread propagation
-        TestTenantContextHolder.setTestTenantId(TEST_TENANT_ID)
+        TenantContext.setCurrentTenantId(TEST_TENANT_ID)
     }
 
     @AfterEach
     fun afterEach() {
         // Story 4.6: Clean up test tenant context
-        TestTenantContextHolder.clearTestTenantId()
+        TenantContext.clearCurrentTenant()
     }
 
     @Nested
@@ -102,6 +102,7 @@ class WidgetControllerIntegrationTest {
             val result =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = requestBody
                     }.andExpect {
@@ -130,6 +131,7 @@ class WidgetControllerIntegrationTest {
             val result =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = requestBody
                     }.andReturn()
@@ -148,6 +150,7 @@ class WidgetControllerIntegrationTest {
             // When/Then - POST returns 400 with ProblemDetail
             mockMvc
                 .post("/api/v1/widgets") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = requestBody
                 }.andExpect {
@@ -169,6 +172,7 @@ class WidgetControllerIntegrationTest {
             val createResult =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -183,6 +187,7 @@ class WidgetControllerIntegrationTest {
             val result =
                 mockMvc
                     .get("/api/v1/widgets/${createdWidget.id}") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         accept = MediaType.APPLICATION_JSON
                     }.andExpect {
                         status { isOk() }
@@ -207,6 +212,7 @@ class WidgetControllerIntegrationTest {
             // When/Then - GET returns 404 with ProblemDetail
             mockMvc
                 .get("/api/v1/widgets/$nonExistentId") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     accept = MediaType.APPLICATION_JSON
                 }.andExpect {
                     status { isNotFound() }
@@ -227,6 +233,7 @@ class WidgetControllerIntegrationTest {
                     val request = CreateWidgetRequest(name = "List Widget $index")
                     val body = objectMapper.writeValueAsString(request)
                     mockMvc.post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = body
                     }
@@ -238,6 +245,7 @@ class WidgetControllerIntegrationTest {
                     val result =
                         mockMvc
                             .get("/api/v1/widgets") {
+                                with(withTenantContext(TEST_TENANT_ID))
                                 accept = MediaType.APPLICATION_JSON
                                 param("limit", "100")
                             }.andExpect {
@@ -265,6 +273,7 @@ class WidgetControllerIntegrationTest {
                 val request = CreateWidgetRequest(name = "Pagination Widget $index")
                 val body = objectMapper.writeValueAsString(request)
                 mockMvc.post("/api/v1/widgets") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = body
                 }
@@ -274,6 +283,7 @@ class WidgetControllerIntegrationTest {
             val firstPageResult =
                 mockMvc
                     .get("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         accept = MediaType.APPLICATION_JSON
                         param("limit", "2")
                     }.andReturn()
@@ -290,6 +300,7 @@ class WidgetControllerIntegrationTest {
             val secondPageResult =
                 mockMvc
                     .get("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         accept = MediaType.APPLICATION_JSON
                         param("limit", "2")
                         param("cursor", cursor!!)
@@ -312,6 +323,7 @@ class WidgetControllerIntegrationTest {
             val createResult =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -329,6 +341,7 @@ class WidgetControllerIntegrationTest {
             val updateResult =
                 mockMvc
                     .put("/api/v1/widgets/${createdWidget.id}") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = updateBody
                     }.andExpect {
@@ -357,6 +370,7 @@ class WidgetControllerIntegrationTest {
             // CRITICAL: Must use andExpect(), not andReturn() for error responses
             mockMvc
                 .put("/api/v1/widgets/$nonExistentId") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = updateBody
                 }.andExpect {
@@ -373,6 +387,7 @@ class WidgetControllerIntegrationTest {
             val createResult =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andReturn()
@@ -389,6 +404,7 @@ class WidgetControllerIntegrationTest {
 
             mockMvc
                 .put("/api/v1/widgets/${createdWidget.id}") {
+                    with(withTenantContext(TEST_TENANT_ID))
                     contentType = MediaType.APPLICATION_JSON
                     content = updateBody
                 }.andExpect {
@@ -410,6 +426,7 @@ class WidgetControllerIntegrationTest {
             val createResult =
                 mockMvc
                     .post("/api/v1/widgets") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = createBody
                     }.andExpect {
@@ -427,6 +444,7 @@ class WidgetControllerIntegrationTest {
             val readResult =
                 mockMvc
                     .get("/api/v1/widgets/${createdWidget.id}") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         accept = MediaType.APPLICATION_JSON
                     }.andExpect {
                         status { isOk() }
@@ -447,6 +465,7 @@ class WidgetControllerIntegrationTest {
             val updateResult =
                 mockMvc
                     .put("/api/v1/widgets/${createdWidget.id}") {
+                        with(withTenantContext(TEST_TENANT_ID))
                         contentType = MediaType.APPLICATION_JSON
                         content = updateBody
                     }.andExpect {

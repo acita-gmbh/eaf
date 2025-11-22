@@ -1,17 +1,18 @@
 package com.axians.eaf.framework.multitenancy.test
 
+import com.axians.eaf.framework.multitenancy.TenantContext
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 
 /**
- * MockMvc RequestPostProcessor that propagates TenantContext to request thread.
+ * MockMvc RequestPostProcessor that sets TenantContext in the request thread.
  *
- * **Problem:** TenantContext is ThreadLocal. When tests set context in test thread,
- * MockMvc requests run in different thread (Servlet container thread) and lose context.
+ * **Problem:** TenantContext is ThreadLocal. Tests run in one thread, MockMvc requests
+ * run in a different thread (Servlet container thread pool). ThreadLocal doesn't cross boundaries!
  *
- * **Solution:** Sets request attribute that TestTenantContextPropagationFilter reads
- * to set TenantContext in the request thread.
+ * **Solution:** This RequestPostProcessor executes IN THE REQUEST THREAD, allowing it to
+ * set TenantContext where Query Handlers actually need it.
  *
- * **Usage (Explicit Per-Request):**
+ * **Usage:**
  * ```kotlin
  * import com.axians.eaf.framework.multitenancy.test.withTenantContext
  *
@@ -20,32 +21,26 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor
  *         with(withTenantContext("tenant-a"))
  *     }
  *     .andExpect { status { isOk() } }
+ *
+ * // Can combine with other RequestPostProcessors:
+ * mockMvc
+ *     .post("/api/v1/widgets") {
+ *         with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
+ *         with(withTenantContext("tenant-a"))
+ *         contentType = MediaType.APPLICATION_JSON
+ *         content = requestBody
+ *     }
  * ```
  *
- * **Usage (Works with @BeforeEach):**
- * ```kotlin
- * @BeforeEach
- * fun beforeEach() {
- *     TenantContext.setCurrentTenantId("test-tenant")
- * }
+ * **Cleanup:** TestTenantContextCleanupFilter automatically clears context after each request.
  *
- * @Test
- * fun myTest() {
- *     // MockMvc calls automatically inherit tenant from @BeforeEach!
- *     mockMvc.get("/api/v1/widgets") {}
- *         .andExpect { status { isOk() } }
- * }
- * ```
+ * **Framework Module:** Reusable test utility for all product modules.
  *
- * **Cleanup:** TestTenantContextCleanupFilter clears context after each request.
- *
- * **Framework Module:** Provides reusable test utility for all product modules.
- *
- * **Story 4.6 AC7:** Enables cross-tenant isolation tests with zero test changes!
+ * **Story 4.6 AC7:** Enables cross-tenant isolation testing with MockMvc.
  */
 fun withTenantContext(tenantId: String): RequestPostProcessor =
     RequestPostProcessor { request ->
-        // Set request attribute for TestTenantContextPropagationFilter to read
-        request.setAttribute(TestTenantContextPropagationFilter.REQUEST_ATTRIBUTE_TENANT_ID, tenantId)
+        // Executes in REQUEST thread - set TenantContext where it's needed
+        TenantContext.setCurrentTenantId(tenantId)
         request
     }
