@@ -49,6 +49,14 @@ dependencyResolutionManagement {
             }
         }
 
+        // AxonIQ Nexus repository for Axon Framework 5.0.0
+        // GA release (2024-11-18) may not be synced to Maven Central yet
+        maven("https://nexus.axoniq.io/repository/releases/") {
+            content {
+                includeGroup("org.axonframework")
+            }
+        }
+
         gradlePluginPortal() {
             content {
                 // Only Gradle plugins and build tools
