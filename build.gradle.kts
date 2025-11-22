@@ -195,21 +195,11 @@ tasks.register("uninstallGitHooks") {
     }
 }
 
-// OpenRewrite configuration for Spring Boot 4.0 migration
+// OpenRewrite configuration for Spring Boot 4.0 / Axon 5.0 migration
 rewrite {
     activeRecipe(
         "org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0",
         "org.openrewrite.java.migrate.jakarta.JavaxMigrationToJakarta"
-    )
-
-    // Enable detailed reporting
-    exportDatatables = true
-
-    // Configure exclusions for generated code
-    exclusion(
-        "build/**",
-        "**/build/**",
-        ".gradle/**"
     )
 }
 
