@@ -8,7 +8,7 @@ gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.prope
 
 # Framework stack (UPDATED for Spring Boot 4.0 / Spring Framework 7.0)
 spring-boot = "4.0.0"         # GA (released 2025-11-20, now in Maven Central)
-spring-framework = "7.0.0"    # GA (released 2025-11-13, now in Maven Central)
+spring-framework = "7.0.1"    # Latest patch version (released 2025-11-21, now in Maven Central)
 spring-modulith = "2.0.0"     # GA (released 2025-11-21, aligns with Spring Boot 4.0)
 spring-dependency-management = "1.1.7"
 
