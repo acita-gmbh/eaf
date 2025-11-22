@@ -68,7 +68,6 @@ dependencyResolutionManagement {
                 includeGroupByRegex("org\\.gradle.*")
                 includeGroupByRegex("com\\.gradle.*")
                 includeGroup("org.jetbrains.kotlin")
-                includeGroup("org.springframework.boot")
                 includeGroup("io.spring.gradle")
                 includeGroup("org.jlleitschuh.gradle")
                 includeGroup("io.gitlab.arturbosch.detekt")
