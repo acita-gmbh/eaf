@@ -15,6 +15,7 @@ import org.gradle.api.plugins.JavaPlugin
 // SBOM Generation (CycloneDX) - Week 2 Enhancement
 plugins {
     alias(libs.plugins.cyclonedx) apply true
+    alias(libs.plugins.openrewrite) apply true
 
     // Kotlin plugins declared centrally to prevent "loaded multiple times" warning
     // These are applied by convention plugins (eaf.kotlin-common, eaf.spring-boot)
@@ -194,7 +195,26 @@ tasks.register("uninstallGitHooks") {
     }
 }
 
-// Note: OpenRewrite for Spring Boot 4.0 migration would be configured here,
-// but requires network access to Maven Central for dependency resolution.
-// Migration will be performed manually following guide in:
-// docs/spring-boot-4-migration-status.md
+// OpenRewrite configuration for Spring Boot 4.0 migration
+rewrite {
+    activeRecipe(
+        "org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0",
+        "org.openrewrite.java.migrate.jakarta.JavaxMigrationToJakarta"
+    )
+
+    // Enable detailed reporting
+    exportDatatables = true
+
+    // Configure exclusions for generated code
+    exclusion(
+        "build/**",
+        "**/build/**",
+        ".gradle/**"
+    )
+}
+
+// OpenRewrite dependencies for Spring Boot 4.0 recipes
+dependencies {
+    rewrite("org.openrewrite.recipe:rewrite-spring:5.24.0")
+    rewrite("org.openrewrite.recipe:rewrite-migrate-java:2.30.0")
+}

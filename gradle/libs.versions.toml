@@ -91,6 +91,9 @@ jcstress = "0.18"         # JCStress for JVM concurrency testing (JDK project)
 gatling = "3.14.9"        # Load testing framework
 gatling-gradle-plugin = "3.14.9"  # Gatling Gradle plugin
 
+# Migration Tools
+openrewrite = "6.31.1"    # OpenRewrite for automated Spring Boot 4.0 migration
+
 # Jakarta JSON Bind
 jakarta-json-bind = "3.0.1"
 jakarta-servlet-api = "6.1.0"  # Jakarta Servlet API for Filter interface
@@ -274,6 +277,9 @@ jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
 
 # Performance Testing
 gatling = { id = "io.gatling.gradle", version.ref = "gatling-gradle-plugin" }
+
+# Migration Tools
+openrewrite = { id = "org.openrewrite.rewrite", version.ref = "openrewrite" }
 
 # Application
 application = { id = "application" }
