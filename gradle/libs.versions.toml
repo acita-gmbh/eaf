@@ -7,9 +7,9 @@ java = "21"                # LTS requirement
 gradle = "9.1.0"           # Build tool version (defined in gradle-wrapper.properties)
 
 # Framework stack (UPDATED for Spring Boot 4.0 / Spring Framework 7.0)
-spring-boot = "4.0.0"     # GA (released 2025-11-20) - EXPERIMENTAL UPGRADE
-spring-framework = "7.0.0" # Spring Framework 7.0 GA (released 2025-11-13)
-spring-modulith = "2.0.0" # Spring Modulith 2.0 (required for Spring Boot 4.0)
+spring-boot = "4.0.0-RC2"     # RC2 (released 2025-11-06) - GA 4.0.0 not yet in Maven Central
+spring-framework = "7.0.0-RC1" # Spring Framework 7.0 RC1 (aligns with Spring Boot 4.0.0-RC2)
+spring-modulith = "2.0.0-RC1" # Spring Modulith 2.0 RC1 (aligns with Spring Boot 4.0.0-RC2)
 spring-dependency-management = "1.1.7"
 
 # CQRS and Event Sourcing
