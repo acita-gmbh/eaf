@@ -48,6 +48,19 @@ dependencyResolutionManagement {
                 excludeGroup("io.spring.gradle")
             }
         }
+
+        // Spring Milestone Repository (for RC and milestone versions)
+        // Required for Spring Boot 4.0.0-RC2, Spring Framework 7.0.0-RC1
+        maven {
+            url = uri("https://repo.spring.io/milestone")
+            content {
+                includeGroup("org.springframework")
+                includeGroup("org.springframework.boot")
+                includeGroup("org.springframework.data")
+                includeGroup("org.springframework.security")
+                includeGroup("org.springframework.modulith")
+            }
+        }
         gradlePluginPortal() {
             content {
                 // Only Gradle plugins and build tools
