@@ -61,6 +61,14 @@ dependencyResolutionManagement {
                 includeGroup("org.springframework.modulith")
             }
         }
+
+        // Spring Plugins Release Repository (for Spring Boot 4.0.0-RC2)
+        maven {
+            url = uri("https://repo.spring.io/plugins-release")
+            content {
+                includeGroup("org.springframework.boot")
+            }
+        }
         gradlePluginPortal() {
             content {
                 // Only Gradle plugins and build tools
