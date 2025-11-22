@@ -117,6 +117,16 @@ subprojects {
                     useVersion(catalog.findVersion("grpc-netty-shaded").get().requiredVersion)
                     because("Fix CVE-2025-55163 in grpc-netty-shaded (requires >= 1.75.0)")
                 }
+
+                // Spring Boot 4.0 / Spring Framework 7.0 upgrade - Force JUnit Platform 6.0.1
+                "org.junit.platform" to "junit-platform-commons",
+                "org.junit.platform" to "junit-platform-engine",
+                "org.junit.platform" to "junit-platform-launcher",
+                "org.junit.platform" to "junit-platform-suite",
+                "org.junit.platform" to "junit-platform-suite-api" -> {
+                    useVersion(catalog.findVersion("junit").get().requiredVersion)
+                    because("JUnit 6 unified versioning - Platform + Jupiter must match 6.0.1")
+                }
             }
         }
     }
