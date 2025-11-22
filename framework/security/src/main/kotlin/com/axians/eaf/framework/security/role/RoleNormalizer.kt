@@ -39,7 +39,7 @@ class RoleNormalizer(
 
         collectedRoles.forEach { rawRole ->
             toAuthority(rawRole)?.let { authority ->
-                val key = authority.authority.lowercase()
+                val key = authority.authority?.lowercase() ?: return@let
                 authorities.putIfAbsent(key, authority)
             }
         }
