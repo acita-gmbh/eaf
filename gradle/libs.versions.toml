@@ -110,6 +110,7 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # Spring Boot starters
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient", version.ref = "spring-boot" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
 spring-security-core = { module = "org.springframework.security:spring-security-core", version.ref = "spring-boot" } # Version managed by Spring Boot BOM

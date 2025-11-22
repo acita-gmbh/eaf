@@ -69,6 +69,7 @@ dependencies {
 
     implementation(libs.bundles.spring.boot.security)
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.restclient) // Spring Boot 4.0: RestTemplateBuilder moved to restclient module
     implementation(libs.spring.boot.starter.data.redis)
     implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation(libs.spring.boot.starter.aop)
