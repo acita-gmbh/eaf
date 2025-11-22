@@ -49,6 +49,19 @@ dependencyResolutionManagement {
             }
         }
 
+        // Spring Release Repository (fallback for new GA releases not yet synced to Maven Central)
+        // Spring Boot 4.0.0 announced 2025-11-20 but may have sync delay to Maven Central
+        maven {
+            url = uri("https://repo.spring.io/release")
+            content {
+                includeGroup("org.springframework.boot")
+                includeGroup("org.springframework")
+                includeGroup("org.springframework.data")
+                includeGroup("org.springframework.security")
+                includeGroup("org.springframework.modulith")
+            }
+        }
+
         gradlePluginPortal() {
             content {
                 // Only Gradle plugins and build tools
