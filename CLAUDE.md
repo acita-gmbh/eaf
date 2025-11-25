@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ```bash
-# Build entire project
-./gradlew build
+# Build entire project (pre-push gate – runs ktlint, Detekt, Konsist, unit & integration tests)
+./gradlew clean build
 
 # Build specific module
 ./gradlew :dvmm:dvmm-app:build
@@ -144,7 +144,7 @@ Convention plugins for consistent configuration:
 
 ## BMAD Method Workflow
 
-This project uses **BMad Method v6** (`.bmad/`) for structured AI-driven development.
+This project uses **BMAD Method v6** (`.bmad/`) for structured AI-driven development.
 
 ### Current Phase: Implementation (Phase 4)
 
@@ -258,7 +258,7 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 - **YOU MUST** write tests BEFORE implementation (Tests First)
 - **YOU MUST** achieve ≥80% line coverage per module
 - **YOU MUST** achieve ≥70% mutation score (Pitest)
-- **YOU MUST** run `./gradlew build` before committing
+- **YOU MUST** run `./gradlew clean build` before committing
 
 ---
 
@@ -422,7 +422,7 @@ val cache = ConcurrentHashMap<UUID, Aggregate>()  // "Might be slow"
 
 | Action | Command |
 |--------|---------|
-| Build all | `./gradlew build` |
+| Build all | `./gradlew clean build` |
 | Run tests | `./gradlew test` |
 | Check coverage | `./gradlew jacocoTestReport` |
 | Mutation testing | `./gradlew pitest` |
