@@ -2470,6 +2470,7 @@ class TenantContextWebFilter : CoWebFilter() {
         // Propagate via CoroutineContext (NOT ThreadLocal!)
         withContext(TenantContextElement(tenantId)) {
             // Set PostgreSQL session variable for RLS
+            // NOTE: tenantId is UUID validated from JWT claim - SET LOCAL doesn't support parameterized queries
             r2dbcClient.execute("SET LOCAL app.tenant_id = '${tenantId.value}'")
             chain.filter(exchange)
         }
@@ -2846,6 +2847,18 @@ See ADR sections above:
 - **ADR-001: EAF Framework-First Architecture** - Hexagonal Architecture, Gradle Multi-Module
 - **ADR-002: IdP-Agnostic Authentication & Modular Starters** - Pluggable Identity Providers
 - **ADR-003: Core Technology Decisions** - WebFlux, Event Store, RLS, jOOQ
+
+---
+
+## Related Documents
+
+This architecture document is part of the DVMM Enterprise Method documentation set. The following companion documents provide detailed specifications for specific architectural concerns:
+
+| Document | Description |
+|----------|-------------|
+| [Security Architecture](security-architecture.md) | Threat model (STRIDE), multi-tenant isolation, crypto-shredding, ISO 27001 control mapping, API security, incident response |
+| [DevOps Strategy](devops-strategy.md) | CI/CD pipeline, quality gates, Blue-Green deployment, monitoring (Grafana/Prometheus/Loki), disaster recovery |
+| [Test Design System](test-design-system.md) | System-level test design, testability concerns (TC-001–TC-004), VCSIM for VMware, k6 for performance, ASR Utility Tree |
 
 ---
 

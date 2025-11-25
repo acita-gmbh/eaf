@@ -13,7 +13,7 @@
 This document provides the complete epic and story breakdown for DVMM (Dynamic Virtual Machine Manager), decomposing the requirements from the [PRD](./prd.md) into implementable stories.
 
 **Living Document Notice:** This document incorporates context from:
-- ✅ PRD (91 FRs, 95 NFRs)
+- ✅ PRD (90 FRs, 95 NFRs)
 - ✅ UX Design Specification (Tech Teal theme, shadcn-admin-kit, 3 user journeys)
 - ✅ Architecture Document (Kotlin 2.2, Spring Boot 3.5, CQRS/ES, PostgreSQL RLS)
 
@@ -63,7 +63,7 @@ Epic 5 (Compliance) ──────► Audit-ready, ISO 27001 prepared
 | FR5 | Admins can assign roles (User, Admin) to users | Growth |
 | FR6 | Admins can deactivate user accounts | Growth |
 | FR7 | Users can reset their password via Keycloak | Growth |
-| FR81 | System handles Keycloak token expiration with transparent refresh | Epic 2 |
+| FR7a | System handles Keycloak token expiration with transparent refresh | Epic 2 |
 
 #### Project Management (5 FRs)
 | ID | Requirement | Epic |
@@ -181,7 +181,7 @@ Epic 5 (Compliance) ──────► Audit-ready, ISO 27001 prepared
 | Epic | Functional Requirements | Count |
 |------|------------------------|-------|
 | **Epic 1: Foundation** | FR66, FR67, FR80 | 3 |
-| **Epic 2: Core Workflow** | FR1, FR2, FR81, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86 | 21 |
+| **Epic 2: Core Workflow** | FR1, FR2, FR7a, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86 | 21 |
 | **Epic 3: VM Provisioning** | FR30, FR34-FR40, FR47, FR71, FR77-FR79 | 13 |
 | **Epic 4: Projects & Quota** | FR10-FR14, FR82-FR84, FR87 | 9 |
 | **Epic 5: Compliance & Oversight** | FR51-FR54, FR57-FR60, FR64-FR65, FR73, FR90, NFR-SEC-10 | 13 |
@@ -425,8 +425,9 @@ class RlsEnforcingDataSource(delegate: DataSource) : DataSource {
         val tenant = TenantTestContext.current()
             ?: throw IllegalStateException("NO TENANT CONTEXT IN TEST!")
         return delegate.connection.also { conn ->
+            // NOTE: tenant.id is UUID from test context - SET doesn't support parameterized queries
             conn.createStatement().execute(
-                "SET app.current_tenant = '${tenant.id}'"
+                "SET app.tenant_id = '${tenant.id}'"
             )
         }
     }
@@ -459,7 +460,7 @@ So that users can authenticate securely.
 - Keycloak realm: `dvmm`
 - Client: `dvmm-api` (confidential) and `dvmm-web` (public)
 - Custom claim mapper for tenant_id in Keycloak
-- FR81 (token refresh) handled client-side
+- FR7a (token refresh) handled client-side
 
 ---
 
@@ -634,7 +635,7 @@ So that code quality standards are maintained automatically.
 
 **User Value:** "Ich kann einen VM-Request erstellen und sehe genau, was damit passiert" - Complete transparency from request to decision.
 
-**FRs Covered:** FR1, FR2, FR81, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86
+**FRs Covered:** FR1, FR2, FR7a, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86
 
 **Stories:** 12 | **Risk:** High (first user-facing features)
 
@@ -665,7 +666,7 @@ So that I can access DVMM securely with my company credentials.
 
 **Prerequisites:** Story 1.7 (Keycloak Integration)
 
-**FRs Satisfied:** FR1, FR2, FR81
+**FRs Satisfied:** FR1, FR2, FR7a
 
 **Technical Notes:**
 - Frontend: React with `react-oidc-context` or similar
@@ -1102,7 +1103,7 @@ So that I stay informed without checking the portal.
 
 **FRs Covered:** FR30, FR34-FR40, FR47, FR71, FR77-FR79
 
-**Stories:** 8 | **Risk:** **Critical** (VMware API complexity, infrastructure dependency)
+**Stories:** 9 | **Risk:** **Critical** (VMware API complexity, infrastructure dependency)
 
 **Risk Mitigation:**
 - VCSIM (vCenter Simulator) for all integration tests (Story 1.10)
@@ -1472,7 +1473,7 @@ So that I can start using it immediately.
 
 ### Story 3.9: vCenter Contract Test Suite
 
-**STATUS: BLOCKED** - Awaiting vCenter access (Timing TBD)
+> **📋 Status Note:** This story is deferred until vCenter test infrastructure is available. Development proceeds with VCSIM (Stories 3.1-3.8). See "Unblock Condition" below.
 
 As a **developer**,
 I want contract tests against a real vCenter instance,
@@ -2408,6 +2409,6 @@ Epic 1 ──► Epic 2 ──► Epic 3 ──► Epic 4 ──► Epic 5
 
 ---
 
-*This epic breakdown was created following the BMad Method, integrating context from PRD (91 FRs), UX Design Specification (Tech Teal theme), and Architecture Document (CQRS/ES, PostgreSQL RLS, Kotlin/Spring Boot).*
+*This epic breakdown was created following the BMad Method, integrating context from PRD (90 FRs), UX Design Specification (Tech Teal theme), and Architecture Document (CQRS/ES, PostgreSQL RLS, Kotlin/Spring Boot).*
 
 *Next Step: → Implementation Readiness Check → Sprint Planning*
