@@ -653,7 +653,7 @@ So that I can access DVMM securely with my company credentials.
 **Then** I am redirected to Keycloak login page
 
 **And** after successful Keycloak login, I am redirected back to DVMM dashboard
-**And** my JWT token is stored in an httpOnly cookie (secure, SameSite=Strict)
+**And** my session is maintained via an httpOnly cookie (Secure, SameSite=Lax)
 **And** my name and tenant are displayed in the header
 **And** logout button is visible and functional
 **And** clicking logout redirects to Keycloak logout and clears session
@@ -679,8 +679,9 @@ Story 2.1 is the **Frontend Tracer Bullet** - the first user-facing code that va
 This story should be implemented with **Pair Programming** (Backend + Frontend Developer) because:
 - Backend: Auth-Flow, Token-Validation, Tenant-Context-API
 - Frontend: Keycloak-JS, Token-Storage (httpOnly cookie), Protected Routes
+- CSRF: Backend validates X-CSRF-Token header on state-changing requests
 
-**Token Storage Decision (RESOLVED):** httpOnly cookie with `Secure` and `SameSite=Strict` flags. This prevents XSS token theft and provides automatic CSRF protection.
+**Token Storage Decision (RESOLVED):** httpOnly cookie with `Secure` and `SameSite=Lax` flags, plus explicit CSRF token validation. SameSite=Lax (not Strict) is required to support OIDC redirect flows from the IdP. The CSRF token is issued by the API and rotated per session.
 
 ---
 
@@ -696,8 +697,8 @@ So that I have a single place to see all my activity.
 **When** I view the dashboard
 **Then** I see:
   - Header with logo, my name, tenant name, logout button
-  - Primary CTA button: "Neue VM anfordern" (Tech Teal accent)
-  - "Meine Requests" section with request list
+  - Primary CTA button: "Request New VM" (Tech Teal accent)
+  - "My Requests" section with request list
   - Quick stats: Pending / Approved / Provisioned counts
 
 **And** the layout follows shadcn-admin-kit patterns

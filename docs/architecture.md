@@ -982,8 +982,8 @@ See **ADR-001: EAF Framework-First Architecture** above for the complete monorep
 ```toml
 # gradle/libs.versions.toml
 [versions]
-kotlin = "2.2.0"
-spring-boot = "3.5.0"
+kotlin = "2.2.21"
+spring-boot = "3.5.8"
 postgresql = "42.7.0"
 keycloak = "26.0.0"
 junit = "6.0.0"
@@ -1777,6 +1777,32 @@ fun securityHeaders(): SecurityWebFilterChain = http.headers {
 }
 ```
 
+#### CSRF Protection
+
+- State-changing endpoints require `X-CSRF-Token` header (issued by API, rotated per session)
+- Cookies: `httpOnly` + `Secure`, `SameSite=Lax` to support OIDC redirects from IdP
+- CORS: Allow only trusted origins; `credentials=true` only for same-site deployments
+- Failure response: `403 Forbidden` with appropriate error type
+
+```kotlin
+// CSRF Token Filter
+@Component
+class CsrfTokenFilter : WebFilter {
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+        val method = exchange.request.method
+        if (method in listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)) {
+            val csrfToken = exchange.request.headers.getFirst("X-CSRF-Token")
+            val sessionToken = exchange.session.map { it.getAttribute<String>("csrfToken") }
+            return sessionToken.flatMap { expected ->
+                if (csrfToken == expected) chain.filter(exchange)
+                else Mono.error(CsrfValidationException("Invalid CSRF token"))
+            }
+        }
+        return chain.filter(exchange)
+    }
+}
+```
+
 ### Audit & Compliance (ISO 27001)
 
 #### Audit Events
@@ -1916,7 +1942,7 @@ C4Context
 
 ### Container Architecture (ASCII Overview)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Kubernetes Cluster                         │
 │  ┌───────────────────────────────────────────────────────────┐  │

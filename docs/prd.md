@@ -14,7 +14,7 @@ DVMM (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal**
 
 **The Core Value Proposition:**
 
-> *"DVMM befreit IT-Teams vom VM-Provisioning-Chaos. Endnutzer bekommen VMs in Minuten statt Tagen. Admins behalten volle Kontrolle durch intelligente Workflows—ohne zum Bottleneck zu werden."*
+> *"DVMM frees IT teams from VM provisioning chaos. End users get VMs in minutes instead of days. Admins retain full control through intelligent workflows—without becoming the bottleneck."*
 
 **Dual Perspective - Why Users Love It:**
 
