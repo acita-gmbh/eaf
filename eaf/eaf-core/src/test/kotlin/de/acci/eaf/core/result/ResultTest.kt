@@ -74,4 +74,42 @@ class ResultTest {
 
         assertEquals(error, (failure as Result.Failure).error)
     }
+
+    @Test
+    fun `map and flatMap exercised on both branches for mutation coverage`() {
+        val success = 5.success()
+        val failure: Result<Int, DomainError> = DomainError.InfrastructureError("err").failure()
+
+        // success path
+        val mapped = success.map { it + 1 }.flatMap { (it * 2).success() }
+        assertEquals(12, (mapped as Result.Success).value)
+
+        // failure path
+        val mappedFail = failure.map { it + 1 }.flatMap { (it * 2).success() }
+        assertTrue(mappedFail is Result.Failure)
+    }
+
+    @Test
+    fun `fold and getOrElse cover both branches`() {
+        val s = "ok".success()
+        val f: Result<String, DomainError> = DomainError.ValidationFailed("f", "m").failure()
+
+        assertEquals("OK", s.fold({ it.uppercase() }, { "fail" }))
+        assertEquals("fallback", f.fold({ it }, { "fallback" }))
+
+        assertEquals("ok", s.getOrElse { "fallback" })
+        assertEquals("fallback", f.getOrElse { "fallback" })
+    }
+
+    @Test
+    fun `onSuccess and onFailure no-ops on opposite branch`() {
+        val success = 1.success()
+        val failure: Result<Int, DomainError> = DomainError.ValidationFailed("f", "m").failure()
+        val sideEffects = mutableListOf<String>()
+
+        success.onFailure { sideEffects.add("fail") }
+        failure.onSuccess { sideEffects.add("success") }
+
+        assertTrue(sideEffects.isEmpty())
+    }
 }
