@@ -34,4 +34,11 @@ class IdentifiersTest {
         val cid = CorrelationId.generate()
         assertEquals(36, cid.value.toString().length)
     }
+
+    @Test
+    fun `correlation id round-trip`() {
+        val original = CorrelationId.generate()
+        val parsed = CorrelationId.fromString(original.value.toString())
+        assertEquals(original, parsed)
+    }
 }

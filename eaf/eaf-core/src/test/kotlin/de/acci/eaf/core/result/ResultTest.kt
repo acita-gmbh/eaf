@@ -22,7 +22,7 @@ class ResultTest {
     @Test
     fun `flatMap chains success and short-circuits failure`() {
         val success = 3.success()
-        val failure: Result<Int, DomainError> = DomainError.InvalidStateTransition("s", "a").failure()
+        val failure: Result<Int, DomainError> = DomainError.InvalidStateTransition("s", "t", "a").failure()
 
         val chained = success.flatMap { (it + 1).success() }
         val shortCircuited = failure.flatMap { (it + 1).success() }

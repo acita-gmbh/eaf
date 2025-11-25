@@ -23,7 +23,7 @@ class DomainErrorTest {
     fun `all getters return provided values`() {
         val validation = DomainError.ValidationFailed(field = "name", message = "required")
         val notFound = DomainError.ResourceNotFound(type = "Order", id = "o-1")
-        val invalid = DomainError.InvalidStateTransition(from = "draft", action = "publish")
+        val invalid = DomainError.InvalidStateTransition(from = "draft", to = "published", action = "publish")
         val infra = DomainError.InfrastructureError(cause = "io-timeout")
 
         assertEquals("name", validation.field)
@@ -31,6 +31,7 @@ class DomainErrorTest {
         assertEquals("Order", notFound.type)
         assertEquals("o-1", notFound.id)
         assertEquals("draft", invalid.from)
+        assertEquals("published", invalid.to)
         assertEquals("publish", invalid.action)
         assertEquals("io-timeout", infra.cause)
     }
