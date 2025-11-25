@@ -469,7 +469,7 @@ DVMM Portal
 | FR5 | Admins can assign roles (User, Admin) to users | MVP |
 | FR6 | Admins can deactivate user accounts | MVP |
 | FR7 | Users can reset their password via Keycloak | MVP |
-| FR81 | System handles Keycloak token expiration with transparent refresh | MVP |
+| FR7a | System handles Keycloak token expiration with transparent refresh | MVP |
 | FR8 | Admins can assign Approver role to users | Growth |
 | FR9 | Super Admins can manage users across tenants (CSP) | Growth |
 
@@ -634,15 +634,15 @@ DVMM Portal
 | Status & Notifications | 5 | 2 | 7 |
 | Onboarding & Empty States | 2 | 0 | 2 |
 | Admin Dashboard | 4 | 2 | 6 |
-| Reporting & Audit | 6 | 3 | 9 |
+| Reporting & Audit | 5 | 3 | 8 |
 | Multi-Tenancy | 4 | 3 | 7 |
 | System Administration | 3 | 3 | 6 |
 | Error Handling & Resilience | 4 | 0 | 4 |
 | Quota Management | 3 | 0 | 3 |
 | Capacity & Cost Visibility | 1 | 2 | 3 |
-| **TOTAL** | **66** | **25** | **91** |
+| **TOTAL** | **65** | **25** | **90** |
 
-**MVP:** 66 Functional Requirements
+**MVP:** 65 Functional Requirements
 **Growth:** 25 additional Functional Requirements
 
 ---
@@ -849,10 +849,10 @@ DVMM Portal
 
 | Metric | Count |
 |--------|-------|
-| **Functional Requirements** | 91 (66 MVP, 25 Growth) |
+| **Functional Requirements** | 90 (65 MVP, 25 Growth) |
 | **Non-Functional Requirements** | 95 (83 MVP, 12 Growth) |
-| **Total Requirements** | 186 |
-| **MVP Requirements** | 149 |
+| **Total Requirements** | 185 |
+| **MVP Requirements** | 148 |
 | **Growth Requirements** | 37 |
 
 ### Validation Status

@@ -64,13 +64,16 @@ workflow_status:
         command: "/bmad:bmm:workflows:prd"
         completed: "2025-11-24"
         output: "docs/prd.md"
-        note: "91 FRs (66 MVP, 25 Growth) + 94 NFRs (82 MVP, 12 Growth) = 185 total requirements"
+        note: "90 FRs (65 MVP, 25 Growth) + 95 NFRs (83 MVP, 12 Growth) = 185 total requirements"
 
       - id: "validate-prd"
         name: "Validate PRD"
-        status: "recommended"
+        status: "docs/validation-report-prd-2025-11-25.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:validate-prd"
+        completed: "2025-11-25"
+        output: "docs/validation-report-prd-2025-11-25.md"
+        note: "PASS: 97.8% (131/134). 0 critical issues, 2 major (non-blocking), 4 minor fixed. FR7a renumbered, counts corrected to 90 FRs (65 MVP + 25 Growth), 51 stories."
 
       - id: "create-ux-design"
         name: "Create UX Design"
@@ -92,6 +95,24 @@ workflow_status:
         completed: "2025-11-25"
         output: "docs/architecture.md"
         note: "EAF Framework-First Architecture: 3 ADRs, 7 steps, Party Mode reviews. Kotlin 2.2, Spring Boot 3.5, CQRS/ES, PostgreSQL RLS, jOOQ projections."
+
+      - id: "security-architecture"
+        name: "Security Architecture"
+        status: "docs/security-architecture.md"
+        agent: "architect"
+        command: "manual"
+        completed: "2025-11-25"
+        output: "docs/security-architecture.md"
+        note: "Enterprise Method: Threat Model (STRIDE), Multi-Tenant Isolation (RLS), Crypto-Shredding (GDPR), ISO 27001 Control Mapping, API Security, Incident Response."
+
+      - id: "devops-strategy"
+        name: "DevOps Strategy"
+        status: "docs/devops-strategy.md"
+        agent: "architect"
+        command: "manual"
+        completed: "2025-11-25"
+        output: "docs/devops-strategy.md"
+        note: "Enterprise Method: CI/CD Pipeline (GitHub Actions), Quality Gates (80% coverage, 70% mutation), Blue-Green Deployment, Monitoring (Grafana/Prometheus/Loki), DR (RTO<4h, RPO<1h)."
 
       - id: "test-design"
         name: "Test Design"
@@ -117,7 +138,7 @@ workflow_status:
         command: "/bmad:bmm:workflows:create-epics-and-stories"
         completed: "2025-11-25"
         output: "docs/epics.md"
-        note: "5 Epics, 51 Stories: Foundation (11), Core Workflow (12), VM Provisioning (9), Projects & Quota (9), Compliance (10). Party Mode reviews. 59/66 MVP FRs covered (89%)."
+        note: "5 Epics, 51 Stories: Foundation (11), Core Workflow (12), VM Provisioning (9), Projects & Quota (9), Compliance (10). Party Mode reviews. 59/65 MVP FRs covered (91%)."
 
       - id: "implementation-readiness"
         name: "Implementation Readiness"
@@ -126,7 +147,7 @@ workflow_status:
         command: "/bmad:bmm:workflows:implementation-readiness"
         completed: "2025-11-25"
         output: "docs/implementation-readiness-report-2025-11-25.md"
-        note: "PASS: 5 Epics, 51 Stories, 89% FR coverage. Party Mode review (5/5 Ready). Crypto-Shredding Story 5.10 + vCenter Contract Tests Story 3.9 added. TC-001–TC-004 ACs integrated."
+        note: "PASS: 5 Epics, 51 Stories, 91% FR coverage (59/65 MVP). Party Mode review (5/5 Ready). Crypto-Shredding Story 5.10 + vCenter Contract Tests Story 3.9 added. TC-001–TC-004 ACs integrated."
 
   # Phase 3: Implementation
   - phase: 3
@@ -140,3 +161,12 @@ workflow_status:
         completed: "2025-11-25"
         output: "docs/sprint-artifacts/sprint-status.yaml"
         note: "Party Mode consensus: Sprint 0 (1w) + 2-week sprints, 2-3 stories/sprint, Tests First pattern. Stories 1.10/1.11 deferred to Sprint 4 parallel with Epic 2 start."
+
+      - id: "epic-tech-context-1"
+        name: "Epic 1 Tech Context"
+        status: "docs/sprint-artifacts/tech-spec-epic-1.md"
+        agent: "sm"
+        command: "/bmad:bmm:workflows:create-epic-tech-context"
+        completed: "2025-11-25"
+        output: "docs/sprint-artifacts/tech-spec-epic-1.md"
+        note: "Epic 1 Foundation: 11 Stories, Implementation Guides mit Code-Patterns, TC-001–TC-004 Tests, FR Traceability (FR66, FR67, FR80)."
