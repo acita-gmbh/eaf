@@ -30,12 +30,6 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-11-25
-project: EAF
-project_key: DVMM
-tracking_system: file-system
-story_location: docs/sprint-artifacts
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # SPRINT PLAN (Agreed 2025-11-25 via Party Mode)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -105,7 +99,7 @@ development_status:
   epic-1: backlog
 
   # Sprint 0 (Week 1) - Setup
-  1-1-project-scaffolding: review              # Sprint 0 - Ready for human review
+  1-1-project-scaffolding: review              # Sprint 0 - Review findings addressed, ready for re-review
   1-2-eaf-core-module: backlog               # Sprint 0
   1-9-testcontainers-setup: backlog          # Sprint 0 (moved up for Tests First)
 

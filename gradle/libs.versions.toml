@@ -11,6 +11,9 @@ jackson = "2.20.1"
 mockk = "1.14.6"
 junit = "6.0.1"
 pitest = "1.17.4"
+pitest-junit5-plugin = "1.2.3"
+pitest-gradle-plugin = "1.19.0-rc.2"
+jacoco = "0.8.12"
 
 [libraries]
 # Kotlin
@@ -36,8 +39,13 @@ jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 
 # Testing - JUnit 6 (unified versioning)
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit" }
+
+# Coroutines BOM
+kotlin-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "coroutines" }
 
 # Testing - MockK
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -51,6 +59,9 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 # Architecture Testing
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 
+# Pitest mutation testing
+pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }
+
 [bundles]
 kotlin-coroutines = ["kotlin-coroutines-core", "kotlin-coroutines-reactor"]
 testing = ["junit-jupiter", "mockk"]
@@ -61,3 +72,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitest-gradle-plugin" }

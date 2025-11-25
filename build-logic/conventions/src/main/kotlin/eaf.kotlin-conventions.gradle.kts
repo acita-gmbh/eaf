@@ -5,6 +5,9 @@ plugins {
     kotlin("jvm")
 }
 
+// Access version catalog
+val libs = versionCatalogs.named("libs")
+
 kotlin {
     // K2 compiler is default in Kotlin 2.2+
     compilerOptions {
@@ -31,7 +34,7 @@ java {
 
 dependencies {
     // Coroutines support
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:${libs.findVersion("coroutines").get()}"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 }

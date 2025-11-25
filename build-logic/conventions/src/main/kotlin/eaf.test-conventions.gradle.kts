@@ -3,9 +3,12 @@ plugins {
     jacoco
 }
 
+// Access version catalog
+val libs = versionCatalogs.named("libs")
+
 // JaCoCo configuration for code coverage
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = libs.findVersion("jacoco").get().toString()
 }
 
 tasks.jacocoTestReport {
@@ -44,7 +47,7 @@ tasks.test {
 
 dependencies {
     // JUnit 6 BOM for consistent versioning
-    testImplementation(platform("org.junit:junit-bom:6.0.1"))
+    testImplementation(platform("org.junit:junit-bom:${libs.findVersion("junit").get()}"))
 
     // JUnit 6 (unified versioning)
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -52,13 +55,16 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-engine")
 
     // MockK for Kotlin mocking
-    testImplementation("io.mockk:mockk:1.14.6")
+    testImplementation("io.mockk:mockk:${libs.findVersion("mockk").get()}")
 
     // Testcontainers 2.x (with new module naming)
-    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.2"))
+    testImplementation(platform("org.testcontainers:testcontainers-bom:${libs.findVersion("testcontainers").get()}"))
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 
     // Konsist for architecture testing
-    testImplementation("com.lemonappdev:konsist:0.17.3")
+    testImplementation("com.lemonappdev:konsist:${libs.findVersion("konsist").get()}")
+
+    // Pitest mutation testing (JUnit 5 plugin)
+    testImplementation("org.pitest:pitest-junit5-plugin:${libs.findVersion("pitest-junit5-plugin").get()}")
 }

@@ -8,16 +8,16 @@ dependencies {
     api(project(":eaf:eaf-core"))
 
     // JUnit 6 BOM for consistent versioning
-    api(platform("org.junit:junit-bom:6.0.1"))
+    api(platform(libs.junit.bom))
 
     // Testing utilities exposed as API for consumers
-    api("org.junit.jupiter:junit-jupiter")
-    api("org.junit.platform:junit-platform-launcher")
-    api("io.mockk:mockk:1.14.6")
+    api(libs.junit.jupiter)
+    api(libs.junit.platform.launcher)
+    api(libs.mockk)
 
     // Testcontainers 2.x
-    api(platform("org.testcontainers:testcontainers-bom:2.0.2"))
-    api("org.testcontainers:testcontainers")
-    api("org.testcontainers:testcontainers-junit-jupiter")
-    api("org.testcontainers:testcontainers-postgresql")
+    api(platform(libs.testcontainers.bom))
+    api(libs.testcontainers.core)
+    api(libs.testcontainers.junit)
+    api(libs.testcontainers.postgresql)
 }

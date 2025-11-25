@@ -18,6 +18,6 @@ dependencies {
     implementation(project(":eaf:eaf-tenant"))
 
     // jOOQ for type-safe SQL
-    implementation("org.jooq:jooq:3.20.8")
-    implementation("org.jooq:jooq-kotlin:3.20.8")
+    implementation(libs.jooq)
+    implementation(libs.jooq.kotlin)
 }

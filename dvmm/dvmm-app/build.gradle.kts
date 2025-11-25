@@ -1,6 +1,7 @@
 plugins {
     id("eaf.spring-conventions")
     id("eaf.test-conventions")
+    id("eaf.pitest-conventions")
 }
 
 // dvmm-app: Main application, assembles all modules

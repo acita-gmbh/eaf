@@ -292,3 +292,156 @@ claude-opus-4-5-20251101
 - `dvmm/dvmm-app/src/main/kotlin/com/acita/dvmm/DvmmApplication.kt` - Application entry point
 - `dvmm/dvmm-app/src/test/kotlin/com/acita/dvmm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
 
+## Change Log
+
+| Date | Version | Description |
+|------|---------|-------------|
+| 2025-11-25 | 0.1.0 | Initial story draft |
+| 2025-11-25 | 0.1.1 | Senior Developer Review notes appended |
+
+---
+
+## Senior Developer Review (AI)
+
+### Reviewer
+Wall-E
+
+### Date
+2025-11-25
+
+### Outcome
+**Changes Requested**
+
+Justification: Two MEDIUM severity findings related to incomplete version catalog usage and missing Pitest plugin configuration. Core functionality is implemented correctly, but dependency management best practices are not fully followed.
+
+### Summary
+Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the build succeeds, and architecture constraints are enforced via Konsist. However, there are two areas where the implementation deviates from the acceptance criteria: (1) Pitest mutation testing is configured only as a version in the catalog but no plugin is applied; (2) Multiple hardcoded versions exist in convention plugins instead of using version catalog references.
+
+### Key Findings
+
+**MEDIUM Severity:**
+1. **Pitest Plugin Not Applied** (AC-6): The version `pitest = "1.17.4"` is defined in `libs.versions.toml:13`, but no Pitest plugin is applied in any build file. Task 6.2 claims Pitest is configured but implementation is incomplete.
+2. **Hardcoded Versions in Conventions** (AC-7): Convention plugins contain hardcoded versions instead of catalog references:
+   - `eaf.test-conventions.gradle.kts:8` - JaCoCo `0.8.12`
+   - `eaf.test-conventions.gradle.kts:47` - JUnit BOM `6.0.1`
+   - `eaf.test-conventions.gradle.kts:55` - MockK `1.14.6`
+   - `eaf.test-conventions.gradle.kts:58` - Testcontainers BOM `2.0.2`
+   - `eaf.test-conventions.gradle.kts:63` - Konsist `0.17.3`
+   - `eaf.kotlin-conventions.gradle.kts:34` - Coroutines BOM `1.10.2`
+   - `eaf.spring-conventions.gradle.kts:13` - Reactor-kotlin `1.2.3`
+   - `eaf-testing/build.gradle.kts:11,16,19` - JUnit, MockK, Testcontainers
+   - `dvmm-infrastructure/build.gradle.kts:21-22` - jOOQ `3.20.8`
+
+**LOW Severity:**
+- None
+
+### Acceptance Criteria Coverage
+
+| AC# | Description | Status | Evidence |
+|-----|-------------|--------|----------|
+| AC-1 | Build Success | IMPLEMENTED | `./gradlew build` → BUILD SUCCESSFUL |
+| AC-2 | Module Structure | IMPLEMENTED | `settings.gradle.kts:17-28` - all 10 modules |
+| AC-3 | Kotlin Configuration | IMPLEMENTED | `libs.versions.toml:2`, `eaf.kotlin-conventions.gradle.kts:12-13,34-36` |
+| AC-4 | Spring Boot Configuration | IMPLEMENTED | `libs.versions.toml:3`, `eaf.spring-conventions.gradle.kts:10,13` |
+| AC-5 | Build Conventions | IMPLEMENTED | 3 convention files in `build-logic/conventions/src/main/kotlin/` |
+| AC-6 | Quality Tooling | PARTIAL | JaCoCo ✓, Konsist ✓, Pitest ✗ (version only, no plugin) |
+| AC-7 | Version Catalog | PARTIAL | Catalog exists, but 9+ hardcoded versions in conventions |
+
+**Summary: 5 of 7 acceptance criteria fully implemented, 2 partial**
+
+### Task Completion Validation
+
+| Task | Marked As | Verified As | Evidence |
+|------|-----------|-------------|----------|
+| 1.1-1.4 Monorepo Structure | ✅ Complete | ✅ VERIFIED | All directories exist |
+| 2.1-2.5 Version Catalog | ✅ Complete | ✅ VERIFIED | `libs.versions.toml`, `gradle.properties` |
+| 3.1-3.5 Build-Logic | ✅ Complete | ✅ VERIFIED | All 3 convention plugins exist |
+| 4.1-4.5 EAF Modules | ✅ Complete | ✅ VERIFIED | All 5 EAF build.gradle.kts |
+| 5.1-5.5 DVMM Modules | ✅ Complete | ✅ VERIFIED | All 5 DVMM build.gradle.kts |
+| 6.1 JaCoCo | ✅ Complete | ✅ VERIFIED | `eaf.test-conventions.gradle.kts:7-28` |
+| 6.2 Pitest | ✅ Complete | ⚠️ PARTIAL | Version in catalog, NO plugin applied |
+| 6.3 ArchitectureTest.kt | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:1-104` |
+| 6.4 EAF→DVMM rule | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:17-74` |
+| 7.1-7.4 Verify Build | ✅ Complete | ✅ VERIFIED | Build and tests pass |
+
+**Summary: 26 of 27 tasks verified, 1 partial (6.2 Pitest), 0 false completions**
+
+### Test Coverage and Gaps
+- 7 Konsist architecture tests exist and pass
+- No unit tests for application code (acceptable for scaffolding story)
+- JaCoCo reports generated successfully
+
+### Architectural Alignment
+- ✅ Dependency direction correct: DVMM → EAF (never reverse)
+- ✅ Hexagonal boundaries maintained
+- ✅ Module isolation via Konsist tests enforced
+- ✅ Convention plugins applied consistently
+
+### Security Notes
+- No security concerns for scaffolding story
+- No secrets in configuration files
+
+### Best-Practices and References
+- [Gradle Version Catalogs](https://docs.gradle.org/current/userguide/platforms.html) - Use `libs.` accessor in convention plugins
+- [Pitest Gradle Plugin](https://gradle-pitest-plugin.solidsoft.info/) - Add `id("info.solidsoft.pitest")` to test-conventions
+
+### Action Items
+
+**Code Changes Required:**
+- [x] [Med] Add Pitest plugin to eaf.test-conventions.gradle.kts (AC-6) [file: build-logic/conventions/src/main/kotlin/eaf.pitest-conventions.gradle.kts] ✅ Created separate pitest-conventions plugin
+- [x] [Med] Replace hardcoded JaCoCo version with catalog reference [file: eaf.test-conventions.gradle.kts:12]
+- [x] [Med] Replace hardcoded JUnit BOM with `libs.versions.junit` [file: eaf.test-conventions.gradle.kts:51]
+- [x] [Med] Replace hardcoded MockK version with `libs.mockk` [file: eaf.test-conventions.gradle.kts:59]
+- [x] [Med] Replace hardcoded Testcontainers BOM with catalog ref [file: eaf.test-conventions.gradle.kts:62]
+- [x] [Med] Replace hardcoded Konsist version with `libs.konsist` [file: eaf.test-conventions.gradle.kts:67]
+- [x] [Med] Replace hardcoded Coroutines BOM with catalog ref [file: eaf.kotlin-conventions.gradle.kts:37]
+- [x] [Med] Replace hardcoded Reactor-kotlin version [file: eaf.spring-conventions.gradle.kts:16]
+- [x] [Med] Replace hardcoded jOOQ versions with catalog refs [file: dvmm-infrastructure/build.gradle.kts:21-22]
+- [x] [Med] Replace hardcoded versions in eaf-testing [file: eaf/eaf-testing/build.gradle.kts:11,14-16,19-22]
+
+**Advisory Notes:**
+- ✅ Added JaCoCo version (0.8.12) to libs.versions.toml
+- ✅ Added Pitest versions and plugin entry to version catalog:
+  - pitest = "1.17.4" (core)
+  - pitest-junit5-plugin = "1.2.3" (JUnit 5 support)
+  - pitest-gradle-plugin = "1.19.0-rc.2" (Gradle 9.x compatible)
+
+---
+
+## Review Resolution (2025-11-25)
+
+All action items from the Senior Developer Review have been addressed.
+
+### Changes Made:
+1. **Created `eaf.pitest-conventions.gradle.kts`** - Separate convention plugin for Pitest mutation testing
+   - Applied `info.solidsoft.pitest` plugin
+   - Configured 70% mutation score threshold
+   - Uses version catalog for all versions
+   - Applied to dvmm-app module as example
+
+2. **Updated `gradle/libs.versions.toml`**:
+   - Added `jacoco = "0.8.12"`
+   - Added `pitest-junit5-plugin = "1.2.3"`
+   - Added `pitest-gradle-plugin = "1.19.0-rc.2"` (Gradle 9.x compatible)
+   - Added library entries for junit-bom, junit-platform-engine, kotlin-coroutines-bom, pitest-junit5-plugin
+
+3. **Updated convention plugins to use version catalog**:
+   - `eaf.kotlin-conventions.gradle.kts`: Coroutines BOM from catalog
+   - `eaf.spring-conventions.gradle.kts`: Reactor-kotlin from catalog
+   - `eaf.test-conventions.gradle.kts`: JaCoCo, JUnit, MockK, Testcontainers, Konsist from catalog
+
+4. **Updated module build files to use version catalog**:
+   - `eaf/eaf-testing/build.gradle.kts`: All dependencies from catalog
+   - `dvmm/dvmm-infrastructure/build.gradle.kts`: jOOQ from catalog
+
+### Verification:
+- ✅ `./gradlew clean build` passes
+- ✅ All 7 Konsist architecture tests pass
+- ✅ Pitest task available: `./gradlew :dvmm:dvmm-app:pitest`
+
+### AC Status After Fix:
+| AC | Requirement | Status |
+|----|-------------|--------|
+| AC-6 | Quality Tooling | ✅ IMPLEMENTED (Pitest convention available) |
+| AC-7 | Version Catalog | ✅ IMPLEMENTED (All versions from catalog) |
+

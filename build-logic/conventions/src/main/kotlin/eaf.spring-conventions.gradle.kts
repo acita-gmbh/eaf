@@ -5,12 +5,15 @@ plugins {
     kotlin("plugin.spring")
 }
 
+// Access version catalog
+val libs = versionCatalogs.named("libs")
+
 dependencies {
     // Spring WebFlux reactive stack
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     // Reactor Kotlin extensions
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.3")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:${libs.findVersion("reactor-kotlin").get()}")
 
     // Kotlin reflection for Spring
     implementation("org.jetbrains.kotlin:kotlin-reflect")

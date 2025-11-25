@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test
  * Key Constraint (ADR-001): EAF modules MUST NOT depend on DVMM modules.
  * Dependency direction: dvmm-* → eaf-* (never the reverse)
  */
-public class ArchitectureTest {
+class ArchitectureTest {
 
     @Test
-    public fun `eaf modules must not depend on dvmm modules`() {
+    fun `eaf modules must not depend on dvmm modules`() {
         Konsist
             .scopeFromModule("eaf/eaf-core")
             .files
@@ -26,7 +26,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `eaf-eventsourcing must not depend on dvmm modules`() {
+    fun `eaf-eventsourcing must not depend on dvmm modules`() {
         Konsist
             .scopeFromModule("eaf/eaf-eventsourcing")
             .files
@@ -38,7 +38,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `eaf-tenant must not depend on dvmm modules`() {
+    fun `eaf-tenant must not depend on dvmm modules`() {
         Konsist
             .scopeFromModule("eaf/eaf-tenant")
             .files
@@ -50,7 +50,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `eaf-auth must not depend on dvmm modules`() {
+    fun `eaf-auth must not depend on dvmm modules`() {
         Konsist
             .scopeFromModule("eaf/eaf-auth")
             .files
@@ -62,7 +62,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `eaf-testing must not depend on dvmm modules`() {
+    fun `eaf-testing must not depend on dvmm modules`() {
         Konsist
             .scopeFromModule("eaf/eaf-testing")
             .files
@@ -74,7 +74,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `domain module must not have Spring dependencies`() {
+    fun `domain module must not have Spring dependencies`() {
         Konsist
             .scopeFromModule("dvmm/dvmm-domain")
             .files
@@ -86,7 +86,7 @@ public class ArchitectureTest {
     }
 
     @Test
-    public fun `classes with Test suffix should be in test source set`() {
+    fun `classes with Test suffix should be in test source set`() {
         // Scope from specific DVMM and EAF modules only, excluding build-logic
         val dvmmModules = listOf("dvmm/dvmm-domain", "dvmm/dvmm-application", "dvmm/dvmm-api", "dvmm/dvmm-infrastructure", "dvmm/dvmm-app")
         val eafModules = listOf("eaf/eaf-core", "eaf/eaf-eventsourcing", "eaf/eaf-tenant", "eaf/eaf-auth", "eaf/eaf-testing")
