@@ -1,0 +1,183 @@
+# AGENTS.md
+
+This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copilot, Cursor, etc.) when working with this repository.
+
+## Project Overview
+
+**EAF/DVMM** is a Gradle multi-module monorepo with two main component groups:
+
+- **EAF** (`eaf/`) - Enterprise Application Framework (reusable, zero product dependencies)
+- **DVMM** (`dvmm/`) - Dynamic Virtual Machine Manager (product modules)
+
+## Build Commands
+
+```bash
+# Pre-push gate (runs ktlint, Detekt, Konsist, unit & integration tests)
+./gradlew clean build
+
+# Run tests only
+./gradlew test
+
+# Single module build
+./gradlew :dvmm:dvmm-app:build
+./gradlew :eaf:eaf-core:build
+
+# Code coverage (80% minimum)
+./gradlew jacocoTestReport
+
+# Mutation testing (70% threshold)
+./gradlew pitest
+```
+
+## Module Structure
+
+### EAF Framework (`eaf/`)
+| Module | Purpose |
+|--------|---------|
+| `eaf-core` | Domain primitives (Entity, AggregateRoot, ValueObject, DomainEvent) |
+| `eaf-eventsourcing` | Event Store interfaces, projection base classes |
+| `eaf-tenant` | Multi-tenancy with PostgreSQL RLS |
+| `eaf-auth` | IdP-agnostic authentication interfaces |
+| `eaf-testing` | Test utilities (InMemoryEventStore, TestClock) |
+
+### DVMM Product (`dvmm/`)
+| Module | Purpose | Constraints |
+|--------|---------|-------------|
+| `dvmm-domain` | Business logic, aggregates | NO Spring dependencies |
+| `dvmm-application` | Use cases, command/query handlers | - |
+| `dvmm-api` | REST controllers, DTOs | - |
+| `dvmm-infrastructure` | Persistence, external integrations | - |
+| `dvmm-app` | Spring Boot entry point | - |
+
+## Critical Architecture Rules
+
+**These rules are enforced by Konsist tests and CI will block violations:**
+
+1. **EAF modules MUST NOT import from `com.acita.dvmm.*`**
+2. **DVMM modules CAN import from `com.acita.eaf.*`**
+3. **`dvmm-domain` MUST NOT import from `org.springframework.*`**
+
+## Tech Stack
+
+- **Kotlin 2.2** with context parameters (`-Xcontext-parameters`)
+- **Spring Boot 3.5** with WebFlux/Coroutines
+- **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
+- **PostgreSQL** with Row-Level Security
+- **JUnit 6** + MockK + Testcontainers
+- **Konsist** for architecture testing
+- **Pitest** for mutation testing
+
+## Code Style Requirements
+
+### Imports
+```kotlin
+// CORRECT - Explicit imports
+import com.acita.eaf.core.domain.AggregateRoot
+import com.acita.eaf.core.domain.DomainEvent
+
+// FORBIDDEN - Wildcard imports
+import com.acita.eaf.core.domain.*
+```
+
+### Named Arguments
+```kotlin
+// CORRECT - Named arguments for >2 parameters
+val request = VmRequest.create(
+    tenantId = tenantId,
+    requesterId = userId,
+    vmName = "web-server-01",
+    cpuCores = 4,
+    memoryGb = 16
+)
+
+// FORBIDDEN - Positional arguments for >2 parameters
+val request = VmRequest.create(tenantId, userId, "web-server-01", 4, 16)
+```
+
+### Error Handling
+```kotlin
+// CORRECT - Domain-specific exceptions with context
+throw VmProvisioningException(
+    vmRequestId = requestId,
+    reason = VmProvisioningFailure.RESOURCE_EXHAUSTED,
+    details = "vCenter cluster 'prod-01' has insufficient memory"
+)
+
+// FORBIDDEN - Generic exceptions
+throw RuntimeException("VM creation failed")
+```
+
+### Dependency Injection
+```kotlin
+// CORRECT - Constructor injection (testable)
+class VmService(
+    private val httpClient: HttpClient
+)
+
+// FORBIDDEN - Hard-coded dependencies (untestable)
+class VmService {
+    private val httpClient = HttpClient.newHttpClient()
+}
+```
+
+## Testing Requirements
+
+- Write tests BEFORE implementation (Tests First)
+- Achieve ≥80% line coverage per module
+- Achieve ≥70% mutation score (Pitest)
+- Run `./gradlew clean build` before committing
+
+### Test Order for New Features
+1. Integration test (proves feature works end-to-end)
+2. Unit tests (prove individual components)
+3. Implementation
+
+## Git Conventions
+
+### Commit Messages (Conventional Commits)
+```
+<type>: <description>
+
+[optional body]
+```
+
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+**Rules:**
+- Lowercase type and description
+- No period at end
+- Under 72 characters
+- Reference Jira: `[DVMM-123] feat: ...`
+
+### Branch Naming
+| Pattern | Example |
+|---------|---------|
+| `feature/<story-id>-<description>` | `feature/story-1.2-eaf-core-module` |
+| `fix/<issue>-<description>` | `fix/tenant-leak-in-projections` |
+| `docs/<description>` | `docs/claude-md-setup` |
+
+## Anti-Patterns to Avoid
+
+1. **Deferred architectural decisions** - Decide NOW or raise blocking issue
+2. **Untestable code** - Always use constructor injection
+3. **Silent failures** - Log with context and re-throw appropriately
+4. **Over-engineering** - Keep it simple until complexity is needed
+5. **Copy-paste without understanding** - Adapt code to specific context
+
+## Quality Gates
+
+| Gate | Threshold | Enforcement |
+|------|-----------|-------------|
+| Test Coverage | ≥80% | CI blocks merge |
+| Mutation Score | ≥70% | CI blocks merge |
+| Architecture Tests | All pass | CI blocks merge |
+| Security Scan | Zero critical | CI blocks merge |
+
+## Key Documentation
+
+| Document | Path |
+|----------|------|
+| Architecture | `docs/architecture.md` |
+| PRD | `docs/prd.md` |
+| Sprint Status | `docs/sprint-artifacts/sprint-status.yaml` |
+| Test Design | `docs/test-design-system.md` |
