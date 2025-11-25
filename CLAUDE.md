@@ -72,6 +72,43 @@ Convention plugins for consistent configuration:
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Git Conventions
+
+### Commit Messages (Conventional Commits)
+
+```
+<type>: <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+| Type | Purpose | Example |
+|------|---------|---------|
+| `feat` | New feature | `feat: Implement VM request form validation` |
+| `fix` | Bug fix | `fix: Correct tenant isolation in event store` |
+| `docs` | Documentation | `docs: Add API endpoint documentation` |
+| `refactor` | Code restructuring | `refactor: Extract tenant context to separate module` |
+| `test` | Adding/fixing tests | `test: Add integration tests for approval workflow` |
+| `chore` | Maintenance | `chore: Update Spring Boot to 3.5.1` |
+
+**Rules:**
+- Use lowercase for type and description
+- No period at the end of the subject line
+- Keep subject line under 72 characters
+- Reference Jira issues when applicable: `[DVMM-123] feat: ...`
+
+### Branch Naming
+
+| Pattern | Purpose | Example |
+|---------|---------|---------|
+| `main` | Production-ready code | - |
+| `feature/<story-id>-<description>` | New features | `feature/story-1.2-eaf-core-module` |
+| `fix/<issue>-<description>` | Bug fixes | `fix/tenant-leak-in-projections` |
+| `docs/<description>` | Documentation only | `docs/claude-md-setup` |
+
 ---
 
 ## Project Documentation
