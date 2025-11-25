@@ -12,5 +12,5 @@ dependencies {
 }
 
 springBoot {
-    mainClass.set("com.acita.dvmm.DvmmApplicationKt")
+    mainClass.set("de.acci.dvmm.DvmmApplicationKt")
 }

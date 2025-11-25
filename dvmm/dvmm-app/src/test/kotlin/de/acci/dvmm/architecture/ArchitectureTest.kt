@@ -1,4 +1,4 @@
-package com.acita.dvmm.architecture
+package de.acci.dvmm.architecture
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
@@ -20,7 +20,7 @@ class ArchitectureTest {
             .files
             .assertTrue { file ->
                 file.imports.none { import ->
-                    import.name.contains("com.acita.dvmm")
+                    import.name.contains("de.acci.dvmm")
                 }
             }
     }
@@ -32,7 +32,7 @@ class ArchitectureTest {
             .files
             .assertTrue { file ->
                 file.imports.none { import ->
-                    import.name.contains("com.acita.dvmm")
+                    import.name.contains("de.acci.dvmm")
                 }
             }
     }
@@ -44,7 +44,7 @@ class ArchitectureTest {
             .files
             .assertTrue { file ->
                 file.imports.none { import ->
-                    import.name.contains("com.acita.dvmm")
+                    import.name.contains("de.acci.dvmm")
                 }
             }
     }
@@ -56,7 +56,7 @@ class ArchitectureTest {
             .files
             .assertTrue { file ->
                 file.imports.none { import ->
-                    import.name.contains("com.acita.dvmm")
+                    import.name.contains("de.acci.dvmm")
                 }
             }
     }
@@ -68,7 +68,7 @@ class ArchitectureTest {
             .files
             .assertTrue { file ->
                 file.imports.none { import ->
-                    import.name.contains("com.acita.dvmm")
+                    import.name.contains("de.acci.dvmm")
                 }
             }
     }

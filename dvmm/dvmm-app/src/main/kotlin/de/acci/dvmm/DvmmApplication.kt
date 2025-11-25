@@ -1,4 +1,4 @@
-package com.acita.dvmm
+package de.acci.dvmm
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
