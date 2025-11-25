@@ -1308,7 +1308,49 @@ fun `can await projection updates`() = runTest {
 
 ---
 
-## 7. Related Documents
+## 7. Risks, Assumptions & Open Questions
+
+### 7.1 Risks
+
+| ID | Risk | Likelihood | Impact | Mitigation | Owner |
+|----|------|------------|--------|------------|-------|
+| **R1** | Kotlin 2.2/K2 Compiler Instability - potential edge cases in production | Medium (30%) | Medium | Fallback plan to Kotlin 2.1.x documented; K2 only for new modules | Architect |
+| **R2** | RLS Performance degradation at >1000 tenants | Medium (25%) | High | Benchmark in Sprint 1 with simulated load; validate index strategy | Dev + DBA |
+| **R3** | TenantContext propagation failure across async/coroutine boundaries | Low (15%) | Critical | TC-001 tests mandatory; code review checklist for coroutine usage | Dev Lead |
+| **R4** | Testcontainers startup time impacts CI pipeline duration | High (60%) | Low | Enable container reuse; parallel test execution | Test Architect |
+| **R5** | 80% coverage gate blocks Sprint 0 delivery | Medium (40%) | Medium | Initial gate at 70%, increase to 80% after Sprint 1 | SM + TEA |
+| **R6** | VCSIM API divergence from real vSphere 7.0 | Medium (35%) | High | Contract tests against real vSphere instance (staging) before Epic 2 | Test Architect |
+
+### 7.2 Assumptions
+
+| ID | Assumption | Validation Status | Impact if Wrong |
+|----|------------|-------------------|-----------------|
+| **A1** | Development team has Event Sourcing experience | ⚠️ UNVALIDATED | +2 sprints for ramp-up, training required |
+| **A2** | Keycloak dev instance available from Sprint 0 | ⚠️ UNVALIDATED | Story 1.7 blocked; mock-auth fallback needed |
+| **A3** | PostgreSQL 16 with RLS approved for production | ✅ VALIDATED (Ops) | - |
+| **A4** | JDK 21 LTS as runtime environment | ✅ VALIDATED | - |
+| **A5** | jOOQ blocking calls acceptable for MVP performance | ⚠️ UNVALIDATED | Performance issues under load; R2DBC migration required |
+
+### 7.3 Open Questions
+
+| ID | Question | Decision Needed By | Stakeholder |
+|----|----------|-------------------|-------------|
+| **Q1** | Snapshot threshold set to 100 events - based on what metrics/benchmarks? | Sprint 1 Start | Architect |
+| **Q2** | jOOQ blocking vs. R2DBC reactive - final architectural decision? | Sprint 0 End | Architect + Dev Lead |
+| **Q3** | User-facing error messages for auth/tenant failures - define standard? | Sprint 1 | UX + PM |
+| **Q4** | VCSIM limitations - which vSphere 7.0 features are missing/broken? | Before Epic 2 | Test Architect |
+| **Q5** | Keycloak realm configuration ownership - who is responsible? | Sprint 0 | Ops/DevOps |
+| **Q6** | Quality gate thresholds - final or iteratively adjusted? | Sprint 0 End | SM + TEA |
+
+### 7.4 Decision Log
+
+| ID | Decision | Date | Rationale | Decided By |
+|----|----------|------|-----------|------------|
+| *No decisions recorded yet* | | | | |
+
+---
+
+## 8. Related Documents
 
 | Document | Location | Description |
 |----------|----------|-------------|
