@@ -3,7 +3,7 @@
 **Date:** 2025-11-24
 **Prepared by:** Mary (Analyst Agent)
 **Research Depth:** Comprehensive Market Analysis
-**Geographic Focus:** DACH Region (Deutschland, Österreich, Schweiz)
+**Geographic Focus:** DACH Region (Germany, Austria, Switzerland)
 
 ---
 

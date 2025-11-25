@@ -532,4 +532,8 @@ For next brainstorming sessions or workshops:
 
 ---
 
+> **Implementation Progress:** See [sprint-status.yaml](sprint-artifacts/sprint-status.yaml) for current sprint status and AI-adjusted timelines based on these insights.
+
+---
+
 _Session facilitated using the BMAD CIS brainstorming framework_

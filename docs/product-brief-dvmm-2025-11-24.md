@@ -386,6 +386,8 @@ gates:
 
 ## Timeline Overview
 
+> **Current Status:** See [sprint-status.yaml](sprint-artifacts/sprint-status.yaml) for live sprint progress and AI-adjusted timelines.
+
 ### Phase 1: Foundation (Month 1-2)
 
 - Week 1-2: CI/CD pipeline, quality gates, dev environment
