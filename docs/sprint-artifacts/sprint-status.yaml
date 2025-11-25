@@ -1,0 +1,197 @@
+# Sprint Status - DVMM Project
+# generated: 2025-11-25
+# project: EAF
+# project_key: DVMM
+# tracking_system: file-system
+# story_location: docs/sprint-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-25
+project: EAF
+project_key: DVMM
+tracking_system: file-system
+story_location: docs/sprint-artifacts
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SPRINT PLAN (Agreed 2025-11-25 via Party Mode)
+# ═══════════════════════════════════════════════════════════════════════════════
+sprint_plan:
+  team:
+    core: "Wall-E (Human) + Amelia (AI)"
+    pattern: "Tests First -> Implementation -> Review"
+    velocity: "2-3 stories per sprint"
+    ai_factor: "0.2"  # AI agents work at ~20% of human time estimates
+
+  quality_gates:
+    line_coverage: "80%"
+    mutation_score: "70%"
+    testability_concerns: "TC-001 to TC-004 mandatory"
+    documentation: "Required per story"
+
+  # AI-ADJUSTED TIMELINE
+  # Traditional 2-week sprints compressed to 2-3 days with AI agents
+  # Human review/decisions remain the bottleneck, not implementation
+  sprints:
+    sprint-0:
+      duration: "1-2 days"
+      duration_traditional: "1 week"
+      focus: "Setup & Test Infrastructure"
+      stories: ["1-1", "1-2", "1-9"]
+
+    sprint-1:
+      duration: "2-3 days"
+      duration_traditional: "2 weeks"
+      focus: "Event Sourcing Foundation"
+      stories: ["1-3", "1-4"]
+
+    sprint-2:
+      duration: "2-3 days"
+      duration_traditional: "2 weeks"
+      focus: "Multi-Tenancy (TC-001/TC-002)"
+      stories: ["1-5", "1-6"]
+
+    sprint-3:
+      duration: "2-3 days"
+      duration_traditional: "2 weeks"
+      focus: "Auth + Projections (TC-004)"
+      stories: ["1-7", "1-8"]
+
+    sprint-4:
+      duration: "2-3 days"
+      duration_traditional: "2 weeks"
+      focus: "Epic 2 Start + Foundation Completion (parallel)"
+      stories: ["2-1"]
+      parallel: ["1-10", "1-11"]
+      note: "VCSIM and CI/CD run parallel to Epic 2 start (Tracer Bullet)"
+
+  timeline_summary:
+    epic_1_traditional: "9 weeks"
+    epic_1_ai_adjusted: "~2 weeks"
+    bottleneck: "Human review & decision-making, not implementation"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEVELOPMENT STATUS
+# ═══════════════════════════════════════════════════════════════════════════════
+development_status:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EPIC 1: FOUNDATION (11 Stories)
+  # Technical base for all features - Low Risk
+  # Timeline: Sprint 0-3 (Core) + Sprint 4 (Parallel completion)
+  # ═══════════════════════════════════════════════════════════════════════════
+  epic-1: backlog
+
+  # Sprint 0 (Week 1) - Setup
+  1-1-project-scaffolding: backlog           # Sprint 0
+  1-2-eaf-core-module: backlog               # Sprint 0
+  1-9-testcontainers-setup: backlog          # Sprint 0 (moved up for Tests First)
+
+  # Sprint 1 (Week 2-3) - Event Sourcing
+  1-3-event-store-setup: backlog             # Sprint 1
+  1-4-aggregate-base-pattern: backlog        # Sprint 1
+
+  # Sprint 2 (Week 4-5) - Multi-Tenancy
+  1-5-tenant-context-module: backlog         # Sprint 2 (TC-001)
+  1-6-postgresql-rls-policies: backlog       # Sprint 2 (TC-002)
+
+  # Sprint 3 (Week 6-7) - Auth + Projections
+  1-7-keycloak-integration: backlog          # Sprint 3
+  1-8-jooq-projection-base: backlog          # Sprint 3 (TC-004)
+
+  # Sprint 4 (Week 8-9) - Parallel with Epic 2 Start
+  1-10-vcsim-integration: backlog            # Sprint 4 (parallel)
+  1-11-cicd-quality-gates: backlog           # Sprint 4 (parallel)
+
+  epic-1-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EPIC 2: CORE WORKFLOW (12 Stories) - TRACER BULLET
+  # "Request -> Approve -> Notify" - High Risk (First UI)
+  # Starts Sprint 4 with Story 2.1
+  # ═══════════════════════════════════════════════════════════════════════════
+  epic-2: backlog
+  2-1-keycloak-login-flow: backlog           # Sprint 4 (Epic 2 Start)
+  2-2-end-user-dashboard-layout: backlog
+  2-3-empty-states-onboarding: backlog
+  2-4-vm-request-form-basic-fields: backlog
+  2-5-vm-request-form-size-selector: backlog
+  2-6-vm-request-form-submit-command: backlog
+  2-7-my-requests-list-cancel: backlog
+  2-8-request-status-timeline: backlog
+  2-9-admin-approval-queue: backlog
+  2-10-request-detail-view-admin: backlog
+  2-11-approve-reject-actions: backlog
+  2-12-email-notifications: backlog
+  epic-2-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EPIC 3: VM PROVISIONING (9 Stories)
+  # "VM is actually created" - CRITICAL Risk (VMware Integration)
+  # ═══════════════════════════════════════════════════════════════════════════
+  epic-3: backlog
+  3-1-vmware-connection-configuration: backlog
+  3-2-vsphere-api-client: backlog
+  3-3-provisioning-trigger-on-approval: backlog
+  3-4-vm-provisioning-execution: backlog
+  3-5-provisioning-progress-tracking: backlog
+  3-6-provisioning-error-handling: backlog
+  3-7-provisioned-vm-details: backlog
+  3-8-vm-ready-notification: backlog
+  3-9-vcenter-contract-test-suite: backlog  # BLOCKED: Awaiting vCenter access
+  epic-3-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EPIC 4: PROJECTS & QUOTA (9 Stories)
+  # "Resources organized & controlled" - Medium Risk
+  # ═══════════════════════════════════════════════════════════════════════════
+  epic-4: backlog
+  4-1-project-aggregate: backlog
+  4-2-project-list-view: backlog
+  4-3-create-project-admin: backlog
+  4-4-edit-project-admin: backlog
+  4-5-archive-project-admin: backlog
+  4-6-project-vm-list: backlog
+  4-7-tenant-quota-configuration: backlog
+  4-8-quota-visibility-enforcement: backlog
+  4-9-resource-utilization-dashboard: backlog
+  epic-4-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EPIC 5: COMPLIANCE & OVERSIGHT (10 Stories)
+  # "Audit-ready in 30 seconds" - Medium Risk
+  # ═══════════════════════════════════════════════════════════════════════════
+  epic-5: backlog
+  5-1-admin-request-overview: backlog
+  5-2-request-filtering-sorting: backlog
+  5-3-request-history-export: backlog
+  5-4-audit-trail-projection: backlog
+  5-5-request-audit-log-view: backlog
+  5-6-iso-27001-control-mapping: backlog
+  5-7-tenant-isolation-verification: backlog
+  5-8-system-health-dashboard: backlog
+  5-9-admin-activity-log: backlog
+  5-10-gdpr-crypto-shredding: backlog
+  epic-5-retrospective: optional

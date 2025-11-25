@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVMM Color Theme Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .theme-card { transition: all 0.3s ease; }
+        .theme-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+        .color-swatch { transition: transform 0.2s; }
+        .color-swatch:hover { transform: scale(1.1); }
+        .btn-demo { transition: all 0.2s; }
+        .btn-demo:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">DVMM Color Theme Explorer</h1>
+            <p class="text-xl text-gray-600">4 Theme-Optionen für Enterprise VM Management</p>
+            <p class="text-sm text-gray-500 mt-2">Klicke auf ein Theme um es im Detail zu sehen</p>
+        </div>
+
+        <!-- Theme Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+
+            <!-- Theme 1: Trust Blue -->
+            <div class="theme-card bg-white rounded-2xl shadow-lg overflow-hidden" id="theme1">
+                <div class="p-6 border-b" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+                    <h2 class="text-2xl font-bold text-white">1. Trust Blue</h2>
+                    <p class="text-blue-100 mt-1">Professional & Reliable</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">Klassisches Enterprise-Blau vermittelt Vertrauen und Stabilität. Perfekt für IT-Entscheider im deutschen Mittelstand.</p>
+
+                    <!-- Color Palette -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #1e40af;" title="Primary: #1e40af"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #3b82f6;" title="Primary Light: #3b82f6"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #10b981;" title="Success: #10b981"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #f59e0b;" title="Warning: #f59e0b"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #ef4444;" title="Error: #ef4444"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer border" style="background: #f8fafc;" title="Background: #f8fafc"></div>
+                    </div>
+
+                    <!-- Component Demo -->
+                    <div class="space-y-3">
+                        <button class="btn-demo px-4 py-2 rounded-lg text-white font-medium" style="background: #1e40af;">Request VM</button>
+                        <button class="btn-demo px-4 py-2 rounded-lg font-medium border-2 ml-2" style="border-color: #1e40af; color: #1e40af;">Cancel</button>
+                        <div class="flex gap-2 mt-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #f59e0b;">Pending</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #10b981;">Approved</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #3b82f6;">Provisioning</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg text-sm" style="background: #eff6ff; border-left: 4px solid #1e40af;">
+                        <strong>Best for:</strong> Maximum trust signal, conservative enterprise clients, banking/finance adjacent
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 2: Tech Teal -->
+            <div class="theme-card bg-white rounded-2xl shadow-lg overflow-hidden" id="theme2">
+                <div class="p-6 border-b" style="background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);">
+                    <h2 class="text-2xl font-bold text-white">2. Tech Teal</h2>
+                    <p class="text-teal-100 mt-1">Modern & Innovative</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">Teal signalisiert technische Innovation ohne kalt zu wirken. Differenziert sich von "langweiligem Enterprise-Blau".</p>
+
+                    <!-- Color Palette -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #0f766e;" title="Primary: #0f766e"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #14b8a6;" title="Primary Light: #14b8a6"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #22c55e;" title="Success: #22c55e"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #eab308;" title="Warning: #eab308"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #ef4444;" title="Error: #ef4444"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer border" style="background: #f0fdfa;" title="Background: #f0fdfa"></div>
+                    </div>
+
+                    <!-- Component Demo -->
+                    <div class="space-y-3">
+                        <button class="btn-demo px-4 py-2 rounded-lg text-white font-medium" style="background: #0f766e;">Request VM</button>
+                        <button class="btn-demo px-4 py-2 rounded-lg font-medium border-2 ml-2" style="border-color: #0f766e; color: #0f766e;">Cancel</button>
+                        <div class="flex gap-2 mt-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #eab308;">Pending</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #22c55e;">Approved</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #14b8a6;">Provisioning</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg text-sm" style="background: #f0fdfa; border-left: 4px solid #0f766e;">
+                        <strong>Best for:</strong> Tech-forward positioning, differentiation from competitors, younger IT teams
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 3: Slate Professional -->
+            <div class="theme-card bg-white rounded-2xl shadow-lg overflow-hidden" id="theme3">
+                <div class="p-6 border-b" style="background: linear-gradient(135deg, #334155 0%, #64748b 100%);">
+                    <h2 class="text-2xl font-bold text-white">3. Slate Professional</h2>
+                    <p class="text-slate-200 mt-1">Minimal & Focused</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">Neutrale Basis mit Akzentfarben. Lässt die Daten sprechen, nicht das UI. Sehr "tool-like" - Fokus auf Effizienz.</p>
+
+                    <!-- Color Palette -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #334155;" title="Primary: #334155"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #6366f1;" title="Accent: #6366f1"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #10b981;" title="Success: #10b981"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #f59e0b;" title="Warning: #f59e0b"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #ef4444;" title="Error: #ef4444"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer border" style="background: #f8fafc;" title="Background: #f8fafc"></div>
+                    </div>
+
+                    <!-- Component Demo -->
+                    <div class="space-y-3">
+                        <button class="btn-demo px-4 py-2 rounded-lg text-white font-medium" style="background: #334155;">Request VM</button>
+                        <button class="btn-demo px-4 py-2 rounded-lg font-medium border-2 ml-2" style="border-color: #334155; color: #334155;">Cancel</button>
+                        <div class="flex gap-2 mt-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #f59e0b;">Pending</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #10b981;">Approved</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #6366f1;">Provisioning</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg text-sm" style="background: #f1f5f9; border-left: 4px solid #334155;">
+                        <strong>Best for:</strong> Data-heavy dashboards, power users, "the tool should disappear" philosophy
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme 4: Azure Inspired -->
+            <div class="theme-card bg-white rounded-2xl shadow-lg overflow-hidden" id="theme4">
+                <div class="p-6 border-b" style="background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);">
+                    <h2 class="text-2xl font-bold text-white">4. Cloud Sky</h2>
+                    <p class="text-sky-100 mt-1">Familiar & Approachable</p>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">Inspiriert von Azure/AWS Console. Vertrautes "Cloud-Feeling" für Nutzer die bereits Cloud-Portale kennen.</p>
+
+                    <!-- Color Palette -->
+                    <div class="flex gap-2 mb-6">
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #0369a1;" title="Primary: #0369a1"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #0ea5e9;" title="Primary Light: #0ea5e9"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #22c55e;" title="Success: #22c55e"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #f97316;" title="Warning: #f97316"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer" style="background: #dc2626;" title="Error: #dc2626"></div>
+                        <div class="color-swatch w-12 h-12 rounded-lg cursor-pointer border" style="background: #f0f9ff;" title="Background: #f0f9ff"></div>
+                    </div>
+
+                    <!-- Component Demo -->
+                    <div class="space-y-3">
+                        <button class="btn-demo px-4 py-2 rounded-lg text-white font-medium" style="background: #0369a1;">Request VM</button>
+                        <button class="btn-demo px-4 py-2 rounded-lg font-medium border-2 ml-2" style="border-color: #0369a1; color: #0369a1;">Cancel</button>
+                        <div class="flex gap-2 mt-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #f97316;">Pending</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #22c55e;">Approved</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #0ea5e9;">Provisioning</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg text-sm" style="background: #f0f9ff; border-left: 4px solid #0369a1;">
+                        <strong>Best for:</strong> Users familiar with Azure/AWS, cloud-native positioning, immediate recognition
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Component Preview Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Component Preview - All Themes</h2>
+
+            <!-- VM Request Card Preview -->
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">VM Request Card</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+                <!-- Card Theme 1 -->
+                <div class="border rounded-xl p-4 hover:shadow-lg transition-shadow" style="border-color: #e2e8f0;">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">dev-server-01</h4>
+                            <p class="text-sm text-gray-500">Project: EAF Development</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-medium text-white" style="background: #f59e0b;">Pending</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between"><span>Size:</span><span class="font-medium">Medium (4 vCPU, 8GB)</span></div>
+                        <div class="flex justify-between"><span>Requested:</span><span>2 hours ago</span></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex-1 px-3 py-1.5 rounded text-white text-sm font-medium" style="background: #10b981;">Approve</button>
+                        <button class="flex-1 px-3 py-1.5 rounded text-white text-sm font-medium" style="background: #ef4444;">Reject</button>
+                    </div>
+                </div>
+
+                <!-- Card Theme 2 -->
+                <div class="border rounded-xl p-4 hover:shadow-lg transition-shadow" style="border-color: #99f6e4;">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">prod-db-02</h4>
+                            <p class="text-sm text-gray-500">Project: Customer Portal</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-medium text-white" style="background: #22c55e;">Approved</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between"><span>Size:</span><span class="font-medium">Large (8 vCPU, 16GB)</span></div>
+                        <div class="flex justify-between"><span>Approved:</span><span>10 min ago</span></div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full" style="width: 45%; background: #14b8a6;"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Provisioning: 45%</p>
+                </div>
+
+                <!-- Card Theme 3 -->
+                <div class="border rounded-xl p-4 hover:shadow-lg transition-shadow" style="border-color: #cbd5e1;">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">test-api-03</h4>
+                            <p class="text-sm text-gray-500">Project: QA Environment</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-medium text-white" style="background: #10b981;">Running</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between"><span>Size:</span><span class="font-medium">Small (2 vCPU, 4GB)</span></div>
+                        <div class="flex justify-between"><span>Created:</span><span>3 days ago</span></div>
+                    </div>
+                    <button class="w-full px-3 py-1.5 rounded border text-sm font-medium" style="border-color: #334155; color: #334155;">Manage VM</button>
+                </div>
+
+                <!-- Card Theme 4 -->
+                <div class="border rounded-xl p-4 hover:shadow-lg transition-shadow" style="border-color: #bae6fd;">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">analytics-01</h4>
+                            <p class="text-sm text-gray-500">Project: Data Science</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-medium text-white" style="background: #dc2626;">Rejected</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">
+                        <div class="flex justify-between"><span>Size:</span><span class="font-medium">XL (16 vCPU, 32GB)</span></div>
+                        <div class="flex justify-between"><span>Reason:</span><span class="text-red-600">Quota exceeded</span></div>
+                    </div>
+                    <button class="w-full px-3 py-1.5 rounded text-white text-sm font-medium" style="background: #0369a1;">Resubmit</button>
+                </div>
+            </div>
+
+            <!-- Status Badge Comparison -->
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Status Badges</h3>
+            <div class="flex flex-wrap gap-3 mb-8">
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Draft</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #f59e0b;">Pending Approval</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #10b981;">Approved</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #3b82f6;">Provisioning</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #22c55e;">Running</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #6366f1;">Stopped</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #ef4444;">Rejected</span>
+                <span class="px-3 py-1 rounded-full text-xs font-medium text-white" style="background: #dc2626;">Error</span>
+            </div>
+
+            <!-- Form Input Preview -->
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Form Elements</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">VM Name</label>
+                    <input type="text" placeholder="e.g., dev-server-01" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="border-color: #e2e8f0;">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                    <select class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" style="border-color: #e2e8f0;">
+                        <option>Select a project...</option>
+                        <option>EAF Development</option>
+                        <option>Customer Portal</option>
+                        <option>QA Environment</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dark Mode Preview -->
+        <div class="bg-gray-900 rounded-2xl shadow-lg p-8 mb-12">
+            <h2 class="text-2xl font-bold text-white mb-6">Dark Mode Preview</h2>
+            <p class="text-gray-400 mb-6">shadcn-admin-kit supports dark mode out of the box. Here's how the themes adapt:</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="rounded-xl p-4" style="background: #1e293b;">
+                    <h4 class="font-semibold text-white mb-2">Trust Blue (Dark)</h4>
+                    <button class="px-4 py-2 rounded-lg text-white font-medium" style="background: #3b82f6;">Primary Action</button>
+                </div>
+                <div class="rounded-xl p-4" style="background: #134e4a;">
+                    <h4 class="font-semibold text-white mb-2">Tech Teal (Dark)</h4>
+                    <button class="px-4 py-2 rounded-lg text-white font-medium" style="background: #14b8a6;">Primary Action</button>
+                </div>
+                <div class="rounded-xl p-4" style="background: #1e293b;">
+                    <h4 class="font-semibold text-white mb-2">Slate Pro (Dark)</h4>
+                    <button class="px-4 py-2 rounded-lg text-white font-medium" style="background: #6366f1;">Primary Action</button>
+                </div>
+                <div class="rounded-xl p-4" style="background: #0c4a6e;">
+                    <h4 class="font-semibold text-white mb-2">Cloud Sky (Dark)</h4>
+                    <button class="px-4 py-2 rounded-lg text-white font-medium" style="background: #0ea5e9;">Primary Action</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl shadow-lg p-8 text-white">
+            <h2 class="text-2xl font-bold mb-4">Meine Empfehlung: Tech Teal (#2)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold mb-2">Warum Tech Teal?</h3>
+                    <ul class="space-y-2 text-teal-50">
+                        <li>✓ Differenziert sich von "langweiligem Enterprise-Blau"</li>
+                        <li>✓ Signalisiert technische Innovation + Modernität</li>
+                        <li>✓ Warm genug um nicht kalt/unpersönlich zu wirken</li>
+                        <li>✓ Exzellenter Kontrast für Accessibility (WCAG AA)</li>
+                        <li>✓ Funktioniert perfekt in Light + Dark Mode</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Alternative: Cloud Sky (#4)</h3>
+                    <ul class="space-y-2 text-teal-50">
+                        <li>• Wenn "vertraut wie Azure" wichtiger ist als Differenzierung</li>
+                        <li>• Nutzer kennen bereits Cloud-Portale</li>
+                        <li>• Schnellere Einarbeitung durch Wiedererkennung</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-12 text-gray-500">
+            <p>DVMM UX Design Workflow - Color Theme Explorer</p>
+            <p class="text-sm mt-1">Generated by BMad Method</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVMM Design Direction Mockups</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwindcss.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#0f766e',
+                            hover: '#115e59',
+                            light: '#ccfbf1',
+                            dark: '#134e4a',
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        status: {
+                            pending: '#f59e0b',
+                            approved: '#10b981',
+                            rejected: '#f43f5e',
+                            info: '#0ea5e9',
+                            warning: '#f97316',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .screen-container {
+            min-height: 600px;
+            background: #f8fafc;
+        }
+        .mockup-frame {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .nav-btn.active {
+            background: #0f766e;
+            color: white;
+        }
+        .sidebar-item:hover {
+            background: #f1f5f9;
+        }
+        .sidebar-item.active {
+            background: #ccfbf1;
+            color: #0f766e;
+            border-left: 3px solid #0f766e;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">DVMM Design Direction</h1>
+                    <p class="text-slate-600 text-sm">Tech Teal Theme - Interactive Mockups</p>
+                </div>
+                <div class="flex gap-2">
+                    <span class="px-3 py-1 bg-primary-light text-primary-dark rounded-full text-sm font-medium">
+                        shadcn-admin-kit
+                    </span>
+                    <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+                        Tailwind CSS
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex gap-1 py-2">
+                <button onclick="showScreen('end-user')" id="nav-end-user" class="nav-btn active px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    End User Dashboard
+                </button>
+                <button onclick="showScreen('request-form')" id="nav-request-form" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    VM Request Form
+                </button>
+                <button onclick="showScreen('admin-queue')" id="nav-admin-queue" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    Admin Approval Queue
+                </button>
+                <button onclick="showScreen('manager-dashboard')" id="nav-manager-dashboard" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                    IT Manager Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen Container -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- End User Dashboard -->
+        <div id="screen-end-user" class="screen-container">
+            <div class="mockup-frame bg-white">
+                <!-- App Header -->
+                <div class="bg-primary text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="font-bold text-lg">DVMM</div>
+                        <div class="h-6 w-px bg-white/30"></div>
+                        <!-- Tenant Switcher -->
+                        <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-white/20 transition-colors">
+                            <span class="text-sm">Acme Corp</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 hover:bg-white/10 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">MK</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <!-- Sidebar -->
+                    <div class="w-56 bg-slate-50 border-r border-slate-200 min-h-[540px]">
+                        <nav class="py-4">
+                            <div class="sidebar-item active flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                                My VMs
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                New Request
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                My Requests
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="flex-1 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-semibold text-slate-900">My Virtual Machines</h2>
+                                <p class="text-slate-600 text-sm">3 VMs active, 1 pending approval</p>
+                            </div>
+                            <button class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Request New VM
+                            </button>
+                        </div>
+
+                        <!-- Status Cards Row -->
+                        <div class="grid grid-cols-4 gap-4 mb-6">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                                <div class="text-2xl font-bold text-emerald-700">3</div>
+                                <div class="text-sm text-emerald-600">Running</div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="text-2xl font-bold text-amber-700">1</div>
+                                <div class="text-sm text-amber-600">Pending</div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                <div class="text-2xl font-bold text-slate-700">0</div>
+                                <div class="text-sm text-slate-600">Stopped</div>
+                            </div>
+                            <div class="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                                <div class="text-2xl font-bold text-primary-700">75%</div>
+                                <div class="text-sm text-primary-600">Quota Used</div>
+                            </div>
+                        </div>
+
+                        <!-- VM Cards -->
+                        <div class="space-y-3">
+                            <!-- Pending VM -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-slate-900">dev-analytics-01</div>
+                                            <div class="text-sm text-slate-500">8 vCPU, 32GB RAM, 500GB SSD</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                                            Awaiting Approval
+                                        </span>
+                                        <span class="text-sm text-slate-500">Requested 2h ago</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Running VM -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-slate-900">web-frontend-prod</div>
+                                            <div class="text-sm text-slate-500">4 vCPU, 16GB RAM, 200GB SSD</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                                            Running
+                                        </span>
+                                        <span class="text-sm text-slate-500">192.168.1.45</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Running VM 2 -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-slate-900">api-backend-01</div>
+                                            <div class="text-sm text-slate-500">4 vCPU, 8GB RAM, 100GB SSD</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                                            Running
+                                        </span>
+                                        <span class="text-sm text-slate-500">192.168.1.46</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Notes -->
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg p-6">
+                <h3 class="font-semibold text-slate-900 mb-3">Design Notes: End User Dashboard</h3>
+                <ul class="space-y-2 text-sm text-slate-600">
+                    <li><span class="text-primary font-medium">Emotional Goal:</span> "Ich kann das selbst und bin immer informiert" - Status always visible, self-service prominent</li>
+                    <li><span class="text-primary font-medium">Tenant Switcher:</span> AWS-style header dropdown for quick context switching</li>
+                    <li><span class="text-primary font-medium">Primary CTA:</span> "Request New VM" button is always accessible</li>
+                    <li><span class="text-primary font-medium">Status at a Glance:</span> 4 metric cards show instant overview</li>
+                    <li><span class="text-primary font-medium">VM Cards:</span> Rich information density without overwhelming</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- VM Request Form -->
+        <div id="screen-request-form" class="screen-container hidden">
+            <div class="mockup-frame bg-white">
+                <!-- App Header (same as above) -->
+                <div class="bg-primary text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="font-bold text-lg">DVMM</div>
+                        <div class="h-6 w-px bg-white/30"></div>
+                        <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
+                            <span class="text-sm">Acme Corp</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">MK</div>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <!-- Sidebar -->
+                    <div class="w-56 bg-slate-50 border-r border-slate-200 min-h-[540px]">
+                        <nav class="py-4">
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/>
+                                </svg>
+                                My VMs
+                            </div>
+                            <div class="sidebar-item active flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                New Request
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                                </svg>
+                                My Requests
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- Main Content - Form -->
+                    <div class="flex-1 p-6">
+                        <div class="max-w-2xl">
+                            <div class="mb-6">
+                                <h2 class="text-xl font-semibold text-slate-900">Request New VM</h2>
+                                <p class="text-slate-600 text-sm">Fill out the form below. Your request will be reviewed by an admin.</p>
+                            </div>
+
+                            <!-- Progress Steps -->
+                            <div class="flex items-center gap-2 mb-8">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
+                                    <span class="text-sm font-medium text-primary">Basics</span>
+                                </div>
+                                <div class="flex-1 h-px bg-slate-200"></div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center text-sm font-medium">2</div>
+                                    <span class="text-sm text-slate-500">Resources</span>
+                                </div>
+                                <div class="flex-1 h-px bg-slate-200"></div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center text-sm font-medium">3</div>
+                                    <span class="text-sm text-slate-500">Review</span>
+                                </div>
+                            </div>
+
+                            <!-- Form -->
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">VM Name *</label>
+                                    <input type="text" placeholder="e.g., dev-analytics-01" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                    <p class="text-xs text-slate-500 mt-1">Lowercase letters, numbers, and hyphens only</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Project *</label>
+                                    <select class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white">
+                                        <option>Select a project...</option>
+                                        <option>Data Analytics Platform</option>
+                                        <option>Customer Portal</option>
+                                        <option>Internal Tools</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Purpose / Justification *</label>
+                                    <textarea rows="3" placeholder="Briefly describe what this VM will be used for..." class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"></textarea>
+                                </div>
+
+                                <!-- VM Size Selector -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-3">VM Size *</label>
+                                    <div class="grid grid-cols-4 gap-3">
+                                        <div class="border-2 border-slate-200 rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors text-center">
+                                            <div class="font-bold text-slate-900">S</div>
+                                            <div class="text-xs text-slate-500 mt-1">2 vCPU</div>
+                                            <div class="text-xs text-slate-500">4GB RAM</div>
+                                        </div>
+                                        <div class="border-2 border-primary rounded-lg p-4 cursor-pointer bg-primary-50 text-center">
+                                            <div class="font-bold text-primary">M</div>
+                                            <div class="text-xs text-primary-dark mt-1">4 vCPU</div>
+                                            <div class="text-xs text-primary-dark">8GB RAM</div>
+                                        </div>
+                                        <div class="border-2 border-slate-200 rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors text-center">
+                                            <div class="font-bold text-slate-900">L</div>
+                                            <div class="text-xs text-slate-500 mt-1">8 vCPU</div>
+                                            <div class="text-xs text-slate-500">16GB RAM</div>
+                                        </div>
+                                        <div class="border-2 border-slate-200 rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors text-center">
+                                            <div class="font-bold text-slate-900">XL</div>
+                                            <div class="text-xs text-slate-500 mt-1">16 vCPU</div>
+                                            <div class="text-xs text-slate-500">32GB RAM</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quota Indicator -->
+                                <div class="bg-slate-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-slate-700">Your Quota</span>
+                                        <span class="text-sm text-slate-600">75% used</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">This request will use 8 of your remaining 32 vCPUs</p>
+                                </div>
+
+                                <div class="flex gap-3 pt-4">
+                                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        Continue to Resources
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Notes -->
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg p-6">
+                <h3 class="font-semibold text-slate-900 mb-3">Design Notes: VM Request Form</h3>
+                <ul class="space-y-2 text-sm text-slate-600">
+                    <li><span class="text-primary font-medium">Multi-Step Form:</span> Breaks complex request into digestible steps (Basics → Resources → Review)</li>
+                    <li><span class="text-primary font-medium">VM Size Selector:</span> Visual card selection instead of confusing dropdowns - "S/M/L/XL" is intuitive</li>
+                    <li><span class="text-primary font-medium">Quota Indicator:</span> Real-time feedback on remaining resources - prevents failed requests</li>
+                    <li><span class="text-primary font-medium">Clear Labels:</span> Required fields marked, helpful placeholder text, validation hints</li>
+                    <li><span class="text-primary font-medium">Consumer Simplicity:</span> Looks like ordering something online, not filling out enterprise forms</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Admin Approval Queue -->
+        <div id="screen-admin-queue" class="screen-container hidden">
+            <div class="mockup-frame bg-white">
+                <!-- App Header -->
+                <div class="bg-primary text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="font-bold text-lg">DVMM</div>
+                        <div class="h-6 w-px bg-white/30"></div>
+                        <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
+                            <span class="text-sm">Acme Corp</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <!-- Notification Badge -->
+                        <button class="p-2 hover:bg-white/10 rounded-lg relative">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">AS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <!-- Sidebar -->
+                    <div class="w-56 bg-slate-50 border-r border-slate-200 min-h-[540px]">
+                        <nav class="py-4">
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/>
+                                </svg>
+                                Dashboard
+                            </div>
+                            <div class="sidebar-item active flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                                </svg>
+                                Approval Queue
+                                <span class="ml-auto bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">3</span>
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2"/>
+                                </svg>
+                                All VMs
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/>
+                                </svg>
+                                Users
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="flex-1 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-semibold text-slate-900">Approval Queue</h2>
+                                <p class="text-slate-600 text-sm">3 requests awaiting your decision</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                                    <option>All Requesters</option>
+                                    <option>Michael K.</option>
+                                    <option>Sarah L.</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Approval Cards -->
+                        <div class="space-y-4">
+                            <!-- Request 1 - Expanded -->
+                            <div class="bg-white border-2 border-primary/20 rounded-lg overflow-hidden">
+                                <div class="p-4 bg-primary-50/50">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                                                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-slate-900">dev-analytics-01</div>
+                                                <div class="text-sm text-slate-600">Requested by Michael K. · 2 hours ago</div>
+                                            </div>
+                                        </div>
+                                        <span class="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                                            Pending Review
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="p-4 border-t border-slate-100">
+                                    <div class="grid grid-cols-4 gap-4 mb-4">
+                                        <div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-wide">Size</div>
+                                            <div class="font-medium text-slate-900">Large (8 vCPU, 32GB)</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-wide">Storage</div>
+                                            <div class="font-medium text-slate-900">500GB SSD</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-wide">Project</div>
+                                            <div class="font-medium text-slate-900">Data Analytics</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-wide">Est. Cost</div>
+                                            <div class="font-medium text-slate-900">€180/month</div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-slate-50 rounded-lg p-3 mb-4">
+                                        <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Justification</div>
+                                        <p class="text-sm text-slate-700">"Need high-memory VM for processing large datasets in our Q4 analytics pipeline. Current dev machines can't handle the 50GB+ CSV files."</p>
+                                    </div>
+                                    <!-- Action Bar -->
+                                    <div class="flex items-center gap-3">
+                                        <button class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Approve
+                                        </button>
+                                        <button class="flex-1 bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            Reject
+                                        </button>
+                                        <button class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                                            Request Info
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Request 2 - Collapsed -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-slate-900">test-staging-02</div>
+                                            <div class="text-sm text-slate-500">Sarah L. · M (4 vCPU) · 1 hour ago</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                        <button class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Request 3 - Collapsed -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-slate-900">ci-runner-03</div>
+                                            <div class="text-sm text-slate-500">DevOps Team · S (2 vCPU) · 30 min ago</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                        <button class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Notes -->
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg p-6">
+                <h3 class="font-semibold text-slate-900 mb-3">Design Notes: Admin Approval Queue</h3>
+                <ul class="space-y-2 text-sm text-slate-600">
+                    <li><span class="text-primary font-medium">Emotional Goal:</span> "Keine Email-Flut mehr!" - Everything in one place, quick actions</li>
+                    <li><span class="text-primary font-medium">One-Click Actions:</span> Approve/Reject buttons immediately visible on each card</li>
+                    <li><span class="text-primary font-medium">Expand for Details:</span> Click card to see full justification and specs</li>
+                    <li><span class="text-primary font-medium">Notification Badge:</span> Admin always knows how many items need attention</li>
+                    <li><span class="text-primary font-medium">Request Info Button:</span> Ask requester for more details without rejecting</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- IT Manager Dashboard -->
+        <div id="screen-manager-dashboard" class="screen-container hidden">
+            <div class="mockup-frame bg-white">
+                <!-- App Header -->
+                <div class="bg-primary text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="font-bold text-lg">DVMM</div>
+                        <div class="h-6 w-px bg-white/30"></div>
+                        <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
+                            <span class="text-sm">Acme Corp</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">TM</div>
+                    </div>
+                </div>
+
+                <div class="flex">
+                    <!-- Sidebar -->
+                    <div class="w-56 bg-slate-50 border-r border-slate-200 min-h-[540px]">
+                        <nav class="py-4">
+                            <div class="sidebar-item active flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                                Analytics
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                Compliance
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Cost Center
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Settings
+                            </div>
+                            <div class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Audit Log
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="flex-1 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-semibold text-slate-900">Management Dashboard</h2>
+                                <p class="text-slate-600 text-sm">Overview for November 2025</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                                    <option>Last 30 days</option>
+                                    <option>Last 90 days</option>
+                                    <option>This year</option>
+                                </select>
+                                <button class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    Export Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- KPI Cards -->
+                        <div class="grid grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-slate-600">Total VMs</span>
+                                    <span class="text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">+12%</span>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-900">147</div>
+                                <div class="text-xs text-slate-500 mt-1">Across 5 projects</div>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-slate-600">Monthly Cost</span>
+                                    <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">+5%</span>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-900">€12,450</div>
+                                <div class="text-xs text-slate-500 mt-1">Budget: €15,000</div>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-slate-600">Avg. Approval Time</span>
+                                    <span class="text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">-23%</span>
+                                </div>
+                                <div class="text-2xl font-bold text-slate-900">2.4h</div>
+                                <div class="text-xs text-slate-500 mt-1">Target: < 4h</div>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-slate-600">Compliance Score</span>
+                                </div>
+                                <div class="text-2xl font-bold text-emerald-600">98%</div>
+                                <div class="text-xs text-slate-500 mt-1">ISO 27001 ready</div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="grid grid-cols-2 gap-6 mb-6">
+                            <!-- Usage Trend Chart (Placeholder) -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <h3 class="font-medium text-slate-900 mb-4">Resource Usage Trend</h3>
+                                <div class="h-40 bg-gradient-to-t from-primary-100 to-transparent rounded-lg flex items-end justify-around px-4 pb-2">
+                                    <div class="w-8 bg-primary rounded-t" style="height: 60%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 75%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 65%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 80%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 70%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 90%"></div>
+                                    <div class="w-8 bg-primary rounded-t" style="height: 85%"></div>
+                                </div>
+                                <div class="flex justify-around mt-2 text-xs text-slate-500">
+                                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                </div>
+                            </div>
+
+                            <!-- Cost by Project -->
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <h3 class="font-medium text-slate-900 mb-4">Cost by Project</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-slate-600">Data Analytics</span>
+                                            <span class="font-medium text-slate-900">€5,200</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div class="bg-primary h-2 rounded-full" style="width: 42%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-slate-600">Customer Portal</span>
+                                            <span class="font-medium text-slate-900">€3,800</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div class="bg-primary-500 h-2 rounded-full" style="width: 31%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-slate-600">Internal Tools</span>
+                                            <span class="font-medium text-slate-900">€2,100</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div class="bg-primary-600 h-2 rounded-full" style="width: 17%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-slate-600">DevOps / CI</span>
+                                            <span class="font-medium text-slate-900">€1,350</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-full h-2">
+                                            <div class="bg-primary-700 h-2 rounded-full" style="width: 10%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Audit Activity -->
+                        <div class="bg-white border border-slate-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-medium text-slate-900">Recent Audit Activity</h3>
+                                <a href="#" class="text-sm text-primary hover:underline">View Full Log</a>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3 text-sm">
+                                    <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                    <span class="text-slate-500">14:32</span>
+                                    <span class="text-slate-700">VM <span class="font-medium">web-frontend-prod</span> approved by Admin S.</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-sm">
+                                    <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                    <span class="text-slate-500">12:15</span>
+                                    <span class="text-slate-700">New request <span class="font-medium">dev-analytics-01</span> submitted by Michael K.</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-sm">
+                                    <div class="w-2 h-2 bg-rose-500 rounded-full"></div>
+                                    <span class="text-slate-500">10:45</span>
+                                    <span class="text-slate-700">VM <span class="font-medium">test-temp-99</span> rejected - exceeded quota</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Notes -->
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg p-6">
+                <h3 class="font-semibold text-slate-900 mb-3">Design Notes: IT Manager Dashboard</h3>
+                <ul class="space-y-2 text-sm text-slate-600">
+                    <li><span class="text-primary font-medium">Emotional Goal:</span> "Ich habe alles im Griff und bin audit-ready" - Compliance score prominent, export ready</li>
+                    <li><span class="text-primary font-medium">KPI Cards:</span> Key metrics at a glance with trend indicators (+/-)</li>
+                    <li><span class="text-primary font-medium">Cost Visibility:</span> Budget tracking, cost by project - supports financial oversight</li>
+                    <li><span class="text-primary font-medium">Audit Trail:</span> Recent activity visible, full log accessible - ISO 27001 requirement</li>
+                    <li><span class="text-primary font-medium">Export Report:</span> One-click report generation for audits and management reviews</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t border-slate-200 bg-white mt-8 py-6">
+        <div class="max-w-7xl mx-auto px-6 text-center text-sm text-slate-500">
+            <p><strong>DVMM UX Design</strong> - Tech Teal Theme with shadcn-admin-kit</p>
+            <p class="mt-1">Design Mantra: "ServiceNow Workflow Power, Consumer App Simplicity"</p>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.screen-container').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+
+            // Show selected screen
+            document.getElementById('screen-' + screenId).classList.remove('hidden');
+
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+            });
+
+            const activeBtn = document.getElementById('nav-' + screenId);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+        }
+    </script>
+</body>
+</html>

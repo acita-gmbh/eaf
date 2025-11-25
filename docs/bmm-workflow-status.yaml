@@ -1,0 +1,142 @@
+# Workflow Status Template
+
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2025-11-24T15:48:35Z"
+project: "EAF"
+project_type: "enterprise"
+selected_track: "enterprise"
+field_type: "greenfield"
+user_description: "DVMM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal for VMware/Windows VM provisioning. Replaces legacy ZEWSSP. Pilot project for EAF framework. Complex enterprise requirements: strict multi-tenancy, ISO 27001 compliance, CQRS/Event Sourcing architecture."
+brainstorm_requested: true
+research_requested: true
+product_brief_requested: true
+workflow_path: "enterprise-greenfield"
+workflow_status:
+  # Phase 0: Discovery (Required)
+  - phase: 0
+    phase_name: "Discovery (Required)"
+    workflows:
+      - id: "brainstorm-project"
+        name: "Brainstorm Project"
+        status: "docs/brainstorming-session-results-2025-11-24.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:brainstorm-project"
+        completed: "2025-11-24"
+
+      - id: "research"
+        name: "Research"
+        status: "docs/research-market-2025-11-24.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:research"
+        completed: "2025-11-24"
+        note: "Market research for DACH region - TAM/SAM/SOM, competitive analysis"
+
+      - id: "product-brief"
+        name: "Product Brief"
+        status: "docs/product-brief-dvmm-2025-11-24.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:product-brief"
+        completed: "2025-11-24"
+        note: "DVMM Product Brief integrating market research + brainstorming insights"
+
+  # Phase 1: Planning
+  - phase: 1
+    phase_name: "Planning"
+    workflows:
+      - id: "prd"
+        name: "Product Requirements Document"
+        status: "docs/prd.md"
+        agent: "pm"
+        command: "/bmad:bmm:workflows:prd"
+        completed: "2025-11-24"
+        output: "docs/prd.md"
+        note: "91 FRs (66 MVP, 25 Growth) + 94 NFRs (82 MVP, 12 Growth) = 185 total requirements"
+
+      - id: "validate-prd"
+        name: "Validate PRD"
+        status: "recommended"
+        agent: "pm"
+        command: "/bmad:bmm:workflows:validate-prd"
+
+      - id: "create-ux-design"
+        name: "Create UX Design"
+        status: "docs/ux-design-specification.md"
+        agent: "ux-designer"
+        command: "/bmad:bmm:workflows:create-ux-design"
+        completed: "2025-11-24"
+        note: "Tech Teal theme, shadcn-admin-kit, 4 screens, 3 user journeys, WCAG 2.1 AA"
+
+  # Phase 2: Solutioning
+  - phase: 2
+    phase_name: "Solutioning"
+    workflows:
+      - id: "architecture"
+        name: "Architecture"
+        status: "docs/architecture.md"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:architecture"
+        completed: "2025-11-25"
+        output: "docs/architecture.md"
+        note: "EAF Framework-First Architecture: 3 ADRs, 7 steps, Party Mode reviews. Kotlin 2.2, Spring Boot 3.5, CQRS/ES, PostgreSQL RLS, jOOQ projections."
+
+      - id: "test-design"
+        name: "Test Design"
+        status: "docs/test-design-system.md"
+        agent: "tea"
+        command: "/bmad:bmm:workflows:test-design"
+        completed: "2025-11-25"
+        output: "docs/test-design-system.md"
+        note: "System-Level Test Design: 4 testability concerns (TC-001-004), VCSIM for VMware, k6 for performance, ASR Utility Tree"
+
+      - id: "validate-architecture"
+        name: "Validate Architecture"
+        status: "docs/architecture.md"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:validate-architecture"
+        completed: "2025-11-25"
+        note: "PASS: All placeholders filled. Complete: Executive Summary, Decision Table, FR Mapping, Implementation Patterns (Command/Query/Aggregate/Projection/REST/Tenant), Naming Conventions, Code Organization, Error Handling, Logging Strategy, Dev Prerequisites."
+
+      - id: "create-epics-and-stories"
+        name: "Create Epics and Stories"
+        status: "docs/epics.md"
+        agent: "pm"
+        command: "/bmad:bmm:workflows:create-epics-and-stories"
+        completed: "2025-11-25"
+        output: "docs/epics.md"
+        note: "5 Epics, 51 Stories: Foundation (11), Core Workflow (12), VM Provisioning (9), Projects & Quota (9), Compliance (10). Party Mode reviews. 59/66 MVP FRs covered (89%)."
+
+      - id: "implementation-readiness"
+        name: "Implementation Readiness"
+        status: "docs/implementation-readiness-report-2025-11-25.md"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:implementation-readiness"
+        completed: "2025-11-25"
+        output: "docs/implementation-readiness-report-2025-11-25.md"
+        note: "PASS: 5 Epics, 51 Stories, 89% FR coverage. Party Mode review (5/5 Ready). Crypto-Shredding Story 5.10 + vCenter Contract Tests Story 3.9 added. TC-001–TC-004 ACs integrated."
+
+  # Phase 3: Implementation
+  - phase: 3
+    phase_name: "Implementation"
+    workflows:
+      - id: "sprint-planning"
+        name: "Sprint Planning"
+        status: "docs/sprint-artifacts/sprint-status.yaml"
+        agent: "sm"
+        command: "/bmad:bmm:workflows:sprint-planning"
+        completed: "2025-11-25"
+        output: "docs/sprint-artifacts/sprint-status.yaml"
+        note: "Party Mode consensus: Sprint 0 (1w) + 2-week sprints, 2-3 stories/sprint, Tests First pattern. Stories 1.10/1.11 deferred to Sprint 4 parallel with Epic 2 start."
