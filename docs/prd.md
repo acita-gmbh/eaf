@@ -868,7 +868,7 @@ DVMM Portal
 ### Key Architectural Decisions Implied
 
 1. **Multi-Tenancy:** PostgreSQL Row-Level Security (RLS) - database-enforced isolation
-2. **Audit Trail:** Event Sourcing with Axon Framework - immutable, complete history
+2. **Audit Trail:** Event Sourcing with EAF custom event store - immutable, complete history
 3. **Authentication:** Keycloak OIDC - SSO, token refresh, MFA-ready
 4. **API Design:** CQRS pattern - separate read/write models for scalability
 5. **Observability:** OpenTelemetry-ready with Prometheus + Grafana + Loki

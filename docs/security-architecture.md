@@ -246,7 +246,7 @@ SET app.tenant_id = '${tenantId}';
 | Data State | Method | Key Management |
 |------------|--------|----------------|
 | In Transit | TLS 1.3 | Let's Encrypt / Internal CA |
-| At Rest (DB) | AES-256 | PostgreSQL native |
+| At Rest (DB) | AES-256 | OS-level (dm-crypt/LUKS) |
 | At Rest (Files) | AES-256 | File system encryption |
 | Secrets | AES-256-GCM | Vault / Environment |
 | PII in Events | AES-256 | Per-user keys (Crypto-Shredding) |
@@ -295,7 +295,7 @@ SET app.tenant_id = '${tenantId}';
 | Control | Implementation | NFR Reference |
 |---------|----------------|---------------|
 | Authentication | Bearer JWT | NFR-SEC-1 |
-| Rate Limiting | 100 req/min/user | NFR-SEC-9 |
+| Rate Limiting | 100 req/min/user (Spring WebFilter) | NFR-SEC-9 |
 | Input Validation | Bean Validation + Custom | NFR-SEC-6 |
 | Output Encoding | Jackson defaults | NFR-SEC-7 |
 | CORS | Whitelist origins | NFR-SEC-8 |

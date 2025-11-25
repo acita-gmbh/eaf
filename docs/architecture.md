@@ -2470,6 +2470,7 @@ class TenantContextWebFilter : CoWebFilter() {
         // Propagate via CoroutineContext (NOT ThreadLocal!)
         withContext(TenantContextElement(tenantId)) {
             // Set PostgreSQL session variable for RLS
+            // NOTE: tenantId is UUID validated from JWT claim - SET LOCAL doesn't support parameterized queries
             r2dbcClient.execute("SET LOCAL app.tenant_id = '${tenantId.value}'")
             chain.filter(exchange)
         }

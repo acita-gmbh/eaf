@@ -29,7 +29,7 @@ All critical failure conditions **PASSED**:
 | Epic 1 establishes foundation | ✓ PASS | Epic 1: "Foundation" - 11 stories, technical base |
 | No forward dependencies | ✓ PASS | All prerequisites reference earlier stories |
 | Stories vertically sliced | ✓ PASS | Stories include UI + Logic + Data (e.g., Story 2.6) |
-| FRs covered by epics | ✓ PASS | 59/66 MVP FRs = 89% (>85% threshold) |
+| FRs covered by epics | ✓ PASS | 59/65 MVP FRs = 91% (>85% threshold) |
 | FRs don't contain implementation | ✓ PASS | FRs describe WHAT not HOW (minor exceptions noted) |
 | FR traceability exists | ✓ PASS | FR Coverage Map + per-story FR references |
 | No unfilled template variables | ✓ PASS | No {{variable}} patterns found |
@@ -49,7 +49,7 @@ All critical failure conditions **PASSED**:
 | Project classification | ✓ PASS | Lines 58-88: SaaS B2B, Medium product/High implementation complexity |
 | Success criteria | ✓ PASS | Lines 90-192: Specific user moments, business metrics, quality gates |
 | Product scope (MVP/Growth/Vision) | ✓ PASS | Lines 194-298: Clear delineation with tables |
-| Functional requirements | ✓ PASS | Lines 456-647: 91 FRs with IDs, organized by category |
+| Functional requirements | ✓ PASS | Lines 456-647: 90 FRs with IDs, organized by category |
 | Non-functional requirements | ✓ PASS | Lines 650-843: 95 NFRs with IDs and targets |
 | References section | ✓ PASS | Lines 84-88: Input documents listed |
 
@@ -98,7 +98,7 @@ All critical failure conditions **PASSED**:
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| MVP features have FRs | ✓ PASS | 66 MVP FRs covering all scope items |
+| MVP features have FRs | ✓ PASS | 65 MVP FRs covering all scope items |
 | Growth features documented | ✓ PASS | 25 Growth FRs explicitly labeled |
 | Vision features captured | ✓ PASS | FR43 (Proxmox), Vision section in scope |
 | Domain requirements included | ✓ PASS | NFR-COMP-1 to NFR-COMP-11 for compliance |
@@ -149,7 +149,7 @@ All critical failure conditions **PASSED**:
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Every MVP FR covered | ⚠ PARTIAL | 59/66 = 89% (7 FRs listed as "Growth" in epics) |
+| Every MVP FR covered | ⚠ PARTIAL | 59/65 = 91% (6 FRs listed as "Growth" in epics) |
 | Stories reference FRs | ✓ PASS | "FRs Satisfied:" in each story |
 | No orphaned FRs | ⚠ PARTIAL | FR3-FR7 not in any story |
 | No orphaned stories | ✓ PASS | All stories trace to FRs |
@@ -159,7 +159,7 @@ All critical failure conditions **PASSED**:
 
 | Category | PRD MVP FRs | Epics Coverage | Gap |
 |----------|-------------|----------------|-----|
-| User Account & Auth | 8 | 3 (FR1, FR2, FR81) | FR3-FR7 → labeled "Growth" in epics |
+| User Account & Auth | 8 | 3 (FR1, FR2, FR7a) | FR3-FR7 → labeled "Growth" in epics |
 | Project Management | 5 | 5 | ✓ Full |
 | VM Request | 8 | 8 | ✓ Full |
 | Approval Workflow | 6 | 6 | ✓ Full |

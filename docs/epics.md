@@ -425,8 +425,9 @@ class RlsEnforcingDataSource(delegate: DataSource) : DataSource {
         val tenant = TenantTestContext.current()
             ?: throw IllegalStateException("NO TENANT CONTEXT IN TEST!")
         return delegate.connection.also { conn ->
+            // NOTE: tenant.id is UUID from test context - SET doesn't support parameterized queries
             conn.createStatement().execute(
-                "SET app.current_tenant = '${tenant.id}'"
+                "SET app.tenant_id = '${tenant.id}'"
             )
         }
     }
@@ -2408,6 +2409,6 @@ Epic 1 ──► Epic 2 ──► Epic 3 ──► Epic 4 ──► Epic 5
 
 ---
 
-*This epic breakdown was created following the BMad Method, integrating context from PRD (91 FRs), UX Design Specification (Tech Teal theme), and Architecture Document (CQRS/ES, PostgreSQL RLS, Kotlin/Spring Boot).*
+*This epic breakdown was created following the BMad Method, integrating context from PRD (90 FRs), UX Design Specification (Tech Teal theme), and Architecture Document (CQRS/ES, PostgreSQL RLS, Kotlin/Spring Boot).*
 
 *Next Step: → Implementation Readiness Check → Sprint Planning*

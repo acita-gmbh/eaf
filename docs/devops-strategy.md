@@ -168,7 +168,7 @@ services:
       - POSTGRES_USER=dvmm
 
   keycloak:
-    image: quay.io/keycloak/keycloak:22
+    image: quay.io/keycloak/keycloak:26.0
     environment:
       - KC_DB=postgres
 ```
@@ -240,7 +240,8 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
-      connection-init-sql: "SET app.tenant_id = '${tenant_id}'"
+      # NOTE: Tenant context is set per-request via SET LOCAL in TenantContextWebFilter
+      # Never use connection-init-sql for tenant - causes cross-tenant data leakage on pooled connections
 ```
 
 ---
@@ -386,7 +387,7 @@ management:
    - Never drop/rename in same release
 
 2. **Migration Sequence:**
-   ```
+   ```text
    Release N:   Add new_column (nullable)
    Release N+1: Migrate data, make non-null
    Release N+2: Remove old_column
@@ -614,7 +615,7 @@ object TestContainers {
         .withUsername("test")
         .withPassword("test")
 
-    val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:22")
+    val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
         .withRealmImportFile("test-realm.json")
 
     val vcsim = GenericContainer("vmware/vcsim:latest")
