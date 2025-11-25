@@ -150,8 +150,8 @@ All quality gates are enforced in CI and block merges if not met:
 
 Enforced by Konsist tests in `ArchitectureTest.kt`:
 
-- EAF modules **MUST NOT** import from `com.acita.dvmm.*`
-- DVMM modules **CAN** import from `com.acita.eaf.*`
+- EAF modules **MUST NOT** import from `de.acci.dvmm.*`
+- DVMM modules **CAN** import from `de.acci.eaf.*`
 - `dvmm-domain` **MUST NOT** import from `org.springframework.*`
 
 ## Testing
@@ -245,7 +245,7 @@ git checkout -b fix/tenant-leak-in-projections
 
 ## License
 
-Copyright 2025 Acita GmbH. All rights reserved.
+Copyright 2025 ACCI (Axians Competence Center Infrastructure). All rights reserved.
 
 ---
 

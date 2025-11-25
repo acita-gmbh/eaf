@@ -53,8 +53,8 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 
 **These rules are enforced by Konsist tests and CI will block violations:**
 
-1. **EAF modules MUST NOT import from `com.acita.dvmm.*`**
-2. **DVMM modules CAN import from `com.acita.eaf.*`**
+1. **EAF modules MUST NOT import from `de.acci.dvmm.*`**
+2. **DVMM modules CAN import from `de.acci.eaf.*`**
 3. **`dvmm-domain` MUST NOT import from `org.springframework.*`**
 
 ## Tech Stack
@@ -72,11 +72,11 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 ### Imports
 ```kotlin
 // CORRECT - Explicit imports
-import com.acita.eaf.core.domain.AggregateRoot
-import com.acita.eaf.core.domain.DomainEvent
+import de.acci.eaf.core.domain.AggregateRoot
+import de.acci.eaf.core.domain.DomainEvent
 
 // FORBIDDEN - Wildcard imports
-import com.acita.eaf.core.domain.*
+import de.acci.eaf.core.domain.*
 ```
 
 ### Named Arguments

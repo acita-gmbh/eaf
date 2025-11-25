@@ -6,7 +6,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.acita"
+    group = "de.acci"
     version = "0.1.0-SNAPSHOT"
 }
 

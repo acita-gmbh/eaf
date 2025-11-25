@@ -289,8 +289,8 @@ claude-opus-4-5-20251101
 - `dvmm/dvmm-api/build.gradle.kts` - REST controllers (library, bootJar disabled)
 - `dvmm/dvmm-infrastructure/build.gradle.kts` - Adapters, jOOQ projections (library, bootJar disabled)
 - `dvmm/dvmm-app/build.gradle.kts` - Main application (runnable)
-- `dvmm/dvmm-app/src/main/kotlin/com/acita/dvmm/DvmmApplication.kt` - Application entry point
-- `dvmm/dvmm-app/src/test/kotlin/com/acita/dvmm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
+- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/DvmmApplication.kt` - Application entry point
+- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
 
 ## Change Log
 

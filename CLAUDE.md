@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test
 
 # Run single test class
-./gradlew :dvmm:dvmm-app:test --tests "com.acita.dvmm.architecture.ArchitectureTest"
+./gradlew :dvmm:dvmm-app:test --tests "de.acci.dvmm.architecture.ArchitectureTest"
 
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
@@ -58,8 +58,8 @@ Convention plugins for consistent configuration:
 ## Critical Architecture Rules (ADR-001)
 
 **Enforced by Konsist tests in `ArchitectureTest.kt`:**
-- EAF modules MUST NOT import from `com.acita.dvmm.*`
-- DVMM modules CAN import from `com.acita.eaf.*`
+- EAF modules MUST NOT import from `de.acci.dvmm.*`
+- DVMM modules CAN import from `de.acci.eaf.*`
 - `dvmm-domain` MUST NOT import from `org.springframework.*`
 
 ## Tech Stack
@@ -220,11 +220,11 @@ Stories move through: `backlog` → `drafted` → `ready-for-dev` → `in-progre
 
 ```kotlin
 // ✅ CORRECT - Explicit imports
-import com.acita.eaf.core.domain.AggregateRoot
-import com.acita.eaf.core.domain.DomainEvent
+import de.acci.eaf.core.domain.AggregateRoot
+import de.acci.eaf.core.domain.DomainEvent
 
 // ❌ FORBIDDEN - Wildcard imports
-import com.acita.eaf.core.domain.*
+import de.acci.eaf.core.domain.*
 ```
 
 ```kotlin
@@ -246,7 +246,7 @@ val request = VmRequest.create(tenantId, userId, "web-server-01", 4, 16)
 ```kotlin
 // ❌ FORBIDDEN - EAF depending on DVMM
 // File: eaf/eaf-core/src/main/kotlin/...
-import com.acita.dvmm.domain.VmRequest  // BLOCKED BY KONSIST
+import de.acci.dvmm.domain.VmRequest  // BLOCKED BY KONSIST
 
 // ❌ FORBIDDEN - Spring in domain layer
 // File: dvmm/dvmm-domain/src/main/kotlin/...

@@ -42,7 +42,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 ./gradlew :eaf:eaf-testing:test
 
 # Run single test class
-./gradlew :dvmm:dvmm-app:test --tests "com.acita.dvmm.architecture.ArchitectureTest"
+./gradlew :dvmm:dvmm-app:test --tests "de.acci.dvmm.architecture.ArchitectureTest"
 
 # Run single test method (use quotes for spaces)
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
