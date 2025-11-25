@@ -653,7 +653,7 @@ So that I can access DVMM securely with my company credentials.
 **Then** I am redirected to Keycloak login page
 
 **And** after successful Keycloak login, I am redirected back to DVMM dashboard
-**And** my JWT token is stored in browser (httpOnly cookie or localStorage per security decision)
+**And** my JWT token is stored in an httpOnly cookie (secure, SameSite=Strict)
 **And** my name and tenant are displayed in the header
 **And** logout button is visible and functional
 **And** clicking logout redirects to Keycloak logout and clears session
@@ -678,9 +678,9 @@ Story 2.1 is the **Frontend Tracer Bullet** - the first user-facing code that va
 **Pair Programming Recommended:**
 This story should be implemented with **Pair Programming** (Backend + Frontend Developer) because:
 - Backend: Auth-Flow, Token-Validation, Tenant-Context-API
-- Frontend: Keycloak-JS, Token-Storage (httpOnly cookie decision), Protected Routes
+- Frontend: Keycloak-JS, Token-Storage (httpOnly cookie), Protected Routes
 
-The token storage decision (httpOnly cookie vs localStorage) MUST be made before implementation.
+**Token Storage Decision (RESOLVED):** httpOnly cookie with `Secure` and `SameSite=Strict` flags. This prevents XSS token theft and provides automatic CSRF protection.
 
 ---
 
@@ -1035,7 +1035,7 @@ So that I can process requests efficiently.
 
 **Given** the request is already approved/rejected (concurrent admin)
 **When** I try to approve/reject
-**Then** I see error: "Request bereits bearbeitet"
+**Then** I see error: "Request already processed"
 **And** detail view refreshes showing current state
 
 **Prerequisites:** Story 2.10, Story 1.4 (Aggregate)
@@ -1638,7 +1638,7 @@ So that I can organize VMs by team or purpose.
 
 **Given** project name already exists
 **When** I submit
-**Then** validation error: "Projektname bereits vergeben"
+**Then** validation error: "Project name already taken"
 
 **Prerequisites:** Story 4.1, Story 2.1 (Auth)
 
@@ -1660,17 +1660,17 @@ So that I can update information as needs change.
 **Acceptance Criteria:**
 
 **Given** I view a project as admin
-**When** I click "Bearbeiten"
+**When** I click "Edit"
 **Then** I see edit form with current values pre-filled
 
 **And** I can update: Name, Description, Quota limits
 **And** on save, `UpdateProjectCommand` is dispatched
 **And** `ProjectUpdated` event includes changed fields
-**And** success toast: "Projekt aktualisiert"
+**And** success toast: "Project updated"
 
 **Given** I change the project name to an existing name
 **When** I save
-**Then** validation error: "Projektname bereits vergeben"
+**Then** validation error: "Project name already taken"
 
 **Prerequisites:** Story 4.3
 

@@ -126,9 +126,9 @@ Success for DVMM is NOT generic metrics. It's these specific moments:
 | **Onboarding Time** | 6+ months | <1 week | Team can scale |
 | **VM Provisioning (E2E)** | 3-5 days | <30 minutes | User satisfaction |
 | **ISO 27001 Status** | Blocked | Audit-ready | Unlock enterprise customers |
-| **First Paying Customer** | N/A | Mittelständler with VMware pain | Market validation |
+| **First Paying Customer** | N/A | Mid-market company with VMware pain | Market validation |
 
-**First Customer Profile:** German Mittelstand company (500-5000 employees) actively seeking VMware alternatives due to Broadcom pricing. This is our beachhead market.
+**First Customer Profile:** German mid-market company (500-5000 employees) actively seeking VMware alternatives due to Broadcom pricing. This is our beachhead market.
 
 ### Controllable vs. Dependent Metrics
 

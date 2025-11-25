@@ -467,9 +467,9 @@ And Konsist architecture rules pass
 
 ### Context
 
-Die ursprüngliche Architektur war hart an Keycloak gebunden. First Principles Analyse zeigte:
-1. Nicht alle Produkte nutzen Keycloak (Azure AD, Okta in anderen Unternehmen)
-2. Ein monolithischer Starter zwingt Produkte, alle Module zu laden
+The original architecture was tightly coupled to Keycloak. First Principles Analysis showed:
+1. Not all products use Keycloak (Azure AD, Okta in other enterprises)
+2. A monolithic starter forces products to load all modules
 
 ### Decision
 
@@ -561,19 +561,19 @@ class KeycloakIdentityProvider(
             ?.toSet() ?: emptySet()
     }
 
-    // ... weitere Implementierungen
+    // ... further implementations
 }
 ```
 
 **3. Modular Starters**
 
-Statt einem Monolith können Produkte gezielt wählen:
+Instead of a monolith, products can selectively choose:
 
 ```kotlin
-// Minimales Produkt (nur Core + Observability)
+// Minimal product (Core + Observability only)
 implementation("com.eaf:eaf-starter-core")
 
-// DVMM (Full Stack mit Keycloak)
+// DVMM (Full Stack with Keycloak)
 implementation("com.eaf:eaf-starter-core")
 implementation("com.eaf:eaf-starter-cqrs")
 implementation("com.eaf:eaf-starter-eventsourcing")
@@ -581,26 +581,26 @@ implementation("com.eaf:eaf-starter-tenant")
 implementation("com.eaf:eaf-starter-auth")
 implementation("com.eaf:eaf-auth-keycloak")
 
-// Zukünftiges Produkt mit Azure AD
+// Future product with Azure AD
 implementation("com.eaf:eaf-starter-auth")
-implementation("com.eaf:eaf-auth-azure-ad")  // Später implementiert
+implementation("com.eaf:eaf-auth-azure-ad")  // To be implemented later
 ```
 
 ### Consequences
 
 **Positive:**
-- Produkte können IdP wechseln ohne EAF-Änderungen
-- Kleinere Deployment-Artefakte durch à-la-carte Starters
-- Testbar mit Mock-IdentityProvider
-- Zukunftssicher für Multi-Cloud-Szenarien
+- Products can switch IdP without EAF changes
+- Smaller deployment artifacts through à-la-carte starters
+- Testable with Mock-IdentityProvider
+- Future-proof for multi-cloud scenarios
 
 **Negative:**
-- Mehr Module zu verwalten
-- Abstraktion muss alle IdP-Features abdecken
+- More modules to manage
+- Abstraction must cover all IdP features
 
 **Mitigation:**
-- `customClaims` Map für IdP-spezifische Erweiterungen
-- Regelmäßige Reviews bei neuen IdP-Anforderungen
+- `customClaims` map for IdP-specific extensions
+- Regular reviews for new IdP requirements
 
 ---
 
@@ -612,26 +612,26 @@ implementation("com.eaf:eaf-auth-azure-ad")  // Später implementiert
 
 ### Overview
 
-| # | Bereich | Entscheidung |
-|---|---------|--------------|
+| # | Area | Decision |
+|---|------|----------|
 | 1 | Reactive Model | WebFlux + Kotlin Coroutines |
 | 2 | Event Store | Single Table + Outbox Pattern |
 | 3 | Projection Strategy | Async + Read-Your-Own-Writes |
 | 4 | Multi-Tenant Data | PostgreSQL RLS |
 | 5 | API Versioning | URL Path (`/api/v1/`) |
-| 6 | Error Handling | Eigener Result Type in eaf-core |
-| 7 | Read Projections | jOOQ für Type-Safe Queries |
+| 6 | Error Handling | Custom Result Type in eaf-core |
+| 7 | Read Projections | jOOQ for Type-Safe Queries |
 
 ---
 
 ### Decision 1: WebFlux + Kotlin Coroutines
 
-**Context:** Wahl zwischen blocking (Web MVC) und reactive (WebFlux) Stack.
+**Context:** Choice between blocking (Web MVC) and reactive (WebFlux) stack.
 
-**Decision:** WebFlux mit Kotlin Coroutines statt Reactor Mono/Flux.
+**Decision:** WebFlux with Kotlin Coroutines instead of Reactor Mono/Flux.
 
 ```kotlin
-// Suspend functions statt Mono/Flux
+// Suspend functions instead of Mono/Flux
 suspend fun getVmRequest(id: RequestId): VmRequest? {
     return repository.findById(id)
 }
@@ -646,17 +646,17 @@ suspend fun getRequest(@PathVariable id: UUID): ResponseEntity<VmRequestDto> {
 ```
 
 **Rationale:**
-- Bessere Performance bei I/O-bound Operations (VMware API, DB)
-- Kotlin Coroutines idiomatischer als Reactor
-- Virtual Threads (Spring Boot 3.5) als Fallback für blocking Libraries
+- Better performance for I/O-bound operations (VMware API, DB)
+- Kotlin Coroutines more idiomatic than Reactor
+- Virtual Threads (Spring Boot 3.5) as fallback for blocking libraries
 
 ---
 
 ### Decision 2: Single Table + Outbox Pattern
 
-**Context:** Event Store Schema Design für Event Sourcing.
+**Context:** Event Store Schema Design for Event Sourcing.
 
-**Decision:** Single `events` Table mit separater `outbox` Table für reliable Event Publishing.
+**Decision:** Single `events` table with separate `outbox` table for reliable Event Publishing.
 
 ```sql
 -- Event Store
@@ -673,7 +673,7 @@ CREATE TABLE events (
     UNIQUE(aggregate_id, version)
 );
 
--- Outbox für reliable Publishing
+-- Outbox for reliable Publishing
 CREATE TABLE outbox (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id UUID NOT NULL REFERENCES events(id),
@@ -682,75 +682,75 @@ CREATE TABLE outbox (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index für Outbox Polling
+-- Index for Outbox Polling
 CREATE INDEX idx_outbox_unpublished ON outbox(created_at) WHERE NOT published;
 ```
 
 **Rationale:**
-- Single Table einfacher zu verwalten als Table-per-Aggregate
-- Outbox garantiert At-Least-Once Delivery
-- RLS auf `tenant_id` für Multi-Tenancy
+- Single table easier to manage than table-per-aggregate
+- Outbox guarantees at-least-once delivery
+- RLS on `tenant_id` for multi-tenancy
 
 ---
 
 ### Decision 3: Async Projections + Read-Your-Own-Writes
 
-**Context:** Eventual Consistency zwischen Event Store und Read Models.
+**Context:** Eventual Consistency between Event Store and Read Models.
 
-**Decision:** Asynchrone Projections mit Read-Your-Own-Writes Pattern für UX.
+**Decision:** Asynchronous Projections with Read-Your-Own-Writes Pattern for UX.
 
 ```kotlin
-// Nach Command: Direkt aus Events lesen (nicht aus Projection)
+// After Command: Read directly from Events (not from Projection)
 class CreateVmRequestHandler(
     private val eventStore: EventStore,
     private val projectionUpdater: ProjectionUpdater
 ) {
     suspend fun handle(command: CreateVmRequestCommand): VmRequestCreatedResponse {
-        // 1. Events erzeugen und speichern
+        // 1. Create and persist events
         val events = VmRequestAggregate.create(command)
         eventStore.append(command.aggregateId, events)
 
-        // 2. Async Projection Update triggern (fire-and-forget)
+        // 2. Trigger Async Projection Update (fire-and-forget)
         projectionUpdater.scheduleUpdate(command.aggregateId)
 
-        // 3. Response direkt aus Events bauen (Read-Your-Own-Writes)
+        // 3. Build response directly from Events (Read-Your-Own-Writes)
         return VmRequestCreatedResponse.fromEvents(events)
     }
 }
 ```
 
 **Rationale:**
-- User sieht eigene Änderungen sofort
-- Projections können asynchron aufholen
-- Keine Latenz durch synchrone Projection Updates
+- User sees own changes immediately
+- Projections can catch up asynchronously
+- No latency from synchronous projection updates
 
 ---
 
 ### Decision 4: PostgreSQL Row-Level Security (RLS)
 
-**Context:** Multi-Tenant Datenisolation.
+**Context:** Multi-Tenant Data Isolation.
 
-**Decision:** RLS Policies auf allen tenant-bezogenen Tabellen.
+**Decision:** RLS Policies on all tenant-related tables.
 
 ```sql
--- RLS aktivieren
+-- Enable RLS
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vm_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vms ENABLE ROW LEVEL SECURITY;
 
--- Policy: Nur eigene Tenant-Daten sichtbar
+-- Policy: Only own tenant data visible
 CREATE POLICY tenant_isolation_events ON events
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
 CREATE POLICY tenant_isolation_vm_requests ON vm_requests
     USING (tenant_id = current_setting('app.tenant_id')::UUID);
 
--- Tenant-Context setzen (in eaf-tenant Filter)
+-- Set Tenant-Context (in eaf-tenant Filter)
 SET LOCAL app.tenant_id = 'uuid-here';
 ```
 
 ```kotlin
-// eaf-tenant: Automatisches Setzen des Tenant-Context
+// eaf-tenant: Automatic Tenant-Context setting
 class TenantContextFilter : WebFilter {
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
         val tenantId = exchange.extractTenantId()
@@ -762,8 +762,8 @@ class TenantContextFilter : WebFilter {
 
 **Rationale:**
 - Database-Level Enforcement (fail-closed)
-- Kein Vergessen von WHERE-Clauses möglich
-- Audit-freundlich (Compliance)
+- No possibility of forgetting WHERE clauses
+- Audit-friendly (Compliance)
 
 ---
 
@@ -793,17 +793,17 @@ openapi/
 ```
 
 **Rationale:**
-- Sichtbar in DevTools/Logs
-- Klare OpenAPI-Spec pro Version
-- Einfaches Routing
+- Visible in DevTools/Logs
+- Clear OpenAPI-Spec per version
+- Simple routing
 
 ---
 
-### Decision 6: Result Type für Error Handling
+### Decision 6: Result Type for Error Handling
 
-**Context:** Fehlerbehandlung in Domain/Application Layer.
+**Context:** Error handling in Domain/Application Layer.
 
-**Decision:** Eigener `Result<T, E>` Type in `eaf-core` (keine externe Library).
+**Decision:** Custom `Result<T, E>` type in `eaf-core` (no external library).
 
 ```kotlin
 // eaf-core/src/main/kotlin/com/eaf/core/Result.kt
@@ -841,7 +841,7 @@ fun <E> E.failure(): Result<Nothing, E> = Result.Failure(this)
 ```
 
 ```kotlin
-// Nutzung in Domain
+// Usage in Domain
 sealed class QuotaError {
     data class Exceeded(val current: Int, val max: Int) : QuotaError()
     data class NotConfigured(val tenantId: TenantId) : QuotaError()
@@ -856,17 +856,17 @@ fun validateQuota(request: VmRequest, quota: Quota): Result<Unit, QuotaError> {
 ```
 
 **Rationale:**
-- Keine externe Dependency (Arrow ist Overkill)
-- Explizite Fehlerbehandlung im Type System
-- Kotlin-idiomatisch
+- No external dependency (Arrow is overkill)
+- Explicit error handling in the type system
+- Kotlin-idiomatic
 
 ---
 
-### Decision 7: jOOQ für Read Projections
+### Decision 7: jOOQ for Read Projections
 
-**Context:** Query-Technologie für CQRS Read Side.
+**Context:** Query technology for CQRS Read Side.
 
-**Decision:** jOOQ für type-safe Projection Queries, R2DBC für Write Side.
+**Decision:** jOOQ for type-safe Projection Queries, R2DBC for Write Side.
 
 ```
 Write Side (Commands):  R2DBC + Coroutines → Event Store
@@ -874,7 +874,7 @@ Read Side (Queries):    jOOQ + Virtual Threads → Projections
 ```
 
 ```kotlin
-// Projection Repository mit jOOQ
+// Projection Repository with jOOQ
 class VmRequestProjectionRepository(private val dsl: DSLContext) {
 
     fun findByTenantWithStats(tenantId: TenantId): List<VmRequestSummary> {
@@ -912,10 +912,10 @@ class VmRequestProjectionRepository(private val dsl: DSLContext) {
 ```
 
 **Rationale:**
-- Type-safe SQL mit Compile-Time Checks
-- Ideal für komplexe JOINs und Aggregationen in Projections
-- Code-Generierung aus DB-Schema
-- Virtual Threads (Spring Boot 3.5) für blocking jOOQ Calls
+- Type-safe SQL with compile-time checks
+- Ideal for complex JOINs and aggregations in Projections
+- Code generation from DB schema
+- Virtual Threads (Spring Boot 3.5) for blocking jOOQ calls
 
 ---
 
@@ -964,18 +964,18 @@ See **ADR-001: EAF Framework-First Architecture** above for the complete monorep
 
 ### Core Technologies
 
-| Kategorie | Technologie | Version | Begründung |
-|-----------|-------------|---------|------------|
-| **Language** | Kotlin | 2.2+ | K2 Compiler, Null-Safety, Coroutines, DSL-Fähigkeiten |
+| Category | Technology | Version | Rationale |
+|----------|------------|---------|-----------|
+| **Language** | Kotlin | 2.2+ | K2 Compiler, Null-Safety, Coroutines, DSL capabilities |
 | **Backend Framework** | Spring Boot | 3.5+ | Kotlin 2.2 Support, Virtual Threads, WebFlux |
 | **Build System** | Gradle Kotlin DSL | 8.10+ | Multi-Module, Version Catalog, Type-Safe |
-| **Database** | PostgreSQL | 16+ | RLS für Multi-Tenancy, JSONB für Events |
-| **Event Store** | PostgreSQL Custom Schema | - | Keine externe Dependency, RLS-kompatibel |
-| **API Style** | REST + OpenAPI | 3.1 | Standard, Code-Generierung |
-| **Auth** | Keycloak | 26+ | OIDC, Multi-Realm für Tenants |
+| **Database** | PostgreSQL | 16+ | RLS for Multi-Tenancy, JSONB for Events |
+| **Event Store** | PostgreSQL Custom Schema | - | No external dependency, RLS-compatible |
+| **API Style** | REST + OpenAPI | 3.1 | Standard, Code Generation |
+| **Auth** | Keycloak | 26+ | OIDC, Multi-Realm for Tenants |
 | **Frontend** | React + TypeScript | 19+ | Server Components, shadcn-admin-kit |
-| **Testing** | JUnit + Testcontainers | 6+ / 1.20+ | Kotlin-Kompatibilität, Container-basiert |
-| **Architecture Tests** | Konsist | 0.16+ | Kotlin-native Architektur-Enforcement |
+| **Testing** | JUnit + Testcontainers | 6+ / 1.20+ | Kotlin compatibility, Container-based |
+| **Architecture Tests** | Konsist | 0.16+ | Kotlin-native Architecture Enforcement |
 
 ### Version Catalog
 
@@ -1329,7 +1329,7 @@ migrations/
 
 ## API Contracts
 
-### Endpoint-Übersicht
+### Endpoint Overview
 
 | Resource | Method | Endpoint | Description |
 |----------|--------|----------|-------------|
@@ -1527,16 +1527,16 @@ data class FieldError(
 )
 ```
 
-| Type | Status | Beschreibung |
-|------|--------|--------------|
-| `/errors/validation` | 400 | Request Validation fehlgeschlagen |
-| `/errors/quota-exceeded` | 400 | Quota überschritten |
-| `/errors/invalid-state` | 409 | Ungültiger Status-Übergang |
-| `/errors/not-found` | 404 | Resource nicht gefunden |
-| `/errors/forbidden` | 403 | Keine Berechtigung |
-| `/errors/conflict` | 409 | Optimistic Locking Konflikt |
-| `/errors/rate-limited` | 429 | Rate Limit überschritten |
-| `/errors/vmware-unavailable` | 503 | VMware API nicht erreichbar |
+| Type | Status | Description |
+|------|--------|-------------|
+| `/errors/validation` | 400 | Request validation failed |
+| `/errors/quota-exceeded` | 400 | Quota exceeded |
+| `/errors/invalid-state` | 409 | Invalid state transition |
+| `/errors/not-found` | 404 | Resource not found |
+| `/errors/forbidden` | 403 | No permission |
+| `/errors/conflict` | 409 | Optimistic locking conflict |
+| `/errors/rate-limited` | 429 | Rate limit exceeded |
+| `/errors/vmware-unavailable` | 503 | VMware API unavailable |
 
 **Rate Limit Response Example:**
 
@@ -1812,7 +1812,7 @@ interface CryptoShredder {
 }
 
 // UI Fallback when data is shredded
-val displayName = cryptoShredder.decrypt(envelope) ?: "[Daten gelöscht]"
+val displayName = cryptoShredder.decrypt(envelope) ?: "[Data deleted]"
 ```
 
 #### Audit Retention (7 Years)
@@ -1830,7 +1830,7 @@ CREATE TABLE eaf_audit.audit_log_2025 PARTITION OF eaf_audit.audit_log
 
 ### Mandatory Security Tests
 
-Diese Tests MÜSSEN in CI bestehen:
+These tests MUST pass in CI:
 
 ```kotlin
 // 1. Cross-Tenant Isolation
@@ -1865,7 +1865,56 @@ fun `direct SQL cannot bypass RLS`() {
 
 ## Deployment Architecture
 
-### Container Architecture
+### Deployment Overview Diagram
+
+```mermaid
+C4Context
+    title DVMM System Deployment Architecture
+
+    Person(user, "End User", "Requests VMs via browser")
+    Person(admin, "IT Admin", "Approves requests")
+
+    System_Boundary(k8s, "Kubernetes Cluster") {
+        System_Boundary(dvmm_ns, "Namespace: dvmm") {
+            Container(ingress, "Ingress", "Traefik/Nginx", "TLS termination, routing")
+            Container(api, "dvmm-api", "Spring Boot 3.5", "REST API, WebFlux")
+            Container(web, "dvmm-web", "React/Nginx", "SPA Frontend")
+            Container(worker, "projection-worker", "Spring Boot", "Async projections")
+            Container(poller, "outbox-poller", "Spring Boot", "Event publishing")
+        }
+
+        System_Boundary(infra_ns, "Namespace: infrastructure") {
+            ContainerDb(postgres, "PostgreSQL 16", "Database", "Event Store + Read Models + RLS")
+            Container(keycloak, "Keycloak 26", "IdP", "OIDC Authentication")
+            Container(redis, "Redis 7", "Cache", "Session + Rate Limiting")
+        }
+
+        System_Boundary(mon_ns, "Namespace: monitoring") {
+            Container(prometheus, "Prometheus", "Metrics", "Scraping & Alerting")
+            Container(grafana, "Grafana", "Dashboards", "Visualization")
+            Container(loki, "Loki", "Logs", "Log aggregation")
+        }
+    }
+
+    System_Ext(vmware, "VMware vSphere", "VM provisioning API")
+    System_Ext(smtp, "SMTP Server", "Email notifications")
+
+    Rel(user, ingress, "HTTPS", "443")
+    Rel(admin, ingress, "HTTPS", "443")
+    Rel(ingress, web, "HTTP", "80")
+    Rel(ingress, api, "HTTP", "8080")
+    Rel(web, api, "REST API", "8080")
+    Rel(api, postgres, "R2DBC", "5432")
+    Rel(api, keycloak, "OIDC", "8080")
+    Rel(api, redis, "Redis", "6379")
+    Rel(worker, postgres, "JDBC", "5432")
+    Rel(poller, postgres, "JDBC", "5432")
+    Rel(api, vmware, "REST", "443")
+    Rel(api, smtp, "SMTP", "587")
+    Rel(prometheus, api, "Scrape", "8080/actuator")
+```
+
+### Container Architecture (ASCII Overview)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
