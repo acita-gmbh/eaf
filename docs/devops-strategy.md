@@ -60,7 +60,7 @@ This document defines the DevOps strategy for DVMM, covering CI/CD pipeline desi
 | Stage | Actions | Duration Target | Failure Action |
 |-------|---------|-----------------|----------------|
 | **Build** | Gradle build, compile | < 2 min | Block |
-| **Unit Tests** | JUnit 5 tests | < 5 min | Block |
+| **Unit Tests** | JUnit 6 tests | < 5 min | Block |
 | **Integration Tests** | Testcontainers | < 10 min | Block |
 | **Quality Gates** | JaCoCo, Pitest, Konsist | < 5 min | Block |
 | **Security Scan** | OWASP, Trivy | < 3 min | Block on Critical |

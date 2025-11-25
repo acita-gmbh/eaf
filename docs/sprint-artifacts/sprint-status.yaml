@@ -105,7 +105,7 @@ development_status:
   epic-1: backlog
 
   # Sprint 0 (Week 1) - Setup
-  1-1-project-scaffolding: backlog           # Sprint 0
+  1-1-project-scaffolding: review              # Sprint 0 - Ready for human review
   1-2-eaf-core-module: backlog               # Sprint 0
   1-9-testcontainers-setup: backlog          # Sprint 0 (moved up for Tests First)
 

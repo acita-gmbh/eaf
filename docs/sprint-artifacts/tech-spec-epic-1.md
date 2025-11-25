@@ -86,8 +86,8 @@ eaf-monorepo/
 | **Framework** | Spring Boot | 3.5+ | WebFlux for reactive |
 | **Build** | Gradle | 8.x | Version Catalogs |
 | **Database** | PostgreSQL | 16 | RLS, JSONB |
-| **ORM (Read)** | jOOQ | 3.19+ | Type-safe queries |
-| **Testing** | JUnit 5 + Testcontainers | Latest | PostgreSQL, Keycloak |
+| **ORM (Read)** | jOOQ | 3.20+ | Type-safe queries |
+| **Testing** | JUnit 6 + Testcontainers | Latest | PostgreSQL, Keycloak |
 | **Coverage** | JaCoCo | Latest | ≥80% gate |
 | **Mutation** | Pitest | Latest | ≥70% gate |
 | **Architecture** | Konsist | Latest | Rule enforcement |
@@ -186,17 +186,22 @@ eaf-monorepo/
 ```toml
 # gradle/libs.versions.toml
 [versions]
-kotlin = "2.2.0"
-spring-boot = "3.5.0"
-jooq = "3.19.0"
-testcontainers = "1.19.0"
-konsist = "0.14.0"
+kotlin = "2.2.21"
+spring-boot = "3.5.8"
+jooq = "3.20.8"
+testcontainers = "2.0.2"      # Breaking: module prefix changed
+konsist = "0.17.3"
+junit = "6.0.1"               # Breaking: unified versioning
+coroutines = "1.10.2"
+mockk = "1.14.6"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 spring-boot-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+# Testcontainers 2.x: modules now prefixed with 'testcontainers-'
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
