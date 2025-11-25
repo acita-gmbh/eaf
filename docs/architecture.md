@@ -928,12 +928,12 @@ class VmRequestProjectionRepository(private val dsl: DSLContext) {
 | Build System | Gradle Kotlin DSL | 8.10+ | All | Multi-Module, Type-Safe |
 | Database | PostgreSQL | 16+ | FR-03-09, FR-10 | RLS, JSONB |
 | Event Store | PostgreSQL Custom | - | FR-03-09 | RLS-compatible |
-| Read Projections | jOOQ | 3.19+ | FR-03-09, FR-08 | Type-Safe Queries |
+| Read Projections | jOOQ | 3.20+ | FR-03-09, FR-08 | Type-Safe Queries |
 | API Style | REST + OpenAPI | 3.1 | All | Code Generation |
 | Auth Provider | Keycloak | 26+ | FR-01, FR-10 | OIDC, Multi-Realm |
 | Frontend | React + TypeScript | 19+ | FR-02-07 | shadcn-admin-kit |
 | Multi-Tenancy | PostgreSQL RLS | - | FR-10 | Database-enforced |
-| Architecture Tests | Konsist | 0.16+ | All | Kotlin-native |
+| Architecture Tests | Konsist | 0.17+ | All | Kotlin-native |
 | Reactive Model | WebFlux + Coroutines | - | All | Non-blocking I/O |
 | Error Handling | Custom Result Type | - | All | Type-safe errors |
 
@@ -974,8 +974,8 @@ See **ADR-001: EAF Framework-First Architecture** above for the complete monorep
 | **API Style** | REST + OpenAPI | 3.1 | Standard, Code Generation |
 | **Auth** | Keycloak | 26+ | OIDC, Multi-Realm for Tenants |
 | **Frontend** | React + TypeScript | 19+ | Server Components, shadcn-admin-kit |
-| **Testing** | JUnit + Testcontainers | 6+ / 1.20+ | Kotlin compatibility, Container-based |
-| **Architecture Tests** | Konsist | 0.16+ | Kotlin-native Architecture Enforcement |
+| **Testing** | JUnit + Testcontainers | 6+ / 2.0+ | Kotlin suspend support, Container-based |
+| **Architecture Tests** | Konsist | 0.17+ | Kotlin-native Architecture Enforcement |
 
 ### Version Catalog
 
@@ -986,11 +986,15 @@ kotlin = "2.2.21"
 spring-boot = "3.5.8"
 postgresql = "42.7.0"
 keycloak = "26.0.0"
-junit = "6.0.0"
-testcontainers = "1.20.0"
-konsist = "0.16.0"
+junit = "6.0.1"                    # Unified versioning (Platform/Jupiter/Vintage)
+testcontainers = "2.0.2"           # Breaking: module prefix changed to testcontainers-*
+konsist = "0.17.3"
 openapi-generator = "7.5.0"
-jooq = "3.19.0"
+jooq = "3.20.8"
+coroutines = "1.10.2"
+mockk = "1.14.6"
+reactor-kotlin = "1.2.3"
+jackson = "2.20.1"
 
 [libraries]
 spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
@@ -998,15 +1002,18 @@ spring-boot-starter-data-r2dbc = { module = "org.springframework.boot:spring-boo
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.9.0" }
-kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version = "1.9.0" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "coroutines" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 r2dbc-postgresql = { module = "org.postgresql:r2dbc-postgresql", version = "1.0.5" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.3.0" }
+# Testcontainers 2.x: modules now prefixed with 'testcontainers-'
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.5.0" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [bundles]
 spring-web = ["spring-boot-starter-webflux", "spring-boot-starter-actuator"]
@@ -1014,13 +1021,13 @@ spring-security = ["spring-boot-starter-security", "spring-boot-starter-oauth2-r
 spring-data = ["spring-boot-starter-data-r2dbc", "r2dbc-postgresql"]
 kotlin-coroutines = ["kotlinx-coroutines-core", "kotlinx-coroutines-reactor"]
 jooq-all = ["jooq", "jooq-kotlin"]
-testing = ["testcontainers-postgresql", "testcontainers-keycloak"]
+testing = ["testcontainers-postgresql", "testcontainers-keycloak", "junit-jupiter", "mockk"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.5" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }
 jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
 ```

@@ -485,7 +485,7 @@ So that I can build efficient read projections.
 **Prerequisites:** Story 1.3
 
 **Technical Notes:**
-- jOOQ 3.19+ with Kotlin extensions
+- jOOQ 3.20+ with Kotlin extensions
 - See Architecture Section: Query Pattern
 - Use DSLContext with R2DBC for reactive queries
 

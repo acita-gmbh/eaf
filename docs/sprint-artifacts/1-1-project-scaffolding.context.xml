@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="1-1-project-scaffolding" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Project Scaffolding</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-25</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-1-project-scaffolding.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a properly configured Kotlin/Spring Boot project structure</iWant>
+    <soThat>I can start implementing domain logic immediately</soThat>
+    <tasks>
+      <task id="1" ac="2">Create Monorepo Structure
+        <subtask id="1.1">Create root settings.gradle.kts with all module includes</subtask>
+        <subtask id="1.2">Create root build.gradle.kts with common configurations</subtask>
+        <subtask id="1.3">Create directory structure for all eaf/* modules</subtask>
+        <subtask id="1.4">Create directory structure for all dvmm/* modules</subtask>
+      </task>
+      <task id="2" ac="7,3">Set Up Version Catalog and Properties
+        <subtask id="2.1">Create gradle/libs.versions.toml</subtask>
+        <subtask id="2.2">Define versions: kotlin=2.2.21, spring-boot=3.5.8, jooq=3.20.8, testcontainers=2.0.2, konsist=0.17.3, mockk=1.14.6, junit=6.0.1</subtask>
+        <subtask id="2.3">Define libraries with version.ref references</subtask>
+        <subtask id="2.4">Define plugins section</subtask>
+        <subtask id="2.5">Create gradle.properties with JVM args and Kotlin settings</subtask>
+      </task>
+      <task id="3" ac="5">Create Build-Logic Conventions
+        <subtask id="3.1">Create build-logic/settings.gradle.kts</subtask>
+        <subtask id="3.2">Create build-logic/conventions/build.gradle.kts</subtask>
+        <subtask id="3.3">Implement eaf.kotlin-conventions.gradle.kts (K2 compiler, coroutines, explicit API)</subtask>
+        <subtask id="3.4">Implement eaf.spring-conventions.gradle.kts (WebFlux, reactor-kotlin)</subtask>
+        <subtask id="3.5">Implement eaf.test-conventions.gradle.kts (JUnit 6, Testcontainers, MockK)
+      </task>
+      <task id="4" ac="2,3,4">Configure EAF Modules
+        <subtask id="4.1">Configure eaf-core/build.gradle.kts (zero external deps except kotlin-stdlib)</subtask>
+        <subtask id="4.2">Configure eaf-eventsourcing/build.gradle.kts (depends on eaf-core)</subtask>
+        <subtask id="4.3">Configure eaf-tenant/build.gradle.kts (depends on eaf-core)</subtask>
+        <subtask id="4.4">Configure eaf-auth/build.gradle.kts (IdP-agnostic interfaces)</subtask>
+        <subtask id="4.5">Configure eaf-testing/build.gradle.kts (test utilities)</subtask>
+      </task>
+      <task id="5" ac="2">Configure DVMM Modules
+        <subtask id="5.1">Configure dvmm-domain/build.gradle.kts (depends on eaf-core)</subtask>
+        <subtask id="5.2">Configure dvmm-application/build.gradle.kts (depends on domain, eaf-eventsourcing)</subtask>
+        <subtask id="5.3">Configure dvmm-api/build.gradle.kts (depends on application, eaf-auth)</subtask>
+        <subtask id="5.4">Configure dvmm-infrastructure/build.gradle.kts (adapters, jOOQ)</subtask>
+        <subtask id="5.5">Configure dvmm-app/build.gradle.kts (main application, assembles all)</subtask>
+      </task>
+      <task id="6" ac="6">Configure Quality Gates
+        <subtask id="6.1">Configure JaCoCo in test-conventions (minimum 80% coverage)</subtask>
+        <subtask id="6.2">Configure Pitest for mutation testing (minimum 70% mutation score)</subtask>
+        <subtask id="6.3">Create initial Konsist test file ArchitectureTest.kt in dvmm-app</subtask>
+        <subtask id="6.4">Add rule: eaf modules must not depend on dvmm modules</subtask>
+      </task>
+      <task id="7" ac="1">Verify Build
+        <subtask id="7.1">Run ./gradlew build and verify success</subtask>
+        <subtask id="7.2">Run ./gradlew test and verify test framework works</subtask>
+        <subtask id="7.3">Run ./gradlew jacocoTestReport and verify report generation</subtask>
+        <subtask id="7.4">Verify all modules compile without warnings</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1" title="Build Success">
+      <given>I clone the repository</given>
+      <when>I run ./gradlew build</when>
+      <then>the build succeeds with zero errors and all modules compile successfully</then>
+    </criterion>
+    <criterion id="AC-2" title="Module Structure">
+      <given>the project structure exists</given>
+      <when>I inspect the modules</when>
+      <then>modules exist: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing, dvmm-domain, dvmm-application, dvmm-api, dvmm-infrastructure, dvmm-app</then>
+    </criterion>
+    <criterion id="AC-3" title="Kotlin Configuration">
+      <given>the project is configured</given>
+      <when>I check Kotlin settings</when>
+      <then>Kotlin 2.2+ with K2 compiler is enabled and coroutines with reactor-kotlin-extensions are configured</then>
+    </criterion>
+    <criterion id="AC-4" title="Spring Boot Configuration">
+      <given>the project is configured</given>
+      <when>I check Spring Boot settings</when>
+      <then>Spring Boot 3.5+ with WebFlux is configured and reactive dependencies are set up</then>
+    </criterion>
+    <criterion id="AC-5" title="Build Conventions">
+      <given>the build-logic module exists</given>
+      <when>I inspect conventions</when>
+      <then>eaf.kotlin-conventions.gradle.kts, eaf.spring-conventions.gradle.kts, eaf.test-conventions.gradle.kts exist</then>
+    </criterion>
+    <criterion id="AC-6" title="Quality Tooling">
+      <given>quality gates are configured</given>
+      <when>I run quality checks</when>
+      <then>JaCoCo coverage, Pitest mutation testing, and Konsist architecture tests are configured</then>
+    </criterion>
+    <criterion id="AC-7" title="Version Catalog">
+      <given>dependencies are managed centrally</given>
+      <when>I check dependency management</when>
+      <then>gradle/libs.versions.toml defines all versions and modules reference catalog entries</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-001: EAF Framework-First Architecture">
+        Defines Framework-First Architecture with Hexagonal Architecture principles. Strict dependency direction: EAF ← DVMM (never reverse). Module isolation via Kotlin internal modifier + Konsist enforcement.
+      </doc>
+      <doc path="docs/architecture.md" title="DVMM Architecture" section="Monorepo Structure">
+        Complete directory structure for eaf-monorepo including build-logic conventions, eaf/* framework modules, and dvmm/* product modules.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Tech Spec" section="Story 1.1: Project Scaffolding">
+        Implementation checklist with key files to create, version catalog example, and Gherkin acceptance criteria for build verification.
+      </doc>
+      <doc path="docs/epics.md" title="DVMM Epic Breakdown" section="Story 1.1: Project Scaffolding">
+        Story definition with acceptance criteria, prerequisites (none), and technical notes for ADR-001, version catalogs, and coroutine configuration.
+      </doc>
+      <doc path="docs/prd.md" title="DVMM PRD" section="Implementation Quality Gates">
+        NFR targets: 80% test coverage (JaCoCo), 70% mutation score (Pitest), Konsist architecture tests enforced.
+      </doc>
+    </docs>
+    <code>
+      <!-- GREENFIELD: No existing code. All files to be created. -->
+      <note>This is a greenfield project. No existing Kotlin/Java code or Gradle configuration exists. All project structure will be created from scratch following the architecture specification.</note>
+    </code>
+    <dependencies>
+      <ecosystem name="gradle-kotlin">
+        <package name="kotlin" version="2.2.21" note="K2 compiler default"/>
+        <package name="spring-boot" version="3.5.8" note="WebFlux reactive stack"/>
+        <package name="kotlinx-coroutines" version="1.10.2"/>
+        <package name="reactor-kotlin-extensions" version="1.2.3"/>
+        <package name="jooq" version="3.20.8" note="Type-safe SQL"/>
+        <package name="testcontainers" version="2.0.2" note="Module prefix: testcontainers-*"/>
+        <package name="konsist" version="0.17.3" note="Architecture tests"/>
+        <package name="jackson" version="2.20.1" note="JSON processing"/>
+        <package name="mockk" version="1.14.6" note="Kotlin mocking"/>
+        <package name="junit" version="6.0.1" note="Unified versioning, Kotlin suspend support"/>
+      </ecosystem>
+      <tooling>
+        <tool name="JaCoCo" purpose="Code coverage reporting" target="80%"/>
+        <tool name="Pitest" purpose="Mutation testing" target="70%"/>
+        <tool name="Konsist" purpose="Architecture constraint enforcement"/>
+      </tooling>
+      <breaking-changes>
+        <change library="junit" version="6.0.1">
+          Unified versioning across Platform/Jupiter/Vintage. Native Kotlin suspend support.
+          Package structure unchanged, but junit-platform-runner removed.
+        </change>
+        <change library="testcontainers" version="2.0.2">
+          Module names: org.testcontainers:mysql → org.testcontainers:testcontainers-mysql.
+          Package relocated to org.testcontainers.&lt;module-name&gt;.
+        </change>
+      </breaking-changes>
+    </dependencies>
+  </artifacts>
+
+  <scope>
+    <in-scope>
+      <item>5 EAF modules: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing</item>
+      <item>5 DVMM modules: dvmm-domain, dvmm-application, dvmm-api, dvmm-infrastructure, dvmm-app</item>
+      <item>Build-logic with 3 convention plugins</item>
+      <item>Version catalog and quality tooling</item>
+    </in-scope>
+    <out-of-scope>
+      <item module="eaf-cqrs-core" deferred-to="Story 1.3+"/>
+      <item module="eaf-audit" deferred-to="Epic 2+"/>
+      <item module="eaf-observability" deferred-to="Epic 2+"/>
+      <item module="eaf-notifications" deferred-to="Epic 3+"/>
+      <item module="eaf-starters/*" deferred-to="Epic 2+"/>
+      <item module="eaf-auth-keycloak" deferred-to="Story 1.7"/>
+    </out-of-scope>
+  </scope>
+
+  <constraints>
+    <constraint type="architecture" source="docs/architecture.md#ADR-001">
+      Strict Dependency Direction: EAF modules MUST NOT depend on DVMM modules. Dependency flow: dvmm-* → eaf-*.
+    </constraint>
+    <constraint type="architecture" source="docs/architecture.md#ADR-001">
+      Hexagonal Boundaries: All external integrations via Ports and Adapters pattern. No direct framework dependencies in domain modules.
+    </constraint>
+    <constraint type="module" source="docs/architecture.md">
+      eaf-core: Zero external dependencies except kotlin-stdlib. This is the shared kernel.
+    </constraint>
+    <constraint type="module" source="docs/architecture.md">
+      Module isolation enforced via Kotlin internal modifier and Konsist architecture tests.
+    </constraint>
+    <constraint type="build" source="docs/sprint-artifacts/tech-spec-epic-1.md">
+      Gradle Version Catalogs: All dependencies MUST be defined in gradle/libs.versions.toml. No hardcoded versions in module build files.
+    </constraint>
+    <constraint type="build" source="docs/sprint-artifacts/tech-spec-epic-1.md">
+      Build-logic as composite build: Convention plugins in build-logic/ enable IDE support and reusable configuration.
+    </constraint>
+    <constraint type="kotlin" source="docs/architecture.md">
+      Kotlin 2.2.21: K2 Compiler is now the default, no special flag required.
+    </constraint>
+    <constraint type="kotlin" source="docs/architecture.md">
+      Explicit API Mode: Enforce in kotlin-conventions for public API clarity. All public declarations require explicit visibility.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <note>No existing interfaces. Story 1.1 creates the project scaffold. Interfaces will be defined in subsequent stories (1.2+).</note>
+    <planned-interfaces>
+      <interface name="Result&lt;T, E&gt;" story="1.2" module="eaf-core" description="Functional error handling sealed class"/>
+      <interface name="DomainError" story="1.2" module="eaf-core" description="Sealed class hierarchy for domain errors"/>
+      <interface name="EventStore" story="1.3" module="eaf-eventsourcing" description="Event persistence interface"/>
+      <interface name="AggregateRoot" story="1.4" module="eaf-eventsourcing" description="Base class for Event Sourced aggregates"/>
+      <interface name="TenantContext" story="1.5" module="eaf-tenant" description="Coroutine context element for tenant propagation"/>
+    </planned-interfaces>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing follows the pyramid pattern with JUnit 6, MockK for mocking, and Testcontainers for integration tests.
+      Quality gates: JaCoCo ≥80% line coverage, Pitest ≥70% mutation score.
+      Architecture tests via Konsist enforce module boundaries.
+      Test execution must complete within 15 minutes (NFR-MAINT-11).
+    </standards>
+    <locations>
+      <location pattern="**/src/test/kotlin/**/*Test.kt" type="unit"/>
+      <location pattern="**/src/test/kotlin/**/*IntegrationTest.kt" type="integration"/>
+      <location pattern="dvmm-app/src/test/kotlin/**/ArchitectureTest.kt" type="architecture"/>
+    </locations>
+    <ideas>
+      <idea ac="AC-1">BuildSuccessTest: Run ./gradlew build programmatically and assert exit code 0</idea>
+      <idea ac="AC-2">ModuleStructureTest: Verify all 10 modules exist via Gradle project inspection</idea>
+      <idea ac="AC-3">KotlinConfigTest: Assert Kotlin version ≥2.2.21 (K2 compiler is now default)</idea>
+      <idea ac="AC-4">SpringBootConfigTest: Verify WebFlux starter present and reactive dependencies (reactor-kotlin-extensions) configured</idea>
+      <idea ac="AC-5">ConventionsExistTest: Verify all three convention files exist in build-logic</idea>
+      <idea ac="AC-6">ArchitectureTest (Konsist): Assert eaf modules have no dependencies on dvmm modules</idea>
+      <idea ac="AC-7">VersionCatalogTest: Parse libs.versions.toml and verify no hardcoded versions in build.gradle.kts files</idea>
+    </ideas>
+  </tests>
+</story-context>
