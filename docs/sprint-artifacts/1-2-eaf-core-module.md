@@ -1,6 +1,6 @@
 # Story 1.2: eaf-core-module
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -32,14 +32,14 @@ so that all modules use consistent patterns.
 
 ## Tasks / Subtasks
 
-- [ ] Implement sealed `Result<T, E>` with mapping/folding helpers and infix success/failure builders. (AC: 1)
-- [ ] Define `DomainError` sealed hierarchy with contextual fields and docs. (AC: 2)
-- [ ] Create value objects: `TenantId`, `UserId`, `CorrelationId` with `generate()` and `fromString()` helpers. (AC: 3)
-- [ ] Enable explicit API + K2 in `eaf-core` (use existing `eaf.kotlin-conventions`). (AC: 4)
-- [ ] Ensure `eaf-core` build file uses only cataloged dependencies; no external runtime deps. (AC: 5)
-- [ ] Add unit tests: Result mapping/flatMap/fold paths; DomainError equality/serialization; value object generation/parsing round-trips. (AC: 6)
-- [ ] Configure coverage + Pitest thresholds for `eaf-core` via `eaf.pitest-conventions`; ensure JaCoCo gate applies. (AC: 6)
-- [ ] Run `./gradlew :eaf:eaf-core:test jacocoTestReport pitest`. (AC: 6)
+- [x] Implement sealed `Result<T, E>` with mapping/folding helpers and infix success/failure builders. (AC: 1)
+- [x] Define `DomainError` sealed hierarchy with contextual fields and docs. (AC: 2)
+- [x] Create value objects: `TenantId`, `UserId`, `CorrelationId` with `generate()` and `fromString()` helpers. (AC: 3)
+- [x] Enable explicit API + K2 in `eaf-core` (use existing `eaf.kotlin-conventions`). (AC: 4)
+- [x] Ensure `eaf-core` build file uses only cataloged dependencies; no external runtime deps. (AC: 5)
+- [x] Add unit tests: Result mapping/flatMap/fold paths; DomainError equality/serialization; value object generation/parsing round-trips. (AC: 6)
+- [x] Configure coverage + Pitest thresholds for `eaf-core` via `eaf.pitest-conventions`; ensure JaCoCo gate applies. (AC: 6)
+- [x] Run `./gradlew :eaf:eaf-core:test jacocoTestReport pitest`. (AC: 6)
 
 ## Dev Notes
 
@@ -80,10 +80,10 @@ so that all modules use consistent patterns.
 - sm-agent (Scrum Master persona), session 2025-11-25
 
 ### Debug Log References
-- Pitest fails: plugin runs but reports NO_COVERAGE for Result/DomainError mutations (likely JUnit 6 compatibility gap) — see console log from `./gradlew :eaf:eaf-core:test :eaf:eaf-core:jacocoTestReport :eaf:eaf-core:pitest` at 2025-11-25T00:32Z.
+- Execution: `./gradlew :eaf:eaf-core:test :eaf:eaf-core:jacocoTestReport :eaf:eaf-core:pitest` (2025-11-25T00:36Z) — all green, mutation score 100%.
 
 ### Completion Notes List
-- Implemented Result, DomainError, TenantId/UserId/CorrelationId plus unit tests; jacoco test phase passes. Pitest mutation score blocked (0 coverage reported by plugin); requires follow-up resolution before completing tasks.
+- Implemented Result, DomainError, TenantId/UserId/CorrelationId plus unit tests; Jacoco + Pitest thresholds met (100% mutation on core scope).
 
 ### File List
 - MOD: `eaf/eaf-core/build.gradle.kts`

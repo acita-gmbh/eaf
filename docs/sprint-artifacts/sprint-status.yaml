@@ -100,7 +100,7 @@ development_status:
 
   # Sprint 0 (Week 1) - Setup
   1-1-project-scaffolding: done                # Sprint 0 - Merged to main (2f4a495)
-  1-2-eaf-core-module: in-progress            # Sprint 0
+  1-2-eaf-core-module: review                 # Sprint 0
   1-9-testcontainers-setup: backlog          # Sprint 0 (moved up for Tests First)
 
   # Sprint 1 (Week 2-3) - Event Sourcing
