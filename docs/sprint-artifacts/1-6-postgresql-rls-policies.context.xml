@@ -1,0 +1,285 @@
+<story-context id="1-6-postgresql-rls-policies" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>PostgreSQL RLS Policies</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-6-postgresql-rls-policies.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>Row-Level Security enforced at database level</iWant>
+    <soThat>tenant isolation is guaranteed even if application code has bugs</soThat>
+    <tasks>
+      <task id="1" acs="1,3,5,6">
+        <name>Create Flyway migration V002__enable_rls.sql</name>
+        <subtasks>
+          <subtask>Enable RLS on eaf_events.events table</subtask>
+          <subtask>Enable RLS on eaf_events.snapshots table</subtask>
+          <subtask>Create RLS policy tenant_isolation_events using current_setting('app.tenant_id', true)::uuid</subtask>
+          <subtask>Create RLS policy tenant_isolation_snapshots using same pattern</subtask>
+          <subtask>Apply FORCE ROW LEVEL SECURITY to prevent bypass</subtask>
+        </subtasks>
+      </task>
+      <task id="2" acs="2,4">
+        <name>Implement RlsConnectionCustomizer in eaf-tenant</name>
+        <subtasks>
+          <subtask>Create RlsConnectionCustomizer component</subtask>
+          <subtask>Integrate with TenantContext.current() to get tenant from coroutine context</subtask>
+          <subtask>Execute SET LOCAL app.tenant_id on connection checkout</subtask>
+          <subtask>Handle suspend context properly (coroutine-safe)</subtask>
+        </subtasks>
+      </task>
+      <task id="3" acs="4">
+        <name>Configure HikariCP/R2DBC pool integration</name>
+        <subtasks>
+          <subtask>Add connection customization hook to datasource configuration</subtask>
+          <subtask>Ensure tenant context is set before any query execution</subtask>
+          <subtask>Document connection lifecycle and tenant injection point</subtask>
+        </subtasks>
+      </task>
+      <task id="4" acs="8">
+        <name>Verify RlsEnforcingDataSource in eaf-testing (ALREADY EXISTS)</name>
+        <subtasks>
+          <subtask>Review existing implementation at eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt</subtask>
+          <subtask>Verify IllegalStateException("NO TENANT CONTEXT IN TEST!") behavior</subtask>
+          <subtask>Verify set_config('app.tenant_id', ?, false) is called</subtask>
+          <subtask>Verify SET ROLE eaf_app is executed for RLS enforcement</subtask>
+        </subtasks>
+      </task>
+      <task id="5" acs="8">
+        <name>Verify TenantTestContext in eaf-testing (ALREADY EXISTS)</name>
+        <subtasks>
+          <subtask>Review existing implementation at eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt</subtask>
+          <subtask>Verify ThreadLocal-based storage with set/current/clear methods</subtask>
+        </subtasks>
+      </task>
+      <task id="6" acs="1,7,8">
+        <name>Write integration tests for RLS</name>
+        <subtasks>
+          <subtask>Test: Tenant A event not visible to Tenant B (cross-tenant isolation)</subtask>
+          <subtask>Test: Query without tenant context returns zero rows (fail-closed)</subtask>
+          <subtask>Test: RlsEnforcingDataSource throws when no test context (exists)</subtask>
+          <subtask>Test: Connection pool properly injects tenant context</subtask>
+        </subtasks>
+      </task>
+      <task id="7" acs="meta">
+        <name>Ensure no Spring dependencies in core eaf-tenant classes</name>
+        <subtasks>
+          <subtask>Keep RlsConnectionCustomizer Spring-free if possible</subtask>
+          <subtask>Follow patterns from Story 1.5 (Spring in adapter layer only)</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" testable="true">
+      <title>RLS enabled on tenant-scoped tables</title>
+      <given>RLS is enabled via Flyway migration V002</given>
+      <when>a query runs without proper tenant context</when>
+      <then>zero rows are returned (fail-closed, NOT an exception)</then>
+    </criterion>
+    <criterion id="2" testable="true">
+      <title>Session variable setting</title>
+      <description>app.tenant_id PostgreSQL session variable is set per connection before any tenant-scoped query</description>
+    </criterion>
+    <criterion id="3" testable="true">
+      <title>RLS policy definition</title>
+      <description>Policy uses: tenant_id = current_setting('app.tenant_id', true)::uuid. Note: 'true' parameter makes current_setting return NULL instead of error if not set.</description>
+    </criterion>
+    <criterion id="4" testable="true">
+      <title>Connection pool integration</title>
+      <description>HikariCP (or R2DBC pool) sets tenant context on connection checkout. RlsConnectionCustomizer or equivalent mechanism injects tenant from coroutine context.</description>
+    </criterion>
+    <criterion id="5" testable="true">
+      <title>Flyway migration V002</title>
+      <description>Creates RLS policies on eaf_events.events and eaf_events.snapshots tables. Forces RLS for application role (no bypass).</description>
+    </criterion>
+    <criterion id="6" testable="true">
+      <title>Superuser bypass disabled</title>
+      <description>Application role eaf_app cannot bypass RLS. ALTER TABLE ... FORCE ROW LEVEL SECURITY applied.</description>
+    </criterion>
+    <criterion id="7" testable="true" tc="TC-002">
+      <title>Cross-tenant data isolation</title>
+      <given>tenant "A" has created a VM request (or event) "req-A" and tenant "B" exists</given>
+      <when>tenant "B" queries all VM requests</when>
+      <then>the result set does NOT contain "req-A" and a direct SQL query as tenant "B" returns 0 rows for "req-A"</then>
+    </criterion>
+    <criterion id="8" testable="true" tc="TC-002">
+      <title>Test database connection enforcement</title>
+      <given>a test is running</given>
+      <when>the test attempts a database query without tenant context</when>
+      <then>the connection MUST throw IllegalStateException with message "NO TENANT CONTEXT IN TEST!"</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>DVMM Architecture</title>
+        <section>ADR-003 Decision 4: PostgreSQL Row-Level Security</section>
+        <snippet>RLS Policies on all tenant-related tables. Policy: tenant_id = current_setting('app.tenant_id')::UUID. Database-Level Enforcement (fail-closed). No possibility of forgetting WHERE clauses.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Foundation Technical Specification</title>
+        <section>Story 1.6: PostgreSQL RLS Policies</section>
+        <snippet>Create Flyway migration V002__enable_rls.sql. Configure HikariCP to set tenant context on checkout. Create RlsConnectionCustomizer. Implement fail-closed RLS policy. Disable superuser bypass for application role.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics and Stories</title>
+        <section>Story 1.6</section>
+        <snippet>TC-002: RLS prevents cross-tenant data access. Test database connection enforces tenant context (throws IllegalStateException if missing).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-5-tenant-context-module.md</path>
+        <title>Story 1.5 Tenant Context Module</title>
+        <section>Dev Agent Record</section>
+        <snippet>Previous story establishes TenantContextElement, TenantContext.current(), REACTOR_TENANT_KEY. Warning: Use SET LOCAL (not SET) for session variable - SET LOCAL scopes to transaction.</snippet>
+      </doc>
+      <doc>
+        <path>docs/security-architecture.md</path>
+        <title>Security Architecture</title>
+        <section>4. Multi-Tenant Isolation / 4.3 Row-Level Security (RLS)</section>
+        <snippet>Multi-Tenant Isolation via PostgreSQL RLS with fail-closed semantics. Database layer returns zero rows (fail-closed) when tenant context missing. NFR-SEC-4 requires tenant isolation via RLS. ISO 27001 A.9.4.1 maps to RLS tenant isolation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/test-design-system.md</path>
+        <title>Test Design System</title>
+        <section>6.2 TC-002: PostgreSQL RLS Test Isolation</section>
+        <snippet>TC-002 is High Risk (Score: 6). Tests may bypass RLS using superuser connection or missing SET app.current_tenant. Mitigation: RlsEnforcingDataSource wrapper, TenantTestContext for test tenant injection. Negative test: RLS prevents cross-tenant access.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt</path>
+        <kind>datasource-wrapper</kind>
+        <symbol>RlsEnforcingDataSource</symbol>
+        <lines>1-51</lines>
+        <reason>EXISTING: DataSource wrapper that enforces tenant context. Sets app.tenant_id via set_config(). Sets ROLE eaf_app. Throws IllegalStateException when no tenant context. THIS FILE ALREADY IMPLEMENTS AC8.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt</path>
+        <kind>test-utility</kind>
+        <symbol>TenantTestContext</symbol>
+        <lines>1-17</lines>
+        <reason>EXISTING: ThreadLocal-based tenant context holder for tests. Provides set/current/clear methods. THIS FILE ALREADY IMPLEMENTS AC8.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/RlsEnforcingDataSourceTest.kt</path>
+        <kind>test</kind>
+        <symbol>RlsEnforcingDataSourceTest</symbol>
+        <lines>1-81</lines>
+        <reason>EXISTING: Tests RlsEnforcingDataSource - verifies tenant context is set and IllegalStateException thrown when missing.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt</path>
+        <kind>service</kind>
+        <symbol>TenantContext</symbol>
+        <lines>1-28</lines>
+        <reason>EXISTING: Coroutine-based tenant context. Provides current()/currentOrNull() with Reactor context fallback. REUSE for RlsConnectionCustomizer.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextElement.kt</path>
+        <kind>domain</kind>
+        <symbol>TenantContextElement</symbol>
+        <reason>EXISTING: CoroutineContext.Element for tenant propagation. Integrate with connection customizer.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-eventsourcing/src/main/resources/db/migration/V001__create_event_store.sql</path>
+        <kind>migration</kind>
+        <symbol>V001__create_event_store</symbol>
+        <lines>1-92</lines>
+        <reason>EXISTING: Creates eaf_events schema with events and snapshots tables. Creates eaf_app role with NOLOGIN. V002 must build on this.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <kotlin version="2.2.21" />
+      <spring-boot version="3.5.8" />
+      <postgresql version="42.7.2" />
+      <flyway version="10.7.1" />
+      <testcontainers version="2.0.2" />
+      <coroutines version="1.10.2" />
+      <junit version="6.0.1" />
+      <mockk version="1.14.6" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="architecture">EAF modules MUST NOT import from de.acci.dvmm.* (Konsist enforced)</constraint>
+    <constraint source="architecture">dvmm-domain MUST NOT import from org.springframework.* (Konsist enforced)</constraint>
+    <constraint source="architecture">Fail-closed semantics: missing tenant context = zero rows returned (NOT exception at DB level)</constraint>
+    <constraint source="story-1.5">Use SET LOCAL (not SET) for session variable - SET LOCAL scopes to transaction, SET persists for connection lifetime</constraint>
+    <constraint source="tech-spec">Application role eaf_app exists (created in V001). Use SET ROLE eaf_app to enforce RLS in tests.</constraint>
+    <constraint source="testing">RLS tests MUST use Testcontainers PostgreSQL. >=80% coverage, >=70% mutation score.</constraint>
+    <constraint source="tc-002">TC-002 tests are mandatory CI gate. Cross-tenant isolation test is critical.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>TenantContext.current()</name>
+      <kind>suspend-function</kind>
+      <signature>suspend fun current(): TenantId</signature>
+      <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt</path>
+    </interface>
+    <interface>
+      <name>TenantContext.currentOrNull()</name>
+      <kind>suspend-function</kind>
+      <signature>suspend fun currentOrNull(): TenantId?</signature>
+      <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt</path>
+    </interface>
+    <interface>
+      <name>TenantTestContext.set()</name>
+      <kind>function</kind>
+      <signature>fun set(tenantId: TenantId)</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt</path>
+    </interface>
+    <interface>
+      <name>TenantTestContext.current()</name>
+      <kind>function</kind>
+      <signature>fun current(): TenantId?</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt</path>
+    </interface>
+    <interface>
+      <name>RlsEnforcingDataSource.getConnection()</name>
+      <kind>function</kind>
+      <signature>override fun getConnection(): Connection</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt</path>
+    </interface>
+    <interface>
+      <name>PostgreSQL RLS Session Variable</name>
+      <kind>sql-function</kind>
+      <signature>SET LOCAL app.tenant_id = 'uuid-here' OR SELECT set_config('app.tenant_id', 'uuid', false)</signature>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use JUnit 6 with Testcontainers PostgreSQL. All RLS tests MUST use actual PostgreSQL with RLS enabled.
+      Tests follow AAA pattern (Arrange-Act-Assert). Coverage gate: >=80% line coverage, >=70% mutation score (Pitest).
+      TC-002 tests are mandatory CI gate and must pass before merge. Use TenantTestContext.set() for tenant injection in tests.
+      Existing RlsEnforcingDataSourceTest demonstrates pattern for tenant context verification.
+    </standards>
+    <locations>
+      <location>eaf/eaf-tenant/src/test/kotlin/de/acci/eaf/tenant/</location>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/</location>
+      <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/</location>
+    </locations>
+    <ideas>
+      <idea acId="1,3,5">RlsFailClosedTest: Insert event with Tenant A, query without tenant context, verify zero rows returned (not error)</idea>
+      <idea acId="7">CrossTenantIsolationTest: Insert event with Tenant A, query as Tenant B, verify Tenant A event not visible</idea>
+      <idea acId="8">RlsEnforcingDataSourceTest (EXISTS): Verify IllegalStateException when no tenant context</idea>
+      <idea acId="2,4">ConnectionTenantContextTest: Verify app.tenant_id session variable is set after connection checkout</idea>
+      <idea acId="6">SuperuserBypassTest: Verify eaf_app role cannot bypass RLS even with FORCE ROW LEVEL SECURITY</idea>
+      <idea acId="5">FlywayMigrationTest: Verify V002 migration applies successfully and RLS policies are created</idea>
+    </ideas>
+  </tests>
+</story-context>

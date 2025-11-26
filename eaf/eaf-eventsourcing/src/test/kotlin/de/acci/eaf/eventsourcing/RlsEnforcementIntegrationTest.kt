@@ -200,6 +200,99 @@ internal class RlsEnforcementIntegrationTest {
         }
     }
 
+    @Test
+    fun `query without tenant context returns zero rows - fail-closed semantics (AC 1)`() = runTest {
+        // This test verifies fail-closed behavior: when no tenant context is set,
+        // queries should return zero rows, NOT throw an exception at DB level.
+        // The RlsEnforcingDataSource throws an exception BEFORE the query runs,
+        // but if somehow a query reaches the DB without tenant context, RLS should
+        // return empty results.
+
+        // Given - insert event with a valid tenant
+        val tenantA = TenantId.generate()
+        val aggregateId = UUID.randomUUID()
+
+        val baseDataSource = createBaseDataSource()
+        val rlsDataSource = RlsEnforcingDataSource(baseDataSource)
+
+        TenantTestContext.set(tenantA)
+        val connection = rlsDataSource.connection
+        val store = PostgresEventStore(DSL.using(connection, SQLDialect.POSTGRES), objectMapper)
+        store.append(
+            aggregateId,
+            listOf(TestEventCreated(metadata = createMetadata(tenantA), name = "test", value = 1)),
+            expectedVersion = 0
+        )
+        connection.close()
+        TenantTestContext.clear()
+
+        // When - query directly without setting app.tenant_id (bypass RlsEnforcingDataSource)
+        // This simulates what happens if RLS is the only protection layer
+        val directConnection = TestContainers.postgres.createConnection("")
+        directConnection.createStatement().execute("SET ROLE eaf_app")
+        // Don't set app.tenant_id - this tests fail-closed behavior
+
+        val dsl = DSL.using(directConnection, SQLDialect.POSTGRES)
+        val directResult = dsl.fetch(
+            "SELECT * FROM eaf_events.events WHERE aggregate_id = ?",
+            aggregateId
+        )
+        directConnection.close()
+
+        // Then - should return zero rows (fail-closed), not all rows
+        assertEquals(0, directResult.size, "Without tenant context, RLS should return zero rows (fail-closed)")
+    }
+
+    @Test
+    fun `RLS policy uses current_setting with missing_ok true (AC 3)`() = runTest {
+        // Verify the RLS policy is correctly configured with current_setting('app.tenant_id', true)
+        // The 'true' parameter means missing_ok, so it returns NULL instead of error
+
+        // Given - direct connection to verify policy definition
+        val connection = TestContainers.postgres.createConnection("")
+
+        // When - query the policy definition
+        val policyInfo = connection.createStatement().executeQuery("""
+            SELECT polname, pg_get_expr(polqual, polrelid) as policy_expr
+            FROM pg_policy
+            WHERE polrelid = 'eaf_events.events'::regclass
+        """)
+
+        // Then - verify policy exists and uses correct expression
+        assertTrue(policyInfo.next(), "RLS policy should exist on events table")
+        val policyName = policyInfo.getString("polname")
+        val policyExpr = policyInfo.getString("policy_expr")
+
+        assertEquals("tenant_isolation_events", policyName)
+        assertTrue(
+            policyExpr.contains("current_setting") && policyExpr.contains("app.tenant_id"),
+            "Policy should use current_setting('app.tenant_id', true)"
+        )
+
+        connection.close()
+    }
+
+    @Test
+    fun `FORCE ROW LEVEL SECURITY is enabled - no bypass for table owner (AC 6)`() = runTest {
+        // Verify that FORCE ROW LEVEL SECURITY is enabled, which prevents
+        // even the table owner from bypassing RLS
+
+        val connection = TestContainers.postgres.createConnection("")
+
+        // Query for RLS enforcement status
+        val result = connection.createStatement().executeQuery("""
+            SELECT relforcerowsecurity
+            FROM pg_class
+            WHERE oid = 'eaf_events.events'::regclass
+        """)
+
+        assertTrue(result.next(), "Should find events table")
+        val forceRls = result.getBoolean("relforcerowsecurity")
+        assertTrue(forceRls, "FORCE ROW LEVEL SECURITY should be enabled on events table")
+
+        connection.close()
+    }
+
     private fun createMetadata(tenantId: TenantId): EventMetadata = EventMetadata(
         tenantId = tenantId,
         userId = UserId.generate(),

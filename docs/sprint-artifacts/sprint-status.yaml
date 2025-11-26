@@ -109,7 +109,7 @@ development_status:
 
   # Sprint 2 (Week 4-5) - Multi-Tenancy
   1-5-tenant-context-module: done           # Sprint 2 (TC-001) - Code review APPROVED 2025-11-26
-  1-6-postgresql-rls-policies: backlog       # Sprint 2 (TC-002)
+  1-6-postgresql-rls-policies: review       # Sprint 2 (TC-002) - Ready for code review
 
   # Sprint 3 (Week 6-7) - Auth + Projections
   1-7-keycloak-integration: backlog          # Sprint 3
