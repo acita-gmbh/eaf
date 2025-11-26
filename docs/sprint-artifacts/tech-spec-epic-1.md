@@ -27,6 +27,23 @@ None directly (technical foundation exception) - but enables ALL subsequent user
 | **FRs Covered** | FR66, FR67, FR80 |
 | **Estimated Sprints** | Sprint 0 (1w) + Sprint 1-2 (2w each) |
 
+### 1.3.1 In-Scope
+
+| Metric | Value |
+|--------|-------|
+| **Stories** | 11 |
+| **Risk Level** | Low |
+| **FRs Covered** | FR66, FR67, FR80 |
+| **Estimated Sprints** | Sprint 0 (1w) + Sprint 1-2 (2w each) |
+
+### 1.3.2 Out-of-Scope
+
+-   **User Interface (UI) Development**: This epic focuses solely on backend foundational elements.
+-   **Specific Business Logic Implementation**: Beyond basic EAF patterns, detailed business rules are out of scope.
+-   **Full Observability Stack Setup**: While foundational components support observability (e.g., Correlation IDs), the complete setup of monitoring, logging, and alerting tools is out of scope.
+-   **Security Compliance Audits**: This epic establishes security mechanisms (e.g., RLS, Keycloak), but formal compliance audits are out of scope.
+-   **Performance Benchmarking (initial)**: Initial setup includes performance gates, but detailed load testing and optimization are out of scope for this foundational epic.
+
 ### 1.4 Epic Dependencies
 
 ```

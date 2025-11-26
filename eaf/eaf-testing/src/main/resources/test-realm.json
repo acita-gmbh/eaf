@@ -1,0 +1,17 @@
+{
+  "realm": "dvmm",
+  "enabled": true,
+  "users": [
+    {
+      "username": "test-user",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ]
+}

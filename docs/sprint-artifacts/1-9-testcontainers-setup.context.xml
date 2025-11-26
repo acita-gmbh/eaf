@@ -1,0 +1,126 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>9</storyId>
+    <title>Testcontainers Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-9-testcontainers-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>Testcontainers for integration tests</iWant>
+    <soThat>tests run against real infrastructure</soThat>
+    <tasks>
+- [ ] Configure `eaf-testing` build with Testcontainers dependencies (PostgreSQL, Keycloak). (AC: 1, 2)
+- [ ] Implement singleton `TestContainers` object in `eaf-testing` to manage container lifecycle. (AC: 1, 2)
+- [ ] Create `RlsEnforcingDataSource` in `eaf-testing` to enforce tenant context in tests. (AC: 5)
+- [ ] Implement `@IsolatedEventStore` annotation and `EventStoreIsolationExtension` (JUnit 5). (AC: 4)
+- [ ] Implement `TestTenantFixture`, `TestUserFixture` in `testFixtures` source set. (AC: 3)
+- [ ] Unit test `TestUserFixture` to verify valid JWT generation structure and claims. (AC: 3)
+- [ ] Verify PostgreSQL container startup and reuse in a sample integration test. (AC: 1)
+- [ ] Verify Keycloak container startup and realm import. (AC: 2)
+- [ ] Verify Event Store isolation strategy (TRUNCATE) works between tests. (AC: 4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **PostgreSQL Container**
+   - Integration tests start a PostgreSQL 16 container automatically.
+   - Container is reused across test classes (singleton pattern).
+   - Database schema is initialized via Flyway.
+2. **Keycloak Container**
+   - Keycloak container is available for auth tests.
+   - Test realm is imported on startup.
+3. **Test Fixtures Module**
+   - `src/testFixtures` provides reusable helpers:
+     - `TestTenantFixture`: Creates random `TenantId`.
+     - `TestUserFixture`: Creates `TestUser` with valid JWT.
+     - `TestDataFixture`: Seeds common reference data.
+4. **Event Store Isolation (TC-003)**
+   - `@IsolatedEventStore` annotation exists in `eaf-testing`.
+   - Supports `TRUNCATE` (fast) and `SCHEMA_PER_TEST` (robust) strategies.
+   - Tests annotated with this start with a clean event store state.
+5. **Configuration**
+   - `TestContainersConfig` (or equivalent) provides `DataSource` bean pointing to container.
+   - `RlsEnforcingDataSource` wrapper is applied to test data source (TC-002 groundwork).
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+        <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Implementation Quality Gates" snippet="Test Coverage: ≥80%, Mutation Score: ≥70% - these gates are non-negotiable. 'No Broken Windows' policy."></doc>
+        <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Technical Dependencies" snippet="Testing: JUnit 6 + Testcontainers - Latest, PostgreSQL, Keycloak."></doc>
+        <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Multi-Tenancy Architecture" snippet="Complete data isolation via PostgreSQL Row-Level Security (RLS)."></doc>
+        <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="2.3 Technology Stack" snippet="Testing: JUnit 6 + Testcontainers - Latest, PostgreSQL, Keycloak. Coverage: JaCoCo (≥80% gate), Mutation: Pitest (≥70% gate)."></doc>
+        <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="3. Story Implementation Guides -> Story 1.9: Testcontainers Setup" snippet="Configures Testcontainers with PostgreSQL 16 and Keycloak. Implements singleton container pattern. Creates test fixtures module."></doc>
+        <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="5.2 Critical Test Scenarios -> TC-003: Event Store Isolation" snippet="Configurable isolation strategy for event store: TRUNCATE (fast) and SCHEMA_PER_TEST (robust)."></doc>
+        <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-001: EAF Framework-First Architecture -> EAF Module Definitions" snippet="eaf-testing: Minimal test utilities (TenantTestContext, InMemoryEventStore, TestClock) - Depends on eaf-core, eaf-eventsourcing."></doc>
+        <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-003: Core Technology Decisions -> Decision 4: PostgreSQL Row-Level Security (RLS)" snippet="RLS Policies on all tenant-related tables. Database-level enforcement, no possibility of forgetting WHERE clauses."></doc>
+        <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-003: Core Technology Decisions -> Decision 7: jOOQ for Read Projections -> TC-004 awaitProjection Helper" snippet="Tests can await projection updates. Helper `awaitProjection` in `eaf-testing` blocks until projection updated."></doc>
+        <doc path="docs/epics.md" title="DVMM - Epic Breakdown" section="Epic 1: Foundation -> Story 1.9: Testcontainers Setup" snippet="As a developer, I want Testcontainers for integration tests, So that tests run against real infrastructure. Prerequisites: Story 1.1."></doc>
+    </docs>
+    <code>
+    </code>
+    <dependencies>
+      <dependency ecosystem="Gradle/Kotlin" name="Kotlin" version="2.2.21" type="language"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Spring Boot" version="3.5.8" type="framework"/>
+      <dependency ecosystem="Gradle/Kotlin" name="PostgreSQL" version="42.7.0" type="database-driver"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Keycloak" version="26.0.0" type="auth-server"/>
+      <dependency ecosystem="Gradle/Kotlin" name="JUnit Jupiter" version="6.0.1" type="testing-framework"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Testcontainers (Platform)" version="2.0.2" type="testing-library"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Testcontainers PostgreSQL" version="2.0.2" type="test-container"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Testcontainers Keycloak" version="3.5.0" type="test-container"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Konsist" version="0.17.3" type="architecture-testing"/>
+      <dependency ecosystem="Gradle/Kotlin" name="jOOQ" version="3.20.8" type="query-dsl"/>
+      <dependency ecosystem="Gradle/Kotlin" name="Kotlin Coroutines" version="1.10.2" type="concurrency-library"/>
+      <dependency ecosystem="Gradle/Kotlin" name="MockK" version="1.14.6" type="mocking-library"/>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Module: `eaf-testing` should be the primary location for Testcontainers setup and test utilities.</constraint>
+    <constraint>Dependencies: Utilize `testcontainers`, `junit-jupiter`, `postgresql`, `flyway-core` within `eaf-testing`.</constraint>
+    <constraint>Isolation: Tests must not leak data across different test runs or tenants. RLS must be enforced even in tests, aligning with TC-002 (Story 1.6).</constraint>
+    <constraint>Performance: Testcontainers startup is resource-intensive; implement a singleton pattern (`static val` in Kotlin) to initialize containers once per test suite run to optimize performance.</constraint>
+    <constraint>Specific Testcontainers usage: Explicitly use `org.testcontainers:postgresql` for PostgreSQL 16 and `com.github.dasniko:testcontainers-keycloak` for Keycloak.</constraint>
+    <constraint>Test Fixtures: Leverage the Kotlin `testFixtures` plugin to enable sharing of test utility code (like `TestTenantFixture`, `TestUserFixture`, `TestDataFixture`) across different modules within the project.</constraint>
+    <constraint>Event Store Isolation (TC-003): The `EventStoreIsolationExtension` must implement `BeforeEachCallback` from JUnit 5. Ensure that `TRUNCATE TABLE eaf_events.events, eaf_events.snapshots RESTART IDENTITY CASCADE` is used for the `TRUNCATE` isolation strategy to clean event store state before each test.</constraint>
+    <constraint>Projection Awaiting (TC-004 groundwork): The `awaitProjection` helper (from Story 1.8) in `eaf-testing` is crucial for testing eventual consistency in projections, blocking until updates are available.</constraint>
+    <constraint>EAF Testing Module Dependencies: `eaf-testing` should depend on `eaf-core` and `eaf-eventsourcing` but MUST NOT depend on any `dvmm-*` product modules.</constraint>
+  </constraints>
+  <interfaces>
+  </interfaces>
+  <tests>
+    <standards>
+      <standard>Test Pyramid Approach: Unit (≥85% coverage), Integration (≥80% coverage), Architecture (Pass), Contract (Pass).</standard>
+      <standard>Quality Gates: Adherence to ≥80% test coverage, ≥70% mutation score, E2E suite runtime &lt;15 minutes, and 100% test pass rate in CI.</standard>
+      <standard>Test Isolation: Rigorous test isolation to prevent data leakage between runs. RLS must be enforced in tests (TC-002). Configurable Event Store isolation via `TRUNCATE` or `SCHEMA_PER_TEST` (TC-003).</standard>
+      <standard>Test Performance: Optimize Testcontainers startup by employing a singleton pattern for container initialization.</standard>
+      <standard>Test Fixtures: Utilize Kotlin `testFixtures` for sharing common test utilities across modules.</standard>
+    </standards>
+    <locations>
+      <location>Testcontainers setup and `EventStoreIsolationExtension`, `RlsEnforcingDataSource` to be located in `eaf/eaf-testing/src/main/kotlin`.</location>
+      <location>Test fixture classes (`TestTenantFixture`, `TestUserFixture`, `TestDataFixture`) to be located in `eaf/eaf-testing/src/testFixtures/kotlin`.</location>
+      <location>Integration test configuration (`TestContainersConfig` for PostgreSQL and Keycloak) in `dvmm/dvmm-app/src/test/kotlin`.</location>
+      <location>All relevant build configurations (JaCoCo, Pitest) managed via `build.gradle.kts` files and `gradle/libs.versions.toml`.</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify PostgreSQL 16 container starts correctly and is accessible for integration tests.</idea>
+      <idea ac="1">Confirm PostgreSQL container reuse across multiple integration test classes to improve performance.</idea>
+      <idea ac="1">Validate Flyway schema initialization within the Testcontainers-managed PostgreSQL instance.</idea>
+      <idea ac="2">Verify Keycloak container starts correctly and is accessible for authentication tests.</idea>
+      <idea ac="2">Confirm that the specified test realm is imported into the Keycloak container on startup.</idea>
+      <idea ac="3">Unit test `TestTenantFixture` for correct `TenantId` generation and usage.</idea>
+      <idea ac="3">Unit test `TestUserFixture` for proper creation of `TestUser` instances and generation of valid JWTs with expected structure and claims.</idea>
+      <idea ac="3">Unit test `TestDataFixture` for effective seeding of common reference data.</idea>
+      <idea ac="4">Implement integration tests to demonstrate the functionality of `@IsolatedEventStore` annotation with the `TRUNCATE` strategy, ensuring no event leakage between tests.</idea>
+      <idea ac="4">Implement integration tests to validate the `SCHEMA_PER_TEST` isolation strategy for robust parallel testing scenarios.</idea>
+      <idea ac="5">Verify that `TestContainersConfig` correctly provides a `DataSource` bean configured to connect to the Testcontainers PostgreSQL instance.</idea>
+      <idea ac="5">Confirm that `RlsEnforcingDataSource` correctly wraps the test data source and dynamically sets the `app.tenant_id` session variable based on test context (TC-002 validation).</idea>
+      <idea ac="General">Create sample integration tests within `dvmm-app/src/test/kotlin` to showcase the usage of configured Testcontainers and fixtures.</idea>
+      <idea ac="General">Implement Konsist tests to enforce `eaf-testing` module's dependency rules (e.g., no `dvmm-*` imports).</idea>
+    </ideas>
+  </tests>
+</story-context>
