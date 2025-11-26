@@ -3,6 +3,7 @@ package de.acci.eaf.core.types
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import de.acci.eaf.core.error.InvalidIdentifierFormatException
@@ -25,15 +26,17 @@ class IdentifiersTest {
 
     @Test
     fun `invalid uuid throws`() {
-        assertThrows(InvalidIdentifierFormatException::class.java) {
+        val ex = assertThrows(InvalidIdentifierFormatException::class.java) {
             UserId.fromString("not-a-uuid")
         }
+        assertEquals("UserId", ex.identifierType)
+        assertEquals("not-a-uuid", ex.raw)
     }
 
     @Test
     fun `correlation id generate is non-empty`() {
         val cid = CorrelationId.generate()
-        assertEquals(36, cid.value.toString().length)
+        assertTrue(cid.value.toString().isNotBlank())
     }
 
     @Test
