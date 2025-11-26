@@ -213,7 +213,7 @@ internal class PostgresSnapshotStoreIntegrationTest {
                     },
                     "special": "quotes\"and\\backslash"
                 }
-            """.trimIndent().replace("\n", "").replace(" ", "")
+            """.trimIndent()
 
             val snapshot = AggregateSnapshot(
                 aggregateId = aggregateId,
