@@ -45,17 +45,17 @@ so that all modules use consistent patterns.
 
 ### Learnings from Previous Story (1-1-project-scaffolding)
 - Story 1.1 status: **done** (sprint-status.yaml) with review resolution on 2025-11-25; no open action items.
-- Build conventions and version catalog are authoritative—reuse `libs.versions.toml` for all versions; avoid hardcoded numbers in module or convention files. sourcedocs/sprint-artifacts/1-1-project-scaffolding.md
-- Pitest is provided via `eaf.pitest-conventions` (70% threshold); apply to `eaf-core`. sourcedocs/sprint-artifacts/1-1-project-scaffolding.md
-- Konsist rules enforce EAF ← DVMM direction; keep `eaf-core` dependency-free and free of Spring imports. sourcedocs/architecture.md
+- Build conventions and version catalog sind maßgeblich—`libs.versions.toml` nutzen, keine hardcodierten Versionen (Quelle: docs/sprint-artifacts/1-1-project-scaffolding.md).
+- Pitest steht via `eaf.pitest-conventions` (70%-Schwelle) bereit; für `eaf-core` anwenden (Quelle: docs/sprint-artifacts/1-1-project-scaffolding.md).
+- Konsist-Regeln erzwingen EAF ← DVMM; `eaf-core` bleibt dependency-frei und ohne Spring-Imports (Quelle: docs/architecture.md).
 
 ### Architecture & Constraints
-- EAF modules must not import `de.acci.dvmm.*`; `eaf-core` must have zero external runtime deps beyond Kotlin stdlib. sourcedocs/architecture.md
-- Use Hexagonal boundaries and explicit API; no wildcard imports; favor sealed classes and value objects for primitives. sourcedocs/architecture.md
-- Security/Audit expects correlation IDs available for logging/tracing. sourcedocs/security-architecture.md
+- EAF-Module dürfen nicht aus `de.acci.dvmm.*` importieren; `eaf-core` hat keine externen Runtime-Deps außer Kotlin stdlib (Quelle: docs/architecture.md).
+- Hexagonal boundaries und explicit API; keine Wildcard-Imports; bevorzugt sealed classes und Value Objects (Quelle: docs/architecture.md).
+- Security/Audit benötigt Correlation IDs für Logging/Tracing (Quelle: docs/security-architecture.md).
 
 ### Testing Strategy
-- Unit tests first; target ≥80% coverage and ≥70% mutation score using `jacocoTestReport` and Pitest. sourcedocs/test-design-system.md
+- Unit tests first; Ziel ≥80% Coverage und ≥70% Mutation Score mit `jacocoTestReport` und Pitest (Quelle: docs/test-design-system.md).
 - Validate coroutine/inline helpers for Result do not allocate excessively; ensure value objects are serializable where needed.
 
 ### Project Structure Notes
