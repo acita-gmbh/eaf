@@ -15,8 +15,8 @@ So that I can persist domain events durably.
    - Table columns: `id` (UUID, PK), `aggregate_id` (UUID, indexed), `aggregate_type` (VARCHAR), `event_type` (VARCHAR), `payload` (JSONB), `metadata` (JSONB with tenant_id, user_id, correlation_id, timestamp), `version` (INT), `created_at` (TIMESTAMPTZ).
 
 2. **Optimistic Locking**
-   - Concurrent writes to the same aggregate are prevented via unique constraint on `(aggregate_id, version)`.
-   - `ConcurrencyConflict` error is returned when version mismatch occurs.
+   - Concurrent writes to the same aggregate are prevented via unique constraint on `(tenant_id, aggregate_id, version)`.
+   - `ConcurrencyConflict` error is returned when version mismatch occurs within the same tenant context.
 
 3. **Event Immutability**
    - Events are immutable (no UPDATE, no DELETE allowed at database level).
