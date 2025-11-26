@@ -20,6 +20,7 @@ dependencies {
     api(platform(libs.testcontainers.bom))
     api(libs.testcontainers.core)
     api(libs.testcontainers.junit)
+    api(libs.testcontainers.jdbc)
     api(libs.testcontainers.postgresql)
     api(libs.testcontainers.keycloak)
 

@@ -23,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.sql.Connection
@@ -49,7 +49,7 @@ class VmRequestProjectionRepositoryIntegrationTest {
 
         @Container
         @JvmStatic
-        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
+        val postgres: PostgreSQLContainer = PostgreSQLContainer("postgres:16-alpine")
             .withDatabaseName(TC_DB_NAME)
             // Use Testcontainers default credentials (test/test) - superuser privileges
             // needed to bypass FORCE ROW LEVEL SECURITY for test data setup

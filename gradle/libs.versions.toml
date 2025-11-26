@@ -4,7 +4,7 @@ spring-boot = "3.5.8"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.8"
 jooq-gradle-plugin = "9.0"
-testcontainers = "1.21.3"
+testcontainers = "2.0.2"
 konsist = "0.17.3"
 coroutines = "1.10.2"
 reactor-kotlin = "1.2.3"
@@ -17,7 +17,7 @@ pitest-gradle-plugin = "1.19.0-rc.2"
 jacoco = "0.8.12"
 postgresql = "42.7.2"
 flyway = "10.7.1"
-testcontainers-keycloak = "3.5.0"
+testcontainers-keycloak = "4.0.0"
 jjwt = "0.12.5"
 slf4j = "2.0.17"
 
@@ -71,11 +71,12 @@ kotlin-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom
 # Testing - MockK
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
-# Testing - Testcontainers 1.x
+# Testing - Testcontainers 2.x
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 
 # Architecture Testing
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }

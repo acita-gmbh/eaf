@@ -1,12 +1,12 @@
 package de.acci.eaf.testing
 
 import dasniko.testcontainers.keycloak.KeycloakContainer
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
 public object TestContainers {
 
-    public val postgres: PostgreSQLContainer<*> by lazy {
+    public val postgres: PostgreSQLContainer by lazy {
         PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
             .withDatabaseName("dvmm_test")
             .withUsername("test")
