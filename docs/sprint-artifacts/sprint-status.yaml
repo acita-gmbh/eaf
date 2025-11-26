@@ -108,7 +108,7 @@ development_status:
   1-4-aggregate-base-pattern: done            # Sprint 1 - Code review APPROVED 2025-11-26
 
   # Sprint 2 (Week 4-5) - Multi-Tenancy
-  1-5-tenant-context-module: backlog         # Sprint 2 (TC-001)
+  1-5-tenant-context-module: review         # Sprint 2 (TC-001)
   1-6-postgresql-rls-policies: backlog       # Sprint 2 (TC-002)
 
   # Sprint 3 (Week 6-7) - Auth + Projections
