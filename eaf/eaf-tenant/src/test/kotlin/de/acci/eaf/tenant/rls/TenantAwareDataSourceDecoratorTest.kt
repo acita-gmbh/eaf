@@ -169,6 +169,7 @@ class TenantAwareDataSourceDecoratorTest {
     /**
      * DataSource that always returns the same connection (simulates connection pool behavior).
      */
+    @Suppress("detekt:EmptyFunctionBlock")
     private class PoolSimulatingDataSource(private val pooledConnection: Connection) : DataSource {
         override fun getConnection(): Connection = pooledConnection
         override fun getConnection(username: String?, password: String?): Connection = pooledConnection
