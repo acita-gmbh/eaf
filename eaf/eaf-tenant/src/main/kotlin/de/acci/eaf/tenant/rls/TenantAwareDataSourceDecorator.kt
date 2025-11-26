@@ -26,7 +26,7 @@ import javax.sql.DataSource
  *    }
  *    ```
  *
- * 2. For coroutine-based applications, use with [withTenant]:
+ * 2. For scoped tenant context, use [withTenant]:
  *    ```kotlin
  *    TenantAwareDataSourceDecorator.withTenant(tenantId) {
  *        // Database operations here

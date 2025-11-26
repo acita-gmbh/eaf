@@ -36,11 +36,11 @@ so that tenant isolation is guaranteed even if application code has bugs.
 
 5. **Flyway migration V002**
    - Creates RLS policies on `eaf_events.events` and `eaf_events.snapshots` tables.
-   - Creates `dvmm_app` role without superuser privileges.
+   - Creates `eaf_app` role without superuser privileges.
    - Forces RLS for application role (no bypass).
 
 6. **Superuser bypass disabled**
-   - Application role `dvmm_app` cannot bypass RLS.
+   - Application role `eaf_app` cannot bypass RLS.
    - `ALTER TABLE ... FORCE ROW LEVEL SECURITY` applied.
 
 ## TC-002 Acceptance Criteria (Critical)
