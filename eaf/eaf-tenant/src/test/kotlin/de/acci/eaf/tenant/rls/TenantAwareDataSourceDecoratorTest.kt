@@ -114,27 +114,27 @@ class TenantAwareDataSourceDecoratorTest {
 
         // Simulate first request with Tenant A - get a connection and set tenant
         TenantAwareDataSourceDecorator.setCurrentTenant(tenantA)
-        val conn = decorator.connection
-        assertEquals(tenantA.value.toString(), getTenantIdFromSession(conn))
+        decorator.connection.use { conn ->
+            assertEquals(tenantA.value.toString(), getTenantIdFromSession(conn))
 
-        // Simulate connection returned to pool (don't close - reuse same connection)
-        TenantAwareDataSourceDecorator.clearCurrentTenant()
+            // Simulate connection returned to pool (don't close - reuse same connection)
+            TenantAwareDataSourceDecorator.clearCurrentTenant()
 
-        // Simulate second request WITHOUT tenant context (e.g., health check endpoint)
-        // The decorator must clear the previous tenant to prevent leakage
-        // We need to manually call configureTenantContext since we're reusing the connection
-        // In production, HikariCP would call getConnection() which triggers this
-        val pooledDataSource = PoolSimulatingDataSource(conn)
-        val decoratorWithPool = TenantAwareDataSourceDecorator(pooledDataSource)
+            // Simulate second request WITHOUT tenant context (e.g., health check endpoint)
+            // The decorator must clear the previous tenant to prevent leakage
+            // In production, HikariCP would call getConnection() which triggers this
+            val pooledDataSource = PoolSimulatingDataSource(conn)
+            val decoratorWithPool = TenantAwareDataSourceDecorator(pooledDataSource)
 
-        decoratorWithPool.connection.use { reusedConn ->
-            // Then - previous tenant context should be cleared (not Tenant A!)
-            // PostgreSQL set_config with NULL returns empty string, not actual NULL
-            val actualTenantId = getTenantIdFromSession(reusedConn)
-            assertTrue(
-                actualTenantId.isNullOrEmpty(),
-                "Previous tenant context should be cleared on pooled connection reuse, but was: $actualTenantId"
-            )
+            decoratorWithPool.connection.use { reusedConn ->
+                // Then - previous tenant context should be cleared (not Tenant A!)
+                // PostgreSQL set_config with NULL returns empty string, not actual NULL
+                val actualTenantId = getTenantIdFromSession(reusedConn)
+                assertTrue(
+                    actualTenantId.isNullOrEmpty(),
+                    "Previous tenant context should be cleared on pooled connection reuse, but was: $actualTenantId"
+                )
+            }
         }
     }
 
@@ -148,20 +148,21 @@ class TenantAwareDataSourceDecoratorTest {
 
         // First request with Tenant A
         TenantAwareDataSourceDecorator.setCurrentTenant(tenantA)
-        val conn = decorator.connection
-        assertEquals(tenantA.value.toString(), getTenantIdFromSession(conn))
+        decorator.connection.use { conn ->
+            assertEquals(tenantA.value.toString(), getTenantIdFromSession(conn))
 
-        // Simulate connection returned to pool and reused by Tenant B
-        TenantAwareDataSourceDecorator.clearCurrentTenant()
-        TenantAwareDataSourceDecorator.setCurrentTenant(tenantB)
+            // Simulate connection returned to pool and reused by Tenant B
+            TenantAwareDataSourceDecorator.clearCurrentTenant()
+            TenantAwareDataSourceDecorator.setCurrentTenant(tenantB)
 
-        val pooledDataSource = PoolSimulatingDataSource(conn)
-        val decoratorWithPool = TenantAwareDataSourceDecorator(pooledDataSource)
+            val pooledDataSource = PoolSimulatingDataSource(conn)
+            val decoratorWithPool = TenantAwareDataSourceDecorator(pooledDataSource)
 
-        decoratorWithPool.connection.use { reusedConn ->
-            // Then - tenant context should be Tenant B, not Tenant A
-            val actualTenantId = getTenantIdFromSession(reusedConn)
-            assertEquals(tenantB.value.toString(), actualTenantId, "Tenant context should be updated to Tenant B")
+            decoratorWithPool.connection.use { reusedConn ->
+                // Then - tenant context should be Tenant B, not Tenant A
+                val actualTenantId = getTenantIdFromSession(reusedConn)
+                assertEquals(tenantB.value.toString(), actualTenantId, "Tenant context should be updated to Tenant B")
+            }
         }
     }
 
