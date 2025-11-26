@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import java.util.UUID
+import de.acci.eaf.core.error.InvalidIdentifierFormatException
 
 class IdentifiersTest {
 
@@ -24,7 +25,7 @@ class IdentifiersTest {
 
     @Test
     fun `invalid uuid throws`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(InvalidIdentifierFormatException::class.java) {
             UserId.fromString("not-a-uuid")
         }
     }

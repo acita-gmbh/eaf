@@ -2,6 +2,7 @@ package de.acci.eaf.core.error
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertTrue
 
 class DomainErrorTest {
 
@@ -10,6 +11,13 @@ class DomainErrorTest {
         val a = DomainError.ValidationFailed(field = "name", message = "required")
         val b = DomainError.ValidationFailed(field = "name", message = "required")
         assertEquals(a, b)
+    }
+
+    @Test
+    fun `equality differs when fields differ`() {
+        val a = DomainError.ValidationFailed(field = "name", message = "required")
+        val b = DomainError.ValidationFailed(field = "email", message = "required")
+        assertTrue(a != b)
     }
 
     @Test

@@ -1,5 +1,6 @@
 package de.acci.eaf.core.types
 
+import de.acci.eaf.core.error.InvalidIdentifierFormatException
 import java.util.UUID
 
 /**
@@ -13,7 +14,12 @@ public value class TenantId(public val value: UUID) {
         public fun generate(): TenantId = TenantId(UUID.randomUUID())
 
         /** Parse from canonical UUID string. */
-        public fun fromString(source: String): TenantId = TenantId(UUID.fromString(source))
+        public fun fromString(source: String): TenantId =
+            try {
+                TenantId(UUID.fromString(source))
+            } catch (e: IllegalArgumentException) {
+                throw InvalidIdentifierFormatException("TenantId", source, e)
+            }
     }
 }
 
@@ -28,7 +34,12 @@ public value class UserId(public val value: UUID) {
         public fun generate(): UserId = UserId(UUID.randomUUID())
 
         /** Parse from canonical UUID string. */
-        public fun fromString(source: String): UserId = UserId(UUID.fromString(source))
+        public fun fromString(source: String): UserId =
+            try {
+                UserId(UUID.fromString(source))
+            } catch (e: IllegalArgumentException) {
+                throw InvalidIdentifierFormatException("UserId", source, e)
+            }
     }
 }
 
@@ -43,6 +54,11 @@ public value class CorrelationId(public val value: UUID) {
         public fun generate(): CorrelationId = CorrelationId(UUID.randomUUID())
 
         /** Parse from canonical UUID string. */
-        public fun fromString(source: String): CorrelationId = CorrelationId(UUID.fromString(source))
+        public fun fromString(source: String): CorrelationId =
+            try {
+                CorrelationId(UUID.fromString(source))
+            } catch (e: IllegalArgumentException) {
+                throw InvalidIdentifierFormatException("CorrelationId", source, e)
+            }
     }
 }
