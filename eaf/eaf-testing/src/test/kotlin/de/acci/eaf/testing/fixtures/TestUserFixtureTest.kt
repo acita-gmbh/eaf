@@ -14,8 +14,7 @@ class TestUserFixtureTest {
         // Given
         val tenantId = TenantId.generate()
         val user = TestUserFixture.createUser(tenantId, "ADMIN")
-        val secret = "test-secret-key-must-be-at-least-256-bits-long-so-make-it-long"
-        val key = Keys.hmacShaKeyFor(secret.toByteArray())
+        val key = Keys.hmacShaKeyFor(TestUserFixture.TEST_JWT_SECRET.toByteArray())
 
         // When
         val token = TestUserFixture.generateJwt(user)

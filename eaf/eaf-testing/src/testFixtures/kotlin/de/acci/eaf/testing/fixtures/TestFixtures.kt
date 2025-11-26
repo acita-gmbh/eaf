@@ -15,6 +15,13 @@ public object TestTenantFixture {
 }
 
 public object TestUserFixture {
+    /**
+     * Shared test secret for JWT signing/verification.
+     * Must be at least 256 bits (32 bytes) for HMAC-SHA256.
+     */
+    public const val TEST_JWT_SECRET: String =
+        "test-secret-key-must-be-at-least-256-bits-long-so-make-it-long"
+
     public fun createUser(
         tenantId: TenantId,
         role: String = "USER"
@@ -31,9 +38,7 @@ public object TestUserFixture {
         val now = Date()
         val expiry = Date(now.time + 3600000) // 1 hour
         
-        // Fixed test key for HMAC SHA256
-        val secret = "test-secret-key-must-be-at-least-256-bits-long-so-make-it-long"
-        val key = Keys.hmacShaKeyFor(secret.toByteArray())
+        val key = Keys.hmacShaKeyFor(TEST_JWT_SECRET.toByteArray())
 
         return Jwts.builder()
             .subject(user.id.value.toString())
