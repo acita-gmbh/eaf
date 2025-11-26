@@ -69,7 +69,7 @@ So that I can persist domain events durably.
 
 ### Learnings from Previous Story
 
-**From Story 1-9-testcontainers-setup (Status: done)**
+#### From Story 1-9-testcontainers-setup (Status: done)
 
 - **TestContainers Setup**: PostgreSQL 16 singleton available via `TestContainers.postgres` - use for all integration tests.
 - **RLS Enforcement**: `RlsEnforcingDataSource` uses parameterized queries with `set_config()` - events table must respect this.

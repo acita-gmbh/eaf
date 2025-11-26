@@ -60,7 +60,7 @@ GRANT USAGE ON SCHEMA eaf_events TO dvmm_app;
 -- Grant only SELECT and INSERT on events table (AC: 3 - no UPDATE/DELETE)
 GRANT SELECT, INSERT ON eaf_events.events TO dvmm_app;
 
--- Grant SELECT, INSERT, UPDATE on snapshots (snapshots can be updated)
+-- Grant full CRUD on snapshots (snapshots can be updated and replaced)
 GRANT SELECT, INSERT, UPDATE, DELETE ON eaf_events.snapshots TO dvmm_app;
 
 -- Revoke UPDATE and DELETE from PUBLIC on events table (AC: 3 - Event Immutability)

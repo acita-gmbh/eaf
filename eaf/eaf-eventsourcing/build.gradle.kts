@@ -20,8 +20,8 @@ dependencies {
     // Flyway for migrations (runtime only)
     runtimeOnly(libs.flyway.core)
 
-    // PostgreSQL driver
-    runtimeOnly(libs.postgresql)
+    // PostgreSQL driver (implementation for PSQLException type-safe error handling)
+    implementation(libs.postgresql)
 
     // Test dependencies
     testImplementation(project(":eaf:eaf-testing"))

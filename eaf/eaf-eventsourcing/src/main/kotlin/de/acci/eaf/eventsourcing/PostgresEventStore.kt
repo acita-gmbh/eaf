@@ -10,6 +10,7 @@ import org.jooq.DSLContext
 import org.jooq.JSONB
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
+import org.postgresql.util.PSQLException
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -44,7 +45,12 @@ public class PostgresEventStore(
 
                 events.forEach { event ->
                     version++
-                    insertEvent(ctx, aggregateId, event, version)
+                    insertEvent(
+                        ctx = ctx,
+                        aggregateId = aggregateId,
+                        event = event,
+                        version = version
+                    )
                 }
             }
             (expectedVersion + events.size).success()
@@ -127,14 +133,26 @@ public class PostgresEventStore(
         val metadata = parseMetadata(metadataJson)
 
         return StoredEvent(
-            id = record.get("id", UUID::class.java),
-            aggregateId = record.get("aggregate_id", UUID::class.java),
-            aggregateType = record.get("aggregate_type", String::class.java),
-            eventType = record.get("event_type", String::class.java),
+            id = requireNotNull(record.get("id", UUID::class.java)) {
+                "id is required but was null in event record"
+            },
+            aggregateId = requireNotNull(record.get("aggregate_id", UUID::class.java)) {
+                "aggregate_id is required but was null in event record"
+            },
+            aggregateType = requireNotNull(record.get("aggregate_type", String::class.java)) {
+                "aggregate_type is required but was null in event record"
+            },
+            eventType = requireNotNull(record.get("event_type", String::class.java)) {
+                "event_type is required but was null in event record"
+            },
             payload = record.get("payload", JSONB::class.java)?.data() ?: "{}",
             metadata = metadata,
-            version = record.get("version", Int::class.java).toLong(),
-            createdAt = record.get("created_at", OffsetDateTime::class.java).toInstant()
+            version = requireNotNull(record.get("version", Int::class.java)) {
+                "version is required but was null in event record"
+            }.toLong(),
+            createdAt = requireNotNull(record.get("created_at", OffsetDateTime::class.java)) {
+                "created_at is required but was null in event record"
+            }.toInstant()
         )
     }
 
@@ -147,9 +165,17 @@ public class PostgresEventStore(
     private fun isUniqueConstraintViolation(e: DataAccessException): Boolean {
         // PostgreSQL unique constraint violation: SQLSTATE 23505
         val cause = e.cause
-        return cause?.message?.contains("23505") == true ||
-            cause?.message?.contains("uq_aggregate_version") == true ||
-            e.message?.contains("23505") == true ||
-            e.message?.contains("uq_aggregate_version") == true
+        // Use PSQLException.getSQLState() for type-safe SQLSTATE checking when available
+        if (cause is PSQLException) {
+            return cause.sqlState == UNIQUE_VIOLATION_SQLSTATE
+        }
+        // Fallback to string matching for non-PostgreSQL or wrapped exceptions
+        return cause?.message?.contains(UNIQUE_VIOLATION_SQLSTATE) == true ||
+            e.message?.contains(UNIQUE_VIOLATION_SQLSTATE) == true
+    }
+
+    private companion object {
+        /** PostgreSQL SQLSTATE for unique constraint violation */
+        const val UNIQUE_VIOLATION_SQLSTATE = "23505"
     }
 }
