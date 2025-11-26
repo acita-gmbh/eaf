@@ -88,8 +88,22 @@ class TestContainersIntegrationTest {
                         }
                         conn.createStatement().use { stmt ->
                             stmt.execute(
-                                "CREATE TABLE eaf_events.snapshots (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), state JSONB)"
+                                """
+                                CREATE TABLE eaf_events.snapshots (
+                                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                    aggregate_id UUID NOT NULL,
+                                    aggregate_type VARCHAR(255) NOT NULL,
+                                    version INT NOT NULL,
+                                    state JSONB NOT NULL,
+                                    tenant_id UUID NOT NULL,
+                                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                                    CONSTRAINT uq_snapshot_aggregate UNIQUE (tenant_id, aggregate_id)
+                                )
+                                """.trimIndent()
                             )
+                        }
+                        conn.createStatement().use { stmt ->
+                            stmt.execute("CREATE INDEX idx_snapshots_tenant ON eaf_events.snapshots (tenant_id)")
                         }
                     }
                 }
