@@ -50,6 +50,9 @@ public class PostgresEventStore(
             (expectedVersion + events.size).success()
         } catch (e: DataAccessException) {
             if (isUniqueConstraintViolation(e)) {
+                // Note: actualVersion is loaded outside the failed transaction, so it may not
+                // represent the exact version that caused the conflict if concurrent writes occur.
+                // This is acceptable as the primary purpose is informational for debugging.
                 val actualVersion = loadCurrentVersion(aggregateId)
                 EventStoreError.ConcurrencyConflict(
                     aggregateId = aggregateId,
@@ -108,6 +111,7 @@ public class PostgresEventStore(
     }
 
     private fun loadCurrentVersion(aggregateId: UUID): Long {
+        // Note: Database column is INT, so we retrieve as Int and convert to Long
         return dsl.fetchOne(
             """
             SELECT COALESCE(MAX(version), 0) as max_version
@@ -115,7 +119,7 @@ public class PostgresEventStore(
             WHERE aggregate_id = ?
             """.trimIndent(),
             aggregateId
-        )?.get("max_version", Long::class.java) ?: 0L
+        )?.get("max_version", Int::class.java)?.toLong() ?: 0L
     }
 
     private fun mapToStoredEvent(record: org.jooq.Record): StoredEvent {

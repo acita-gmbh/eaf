@@ -18,13 +18,14 @@ CREATE TABLE eaf_events.events (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Optimistic locking: unique constraint prevents concurrent writes (AC: 2)
-    CONSTRAINT uq_aggregate_version UNIQUE (aggregate_id, version),
+    -- Includes tenant_id to allow same aggregate_id across different tenants
+    CONSTRAINT uq_aggregate_version UNIQUE (tenant_id, aggregate_id, version),
     -- Version must be positive (starts at 1)
     CONSTRAINT chk_version_positive CHECK (version > 0)
 );
 
 -- Indexes for efficient queries (AC: 1, 5)
-CREATE INDEX idx_events_aggregate ON eaf_events.events (aggregate_id, version);
+-- Note: idx_events_aggregate is not needed as uq_aggregate_version unique constraint creates an index
 CREATE INDEX idx_events_tenant ON eaf_events.events (tenant_id);
 CREATE INDEX idx_events_aggregate_type ON eaf_events.events (aggregate_type);
 CREATE INDEX idx_events_created_at ON eaf_events.events (created_at);
@@ -39,7 +40,8 @@ CREATE TABLE eaf_events.snapshots (
     tenant_id       UUID NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT uq_snapshot_aggregate UNIQUE (aggregate_id)
+    -- Includes tenant_id to allow same aggregate_id across different tenants
+    CONSTRAINT uq_snapshot_aggregate UNIQUE (tenant_id, aggregate_id)
 );
 
 CREATE INDEX idx_snapshots_tenant ON eaf_events.snapshots (tenant_id);

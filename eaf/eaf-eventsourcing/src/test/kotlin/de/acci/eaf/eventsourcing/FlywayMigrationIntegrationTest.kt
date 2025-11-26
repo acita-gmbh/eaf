@@ -99,7 +99,9 @@ internal class FlywayMigrationIntegrationTest {
     }
 
     @Test
-    fun `migration creates index on aggregate_id`() {
+    fun `migration creates index for unique constraint on tenant_id, aggregate_id, version`() {
+        // Note: PostgreSQL automatically creates an index for unique constraints
+        // The redundant idx_events_aggregate was removed as it duplicated this
         TestContainers.postgres.createConnection("").use { conn ->
             val rs = conn.createStatement().executeQuery(
                 """
@@ -107,10 +109,10 @@ internal class FlywayMigrationIntegrationTest {
                 FROM pg_indexes
                 WHERE schemaname = 'eaf_events'
                   AND tablename = 'events'
-                  AND indexname = 'idx_events_aggregate'
+                  AND indexname = 'uq_aggregate_version'
                 """.trimIndent()
             )
-            assertTrue(rs.next(), "Index idx_events_aggregate should exist")
+            assertTrue(rs.next(), "Index uq_aggregate_version (from unique constraint) should exist")
         }
     }
 

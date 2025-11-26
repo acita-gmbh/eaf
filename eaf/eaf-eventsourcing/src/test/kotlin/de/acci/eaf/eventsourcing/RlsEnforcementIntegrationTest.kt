@@ -147,21 +147,28 @@ internal class RlsEnforcementIntegrationTest {
         TenantTestContext.clear()
 
         // Insert event for tenant B with same aggregate ID
+        // This should NOT conflict because unique constraint includes tenant_id:
+        // UNIQUE (tenant_id, aggregate_id, version)
         TenantTestContext.set(tenantB)
         connection = rlsDataSource.connection
         store = PostgresEventStore(DSL.using(connection, SQLDialect.POSTGRES), objectMapper)
-        // This should NOT conflict because RLS filters by tenant
-        // However, the unique constraint is on (aggregate_id, version), not (tenant_id, aggregate_id, version)
-        // So this test verifies the current behavior - which may need adjustment
-        // For now, let's verify each tenant can load their own data correctly
+
+        // Tenant B inserts their own event with same aggregate_id and version=1
+        val resultB = store.append(
+            aggregateId,
+            listOf(TestEventCreated(metadata = createMetadata(tenantB), name = "B", value = 2)),
+            expectedVersion = 0
+        )
+        assertInstanceOf(Result.Success::class.java, resultB, "Tenant B should be able to insert events for same aggregate ID")
 
         // Each tenant should be able to query and see only their events
         val tenantBEvents = store.load(aggregateId)
         connection.close()
         TenantTestContext.clear()
 
-        // Tenant B should see no events (they didn't create any for this aggregate)
-        assertTrue(tenantBEvents.isEmpty())
+        // Tenant B should see their own event
+        assertEquals(1, tenantBEvents.size, "Tenant B should see their own event")
+        assertEquals("B", objectMapper.readTree(tenantBEvents[0].payload).get("name").asText())
 
         // Verify tenant A can still see their event
         TenantTestContext.set(tenantA)

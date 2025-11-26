@@ -57,15 +57,18 @@ internal class EventImmutabilityIntegrationTest {
             // Insert a test event
             val eventId = insertTestEvent(conn)
 
-            // Attempt to UPDATE the event
+            // Attempt to UPDATE the event (using PreparedStatement to avoid SQL injection)
             val exception = assertThrows<SQLException> {
-                conn.createStatement().executeUpdate(
+                conn.prepareStatement(
                     """
                     UPDATE eaf_events.events
                     SET event_type = 'ModifiedEvent'
-                    WHERE id = '$eventId'
+                    WHERE id = ?
                     """.trimIndent()
-                )
+                ).use { stmt ->
+                    stmt.setObject(1, eventId)
+                    stmt.executeUpdate()
+                }
             }
 
             // Verify the error message indicates immutability
@@ -84,14 +87,17 @@ internal class EventImmutabilityIntegrationTest {
             // Insert a test event
             val eventId = insertTestEvent(conn)
 
-            // Attempt to DELETE the event
+            // Attempt to DELETE the event (using PreparedStatement to avoid SQL injection)
             val exception = assertThrows<SQLException> {
-                conn.createStatement().executeUpdate(
+                conn.prepareStatement(
                     """
                     DELETE FROM eaf_events.events
-                    WHERE id = '$eventId'
+                    WHERE id = ?
                     """.trimIndent()
-                )
+                ).use { stmt ->
+                    stmt.setObject(1, eventId)
+                    stmt.executeUpdate()
+                }
             }
 
             // Verify the error message indicates immutability
@@ -110,11 +116,12 @@ internal class EventImmutabilityIntegrationTest {
             // This should succeed without exception
             val eventId = insertTestEvent(conn)
 
-            // Verify the event was inserted
-            val rs = conn.createStatement().executeQuery(
-                "SELECT id FROM eaf_events.events WHERE id = '$eventId'"
-            )
-            assertTrue(rs.next(), "Event should be inserted successfully")
+            // Verify the event was inserted (using PreparedStatement to avoid SQL injection)
+            conn.prepareStatement("SELECT id FROM eaf_events.events WHERE id = ?").use { stmt ->
+                stmt.setObject(1, eventId)
+                val rs = stmt.executeQuery()
+                assertTrue(rs.next(), "Event should be inserted successfully")
+            }
         }
     }
 
@@ -139,22 +146,27 @@ internal class EventImmutabilityIntegrationTest {
         val correlationId = CorrelationId.generate()
         val timestamp = Instant.now()
 
-        conn.createStatement().executeUpdate(
-            """
+        // Use PreparedStatement to avoid SQL injection vulnerabilities
+        val sql = """
             INSERT INTO eaf_events.events
                 (id, aggregate_id, aggregate_type, event_type, payload, metadata, tenant_id, version)
-            VALUES (
-                '$eventId',
-                '$aggregateId',
-                'TestAggregate',
-                'TestEvent',
-                '{"test": "data"}'::jsonb,
-                '{"tenantId": {"value": "${tenantId.value}"}, "userId": {"value": "${userId.value}"}, "correlationId": {"value": "${correlationId.value}"}, "timestamp": "$timestamp"}'::jsonb,
-                '${tenantId.value}',
-                1
+            VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?)
+        """.trimIndent()
+
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setObject(1, eventId)
+            stmt.setObject(2, aggregateId)
+            stmt.setString(3, "TestAggregate")
+            stmt.setString(4, "TestEvent")
+            stmt.setString(5, """{"test": "data"}""")
+            stmt.setString(
+                6,
+                """{"tenantId": "${tenantId.value}", "userId": "${userId.value}", "correlationId": "${correlationId.value}", "timestamp": "$timestamp"}"""
             )
-            """.trimIndent()
-        )
+            stmt.setObject(7, tenantId.value)
+            stmt.setInt(8, 1)
+            stmt.executeUpdate()
+        }
         return eventId
     }
 }
