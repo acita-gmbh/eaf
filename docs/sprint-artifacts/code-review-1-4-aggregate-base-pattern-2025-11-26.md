@@ -6,9 +6,9 @@
 
 ## Executive Summary
 
-Story 1.4 (Aggregate Base Pattern) ist **APPROVED** für den Status "done".
+Story 1.4 (Aggregate Base Pattern) is **APPROVED** for status "done".
 
-Alle Acceptance Criteria sind erfüllt, die Testabdeckung liegt über dem Minimum, und die Code-Qualität entspricht den Projektstandards.
+All Acceptance Criteria are fulfilled, test coverage exceeds the minimum threshold, and code quality meets project standards.
 
 ---
 
@@ -124,7 +124,7 @@ Total: 5/5 PASSED
 | `de.acci.eaf.eventsourcing.snapshot` | 69% | 54% |
 | `de.acci.eaf.eventsourcing` (total) | **77%** | 44% |
 
-**Note:** Die aggregate-Komponente (Kernfunktionalität dieser Story) hat 92% Coverage. Die niedrigere Coverage im snapshot-Package stammt hauptsächlich von nicht-erreichbaren Null-Check-Branches in der `load()` Funktion, die durch die `requireNotNull`-Aufrufe abgedeckt sind.
+**Note:** The aggregate component (core functionality of this story) has 92% coverage. The lower coverage in the snapshot package is primarily due to unreachable null-check branches in the `load()` function, which are covered by the `requireNotNull` calls.
 
 ---
 
@@ -181,17 +181,17 @@ Total: 5/5 PASSED
 
 ## Recommendation
 
-**APPROVED** - Story 1.4 kann auf Status "done" gesetzt werden.
+**APPROVED** - Story 1.4 can be set to status "done".
 
 ### Strengths
-1. Saubere Implementierung des AggregateRoot-Patterns
-2. Vollständige Test-Coverage für alle Acceptance Criteria
-3. Gute Dokumentation (KDoc)
-4. Alle externen Review-Kommentare (CodeRabbit, Copilot) adressiert
+1. Clean implementation of the AggregateRoot pattern
+2. Complete test coverage for all Acceptance Criteria
+3. Good documentation (KDoc)
+4. All external review comments (CodeRabbit, Copilot) addressed
 
 ### Minor Notes (No Action Required)
-1. Reconstitution-Pattern als static factory in TestAggregate demonstriert - dies ist das empfohlene Pattern für konkrete Aggregates
-2. RLS für Snapshots wird in Story 1.6 implementiert (by design)
+1. Reconstitution pattern demonstrated as static factory in TestAggregate - this is the recommended pattern for concrete aggregates
+2. RLS for snapshots will be implemented in Story 1.6 (by design)
 
 ---
 
