@@ -92,8 +92,10 @@ class VmRequestProjectionRepositoryIntegrationTest {
 
     /**
      * Creates a DSLContext with tenant context set for RLS.
+     * IMPORTANT: The caller is responsible for closing the underlying connection.
+     * Consider using withTenantDsl() for automatic resource management.
      */
-    private fun createTenantDsl(tenant: TenantId): DSLContext {
+    private fun createTenantDsl(tenant: TenantId): Pair<Connection, DSLContext> {
         val conn = postgres.createConnection("")
         // Switch to eaf_app role so RLS is enforced
         conn.createStatement().execute("SET ROLE eaf_app")
@@ -102,7 +104,15 @@ class VmRequestProjectionRepositoryIntegrationTest {
             stmt.setString(1, tenant.value.toString())
             stmt.execute()
         }
-        return DSL.using(conn, SQLDialect.POSTGRES)
+        return conn to DSL.using(conn, SQLDialect.POSTGRES)
+    }
+
+    /**
+     * Executes a block with a tenant-scoped DSLContext, ensuring proper connection cleanup.
+     */
+    private fun <T> withTenantDsl(tenant: TenantId, block: (DSLContext) -> T): T {
+        val (conn, dsl) = createTenantDsl(tenant)
+        return conn.use { block(dsl) }
     }
 
     private fun insertTestProjection(
@@ -151,15 +161,16 @@ class VmRequestProjectionRepositoryIntegrationTest {
             val tenantBId = insertTestProjection(tenantId = tenantB, vmName = "tenant-b-vm")
 
             // When: Tenant A queries
-            val dslA = createTenantDsl(tenantA)
-            val repoA = VmRequestProjectionRepository(dslA)
-            val resultA = repoA.findById(tenantAId)
-            val resultB = repoA.findById(tenantBId)
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val resultA = runBlocking { repoA.findById(tenantAId) }
+                val resultB = runBlocking { repoA.findById(tenantBId) }
 
-            // Then: Tenant A sees only their data
-            assertNotNull(resultA, "Tenant A should see their own VM request")
-            assertEquals("tenant-a-vm", resultA?.vmName)
-            assertNull(resultB, "Tenant A should NOT see Tenant B's VM request")
+                // Then: Tenant A sees only their data
+                assertNotNull(resultA, "Tenant A should see their own VM request")
+                assertEquals("tenant-a-vm", resultA?.vmName)
+                assertNull(resultB, "Tenant A should NOT see Tenant B's VM request")
+            }
         }
 
         @Test
@@ -170,13 +181,14 @@ class VmRequestProjectionRepositoryIntegrationTest {
             insertTestProjection(tenantId = tenantB, vmName = "b-vm-1")
 
             // When: Tenant A queries all
-            val dslA = createTenantDsl(tenantA)
-            val repoA = VmRequestProjectionRepository(dslA)
-            val result = repoA.findAll()
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val result = runBlocking { repoA.findAll() }
 
-            // Then: Only tenant A data is returned
-            assertEquals(2, result.totalElements, "Should have exactly 2 records for tenant A")
-            assertTrue(result.items.all { it.tenantId == tenantA.value }, "All items should belong to tenant A")
+                // Then: Only tenant A data is returned
+                assertEquals(2, result.totalElements, "Should have exactly 2 records for tenant A")
+                assertTrue(result.items.all { it.tenantId == tenantA.value }, "All items should belong to tenant A")
+            }
         }
 
         @Test
@@ -187,12 +199,13 @@ class VmRequestProjectionRepositoryIntegrationTest {
             insertTestProjection(tenantId = tenantB)
 
             // When: Tenant A counts
-            val dslA = createTenantDsl(tenantA)
-            val repoA = VmRequestProjectionRepository(dslA)
-            val count = repoA.count()
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val count = runBlocking { repoA.count() }
 
-            // Then: Only tenant A records counted
-            assertEquals(2, count, "Count should only include tenant A records")
+                // Then: Only tenant A records counted
+                assertEquals(2, count, "Count should only include tenant A records")
+            }
         }
     }
 
@@ -207,18 +220,19 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 insertTestProjection(tenantId = tenantA, vmName = "vm-$i")
             }
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Request first page of 2
-            val page1 = repository.findAll(PageRequest(page = 0, size = 2))
+                // When: Request first page of 2
+                val page1 = runBlocking { repository.findAll(PageRequest(page = 0, size = 2)) }
 
-            // Then: Pagination metadata is correct
-            assertEquals(2, page1.items.size, "Should return 2 items")
-            assertEquals(5, page1.totalElements, "Total should be 5")
-            assertEquals(3, page1.totalPages, "Should have 3 pages")
-            assertTrue(page1.hasNext, "Should have next page")
-            assertFalse(page1.hasPrevious, "Should not have previous page")
+                // Then: Pagination metadata is correct
+                assertEquals(2, page1.items.size, "Should return 2 items")
+                assertEquals(5, page1.totalElements, "Total should be 5")
+                assertEquals(3, page1.totalPages, "Should have 3 pages")
+                assertTrue(page1.hasNext, "Should have next page")
+                assertFalse(page1.hasPrevious, "Should not have previous page")
+            }
         }
 
         @Test
@@ -228,17 +242,18 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 insertTestProjection(tenantId = tenantA, vmName = "vm-$i")
             }
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Request second page
-            val page2 = repository.findAll(PageRequest(page = 1, size = 2))
+                // When: Request second page
+                val page2 = runBlocking { repository.findAll(PageRequest(page = 1, size = 2)) }
 
-            // Then: Correct offset applied
-            assertEquals(2, page2.items.size, "Should return 2 items")
-            assertEquals(1, page2.page, "Should be page 1")
-            assertTrue(page2.hasNext, "Should have next page")
-            assertTrue(page2.hasPrevious, "Should have previous page")
+                // Then: Correct offset applied
+                assertEquals(2, page2.items.size, "Should return 2 items")
+                assertEquals(1, page2.page, "Should be page 1")
+                assertTrue(page2.hasNext, "Should have next page")
+                assertTrue(page2.hasPrevious, "Should have previous page")
+            }
         }
 
         @Test
@@ -248,16 +263,17 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 insertTestProjection(tenantId = tenantA, vmName = "vm-$i")
             }
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Request last page
-            val lastPage = repository.findAll(PageRequest(page = 2, size = 2))
+                // When: Request last page
+                val lastPage = runBlocking { repository.findAll(PageRequest(page = 2, size = 2)) }
 
-            // Then: Only remaining item returned
-            assertEquals(1, lastPage.items.size, "Should return 1 remaining item")
-            assertFalse(lastPage.hasNext, "Should not have next page")
-            assertTrue(lastPage.hasPrevious, "Should have previous page")
+                // Then: Only remaining item returned
+                assertEquals(1, lastPage.items.size, "Should return 1 remaining item")
+                assertFalse(lastPage.hasNext, "Should not have next page")
+                assertTrue(lastPage.hasPrevious, "Should have previous page")
+            }
         }
     }
 
@@ -276,29 +292,31 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 status = "APPROVED"
             )
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Find by ID
-            val result = repository.findById(id)
+                // When: Find by ID
+                val result = runBlocking { repository.findById(id) }
 
-            // Then: Projection is returned with correct data
-            assertNotNull(result)
-            assertEquals(id, result?.id)
-            assertEquals("test-vm", result?.vmName)
-            assertEquals(8, result?.cpuCores)
-            assertEquals(32, result?.memoryGb)
-            assertEquals("APPROVED", result?.status)
+                // Then: Projection is returned with correct data
+                assertNotNull(result)
+                assertEquals(id, result?.id)
+                assertEquals("test-vm", result?.vmName)
+                assertEquals(8, result?.cpuCores)
+                assertEquals(32, result?.memoryGb)
+                assertEquals("APPROVED", result?.status)
+            }
         }
 
         @Test
         fun `findById returns null when not exists`() = runBlocking {
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            val result = repository.findById(UUID.randomUUID())
+                val result = runBlocking { repository.findById(UUID.randomUUID()) }
 
-            assertNull(result)
+                assertNull(result)
+            }
         }
 
         @Test
@@ -308,15 +326,16 @@ class VmRequestProjectionRepositoryIntegrationTest {
             insertTestProjection(tenantId = tenantA, status = "PENDING")
             insertTestProjection(tenantId = tenantA, status = "APPROVED")
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Find by status
-            val result = repository.findByStatus("PENDING")
+                // When: Find by status
+                val result = runBlocking { repository.findByStatus("PENDING") }
 
-            // Then: Only matching status returned
-            assertEquals(2, result.totalElements)
-            assertTrue(result.items.all { it.status == "PENDING" })
+                // Then: Only matching status returned
+                assertEquals(2, result.totalElements)
+                assertTrue(result.items.all { it.status == "PENDING" })
+            }
         }
 
         @Test
@@ -328,33 +347,36 @@ class VmRequestProjectionRepositoryIntegrationTest {
             insertTestProjection(tenantId = tenantA, requesterId = requester1)
             insertTestProjection(tenantId = tenantA, requesterId = requester2)
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // When: Find by requester
-            val result = repository.findByRequesterId(requester1)
+                // When: Find by requester
+                val result = runBlocking { repository.findByRequesterId(requester1) }
 
-            // Then: Only matching requester returned
-            assertEquals(2, result.totalElements)
-            assertTrue(result.items.all { it.requesterId == requester1 })
+                // Then: Only matching requester returned
+                assertEquals(2, result.totalElements)
+                assertTrue(result.items.all { it.requesterId == requester1 })
+            }
         }
 
         @Test
         fun `exists returns true when data exists`() = runBlocking {
             insertTestProjection(tenantId = tenantA)
 
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            assertTrue(repository.exists())
+                assertTrue(runBlocking { repository.exists() })
+            }
         }
 
         @Test
         fun `exists returns false when no data`() = runBlocking {
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            assertFalse(repository.exists())
+                assertFalse(runBlocking { repository.exists() })
+            }
         }
     }
 
@@ -364,8 +386,6 @@ class VmRequestProjectionRepositoryIntegrationTest {
 
         @Test
         fun `awaitProjection returns projection once available`() = runBlocking {
-            val dsl = createTenantDsl(tenantA)
-            repository = VmRequestProjectionRepository(dsl)
             val id = UUID.randomUUID()
 
             // Insert data asynchronously (simulating eventual consistency)
@@ -374,14 +394,20 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 insertTestProjection(id = id, tenantId = tenantA, vmName = "delayed-vm")
             }
 
-            // When: Await projection - type is inferred from repository.findById() return type
-            val result = awaitProjection(
-                repository = { repository.findById(id) }
-            )
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
 
-            // Then: Projection is returned
-            assertNotNull(result)
-            assertEquals("delayed-vm", result.vmName)
+                // When: Await projection - type is inferred from repository.findById() return type
+                val result = runBlocking {
+                    awaitProjection(
+                        repository = { repository.findById(id) }
+                    )
+                }
+
+                // Then: Projection is returned
+                assertNotNull(result)
+                assertEquals("delayed-vm", result.vmName)
+            }
         }
     }
 }

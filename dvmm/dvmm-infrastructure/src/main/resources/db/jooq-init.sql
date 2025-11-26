@@ -111,3 +111,15 @@ CREATE POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection
     USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE vm_requests_projection FORCE ROW LEVEL SECURITY;
+
+-- Column comments for documentation
+COMMENT ON COLUMN vm_requests_projection.id IS 'Unique identifier for the VM request';
+COMMENT ON COLUMN vm_requests_projection.tenant_id IS 'Tenant identifier for multi-tenancy isolation';
+COMMENT ON COLUMN vm_requests_projection.requester_id IS 'User ID who requested the VM';
+COMMENT ON COLUMN vm_requests_projection.vm_name IS 'Requested name for the virtual machine';
+COMMENT ON COLUMN vm_requests_projection.cpu_cores IS 'Number of CPU cores requested';
+COMMENT ON COLUMN vm_requests_projection.memory_gb IS 'Amount of memory in GB requested';
+COMMENT ON COLUMN vm_requests_projection.status IS 'Current status: PENDING, APPROVED, REJECTED, PROVISIONING, COMPLETED, FAILED';
+COMMENT ON COLUMN vm_requests_projection.created_at IS 'Timestamp when the request was created';
+COMMENT ON COLUMN vm_requests_projection.updated_at IS 'Timestamp when the request was last updated';
+COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version for concurrent updates';

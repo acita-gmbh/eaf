@@ -34,7 +34,7 @@ public class VmRequestProjectionRepository(
             status = record.get(VM_REQUESTS_PROJECTION.STATUS)!!,
             createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!,
             updatedAt = record.get(VM_REQUESTS_PROJECTION.UPDATED_AT)!!,
-            version = record.get(VM_REQUESTS_PROJECTION.VERSION)
+            version = record.get(VM_REQUESTS_PROJECTION.VERSION)!!
         )
     }
 
@@ -73,7 +73,7 @@ public class VmRequestProjectionRepository(
             .where(VM_REQUESTS_PROJECTION.STATUS.eq(status))
             .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
             .limit(pageRequest.size)
-            .offset(pageRequest.offset.toInt())
+            .offset(pageRequest.offset)
             .fetch()
             .map { mapRecord(it) }
 
@@ -105,7 +105,7 @@ public class VmRequestProjectionRepository(
             .where(VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId))
             .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
             .limit(pageRequest.size)
-            .offset(pageRequest.offset.toInt())
+            .offset(pageRequest.offset)
             .fetch()
             .map { mapRecord(it) }
 

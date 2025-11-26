@@ -19,6 +19,7 @@ postgresql = "42.7.2"
 flyway = "10.7.1"
 testcontainers-keycloak = "3.5.0"
 jjwt = "0.12.5"
+slf4j = "2.0.17"
 
 [libraries]
 # Kotlin
@@ -78,6 +79,9 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 
 # Architecture Testing
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+
+# Logging
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 # Pitest mutation testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }

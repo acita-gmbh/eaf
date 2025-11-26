@@ -48,7 +48,7 @@ public abstract class BaseProjectionRepository<T : Any>(
         // Fetch the page using a wrapper query with LIMIT/OFFSET
         val items = dsl.selectFrom(query.asTable("subquery"))
             .limit(pageRequest.size)
-            .offset(pageRequest.offset.toInt())
+            .offset(pageRequest.offset)
             .fetch()
             .map { record -> mapRecord(record) }
 

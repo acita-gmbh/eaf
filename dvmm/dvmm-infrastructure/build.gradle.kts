@@ -30,7 +30,7 @@ dependencies {
     jooqGenerator(libs.postgresql)
     jooqGenerator(libs.testcontainers.core)
     jooqGenerator(libs.testcontainers.postgresql)
-    jooqGenerator("org.slf4j:slf4j-simple:2.0.17")
+    jooqGenerator(libs.slf4j.simple)
 
     // Test dependencies
     testImplementation(project(":eaf:eaf-testing"))
@@ -64,7 +64,7 @@ jooq {
                     // Alternative: Use Testcontainers JDBC URL when Docker/Testcontainers compatibility is resolved
                     // jdbc:tc:postgresql:15:///dvmm?TC_INITSCRIPT=file:src/main/resources/db/jooq-init.sql
                     driver = "org.postgresql.Driver"
-                    url = System.getenv("JOOQ_DB_URL") ?: "jdbc:postgresql://localhost:62818/dvmm_test"
+                    url = System.getenv("JOOQ_DB_URL") ?: "jdbc:postgresql://localhost:5432/dvmm_test"
                     user = System.getenv("JOOQ_DB_USER") ?: "test"
                     password = System.getenv("JOOQ_DB_PASSWORD") ?: "test"
                 }
