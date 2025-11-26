@@ -6,6 +6,7 @@ import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.eventsourcing.projection.PagedResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SortField
@@ -72,27 +73,11 @@ public class VmRequestProjectionRepository(
     public suspend fun findByStatus(
         status: String,
         pageRequest: PageRequest = PageRequest()
-    ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
-        val totalElements = dsl.selectCount()
-            .from(VM_REQUESTS_PROJECTION)
-            .where(VM_REQUESTS_PROJECTION.STATUS.eq(status))
-            .fetchOne(0, Long::class.java) ?: 0L
-
-        val items = dsl.selectFrom(VM_REQUESTS_PROJECTION)
-            .where(VM_REQUESTS_PROJECTION.STATUS.eq(status))
-            .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
-            .limit(pageRequest.size)
-            .offset(pageRequest.offset.toInt())
-            .fetch()
-            .map { mapRecord(it) }
-
-        PagedResponse(
-            items = items,
-            page = pageRequest.page,
-            size = pageRequest.size,
-            totalElements = totalElements
+    ): PagedResponse<VmRequestsProjection> =
+        findByCondition(
+            condition = VM_REQUESTS_PROJECTION.STATUS.eq(status),
+            pageRequest = pageRequest
         )
-    }
 
     /**
      * Finds all VM request projections for a specific requester.
@@ -104,15 +89,31 @@ public class VmRequestProjectionRepository(
     public suspend fun findByRequesterId(
         requesterId: UUID,
         pageRequest: PageRequest = PageRequest()
+    ): PagedResponse<VmRequestsProjection> =
+        findByCondition(
+            condition = VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId),
+            pageRequest = pageRequest
+        )
+
+    /**
+     * Shared pagination logic for filtered queries.
+     *
+     * @param condition The WHERE condition for filtering
+     * @param pageRequest Pagination parameters
+     * @return A paginated response of matching projections
+     */
+    private suspend fun findByCondition(
+        condition: Condition,
+        pageRequest: PageRequest
     ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
         val totalElements = dsl.selectCount()
             .from(VM_REQUESTS_PROJECTION)
-            .where(VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId))
+            .where(condition)
             .fetchOne(0, Long::class.java) ?: 0L
 
         val items = dsl.selectFrom(VM_REQUESTS_PROJECTION)
-            .where(VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId))
-            .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
+            .where(condition)
+            .orderBy(defaultOrderBy())
             .limit(pageRequest.size)
             .offset(pageRequest.offset.toInt())
             .fetch()

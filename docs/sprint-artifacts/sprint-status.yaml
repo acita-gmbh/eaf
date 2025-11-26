@@ -113,7 +113,7 @@ development_status:
 
   # Sprint 3 (Week 6-7) - Auth + Projections
   1-7-keycloak-integration: done              # Sprint 3 - Code review APPROVED 2025-11-26
-  1-8-jooq-projection-base: review            # Sprint 3 (TC-004) - Implementation complete
+  1-8-jooq-projection-base: done               # Sprint 3 (TC-004) - Code review APPROVED 2025-11-27
 
   # Sprint 4 (Week 8-9) - Parallel with Epic 2 Start
   1-10-vcsim-integration: backlog            # Sprint 4 (parallel)

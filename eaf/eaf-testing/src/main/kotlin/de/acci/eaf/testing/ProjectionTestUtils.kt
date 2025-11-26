@@ -86,7 +86,11 @@ public object ProjectionTestUtils {
         pollInterval: Duration = DEFAULT_POLL_INTERVAL
     ): T {
         try {
-            return awaitProjection(repository, timeout, pollInterval)
+            return awaitProjection(
+                repository = repository,
+                timeout = timeout,
+                pollInterval = pollInterval
+            )
         } catch (e: TimeoutCancellationException) {
             // Wrap the original timeout exception with additional context
             throw IllegalStateException(
@@ -126,7 +130,7 @@ public object ProjectionTestUtils {
     ): T {
         return withTimeout(timeout) {
             var result = repository()
-            while (!condition(result) || result == null) {
+            while (result == null || !condition(result)) {
                 delay(pollInterval)
                 result = repository()
             }
@@ -144,7 +148,11 @@ public suspend fun <T : Any> awaitProjection(
     repository: suspend () -> T?,
     timeout: Duration = ProjectionTestUtils.DEFAULT_TIMEOUT,
     pollInterval: Duration = ProjectionTestUtils.DEFAULT_POLL_INTERVAL
-): T = ProjectionTestUtils.awaitProjection(repository, timeout, pollInterval)
+): T = ProjectionTestUtils.awaitProjection(
+    repository = repository,
+    timeout = timeout,
+    pollInterval = pollInterval
+)
 
 /**
  * Extension function for convenient access to awaitProjection with aggregate ID.
@@ -156,4 +164,9 @@ public suspend fun <T : Any> awaitProjection(
     repository: suspend () -> T?,
     timeout: Duration = ProjectionTestUtils.DEFAULT_TIMEOUT,
     pollInterval: Duration = ProjectionTestUtils.DEFAULT_POLL_INTERVAL
-): T = ProjectionTestUtils.awaitProjection(aggregateId, repository, timeout, pollInterval)
+): T = ProjectionTestUtils.awaitProjection(
+    aggregateId = aggregateId,
+    repository = repository,
+    timeout = timeout,
+    pollInterval = pollInterval
+)
