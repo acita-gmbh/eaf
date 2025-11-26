@@ -1,6 +1,6 @@
 # Story 1.4: Aggregate Base Pattern
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -76,7 +76,7 @@ So that I can implement domain logic consistently.
 
 - [x] Create example aggregate (test fixture) demonstrating pattern (AC: 1, 2)
   - [x] Create `TestAggregate` extending `AggregateRoot<UUID>`
-  - [x] Create `TestEvent` sealed class with `Created` and `Updated` variants
+  - [x] Create `TestAggregateEvent` sealed class with `Created` and `Updated` variants
   - [x] Implement `handleEvent()` for state mutations
 
 ## Dev Notes
@@ -174,3 +174,4 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - 2025-11-26: Added test-design-system.md citation after validation (#validate-create-story).
 - 2025-11-26: Story context generated, status changed to ready-for-dev (#create-story-context).
 - 2025-11-26: Implementation complete - all tasks done, all tests passing, status changed to review (#dev-story).
+- 2025-11-26: Code review APPROVED - all ACs validated, external review comments (CodeRabbit, Copilot) addressed, status changed to done (#code-review).
