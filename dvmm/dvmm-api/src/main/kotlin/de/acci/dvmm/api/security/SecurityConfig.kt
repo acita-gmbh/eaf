@@ -26,13 +26,12 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
  */
 @Configuration
 @EnableWebFluxSecurity
-public class SecurityConfig {
-
+public class SecurityConfig(
     @Value("\${eaf.auth.keycloak.client-id:dvmm-web}")
-    private lateinit var keycloakClientId: String
-
+    private val keycloakClientId: String,
     @Value("\${eaf.cors.allowed-origins:http://localhost:3000}")
-    private lateinit var allowedOrigins: String
+    private val allowedOrigins: String,
+) {
 
     /**
      * Configures the security filter chain for WebFlux.

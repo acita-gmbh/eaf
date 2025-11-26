@@ -10,7 +10,10 @@ import org.springframework.web.cors.CorsConfiguration
 
 class SecurityConfigTest {
 
-    private val securityConfig = SecurityConfig()
+    private val securityConfig = SecurityConfig(
+        keycloakClientId = "test-client",
+        allowedOrigins = "http://localhost:3000",
+    )
 
     private fun createExchange(path: String): MockServerWebExchange {
         val request = MockServerHttpRequest.get(path).build()
@@ -19,24 +22,21 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource returns configuration with correct allowed origins`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000,http://localhost:4200")
+        val config = SecurityConfig(
+            keycloakClientId = "test-client",
+            allowedOrigins = "http://localhost:3000,http://localhost:4200",
+        )
 
-        val corsSource = securityConfig.corsConfigurationSource()
+        val corsSource = config.corsConfigurationSource()
         val exchange = createExchange("/api/test")
-        val config = corsSource.getCorsConfiguration(exchange)
+        val corsConfig = corsSource.getCorsConfiguration(exchange)
 
-        assertNotNull(config)
-        assertEquals(listOf("http://localhost:3000", "http://localhost:4200"), config?.allowedOrigins)
+        assertNotNull(corsConfig)
+        assertEquals(listOf("http://localhost:3000", "http://localhost:4200"), corsConfig?.allowedOrigins)
     }
 
     @Test
     fun `corsConfigurationSource allows required HTTP methods`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
         val exchange = createExchange("/api/test")
         val config = corsSource.getCorsConfiguration(exchange)
@@ -47,10 +47,6 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource allows all headers`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
         val exchange = createExchange("/api/test")
         val config = corsSource.getCorsConfiguration(exchange)
@@ -61,10 +57,6 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource allows credentials`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
         val exchange = createExchange("/api/test")
         val config = corsSource.getCorsConfiguration(exchange)
@@ -75,10 +67,6 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource sets max age for preflight caching`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
         val exchange = createExchange("/api/test")
         val config = corsSource.getCorsConfiguration(exchange)
@@ -89,10 +77,6 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource applies to all paths`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
 
         assertNotNull(corsSource.getCorsConfiguration(createExchange("/api/vms")))
@@ -102,10 +86,6 @@ class SecurityConfigTest {
 
     @Test
     fun `keycloakJwtAuthenticationConverter uses configured client id`() {
-        val clientIdField = SecurityConfig::class.java.getDeclaredField("keycloakClientId")
-        clientIdField.isAccessible = true
-        clientIdField.set(securityConfig, "test-client")
-
         val converter = securityConfig.keycloakJwtAuthenticationConverter()
 
         assertNotNull(converter)
@@ -113,10 +93,6 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource handles single origin`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, "http://localhost:3000")
-
         val corsSource = securityConfig.corsConfigurationSource()
         val exchange = createExchange("/api/test")
         val config = corsSource.getCorsConfiguration(exchange)
@@ -128,15 +104,16 @@ class SecurityConfigTest {
 
     @Test
     fun `corsConfigurationSource trims whitespace from origins`() {
-        val field = SecurityConfig::class.java.getDeclaredField("allowedOrigins")
-        field.isAccessible = true
-        field.set(securityConfig, " http://localhost:3000 , http://localhost:4200 ")
+        val config = SecurityConfig(
+            keycloakClientId = "test-client",
+            allowedOrigins = " http://localhost:3000 , http://localhost:4200 ",
+        )
 
-        val corsSource = securityConfig.corsConfigurationSource()
+        val corsSource = config.corsConfigurationSource()
         val exchange = createExchange("/api/test")
-        val config = corsSource.getCorsConfiguration(exchange)
+        val corsConfig = corsSource.getCorsConfiguration(exchange)
 
-        assertNotNull(config)
-        assertEquals(listOf("http://localhost:3000", "http://localhost:4200"), config?.allowedOrigins)
+        assertNotNull(corsConfig)
+        assertEquals(listOf("http://localhost:3000", "http://localhost:4200"), corsConfig?.allowedOrigins)
     }
 }

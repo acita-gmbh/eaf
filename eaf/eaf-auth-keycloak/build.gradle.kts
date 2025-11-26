@@ -2,6 +2,7 @@ plugins {
     id("eaf.kotlin-conventions")
     id("eaf.spring-conventions")
     id("eaf.test-conventions")
+    id("eaf.pitest-conventions")
 }
 
 // eaf-auth-keycloak: Keycloak-specific implementation of IdentityProvider

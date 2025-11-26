@@ -1,11 +1,13 @@
 package de.acci.eaf.auth.keycloak
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import de.acci.eaf.auth.IdentityProvider
 import de.acci.eaf.auth.InvalidTokenException
 import de.acci.eaf.auth.TokenClaims
 import de.acci.eaf.auth.UserInfo
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
+import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.web.reactive.function.client.WebClient
@@ -32,7 +34,7 @@ public class KeycloakIdentityProvider(
         val jwt = try {
             jwtDecoder.decode(token)
                 .onErrorMap { e -> mapDecoderException(e) }
-                .block() ?: throw InvalidTokenException.validationFailed("JWT decoding returned null")
+                .awaitSingle()
         } catch (e: InvalidTokenException) {
             throw e
         } catch (e: Exception) {
@@ -50,7 +52,7 @@ public class KeycloakIdentityProvider(
             .onErrorMap { e ->
                 InvalidTokenException.validationFailed("UserInfo request failed: ${e.message}", e)
             }
-            .block() ?: throw InvalidTokenException.validationFailed("UserInfo response was null")
+            .awaitSingle()
 
         return UserInfo(
             id = UserId.fromString(response.sub),
@@ -135,16 +137,25 @@ public class KeycloakIdentityProvider(
 
 /**
  * Data class for Keycloak UserInfo endpoint response.
+ *
+ * Uses @JsonProperty annotations to map OIDC snake_case claim names
+ * to Kotlin camelCase property names.
  */
 internal data class KeycloakUserInfoResponse(
     val sub: String,
     val email: String?,
     val name: String?,
+    @JsonProperty("given_name")
     val givenName: String?,
+    @JsonProperty("family_name")
     val familyName: String?,
+    @JsonProperty("email_verified")
     val emailVerified: Boolean?,
+    @JsonProperty("tenant_id")
     val tenantId: String?,
+    @JsonProperty("realm_access")
     val realmAccess: RealmAccess?,
+    @JsonProperty("resource_access")
     val resourceAccess: Map<String, ClientAccess>?,
 ) {
     data class RealmAccess(val roles: List<String>?)
