@@ -8,7 +8,7 @@ plugins {
 dependencies {
     implementation(project(":dvmm:dvmm-api"))
     implementation(project(":dvmm:dvmm-infrastructure"))
-    implementation(project(":eaf:eaf-testing"))
+    testImplementation(testFixtures(project(":eaf:eaf-testing")))
 }
 
 springBoot {
