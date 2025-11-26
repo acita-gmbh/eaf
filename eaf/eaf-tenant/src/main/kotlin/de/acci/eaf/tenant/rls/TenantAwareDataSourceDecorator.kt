@@ -79,15 +79,25 @@ public class TenantAwareDataSourceDecorator(
     @Throws(SQLException::class)
     override fun getConnection(): Connection {
         val connection = delegate.connection
-        configureTenantContext(connection)
-        return connection
+        try {
+            configureTenantContext(connection)
+            return connection
+        } catch (e: Exception) {
+            connection.close()
+            throw e
+        }
     }
 
     @Throws(SQLException::class)
     override fun getConnection(username: String?, password: String?): Connection {
         val connection = delegate.getConnection(username, password)
-        configureTenantContext(connection)
-        return connection
+        try {
+            configureTenantContext(connection)
+            return connection
+        } catch (e: Exception) {
+            connection.close()
+            throw e
+        }
     }
 
     private fun configureTenantContext(connection: Connection) {

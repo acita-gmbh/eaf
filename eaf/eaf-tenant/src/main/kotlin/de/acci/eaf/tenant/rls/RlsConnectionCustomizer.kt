@@ -22,8 +22,9 @@ public object RlsConnectionCustomizer {
     /**
      * Configures a connection with the given tenant ID for RLS enforcement.
      *
-     * Sets the PostgreSQL session variable `app.tenant_id` using `SET LOCAL` which
-     * scopes the setting to the current transaction only.
+     * Sets the PostgreSQL session variable `app.tenant_id` using `set_config` with
+     * `is_local=false`, which scopes the setting to the entire session (connection lifetime).
+     * This ensures tenant context persists across transactions, including autocommit mode.
      *
      * @param connection The database connection to configure
      * @param tenantId The tenant ID to set for RLS filtering

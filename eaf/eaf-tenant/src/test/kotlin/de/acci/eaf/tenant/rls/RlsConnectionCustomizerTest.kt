@@ -15,6 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.sql.DriverManager
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @Testcontainers
 class RlsConnectionCustomizerTest {
@@ -57,7 +58,7 @@ class RlsConnectionCustomizerTest {
         // Then
         connection.createStatement().use { stmt ->
             stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
-                rs.next()
+                assertTrue(rs.next(), "Expected result from current_setting query")
                 assertEquals(tenantId.value.toString(), rs.getString(1))
             }
         }
@@ -74,7 +75,7 @@ class RlsConnectionCustomizerTest {
                 // Verify tenant was set
                 connection.createStatement().use { stmt ->
                     stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
-                        rs.next()
+                        assertTrue(rs.next(), "Expected result from current_setting query")
                         assertEquals(tenantId.value.toString(), rs.getString(1))
                     }
                 }
@@ -123,7 +124,7 @@ class RlsConnectionCustomizerTest {
         // Verify it's set
         connection.createStatement().use { stmt ->
             stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
-                rs.next()
+                assertTrue(rs.next(), "Expected result from current_setting query")
                 assertEquals(tenantId.value.toString(), rs.getString(1))
             }
         }
@@ -135,7 +136,7 @@ class RlsConnectionCustomizerTest {
         // Note: set_config with is_local=false means it's session-scoped
         connection.createStatement().use { stmt ->
             stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
-                rs.next()
+                assertTrue(rs.next(), "Expected result from current_setting query after commit")
                 // After commit, the session setting should still be set
                 assertEquals(tenantId.value.toString(), rs.getString(1))
             }

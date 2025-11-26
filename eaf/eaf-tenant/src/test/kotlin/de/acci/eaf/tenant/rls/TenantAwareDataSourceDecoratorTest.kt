@@ -102,8 +102,7 @@ class TenantAwareDataSourceDecoratorTest {
     private fun getTenantIdFromSession(conn: Connection): String? {
         conn.createStatement().use { stmt ->
             stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
-                rs.next()
-                return rs.getString(1)
+                return if (rs.next()) rs.getString(1) else null
             }
         }
     }

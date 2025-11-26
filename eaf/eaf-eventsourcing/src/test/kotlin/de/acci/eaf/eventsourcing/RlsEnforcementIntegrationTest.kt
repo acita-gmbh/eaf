@@ -252,24 +252,26 @@ internal class RlsEnforcementIntegrationTest {
         val connection = TestContainers.postgres.createConnection("")
 
         // When - query the policy definition
-        val policyInfo = connection.createStatement().executeQuery("""
-            SELECT polname, pg_get_expr(polqual, polrelid) as policy_expr
-            FROM pg_policy
-            WHERE polrelid = 'eaf_events.events'::regclass
-        """)
+        connection.use { conn ->
+            conn.createStatement().use { stmt ->
+                stmt.executeQuery("""
+                    SELECT polname, pg_get_expr(polqual, polrelid) as policy_expr
+                    FROM pg_policy
+                    WHERE polrelid = 'eaf_events.events'::regclass
+                """).use { policyInfo ->
+                    // Then - verify policy exists and uses correct expression
+                    assertTrue(policyInfo.next(), "RLS policy should exist on events table")
+                    val policyName = policyInfo.getString("polname")
+                    val policyExpr = policyInfo.getString("policy_expr")
 
-        // Then - verify policy exists and uses correct expression
-        assertTrue(policyInfo.next(), "RLS policy should exist on events table")
-        val policyName = policyInfo.getString("polname")
-        val policyExpr = policyInfo.getString("policy_expr")
-
-        assertEquals("tenant_isolation_events", policyName)
-        assertTrue(
-            policyExpr.contains("current_setting") && policyExpr.contains("app.tenant_id"),
-            "Policy should use current_setting('app.tenant_id', true)"
-        )
-
-        connection.close()
+                    assertEquals("tenant_isolation_events", policyName)
+                    assertTrue(
+                        policyExpr.contains("current_setting") && policyExpr.contains("app.tenant_id"),
+                        "Policy should use current_setting('app.tenant_id', true)"
+                    )
+                }
+            }
+        }
     }
 
     @Test
@@ -277,20 +279,20 @@ internal class RlsEnforcementIntegrationTest {
         // Verify that FORCE ROW LEVEL SECURITY is enabled, which prevents
         // even the table owner from bypassing RLS
 
-        val connection = TestContainers.postgres.createConnection("")
-
-        // Query for RLS enforcement status
-        val result = connection.createStatement().executeQuery("""
-            SELECT relforcerowsecurity
-            FROM pg_class
-            WHERE oid = 'eaf_events.events'::regclass
-        """)
-
-        assertTrue(result.next(), "Should find events table")
-        val forceRls = result.getBoolean("relforcerowsecurity")
-        assertTrue(forceRls, "FORCE ROW LEVEL SECURITY should be enabled on events table")
-
-        connection.close()
+        TestContainers.postgres.createConnection("").use { connection ->
+            // Query for RLS enforcement status
+            connection.createStatement().use { stmt ->
+                stmt.executeQuery("""
+                    SELECT relforcerowsecurity
+                    FROM pg_class
+                    WHERE oid = 'eaf_events.events'::regclass
+                """).use { result ->
+                    assertTrue(result.next(), "Should find events table")
+                    val forceRls = result.getBoolean("relforcerowsecurity")
+                    assertTrue(forceRls, "FORCE ROW LEVEL SECURITY should be enabled on events table")
+                }
+            }
+        }
     }
 
     private fun createMetadata(tenantId: TenantId): EventMetadata = EventMetadata(

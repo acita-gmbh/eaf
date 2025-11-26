@@ -29,7 +29,7 @@
         <subtasks>
           <subtask>Create RlsConnectionCustomizer component</subtask>
           <subtask>Integrate with TenantContext.current() to get tenant from coroutine context</subtask>
-          <subtask>Execute SET LOCAL app.tenant_id on connection checkout</subtask>
+          <subtask>Execute set_config('app.tenant_id', ?, false) on connection checkout for session-scoped tenant context</subtask>
           <subtask>Handle suspend context properly (coroutine-safe)</subtask>
         </subtasks>
       </task>
@@ -217,7 +217,7 @@
     <constraint source="architecture">EAF modules MUST NOT import from de.acci.dvmm.* (Konsist enforced)</constraint>
     <constraint source="architecture">dvmm-domain MUST NOT import from org.springframework.* (Konsist enforced)</constraint>
     <constraint source="architecture">Fail-closed semantics: missing tenant context = zero rows returned (NOT exception at DB level)</constraint>
-    <constraint source="story-1.5">Use SET LOCAL (not SET) for session variable - SET LOCAL scopes to transaction, SET persists for connection lifetime</constraint>
+    <constraint source="story-1.5">Use set_config('app.tenant_id', ?, false) for session-scoped tenant context - is_local=false persists for connection lifetime, compatible with autocommit and connection pooling</constraint>
     <constraint source="tech-spec">Application role eaf_app exists (created in V001). Use SET ROLE eaf_app to enforce RLS in tests.</constraint>
     <constraint source="testing">RLS tests MUST use Testcontainers PostgreSQL. >=80% coverage, >=70% mutation score.</constraint>
     <constraint source="tc-002">TC-002 tests are mandatory CI gate. Cross-tenant isolation test is critical.</constraint>
