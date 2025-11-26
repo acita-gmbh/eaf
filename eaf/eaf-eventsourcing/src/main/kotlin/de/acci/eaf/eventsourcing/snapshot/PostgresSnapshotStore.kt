@@ -24,7 +24,20 @@ public class PostgresSnapshotStore(
     private val dsl: DSLContext
 ) : SnapshotStore {
 
+    /**
+     * Saves a snapshot to PostgreSQL using upsert semantics.
+     *
+     * If a snapshot for the same (tenant_id, aggregate_id) already exists, it is replaced.
+     *
+     * @param snapshot The snapshot to persist
+     * @throws IllegalArgumentException if version exceeds [Int.MAX_VALUE] (database schema limitation)
+     */
     override suspend fun save(snapshot: AggregateSnapshot): Unit = withContext(Dispatchers.IO) {
+        require(snapshot.version <= Int.MAX_VALUE) {
+            "Snapshot version ${snapshot.version} exceeds maximum supported value ${Int.MAX_VALUE}. " +
+                "Consider upgrading the database schema to use BIGINT for the version column."
+        }
+
         dsl.execute(
             """
             INSERT INTO eaf_events.snapshots
@@ -46,6 +59,15 @@ public class PostgresSnapshotStore(
         )
     }
 
+    /**
+     * Loads a snapshot from PostgreSQL by aggregate ID.
+     *
+     * Note: Currently queries by aggregate_id only. RLS policies (Story 1.6) will
+     * enforce tenant isolation at the database level.
+     *
+     * @param aggregateId The aggregate's unique identifier
+     * @return The snapshot if found, null otherwise
+     */
     override suspend fun load(aggregateId: UUID): AggregateSnapshot? = withContext(Dispatchers.IO) {
         dsl.fetchOne(
             """

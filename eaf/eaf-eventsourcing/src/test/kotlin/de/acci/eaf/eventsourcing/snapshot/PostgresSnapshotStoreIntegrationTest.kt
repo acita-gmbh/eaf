@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.sql.Connection
 import java.time.Instant
 import java.util.UUID
@@ -34,6 +36,8 @@ internal class PostgresSnapshotStoreIntegrationTest {
     private val tenantId = TenantId.generate()
 
     companion object {
+        private val objectMapper: ObjectMapper = jacksonObjectMapper()
+
         @JvmStatic
         @BeforeAll
         fun setupSchema() {
@@ -44,6 +48,16 @@ internal class PostgresSnapshotStoreIntegrationTest {
                     .readText()
             }
         }
+    }
+
+    /**
+     * Compares two JSON strings for semantic equality.
+     * PostgreSQL normalizes JSON formatting, so we parse and compare the tree structure.
+     */
+    private fun assertJsonEquals(expected: String, actual: String) {
+        val expectedTree = objectMapper.readTree(expected)
+        val actualTree = objectMapper.readTree(actual)
+        assertEquals(expectedTree, actualTree, "JSON content should be semantically equal")
     }
 
     @BeforeEach
@@ -91,9 +105,7 @@ internal class PostgresSnapshotStoreIntegrationTest {
             assertEquals("TestAggregate", loaded.aggregateType)
             assertEquals(42L, loaded.version)
             // PostgreSQL normalizes JSON, compare parsed content
-            val expectedParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readTree(stateJson)
-            val actualParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readTree(loaded.state)
-            assertEquals(expectedParsed, actualParsed)
+            assertJsonEquals(stateJson, loaded.state)
             assertEquals(tenantId.value, loaded.tenantId)
         }
 
@@ -147,9 +159,7 @@ internal class PostgresSnapshotStoreIntegrationTest {
             assertNotNull(loaded)
             assertEquals(50L, loaded!!.version)
             // PostgreSQL normalizes JSON, compare parsed content
-            val expectedParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readTree(expectedState)
-            val actualParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().readTree(loaded.state)
-            assertEquals(expectedParsed, actualParsed)
+            assertJsonEquals(expectedState, loaded.state)
         }
 
         @Test
@@ -221,11 +231,7 @@ internal class PostgresSnapshotStoreIntegrationTest {
             // Then - JSON is normalized by PostgreSQL but content preserved
             assertNotNull(loaded)
             // PostgreSQL may format JSON differently, but the parsed content should be equivalent
-            val expectedParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
-                .readTree(complexState)
-            val actualParsed = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
-                .readTree(loaded!!.state)
-            assertEquals(expectedParsed, actualParsed)
+            assertJsonEquals(complexState, loaded!!.state)
         }
     }
 }
