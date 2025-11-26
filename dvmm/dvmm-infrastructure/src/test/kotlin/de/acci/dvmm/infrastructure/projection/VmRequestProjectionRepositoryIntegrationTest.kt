@@ -44,12 +44,15 @@ import java.util.UUID
 class VmRequestProjectionRepositoryIntegrationTest {
 
     companion object {
+        // Testcontainers default credentials - not sensitive, used only for local testing
+        private const val TC_DB_NAME = "dvmm_test"
+
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("dvmm_test")
-            .withUsername("postgres")  // Use postgres superuser to bypass FORCE RLS
-            .withPassword("postgres")
+            .withDatabaseName(TC_DB_NAME)
+            // Use Testcontainers default credentials (test/test) - superuser privileges
+            // needed to bypass FORCE ROW LEVEL SECURITY for test data setup
 
         private lateinit var superuserDsl: DSLContext
 
