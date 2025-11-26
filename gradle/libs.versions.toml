@@ -3,7 +3,8 @@ kotlin = "2.2.21"
 spring-boot = "3.5.8"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.8"
-testcontainers = "2.0.2"
+jooq-gradle-plugin = "9.0"
+testcontainers = "1.21.3"
 konsist = "0.17.3"
 coroutines = "1.10.2"
 reactor-kotlin = "1.2.3"
@@ -42,6 +43,8 @@ reactor-test = { module = "io.projectreactor:reactor-test" }
 # Database
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
+jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
+jooq-meta = { module = "org.jooq:jooq-meta", version.ref = "jooq" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "testcontainers-keycloak" }
@@ -67,11 +70,11 @@ kotlin-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom
 # Testing - MockK
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
-# Testing - Testcontainers 2.x (new module naming)
+# Testing - Testcontainers 1.x
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
-testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 
 # Architecture Testing
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
@@ -90,3 +93,4 @@ kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotl
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitest-gradle-plugin" }
+jooq-codegen = { id = "nu.studer.jooq", version.ref = "jooq-gradle-plugin" }

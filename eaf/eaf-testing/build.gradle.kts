@@ -33,4 +33,7 @@ dependencies {
     runtimeOnly(libs.jjwt.jackson)
 
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
+
+    // Coroutines test for testing suspend functions
+    testImplementation(libs.kotlin.coroutines.test)
 }
