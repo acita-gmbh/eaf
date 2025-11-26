@@ -16,4 +16,10 @@ tasks.named<Jar>("jar") {
 dependencies {
     implementation(project(":dvmm:dvmm-application"))
     implementation(project(":eaf:eaf-auth"))
+    implementation(project(":eaf:eaf-auth-keycloak"))
+    implementation(project(":eaf:eaf-tenant"))
+
+    implementation(libs.spring.boot.oauth2.resource.server)
+
+    testImplementation(libs.spring.security.test)
 }
