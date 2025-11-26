@@ -1,0 +1,94 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>eaf-core-module</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-25</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-2-eaf-core-module.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>foundational types for error handling and tracing</iWant>
+    <soThat>all modules use consistent patterns</soThat>
+    <tasks><![CDATA[
+- [ ] Implement sealed Result<T, E> with mapping/folding helpers and infix success/failure builders. (AC: 1)
+- [ ] Define DomainError sealed hierarchy with contextual fields and docs. (AC: 2)
+- [ ] Create value objects: TenantId, UserId, CorrelationId with generate() and fromString() helpers. (AC: 3)
+- [ ] Enable explicit API + K2 in eaf-core via eaf.kotlin-conventions. (AC: 4)
+- [ ] Ensure eaf-core build uses only cataloged dependencies; zero external runtime deps. (AC: 5)
+- [ ] Add unit tests for Result mapping/flatMap/fold; DomainError equality/serialization; value object round-trips. (AC: 6)
+- [ ] Configure coverage + Pitest thresholds for eaf-core via eaf.pitest-conventions; ensure JaCoCo gate applies. (AC: 6)
+- [ ] Run ./gradlew :eaf:eaf-core:test jacocoTestReport pitest. (AC: 6)
+    ]]></tasks>
+  </story>
+
+  <acceptanceCriteria><![CDATA[
+1. Result type exists with Success/Failure and mapping helpers; no unchecked exceptions in domain flow.
+2. DomainError sealed hierarchy includes ValidationFailed, ResourceNotFound, InvalidStateTransition, QuotaExceeded, InfrastructureError with contextual fields.
+3. TenantId, UserId, CorrelationId implemented as @JvmInline value classes with generate() and fromString().
+4. Module compiles with Kotlin 2.2 (K2) and explicit API enabled; no experimental warnings.
+5. eaf-core has zero external runtime deps (Kotlin stdlib only); no de.acci.dvmm imports; Konsist rule passes.
+6. Unit tests cover Result and DomainError; JaCoCo ≥80% line coverage; Pitest ≥70% mutation score for eaf-core.
+  ]]></acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/epics.md" title="DVMM - Epic Breakdown" section="Story 1.2: EAF Core Module" snippet="Story 1.2 requires Result/DomainError primitives and zero external dependencies as the shared kernel for all modules." />
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.2 Implementation Checklist" snippet="Defines Result sealed class, DomainError hierarchy, value objects for TenantId/UserId/CorrelationId, and quality gates (JaCoCo ≥80%, Pitest ≥70%)." />
+      <doc path="docs/architecture.md" title="DVMM Architecture" section="EAF Module Definitions & Dependency Rules" snippet="EAF modules must not import DVMM code; eaf-core has zero external dependencies and enforces framework-first boundaries with Konsist tests." />
+      <doc path="docs/security-architecture.md" title="Security Architecture" section="Audit & Compliance / Correlation IDs" snippet="CorrelationId required for traceability across audit logs; error handling must carry context for observability." />
+      <doc path="docs/test-design-system.md" title="Test Design System" section="Critical Test Scenarios TC-001..004" snippet="Emphasizes isolation, tenant context propagation, projection waiting; sets expectations for ≥80% coverage and ≥70% mutation score." />
+      <doc path="docs/prd.md" title="Product Requirements" section="Non-Functional Requirements / Maintainability & Quality Gates" snippet="NFRs demand ≥80% coverage, ≥70% mutation, and architecture rule adherence; FR80 logging with correlation IDs informs core design." />
+    </docs>
+    <code />
+    <dependencies>
+      <dependency ecosystem="gradle" name="kotlin" version="2.2.x" />
+      <dependency ecosystem="gradle" name="jvm" version="21" />
+      <dependency ecosystem="gradle" name="jacoco" version="0.8.12" />
+      <dependency ecosystem="gradle" name="pitest" version="1.19.0-rc.2" />
+      <dependency ecosystem="gradle" name="konsist" version="0.17.3" />
+      <dependency ecosystem="gradle" name="testcontainers" version="2.0.2" scope="test-only (framework available but not required for eaf-core)" />
+      <dependency ecosystem="gradle" name="junit" version="6.0.1" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <![CDATA[
+- EAF ← DVMM dependency direction: eaf-core must not import de.acci.dvmm.* (Konsist rule).
+- Zero external runtime dependencies in eaf-core; Kotlin stdlib only.
+- Use Kotlin 2.2 (K2) with explicit API enabled.
+- No wildcard imports; adhere to named-argument rule (>2 params) per coding standards.
+- Error handling centralized in Result/DomainError; avoid unchecked RuntimeException in domain flow.
+- CorrelationId must be available for logging/audit per security architecture.
+- Quality gates: JaCoCo ≥80% line coverage, Pitest ≥70% mutation score for eaf-core.
+    ]]>
+  </constraints>
+
+  <interfaces>
+    <![CDATA[
+- (None yet) — story delivers foundational primitives; no external APIs/interfaces to expose.
+    ]]>
+  </interfaces>
+
+  <tests>
+    <standards><![CDATA[
+- JUnit 6, MockK for mocking, JaCoCo coverage gate ≥80%, Pitest mutation ≥70%.
+- Architecture checks via Konsist to enforce zero DVMM imports and dependency cleanliness.
+- Prefer property-based/parameterized tests for Result helpers; ensure null-safety and short-circuit behavior.
+    ]]></standards>
+    <locations><![CDATA[
+- eaf/eaf-core/src/test/kotlin
+    ]]></locations>
+    <ideas><![CDATA[
+- AC1: Verify Result.map/flatMap/fold keep Failure untouched; ensure infix success/failure builders align with helpers.
+- AC2: DomainError equality/serialization round-trips for each variant; ensure contextual fields retained.
+- AC3: TenantId/UserId/CorrelationId generate()/fromString() round-trips; assert UUID format validation failures.
+- AC4: Build should fail if explicit API disabled—add gradle functional test or compile task assertion.
+- AC5: Konsist rule: assert no external imports and no de.acci.dvmm.* usage.
+- AC6: Mutation tests targeting error mapping branches and value-object factories; ensure survival rate <30% (target ≥70% score).
+    ]]></ideas>
+  </tests>
+</story-context>
