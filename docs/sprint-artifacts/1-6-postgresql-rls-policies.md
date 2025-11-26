@@ -71,7 +71,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 
 ### Learnings from Previous Story
 
-**From Story 1-5-tenant-context-module (Status: done)**
+#### From Story 1-5-tenant-context-module (Status: done)
 
 - **New Service Created:** `TenantContext` coroutine-based helpers available at `eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt` — use `TenantContext.current()` to get current tenant.
 - **Coroutine Context Element:** `TenantContextElement` propagates tenant through coroutine boundaries — integrate with connection customizer.
@@ -159,7 +159,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 
 ### Learnings from Previous Story
 
-**From Story 1-5-tenant-context-module (Status: done)**
+#### From Story 1-5-tenant-context-module (Status: done)
 
 - **New Files Created:**
   - `eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextElement.kt`
@@ -265,7 +265,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 
 - **Fail-Closed:** Missing tenant context returns zero rows (not exception at DB level)
 - **No Bypass:** FORCE ROW LEVEL SECURITY prevents table owner bypass
-- **Session Scope:** `set_config(..., false)` ensures tenant context persists for connection lifetime
+- **Session Scope:** `set_config(..., false)` ensures tenant context persists for connection lifetime; must be explicitly cleared (set to NULL) when tenant is absent to prevent leakage in pooled connections
 - **Role Separation:** eaf_app role has no superuser privileges
 
 ### Action Items
