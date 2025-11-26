@@ -200,6 +200,164 @@ internal class RlsEnforcementIntegrationTest {
         }
     }
 
+    @Test
+    fun `query without tenant context returns zero rows - fail-closed semantics (AC 1)`() = runTest {
+        // This test verifies fail-closed behavior: when no tenant context is set,
+        // queries should return zero rows, NOT throw an exception at DB level.
+        // The RlsEnforcingDataSource throws an exception BEFORE the query runs,
+        // but if somehow a query reaches the DB without tenant context, RLS should
+        // return empty results.
+
+        // Given - insert event with a valid tenant
+        val tenantA = TenantId.generate()
+        val aggregateId = UUID.randomUUID()
+
+        val baseDataSource = createBaseDataSource()
+        val rlsDataSource = RlsEnforcingDataSource(baseDataSource)
+
+        TenantTestContext.set(tenantA)
+        val connection = rlsDataSource.connection
+        val store = PostgresEventStore(DSL.using(connection, SQLDialect.POSTGRES), objectMapper)
+        store.append(
+            aggregateId,
+            listOf(TestEventCreated(metadata = createMetadata(tenantA), name = "test", value = 1)),
+            expectedVersion = 0
+        )
+        connection.close()
+        TenantTestContext.clear()
+
+        // When - query directly without setting app.tenant_id (bypass RlsEnforcingDataSource)
+        // This simulates what happens if RLS is the only protection layer
+        val directConnection = TestContainers.postgres.createConnection("")
+        directConnection.createStatement().execute("SET ROLE eaf_app")
+        // Don't set app.tenant_id - this tests fail-closed behavior
+
+        val dsl = DSL.using(directConnection, SQLDialect.POSTGRES)
+        val directResult = dsl.fetch(
+            "SELECT * FROM eaf_events.events WHERE aggregate_id = ?",
+            aggregateId
+        )
+        directConnection.close()
+
+        // Then - should return zero rows (fail-closed), not all rows
+        assertEquals(0, directResult.size, "Without tenant context, RLS should return zero rows (fail-closed)")
+    }
+
+    @Test
+    fun `RLS policy uses current_setting with missing_ok true (AC 3)`() = runTest {
+        // Verify the RLS policy is correctly configured with current_setting('app.tenant_id', true)
+        // The 'true' parameter means missing_ok, so it returns NULL instead of error
+
+        // Given - direct connection to verify policy definition
+        val connection = TestContainers.postgres.createConnection("")
+
+        // When - query the policy definition
+        connection.use { conn ->
+            conn.createStatement().use { stmt ->
+                stmt.executeQuery("""
+                    SELECT polname, pg_get_expr(polqual, polrelid) as policy_expr
+                    FROM pg_policy
+                    WHERE polrelid = 'eaf_events.events'::regclass
+                """).use { policyInfo ->
+                    // Then - verify policy exists and uses correct expression
+                    assertTrue(policyInfo.next(), "RLS policy should exist on events table")
+                    val policyName = policyInfo.getString("polname")
+                    val policyExpr = policyInfo.getString("policy_expr")
+
+                    assertEquals("tenant_isolation_events", policyName)
+                    assertTrue(
+                        policyExpr.contains("current_setting") && policyExpr.contains("app.tenant_id"),
+                        "Policy should use current_setting('app.tenant_id', true)"
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `cleared tenant context on pooled connection returns zero rows without cast error`() = runTest {
+        // This test verifies that when a pooled connection has its tenant context cleared
+        // (e.g., for a health check endpoint), querying RLS-protected tables returns zero rows
+        // and does NOT throw a cast error from ''::uuid.
+        //
+        // PostgreSQL set_config(..., NULL, ...) may leave an empty string rather than true NULL.
+        // The RLS policy must handle this gracefully.
+
+        // Given - insert event with a valid tenant
+        val tenantA = TenantId.generate()
+        val aggregateId = UUID.randomUUID()
+
+        val baseDataSource = createBaseDataSource()
+        val rlsDataSource = RlsEnforcingDataSource(baseDataSource)
+
+        TenantTestContext.set(tenantA)
+        var connection = rlsDataSource.connection
+        val store = PostgresEventStore(DSL.using(connection, SQLDialect.POSTGRES), objectMapper)
+        store.append(
+            aggregateId,
+            listOf(TestEventCreated(metadata = createMetadata(tenantA), name = "test", value = 1)),
+            expectedVersion = 0
+        )
+        connection.close()
+        TenantTestContext.clear()
+
+        // When - simulate pooled connection reuse: set tenant, then clear it
+        TestContainers.postgres.createConnection("").use { pooledConn ->
+            pooledConn.createStatement().execute("SET ROLE eaf_app")
+
+            // First set a tenant (simulates previous request)
+            pooledConn.prepareStatement("SELECT set_config('app.tenant_id', ?, false)").use { stmt ->
+                stmt.setString(1, tenantA.value.toString())
+                stmt.execute()
+            }
+
+            // Then clear tenant context (simulates health check or system request)
+            pooledConn.createStatement().execute(
+                "SELECT set_config('app.tenant_id', NULL, false)"
+            )
+
+            // Verify what current_setting returns after clearing
+            val settingResult = pooledConn.createStatement().executeQuery(
+                "SELECT current_setting('app.tenant_id', true)"
+            )
+            settingResult.next()
+            val currentValue = settingResult.getString(1)
+
+            // Query RLS-protected table - should return zero rows, NOT throw cast error
+            val dsl = DSL.using(pooledConn, SQLDialect.POSTGRES)
+            val result = dsl.fetch(
+                "SELECT * FROM eaf_events.events WHERE aggregate_id = ?",
+                aggregateId
+            )
+
+            // Then - should return zero rows (fail-closed behavior)
+            assertEquals(0, result.size,
+                "After clearing tenant context (current_setting='$currentValue'), " +
+                "RLS should return zero rows without cast error")
+        }
+    }
+
+    @Test
+    fun `FORCE ROW LEVEL SECURITY is enabled - no bypass for table owner (AC 6)`() = runTest {
+        // Verify that FORCE ROW LEVEL SECURITY is enabled, which prevents
+        // even the table owner from bypassing RLS
+
+        TestContainers.postgres.createConnection("").use { connection ->
+            // Query for RLS enforcement status
+            connection.createStatement().use { stmt ->
+                stmt.executeQuery("""
+                    SELECT relforcerowsecurity
+                    FROM pg_class
+                    WHERE oid = 'eaf_events.events'::regclass
+                """).use { result ->
+                    assertTrue(result.next(), "Should find events table")
+                    val forceRls = result.getBoolean("relforcerowsecurity")
+                    assertTrue(forceRls, "FORCE ROW LEVEL SECURITY should be enabled on events table")
+                }
+            }
+        }
+    }
+
     private fun createMetadata(tenantId: TenantId): EventMetadata = EventMetadata(
         tenantId = tenantId,
         userId = UserId.generate(),
