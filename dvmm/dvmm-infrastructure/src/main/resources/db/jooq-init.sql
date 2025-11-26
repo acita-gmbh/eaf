@@ -55,8 +55,39 @@ END $$;
 
 -- Grant schema usage to application role
 GRANT USAGE ON SCHEMA eaf_events TO eaf_app;
+
+-- Grant only SELECT and INSERT on events table (no UPDATE/DELETE for immutability)
 GRANT SELECT, INSERT ON eaf_events.events TO eaf_app;
+
+-- Grant full CRUD on snapshots (snapshots can be updated and replaced)
 GRANT SELECT, INSERT, UPDATE, DELETE ON eaf_events.snapshots TO eaf_app;
+
+-- Revoke UPDATE and DELETE from PUBLIC on events table (Event Immutability)
+REVOKE UPDATE, DELETE ON eaf_events.events FROM PUBLIC;
+
+-- Create trigger to prevent UPDATE/DELETE even by superusers
+CREATE OR REPLACE FUNCTION eaf_events.prevent_event_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION 'Events are immutable. UPDATE and DELETE operations are not allowed on eaf_events.events table.';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_prevent_event_update
+    BEFORE UPDATE ON eaf_events.events
+    FOR EACH ROW
+    EXECUTE FUNCTION eaf_events.prevent_event_modification();
+
+CREATE TRIGGER trg_prevent_event_delete
+    BEFORE DELETE ON eaf_events.events
+    FOR EACH ROW
+    EXECUTE FUNCTION eaf_events.prevent_event_modification();
+
+-- Add comments for documentation
+COMMENT ON TABLE eaf_events.events IS 'Immutable event log for event sourcing. No UPDATE or DELETE allowed.';
+COMMENT ON TABLE eaf_events.snapshots IS 'Aggregate state snapshots for performance optimization.';
+COMMENT ON COLUMN eaf_events.events.version IS 'Aggregate version. Starts at 1, increments with each event.';
+COMMENT ON COLUMN eaf_events.events.metadata IS 'Event metadata: tenant_id, user_id, correlation_id, timestamp';
 
 -- ============================================================================
 -- V002__enable_rls.sql content

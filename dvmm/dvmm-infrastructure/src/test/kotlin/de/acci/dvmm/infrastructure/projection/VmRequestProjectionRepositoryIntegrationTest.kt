@@ -47,6 +47,10 @@ class VmRequestProjectionRepositoryIntegrationTest {
         // Testcontainers default credentials - not sensitive, used only for local testing
         private const val TC_DB_NAME = "dvmm_test"
 
+        // Default test values for VM request projections
+        private const val DEFAULT_CPU_CORES = 4
+        private const val DEFAULT_MEMORY_GB = 16
+
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer = PostgreSQLContainer("postgres:16-alpine")
@@ -120,8 +124,8 @@ class VmRequestProjectionRepositoryIntegrationTest {
         tenantId: TenantId,
         requesterId: UUID = UUID.randomUUID(),
         vmName: String = "test-vm",
-        cpuCores: Int = 4,
-        memoryGb: Int = 16,
+        cpuCores: Int = DEFAULT_CPU_CORES,
+        memoryGb: Int = DEFAULT_MEMORY_GB,
         status: String = "PENDING",
         createdAt: OffsetDateTime = OffsetDateTime.now(),
         updatedAt: OffsetDateTime = OffsetDateTime.now()

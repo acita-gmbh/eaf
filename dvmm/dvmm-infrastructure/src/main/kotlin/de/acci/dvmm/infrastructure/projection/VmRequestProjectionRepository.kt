@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.jooq.SortField
 import org.jooq.Table
 import java.util.UUID
 
@@ -39,6 +40,14 @@ public class VmRequestProjectionRepository(
     }
 
     override fun table(): Table<*> = VM_REQUESTS_PROJECTION
+
+    /**
+     * Returns the default ordering for deterministic pagination.
+     * Orders by creation date descending (newest first).
+     */
+    override fun defaultOrderBy(): List<SortField<*>> = listOf(
+        VM_REQUESTS_PROJECTION.CREATED_AT.desc()
+    )
 
     /**
      * Finds a VM request projection by its ID.
@@ -73,7 +82,7 @@ public class VmRequestProjectionRepository(
             .where(VM_REQUESTS_PROJECTION.STATUS.eq(status))
             .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
             .limit(pageRequest.size)
-            .offset(pageRequest.offset)
+            .offset(pageRequest.offset.toInt())
             .fetch()
             .map { mapRecord(it) }
 
@@ -105,7 +114,7 @@ public class VmRequestProjectionRepository(
             .where(VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId))
             .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.desc())
             .limit(pageRequest.size)
-            .offset(pageRequest.offset)
+            .offset(pageRequest.offset.toInt())
             .fetch()
             .map { mapRecord(it) }
 

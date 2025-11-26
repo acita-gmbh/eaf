@@ -56,15 +56,12 @@ public object ProjectionTestUtils {
         pollInterval: Duration = DEFAULT_POLL_INTERVAL
     ): T {
         return withTimeout(timeout) {
-            while (true) {
-                val result = repository()
-                if (result != null) {
-                    return@withTimeout result
-                }
+            var result = repository()
+            while (result == null) {
                 delay(pollInterval)
+                result = repository()
             }
-            @Suppress("UNREACHABLE_CODE")
-            error("This should never be reached")
+            result
         }
     }
 
@@ -72,6 +69,7 @@ public object ProjectionTestUtils {
      * Waits for a projection to become available for a specific aggregate.
      *
      * Convenience overload that includes the aggregate ID for better traceability.
+     * The aggregate ID is included in the timeout exception message for easier debugging.
      *
      * @param T The projected entity type
      * @param aggregateId The ID of the aggregate whose projection we're waiting for
@@ -79,7 +77,7 @@ public object ProjectionTestUtils {
      * @param timeout Maximum time to wait for the projection (default: 5 seconds)
      * @param pollInterval Time between polling attempts (default: 50ms)
      * @return The projected entity when found
-     * @throws TimeoutCancellationException if the projection is not found within the timeout period
+     * @throws IllegalStateException if the projection is not found within the timeout period (wraps TimeoutCancellationException)
      */
     public suspend fun <T : Any> awaitProjection(
         aggregateId: UUID,
@@ -87,8 +85,15 @@ public object ProjectionTestUtils {
         timeout: Duration = DEFAULT_TIMEOUT,
         pollInterval: Duration = DEFAULT_POLL_INTERVAL
     ): T {
-        // aggregateId is available for debugging/logging purposes if needed
-        return awaitProjection(repository, timeout, pollInterval)
+        try {
+            return awaitProjection(repository, timeout, pollInterval)
+        } catch (e: TimeoutCancellationException) {
+            // Wrap the original timeout exception with additional context
+            throw IllegalStateException(
+                "Projection for aggregate $aggregateId was not found within $timeout",
+                e
+            )
+        }
     }
 
     /**
@@ -120,15 +125,12 @@ public object ProjectionTestUtils {
         pollInterval: Duration = DEFAULT_POLL_INTERVAL
     ): T {
         return withTimeout(timeout) {
-            while (true) {
-                val result = repository()
-                if (condition(result) && result != null) {
-                    return@withTimeout result
-                }
+            var result = repository()
+            while (!condition(result) || result == null) {
                 delay(pollInterval)
+                result = repository()
             }
-            @Suppress("UNREACHABLE_CODE")
-            error("This should never be reached")
+            result
         }
     }
 }

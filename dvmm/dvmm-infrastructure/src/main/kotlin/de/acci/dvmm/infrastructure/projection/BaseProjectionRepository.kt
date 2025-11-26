@@ -6,7 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
 import org.jooq.Record
-import org.jooq.Select
+import org.jooq.SortField
 import org.jooq.Table
 
 /**
@@ -32,36 +32,18 @@ public abstract class BaseProjectionRepository<T : Any>(
     protected abstract fun table(): Table<*>
 
     /**
-     * Executes a paginated query and returns a PagedResponse.
+     * Returns the default sort fields for deterministic pagination.
+     * Override this method to customize the default ordering.
      *
-     * @param pageRequest The pagination parameters
-     * @param query The base query to paginate (without LIMIT/OFFSET)
-     * @return PagedResponse containing the items and pagination metadata
+     * @return List of sort fields for ORDER BY clause
      */
-    protected suspend fun <R : Record> paginate(
-        pageRequest: PageRequest,
-        query: Select<R>
-    ): PagedResponse<T> = withContext(Dispatchers.IO) {
-        // Count total elements (executed as a separate query)
-        val totalElements = dsl.fetchCount(query).toLong()
-
-        // Fetch the page using a wrapper query with LIMIT/OFFSET
-        val items = dsl.selectFrom(query.asTable("subquery"))
-            .limit(pageRequest.size)
-            .offset(pageRequest.offset)
-            .fetch()
-            .map { record -> mapRecord(record) }
-
-        PagedResponse(
-            items = items,
-            page = pageRequest.page,
-            size = pageRequest.size,
-            totalElements = totalElements
-        )
-    }
+    protected open fun defaultOrderBy(): List<SortField<*>> = emptyList()
 
     /**
      * Finds all entities with pagination.
+     *
+     * Note: For deterministic pagination results, subclasses should override [defaultOrderBy]
+     * to provide a consistent sort order.
      *
      * @param pageRequest The pagination parameters
      * @return PagedResponse containing the entities
@@ -70,9 +52,17 @@ public abstract class BaseProjectionRepository<T : Any>(
         withContext(Dispatchers.IO) {
             val totalElements = dsl.fetchCount(table()).toLong()
 
-            val items = dsl.selectFrom(table())
+            val query = dsl.selectFrom(table())
+            val orderBy = defaultOrderBy()
+            val orderedQuery = if (orderBy.isNotEmpty()) {
+                query.orderBy(orderBy)
+            } else {
+                query
+            }
+
+            val items = orderedQuery
                 .limit(pageRequest.size)
-                .offset(pageRequest.offset)
+                .offset(pageRequest.offset.toInt())
                 .fetch()
                 .map { mapRecord(it) }
 
