@@ -69,8 +69,19 @@ public object TestContainers {
                     ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
                     DROP POLICY IF EXISTS tenant_isolation_events ON eaf_events.events;
                     CREATE POLICY tenant_isolation_events ON eaf_events.events
-                        USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
+                        USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::UUID);
                     ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
+
+                    -- Create eaf_app role for RLS tests if it doesn't exist
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'eaf_app') THEN
+                            CREATE ROLE eaf_app NOINHERIT;
+                        END IF;
+                    END
+                    $$;
+                    GRANT USAGE ON SCHEMA eaf_events TO eaf_app;
+                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA eaf_events TO eaf_app;
                     """.trimIndent()
                 )
             }

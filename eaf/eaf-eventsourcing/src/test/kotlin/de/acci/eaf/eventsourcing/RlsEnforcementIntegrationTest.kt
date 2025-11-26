@@ -275,6 +275,68 @@ internal class RlsEnforcementIntegrationTest {
     }
 
     @Test
+    fun `cleared tenant context on pooled connection returns zero rows without cast error`() = runTest {
+        // This test verifies that when a pooled connection has its tenant context cleared
+        // (e.g., for a health check endpoint), querying RLS-protected tables returns zero rows
+        // and does NOT throw a cast error from ''::uuid.
+        //
+        // PostgreSQL set_config(..., NULL, ...) may leave an empty string rather than true NULL.
+        // The RLS policy must handle this gracefully.
+
+        // Given - insert event with a valid tenant
+        val tenantA = TenantId.generate()
+        val aggregateId = UUID.randomUUID()
+
+        val baseDataSource = createBaseDataSource()
+        val rlsDataSource = RlsEnforcingDataSource(baseDataSource)
+
+        TenantTestContext.set(tenantA)
+        var connection = rlsDataSource.connection
+        val store = PostgresEventStore(DSL.using(connection, SQLDialect.POSTGRES), objectMapper)
+        store.append(
+            aggregateId,
+            listOf(TestEventCreated(metadata = createMetadata(tenantA), name = "test", value = 1)),
+            expectedVersion = 0
+        )
+        connection.close()
+        TenantTestContext.clear()
+
+        // When - simulate pooled connection reuse: set tenant, then clear it
+        TestContainers.postgres.createConnection("").use { pooledConn ->
+            pooledConn.createStatement().execute("SET ROLE eaf_app")
+
+            // First set a tenant (simulates previous request)
+            pooledConn.createStatement().execute(
+                "SELECT set_config('app.tenant_id', '${tenantA.value}', false)"
+            )
+
+            // Then clear tenant context (simulates health check or system request)
+            pooledConn.createStatement().execute(
+                "SELECT set_config('app.tenant_id', NULL, false)"
+            )
+
+            // Verify what current_setting returns after clearing
+            val settingResult = pooledConn.createStatement().executeQuery(
+                "SELECT current_setting('app.tenant_id', true)"
+            )
+            settingResult.next()
+            val currentValue = settingResult.getString(1)
+
+            // Query RLS-protected table - should return zero rows, NOT throw cast error
+            val dsl = DSL.using(pooledConn, SQLDialect.POSTGRES)
+            val result = dsl.fetch(
+                "SELECT * FROM eaf_events.events WHERE aggregate_id = ?",
+                aggregateId
+            )
+
+            // Then - should return zero rows (fail-closed behavior)
+            assertEquals(0, result.size,
+                "After clearing tenant context (current_setting='$currentValue'), " +
+                "RLS should return zero rows without cast error")
+        }
+    }
+
+    @Test
     fun `FORCE ROW LEVEL SECURITY is enabled - no bypass for table owner (AC 6)`() = runTest {
         // Verify that FORCE ROW LEVEL SECURITY is enabled, which prevents
         // even the table owner from bypassing RLS
