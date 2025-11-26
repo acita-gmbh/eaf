@@ -105,8 +105,12 @@ public class TenantAwareDataSourceDecorator(
 
         if (tenantId != null) {
             RlsConnectionCustomizer.configureConnection(connection, tenantId)
+        } else {
+            // Clear any previous tenant context from pooled connection to prevent tenant leakage
+            // This is critical for connection pool security: connections may be reused across tenants
+            connection.prepareStatement("SELECT set_config('app.tenant_id', NULL, false)").use { it.execute() }
         }
-        // Note: If tenantId is null, RLS fail-closed semantics apply (zero rows returned)
+        // Note: If tenantId is null after clearing, RLS fail-closed semantics apply (zero rows returned)
     }
 
     override fun getLogWriter(): PrintWriter? = delegate.logWriter

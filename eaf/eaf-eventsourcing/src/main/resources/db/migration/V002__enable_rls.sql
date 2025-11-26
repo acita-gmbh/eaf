@@ -10,8 +10,9 @@ ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eaf_events.snapshots ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policy for events table
--- Uses current_setting with 'true' parameter for missing_ok (returns NULL instead of error)
--- This implements fail-closed semantics: no tenant context = no rows returned
+-- Uses current_setting with 'true' parameter for missing_ok
+-- When app.tenant_id is not set, current_setting returns NULL which casts to NULL::uuid
+-- This implements fail-closed semantics: tenant_id = NULL::uuid matches no rows (SQL NULL semantics)
 CREATE POLICY tenant_isolation_events ON eaf_events.events
     FOR ALL
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
