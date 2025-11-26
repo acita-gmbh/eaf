@@ -3,6 +3,7 @@ package de.acci.eaf.testing
 import de.acci.eaf.core.types.TenantId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.postgresql.ds.PGSimpleDataSource
 import java.sql.Connection
@@ -10,6 +11,28 @@ import java.sql.SQLException
 import javax.sql.DataSource
 
 class RlsEnforcingDataSourceTest {
+
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun ensureRoleExists() {
+            // Create eaf_app role if it doesn't exist (needed for RLS testing)
+            TestContainers.postgres.createConnection("").use { conn ->
+                conn.createStatement().use { stmt ->
+                    stmt.execute(
+                        """
+                        DO ${'$'}${'$'}
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'eaf_app') THEN
+                                CREATE ROLE eaf_app NOLOGIN;
+                            END IF;
+                        END ${'$'}${'$'};
+                        """.trimIndent()
+                    )
+                }
+            }
+        }
+    }
 
     // Use PGSimpleDataSource as delegate (standard Postgres DataSource)
     private val delegate = PGSimpleDataSource().apply {

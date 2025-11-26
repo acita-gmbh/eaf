@@ -1,0 +1,90 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>5</storyId>
+    <title>tenant-context-module</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-5-tenant-context-module.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>tenant context automatically propagated through coroutines</iWant>
+    <soThat>all operations are tenant-scoped and fail closed when context is missing</soThat>
+    <tasks>
+      - Implement TenantContextElement (CoroutineContext.Element) in eaf-tenant with value class TenantId. (AC: 2)
+      - Implement TenantContext.current() and currentOrNull() helpers (suspend, coroutine-context based). (AC: 1,4)
+      - Define TenantContextMissingException with fail-closed semantics (HTTP 403 message). (AC: 4)
+      - Implement TenantContextWebFilter (WebFlux/CoWebFilter) to extract tenant_id from JWT and install context; reject missing/invalid with 403. (AC: 1,3,4)
+      - JWT helper: extract claim tenant_id (UUID), validate format; unit tests for claim parsing edge cases. (AC: 1,3)
+      - Tests: TenantContextPropagationTest covering dispatcher switch, async child, 100-parallel isolation (TC-001). (AC: 2,5)
+      - Tests: TenantContextWebFilterTest covering happy path and missing/invalid tenant -&gt; 403. (AC: 1,3,4)
+      - Tests: TenantContext.current() throws when not set. (AC: 4)
+      - Ensure no Spring dependencies leak into core context classes; keep filter in adapter layer if needed. (AC: 2,3)
+      - Documentation updates: add references/citations to Dev Notes (architecture, security), update sprint-status when drafted. (meta)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Tenant context retrieval: Given JWT with tenant_id, TenantContext.current() returns that tenant.
+    2. Coroutine propagation: TenantContextElement carries tenant via CoroutineContext (no ThreadLocal).
+    3. Web filter extraction: TenantContextWebFilter pulls tenant_id each request and installs context.
+    4. Fail-closed: Missing tenant context -> HTTP 403 + TenantContextMissingException.
+    5. TC-001 resilience: survives dispatcher switch, async child; 100 parallel coroutines (A/B) without cross-contamination.
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      - docs/epics.md#Story-1.5-Tenant-Context-Module: Source ACs and TC-001 scenarios.
+      - docs/architecture.md#Tenant-Context-Pattern: Coroutine context, fail-closed, no ThreadLocal; module boundaries.
+      - docs/security-architecture.md#Multi-Tenant-Isolation: RLS, tenant_id claim propagation, fail-closed semantics.
+      - docs/prd.md#Multi-Tenancy: FR64-67 expectations on tenant isolation.
+      - docs/test-design-system.md#TC-001: Stress scenarios for tenant context propagation.
+    </docs>
+    <code>
+      - (To be created) eaf/eaf-tenant/src/main/kotlin/.../TenantContext.kt — tenant context element and helpers.
+      - (To be created) eaf/eaf-tenant/src/main/kotlin/.../TenantContextWebFilter.kt — JWT extraction adapter (WebFlux).
+      - eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt — tenant metadata pattern for consistency (reference).
+    </code>
+    <dependencies>
+      - Kotlin 2.2 (coroutines) — coroutine context propagation.
+      - Spring Boot 3.5 WebFlux — filter adapter layer (no Spring in core).
+      - kotlinx-coroutines-core — context elements, Dispatchers.IO, async.
+      - JWT parsing (existing stack in dvmm-api) — reuse claim extraction utilities if available.
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - No ThreadLocal; propagation via CoroutineContext.Element only.
+    - Fail-closed: missing tenant -> 403; never default to any tenant.
+    - EAF modules must not depend on Spring (rule 1); keep WebFilter in adapter layer.
+    - Consistent tenant_id value class across modules; align with RLS policies.
+    - Tests must hit TC-001 stress (100 parallel coroutines) and negative path (missing context).
+  </constraints>
+
+  <interfaces>
+    - TenantContext.current(): TenantId (suspend) — throws TenantContextMissingException when absent.
+    - TenantContext.currentOrNull(): TenantId? (suspend).
+    - TenantContextElement(val tenantId: TenantId) : CoroutineContext.Element.
+    - TenantContextWebFilter: extracts tenant_id claim from JWT Authorization header Bearer token; on success, wraps downstream in TenantContextElement; on failure, returns 403.
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use JUnit + kotlinx-coroutines test; follow TC-001 from docs/test-design-system.md. Ensure isolation (no cross-tenant leakage) and negative cases (missing/invalid JWT). Aim ≥80% coverage, mutation ≥70%.
+    </standards>
+    <locations>
+      - eaf/eaf-tenant/src/test/kotlin/**/TenantContextPropagationTest.kt
+      - eaf/eaf-tenant/src/test/kotlin/**/TenantContextWebFilterTest.kt
+    </locations>
+    <ideas>
+      - AC1: Given JWT with tenant_id, TenantContext.current() returns id (unit).
+      - AC2: WithContext(Dispatchers.IO) and async child retain tenant (unit).
+      - AC5: 100 parallel coroutines (A/B tenants) assert no cross-contamination (unit stress).
+      - AC3/4: WebFilter happy path sets context; missing/invalid JWT returns 403 (integration/unit with mocked exchange).
+      - Negative: TenantContext.current() without element throws TenantContextMissingException.
+    </ideas>
+  </tests>
+</story-context>
