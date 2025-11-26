@@ -1,6 +1,6 @@
 # Story 1.3: Event Store Setup
 
-**Status:** ready-for-dev
+**Status:** done
 
 ## Story
 
@@ -32,38 +32,38 @@ So that I can persist domain events durably.
 
 ## Tasks / Subtasks
 
-- [ ] Create Flyway migration `V001__create_event_store.sql` in `eaf-eventsourcing/src/main/resources/db/migration/` (AC: 1, 3, 4)
-  - [ ] Create `eaf_events` schema
-  - [ ] Create `events` table with all columns
-  - [ ] Add unique constraint on `(aggregate_id, version)`
-  - [ ] Add indexes on `aggregate_id` and `tenant_id`
-  - [ ] Revoke UPDATE/DELETE permissions on events table
-- [ ] Define `DomainEvent` interface in `eaf-eventsourcing` (AC: 1)
-  - [ ] Include `aggregateType`, `metadata` properties
-  - [ ] Define `EventMetadata` data class with `tenantId`, `userId`, `correlationId`, `timestamp`
-- [ ] Define `EventStore` interface in `eaf-eventsourcing` (AC: 1, 2, 5)
-  - [ ] `append(aggregateId, events, expectedVersion): Result<Long, EventStoreError>`
-  - [ ] `load(aggregateId): List<StoredEvent>`
-  - [ ] `loadFrom(aggregateId, fromVersion): List<StoredEvent>`
-- [ ] Define `EventStoreError` sealed class (AC: 2)
-  - [ ] `ConcurrencyConflict(aggregateId, expectedVersion, actualVersion)`
-- [ ] Implement `PostgresEventStore` in `eaf-eventsourcing` using jOOQ DSLContext (AC: 1, 2, 5)
-  - [ ] Implement `append()` with version increment and conflict detection
-  - [ ] Implement `load()` returning events ordered by version ASC
-  - [ ] Implement `loadFrom()` for partial replay
-- [ ] Configure Jackson `ObjectMapper` for JSONB serialization in Spring context (AC: 1)
-  - [ ] Register Kotlin module
-  - [ ] Configure ISO-8601 timestamp format
-- [ ] Write unit tests for `PostgresEventStore` (AC: 1, 2, 5)
-  - [ ] Test successful event append
-  - [ ] Test optimistic locking conflict detection
-  - [ ] Test event loading by aggregate ID
-  - [ ] Test partial loading from version
-- [ ] Write integration test verifying Flyway migration runs successfully (AC: 4)
-- [ ] Write integration test verifying RLS applies to events table via `RlsEnforcingDataSource` (AC: 1)
-- [ ] Write integration test verifying UPDATE/DELETE operations are rejected on events table (AC: 3)
-  - [ ] Attempt UPDATE on existing event row, verify permission denied error
-  - [ ] Attempt DELETE on existing event row, verify permission denied error
+- [x] Create Flyway migration `V001__create_event_store.sql` in `eaf-eventsourcing/src/main/resources/db/migration/` (AC: 1, 3, 4)
+  - [x] Create `eaf_events` schema
+  - [x] Create `events` table with all columns
+  - [x] Add unique constraint on `(tenant_id, aggregate_id, version)` - includes tenant_id for multi-tenancy
+  - [x] Add indexes on `aggregate_id` (via unique constraint) and `tenant_id`
+  - [x] Revoke UPDATE/DELETE permissions on events table
+- [x] Define `DomainEvent` interface in `eaf-eventsourcing` (AC: 1)
+  - [x] Include `aggregateType`, `metadata` properties
+  - [x] Define `EventMetadata` data class with `tenantId`, `userId`, `correlationId`, `timestamp`
+- [x] Define `EventStore` interface in `eaf-eventsourcing` (AC: 1, 2, 5)
+  - [x] `append(aggregateId, events, expectedVersion): Result<Long, EventStoreError>`
+  - [x] `load(aggregateId): List<StoredEvent>`
+  - [x] `loadFrom(aggregateId, fromVersion): List<StoredEvent>`
+- [x] Define `EventStoreError` sealed class (AC: 2)
+  - [x] `ConcurrencyConflict(aggregateId, expectedVersion, actualVersion)`
+- [x] Implement `PostgresEventStore` in `eaf-eventsourcing` using jOOQ DSLContext (AC: 1, 2, 5)
+  - [x] Implement `append()` with version increment and conflict detection
+  - [x] Implement `load()` returning events ordered by version ASC
+  - [x] Implement `loadFrom()` for partial replay
+- [x] Configure Jackson `ObjectMapper` for JSONB serialization in Spring context (AC: 1)
+  - [x] Register Kotlin module
+  - [x] Configure ISO-8601 timestamp format
+- [x] Write unit tests for `PostgresEventStore` (AC: 1, 2, 5)
+  - [x] Test successful event append
+  - [x] Test optimistic locking conflict detection
+  - [x] Test event loading by aggregate ID
+  - [x] Test partial loading from version
+- [x] Write integration test verifying Flyway migration runs successfully (AC: 4)
+- [x] Write integration test verifying RLS applies to events table via `RlsEnforcingDataSource` (AC: 1)
+- [x] Write integration test verifying UPDATE/DELETE operations are rejected on events table (AC: 3)
+  - [x] Attempt UPDATE on existing event row, verify permission denied error
+  - [x] Attempt DELETE on existing event row, verify permission denied error
 
 ## Dev Notes
 
@@ -116,14 +116,79 @@ So that I can persist domain events durably.
 
 ### Agent Model Used
 
+- claude-opus-4-5-20251101
+
 ### Debug Log References
 
 ### Completion Notes List
 
+- All 5 ACs implemented and tested
+- 27 integration tests pass (PostgresEventStore: 13, Flyway: 7, RLS: 3, Immutability: 4)
+- Test coverage: 87% (exceeds 80% requirement)
+- Architecture tests pass
+- PR #10 merged with CodeRabbit and Copilot review fixes
+
 ### File List
+
+- `eaf/eaf-eventsourcing/src/main/resources/db/migration/V001__create_event_store.sql`
+- `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStore.kt`
+- `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt`
+- `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/StoredEvent.kt`
+- `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/PostgresEventStore.kt`
+- `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStoreObjectMapper.kt`
+- `eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/PostgresEventStoreIntegrationTest.kt`
+- `eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/FlywayMigrationIntegrationTest.kt`
+- `eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/RlsEnforcementIntegrationTest.kt`
+- `eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/EventImmutabilityIntegrationTest.kt`
+- `eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/TestEvents.kt`
+
+## Code Review
+
+### Review Date: 2025-11-26
+
+### Reviewer: Senior Dev Agent (claude-opus-4-5-20251101)
+
+### Review Outcome: APPROVED
+
+### Acceptance Criteria Validation
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| AC1: Event Persistence | PASS | `PostgresEventStore.kt:97-110` - INSERT, all columns present in `V001__create_event_store.sql:9-25` |
+| AC2: Optimistic Locking | PASS | `V001__create_event_store.sql:22` - UNIQUE (tenant_id, aggregate_id, version), `PostgresEventStore.kt:51-65` - conflict detection |
+| AC3: Event Immutability | PASS | `V001__create_event_store.sql:77-85` - triggers, `V001__create_event_store.sql:67` - REVOKE |
+| AC4: Flyway Migration | PASS | `V001__create_event_store.sql` exists with schema, tables, indexes, constraints |
+| AC5: Event Loading | PASS | `PostgresEventStore.kt:68-86` - load() and loadFrom() with ORDER BY version ASC |
+
+### Code Quality Assessment
+
+| Aspect | Rating | Notes |
+|--------|--------|-------|
+| Test Coverage | EXCELLENT | 87% instruction coverage (exceeds 80% threshold) |
+| Architecture Compliance | PASS | No Spring dependencies in interfaces, EAF module independent |
+| Security | PASS | PreparedStatement usage, RLS support, immutability triggers |
+| Documentation | GOOD | KDoc on all public APIs |
+| Error Handling | GOOD | ConcurrencyConflict returns Result.Failure, race condition documented |
+
+### Issues Found and Resolved
+
+1. **HIGH - Multi-tenant unique constraint** (Copilot review): Changed from `UNIQUE (aggregate_id, version)` to `UNIQUE (tenant_id, aggregate_id, version)` - FIXED
+2. **MEDIUM - SQL injection in tests**: Converted string interpolation to PreparedStatement - FIXED
+3. **MEDIUM - Type mismatch INT vs Long**: Fixed `loadCurrentVersion()` to use `Int::class.java` with `.toLong()` - FIXED
+4. **LOW - Redundant index**: Removed `idx_events_aggregate` (duplicated by unique constraint) - FIXED
+5. **LOW - Race condition documentation**: Added comment explaining actualVersion timing - FIXED
+
+### Recommendations for Future Stories
+
+1. Consider adding snapshot support in a future story (table created but not used)
+2. Event replay/projection support will be needed for CQRS implementation
+3. Consider adding event type registry for type-safe deserialization
 
 ## Change Log
 
 - 2025-11-26: Draft created from epics/tech-spec with SM agent (#create-story).
 - 2025-11-26: Auto-improved after validation - added AC 3 test task, added test-design-system.md citations (#validate-create-story).
 - 2025-11-26: Story context generated, status changed to ready-for-dev (#create-story-context).
+- 2025-11-26: Implementation complete, PR #10 created (#dev-story).
+- 2025-11-26: Copilot review comments addressed - multi-tenant constraint, SQL injection, type mismatch fixes.
+- 2025-11-26: Code review APPROVED, status changed to done (#code-review).
