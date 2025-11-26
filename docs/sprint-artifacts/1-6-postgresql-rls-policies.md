@@ -199,13 +199,12 @@ so that tenant isolation is guaranteed even if application code has bugs.
   - `RlsConnectionCustomizer` - Coroutine-based for suspend functions
   - `TenantAwareDataSourceDecorator` - ThreadLocal-based for synchronous DataSource API
 - **Role naming:** Changed from `dvmm_app` to `eaf_app` since this is framework-level (EAF) not product-level (DVMM)
-- **V003 migration added:** Fixed RLS policy to handle empty string from `set_config(..., NULL, ...)` using `NULLIF(current_setting('app.tenant_id', true), '')::uuid` - prevents cast error when pooled connection tenant context is cleared
+- **Empty string handling:** V002 uses `NULLIF(current_setting('app.tenant_id', true), '')::uuid` to handle PostgreSQL returning empty string (not NULL) from `set_config(..., NULL, ...)` - prevents cast error when pooled connection tenant context is cleared
 
 ### File List
 
 **New Files:**
-- `eaf/eaf-eventsourcing/src/main/resources/db/migration/V002__enable_rls.sql` - Flyway migration enabling RLS
-- `eaf/eaf-eventsourcing/src/main/resources/db/migration/V003__fix_rls_empty_string_handling.sql` - Fix RLS policy to handle empty string from cleared tenant context
+- `eaf/eaf-eventsourcing/src/main/resources/db/migration/V002__enable_rls.sql` - Flyway migration enabling RLS with NULLIF for empty string handling
 - `eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/rls/RlsConnectionCustomizer.kt` - Coroutine-based connection customizer
 - `eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/rls/TenantAwareDataSourceDecorator.kt` - ThreadLocal-based DataSource decorator
 - `eaf/eaf-tenant/src/test/kotlin/de/acci/eaf/tenant/rls/RlsConnectionCustomizerTest.kt` - Unit tests for connection customizer

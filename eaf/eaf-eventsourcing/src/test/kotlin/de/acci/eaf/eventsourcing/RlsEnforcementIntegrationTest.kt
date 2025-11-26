@@ -306,9 +306,10 @@ internal class RlsEnforcementIntegrationTest {
             pooledConn.createStatement().execute("SET ROLE eaf_app")
 
             // First set a tenant (simulates previous request)
-            pooledConn.createStatement().execute(
-                "SELECT set_config('app.tenant_id', '${tenantA.value}', false)"
-            )
+            pooledConn.prepareStatement("SELECT set_config('app.tenant_id', ?, false)").use { stmt ->
+                stmt.setString(1, tenantA.value.toString())
+                stmt.execute()
+            }
 
             // Then clear tenant context (simulates health check or system request)
             pooledConn.createStatement().execute(
