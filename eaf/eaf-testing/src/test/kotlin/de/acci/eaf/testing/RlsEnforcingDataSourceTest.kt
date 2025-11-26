@@ -22,20 +22,25 @@ class RlsEnforcingDataSourceTest {
     fun `getConnection sets tenant context session variable`() {
         // Given
         val tenantId = TenantId.generate()
-        TenantTestContext.set(tenantId)
         val rlsDataSource = RlsEnforcingDataSource(delegate)
 
-        // When
-        rlsDataSource.connection.use { conn ->
-            // Then
-            val stmt = conn.createStatement()
-            val rs = stmt.executeQuery("SELECT current_setting('app.tenant_id', true)")
-            rs.next()
-            val setting = rs.getString(1)
-            assertEquals(tenantId.value.toString(), setting)
+        try {
+            TenantTestContext.set(tenantId)
+
+            // When
+            rlsDataSource.connection.use { conn ->
+                // Then
+                conn.createStatement().use { stmt ->
+                    stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
+                        rs.next()
+                        val setting = rs.getString(1)
+                        assertEquals(tenantId.value.toString(), setting)
+                    }
+                }
+            }
+        } finally {
+            TenantTestContext.clear()
         }
-        
-        TenantTestContext.clear()
     }
 
     @Test
