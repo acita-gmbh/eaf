@@ -18,6 +18,7 @@ include(":eaf:eaf-core")
 include(":eaf:eaf-eventsourcing")
 include(":eaf:eaf-tenant")
 include(":eaf:eaf-auth")
+include(":eaf:eaf-auth-keycloak")
 include(":eaf:eaf-testing")
 
 // DVMM Product modules

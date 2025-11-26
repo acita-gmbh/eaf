@@ -1,0 +1,218 @@
+<story-context id="1-7-keycloak-integration" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>Keycloak Integration</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-7-keycloak-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>Keycloak OIDC authentication configured</iWant>
+    <soThat>users can authenticate securely</soThat>
+    <tasks>
+      <task id="1" ac="3,4">Create IdP-agnostic interfaces in eaf-auth (IdentityProvider, TokenClaims, UserInfo, InvalidTokenException)</task>
+      <task id="2" ac="3,4">Create Keycloak adapter in eaf-auth-keycloak (KeycloakIdentityProvider)</task>
+      <task id="3" ac="1,2,4">Configure Spring Security OAuth2 Resource Server (SecurityConfig)</task>
+      <task id="4" ac="3,5">Implement custom ReactiveJwtAuthenticationConverter for role extraction</task>
+      <task id="5" ac="6">Configure CORS for frontend origin</task>
+      <task id="6" ac="4">Configure application properties (issuer-uri, jwk-set-uri)</task>
+      <task id="7" ac="meta">Integrate with TenantContextWebFilter (filter chain ordering)</task>
+      <task id="8" ac="1,2,3,5,6">Write unit and integration tests</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Valid JWT authentication - Given valid Keycloak JWT, When request includes Authorization Bearer token, Then request is authenticated</ac>
+    <ac id="2">Invalid/expired token rejection - Returns HTTP 401 Unauthorized</ac>
+    <ac id="3">JWT claims extraction - sub, tenant_id, roles, email extracted from validated token</ac>
+    <ac id="4">Spring Security OAuth2 Resource Server - ServerHttpSecurity.oauth2ResourceServer().jwt() with configurable issuer-uri/jwk-set-uri</ac>
+    <ac id="5">Role extraction - ReactiveJwtAuthenticationConverter extracts roles, maps to ROLE_* authorities</ac>
+    <ac id="6">CORS configuration - Allowed origins (localhost:3000), methods (GET,POST,PUT,DELETE,OPTIONS), credentials</ac>
+    <ac id="7">Token refresh handled by frontend - Backend returns 401 on expiry, frontend handles refresh</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Definitions</title>
+        <section>Story 1.7: Keycloak Integration</section>
+        <snippet>Configure Spring Security OAuth2 Resource Server with Keycloak. Extract JWT claims (sub, tenant_id, roles, email). Return HTTP 401 for invalid/expired tokens.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>DVMM Architecture</title>
+        <section>ADR-002: IdP-Agnostic Authentication</section>
+        <snippet>Identity Provider abstraction with IdentityProvider interface in eaf-auth. Products choose implementation via eaf-auth-{provider} modules. Keycloak adapter for MVP.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Story 1.7: Keycloak Integration</section>
+        <snippet>SecurityConfig with oauth2ResourceServer().jwt(), ReactiveJwtAuthenticationConverter for role extraction, CORS configuration for frontend origin, application.yml properties.</snippet>
+      </doc>
+      <doc>
+        <path>docs/security-architecture.md</path>
+        <title>DVMM Security Architecture</title>
+        <section>Authentication Architecture</section>
+        <snippet>Keycloak OIDC with JWT tokens containing tenant_id claim. Token stored in httpOnly cookie (Secure, SameSite=Lax). CSRF protection via X-CSRF-Token header.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-5-tenant-context-module.md</path>
+        <title>Story 1.5: Tenant Context Module</title>
+        <section>Dev Agent Record</section>
+        <snippet>TenantContextWebFilter, JwtTenantClaimExtractor, TenantContextElement available. Integration point: JWT validation (Story 1.7) runs before TenantContextWebFilter.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-6-postgresql-rls-policies.md</path>
+        <title>Story 1.6: PostgreSQL RLS Policies</title>
+        <section>Completion Notes</section>
+        <snippet>Tenant Context Chain: JWT → JwtTenantClaimExtractor → TenantContextWebFilter → TenantContext → RLS. Story 1.7 completes the JWT validation piece.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/JwtTenantClaimExtractor.kt</path>
+        <kind>utility</kind>
+        <symbol>JwtTenantClaimExtractor</symbol>
+        <lines>1-33</lines>
+        <reason>Extracts tenant_id claim from JWT payload. Assumes JWT already validated upstream. This story adds upstream JWT signature validation via Spring Security.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextWebFilter.kt</path>
+        <kind>filter</kind>
+        <symbol>TenantContextWebFilter</symbol>
+        <lines>1-33</lines>
+        <reason>WebFilter @Order(HIGHEST_PRECEDENCE + 10). SecurityWebFilter must run before this. Calls JwtTenantClaimExtractor.extractTenantId().</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt</path>
+        <kind>service</kind>
+        <symbol>TenantContext</symbol>
+        <reason>Provides TenantContext.current() suspend function. REACTOR_TENANT_KEY for Reactor context. Integration target for authenticated tenant propagation.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextElement.kt</path>
+        <kind>model</kind>
+        <symbol>TenantContextElement</symbol>
+        <reason>CoroutineContext.Element for tenant propagation. Used by TenantContextWebFilter to set tenant in coroutine context.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextMissingException.kt</path>
+        <kind>exception</kind>
+        <symbol>TenantContextMissingException</symbol>
+        <reason>Thrown when tenant context missing. TenantContextWebFilter throws this for requests without valid tenant_id in JWT.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/types/TenantId.kt</path>
+        <kind>value-class</kind>
+        <symbol>TenantId</symbol>
+        <reason>Value class for tenant ID. Used throughout authentication flow. TokenClaims should use this type.</reason>
+      </file>
+      <file>
+        <path>eaf/eaf-tenant/build.gradle.kts</path>
+        <kind>build</kind>
+        <symbol>build.gradle.kts</symbol>
+        <reason>Dependencies reference: spring-boot-webflux, coroutines-reactor, jackson-kotlin. eaf-auth should follow similar pattern but without Spring dependencies.</reason>
+      </file>
+      <file>
+        <path>gradle/libs.versions.toml</path>
+        <kind>config</kind>
+        <symbol>libs.versions.toml</symbol>
+        <reason>Version catalog with testcontainers-keycloak (3.5.0), jjwt (0.12.5). Missing: spring-boot-starter-oauth2-resource-server - must be added for Story 1.7.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <ecosystem name="kotlin/gradle">
+        <package name="org.springframework.boot:spring-boot-starter-webflux" version="${spring-boot}" />
+        <package name="org.springframework.boot:spring-boot-starter-oauth2-resource-server" version="${spring-boot}" note="TO ADD - required for JWT validation" />
+        <package name="org.jetbrains.kotlinx:kotlinx-coroutines-reactor" version="1.10.2" />
+        <package name="io.jsonwebtoken:jjwt-api" version="0.12.5" />
+        <package name="io.jsonwebtoken:jjwt-impl" version="0.12.5" />
+        <package name="io.jsonwebtoken:jjwt-jackson" version="0.12.5" />
+        <package name="com.github.dasniko:testcontainers-keycloak" version="3.5.0" scope="test" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface>
+      <name>TenantContext.current()</name>
+      <kind>suspend function</kind>
+      <signature>suspend fun current(): TenantId</signature>
+      <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContext.kt</path>
+    </interface>
+    <interface>
+      <name>JwtTenantClaimExtractor.extractTenantId()</name>
+      <kind>function</kind>
+      <signature>fun extractTenantId(token: String): TenantId?</signature>
+      <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/JwtTenantClaimExtractor.kt</path>
+    </interface>
+    <interface>
+      <name>TenantContextWebFilter</name>
+      <kind>WebFilter</kind>
+      <signature>@Order(Ordered.HIGHEST_PRECEDENCE + 10) class TenantContextWebFilter : WebFilter</signature>
+      <path>eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/TenantContextWebFilter.kt</path>
+    </interface>
+    <interface>
+      <name>IdentityProvider</name>
+      <kind>interface</kind>
+      <signature>interface IdentityProvider { suspend fun validateToken(token: String): TokenClaims; suspend fun getUserInfo(accessToken: String): UserInfo }</signature>
+      <path>eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/IdentityProvider.kt (TO CREATE)</path>
+      <note>ADR-002 mandates IdP-agnostic interface. eaf-auth must have NO Spring dependencies.</note>
+    </interface>
+    <interface>
+      <name>SecurityWebFilterChain</name>
+      <kind>Spring Security bean</kind>
+      <signature>@Bean fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain</signature>
+      <path>dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt (TO CREATE)</path>
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint source="ADR-002">eaf-auth module must contain IdP-agnostic IdentityProvider interface with NO Spring dependencies (pure Kotlin)</constraint>
+    <constraint source="ADR-002">Keycloak-specific implementation in eaf-auth-keycloak module implements IdentityProvider</constraint>
+    <constraint source="ADR-001">EAF modules (eaf-auth) must not import from de.acci.dvmm.* - enforced by Konsist</constraint>
+    <constraint source="Story-1.5">TenantContextWebFilter has @Order(HIGHEST_PRECEDENCE + 10). SecurityWebFilter must run before it (default order is higher precedence).</constraint>
+    <constraint source="CLAUDE.md">Test coverage ≥80%, mutation score ≥70% - CI blocks merge if not met</constraint>
+    <constraint source="CLAUDE.md">No wildcard imports, named arguments for >2 parameters</constraint>
+    <constraint source="tech-spec">Use MockWebServer or WireMock for Keycloak JWKS endpoint mocking in tests</constraint>
+    <constraint source="security-arch">JWT token structure must include: sub, tenant_id, roles, email claims</constraint>
+    <constraint source="security-arch">Token stored in httpOnly cookie with Secure and SameSite=Lax flags (frontend responsibility)</constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      JUnit 6 with MockK for unit tests. Testcontainers Keycloak for integration tests.
+      MockWebServer/WireMock for JWKS endpoint mocking. ReactorTest for WebFlux testing.
+      Follow Tests First pattern: write tests before implementation.
+      All tests must achieve ≥80% line coverage and ≥70% mutation score.
+    </standards>
+    <locations>
+      <location>eaf/eaf-auth/src/test/kotlin/de/acci/eaf/auth/</location>
+      <location>eaf/eaf-auth-keycloak/src/test/kotlin/de/acci/eaf/auth/keycloak/</location>
+      <location>dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/security/</location>
+      <location>dvmm/dvmm-app/src/test/kotlin/ (integration tests)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Valid JWT token grants access to protected /api/** endpoint</idea>
+      <idea ac="2">Invalid JWT signature returns HTTP 401 Unauthorized</idea>
+      <idea ac="2">Expired JWT token returns HTTP 401 Unauthorized</idea>
+      <idea ac="2">Missing Authorization header returns HTTP 401 Unauthorized</idea>
+      <idea ac="3">ReactiveJwtAuthenticationConverter extracts sub, tenant_id, roles, email from JWT</idea>
+      <idea ac="5">Roles from realm_access.roles mapped to ROLE_* SimpleGrantedAuthority</idea>
+      <idea ac="5">Roles from resource_access.{client}.roles also extracted</idea>
+      <idea ac="6">CORS headers present for allowed origin (localhost:3000)</idea>
+      <idea ac="6">CORS preflight OPTIONS request returns 200 with correct headers</idea>
+      <idea ac="7">Tenant context available via TenantContext.current() after authentication</idea>
+      <idea ac="4">Actuator health endpoint (/actuator/health) accessible without authentication</idea>
+      <idea ac="meta">SecurityWebFilter runs before TenantContextWebFilter in filter chain</idea>
+    </ideas>
+  </tests>
+</story-context>
