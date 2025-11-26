@@ -1,6 +1,7 @@
 .pids/
 .kotlin/
 .cifuzz-corpus/
+.codex/
 
 # Operating System Files
 .DS_Store
