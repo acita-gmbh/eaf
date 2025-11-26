@@ -36,24 +36,49 @@ class TestContainersIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun setupSchema() {
-            // Ensure containers are started
-            val url = TestContainers.postgres.jdbcUrl
-            val user = TestContainers.postgres.username
-            val password = TestContainers.postgres.password
+            // Ensure the event store schema is created (uses the shared idempotent setup)
+            // This loads the migration SQL from the classpath resource
+            val migrationSql = TestContainersIntegrationTest::class.java
+                .getResource("/db/migration/V001__create_event_store.sql")
+                ?.readText()
 
-            DriverManager.getConnection(url, user, password).use { conn ->
-                conn.createStatement().use { stmt ->
-                    stmt.execute("CREATE SCHEMA IF NOT EXISTS eaf_events")
-                }
-                conn.createStatement().use { stmt ->
-                    stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS eaf_events.events (id SERIAL PRIMARY KEY, payload TEXT)",
-                    )
-                }
-                conn.createStatement().use { stmt ->
-                    stmt.execute(
-                        "CREATE TABLE IF NOT EXISTS eaf_events.snapshots (id SERIAL PRIMARY KEY, state TEXT)",
-                    )
+            if (migrationSql != null) {
+                // Use the idempotent schema setup that drops and recreates
+                TestContainers.ensureEventStoreSchema { migrationSql }
+            } else {
+                // Fallback: create a minimal schema for testing isolation
+                val url = TestContainers.postgres.jdbcUrl
+                val user = TestContainers.postgres.username
+                val password = TestContainers.postgres.password
+
+                DriverManager.getConnection(url, user, password).use { conn ->
+                    conn.createStatement().use { stmt ->
+                        stmt.execute("DROP SCHEMA IF EXISTS eaf_events CASCADE")
+                    }
+                    conn.createStatement().use { stmt ->
+                        stmt.execute("CREATE SCHEMA eaf_events")
+                    }
+                    conn.createStatement().use { stmt ->
+                        stmt.execute(
+                            """
+                            CREATE TABLE eaf_events.events (
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                aggregate_id UUID NOT NULL,
+                                aggregate_type VARCHAR(255) NOT NULL,
+                                event_type VARCHAR(255) NOT NULL,
+                                payload JSONB NOT NULL,
+                                metadata JSONB NOT NULL,
+                                tenant_id UUID NOT NULL,
+                                version INT NOT NULL
+                            )
+                            """.trimIndent()
+                        )
+                    }
+                    conn.createStatement().use { stmt ->
+                        stmt.execute(
+                            "CREATE TABLE eaf_events.snapshots (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), state JSONB)"
+                        )
+                    }
                 }
             }
         }
@@ -98,7 +123,22 @@ class TestContainersIntegrationTest {
 
         DriverManager.getConnection(url, user, password).use { conn ->
             conn.createStatement().use { stmt ->
-                stmt.execute("INSERT INTO eaf_events.events (payload) VALUES ('test-event')")
+                // Use valid JSON for JSONB column (schema may be upgraded by other tests)
+                stmt.execute(
+                    """
+                    INSERT INTO eaf_events.events
+                        (aggregate_id, aggregate_type, event_type, payload, metadata, tenant_id, version)
+                    VALUES (
+                        gen_random_uuid(),
+                        'TestAggregate',
+                        'TestEvent',
+                        '{"test": "data"}'::jsonb,
+                        '{"tenantId": "00000000-0000-0000-0000-000000000000"}'::jsonb,
+                        '00000000-0000-0000-0000-000000000000',
+                        1
+                    )
+                    """.trimIndent()
+                )
             }
         }
     }
