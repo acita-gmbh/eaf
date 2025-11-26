@@ -5,6 +5,15 @@ plugins {
 }
 
 // eaf-auth-keycloak: Keycloak-specific implementation of IdentityProvider
+// This is a library module, not an executable application
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    enabled = false
+}
+
+tasks.named<Jar>("jar") {
+    enabled = true
+}
+
 dependencies {
     api(project(":eaf:eaf-auth"))
 
