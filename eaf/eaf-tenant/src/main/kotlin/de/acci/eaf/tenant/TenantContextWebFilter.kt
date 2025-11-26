@@ -19,18 +19,14 @@ public class TenantContextWebFilter : WebFilter {
         val tenantId = extractTenantId(exchange) ?: return Mono.error(TenantContextMissingException())
 
         return chain.filter(exchange)
-            .contextWrite { ctx -> ctx.put(REACTOR_TENANT_KEY, tenantId) }
+            .contextWrite { ctx -> ctx.put(TenantContext.REACTOR_TENANT_KEY, tenantId) }
     }
 
     private fun extractTenantId(exchange: ServerWebExchange): TenantId? {
         val authHeader = exchange.request.headers.getFirst(HttpHeaders.AUTHORIZATION) ?: return null
-        if (!authHeader.startsWith("Bearer ")) return null
+        if (!authHeader.startsWith("Bearer ", ignoreCase = true)) return null
 
-        val token = authHeader.removePrefix("Bearer ").trim()
+        val token = authHeader.substring(7).trim()
         return JwtTenantClaimExtractor.extractTenantId(token)
-    }
-
-    private companion object {
-        const val REACTOR_TENANT_KEY: String = "tenantId"
     }
 }

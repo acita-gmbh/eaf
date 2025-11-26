@@ -49,19 +49,19 @@ CREATE INDEX idx_snapshots_tenant ON eaf_events.snapshots (tenant_id);
 -- Create application role for RLS enforcement (non-superuser)
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dvmm_app') THEN
-        CREATE ROLE dvmm_app NOLOGIN;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'eaf_app') THEN
+        CREATE ROLE eaf_app NOLOGIN;
     END IF;
 END $$;
 
 -- Grant schema usage to application role
-GRANT USAGE ON SCHEMA eaf_events TO dvmm_app;
+GRANT USAGE ON SCHEMA eaf_events TO eaf_app;
 
 -- Grant only SELECT and INSERT on events table (AC: 3 - no UPDATE/DELETE)
-GRANT SELECT, INSERT ON eaf_events.events TO dvmm_app;
+GRANT SELECT, INSERT ON eaf_events.events TO eaf_app;
 
 -- Grant full CRUD on snapshots (snapshots can be updated and replaced)
-GRANT SELECT, INSERT, UPDATE, DELETE ON eaf_events.snapshots TO dvmm_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON eaf_events.snapshots TO eaf_app;
 
 -- Revoke UPDATE and DELETE from PUBLIC on events table (AC: 3 - Event Immutability)
 REVOKE UPDATE, DELETE ON eaf_events.events FROM PUBLIC;

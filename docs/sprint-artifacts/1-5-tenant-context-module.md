@@ -1,6 +1,6 @@
 # Story 1.5: tenant-context-module
 
-Status: review
+Status: done
 
 ## Story
 
@@ -60,7 +60,7 @@ so that all operations are tenant-scoped and fail closed when context is missing
 
 ## Dev Notes
 
-- Relevant architecture patterns and constraints: see docs/architecture.md (Tenant Context Pattern), docs/security-architecture.md (RLS, fail-closed), docs/prd.md (FR64-67 multi-tenancy expectations), docs/test-design-system.md#TC-001]n-system.md (TC-001 stress requirements).
+- Relevant architecture patterns and constraints: see docs/architecture.md (Tenant Context Pattern), docs/security-architecture.md (RLS, fail-closed), docs/prd.md (FR64-67 multi-tenancy expectations), docs/test-design-system.md#TC-001 (TC-001 stress requirements).
 - Source tree components to touch: eaf/eaf-tenant (new TenantContext*, WebFilter adapter), potential reuse of JWT utilities in dvmm-api; keep framework code Spring-free.
 - Testing standards summary: Use kotlinx-coroutines-test for propagation; WebFlux filter tests with mock ServerWebExchange; achieve ≥80% coverage and ≥70% mutation where applicable.
 
@@ -127,3 +127,52 @@ so that all operations are tenant-scoped and fail closed when context is missing
 ### Completion Notes List
 
 ### File List
+
+---
+
+## Code Review
+
+**Reviewer:** Senior Developer (Claude Code)
+**Date:** 2025-11-26
+**Outcome:** ✅ **APPROVED**
+
+### Acceptance Criteria Validation
+
+| AC | Description | Status | Evidence |
+|----|-------------|--------|----------|
+| AC1 | Tenant context retrieval | ✅ | `TenantContext.kt:13-14`, `TenantContextWebFilter.kt:18-22` |
+| AC2 | Coroutine propagation | ✅ | `TenantContextElement.kt:8-11` extends `AbstractCoroutineContextElement` |
+| AC3 | Web filter extraction | ✅ | `TenantContextWebFilter.kt:25-30` extracts from JWT |
+| AC4 | Fail-closed semantics | ✅ | `TenantContextMissingException.kt:7-9` - HTTP 403 |
+| AC5 | TC-001 resilience | ✅ | `TenantContextPropagationTest.kt:18-68` - dispatcher, async, 100 concurrent |
+
+### Task Verification
+
+All 10 tasks verified complete with file:line evidence.
+
+### Code Quality Assessment
+
+**Strengths:**
+- Clean separation: pure Kotlin context classes vs Spring adapter
+- Proper fail-closed semantics with HTTP 403
+- Case-insensitive Bearer check
+- Reactor context fallback for WebFlux integration
+- Consolidated `REACTOR_TENANT_KEY` constant
+- Clear documentation about JWT signature verification deferral to Story 1.7
+
+**Test Coverage:**
+- 7 tests, 100% passing
+- Covers TC-001 requirements (dispatcher switches, async boundaries, 100 concurrent)
+
+**Architecture Compliance:**
+- No EAF → DVMM dependencies
+- Spring imports only in adapter layer
+- Uses `eaf-core` types
+
+### Issues Found
+
+None blocking. JWT signature verification intentionally deferred to Story 1.7.
+
+### Recommendation
+
+Story ready to proceed to `done` status.

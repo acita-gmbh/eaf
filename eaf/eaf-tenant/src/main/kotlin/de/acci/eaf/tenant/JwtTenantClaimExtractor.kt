@@ -4,6 +4,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.acci.eaf.core.types.TenantId
 import java.util.Base64
 
+/**
+ * Extracts tenant_id claim from JWT payload.
+ *
+ * NOTE: This extractor assumes the JWT has already been validated upstream.
+ * Signature verification happens via Spring Security OAuth2 Resource Server
+ * (Story 1.7 - Keycloak Integration). This component only extracts the claim
+ * from pre-validated tokens.
+ */
 internal object JwtTenantClaimExtractor {
     private val mapper = jacksonObjectMapper().findAndRegisterModules()
 

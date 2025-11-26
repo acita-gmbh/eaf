@@ -30,9 +30,27 @@ public class EventStoreIsolationExtension : BeforeEachCallback {
 
     private fun truncateEventStore() {
         TestContainers.postgres.createConnection("").use { conn ->
-            conn.createStatement().execute(
-                "TRUNCATE TABLE eaf_events.events, eaf_events.snapshots RESTART IDENTITY CASCADE"
-            )
+            conn.autoCommit = true
+            // Check which tables exist and truncate only those
+            val tables = mutableListOf<String>()
+            conn.createStatement().use { stmt ->
+                stmt.executeQuery(
+                    """
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = 'eaf_events'
+                    AND table_name IN ('events', 'snapshots')
+                    """.trimIndent()
+                ).use { rs ->
+                    while (rs.next()) {
+                        tables.add("eaf_events.${rs.getString("table_name")}")
+                    }
+                }
+            }
+            if (tables.isNotEmpty()) {
+                conn.createStatement().use { stmt ->
+                    stmt.execute("TRUNCATE TABLE ${tables.joinToString(", ")} RESTART IDENTITY CASCADE")
+                }
+            }
         }
     }
 }

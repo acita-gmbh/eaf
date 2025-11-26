@@ -46,38 +46,51 @@ class TestContainersIntegrationTest {
                 // Use the idempotent schema setup that drops and recreates
                 TestContainers.ensureEventStoreSchema { migrationSql }
             } else {
-                // Fallback: create a minimal schema for testing isolation
+                // Fallback: create a minimal schema for testing isolation (only if not exists)
                 val url = TestContainers.postgres.jdbcUrl
                 val user = TestContainers.postgres.username
                 val password = TestContainers.postgres.password
 
                 DriverManager.getConnection(url, user, password).use { conn ->
-                    conn.createStatement().use { stmt ->
-                        stmt.execute("DROP SCHEMA IF EXISTS eaf_events CASCADE")
+                    // Check if schema already exists (e.g., created by eaf-eventsourcing)
+                    val schemaExists = conn.createStatement().use { stmt ->
+                        stmt.executeQuery(
+                            "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'eaf_events'"
+                        ).use { rs -> rs.next() }
                     }
-                    conn.createStatement().use { stmt ->
-                        stmt.execute("CREATE SCHEMA eaf_events")
-                    }
-                    conn.createStatement().use { stmt ->
-                        stmt.execute(
-                            """
-                            CREATE TABLE eaf_events.events (
-                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                aggregate_id UUID NOT NULL,
-                                aggregate_type VARCHAR(255) NOT NULL,
-                                event_type VARCHAR(255) NOT NULL,
-                                payload JSONB NOT NULL,
-                                metadata JSONB NOT NULL,
-                                tenant_id UUID NOT NULL,
-                                version INT NOT NULL
+
+                    if (!schemaExists) {
+                        // Only create minimal schema if nothing exists
+                        conn.createStatement().use { stmt ->
+                            stmt.execute("CREATE SCHEMA eaf_events")
+                        }
+                        conn.createStatement().use { stmt ->
+                            stmt.execute(
+                                """
+                                CREATE TABLE eaf_events.events (
+                                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                    aggregate_id UUID NOT NULL,
+                                    aggregate_type VARCHAR(255) NOT NULL,
+                                    event_type VARCHAR(255) NOT NULL,
+                                    payload JSONB NOT NULL,
+                                    metadata JSONB NOT NULL DEFAULT '{}',
+                                    tenant_id UUID NOT NULL,
+                                    version INT NOT NULL,
+                                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                                    CONSTRAINT uq_aggregate_version UNIQUE (tenant_id, aggregate_id, version),
+                                    CONSTRAINT chk_version_positive CHECK (version > 0)
+                                )
+                                """.trimIndent()
                             )
-                            """.trimIndent()
-                        )
-                    }
-                    conn.createStatement().use { stmt ->
-                        stmt.execute(
-                            "CREATE TABLE eaf_events.snapshots (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), state JSONB)"
-                        )
+                        }
+                        conn.createStatement().use { stmt ->
+                            stmt.execute("CREATE INDEX idx_events_tenant ON eaf_events.events (tenant_id)")
+                        }
+                        conn.createStatement().use { stmt ->
+                            stmt.execute(
+                                "CREATE TABLE eaf_events.snapshots (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), state JSONB)"
+                            )
+                        }
                     }
                 }
             }

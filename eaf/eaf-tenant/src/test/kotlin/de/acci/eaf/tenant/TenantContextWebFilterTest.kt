@@ -62,7 +62,7 @@ class TenantContextWebFilterTest {
 
         override fun filter(exchange: ServerWebExchange): Mono<Void> =
             reactor.core.publisher.Mono.deferContextual { reactorCtx ->
-                val tenantId = reactorCtx.get<TenantId>(REACTOR_TENANT_KEY)
+                val tenantId = reactorCtx.get<TenantId>(TenantContext.REACTOR_TENANT_KEY)
                 mono(context = reactorCtx.asCoroutineContext() + TenantContextElement(tenantId)) {
                     observedTenant = TenantContext.current()
                     Unit
@@ -81,8 +81,4 @@ class TenantContextWebFilterTest {
 
     private fun base64Url(value: String): String =
         java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray())
-
-    private companion object {
-        const val REACTOR_TENANT_KEY: String = "tenantId"
-    }
 }

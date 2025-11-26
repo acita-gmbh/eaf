@@ -6,6 +6,9 @@ import kotlin.coroutines.coroutineContext
 
 public object TenantContext {
 
+    /** Key used to store tenant ID in Reactor context. */
+    public const val REACTOR_TENANT_KEY: String = "tenantId"
+
     /** Returns the tenant from the current coroutine context or throws. */
     public suspend fun current(): TenantId =
         currentOrNull() ?: throw TenantContextMissingException()
@@ -22,6 +25,4 @@ public object TenantContext {
 
         return fromReactor
     }
-
-    private const val REACTOR_TENANT_KEY: String = "tenantId"
 }
