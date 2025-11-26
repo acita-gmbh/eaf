@@ -14,6 +14,10 @@ pitest = "1.17.4"
 pitest-junit5-plugin = "1.2.3"
 pitest-gradle-plugin = "1.19.0-rc.2"
 jacoco = "0.8.12"
+postgresql = "42.7.0"
+flyway = "10.7.1"
+testcontainers-keycloak = "3.5.0"
+jjwt = "0.12.5"
 
 [libraries]
 # Kotlin
@@ -34,6 +38,14 @@ reactor-test = { module = "io.projectreactor:reactor-test" }
 # Database
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 jooq-kotlin = { module = "org.jooq:jooq-kotlin", version.ref = "jooq" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "testcontainers-keycloak" }
+
+# JWT
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }

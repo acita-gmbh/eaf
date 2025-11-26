@@ -1,6 +1,7 @@
 plugins {
     id("eaf.kotlin-conventions")
     id("eaf.test-conventions")
+    id("java-test-fixtures")
 }
 
 // eaf-testing: Test utilities for EAF-based applications
@@ -20,4 +21,16 @@ dependencies {
     api(libs.testcontainers.core)
     api(libs.testcontainers.junit)
     api(libs.testcontainers.postgresql)
+    api(libs.testcontainers.keycloak)
+
+    // Database & Migration (needed for test setups)
+    api(libs.postgresql)
+    api(libs.flyway.core)
+
+    // JWT for TestUserFixture
+    api(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
+
+    testImplementation(testFixtures(project(":eaf:eaf-testing")))
 }
