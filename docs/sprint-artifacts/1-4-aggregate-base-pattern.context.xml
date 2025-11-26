@@ -1,0 +1,210 @@
+<story-context id="1-4-aggregate-base-pattern" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>4</storyId>
+    <title>Aggregate Base Pattern</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-4-aggregate-base-pattern.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a base class for Event Sourced aggregates</iWant>
+    <soThat>I can implement domain logic consistently</soThat>
+    <tasks>
+      <task id="1" ac="1,2,4,5">Create AggregateRoot&lt;TId&gt; abstract class in eaf-eventsourcing
+        <subtask>Define abstract id property of type TId</subtask>
+        <subtask>Add version: Long property starting at 0</subtask>
+        <subtask>Add private _uncommittedEvents mutable list</subtask>
+        <subtask>Add public uncommittedEvents property returning immutable list</subtask>
+        <subtask>Implement applyEvent(event, isReplay = false) method</subtask>
+        <subtask>Implement protected abstract handleEvent(event) method</subtask>
+        <subtask>Implement clearUncommittedEvents() method</subtask>
+        <subtask>Add companion object with DEFAULT_SNAPSHOT_THRESHOLD = 100</subtask>
+      </task>
+      <task id="2" ac="2">Create reconstitution support
+        <subtask>Add reconstitute(id, events) static factory pattern or method</subtask>
+        <subtask>Ensure events are applied with isReplay = true</subtask>
+        <subtask>Verify version equals event count after reconstitution</subtask>
+      </task>
+      <task id="3" ac="3">Create AggregateSnapshot data class in eaf-eventsourcing
+        <subtask>Fields: aggregateId (UUID), aggregateType (String), version (Long), state (String/JSON), tenantId (UUID), createdAt (Instant)</subtask>
+      </task>
+      <task id="4" ac="3">Define SnapshotStore interface in eaf-eventsourcing
+        <subtask>suspend fun save(snapshot: AggregateSnapshot)</subtask>
+        <subtask>suspend fun load(aggregateId: UUID): AggregateSnapshot?</subtask>
+      </task>
+      <task id="5" ac="3">Create Flyway migration V002__create_snapshot_store.sql
+        <subtask>Create eaf_events.snapshots table with columns matching AggregateSnapshot</subtask>
+        <subtask>Add unique constraint on (tenant_id, aggregate_id)</subtask>
+        <subtask>Add index on aggregate_id</subtask>
+        <subtask>Enable RLS on snapshots table (mirrors events table pattern)</subtask>
+      </task>
+      <task id="6" ac="1,2,4,5">Write unit tests for AggregateRoot
+        <subtask>Test event application increments version</subtask>
+        <subtask>Test uncommittedEvents contains applied events</subtask>
+        <subtask>Test clearUncommittedEvents empties the list</subtask>
+        <subtask>Test reconstitution replays events without uncommitting</subtask>
+        <subtask>Test version equals event count after reconstitution</subtask>
+      </task>
+      <task id="7" ac="3">Write integration tests for SnapshotStore
+        <subtask>Test save and load snapshot round-trip</subtask>
+        <subtask>Test snapshot overwrites previous version for same aggregate</subtask>
+        <subtask>Test load returns null for non-existent aggregate</subtask>
+      </task>
+      <task id="8" ac="1,2">Create example aggregate (test fixture) demonstrating pattern
+        <subtask>Create TestAggregate extending AggregateRoot&lt;UUID&gt;</subtask>
+        <subtask>Create TestEvent sealed class with Created and Updated variants</subtask>
+        <subtask>Implement handleEvent() for state mutations</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1" name="Event Application">
+      <criterion>Given I extend AggregateRoot&lt;TId&gt;, when I call aggregate.applyEvent(event), then the event is added to uncommittedEvents list</criterion>
+      <criterion>Version is incremented per applied event</criterion>
+    </ac>
+    <ac id="2" name="Event Replay / Reconstitution">
+      <criterion>reconstitute(id, events) rebuilds aggregate state from event history</criterion>
+      <criterion>Events are applied in version order without adding to uncommittedEvents</criterion>
+    </ac>
+    <ac id="3" name="Snapshot Support">
+      <criterion>Snapshot support exists with configurable threshold (default: 100 events)</criterion>
+      <criterion>AggregateSnapshot data class stores serialized state + version + aggregateId + tenantId</criterion>
+      <criterion>SnapshotStore interface provides save() and load() operations</criterion>
+    </ac>
+    <ac id="4" name="Version Management">
+      <criterion>Version starts at 0 for new aggregates</criterion>
+      <criterion>Each event application increments version by 1</criterion>
+      <criterion>After reconstitution, version equals number of events replayed</criterion>
+    </ac>
+    <ac id="5" name="Uncommitted Events Lifecycle">
+      <criterion>uncommittedEvents returns immutable list of events applied since last commit</criterion>
+      <criterion>clearUncommittedEvents() clears the list after persistence</criterion>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.4: Aggregate Base Pattern">
+        AggregateRoot&lt;TId&gt; implementation guide with code samples for event application, version tracking, uncommitted events, and snapshot support (lines 405-476).
+      </doc>
+      <doc path="docs/epics.md" title="DVMM Epics" section="Story 1.4">
+        Story definition and acceptance criteria as originally specified.
+      </doc>
+      <doc path="docs/architecture.md" title="System Architecture" section="Aggregate Pattern">
+        Architectural context for event sourcing and CQRS patterns.
+      </doc>
+      <doc path="docs/test-design-system.md" title="Test Design System" section="TC-003 Event Store Isolation">
+        Testing strategy for event sourcing components: Unit + Integration tests for eaf-eventsourcing module. Test pyramid: 60% unit, 30% integration.
+      </doc>
+      <doc path="docs/sprint-artifacts/1-3-event-store-setup.md" title="Previous Story: Event Store Setup" section="Dev Agent Record">
+        Completed story with EventStore interface, DomainEvent, StoredEvent, and PostgresEventStore. Contains file list and learnings.
+      </doc>
+    </docs>
+
+    <code>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt" kind="interface" symbol="DomainEvent" reason="Base interface for domain events - AggregateRoot.applyEvent() will accept DomainEvent instances">
+        <signature>public interface DomainEvent { val aggregateType: String; val metadata: EventMetadata }</signature>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt" kind="data-class" symbol="EventMetadata" lines="38-59" reason="Metadata for events - contains tenantId, userId, correlationId, timestamp">
+        <signature>public data class EventMetadata(tenantId: TenantId, userId: UserId, correlationId: CorrelationId, timestamp: Instant)</signature>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/StoredEvent.kt" kind="data-class" symbol="StoredEvent" reason="Persisted event record - used for reconstitution from EventStore.load()">
+        <signature>public data class StoredEvent(id: UUID, aggregateId: UUID, aggregateType: String, eventType: String, payload: String, metadata: EventMetadata, version: Long, createdAt: Instant)</signature>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStore.kt" kind="interface" symbol="EventStore" reason="Event persistence interface - aggregate reconstitution will use load(aggregateId)">
+        <signature>public interface EventStore { suspend fun append(...): Result&lt;Long, EventStoreError&gt;; suspend fun load(aggregateId: UUID): List&lt;StoredEvent&gt;; suspend fun loadFrom(aggregateId: UUID, fromVersion: Long): List&lt;StoredEvent&gt; }</signature>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/PostgresEventStore.kt" kind="class" symbol="PostgresEventStore" reason="Reference implementation - shows jOOQ usage patterns and transaction handling">
+        <signature>public class PostgresEventStore(dsl: DSLContext, objectMapper: ObjectMapper) : EventStore</signature>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/resources/db/migration/V001__create_event_store.sql" kind="migration" symbol="events table" reason="Reference for V002 snapshot table migration - RLS pattern, constraints, indexes">
+        <note>Use same schema (eaf_events), similar RLS policy pattern, UNIQUE constraint on (tenant_id, aggregate_id)</note>
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/TestEvents.kt" kind="test-fixture" symbol="TestEvents" reason="Example of sealed class event hierarchy for testing">
+        <note>Reference for creating TestAggregate test fixture events</note>
+      </file>
+    </code>
+
+    <dependencies>
+      <ecosystem name="kotlin-jvm">
+        <package name="kotlin" version="2.2.21" />
+        <package name="kotlinx-coroutines-core" version="1.10.2" />
+        <package name="kotlinx-coroutines-test" version="1.10.2" />
+      </ecosystem>
+      <ecosystem name="spring-boot">
+        <package name="spring-boot" version="3.5.8" />
+        <package name="jackson-module-kotlin" version="2.20.1" />
+        <package name="jackson-datatype-jsr310" version="2.20.1" />
+      </ecosystem>
+      <ecosystem name="database">
+        <package name="jooq" version="3.20.8" />
+        <package name="postgresql" version="42.7.0" />
+        <package name="flyway-core" version="10.7.1" />
+      </ecosystem>
+      <ecosystem name="testing">
+        <package name="junit-jupiter" version="6.0.1" />
+        <package name="mockk" version="1.14.6" />
+        <package name="testcontainers" version="2.0.2" />
+        <package name="konsist" version="0.17.3" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="module">AggregateRoot and SnapshotStore must be in eaf-eventsourcing module (same as EventStore)</constraint>
+    <constraint type="framework">No Spring dependencies allowed in interfaces - must be framework-agnostic</constraint>
+    <constraint type="pattern">Sealed events: Each aggregate should define its events as a sealed class (documented pattern, not enforced)</constraint>
+    <constraint type="immutability">Events are value objects - use data classes with val properties only</constraint>
+    <constraint type="package">Package: de.acci.eaf.eventsourcing (same as existing EventStore)</constraint>
+    <constraint type="api">Explicit API mode enabled - all public API must have explicit visibility modifiers</constraint>
+    <constraint type="versioning">Version starts at 0 for new aggregates, persisted events start at version 1</constraint>
+    <constraint type="rls">Snapshot table must have tenant_id column and RLS policy matching events table</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="DomainEvent" kind="interface" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt">
+      <signature>public interface DomainEvent { val aggregateType: String; val metadata: EventMetadata }</signature>
+      <usage>Events emitted by aggregates must implement this interface</usage>
+    </interface>
+    <interface name="EventStore" kind="interface" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStore.kt">
+      <signature>suspend fun load(aggregateId: UUID): List&lt;StoredEvent&gt;</signature>
+      <usage>Use EventStore.load() to retrieve events for aggregate reconstitution</usage>
+    </interface>
+    <interface name="StoredEvent" kind="data-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/StoredEvent.kt">
+      <signature>data class StoredEvent(id, aggregateId, aggregateType, eventType, payload, metadata, version, createdAt)</signature>
+      <usage>Reconstitution receives List&lt;StoredEvent&gt; from EventStore and deserializes payload to DomainEvent</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      JUnit 6 with MockK for mocking. Tests First pattern required. Coverage gate: 80% line coverage (JaCoCo), 70% mutation score (Pitest). Architecture tests via Konsist ensure no Spring dependencies in interfaces and correct module boundaries.
+    </standards>
+    <locations>
+      <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/</location>
+      <location>eaf/eaf-eventsourcing/src/test/resources/</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test applyEvent() adds event to uncommittedEvents and increments version</idea>
+      <idea ac="1">Test multiple events applied in sequence produce correct version sequence</idea>
+      <idea ac="2">Test reconstitute() replays events without adding to uncommittedEvents</idea>
+      <idea ac="2">Test reconstitute() sets version equal to event count</idea>
+      <idea ac="2">Test reconstitute() applies events in order (version ASC)</idea>
+      <idea ac="3">Test AggregateSnapshot data class serializes/deserializes correctly with Jackson</idea>
+      <idea ac="3">Test SnapshotStore save() persists to database</idea>
+      <idea ac="3">Test SnapshotStore load() retrieves correct snapshot by aggregateId</idea>
+      <idea ac="3">Test SnapshotStore upsert behavior (overwrite existing)</idea>
+      <idea ac="4">Test new aggregate has version 0</idea>
+      <idea ac="4">Test version increments by 1 per event</idea>
+      <idea ac="5">Test clearUncommittedEvents() empties the list</idea>
+      <idea ac="5">Test uncommittedEvents returns immutable copy</idea>
+      <idea ac="integration">Integration test: Save events via EventStore, reconstitute aggregate, verify state</idea>
+      <idea ac="integration">Integration test: V002 migration creates snapshots table with RLS</idea>
+    </ideas>
+  </tests>
+</story-context>

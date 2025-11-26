@@ -105,7 +105,7 @@ development_status:
 
   # Sprint 1 (Week 2-3) - Event Sourcing
   1-3-event-store-setup: done                # Sprint 1 - Code review APPROVED 2025-11-26
-  1-4-aggregate-base-pattern: backlog        # Sprint 1
+  1-4-aggregate-base-pattern: done            # Sprint 1 - Code review APPROVED 2025-11-26
 
   # Sprint 2 (Week 4-5) - Multi-Tenancy
   1-5-tenant-context-module: backlog         # Sprint 2 (TC-001)
