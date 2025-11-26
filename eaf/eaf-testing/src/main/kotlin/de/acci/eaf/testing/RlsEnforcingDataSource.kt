@@ -32,6 +32,12 @@ public class RlsEnforcingDataSource(
                 "Use @WithTenant annotation or TenantTestContext.set()"
             )
 
+        // Switch to non-superuser role so RLS is enforced
+        // The dvmm_app role is created in the event store migration
+        conn.createStatement().use { stmt ->
+            stmt.execute("SET ROLE dvmm_app")
+        }
+
         // Use set_config() with PreparedStatement to avoid SQL injection
         // set_config(setting_name, new_value, is_local) - is_local=false means session-scoped
         conn.prepareStatement("SELECT set_config('app.tenant_id', ?, false)").use { stmt ->

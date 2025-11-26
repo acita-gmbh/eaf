@@ -21,4 +21,59 @@ public object TestContainers {
             .withReuse(true)
             .apply { start() }
     }
+
+    private val eventStoreSchemaInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val eventStoreRlsInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Sets up the event store schema if not already initialized.
+     * This is thread-safe and idempotent - multiple calls will only initialize once.
+     * Drops existing schema to ensure clean state (since containers are reused).
+     *
+     * Uses synchronized block to prevent race condition where RLS setup could run
+     * before schema creation completes in concurrent test execution.
+     *
+     * @param migrationSqlSupplier Function that returns the migration SQL content
+     */
+    public fun ensureEventStoreSchema(migrationSqlSupplier: () -> String) {
+        synchronized(this) {
+            if (!eventStoreSchemaInitialized.compareAndSet(false, true)) {
+                return
+            }
+            postgres.createConnection("").use { conn ->
+                // Drop existing schema to ensure clean state (containers are reused)
+                conn.createStatement().execute("DROP SCHEMA IF EXISTS eaf_events CASCADE")
+                conn.createStatement().execute(migrationSqlSupplier())
+            }
+        }
+    }
+
+    /**
+     * Sets up the event store schema with RLS enabled if not already initialized.
+     * This is thread-safe and idempotent - multiple calls will only initialize once.
+     *
+     * Uses synchronized block to ensure RLS setup waits for schema creation to complete.
+     * This prevents race condition in parallel test execution.
+     *
+     * @param migrationSqlSupplier Function that returns the migration SQL content
+     */
+    public fun ensureEventStoreSchemaWithRls(migrationSqlSupplier: () -> String) {
+        synchronized(this) {
+            ensureEventStoreSchema(migrationSqlSupplier)
+            if (!eventStoreRlsInitialized.compareAndSet(false, true)) {
+                return
+            }
+            postgres.createConnection("").use { conn ->
+                conn.createStatement().execute(
+                    """
+                    ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
+                    DROP POLICY IF EXISTS tenant_isolation_events ON eaf_events.events;
+                    CREATE POLICY tenant_isolation_events ON eaf_events.events
+                        USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
+                    ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
+                    """.trimIndent()
+                )
+            }
+        }
+    }
 }
