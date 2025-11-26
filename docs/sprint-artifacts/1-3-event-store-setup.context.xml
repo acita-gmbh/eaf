@@ -1,0 +1,194 @@
+<story-context id="1-3-event-store-setup" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>3</storyId>
+    <title>Event Store Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-3-event-store-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a PostgreSQL-based event store</iWant>
+    <soThat>I can persist domain events durably</soThat>
+    <tasks>
+      <task id="1" ac="1,3,4">Create Flyway migration V001__create_event_store.sql in eaf-eventsourcing/src/main/resources/db/migration/
+        <subtask>Create eaf_events schema</subtask>
+        <subtask>Create events table with all columns</subtask>
+        <subtask>Add unique constraint on (aggregate_id, version)</subtask>
+        <subtask>Add indexes on aggregate_id and tenant_id</subtask>
+        <subtask>Revoke UPDATE/DELETE permissions on events table</subtask>
+      </task>
+      <task id="2" ac="1">Define DomainEvent interface in eaf-eventsourcing
+        <subtask>Include aggregateType, metadata properties</subtask>
+        <subtask>Define EventMetadata data class with tenantId, userId, correlationId, timestamp</subtask>
+      </task>
+      <task id="3" ac="1,2,5">Define EventStore interface in eaf-eventsourcing
+        <subtask>append(aggregateId, events, expectedVersion): Result&lt;Long, EventStoreError&gt;</subtask>
+        <subtask>load(aggregateId): List&lt;StoredEvent&gt;</subtask>
+        <subtask>loadFrom(aggregateId, fromVersion): List&lt;StoredEvent&gt;</subtask>
+      </task>
+      <task id="4" ac="2">Define EventStoreError sealed class
+        <subtask>ConcurrencyConflict(aggregateId, expectedVersion, actualVersion)</subtask>
+      </task>
+      <task id="5" ac="1,2,5">Implement PostgresEventStore in eaf-eventsourcing using jOOQ DSLContext
+        <subtask>Implement append() with version increment and conflict detection</subtask>
+        <subtask>Implement load() returning events ordered by version ASC</subtask>
+        <subtask>Implement loadFrom() for partial replay</subtask>
+      </task>
+      <task id="6" ac="1">Configure Jackson ObjectMapper for JSONB serialization in Spring context
+        <subtask>Register Kotlin module</subtask>
+        <subtask>Configure ISO-8601 timestamp format</subtask>
+      </task>
+      <task id="7" ac="1,2,5">Write unit tests for PostgresEventStore
+        <subtask>Test successful event append</subtask>
+        <subtask>Test optimistic locking conflict detection</subtask>
+        <subtask>Test event loading by aggregate ID</subtask>
+        <subtask>Test partial loading from version</subtask>
+      </task>
+      <task id="8" ac="4">Write integration test verifying Flyway migration runs successfully</task>
+      <task id="9" ac="1">Write integration test verifying RLS applies to events table via RlsEnforcingDataSource</task>
+      <task id="10" ac="3">Write integration test verifying UPDATE/DELETE operations are rejected on events table
+        <subtask>Attempt UPDATE on existing event row, verify permission denied error</subtask>
+        <subtask>Attempt DELETE on existing event row, verify permission denied error</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1" title="Event Persistence">
+      <criterion>Events are persisted to eaf_events.events table when eventStore.append() is called.</criterion>
+      <criterion>Table columns: id (UUID, PK), aggregate_id (UUID, indexed), aggregate_type (VARCHAR), event_type (VARCHAR), payload (JSONB), metadata (JSONB with tenant_id, user_id, correlation_id, timestamp), version (INT), created_at (TIMESTAMPTZ).</criterion>
+    </ac>
+    <ac id="2" title="Optimistic Locking">
+      <criterion>Concurrent writes to the same aggregate are prevented via unique constraint on (aggregate_id, version).</criterion>
+      <criterion>ConcurrencyConflict error is returned when version mismatch occurs.</criterion>
+    </ac>
+    <ac id="3" title="Event Immutability">
+      <criterion>Events are immutable (no UPDATE, no DELETE allowed at database level).</criterion>
+      <criterion>Only INSERT and SELECT operations are permitted on the events table.</criterion>
+    </ac>
+    <ac id="4" title="Flyway Migration">
+      <criterion>Migration V001__create_event_store.sql creates the eaf_events schema and events table.</criterion>
+      <criterion>Migration includes all required indexes and constraints.</criterion>
+    </ac>
+    <ac id="5" title="Event Loading">
+      <criterion>Events can be loaded by aggregate ID in version order.</criterion>
+      <criterion>Events can be loaded from a specific version for replay after snapshot.</criterion>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.3: Event Store Setup">
+        Implementation checklist, EventStore interface signature, PostgresEventStore skeleton, Flyway migration schema, acceptance criteria in Gherkin format.
+      </doc>
+      <doc path="docs/test-design-system.md" title="System-Level Test Design" section="EAF Framework Testing Strategy">
+        eaf-eventsourcing requires Integration tests for event persistence, snapshots, replay, projections. TC-002 (RLS isolation) and TC-003 (Event store isolation) patterns apply.
+      </doc>
+      <doc path="docs/epics.md" title="Epics and Stories" section="Epic 1: Foundation">
+        Story 1.3 prerequisites (1.1, 1.2), acceptance criteria, story grouping with 1.4 (Aggregate Base Pattern).
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture Document" section="ADR-003: Event Sourcing with PostgreSQL">
+        Event store schema design, JSONB for payload/metadata, optimistic locking via version constraint, tenant_id for RLS.
+      </doc>
+      <doc path="docs/sprint-artifacts/1-9-testcontainers-setup.md" title="Previous Story: Testcontainers Setup" section="Dev Agent Record">
+        TestContainers singleton, RlsEnforcingDataSource with set_config(), @IsolatedEventStore annotation, TestTenantFixture and TestUserFixture, Flyway migration deferred to Story 1.3.
+      </doc>
+    </docs>
+
+    <code>
+      <file path="eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/result/Result.kt" kind="interface" symbol="Result&lt;T,E&gt;" reason="EventStore.append() must return Result&lt;Long, EventStoreError&gt;. Use success()/failure() extension functions."/>
+      <file path="eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/types/Identifiers.kt" kind="value-class" symbol="TenantId, UserId, CorrelationId" reason="EventMetadata must use these typed IDs. TenantId.value for database column."/>
+      <file path="eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/error/DomainError.kt" kind="sealed-class" symbol="DomainError" reason="Reference for EventStoreError sealed class pattern."/>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/IsolatedEventStore.kt" kind="annotation" symbol="@IsolatedEventStore" reason="Use for integration tests. TRUNCATE strategy clears eaf_events.events and eaf_events.snapshots tables."/>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt" kind="wrapper" symbol="RlsEnforcingDataSource" reason="Wraps DataSource to enforce tenant context via set_config(). Use in integration tests."/>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TestContainers.kt" kind="singleton" symbol="TestContainers.postgres" reason="PostgreSQL 16 container singleton. Use for integration tests requiring real database."/>
+      <file path="eaf/eaf-testing/src/testFixtures/kotlin/de/acci/eaf/testing/fixtures/TestFixtures.kt" kind="fixture" symbol="TestTenantFixture, TestUserFixture" reason="Create test tenants and users with valid JWTs for integration tests."/>
+    </code>
+
+    <dependencies>
+      <kotlin version="2.2.21"/>
+      <spring-boot version="3.5.8"/>
+      <jooq version="3.20.8" note="Use DSLContext for SQL. Code generation not yet configured (Story 1.8)."/>
+      <flyway version="10.7.1" note="Migrations in src/main/resources/db/migration/"/>
+      <jackson version="2.20.1" note="jackson-module-kotlin for Kotlin support, JavaTimeModule for Instant"/>
+      <postgresql version="42.7.0"/>
+      <testcontainers version="2.0.2"/>
+      <junit version="6.0.1"/>
+      <mockk version="1.14.6"/>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="module">Target module: eaf/eaf-eventsourcing (create if not exists)</constraint>
+    <constraint type="schema">Database schema: eaf_events (separate from projection schemas)</constraint>
+    <constraint type="framework">EventStore interface MUST NOT use Spring annotations - framework-agnostic</constraint>
+    <constraint type="dependency">MUST use Result&lt;T,E&gt; from eaf-core, not exceptions for expected errors</constraint>
+    <constraint type="dependency">MUST use TenantId, UserId, CorrelationId from eaf-core types</constraint>
+    <constraint type="versioning">Event version starts at 1 (not 0). Each event increments by 1.</constraint>
+    <constraint type="architecture">EAF modules must not import from de.acci.dvmm.* (ADR-001)</constraint>
+    <constraint type="coverage">Minimum 80% line coverage (JaCoCo), 70% mutation score (Pitest)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="EventStore" kind="kotlin-interface" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStore.kt">
+      <signature>interface EventStore {
+    suspend fun append(aggregateId: UUID, events: List&lt;DomainEvent&gt;, expectedVersion: Long): Result&lt;Long, EventStoreError&gt;
+    suspend fun load(aggregateId: UUID): List&lt;StoredEvent&gt;
+    suspend fun loadFrom(aggregateId: UUID, fromVersion: Long): List&lt;StoredEvent&gt;
+}</signature>
+    </interface>
+    <interface name="EventStoreError" kind="sealed-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/EventStore.kt">
+      <signature>sealed class EventStoreError {
+    data class ConcurrencyConflict(val aggregateId: UUID, val expectedVersion: Long, val actualVersion: Long) : EventStoreError()
+}</signature>
+    </interface>
+    <interface name="DomainEvent" kind="kotlin-interface" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/DomainEvent.kt">
+      <signature>interface DomainEvent {
+    val aggregateType: String
+    val metadata: EventMetadata
+}
+
+data class EventMetadata(
+    val tenantId: TenantId,
+    val userId: UserId,
+    val correlationId: CorrelationId,
+    val timestamp: Instant
+)</signature>
+    </interface>
+    <interface name="StoredEvent" kind="data-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/StoredEvent.kt">
+      <signature>data class StoredEvent(
+    val id: UUID,
+    val aggregateId: UUID,
+    val aggregateType: String,
+    val eventType: String,
+    val payload: String,  // JSON
+    val metadata: EventMetadata,
+    val version: Long,
+    val createdAt: Instant
+)</signature>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>JUnit 6 with MockK for mocking. Testcontainers for PostgreSQL integration tests. Target 80% line coverage (JaCoCo) and 70% mutation score (Pitest). Use @IsolatedEventStore annotation for tests that modify event store. Use RlsEnforcingDataSource for RLS verification. Follow Tests First pattern - write tests before implementation.</standards>
+    <locations>
+      <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/</location>
+      <location>eaf/eaf-eventsourcing/src/testFixtures/kotlin/ (if shared fixtures needed)</location>
+    </locations>
+    <ideas>
+      <idea ac="1" title="Event append persists to database">Given a valid DomainEvent, when append() is called, then event is stored in eaf_events.events with correct columns.</idea>
+      <idea ac="1" title="Event metadata stored as JSONB">Given event with metadata (tenantId, userId, correlationId, timestamp), when persisted, then metadata JSONB contains all fields.</idea>
+      <idea ac="2" title="Concurrent writes return ConcurrencyConflict">Given aggregate at version 5, when two concurrent appends with expectedVersion=5, then one succeeds and one returns ConcurrencyConflict.</idea>
+      <idea ac="2" title="Version mismatch detected">Given aggregate at version 3, when append with expectedVersion=1, then ConcurrencyConflict(expectedVersion=1, actualVersion=3) returned.</idea>
+      <idea ac="3" title="UPDATE rejected by database">Given existing event row, when UPDATE attempted via raw SQL, then permission denied error thrown.</idea>
+      <idea ac="3" title="DELETE rejected by database">Given existing event row, when DELETE attempted via raw SQL, then permission denied error thrown.</idea>
+      <idea ac="4" title="Flyway migration creates schema">When Flyway runs, then eaf_events schema exists with events table and all constraints.</idea>
+      <idea ac="5" title="Load returns events in version order">Given 5 events for aggregate, when load(aggregateId) called, then events returned ordered by version ASC.</idea>
+      <idea ac="5" title="LoadFrom supports partial replay">Given aggregate with versions 1-10, when loadFrom(aggregateId, fromVersion=6), then events 6-10 returned.</idea>
+    </ideas>
+  </tests>
+</story-context>
