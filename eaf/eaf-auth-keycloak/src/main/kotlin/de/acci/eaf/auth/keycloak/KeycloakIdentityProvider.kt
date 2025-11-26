@@ -8,7 +8,9 @@ import de.acci.eaf.auth.UserInfo
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import kotlinx.coroutines.reactive.awaitSingle
+import org.springframework.security.oauth2.jwt.BadJwtException
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
@@ -124,14 +126,44 @@ public class KeycloakIdentityProvider(
         return roles
     }
 
+    /**
+     * Maps Spring Security JWT exceptions to domain-specific InvalidTokenException.
+     *
+     * Uses type-based exception handling instead of brittle message-based classification:
+     * - [JwtValidationException]: Contains structured [OAuth2TokenValidatorResult] errors
+     *   with specific error codes (exp, iat, nbf, iss, aud)
+     * - [BadJwtException]: Signature verification or parsing failures
+     */
     private fun mapDecoderException(e: Throwable): InvalidTokenException {
-        val message = e.message ?: "Unknown error"
-        return when {
-            message.contains("expired", ignoreCase = true) -> InvalidTokenException.expired(message)
-            message.contains("signature", ignoreCase = true) -> InvalidTokenException.invalidSignature(message)
-            message.contains("issuer", ignoreCase = true) -> InvalidTokenException.validationFailed(message)
-            else -> InvalidTokenException.validationFailed(message, e)
+        return when (e) {
+            is JwtValidationException -> mapValidationException(e)
+            is BadJwtException -> InvalidTokenException.invalidSignature(e.message ?: "Invalid JWT signature or format")
+            else -> InvalidTokenException.validationFailed(e.message ?: "Unknown error", e)
         }
+    }
+
+    private fun mapValidationException(e: JwtValidationException): InvalidTokenException {
+        // Check for specific validation errors by error code
+        val errors = e.errors
+        for (error in errors) {
+            return when (error.errorCode) {
+                "invalid_token" -> {
+                    // Check description for more specific error type
+                    val description = error.description ?: ""
+                    when {
+                        description.contains("expired", ignoreCase = true) ->
+                            InvalidTokenException.expired(description)
+                        else -> InvalidTokenException.validationFailed(description, e)
+                    }
+                }
+                else -> InvalidTokenException.validationFailed(
+                    error.description ?: e.message ?: "JWT validation failed",
+                    e,
+                )
+            }
+        }
+        // Fallback if no errors (shouldn't happen)
+        return InvalidTokenException.validationFailed(e.message ?: "JWT validation failed", e)
     }
 }
 
