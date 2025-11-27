@@ -227,8 +227,13 @@ public class VcsimTestFixture(
         "vsphere.insecure" to "true"
     )
 
+    /**
+     * Creates an HTTP client that trusts all SSL certificates.
+     *
+     * **WARNING: This is ONLY safe for testing with VCSIM's self-signed certificates.**
+     * **NEVER use this pattern in production code as it disables all certificate validation.**
+     */
     private fun createInsecureJavaHttpClient(): HttpClient {
-        // VCSIM uses self-signed certificates, need to trust all
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
             override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
             override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}

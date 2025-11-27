@@ -115,7 +115,7 @@
         <path>docs/epics.md</path>
         <title>Epic 1 - Foundation</title>
         <section>Story 1.10: VCSIM Integration</section>
-        <snippet>Configure VCSIM container via Testcontainers for VMware API testing. Prerequisites: Story 1.9 (Testcontainers Setup). Docker image: vmware/vcsim:latest. VCSIM provides /sdk endpoint compatible with govmomi/pyvmomi.</snippet>
+        <snippet>Configure VCSIM container via Testcontainers for VMware API testing. Prerequisites: Story 1.9 (Testcontainers Setup). Docker image: vmware/vcsim:v0.47.0 (pinned for reproducibility). VCSIM provides /sdk endpoint compatible with govmomi/pyvmomi.</snippet>
       </doc>
       <doc>
         <path>docs/test-design-system.md</path>
@@ -176,7 +176,7 @@
         <kind>version-catalog</kind>
         <symbol>testcontainers</symbol>
         <lines>7,77-81</lines>
-        <reason>Testcontainers version 2.0.2, BOM pattern. No VCSIM-specific dependency exists - VCSIM uses GenericContainer with custom Docker image vmware/vcsim:latest.</reason>
+        <reason>Testcontainers version 2.0.2, BOM pattern. No VCSIM-specific dependency exists - VCSIM uses GenericContainer with custom Docker image vmware/vcsim:v0.47.0.</reason>
       </artifact>
     </code>
     <dependencies>
@@ -226,7 +226,7 @@
     <interface>
       <name>VcsimContainer</name>
       <kind>class</kind>
-      <signature>public class VcsimContainer : GenericContainer&lt;VcsimContainer&gt;("vmware/vcsim:latest")</signature>
+      <signature>public class VcsimContainer : GenericContainer&lt;VcsimContainer&gt;("vmware/vcsim:v0.47.0")</signature>
       <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimContainer.kt</path>
       <methods>
         <method>fun getSdkUrl(): String</method>
