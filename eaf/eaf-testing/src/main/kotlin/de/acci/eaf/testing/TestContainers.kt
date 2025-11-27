@@ -1,6 +1,7 @@
 package de.acci.eaf.testing
 
 import dasniko.testcontainers.keycloak.KeycloakContainer
+import de.acci.eaf.testing.vcsim.VcsimContainer
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
@@ -19,6 +20,25 @@ public object TestContainers {
         KeycloakContainer("quay.io/keycloak/keycloak:26.0")
             .withRealmImportFile("/test-realm.json")
             .withReuse(true)
+            .apply { start() }
+    }
+
+    /**
+     * VMware vCenter Simulator (VCSIM) container for integration testing.
+     *
+     * Provides a vSphere API-compatible `/sdk` endpoint with default configuration:
+     * - 2 clusters, 4 hosts per cluster, 10 VMs per host (80 total VMs)
+     * - Default credentials: user/pass
+     *
+     * Usage:
+     * ```kotlin
+     * val sdkUrl = TestContainers.vcsim.getSdkUrl()
+     * val username = TestContainers.vcsim.getUsername()
+     * val password = TestContainers.vcsim.getPassword()
+     * ```
+     */
+    public val vcsim: VcsimContainer by lazy {
+        VcsimContainer()
             .apply { start() }
     }
 

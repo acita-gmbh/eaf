@@ -1,0 +1,289 @@
+<story-context id="1-10-vcsim-integration" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>10</storyId>
+    <title>VCSIM Integration</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-10-vcsim-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>VMware vCenter Simulator for integration tests</iWant>
+    <soThat>I can test VMware operations without real infrastructure</soThat>
+    <tasks>
+      <task id="1" ac="1">
+        <title>Add VCSIM Testcontainer dependency</title>
+        <subtasks>
+          <subtask>Add vmware/vcsim container support to eaf-testing/build.gradle.kts</subtask>
+          <subtask>Add vSphere SDK dependency for API interaction (vijava or govmomi-style)</subtask>
+          <subtask>Verify container image pulls successfully</subtask>
+        </subtasks>
+      </task>
+      <task id="2" ac="1,3,4,5">
+        <title>Create VcsimContainer class</title>
+        <subtasks>
+          <subtask>Create VcsimContainer extending GenericContainer in eaf-testing</subtask>
+          <subtask>Configure default VCSIM environment variables (VCSIM_CLUSTER, VCSIM_HOST, VCSIM_VM)</subtask>
+          <subtask>Expose /sdk port (default: 8989)</subtask>
+          <subtask>Implement getSdkUrl() method returning full vSphere SDK URL</subtask>
+          <subtask>Add getUsername() and getPassword() methods (VCSIM defaults)</subtask>
+        </subtasks>
+      </task>
+      <task id="3" ac="2">
+        <title>Create VcsimTestFixture helper class</title>
+        <subtasks>
+          <subtask>Create VcsimTestFixture class with VCSIM container reference</subtask>
+          <subtask>Implement createVm(spec: VmSpec): VmRef helper</subtask>
+          <subtask>Implement createNetwork(name: String): NetworkRef helper</subtask>
+          <subtask>Implement createDatastore(name: String): DatastoreRef helper</subtask>
+          <subtask>Implement simulateProvisioning(vmRef: VmRef) helper</subtask>
+          <subtask>Implement resetState() for state cleanup between test classes</subtask>
+          <subtask>Add unit tests for fixture methods</subtask>
+        </subtasks>
+      </task>
+      <task id="4" ac="3,4,5">
+        <title>Create @VcsimTest annotation</title>
+        <subtasks>
+          <subtask>Create @VcsimTest meta-annotation combining @Testcontainers + VCSIM config</subtask>
+          <subtask>Implement VcsimExtension for lifecycle management</subtask>
+          <subtask>Configure singleton container pattern for class-level reuse</subtask>
+          <subtask>Implement automatic state reset via @BeforeAll/@AfterAll</subtask>
+          <subtask>Add @DynamicPropertySource for Spring property injection</subtask>
+        </subtasks>
+      </task>
+      <task id="5" ac="1,2,3,4,5">
+        <title>Create sample integration test</title>
+        <subtasks>
+          <subtask>Create VcsimIntegrationTest demonstrating all fixture capabilities</subtask>
+          <subtask>Test: Container starts and /sdk endpoint responds</subtask>
+          <subtask>Test: Create VM via fixture, verify in VCSIM inventory</subtask>
+          <subtask>Test: Create network via fixture, verify accessible</subtask>
+          <subtask>Test: State isolation between test classes</subtask>
+          <subtask>Test: Connection properties correctly injected</subtask>
+        </subtasks>
+      </task>
+      <task id="6" ac="1,2,3">
+        <title>Document VCSIM usage patterns</title>
+        <subtasks>
+          <subtask>Add KDoc documentation to VcsimContainer and VcsimTestFixture</subtask>
+          <subtask>Document VCSIM environment variable configuration options</subtask>
+          <subtask>Document scaling options (VCSIM_CLUSTER, VCSIM_HOST, VCSIM_VM counts)</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" testable="true">
+      <title>VCSIM container starts for VMware integration tests</title>
+      <given>I run VMware integration tests</given>
+      <when>The test class starts</when>
+      <then>VCSIM container is automatically started via Testcontainers and the container provides vSphere API compatible /sdk endpoint</then>
+    </criterion>
+    <criterion id="2" testable="true">
+      <title>VcsimTestFixture provides helper methods</title>
+      <given>VCSIM container is running</given>
+      <when>I use VcsimTestFixture</when>
+      <then>I can create test VMs via createVm(spec: VmSpec): VmRef, create test networks via createNetwork(name: String): NetworkRef, create test datastores via createDatastore(name: String): DatastoreRef, and simulate provisioning operations via simulateProvisioning(vmRef: VmRef)</then>
+    </criterion>
+    <criterion id="3" testable="true">
+      <title>Connection parameters injected via test properties</title>
+      <given>VCSIM container is started</given>
+      <when>The Spring context loads</when>
+      <then>vSphere connection properties are automatically configured: vsphere.url = VCSIM container SDK URL, vsphere.username = "user" (VCSIM default), vsphere.password = "pass" (VCSIM default), and no manual configuration required in tests</then>
+    </criterion>
+    <criterion id="4" testable="true">
+      <title>VCSIM state resets between test classes</title>
+      <given>Test class A creates VMs in VCSIM</given>
+      <when>Test class B runs</when>
+      <then>Test class B starts with fresh VCSIM state (no VMs from class A) and state isolation is achieved via container restart or API reset</then>
+    </criterion>
+    <criterion id="5" testable="true">
+      <title>VCSIM container reused within test class (performance)</title>
+      <given>Multiple tests in the same test class</given>
+      <when>Tests run sequentially</when>
+      <then>The same VCSIM container instance is reused and container startup overhead is minimized</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 1 - Foundation</title>
+        <section>Story 1.10: VCSIM Integration</section>
+        <snippet>Configure VCSIM container via Testcontainers for VMware API testing. Prerequisites: Story 1.9 (Testcontainers Setup). Docker image: vmware/vcsim:latest. VCSIM provides /sdk endpoint compatible with govmomi/pyvmomi.</snippet>
+      </doc>
+      <doc>
+        <path>docs/test-design-system.md</path>
+        <title>System-Level Test Design</title>
+        <section>Section 7.3 - VMware vCenter Simulator (VCSIM)</section>
+        <snippet>VCSIM over WireMock for realistic SOAP API responses, scalable inventories (100 hosts, 200 VMs), minimal resources (~2GB RAM), official VMware govmomi team maintenance. Repository: github.com/vmware/govmomi/blob/main/vcsim/README.md</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Overview</title>
+        <section>Integration - External Systems</section>
+        <snippet>VMware vSphere integration uses Ports &amp; Adapters pattern in dvmm-infrastructure/vmware/. Contract tests (Pact) + graceful degradation with request queuing. Circuit breaker, retry, and queue resilience patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-8-jooq-projection-base.md</path>
+        <title>Previous Story Learnings</title>
+        <section>Dev Agent Record</section>
+        <snippet>Test Fixtures pattern: Use src/testFixtures for shared test utilities. Testcontainers singleton pattern via companion object established in Story 1.9. @DynamicPropertySource pattern for container-based property injection.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR34, FR71 - VMware Integration</section>
+        <snippet>FR34: System provisions VM on VMware ESXi via vSphere API. FR71: Admins can configure VMware connection settings. Tracer Bullet approach: Docker containers simulate VM provisioning first, then real VMware vSphere API integration.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TestContainers.kt</path>
+        <kind>test-infrastructure</kind>
+        <symbol>TestContainers</symbol>
+        <lines>1-90</lines>
+        <reason>Singleton container pattern to follow for VCSIM. Contains postgres and keycloak lazy containers with withReuse(true) and start() pattern. ensureEventStoreSchema methods demonstrate synchronized idempotent initialization.</reason>
+      </artifact>
+      <artifact>
+        <path>eaf/eaf-testing/build.gradle.kts</path>
+        <kind>build-config</kind>
+        <symbol>dependencies</symbol>
+        <lines>1-41</lines>
+        <reason>Current eaf-testing dependencies. Uses testcontainers BOM, testcontainers-keycloak. Follow pattern for adding VCSIM container dependency. Note: java-test-fixtures plugin already configured.</reason>
+      </artifact>
+      <artifact>
+        <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/ProjectionTestUtils.kt</path>
+        <kind>test-utilities</kind>
+        <symbol>ProjectionTestUtils</symbol>
+        <lines>1-173</lines>
+        <reason>Example of test utility pattern with DEFAULT constants, suspend functions, KDoc documentation, and public API. Follow this pattern for VcsimTestFixture.</reason>
+      </artifact>
+      <artifact>
+        <path>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/TestContainersIntegrationTest.kt</path>
+        <kind>integration-test</kind>
+        <symbol>TestContainersIntegrationTest</symbol>
+        <lines>1-192</lines>
+        <reason>Integration test pattern for Testcontainers. Uses @BeforeAll companion object for setup, @Order for test sequencing, @IsolatedEventStore for state management. Model VcsimIntegrationTest similarly.</reason>
+      </artifact>
+      <artifact>
+        <path>gradle/libs.versions.toml</path>
+        <kind>version-catalog</kind>
+        <symbol>testcontainers</symbol>
+        <lines>7,77-81</lines>
+        <reason>Testcontainers version 2.0.2, BOM pattern. No VCSIM-specific dependency exists - VCSIM uses GenericContainer with custom Docker image vmware/vcsim:latest.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="jvm">
+        <package name="org.testcontainers:testcontainers" version="2.0.2" />
+        <package name="org.testcontainers:testcontainers-junit-jupiter" version="2.0.2" />
+        <package name="org.testcontainers:testcontainers-postgresql" version="2.0.2" />
+        <package name="com.github.dasniko:testcontainers-keycloak" version="4.0.0" />
+        <package name="org.junit.jupiter:junit-jupiter" version="6.0.1" />
+        <package name="io.mockk:mockk" version="1.14.6" />
+        <package name="org.jetbrains.kotlinx:kotlinx-coroutines-test" version="1.10.2" />
+      </ecosystem>
+      <docker>
+        <image name="vmware/vcsim" tag="v0.47.0" port="8989" description="VMware vCenter Simulator - provides /sdk endpoint with SOAP API compatible with govmomi/pyvmomi. Pinned to v0.47.0 (Jan 2025) for reproducibility." />
+      </docker>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      <rule>VCSIM container must be added to eaf-testing module (EAF layer), NOT dvmm modules</rule>
+      <rationale>EAF provides test infrastructure reusable across products; dvmm-specific tests consume eaf-testing utilities</rationale>
+    </constraint>
+    <constraint type="architecture">
+      <rule>VcsimTestFixture must use public API for Explicit API mode compliance</rule>
+      <rationale>eaf-testing uses eaf.kotlin-conventions which enforces Explicit API mode</rationale>
+    </constraint>
+    <constraint type="testing">
+      <rule>Singleton container pattern: VCSIM container must use lazy initialization with withReuse(true)</rule>
+      <rationale>Minimizes container startup overhead across test classes (established in Story 1.9)</rationale>
+    </constraint>
+    <constraint type="testing">
+      <rule>State isolation: VCSIM state must reset between test classes to prevent cross-test pollution</rule>
+      <rationale>Test determinism requirement; use resetState() method or container lifecycle management</rationale>
+    </constraint>
+    <constraint type="quality">
+      <rule>Line coverage minimum 80%, mutation score minimum 70%</rule>
+      <rationale>Quality gates enforced by CI (koverVerify, pitest)</rationale>
+    </constraint>
+    <constraint type="naming">
+      <rule>Package: de.acci.eaf.testing.vcsim for all VCSIM-related classes</rule>
+      <rationale>Consistent with existing eaf-testing package structure</rationale>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>VcsimContainer</name>
+      <kind>class</kind>
+      <signature>public class VcsimContainer : GenericContainer&lt;VcsimContainer&gt;("vmware/vcsim:latest")</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimContainer.kt</path>
+      <methods>
+        <method>fun getSdkUrl(): String</method>
+        <method>fun getUsername(): String</method>
+        <method>fun getPassword(): String</method>
+      </methods>
+    </interface>
+    <interface>
+      <name>VcsimTestFixture</name>
+      <kind>class</kind>
+      <signature>public class VcsimTestFixture(private val container: VcsimContainer)</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimTestFixture.kt</path>
+      <methods>
+        <method>fun createVm(spec: VmSpec): VmRef</method>
+        <method>fun createNetwork(name: String): NetworkRef</method>
+        <method>fun createDatastore(name: String): DatastoreRef</method>
+        <method>fun simulateProvisioning(vmRef: VmRef)</method>
+        <method>fun resetState()</method>
+      </methods>
+    </interface>
+    <interface>
+      <name>VcsimTest</name>
+      <kind>annotation</kind>
+      <signature>@Target(AnnotationTarget.CLASS) @Retention(AnnotationRetention.RUNTIME) @ExtendWith(VcsimExtension::class) @Testcontainers public annotation class VcsimTest</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimTest.kt</path>
+    </interface>
+    <interface>
+      <name>Spring Property Injection</name>
+      <kind>configuration</kind>
+      <signature>@DynamicPropertySource with vsphere.url, vsphere.username, vsphere.password</signature>
+      <path>eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimExtension.kt</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Tests must achieve ≥80% line coverage (Kover) and ≥70% mutation score (Pitest). Use JUnit 6 with @Test annotations. Integration tests use Testcontainers with singleton pattern for container reuse. Unit tests use MockK for mocking. Follow Tests First pattern: write tests before implementation. Use descriptive test names with backticks. Place unit tests in src/test/kotlin, integration tests alongside with @IntegrationTest or similar marker.
+    </standards>
+    <locations>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/vcsim/</location>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/vcsim/VcsimContainerTest.kt</location>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/vcsim/VcsimTestFixtureTest.kt</location>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/vcsim/VcsimIntegrationTest.kt</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test that VcsimContainer starts successfully and exposes port 8989</idea>
+      <idea ac="1">Test that /sdk endpoint responds to HTTP requests after container start</idea>
+      <idea ac="2">Test that createVm() returns a valid VmRef with expected properties</idea>
+      <idea ac="2">Test that createNetwork() creates network accessible via VCSIM API</idea>
+      <idea ac="2">Test that createDatastore() creates datastore visible in inventory</idea>
+      <idea ac="2">Test that simulateProvisioning() changes VM state appropriately</idea>
+      <idea ac="3">Test that @VcsimTest annotation injects vsphere.url property correctly</idea>
+      <idea ac="3">Test that vsphere.username and vsphere.password match VCSIM defaults</idea>
+      <idea ac="4">Test that VMs created in one test class are not visible in another (isolation)</idea>
+      <idea ac="4">Test that resetState() clears all VCSIM inventory</idea>
+      <idea ac="5">Test that multiple tests in same class reuse container instance (no restart)</idea>
+      <idea ac="5">Test that container startup time is minimal for subsequent tests</idea>
+    </ideas>
+  </tests>
+</story-context>
