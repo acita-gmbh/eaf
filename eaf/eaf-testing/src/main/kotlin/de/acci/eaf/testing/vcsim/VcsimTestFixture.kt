@@ -59,7 +59,6 @@ public class VcsimTestFixture(
      *
      * @param spec VM specification including name, CPU, memory, disk
      * @return Reference to the created VM
-     * @throws VcsimException if VM creation fails
      */
     public fun createVm(spec: VmSpec): VmRef {
         vmCounter++
@@ -84,7 +83,7 @@ public class VcsimTestFixture(
      *
      * @param name Network name (must be unique)
      * @return Reference to the created network
-     * @throws VcsimException if network creation fails
+     * @throws IllegalArgumentException if name is blank
      */
     public fun createNetwork(name: String): NetworkRef {
         require(name.isNotBlank()) { "Network name must not be blank" }
@@ -105,7 +104,7 @@ public class VcsimTestFixture(
      *
      * @param name Datastore name (must be unique)
      * @return Reference to the created datastore
-     * @throws VcsimException if datastore creation fails
+     * @throws IllegalArgumentException if name is blank
      */
     public fun createDatastore(name: String): DatastoreRef {
         require(name.isNotBlank()) { "Datastore name must not be blank" }

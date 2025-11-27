@@ -22,7 +22,7 @@ so that I can test VMware operations without real infrastructure.
    - Given I run VMware integration tests
    - When the test class starts
    - Then VCSIM container is automatically started via Testcontainers
-   - And the container provides vSphere API compatible `/sdk` endpoint.
+   - And the container provides vSphere API-compatible `/sdk` endpoint.
 
 2. **VcsimTestFixture provides helper methods**
    - Given VCSIM container is running

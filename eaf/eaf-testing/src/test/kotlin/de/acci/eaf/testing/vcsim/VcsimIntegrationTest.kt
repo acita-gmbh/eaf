@@ -81,7 +81,7 @@ class VcsimIntegrationTest {
         assertNotNull(aboutInfo)
         assertTrue(aboutInfo.isNotBlank())
         // VCSIM /about endpoint returns JSON with version info
-        assertTrue(aboutInfo.contains("{") || aboutInfo.isNotBlank())
+        assertTrue(aboutInfo.contains("{"))
     }
 
     // AC2: VcsimTestFixture helper methods work correctly
