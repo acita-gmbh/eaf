@@ -1,5 +1,6 @@
 plugins {
     id("eaf.spring-conventions")
+    id("eaf.logging-conventions")
     id("eaf.test-conventions")
 }
 

@@ -183,7 +183,7 @@
 
   <tests>
     <standards>
-      JUnit 6 with MockK for mocking. Tests First pattern required. Coverage gate: 80% line coverage (JaCoCo), 70% mutation score (Pitest). Architecture tests via Konsist ensure no Spring dependencies in interfaces and correct module boundaries.
+      JUnit 6 with MockK for mocking. Tests First pattern required. Coverage gate: 80% line coverage (Kover), 70% mutation score (Pitest). Architecture tests via Konsist ensure no Spring dependencies in interfaces and correct module boundaries.
     </standards>
     <locations>
       <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/</location>

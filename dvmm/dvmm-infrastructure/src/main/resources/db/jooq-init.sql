@@ -2,6 +2,20 @@
 -- Combined initialization script for jOOQ code generation
 -- This script combines all Flyway migrations needed for jOOQ to generate type-safe code
 -- NOTE: Keep in sync with eaf-eventsourcing migrations
+--
+-- IMPORTANT: This file uses jOOQ ignore tokens to skip PostgreSQL-specific statements
+-- that are not supported by DDLDatabase (which uses H2 internally).
+-- See: https://www.jooq.org/doc/latest/manual/code-generation/codegen-ddl/
+--
+-- Statements wrapped in [jooq ignore start/stop] are:
+-- - RLS policies (ENABLE/FORCE ROW LEVEL SECURITY, CREATE POLICY)
+-- - Permission grants (GRANT, REVOKE)
+-- - Roles (CREATE ROLE)
+-- - Triggers and functions (CREATE TRIGGER, CREATE FUNCTION)
+-- - PL/pgSQL blocks (DO $$ ... $$)
+-- - Comments (COMMENT ON)
+--
+-- These are runtime concerns that don't affect generated jOOQ code.
 
 -- ============================================================================
 -- V001__create_event_store.sql content
@@ -44,6 +58,9 @@ CREATE TABLE eaf_events.snapshots (
 );
 
 CREATE INDEX idx_snapshots_tenant ON eaf_events.snapshots (tenant_id);
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Roles, Grants, Triggers, Functions (not needed for jOOQ code generation)
 
 -- Create application role for RLS enforcement
 DO $$
@@ -110,12 +127,15 @@ CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
 ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
 ALTER TABLE eaf_events.snapshots FORCE ROW LEVEL SECURITY;
 
+-- [jooq ignore stop]
+
 -- ============================================================================
 -- V003__create_vm_requests_projection.sql content
 -- ============================================================================
 
 -- Projection table for VM requests read model
-CREATE TABLE IF NOT EXISTS vm_requests_projection (
+-- Note: Explicit PUBLIC schema prefix ensures jOOQ generates code in the 'public' package
+CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
     id              UUID PRIMARY KEY,
     tenant_id       UUID NOT NULL,
     requester_id    UUID NOT NULL,
@@ -128,10 +148,13 @@ CREATE TABLE IF NOT EXISTS vm_requests_projection (
     version         INT NOT NULL DEFAULT 1
 );
 
-CREATE INDEX idx_vm_requests_projection_tenant ON vm_requests_projection (tenant_id);
-CREATE INDEX idx_vm_requests_projection_status ON vm_requests_projection (status);
-CREATE INDEX idx_vm_requests_projection_requester ON vm_requests_projection (requester_id);
-CREATE INDEX idx_vm_requests_projection_created ON vm_requests_projection (created_at DESC);
+CREATE INDEX idx_vm_requests_projection_tenant ON PUBLIC.vm_requests_projection (tenant_id);
+CREATE INDEX idx_vm_requests_projection_status ON PUBLIC.vm_requests_projection (status);
+CREATE INDEX idx_vm_requests_projection_requester ON PUBLIC.vm_requests_projection (requester_id);
+CREATE INDEX idx_vm_requests_projection_created ON PUBLIC.vm_requests_projection (created_at DESC);
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON vm_requests_projection TO eaf_app;
 
@@ -154,3 +177,5 @@ COMMENT ON COLUMN vm_requests_projection.status IS 'Current status: PENDING, APP
 COMMENT ON COLUMN vm_requests_projection.created_at IS 'Timestamp when the request was created';
 COMMENT ON COLUMN vm_requests_projection.updated_at IS 'Timestamp when the request was last updated';
 COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version for concurrent updates';
+
+-- [jooq ignore stop]

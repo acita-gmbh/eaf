@@ -49,7 +49,7 @@ so that I can start implementing domain logic immediately.
 
 6. **AC-6: Quality Tooling**
    - Given quality gates are configured
-   - Then JaCoCo code coverage reporting is configured
+   - Then Kover code coverage reporting is configured
    - And Pitest mutation testing is configured
    - And Konsist architecture tests scaffold exists
 
@@ -95,7 +95,7 @@ so that I can start implementing domain logic immediately.
   - [x] 5.5 Configure `dvmm-app/build.gradle.kts` (main application, assembles all)
 
 - [x] **Task 6: Configure Quality Gates** (AC: 6)
-  - [x] 6.1 Configure JaCoCo in test-conventions (minimum 80% coverage)
+  - [x] 6.1 Configure Kover in test-conventions (minimum 80% coverage)
   - [x] 6.2 Configure Pitest for mutation testing (minimum 70% mutation score)
   - [x] 6.3 Create initial Konsist test file `ArchitectureTest.kt` in dvmm-app
   - [x] 6.4 Add rule: eaf modules must not depend on dvmm modules
@@ -103,7 +103,7 @@ so that I can start implementing domain logic immediately.
 - [x] **Task 7: Verify Build** (AC: 1)
   - [x] 7.1 Run `./gradlew build` and verify success
   - [x] 7.2 Run `./gradlew test` and verify test framework works
-  - [x] 7.3 Run `./gradlew jacocoTestReport` and verify report generation
+  - [x] 7.3 Run `./gradlew koverHtmlReport` and verify report generation
   - [x] 7.4 Verify all modules compile without warnings
 
 ## Dev Notes
@@ -274,7 +274,7 @@ claude-opus-4-5-20251101
 - `build-logic/conventions/build.gradle.kts` - Convention plugins project
 - `build-logic/conventions/src/main/kotlin/eaf.kotlin-conventions.gradle.kts` - Kotlin 2.2+ K2 compiler config
 - `build-logic/conventions/src/main/kotlin/eaf.spring-conventions.gradle.kts` - Spring Boot 3.5+ WebFlux config
-- `build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts` - JUnit 6, Testcontainers 2.x, JaCoCo config
+- `build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts` - JUnit 6, Testcontainers 2.x, Kover config
 
 **EAF Modules:**
 - `eaf/eaf-core/build.gradle.kts` - Core module (no external deps)
@@ -298,6 +298,7 @@ claude-opus-4-5-20251101
 |------|---------|-------------|
 | 2025-11-25 | 0.1.0 | Initial story draft |
 | 2025-11-25 | 0.1.1 | Senior Developer Review notes appended |
+| 2025-11-27 | 0.1.2 | Updated JaCoCo references to Kover (coverage tool migration) |
 
 ---
 
@@ -322,7 +323,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 **MEDIUM Severity:**
 1. **Pitest Plugin Not Applied** (AC-6): The version `pitest = "1.17.4"` is defined in `libs.versions.toml:13`, but no Pitest plugin is applied in any build file. Task 6.2 claims Pitest is configured but implementation is incomplete.
 2. **Hardcoded Versions in Conventions** (AC-7): Convention plugins contain hardcoded versions instead of catalog references:
-   - `eaf.test-conventions.gradle.kts:8` - JaCoCo `0.8.12`
+   - `eaf.test-conventions.gradle.kts:8` - Kover `0.9.3`
    - `eaf.test-conventions.gradle.kts:47` - JUnit BOM `6.0.1`
    - `eaf.test-conventions.gradle.kts:55` - MockK `1.14.6`
    - `eaf.test-conventions.gradle.kts:58` - Testcontainers BOM `2.0.2`
@@ -344,7 +345,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 | AC-3 | Kotlin Configuration | IMPLEMENTED | `libs.versions.toml:2`, `eaf.kotlin-conventions.gradle.kts:12-13,34-36` |
 | AC-4 | Spring Boot Configuration | IMPLEMENTED | `libs.versions.toml:3`, `eaf.spring-conventions.gradle.kts:10,13` |
 | AC-5 | Build Conventions | IMPLEMENTED | 3 convention files in `build-logic/conventions/src/main/kotlin/` |
-| AC-6 | Quality Tooling | PARTIAL | JaCoCo ✓, Konsist ✓, Pitest ✗ (version only, no plugin) |
+| AC-6 | Quality Tooling | PARTIAL | Kover ✓, Konsist ✓, Pitest ✗ (version only, no plugin) |
 | AC-7 | Version Catalog | PARTIAL | Catalog exists, but 9+ hardcoded versions in conventions |
 
 **Summary: 5 of 7 acceptance criteria fully implemented, 2 partial**
@@ -358,7 +359,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 | 3.1-3.5 Build-Logic | ✅ Complete | ✅ VERIFIED | All 3 convention plugins exist |
 | 4.1-4.5 EAF Modules | ✅ Complete | ✅ VERIFIED | All 5 EAF build.gradle.kts |
 | 5.1-5.5 DVMM Modules | ✅ Complete | ✅ VERIFIED | All 5 DVMM build.gradle.kts |
-| 6.1 JaCoCo | ✅ Complete | ✅ VERIFIED | `eaf.test-conventions.gradle.kts:7-28` |
+| 6.1 Kover | ✅ Complete | ✅ VERIFIED | `eaf.test-conventions.gradle.kts:7-28` |
 | 6.2 Pitest | ✅ Complete | ⚠️ PARTIAL | Version in catalog, NO plugin applied |
 | 6.3 ArchitectureTest.kt | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:1-104` |
 | 6.4 EAF→DVMM rule | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:17-74` |
@@ -369,7 +370,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 ### Test Coverage and Gaps
 - 7 Konsist architecture tests exist and pass
 - No unit tests for application code (acceptable for scaffolding story)
-- JaCoCo reports generated successfully
+- Kover reports generated successfully
 
 ### Architectural Alignment
 - ✅ Dependency direction correct: DVMM → EAF (never reverse)
@@ -389,7 +390,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 
 **Code Changes Required:**
 - [x] [Med] Add Pitest plugin to eaf.test-conventions.gradle.kts (AC-6) [file: build-logic/conventions/src/main/kotlin/eaf.pitest-conventions.gradle.kts] ✅ Created separate pitest-conventions plugin
-- [x] [Med] Replace hardcoded JaCoCo version with catalog reference [file: eaf.test-conventions.gradle.kts:12]
+- [x] [Med] Replace hardcoded Kover version with catalog reference [file: eaf.test-conventions.gradle.kts:12]
 - [x] [Med] Replace hardcoded JUnit BOM with `libs.versions.junit` [file: eaf.test-conventions.gradle.kts:51]
 - [x] [Med] Replace hardcoded MockK version with `libs.mockk` [file: eaf.test-conventions.gradle.kts:59]
 - [x] [Med] Replace hardcoded Testcontainers BOM with catalog ref [file: eaf.test-conventions.gradle.kts:62]
@@ -400,7 +401,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 - [x] [Med] Replace hardcoded versions in eaf-testing [file: eaf/eaf-testing/build.gradle.kts:11,14-16,19-22]
 
 **Advisory Notes:**
-- ✅ Added JaCoCo version (0.8.12) to libs.versions.toml
+- ✅ Added Kover version (0.9.3) to libs.versions.toml
 - ✅ Added Pitest versions and plugin entry to version catalog:
   - pitest = "1.17.4" (core)
   - pitest-junit5-plugin = "1.2.3" (JUnit 5 support)
@@ -420,7 +421,7 @@ All action items from the Senior Developer Review have been addressed.
    - Applied to dvmm-app module as example
 
 2. **Updated `gradle/libs.versions.toml`**:
-   - Added `jacoco = "0.8.12"`
+   - Added `kover = "0.9.3"`
    - Added `pitest-junit5-plugin = "1.2.3"`
    - Added `pitest-gradle-plugin = "1.19.0-rc.2"` (Gradle 9.x compatible)
    - Added library entries for junit-bom, junit-platform-engine, kotlin-coroutines-bom, pitest-junit5-plugin
@@ -428,7 +429,7 @@ All action items from the Senior Developer Review have been addressed.
 3. **Updated convention plugins to use version catalog**:
    - `eaf.kotlin-conventions.gradle.kts`: Coroutines BOM from catalog
    - `eaf.spring-conventions.gradle.kts`: Reactor-kotlin from catalog
-   - `eaf.test-conventions.gradle.kts`: JaCoCo, JUnit, MockK, Testcontainers, Konsist from catalog
+   - `eaf.test-conventions.gradle.kts`: Kover, JUnit, MockK, Testcontainers, Konsist from catalog
 
 4. **Updated module build files to use version catalog**:
    - `eaf/eaf-testing/build.gradle.kts`: All dependencies from catalog

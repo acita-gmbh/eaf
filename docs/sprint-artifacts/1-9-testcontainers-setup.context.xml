@@ -53,7 +53,7 @@
         <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Implementation Quality Gates" snippet="Test Coverage: ≥80%, Mutation Score: ≥70% - these gates are non-negotiable. 'No Broken Windows' policy."></doc>
         <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Technical Dependencies" snippet="Testing: JUnit 6 + Testcontainers - Latest, PostgreSQL, Keycloak."></doc>
         <doc path="docs/prd.md" title="DVMM - Product Requirements Document" section="Multi-Tenancy Architecture" snippet="Complete data isolation via PostgreSQL Row-Level Security (RLS)."></doc>
-        <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="2.3 Technology Stack" snippet="Testing: JUnit 6 + Testcontainers - Latest, PostgreSQL, Keycloak. Coverage: JaCoCo (≥80% gate), Mutation: Pitest (≥70% gate)."></doc>
+        <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="2.3 Technology Stack" snippet="Testing: JUnit 6 + Testcontainers - Latest, PostgreSQL, Keycloak. Coverage: Kover (≥80% gate), Mutation: Pitest (≥70% gate)."></doc>
         <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="3. Story Implementation Guides -> Story 1.9: Testcontainers Setup" snippet="Configures Testcontainers with PostgreSQL 16 and Keycloak. Implements singleton container pattern. Creates test fixtures module."></doc>
         <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1: Foundation - Technical Specification" section="5.2 Critical Test Scenarios -> TC-003: Event Store Isolation" snippet="Configurable isolation strategy for event store: TRUNCATE (fast) and SCHEMA_PER_TEST (robust)."></doc>
         <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-001: EAF Framework-First Architecture -> EAF Module Definitions" snippet="eaf-testing: Minimal test utilities (TenantTestContext, InMemoryEventStore, TestClock) - Depends on eaf-core, eaf-eventsourcing."></doc>
@@ -104,7 +104,7 @@
       <location>Testcontainers setup and `EventStoreIsolationExtension`, `RlsEnforcingDataSource` to be located in `eaf/eaf-testing/src/main/kotlin`.</location>
       <location>Test fixture classes (`TestTenantFixture`, `TestUserFixture`, `TestDataFixture`) to be located in `eaf/eaf-testing/src/testFixtures/kotlin`.</location>
       <location>Integration test configuration (`TestContainersConfig` for PostgreSQL and Keycloak) in `dvmm/dvmm-app/src/test/kotlin`.</location>
-      <location>All relevant build configurations (JaCoCo, Pitest) managed via `build.gradle.kts` files and `gradle/libs.versions.toml`.</location>
+      <location>All relevant build configurations (Kover, Pitest) managed via `build.gradle.kts` files and `gradle/libs.versions.toml`.</location>
     </locations>
     <ideas>
       <idea ac="1">Verify PostgreSQL 16 container starts correctly and is accessible for integration tests.</idea>

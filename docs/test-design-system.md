@@ -308,7 +308,7 @@ test('app remains functional when VMware is offline', async ({ page, context }) 
 
 | NFR ID | Requirement | Test Tool | CI Integration |
 |--------|-------------|-----------|----------------|
-| NFR-MAINT-1 | Coverage ≥ 80% | JaCoCo | `./gradlew jacocoTestReport` |
+| NFR-MAINT-1 | Coverage ≥ 80% | Kover | `./gradlew koverHtmlReport` |
 | NFR-MAINT-2 | Mutation score ≥ 70% | PITest | `./gradlew pitest` |
 | NFR-MAINT-11 | E2E < 15 min | Playwright | CI timing assertion |
 | NFR-MAINT-12 | Contract tests | Pact | `./gradlew pactVerify` |
@@ -663,11 +663,8 @@ test:
       runs-on: ubuntu-latest
       steps:
         - run: ./gradlew test
-        - run: ./gradlew jacocoTestReport
-        - name: Check coverage
-          run: |
-            COVERAGE=$(cat build/reports/jacoco/test/html/index.html | grep -o 'Total[^%]*%' | head -1)
-            if [[ ${COVERAGE%\%} -lt 80 ]]; then exit 1; fi
+        - run: ./gradlew koverHtmlReport
+        - run: ./gradlew koverVerify  # Enforces 80% coverage threshold
 
     architecture:
       runs-on: ubuntu-latest

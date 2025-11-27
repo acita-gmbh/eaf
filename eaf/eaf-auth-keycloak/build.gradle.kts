@@ -1,5 +1,6 @@
 plugins {
     id("eaf.kotlin-conventions")
+    id("eaf.logging-conventions")
     id("eaf.spring-conventions")
     id("eaf.test-conventions")
     id("eaf.pitest-conventions")

@@ -20,8 +20,8 @@
 - [ ] Enable explicit API + K2 in eaf-core via eaf.kotlin-conventions. (AC: 4)
 - [ ] Ensure eaf-core build uses only cataloged dependencies; zero external runtime deps. (AC: 5)
 - [ ] Add unit tests for Result mapping/flatMap/fold; DomainError equality/serialization; value object round-trips. (AC: 6)
-- [ ] Configure coverage + Pitest thresholds for eaf-core via eaf.pitest-conventions; ensure JaCoCo gate applies. (AC: 6)
-- [ ] Run ./gradlew :eaf:eaf-core:test jacocoTestReport pitest. (AC: 6)
+- [ ] Configure coverage + Pitest thresholds for eaf-core via eaf.pitest-conventions; ensure Kover gate applies. (AC: 6)
+- [ ] Run ./gradlew :eaf:eaf-core:test :eaf:eaf-core:koverHtmlReport :eaf:eaf-core:pitest. (AC: 6)
     ]]></tasks>
   </story>
 
@@ -31,13 +31,13 @@
 3. TenantId, UserId, CorrelationId implemented as @JvmInline value classes with generate() and fromString().
 4. Module compiles with Kotlin 2.2 (K2) and explicit API enabled; no experimental warnings.
 5. eaf-core has zero external runtime deps (Kotlin stdlib only); no de.acci.dvmm imports; Konsist rule passes.
-6. Unit tests cover Result and DomainError; JaCoCo ≥80% line coverage; Pitest ≥70% mutation score for eaf-core.
+6. Unit tests cover Result and DomainError; Kover ≥80% line coverage; Pitest ≥70% mutation score for eaf-core.
   ]]></acceptanceCriteria>
 
   <artifacts>
     <docs>
       <doc path="docs/epics.md" title="DVMM - Epic Breakdown" section="Story 1.2: EAF Core Module" snippet="Story 1.2 requires Result/DomainError primitives and zero external dependencies as the shared kernel for all modules." />
-      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.2 Implementation Checklist" snippet="Defines Result sealed class, DomainError hierarchy, value objects for TenantId/UserId/CorrelationId, and quality gates (JaCoCo ≥80%, Pitest ≥70%)." />
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.2 Implementation Checklist" snippet="Defines Result sealed class, DomainError hierarchy, value objects for TenantId/UserId/CorrelationId, and quality gates (Kover ≥80%, Pitest ≥70%)." />
       <doc path="docs/architecture.md" title="DVMM Architecture" section="EAF Module Definitions & Dependency Rules" snippet="EAF modules must not import DVMM code; eaf-core has zero external dependencies and enforces framework-first boundaries with Konsist tests." />
       <doc path="docs/security-architecture.md" title="Security Architecture" section="Audit & Compliance / Correlation IDs" snippet="CorrelationId required for traceability across audit logs; error handling must carry context for observability." />
       <doc path="docs/test-design-system.md" title="Test Design System" section="Critical Test Scenarios TC-001..004" snippet="Emphasizes isolation, tenant context propagation, projection waiting; sets expectations for ≥80% coverage and ≥70% mutation score." />
@@ -47,7 +47,7 @@
     <dependencies>
       <dependency ecosystem="gradle" name="kotlin" version="2.2.x" />
       <dependency ecosystem="gradle" name="jvm" version="21" />
-      <dependency ecosystem="gradle" name="jacoco" version="0.8.12" />
+      <dependency ecosystem="gradle" name="kover" version="0.9.3" />
       <dependency ecosystem="gradle" name="pitest" version="1.19.0-rc.2" />
       <dependency ecosystem="gradle" name="konsist" version="0.17.3" />
       <dependency ecosystem="gradle" name="testcontainers" version="2.0.2" scope="test-only (framework available but not required for eaf-core)" />
@@ -63,7 +63,7 @@
 - No wildcard imports; adhere to named-argument rule (>2 params) per coding standards.
 - Error handling centralized in Result/DomainError; avoid unchecked RuntimeException in domain flow.
 - CorrelationId must be available for logging/audit per security architecture.
-- Quality gates: JaCoCo ≥80% line coverage, Pitest ≥70% mutation score for eaf-core.
+- Quality gates: Kover ≥80% line coverage, Pitest ≥70% mutation score for eaf-core.
     ]]>
   </constraints>
 
@@ -75,7 +75,7 @@
 
   <tests>
     <standards><![CDATA[
-- JUnit 6, MockK for mocking, JaCoCo coverage gate ≥80%, Pitest mutation ≥70%.
+- JUnit 6, MockK for mocking, Kover coverage gate ≥80%, Pitest mutation ≥70%.
 - Architecture checks via Konsist to enforce zero DVMM imports and dependency cleanliness.
 - Prefer property-based/parameterized tests for Result helpers; ensure null-safety and short-circuit behavior.
     ]]></standards>

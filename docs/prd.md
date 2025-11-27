@@ -784,8 +784,11 @@ DVMM Portal
 | NFR-OBS-6 | Dashboard (Grafana) | Ops visibility | MVP |
 | NFR-OBS-7 | Distributed tracing | OpenTelemetry | Growth |
 | NFR-OBS-8 | SLO monitoring | Error budgets | Growth |
+| NFR-OBS-9 | Coroutine MDC propagation | kotlinx-coroutines-slf4j | Growth |
 
-**Stack:** OpenTelemetry-ready. Grafana + Prometheus + Loki for MVP.
+**Stack:** OpenTelemetry-ready. Grafana + Prometheus + Loki for MVP. kotlin-logging facade wraps SLF4J for Kotlin-idiomatic logging.
+
+**Coroutine Context Propagation (NFR-OBS-9):** In reactive/coroutine-based systems, MDC (Mapped Diagnostic Context) does not automatically propagate across coroutine boundaries. Growth phase will add `kotlinx-coroutines-slf4j` integration to ensure correlation IDs, tenant IDs, and trace context propagate correctly through async operations. This is critical for distributed tracing and audit trail integrity.
 
 ### Compatibility & Integration
 
@@ -832,14 +835,14 @@ DVMM Portal
 | Availability & Reliability | 11 | 2 | 13 |
 | Compliance & Audit | 10 | 2 | 12 |
 | Maintainability & Operability | 13 | 0 | 13 |
-| Observability | 6 | 2 | 8 |
+| Observability | 6 | 3 | 9 |
 | Compatibility & Integration | 7 | 1 | 8 |
 | Localization | 5 | 0 | 5 |
 | Support SLA | 0 | 3 | 3 |
-| **TOTAL** | **83** | **12** | **95** |
+| **TOTAL** | **83** | **13** | **96** |
 
 **MVP:** 83 Non-Functional Requirements
-**Growth:** 12 additional Non-Functional Requirements
+**Growth:** 13 additional Non-Functional Requirements
 
 ---
 
@@ -850,10 +853,10 @@ DVMM Portal
 | Metric | Count |
 |--------|-------|
 | **Functional Requirements** | 90 (65 MVP, 25 Growth) |
-| **Non-Functional Requirements** | 95 (83 MVP, 12 Growth) |
-| **Total Requirements** | 185 |
+| **Non-Functional Requirements** | 96 (83 MVP, 13 Growth) |
+| **Total Requirements** | 186 |
 | **MVP Requirements** | 148 |
-| **Growth Requirements** | 37 |
+| **Growth Requirements** | 38 |
 
 ### Validation Status
 

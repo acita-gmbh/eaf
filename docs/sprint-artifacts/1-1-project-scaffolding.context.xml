@@ -50,7 +50,7 @@
         <subtask id="5.5">Configure dvmm-app/build.gradle.kts (main application, assembles all)</subtask>
       </task>
       <task id="6" ac="6">Configure Quality Gates
-        <subtask id="6.1">Configure JaCoCo in test-conventions (minimum 80% coverage)</subtask>
+        <subtask id="6.1">Configure Kover in test-conventions (minimum 80% coverage)</subtask>
         <subtask id="6.2">Configure Pitest for mutation testing (minimum 70% mutation score)</subtask>
         <subtask id="6.3">Create initial Konsist test file ArchitectureTest.kt in dvmm-app</subtask>
         <subtask id="6.4">Add rule: eaf modules must not depend on dvmm modules</subtask>
@@ -58,7 +58,7 @@
       <task id="7" ac="1">Verify Build
         <subtask id="7.1">Run ./gradlew build and verify success</subtask>
         <subtask id="7.2">Run ./gradlew test and verify test framework works</subtask>
-        <subtask id="7.3">Run ./gradlew jacocoTestReport and verify report generation</subtask>
+        <subtask id="7.3">Run ./gradlew koverHtmlReport and verify report generation</subtask>
         <subtask id="7.4">Verify all modules compile without warnings</subtask>
       </task>
     </tasks>
@@ -93,7 +93,7 @@
     <criterion id="AC-6" title="Quality Tooling">
       <given>quality gates are configured</given>
       <when>I run quality checks</when>
-      <then>JaCoCo coverage, Pitest mutation testing, and Konsist architecture tests are configured</then>
+      <then>Kover coverage, Pitest mutation testing, and Konsist architecture tests are configured</then>
     </criterion>
     <criterion id="AC-7" title="Version Catalog">
       <given>dependencies are managed centrally</given>
@@ -117,7 +117,7 @@
         Story definition with acceptance criteria, prerequisites (none), and technical notes for ADR-001, version catalogs, and coroutine configuration.
       </doc>
       <doc path="docs/prd.md" title="DVMM PRD" section="Implementation Quality Gates">
-        NFR targets: 80% test coverage (JaCoCo), 70% mutation score (Pitest), Konsist architecture tests enforced.
+        NFR targets: 80% test coverage (Kover), 70% mutation score (Pitest), Konsist architecture tests enforced.
       </doc>
     </docs>
     <code>
@@ -138,7 +138,7 @@
         <package name="junit" version="6.0.1" note="Unified versioning, Kotlin suspend support"/>
       </ecosystem>
       <tooling>
-        <tool name="JaCoCo" purpose="Code coverage reporting" target="80%"/>
+        <tool name="Kover" purpose="Code coverage reporting" target="80%"/>
         <tool name="Pitest" purpose="Mutation testing" target="70%"/>
         <tool name="Konsist" purpose="Architecture constraint enforcement"/>
       </tooling>
@@ -213,7 +213,7 @@
   <tests>
     <standards>
       Testing follows the pyramid pattern with JUnit 6, MockK for mocking, and Testcontainers for integration tests.
-      Quality gates: JaCoCo ≥80% line coverage, Pitest ≥70% mutation score.
+      Quality gates: Kover ≥80% line coverage, Pitest ≥70% mutation score.
       Architecture tests via Konsist enforce module boundaries.
       Test execution must complete within 15 minutes (NFR-MAINT-11).
     </standards>

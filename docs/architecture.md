@@ -917,6 +917,40 @@ class VmRequestProjectionRepository(private val dsl: DSLContext) {
 - Code generation from DB schema
 - Virtual Threads (Spring Boot 3.5) for blocking jOOQ calls
 
+**Code Generation (DDLDatabase):**
+
+jOOQ code is generated from DDL files using `DDLDatabase` - no running database required:
+
+```bash
+./gradlew :dvmm:dvmm-infrastructure:generateJooq
+```
+
+Key files:
+- `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` - Combined DDL script
+- `dvmm/dvmm-infrastructure/build.gradle.kts` - jOOQ configuration
+
+**PostgreSQL-Specific Syntax:**
+
+DDLDatabase uses H2 internally and cannot parse PostgreSQL-specific statements. Use jOOQ ignore tokens:
+
+```sql
+-- [jooq ignore start]
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON events ...;
+GRANT SELECT ON events TO eaf_app;
+CREATE TRIGGER trg_prevent_update ...;
+-- [jooq ignore stop]
+```
+
+Statements to wrap in ignore tokens:
+- RLS policies (`ENABLE/FORCE ROW LEVEL SECURITY`, `CREATE POLICY`)
+- Permission grants (`GRANT`, `REVOKE`)
+- Roles (`CREATE ROLE`, `DO $$ ... $$` blocks)
+- Triggers and functions (`CREATE TRIGGER`, `CREATE FUNCTION`)
+- Comments (`COMMENT ON`)
+
+These are runtime concerns that don't affect generated jOOQ code.
+
 ---
 
 ## Decision Summary
@@ -2708,9 +2742,12 @@ class GlobalExceptionHandler {
 
 ### Logging Strategy
 
-**Structured JSON Logging (Logback)**
+**Structured JSON Logging (Logback + kotlin-logging)**
 ```kotlin
-// Use structured logging with context
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.withLoggingContext
+
+// Kotlin-idiomatic logger declaration
 private val logger = KotlinLogging.logger {}
 
 suspend fun createVmRequest(command: CreateVmRequestCommand) {
@@ -2755,6 +2792,35 @@ suspend fun createVmRequest(command: CreateVmRequestCommand) {
 - NEVER log: passwords, tokens, PII (email, names) in plain text
 - MASK: last 4 chars of IDs for debugging (`****-****-****-ab12`)
 - AUDIT only: full user actions go to audit log, not application logs
+
+**Logging Stack**
+- **kotlin-logging** (`io.github.oshai:kotlin-logging-jvm`): Kotlin-idiomatic facade wrapping SLF4J
+- **Logback**: Backend for structured JSON output
+- **MDC (Mapped Diagnostic Context)**: Carries correlationId, tenantId, userId across call chain
+
+**Coroutine MDC Propagation (NFR-OBS-9 - Growth Phase)**
+
+In reactive/coroutine-based systems, MDC context does not automatically propagate across coroutine boundaries. This is critical for:
+- Distributed tracing integrity (correlation IDs)
+- Audit trail completeness
+- Multi-tenant context verification in logs
+
+**Growth Phase Implementation:**
+```kotlin
+// Add to eaf-observability module
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${coroutinesVersion}")
+}
+
+// Usage: MDC context automatically propagates
+withContext(MDCContext()) {
+    // correlationId, tenantId available in MDC across all coroutine switches
+    logger.info { "Processing request" }  // MDC context preserved
+}
+```
+
+**Why This Matters:**
+Without `kotlinx-coroutines-slf4j`, logs from different dispatcher switches (e.g., `Dispatchers.IO`) lose MDC context, making it impossible to trace requests across async boundaries. This breaks audit trail integrity and complicates debugging in production.
 
 ## Data Architecture
 

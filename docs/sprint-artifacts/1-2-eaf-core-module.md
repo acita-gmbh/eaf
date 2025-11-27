@@ -27,7 +27,7 @@ so that all modules use consistent patterns.
    - No imports from `de.acci.dvmm.*`; Konsist rule passes.
 6. **Quality Gates**
    - Unit tests for Result and DomainError cover success/failure flows.
-   - JaCoCo ≥80% line coverage for `eaf-core`.
+   - Kover ≥80% line coverage for `eaf-core`.
    - Pitest mutation score ≥70% for `eaf-core`.
 
 ## Tasks / Subtasks
@@ -38,8 +38,8 @@ so that all modules use consistent patterns.
 - [x] Enable explicit API + K2 in `eaf-core` (use existing `eaf.kotlin-conventions`). (AC: 4)
 - [x] Ensure `eaf-core` build file uses only cataloged dependencies; no external runtime deps. (AC: 5)
 - [x] Add unit tests: Result mapping/flatMap/fold paths; DomainError equality/serialization; value object generation/parsing round-trips. (AC: 6)
-- [x] Configure coverage + Pitest thresholds for `eaf-core` via `eaf.pitest-conventions`; ensure JaCoCo gate applies. (AC: 6)
-- [x] Run `./gradlew :eaf:eaf-core:test jacocoTestReport pitest`. (AC: 6)
+- [x] Configure coverage + Pitest thresholds for `eaf-core` via `eaf.pitest-conventions`; ensure Kover gate applies. (AC: 6)
+- [x] Run `./gradlew :eaf:eaf-core:test koverHtmlReport pitest`. (AC: 6)
 
 ## Dev Notes
 
@@ -55,7 +55,7 @@ so that all modules use consistent patterns.
 - Security/Audit requires Correlation IDs for logging/tracing (Source: docs/security-architecture.md).
 
 ### Testing Strategy
-- Unit tests first; target ≥80% coverage and ≥70% mutation score with `jacocoTestReport` and Pitest (Source: docs/test-design-system.md).
+- Unit tests first; target ≥80% coverage and ≥70% mutation score with `koverHtmlReport` and Pitest (Source: docs/test-design-system.md).
 - Validate coroutine/inline helpers for Result do not allocate excessively; ensure value objects are serializable where needed.
 
 ### Project Structure Notes
@@ -80,10 +80,10 @@ so that all modules use consistent patterns.
 - sm-agent (Scrum Master persona), session 2025-11-25
 
 ### Debug Log References
-- Execution: `./gradlew :eaf:eaf-core:test :eaf:eaf-core:jacocoTestReport :eaf:eaf-core:pitest` (2025-11-25T00:36Z) — all green, mutation score 100%.
+- Execution: `./gradlew :eaf:eaf-core:test :eaf:eaf-core:koverHtmlReport :eaf:eaf-core:pitest` (2025-11-25T00:36Z) — all green, mutation score 100%.
 
 ### Completion Notes List
-- Implemented Result, DomainError, TenantId/UserId/CorrelationId plus unit tests; Jacoco + Pitest thresholds met (100% mutation on core scope).
+- Implemented Result, DomainError, TenantId/UserId/CorrelationId plus unit tests; Kover + Pitest thresholds met (100% mutation on core scope).
 
 ### File List
 - MOD: `eaf/eaf-core/build.gradle.kts`
@@ -134,13 +134,13 @@ Summary: 6 of 6 ACs fully implemented.
 | Ensure zero external runtime deps (AC5) | [x] | VERIFIED COMPLETE | eaf/eaf-core/build.gradle.kts:6-24 |
 | Add unit tests (AC6) | [x] | VERIFIED COMPLETE | ResultTest.kt:10-114; DomainErrorTest.kt:8-37; IdentifiersTest.kt:11-43 |
 | Configure coverage + Pitest thresholds (AC6) | [x] | VERIFIED COMPLETE | eaf/eaf-core/build.gradle.kts:6-24; pitest targets core namespace |
-| Run gradle tests/jacoco/pitest (AC6) | [x] | VERIFIED COMPLETE | gradle run 2025-11-25T00:52Z |
+| Run gradle tests/kover/pitest (AC6) | [x] | VERIFIED COMPLETE | gradle run 2025-11-25T00:52Z |
 
 Summary: 8 of 8 completed tasks verified; 0 questionable; 0 false completions.
 
 ### Test Coverage and Gaps
 - Unit tests cover success/failure branches of Result, DomainError getters, UUID round-trips.
-- Pitest mutation score 100%, Jacoco executed for module.
+- Pitest mutation score 100%, Kover executed for module.
 
 ### Architectural Alignment
 - EAF core free of external runtime deps; no DVMM imports. Explicit API and Kotlin 2.2 K2 per conventions.

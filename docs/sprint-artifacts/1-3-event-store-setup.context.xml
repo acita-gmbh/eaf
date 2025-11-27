@@ -130,7 +130,7 @@
     <constraint type="dependency">MUST use TenantId, UserId, CorrelationId from eaf-core types</constraint>
     <constraint type="versioning">Event version starts at 1 (not 0). Each event increments by 1.</constraint>
     <constraint type="architecture">EAF modules must not import from de.acci.dvmm.* (ADR-001)</constraint>
-    <constraint type="coverage">Minimum 80% line coverage (JaCoCo), 70% mutation score (Pitest)</constraint>
+    <constraint type="coverage">Minimum 80% line coverage (Kover), 70% mutation score (Pitest)</constraint>
   </constraints>
 
   <interfaces>
@@ -174,7 +174,7 @@ data class EventMetadata(
   </interfaces>
 
   <tests>
-    <standards>JUnit 6 with MockK for mocking. Testcontainers for PostgreSQL integration tests. Target 80% line coverage (JaCoCo) and 70% mutation score (Pitest). Use @IsolatedEventStore annotation for tests that modify event store. Use RlsEnforcingDataSource for RLS verification. Follow Tests First pattern - write tests before implementation.</standards>
+    <standards>JUnit 6 with MockK for mocking. Testcontainers for PostgreSQL integration tests. Target 80% line coverage (Kover) and 70% mutation score (Pitest). Use @IsolatedEventStore annotation for tests that modify event store. Use RlsEnforcingDataSource for RLS verification. Follow Tests First pattern - write tests before implementation.</standards>
     <locations>
       <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/</location>
       <location>eaf/eaf-eventsourcing/src/testFixtures/kotlin/ (if shared fixtures needed)</location>

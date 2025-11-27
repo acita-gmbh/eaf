@@ -105,7 +105,7 @@ eaf-monorepo/
 | **Database** | PostgreSQL | 16 | RLS, JSONB |
 | **ORM (Read)** | jOOQ | 3.20+ | Type-safe queries |
 | **Testing** | JUnit 6 + Testcontainers | Latest | PostgreSQL, Keycloak |
-| **Coverage** | JaCoCo | Latest | ≥80% gate |
+| **Coverage** | Kover | Latest | ≥80% gate |
 | **Mutation** | Pitest | Latest | ≥70% gate |
 | **Architecture** | Konsist | Latest | Rule enforcement |
 
@@ -164,7 +164,7 @@ CREATE POLICY tenant_isolation ON eaf_events.events
   - `eaf.test-conventions.gradle.kts`
 - [ ] Configure Kotlin 2.2 with K2 compiler
 - [ ] Configure Spring Boot 3.5 with WebFlux
-- [ ] Set up JaCoCo for coverage reporting
+- [ ] Set up Kover for coverage reporting
 - [ ] Set up Pitest for mutation testing
 - [ ] Create initial Konsist test scaffold
 
@@ -1169,8 +1169,8 @@ jobs:
       - name: Integration Tests
         run: ./gradlew integrationTest
 
-      - name: Code Coverage (JaCoCo ≥80%)
-        run: ./gradlew jacocoTestReport jacocoTestCoverageVerification
+      - name: Code Coverage (Kover ≥80%)
+        run: ./gradlew koverHtmlReport koverVerify
 
       - name: Mutation Testing (Pitest ≥70%)
         run: ./gradlew pitest
@@ -1182,7 +1182,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: build/reports/jacoco/
+          path: build/reports/kover/
 
       - name: Upload Mutation Report
         uses: actions/upload-artifact@v4
@@ -1195,15 +1195,13 @@ jobs:
 
 ```kotlin
 // build.gradle.kts (root)
-subprojects {
-    apply(plugin = "jacoco")
-
-    tasks.jacocoTestCoverageVerification {
-        violationRules {
+// Kover configured via eaf.test-conventions plugin
+// See build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts
+kover {
+    reports {
+        verify {
             rule {
-                limit {
-                    minimum = "0.80".toBigDecimal()
-                }
+                minBound(80) // 80% minimum coverage
             }
         }
     }

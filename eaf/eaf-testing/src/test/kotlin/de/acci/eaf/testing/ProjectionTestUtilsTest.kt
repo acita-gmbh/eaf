@@ -4,6 +4,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
@@ -77,6 +78,39 @@ class ProjectionTestUtilsTest {
 
         // Then
         assertEquals(expected, result)
+    }
+
+    @Test
+    fun `awaitProjection with aggregateId throws IllegalStateException with context when timeout`() {
+        // Given
+        val aggregateId = UUID.randomUUID()
+
+        // When / Then
+        val exception = assertThrows<IllegalStateException> {
+            runBlocking {
+                awaitProjection<TestProjection>(
+                    aggregateId = aggregateId,
+                    repository = { null },
+                    timeout = 100.milliseconds,
+                    pollInterval = 10.milliseconds
+                )
+            }
+        }
+
+        // Verify the exception contains the aggregateId for debugging
+        assertTrue(
+            exception.message?.contains(aggregateId.toString()) == true,
+            "Exception message should contain aggregateId"
+        )
+        assertTrue(
+            exception.message?.contains("100ms") == true,
+            "Exception message should contain timeout duration"
+        )
+        // Verify the original TimeoutCancellationException is the cause
+        assertTrue(
+            exception.cause is TimeoutCancellationException,
+            "Cause should be TimeoutCancellationException"
+        )
     }
 
     @Test

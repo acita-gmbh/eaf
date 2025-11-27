@@ -21,8 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
 
-# Check code coverage (JaCoCo) - 80% minimum required
-./gradlew jacocoTestReport
+# Check code coverage (Kover) - 80% minimum required
+./gradlew koverHtmlReport          # Per-module reports
+./gradlew :koverHtmlReport         # Merged report (root)
+./gradlew koverVerify              # Verify 80% threshold
 
 # Run mutation testing (Pitest) - 70% threshold
 ./gradlew pitest
@@ -52,7 +54,7 @@ Product modules following Hexagonal Architecture:
 Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
-- `eaf.test-conventions` - JUnit 6, JaCoCo (80% coverage), Testcontainers, Konsist
+- `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
 - `eaf.pitest-conventions` - Mutation testing (70% threshold)
 
 ## Critical Architecture Rules (ADR-001)
@@ -68,9 +70,51 @@ Convention plugins for consistent configuration:
 - **Spring Boot 3.5** with WebFlux/Coroutines
 - **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security for multi-tenancy
+- **jOOQ 3.20** with DDLDatabase for type-safe SQL
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
+
+## jOOQ Code Generation
+
+jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` | Combined DDL for jOOQ generation |
+| `dvmm/dvmm-infrastructure/build.gradle.kts` | jOOQ Gradle configuration |
+
+### Regenerate jOOQ Code
+
+```bash
+./gradlew :dvmm:dvmm-infrastructure:generateJooq
+```
+
+### Adding New Tables
+
+1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+2. Update `jooq-init.sql` with the new DDL (keep in sync with migrations)
+3. Wrap PostgreSQL-specific statements with jOOQ ignore tokens:
+   ```sql
+   -- [jooq ignore start]
+   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY tenant_isolation ON my_table ...;
+   GRANT SELECT ON my_table TO eaf_app;
+   -- [jooq ignore stop]
+   ```
+4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+
+### What Gets Ignored
+
+DDLDatabase uses H2 internally, so PostgreSQL-specific statements must be wrapped:
+- RLS: `ENABLE/FORCE ROW LEVEL SECURITY`, `CREATE POLICY`
+- Permissions: `GRANT`, `REVOKE`, `CREATE ROLE`
+- Triggers/Functions: `CREATE TRIGGER`, `CREATE FUNCTION`, `DO $$ ... $$`
+- Comments: `COMMENT ON TABLE/COLUMN`
+
+These are runtime concerns that don't affect generated jOOQ code.
 
 ## Git Conventions
 
@@ -424,7 +468,9 @@ val cache = ConcurrentHashMap<UUID, Aggregate>()  // "Might be slow"
 |--------|---------|
 | Build all | `./gradlew clean build` |
 | Run tests | `./gradlew test` |
-| Check coverage | `./gradlew jacocoTestReport` |
+| Check coverage (per-module) | `./gradlew koverHtmlReport` |
+| Check coverage (merged) | `./gradlew :koverHtmlReport` |
+| Verify coverage threshold | `./gradlew koverVerify` |
 | Mutation testing | `./gradlew pitest` |
 | Architecture tests | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
 | Sprint status | Check `docs/sprint-artifacts/sprint-status.yaml` |
