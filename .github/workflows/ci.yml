@@ -54,7 +54,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build (compile without tests)
-        run: ./gradlew build -x test --no-daemon
+        run: ./gradlew assemble --no-daemon
 
       - name: Unit & Integration Tests
         run: ./gradlew test --no-daemon
