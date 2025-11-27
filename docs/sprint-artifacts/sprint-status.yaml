@@ -116,7 +116,7 @@ development_status:
   1-8-jooq-projection-base: done               # Sprint 3 (TC-004) - Code review APPROVED 2025-11-27
 
   # Sprint 4 (Week 8-9) - Parallel with Epic 2 Start
-  1-10-vcsim-integration: backlog            # Sprint 4 (parallel)
+  1-10-vcsim-integration: done               # Sprint 4 (parallel) - Code review APPROVED 2025-11-27
   1-11-cicd-quality-gates: backlog           # Sprint 4 (parallel)
 
   epic-1-retrospective: optional

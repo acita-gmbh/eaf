@@ -600,6 +600,26 @@ So that I can test VMware operations without real infrastructure.
 - See Architecture: Test Design TC-001
 - VCSIM provides /sdk endpoint compatible with govmomi/pyvmomi
 
+**Spring Boot Integration Pattern:**
+When Epic 3 introduces Spring Boot tests that require vSphere connection properties, add a `@DynamicPropertySource` example test to `eaf-testing`:
+```kotlin
+@SpringBootTest
+@VcsimTest
+class VcsimSpringIntegrationTest {
+    companion object {
+        @JvmStatic
+        @DynamicPropertySource
+        fun vcsimProperties(registry: DynamicPropertyRegistry) {
+            registry.add("vsphere.url") { TestContainers.vcsim.getSdkUrl() }
+            registry.add("vsphere.username") { TestContainers.vcsim.getUsername() }
+            registry.add("vsphere.password") { TestContainers.vcsim.getPassword() }
+            registry.add("vsphere.insecure") { "true" }
+        }
+    }
+}
+```
+This pattern enables automatic property injection for Spring Boot integration tests.
+
 ---
 
 ### Story 1.11: CI/CD Quality Gates
@@ -1220,6 +1240,14 @@ So that I can interact with VMware infrastructure reliably.
 - Wrap in Kotlin coroutines for non-blocking
 - See Architecture: Adapter Pattern for Infrastructure
 - Integration tests use VCSIM (Story 1.10)
+
+**VCSIM Enhancement Required:**
+Story 1.10's `VcsimTestFixture` currently simulates moRefs locally (counter-based). When implementing Story 3.2, extend `VcsimTestFixture` to make actual VCSIM SOAP API calls via the `/sdk` endpoint for realistic testing of:
+- `createVm()` → actual CloneVM_Task SOAP call
+- `getVm()` → actual RetrieveProperties SOAP call
+- `deleteVm()` → actual Destroy_Task SOAP call
+
+This ensures VCSIM tests validate the same code paths as real vCenter integration.
 
 ---
 
