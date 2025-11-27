@@ -78,4 +78,32 @@ class RlsEnforcingDataSourceTest {
         }
         assertEquals("NO TENANT CONTEXT IN TEST! Use @WithTenant annotation or TenantTestContext.set()", exception.message)
     }
+
+    @Test
+    fun `getConnection with credentials sets tenant context session variable`() {
+        // Given
+        val tenantId = TenantId.generate()
+        val rlsDataSource = RlsEnforcingDataSource(delegate)
+
+        try {
+            TenantTestContext.set(tenantId)
+
+            // When - use the (username, password) overload
+            rlsDataSource.getConnection(
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
+            ).use { conn ->
+                // Then
+                conn.createStatement().use { stmt ->
+                    stmt.executeQuery("SELECT current_setting('app.tenant_id', true)").use { rs ->
+                        rs.next()
+                        val setting = rs.getString(1)
+                        assertEquals(tenantId.value.toString(), setting)
+                    }
+                }
+            }
+        } finally {
+            TenantTestContext.clear()
+        }
+    }
 }
