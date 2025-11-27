@@ -20,3 +20,22 @@ dependencies {
 springBoot {
     mainClass.set("de.acci.dvmm.DvmmApplicationKt")
 }
+
+// =============================================================================
+// KOVER CONFIGURATION - Exclude Spring Boot Main Function from Coverage
+// =============================================================================
+// The main() function in DvmmApplicationKt cannot be meaningfully tested
+// in JUnit because it starts a new application instance. This is standard
+// practice for Spring Boot applications where the main function is just
+// a bootstrap wrapper that delegates to Spring's runApplication().
+// =============================================================================
+kover {
+    reports {
+        filters {
+            excludes {
+                // Exclude the main() function (Kotlin generates a *Kt class for top-level functions)
+                classes("de.acci.dvmm.DvmmApplicationKt")
+            }
+        }
+    }
+}

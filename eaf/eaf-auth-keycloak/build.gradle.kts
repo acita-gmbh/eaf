@@ -15,18 +15,12 @@ plugins {
 // Action Required: When implementing Story 2.1 (Keycloak Login Flow):
 // 1. Add Keycloak Testcontainer integration tests for KeycloakIdentityProvider
 // 2. Achieve ≥80% coverage for this module
-// 3. DELETE this entire kover block to restore coverage enforcement
+// 3. DELETE this task disabling block to restore coverage enforcement
 //
 // Tracking: See docs/epics.md Story 2.1 Technical Notes
 // =============================================================================
-kover {
-    reports {
-        verify {
-            rule {
-                minBound(0) // Temporarily disabled - restore to 80% in Story 2.1
-            }
-        }
-    }
+tasks.named("koverVerify") {
+    enabled = false
 }
 
 // eaf-auth-keycloak: Keycloak-specific implementation of IdentityProvider

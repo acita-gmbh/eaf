@@ -122,3 +122,20 @@ jooq {
         }
     }
 }
+
+// =============================================================================
+// KOVER CONFIGURATION - Exclude jOOQ Generated Code from Coverage
+// =============================================================================
+// jOOQ generates code in de.acci.dvmm.infrastructure.jooq package
+// This generated code should not count toward coverage metrics
+// =============================================================================
+kover {
+    reports {
+        filters {
+            excludes {
+                // Exclude all jOOQ generated code from coverage analysis
+                packages("de.acci.dvmm.infrastructure.jooq.*")
+            }
+        }
+    }
+}
