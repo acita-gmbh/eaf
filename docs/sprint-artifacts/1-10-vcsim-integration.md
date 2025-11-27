@@ -1,6 +1,6 @@
 # Story 1.10: VCSIM Integration
 
-Status: review
+Status: done
 
 ## Story
 
@@ -284,3 +284,7 @@ Senior Developer Agent (claude-opus-4-5-20251101)
 
 1. **Epic 3 VCSIM Enhancement** - Story 3.2 should extend `VcsimTestFixture` to make actual SOAP API calls via `/sdk` endpoint (documented in `docs/epics.md`)
 2. **Spring Integration Pattern** - Documented in `VcsimTest.kt:40-57` and `docs/epics.md` Story 1.10 Technical Notes
+
+### Completion Notes
+**Completed:** 2025-11-27
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing
