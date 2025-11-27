@@ -21,7 +21,7 @@
 - [ ] Ensure eaf-core build uses only cataloged dependencies; zero external runtime deps. (AC: 5)
 - [ ] Add unit tests for Result mapping/flatMap/fold; DomainError equality/serialization; value object round-trips. (AC: 6)
 - [ ] Configure coverage + Pitest thresholds for eaf-core via eaf.pitest-conventions; ensure Kover gate applies. (AC: 6)
-- [ ] Run ./gradlew :eaf:eaf-core:test koverHtmlReport pitest. (AC: 6)
+- [ ] Run ./gradlew :eaf:eaf-core:test :eaf:eaf-core:koverHtmlReport :eaf:eaf-core:pitest. (AC: 6)
     ]]></tasks>
   </story>
 
