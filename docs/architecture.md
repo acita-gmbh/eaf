@@ -2708,9 +2708,12 @@ class GlobalExceptionHandler {
 
 ### Logging Strategy
 
-**Structured JSON Logging (Logback)**
+**Structured JSON Logging (Logback + kotlin-logging)**
 ```kotlin
-// Use structured logging with context
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.withLoggingContext
+
+// Kotlin-idiomatic logger declaration
 private val logger = KotlinLogging.logger {}
 
 suspend fun createVmRequest(command: CreateVmRequestCommand) {
@@ -2755,6 +2758,35 @@ suspend fun createVmRequest(command: CreateVmRequestCommand) {
 - NEVER log: passwords, tokens, PII (email, names) in plain text
 - MASK: last 4 chars of IDs for debugging (`****-****-****-ab12`)
 - AUDIT only: full user actions go to audit log, not application logs
+
+**Logging Stack**
+- **kotlin-logging** (`io.github.oshai:kotlin-logging-jvm`): Kotlin-idiomatic facade wrapping SLF4J
+- **Logback**: Backend for structured JSON output
+- **MDC (Mapped Diagnostic Context)**: Carries correlationId, tenantId, userId across call chain
+
+**Coroutine MDC Propagation (NFR-OBS-9 - Growth Phase)**
+
+In reactive/coroutine-based systems, MDC context does not automatically propagate across coroutine boundaries. This is critical for:
+- Distributed tracing integrity (correlation IDs)
+- Audit trail completeness
+- Multi-tenant context verification in logs
+
+**Growth Phase Implementation:**
+```kotlin
+// Add to eaf-observability module
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${coroutinesVersion}")
+}
+
+// Usage: MDC context automatically propagates
+withContext(MDCContext()) {
+    // correlationId, tenantId available in MDC across all coroutine switches
+    logger.info { "Processing request" }  // MDC context preserved
+}
+```
+
+**Why This Matters:**
+Without `kotlinx-coroutines-slf4j`, logs from different dispatcher switches (e.g., `Dispatchers.IO`) lose MDC context, making it impossible to trace requests across async boundaries. This breaks audit trail integrity and complicates debugging in production.
 
 ## Data Architecture
 

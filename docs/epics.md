@@ -268,6 +268,11 @@ So that all modules use consistent patterns.
 - Use `@JvmInline value class` for IDs
 - Result type should be a sealed class, not Arrow-kt dependency
 
+**Observability Foundation:**
+- kotlin-logging (io.github.oshai) wraps SLF4J with Kotlin-idiomatic API
+- CorrelationId propagation via MDC (Mapped Diagnostic Context) for request tracing
+- **Growth Phase (NFR-OBS-9):** Add `kotlinx-coroutines-slf4j` for automatic MDC propagation across coroutine boundaries. Critical for distributed tracing integrity when using reactive/coroutine-based operations.
+
 ---
 
 ### Story 1.3: Event Store Setup
@@ -2052,6 +2057,11 @@ So that audit queries are fast and comprehensive.
 - Event handler subscribes to all domain events
 - Changes extracted from event payload
 - Consider separate audit database for scale (future)
+
+**Observability Dependency (NFR-OBS-9):**
+- Audit entries require correlation_id for request tracing across services
+- In coroutine-based systems, MDC context (containing correlation_id, tenant_id) must propagate correctly
+- **Growth Phase:** `kotlinx-coroutines-slf4j` integration ensures audit trail integrity across async boundaries. Without this, correlation_ids may be lost during dispatcher switches or async operations.
 
 ---
 
