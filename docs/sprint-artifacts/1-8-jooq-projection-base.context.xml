@@ -1,0 +1,162 @@
+<story-context id="1-8-jooq-projection-base" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>8</storyId>
+    <title>jOOQ Projection Base</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-26</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-8-jooq-projection-base.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>jOOQ configured for type-safe read queries</iWant>
+    <soThat>I can build efficient read projections</soThat>
+    <tasks>
+      <task id="1" ac="1">Configure jOOQ Gradle plugin in dvmm-infrastructure/build.gradle.kts</task>
+      <task id="2" ac="1,2">Add jOOQ dependencies to gradle/libs.versions.toml</task>
+      <task id="3" ac="5">Create PageRequest and PagedResponse in eaf-eventsourcing</task>
+      <task id="4" ac="3,4">Create BaseProjectionRepository in dvmm-infrastructure</task>
+      <task id="5" ac="6">Create awaitProjection helper in eaf-testing</task>
+      <task id="6" ac="2,4">Create sample projection for validation</task>
+      <task id="7" ac="1,2,3,4,5,6">Write integration tests</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">jOOQ code generation runs during build - generates record classes in build/generated-sources/jooq</ac>
+    <ac id="2">Type-safe queries with generated classes - compile-time checked</ac>
+    <ac id="3">BaseProjectionRepository provides common patterns - find, list, pagination</ac>
+    <ac id="4">Tenant filtering via RLS automatic - no explicit WHERE tenant_id clauses</ac>
+    <ac id="5">Pagination helpers available - PageRequest and PagedResponse with totalElements/totalPages</ac>
+    <ac id="6">TC-004: awaitProjection helper for tests - blocks until projection updated, throws TimeoutException after 5s</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.8: jOOQ Projection Base">
+        jOOQ Gradle plugin configuration, BaseProjectionRepository pattern, pagination helpers, awaitProjection test utility. Configure nu.studer.jooq plugin with KotlinGenerator.
+      </doc>
+      <doc path="docs/epics.md" title="Epics and Stories" section="Story 1.8">
+        Story definition: As a developer, I want jOOQ configured for type-safe read queries. TC-004: Tests can await projection updates.
+      </doc>
+      <doc path="docs/prd.md" title="Product Requirements Document" section="Implementation Quality Gates">
+        Test coverage >=80% CI blocks merge. Mutation score >=70% CI blocks merge. All tests pass 100% green.
+      </doc>
+      <doc path="docs/architecture.md" title="System Architecture" section="CQRS Pattern">
+        Query pattern uses jOOQ for type-safe read queries against PostgreSQL. RLS provides automatic tenant filtering at database level.
+      </doc>
+    </docs>
+    <code>
+      <file path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/PostgresEventStore.kt" kind="repository" symbol="PostgresEventStore" lines="27-181" reason="Reference implementation showing DSLContext usage, withContext(Dispatchers.IO) pattern, raw SQL with jOOQ, record mapping">
+        Uses DSLContext for database operations. Shows pattern for async database access with coroutines.
+      </file>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt" kind="test-utility" symbol="RlsEnforcingDataSource" lines="16-50" reason="Shows how RLS is enforced in tests - SET ROLE eaf_app and set_config for tenant_id">
+        DataSource wrapper that sets app.tenant_id session variable. Use as reference for RLS integration in tests.
+      </file>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt" kind="test-utility" symbol="TenantTestContext" lines="5-17" reason="ThreadLocal tenant context for tests - awaitProjection must respect this">
+        Simple ThreadLocal holder for tenant ID in tests. Used by RlsEnforcingDataSource.
+      </file>
+      <file path="dvmm/dvmm-infrastructure/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-24" reason="Target file for jOOQ plugin configuration - currently has jOOQ dependencies only">
+        Add nu.studer.jooq plugin and jooq { configurations { ... } } block here.
+      </file>
+      <file path="eaf/eaf-eventsourcing/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-31" reason="Shows existing jOOQ dependency setup - reuse for pagination helpers">
+        Has jOOQ and jOOQ-kotlin dependencies. Add pagination classes to this module.
+      </file>
+      <file path="eaf/eaf-testing/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-36" reason="Target for awaitProjection helper - uses java-test-fixtures plugin">
+        Test utilities module with testFixtures. Add awaitProjection helper here.
+      </file>
+      <file path="gradle/libs.versions.toml" kind="config" symbol="libs.versions.toml" lines="1-93" reason="Version catalog - jOOQ 3.20.8 already defined, need to add jooq-codegen">
+        Contains jooq = "3.20.8". Add jooq-codegen library and nu.studer.jooq plugin.
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/resources/db/migration/V001__create_event_store.sql" kind="migration" symbol="V001" lines="1-92" reason="Existing schema with eaf_events schema, eaf_app role, and table structure">
+        Shows schema pattern and eaf_app role for RLS. Use as reference for projection table migration.
+      </file>
+      <file path="eaf/eaf-eventsourcing/src/main/resources/db/migration/V002__enable_rls.sql" kind="migration" symbol="V002" lines="1-35" reason="RLS policy pattern - tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid">
+        Shows RLS policy syntax with fail-closed semantics. Apply same pattern to projection tables.
+      </file>
+      <file path="build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts" kind="convention" symbol="eaf.test-conventions" lines="1-70" reason="Test configuration - JUnit 6, JaCoCo 80%, Konsist, Pitest">
+        Defines testing standards. 80% coverage minimum, JUnit platform, MockK.
+      </file>
+    </code>
+    <dependencies>
+      <ecosystem name="kotlin-jvm">
+        <dep name="kotlin" version="2.2.21" />
+        <dep name="coroutines" version="1.10.2" />
+      </ecosystem>
+      <ecosystem name="spring-boot">
+        <dep name="spring-boot" version="3.5.8" />
+        <dep name="spring-boot-webflux" />
+      </ecosystem>
+      <ecosystem name="database">
+        <dep name="jooq" version="3.20.8" />
+        <dep name="jooq-kotlin" version="3.20.8" />
+        <dep name="postgresql" version="42.7.2" />
+        <dep name="flyway" version="10.7.1" />
+      </ecosystem>
+      <ecosystem name="testing">
+        <dep name="junit" version="6.0.1" />
+        <dep name="testcontainers" version="2.0.2" />
+        <dep name="mockk" version="1.14.6" />
+        <dep name="konsist" version="0.17.3" />
+        <dep name="pitest" version="1.17.4" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">CQRS pattern - projections are separate read model using jOOQ for type-safe queries</constraint>
+    <constraint type="architecture">RLS handles tenant filtering automatically - do NOT add explicit WHERE tenant_id = ? clauses</constraint>
+    <constraint type="architecture">Library modules must disable bootJar and enable jar (see dvmm-infrastructure/build.gradle.kts:8-14)</constraint>
+    <constraint type="module">Pagination helpers (PageRequest, PagedResponse) go in eaf-eventsourcing module (framework layer)</constraint>
+    <constraint type="module">BaseProjectionRepository goes in dvmm-infrastructure module (product layer)</constraint>
+    <constraint type="module">awaitProjection helper goes in eaf-testing module</constraint>
+    <constraint type="testing">Tests First pattern - write tests before implementation</constraint>
+    <constraint type="testing">Minimum 80% test coverage (CI blocks merge)</constraint>
+    <constraint type="testing">Minimum 70% mutation score (CI blocks merge)</constraint>
+    <constraint type="naming">Package: de.acci.dvmm.infrastructure.jooq for generated code</constraint>
+    <constraint type="naming">Package: de.acci.eaf.eventsourcing.projection for pagination helpers</constraint>
+    <constraint type="pattern">Use withContext(Dispatchers.IO) for blocking database operations</constraint>
+    <constraint type="pattern">Use suspend functions for all repository methods</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="PageRequest" kind="data-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/projection/PageRequest.kt">
+      data class PageRequest(val page: Int = 0, val size: Int = 20) - with validation: page >= 0, size > 0
+    </interface>
+    <interface name="PagedResponse" kind="data-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/projection/PagedResponse.kt">
+      data class PagedResponse&lt;T&gt;(val items: List&lt;T&gt;, val page: Int, val size: Int, val totalElements: Long, val totalPages: Int)
+    </interface>
+    <interface name="BaseProjectionRepository" kind="abstract-class" path="dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/BaseProjectionRepository.kt">
+      abstract class BaseProjectionRepository&lt;T : Any&gt;(protected val dsl: DSLContext) with paginate() extension function
+    </interface>
+    <interface name="awaitProjection" kind="suspend-function" path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/ProjectionTestUtils.kt">
+      suspend fun &lt;T&gt; awaitProjection(aggregateId: UUID, repository: suspend () -> T?, timeout: Duration = 5.seconds): T
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      JUnit 6 with native Kotlin suspend support. JaCoCo for coverage (80% minimum). Pitest for mutation testing (70% minimum).
+      Testcontainers 2.x for PostgreSQL integration tests. MockK for mocking. Konsist for architecture rules.
+      Use TenantTestContext.set() before database operations in tests. RlsEnforcingDataSource wraps connections with tenant context.
+    </standards>
+    <locations>
+      <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/projection/</location>
+      <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/</location>
+      <location>dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/projection/</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test jOOQ code generation produces expected classes in build/generated-sources/jooq</idea>
+      <idea ac="2">Test queries with generated record classes compile and execute</idea>
+      <idea ac="3">Test BaseProjectionRepository.paginate() returns correct page size and offset</idea>
+      <idea ac="4">Test RLS filtering via DSLContext - Tenant A cannot see Tenant B data</idea>
+      <idea ac="5">Test PageRequest validation rejects negative page or zero/negative size</idea>
+      <idea ac="5">Test PagedResponse.totalPages calculation for various totalElements/size combinations</idea>
+      <idea ac="6">Test awaitProjection waits and returns entity when projection available</idea>
+      <idea ac="6">Test awaitProjection throws TimeoutException after configured timeout</idea>
+      <idea ac="6">Test awaitProjection respects TenantTestContext</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -57,7 +57,7 @@ dependencies {
     // MockK for Kotlin mocking
     testImplementation("io.mockk:mockk:${libs.findVersion("mockk").get()}")
 
-    // Testcontainers 2.x (with new module naming)
+    // Testcontainers 2.x
     testImplementation(platform("org.testcontainers:testcontainers-bom:${libs.findVersion("testcontainers").get()}"))
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")

@@ -20,6 +20,7 @@ dependencies {
     api(platform(libs.testcontainers.bom))
     api(libs.testcontainers.core)
     api(libs.testcontainers.junit)
+    api(libs.testcontainers.jdbc)
     api(libs.testcontainers.postgresql)
     api(libs.testcontainers.keycloak)
 
@@ -33,4 +34,7 @@ dependencies {
     runtimeOnly(libs.jjwt.jackson)
 
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
+
+    // Coroutines test for testing suspend functions
+    testImplementation(libs.kotlin.coroutines.test)
 }
