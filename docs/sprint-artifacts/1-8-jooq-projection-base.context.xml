@@ -76,7 +76,7 @@
       <file path="eaf/eaf-eventsourcing/src/main/resources/db/migration/V002__enable_rls.sql" kind="migration" symbol="V002" lines="1-35" reason="RLS policy pattern - tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid">
         Shows RLS policy syntax with fail-closed semantics. Apply same pattern to projection tables.
       </file>
-      <file path="build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts" kind="convention" symbol="eaf.test-conventions" lines="1-70" reason="Test configuration - JUnit 6, JaCoCo 80%, Konsist, Pitest">
+      <file path="build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts" kind="convention" symbol="eaf.test-conventions" lines="1-70" reason="Test configuration - JUnit 6, Kover 80%, Konsist, Pitest">
         Defines testing standards. 80% coverage minimum, JUnit platform, MockK.
       </file>
     </code>
@@ -138,7 +138,7 @@
 
   <tests>
     <standards>
-      JUnit 6 with native Kotlin suspend support. JaCoCo for coverage (80% minimum). Pitest for mutation testing (70% minimum).
+      JUnit 6 with native Kotlin suspend support. Kover for coverage (80% minimum). Pitest for mutation testing (70% minimum).
       Testcontainers 2.x for PostgreSQL integration tests. MockK for mocking. Konsist for architecture rules.
       Use TenantTestContext.set() before database operations in tests. RlsEnforcingDataSource wraps connections with tenant context.
     </standards>

@@ -225,7 +225,7 @@ So that I can start implementing domain logic immediately.
 **And** Kotlin 2.2+ with K2 compiler is configured
 **And** Spring Boot 3.5+ with WebFlux is configured
 **And** Konsist architecture tests scaffold exists
-**And** code coverage reporting (JaCoCo) is configured
+**And** code coverage reporting (Kover) is configured
 **And** mutation testing (Pitest) is configured
 
 **Prerequisites:** None
@@ -611,7 +611,7 @@ So that code quality standards are maintained automatically.
   1. Build (Gradle)
   2. Unit tests
   3. Integration tests (Testcontainers)
-  4. Code coverage check (JaCoCo ≥80%)
+  4. Code coverage check (Kover ≥80%)
   5. Mutation testing (Pitest ≥70%)
   6. Architecture tests (Konsist)
 
