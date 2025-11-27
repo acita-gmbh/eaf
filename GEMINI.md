@@ -21,8 +21,10 @@ This file provides guidance to Google Gemini when working with code in this repo
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
 
-# Check code coverage (JaCoCo) - 80% minimum required
-./gradlew jacocoTestReport
+# Check code coverage (Kover) - 80% minimum required
+./gradlew koverHtmlReport          # Per-module reports
+./gradlew :koverHtmlReport         # Merged report (root)
+./gradlew koverVerify              # Verify 80% threshold
 
 # Run mutation testing (Pitest) - 70% threshold
 ./gradlew pitest
@@ -52,7 +54,7 @@ Product modules following Hexagonal Architecture:
 Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
-- `eaf.test-conventions` - JUnit 6, JaCoCo (80% coverage), Testcontainers, Konsist
+- `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
 - `eaf.pitest-conventions` - Mutation testing (70% threshold)
 
 ## Critical Architecture Rules (ADR-001)
@@ -297,7 +299,9 @@ val cache = ConcurrentHashMap<UUID, Aggregate>()  // "Might be slow"
 |--------|---------|
 | Build all | `./gradlew clean build` |
 | Run tests | `./gradlew test` |
-| Check coverage | `./gradlew jacocoTestReport` |
+| Check coverage (per-module) | `./gradlew koverHtmlReport` |
+| Check coverage (merged) | `./gradlew :koverHtmlReport` |
+| Verify coverage threshold | `./gradlew koverVerify` |
 | Mutation testing | `./gradlew pitest` |
 | Architecture tests | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
 | Sprint status | Check `docs/sprint-artifacts/sprint-status.yaml` |

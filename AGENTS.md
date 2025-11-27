@@ -23,7 +23,9 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 ./gradlew :eaf:eaf-core:build
 
 # Code coverage (80% minimum)
-./gradlew jacocoTestReport
+./gradlew koverHtmlReport          # Per-module reports
+./gradlew :koverHtmlReport         # Merged report (root)
+./gradlew koverVerify              # Verify 80% threshold
 
 # Mutation testing (70% threshold)
 ./gradlew pitest
