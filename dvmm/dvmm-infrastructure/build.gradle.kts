@@ -89,10 +89,15 @@ jooq {
                         excludes = "flyway_schema_history"
 
                         // Include both public and eaf_events schemas for event store tables
+                        // H2 uses uppercase schema names, but we need lowercase for Kotlin package names
                         schemata.addAll(
                             listOf(
-                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("PUBLIC"),
-                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("EAF_EVENTS")
+                                org.jooq.meta.jaxb.SchemaMappingType()
+                                    .withInputSchema("PUBLIC")
+                                    .withOutputSchema("public"),
+                                org.jooq.meta.jaxb.SchemaMappingType()
+                                    .withInputSchema("EAF_EVENTS")
+                                    .withOutputSchema("eaf_events")
                             )
                         )
                     }

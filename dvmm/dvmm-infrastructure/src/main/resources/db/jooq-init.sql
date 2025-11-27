@@ -134,7 +134,8 @@ ALTER TABLE eaf_events.snapshots FORCE ROW LEVEL SECURITY;
 -- ============================================================================
 
 -- Projection table for VM requests read model
-CREATE TABLE IF NOT EXISTS vm_requests_projection (
+-- Note: Explicit PUBLIC schema prefix ensures jOOQ generates code in the 'public' package
+CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
     id              UUID PRIMARY KEY,
     tenant_id       UUID NOT NULL,
     requester_id    UUID NOT NULL,
@@ -147,10 +148,10 @@ CREATE TABLE IF NOT EXISTS vm_requests_projection (
     version         INT NOT NULL DEFAULT 1
 );
 
-CREATE INDEX idx_vm_requests_projection_tenant ON vm_requests_projection (tenant_id);
-CREATE INDEX idx_vm_requests_projection_status ON vm_requests_projection (status);
-CREATE INDEX idx_vm_requests_projection_requester ON vm_requests_projection (requester_id);
-CREATE INDEX idx_vm_requests_projection_created ON vm_requests_projection (created_at DESC);
+CREATE INDEX idx_vm_requests_projection_tenant ON PUBLIC.vm_requests_projection (tenant_id);
+CREATE INDEX idx_vm_requests_projection_status ON PUBLIC.vm_requests_projection (status);
+CREATE INDEX idx_vm_requests_projection_requester ON PUBLIC.vm_requests_projection (requester_id);
+CREATE INDEX idx_vm_requests_projection_created ON PUBLIC.vm_requests_projection (created_at DESC);
 
 -- [jooq ignore start]
 -- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
