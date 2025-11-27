@@ -1,30 +1,25 @@
 plugins {
     id("eaf.kotlin-conventions")
-    jacoco
+    id("org.jetbrains.kotlinx.kover")
 }
 
 // Access version catalog
 val libs = versionCatalogs.named("libs")
 
-// JaCoCo configuration for code coverage
-jacoco {
-    toolVersion = libs.findVersion("jacoco").get().toString()
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-
+// Kover configuration for code coverage
+kover {
     reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
-
-tasks.jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = "0.80".toBigDecimal() // 80% minimum coverage
+        total {
+            html {
+                onCheck = false // Don't run on every check
+            }
+            xml {
+                onCheck = false
+            }
+        }
+        verify {
+            rule {
+                minBound(80) // 80% minimum coverage
             }
         }
     }
