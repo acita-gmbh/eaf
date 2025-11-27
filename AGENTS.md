@@ -65,9 +65,32 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Spring Boot 3.5** with WebFlux/Coroutines
 - **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security
+- **jOOQ 3.20** with DDLDatabase for type-safe SQL
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
+
+## jOOQ Code Generation
+
+jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
+
+```bash
+# Regenerate jOOQ code
+./gradlew :dvmm:dvmm-infrastructure:generateJooq
+```
+
+### Adding New Tables
+
+1. Add migration to `db/migration/`
+2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql`
+3. Wrap PostgreSQL-specific statements with ignore tokens:
+   ```sql
+   -- [jooq ignore start]
+   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY tenant_isolation ON my_table ...;
+   -- [jooq ignore stop]
+   ```
+4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 
 ## Code Style Requirements
 

@@ -917,6 +917,40 @@ class VmRequestProjectionRepository(private val dsl: DSLContext) {
 - Code generation from DB schema
 - Virtual Threads (Spring Boot 3.5) for blocking jOOQ calls
 
+**Code Generation (DDLDatabase):**
+
+jOOQ code is generated from DDL files using `DDLDatabase` - no running database required:
+
+```bash
+./gradlew :dvmm:dvmm-infrastructure:generateJooq
+```
+
+Key files:
+- `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` - Combined DDL script
+- `dvmm/dvmm-infrastructure/build.gradle.kts` - jOOQ configuration
+
+**PostgreSQL-Specific Syntax:**
+
+DDLDatabase uses H2 internally and cannot parse PostgreSQL-specific statements. Use jOOQ ignore tokens:
+
+```sql
+-- [jooq ignore start]
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON events ...;
+GRANT SELECT ON events TO eaf_app;
+CREATE TRIGGER trg_prevent_update ...;
+-- [jooq ignore stop]
+```
+
+Statements to wrap in ignore tokens:
+- RLS policies (`ENABLE/FORCE ROW LEVEL SECURITY`, `CREATE POLICY`)
+- Permission grants (`GRANT`, `REVOKE`)
+- Roles (`CREATE ROLE`, `DO $$ ... $$` blocks)
+- Triggers and functions (`CREATE TRIGGER`, `CREATE FUNCTION`)
+- Comments (`COMMENT ON`)
+
+These are runtime concerns that don't affect generated jOOQ code.
+
 ---
 
 ## Decision Summary

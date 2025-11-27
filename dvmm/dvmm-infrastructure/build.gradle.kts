@@ -25,12 +25,11 @@ dependencies {
     implementation(libs.jooq.kotlin)
 
     // jOOQ code generation dependencies
+    // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)
     jooqGenerator(libs.jooq)
     jooqGenerator(libs.jooq.codegen)
     jooqGenerator(libs.jooq.meta)
-    jooqGenerator(libs.postgresql)
-    jooqGenerator(libs.testcontainers.core)
-    jooqGenerator(libs.testcontainers.postgresql)
+    jooqGenerator(libs.jooq.meta.extensions)
     jooqGenerator(libs.slf4j.simple)
 
     // Test dependencies
@@ -47,9 +46,12 @@ kotlin {
 }
 
 // jOOQ code generation configuration
-// NOTE: Requires PostgreSQL container running with schema initialized
-// Run: docker run -d --name dvmm-jooq-db -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=dvmm_test -p 5432:5432 postgres:16-alpine
-// Then: psql -h localhost -U test -d dvmm_test -f src/main/resources/db/jooq-init.sql
+// Uses DDLDatabase to generate code from SQL DDL files without requiring a running database.
+// This enables builds without Docker/PostgreSQL and works in any CI environment.
+// See: https://www.jooq.org/doc/latest/manual/code-generation/codegen-ddl/
+//
+// The jooq-init.sql file uses [jooq ignore start/stop] tokens to skip PostgreSQL-specific
+// statements (RLS, grants, triggers) that H2 (used internally by DDLDatabase) doesn't support.
 jooq {
     version.set("3.20.8")
 
@@ -60,30 +62,37 @@ jooq {
             jooqConfiguration.apply {
                 logging = org.jooq.meta.jaxb.Logging.WARN
 
-                jdbc.apply {
-                    // Direct PostgreSQL connection - container must be running with schema initialized
-                    // Alternative: Use Testcontainers JDBC URL when Docker/Testcontainers compatibility is resolved
-                    // jdbc:tc:postgresql:15:///dvmm?TC_INITSCRIPT=file:src/main/resources/db/jooq-init.sql
-                    driver = "org.postgresql.Driver"
-                    url = System.getenv("JOOQ_DB_URL") ?: "jdbc:postgresql://localhost:5432/dvmm_test"
-                    user = System.getenv("JOOQ_DB_USER") ?: "test"
-                    password = System.getenv("JOOQ_DB_PASSWORD") ?: "test"
-                }
-
+                // No JDBC connection needed - DDLDatabase parses DDL files directly
                 generator.apply {
                     name = "org.jooq.codegen.KotlinGenerator"
 
                     database.apply {
-                        name = "org.jooq.meta.postgres.PostgresDatabase"
+                        // DDLDatabase generates code from SQL DDL scripts without a live database
+                        // Located in jooq-meta-extensions module
+                        name = "org.jooq.meta.extensions.ddl.DDLDatabase"
+
+                        // Path to the combined DDL script with all schema definitions
+                        properties.add(
+                            org.jooq.meta.jaxb.Property()
+                                .withKey("scripts")
+                                .withValue("src/main/resources/db/jooq-init.sql")
+                        )
+
+                        // Parse comments to enable [jooq ignore start/stop] tokens
+                        properties.add(
+                            org.jooq.meta.jaxb.Property()
+                                .withKey("parseIgnoreComments")
+                                .withValue("true")
+                        )
+
                         includes = ".*"
                         excludes = "flyway_schema_history"
 
                         // Include both public and eaf_events schemas for event store tables
-                        // Note: schemata overrides inputSchema, so we define all schemas here
                         schemata.addAll(
                             listOf(
-                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("public"),
-                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("eaf_events")
+                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("PUBLIC"),
+                                org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("EAF_EVENTS")
                             )
                         )
                     }
