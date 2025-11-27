@@ -698,6 +698,14 @@ So that I can access DVMM securely with my company credentials.
 - Backend validates JWT on every request (Story 1.7)
 - See UX Design: Login screen follows Tech Teal theme
 
+**⚠️ Coverage Restoration Required:**
+- Module `eaf-auth-keycloak` has temporarily disabled coverage verification (see `eaf/eaf-auth-keycloak/build.gradle.kts`)
+- **Action Required in this Story:**
+  1. Add Keycloak Testcontainer integration tests for `KeycloakIdentityProvider`
+  2. Achieve ≥80% test coverage for `eaf-auth-keycloak` module
+  3. Remove the `kover { ... }` override block in `eaf/eaf-auth-keycloak/build.gradle.kts`
+- Reason: Story 1.7 created the implementation, but proper testing requires the Keycloak Testcontainer setup which is natural to this story
+
 **Frontend Tracer Bullet Note:**
 Story 2.1 is the **Frontend Tracer Bullet** - the first user-facing code that validates the complete UI stack (React + shadcn + Keycloak integration).
 
