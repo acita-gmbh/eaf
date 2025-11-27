@@ -6,6 +6,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.security.cert.X509Certificate
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
@@ -46,9 +47,9 @@ public class VcsimTestFixture(
     private val container: VcsimContainer
 ) {
     private val httpClient: HttpClient = createInsecureJavaHttpClient()
-    private var vmCounter = 0
-    private var networkCounter = 0
-    private var datastoreCounter = 0
+    private val vmCounter = AtomicInteger(0)
+    private val networkCounter = AtomicInteger(0)
+    private val datastoreCounter = AtomicInteger(0)
 
     /**
      * Creates a virtual machine in VCSIM.
@@ -61,8 +62,8 @@ public class VcsimTestFixture(
      * @return Reference to the created VM
      */
     public fun createVm(spec: VmSpec): VmRef {
-        vmCounter++
-        val moRef = "vm-test-${vmCounter}"
+        val counter = vmCounter.incrementAndGet()
+        val moRef = "vm-test-$counter"
 
         // VCSIM tracks VMs internally - for testing purposes we simulate the reference
         // Real vSphere SDK would use SOAP CreateVM_Task API
@@ -87,8 +88,8 @@ public class VcsimTestFixture(
      */
     public fun createNetwork(name: String): NetworkRef {
         require(name.isNotBlank()) { "Network name must not be blank" }
-        networkCounter++
-        val moRef = "network-test-${networkCounter}"
+        val counter = networkCounter.incrementAndGet()
+        val moRef = "network-test-$counter"
 
         return NetworkRef(
             moRef = moRef,
@@ -108,8 +109,8 @@ public class VcsimTestFixture(
      */
     public fun createDatastore(name: String): DatastoreRef {
         require(name.isNotBlank()) { "Datastore name must not be blank" }
-        datastoreCounter++
-        val moRef = "datastore-test-${datastoreCounter}"
+        val counter = datastoreCounter.incrementAndGet()
+        val moRef = "datastore-test-$counter"
 
         // VCSIM pre-creates datastores based on configuration
         // Simulating 100GB capacity for test purposes
@@ -152,9 +153,9 @@ public class VcsimTestFixture(
      * naming conventions to avoid conflicts.
      */
     public fun resetState() {
-        vmCounter = 0
-        networkCounter = 0
-        datastoreCounter = 0
+        vmCounter.set(0)
+        networkCounter.set(0)
+        datastoreCounter.set(0)
         // Note: VCSIM doesn't have a built-in reset API
         // Full state reset requires container restart
     }
