@@ -37,7 +37,4 @@ dependencies {
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:${libs.findVersion("coroutines").get()}"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-
-    // Logging - kotlin-logging wraps SLF4J with Kotlin-idiomatic API
-    implementation("io.github.oshai:kotlin-logging-jvm:${libs.findVersion("kotlinLogging").get()}")
 }
