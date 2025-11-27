@@ -62,7 +62,7 @@ public abstract class BaseProjectionRepository<T : Any>(
 
             val items = orderedQuery
                 .limit(pageRequest.size)
-                .offset(pageRequest.offset.toInt())
+                .offset(pageRequest.offset)
                 .fetch()
                 .map { mapRecord(it) }
 

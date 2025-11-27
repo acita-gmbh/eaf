@@ -115,7 +115,7 @@ public class VmRequestProjectionRepository(
             .where(condition)
             .orderBy(defaultOrderBy())
             .limit(pageRequest.size)
-            .offset(pageRequest.offset.toInt())
+            .offset(pageRequest.offset)
             .fetch()
             .map { mapRecord(it) }
 

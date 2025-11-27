@@ -74,11 +74,11 @@ jooq {
 
                     database.apply {
                         name = "org.jooq.meta.postgres.PostgresDatabase"
-                        inputSchema = "public"
                         includes = ".*"
                         excludes = "flyway_schema_history"
 
-                        // Include eaf_events schema for event store tables
+                        // Include both public and eaf_events schemas for event store tables
+                        // Note: schemata overrides inputSchema, so we define all schemas here
                         schemata.addAll(
                             listOf(
                                 org.jooq.meta.jaxb.SchemaMappingType().withInputSchema("public"),
