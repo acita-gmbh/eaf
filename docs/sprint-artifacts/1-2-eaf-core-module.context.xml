@@ -47,7 +47,7 @@
     <dependencies>
       <dependency ecosystem="gradle" name="kotlin" version="2.2.x" />
       <dependency ecosystem="gradle" name="jvm" version="21" />
-      <dependency ecosystem="gradle" name="kover" version="0.8.12" />
+      <dependency ecosystem="gradle" name="kover" version="0.9.3" />
       <dependency ecosystem="gradle" name="pitest" version="1.19.0-rc.2" />
       <dependency ecosystem="gradle" name="konsist" version="0.17.3" />
       <dependency ecosystem="gradle" name="testcontainers" version="2.0.2" scope="test-only (framework available but not required for eaf-core)" />
