@@ -254,21 +254,33 @@ public class VcsimTestFixture(
         // JDK-internal property to disable hostname verification for HttpClient.
         // Required because HttpClient doesn't support custom HostnameVerifier.
         // See: https://bugs.openjdk.org/browse/JDK-8213309
-        System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true")
+        val propertyName = "jdk.internal.httpclient.disableHostnameVerification"
+        val originalValue = System.getProperty(propertyName)
 
-        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-            override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        })
+        try {
+            System.setProperty(propertyName, "true")
 
-        val sslContext = SSLContext.getInstance("TLS").apply {
-            init(null, trustAllCerts, java.security.SecureRandom())
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+
+            val sslContext = SSLContext.getInstance("TLS").apply {
+                init(null, trustAllCerts, java.security.SecureRandom())
+            }
+
+            return HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build()
+        } finally {
+            // Restore original property value to minimize global side effects
+            if (originalValue != null) {
+                System.setProperty(propertyName, originalValue)
+            } else {
+                System.clearProperty(propertyName)
+            }
         }
-
-        return HttpClient.newBuilder()
-            .sslContext(sslContext)
-            .build()
     }
 }
 
