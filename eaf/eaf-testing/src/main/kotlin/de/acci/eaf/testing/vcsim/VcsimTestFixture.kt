@@ -237,12 +237,23 @@ public class VcsimTestFixture(
      * that doesn't match the certificate's Subject Alternative Name (SAN), requiring disabled
      * hostname verification in addition to disabled certificate validation.
      *
-     * Uses system property approach as HttpClient.Builder.sslParameters() doesn't reliably
-     * disable hostname verification in all Java versions.
+     * ## Why system property instead of SSLParameters?
+     *
+     * Java's HttpClient (since Java 11) doesn't expose a HostnameVerifier API like the older
+     * HttpsURLConnection. While SSLParameters.setEndpointIdentificationAlgorithm(null) should
+     * theoretically disable hostname verification, the HttpClient implementation may override
+     * these settings internally. The JDK-internal system property is the only reliable way
+     * to disable hostname verification for Java's HttpClient across all Java 11+ versions.
+     *
+     * The global side effect is acceptable here because:
+     * 1. VcsimTestFixture is test-only code (in eaf-testing module)
+     * 2. Test JVMs are isolated per Gradle worker
+     * 3. No production code depends on this module
      */
     private fun createInsecureJavaHttpClient(): HttpClient {
-        // Set system property to disable hostname verification for HttpClient
-        // This is safe because VcsimTestFixture is only used in tests
+        // JDK-internal property to disable hostname verification for HttpClient.
+        // Required because HttpClient doesn't support custom HostnameVerifier.
+        // See: https://bugs.openjdk.org/browse/JDK-8213309
         System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true")
 
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
