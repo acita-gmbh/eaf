@@ -152,6 +152,7 @@ User → Keycloak Login → JWT Token → DVMM API Validation
 ```
 
 **Token Handling:**
+
 | Aspect | Implementation |
 |--------|----------------|
 | Storage | httpOnly cookie (Secure, SameSite=Lax) |
@@ -264,6 +265,7 @@ SET LOCAL app.tenant_id = '${tenantId}';
 ### 3.5 VMware Integration Security
 
 **Credential Management:**
+
 | Secret Type | Current Storage | Rotation |
 |-------------|-----------------|----------|
 | VMware service account | Encrypted DB column | Manual (admin) |
