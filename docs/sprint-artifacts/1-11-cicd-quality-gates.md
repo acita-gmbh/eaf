@@ -131,8 +131,12 @@ so that code quality standards are maintained automatically.
 
 ### Workflow Configuration Reference
 
+> **Note:** This is a simplified reference example from planning. The actual implementation
+> is in `.github/workflows/ci.yml` and includes additional features like PostgreSQL service
+> containers, concurrency control, and JUnit report integration.
+
 ```yaml
-# .github/workflows/ci.yml
+# Simplified example - see .github/workflows/ci.yml for actual implementation
 name: CI Pipeline
 
 on:

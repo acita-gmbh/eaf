@@ -10,6 +10,11 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel redundant runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-quality-gates:
     name: Build & Quality Gates
@@ -62,6 +67,15 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
           SPRING_DATASOURCE_USERNAME: eaf
           SPRING_DATASOURCE_PASSWORD: eaf
+
+      - name: Publish Test Results
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          include_passed: false
+          detailed_summary: true
+          fail_on_failure: false
 
       - name: Code Coverage - Kover (≥80%)
         run: ./gradlew :koverHtmlReport koverVerify --no-daemon
