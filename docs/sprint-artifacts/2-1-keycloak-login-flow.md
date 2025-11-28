@@ -117,7 +117,7 @@ so that I can access DVMM securely with my company credentials.
 
 - [ ] **Task 1: Setup Keycloak Testcontainer** (AC: 6, 7, 8)
   - [ ] Add Keycloak Testcontainer dependency to `eaf-testing` module
-  - [ ] Create `KeycloakTestcontainer` fixture (realm import, test users)
+  - [ ] Create `KeycloakTestFixture` class (realm import, test users)
   - [ ] Configure test realm JSON with `dvmm` realm, clients, users
   - [ ] Verify Testcontainer starts and accepts logins
 

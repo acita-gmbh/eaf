@@ -1,14 +1,137 @@
 {
   "realm": "dvmm",
   "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user role"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "dvmm-web",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": ["+"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "dvmm-api",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
   "users": [
     {
       "username": "test-user",
+      "email": "test@example.com",
+      "emailVerified": true,
       "enabled": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "attributes": {
+        "tenant_id": ["11111111-1111-1111-1111-111111111111"]
+      },
       "credentials": [
         {
           "type": "password",
-          "value": "password"
+          "value": "test",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "test-admin",
+      "email": "admin@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Admin",
+      "attributes": {
+        "tenant_id": ["11111111-1111-1111-1111-111111111111"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "admin"]
+    },
+    {
+      "username": "tenant2-user",
+      "email": "user@tenant2.example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Tenant2",
+      "lastName": "User",
+      "attributes": {
+        "tenant_id": ["22222222-2222-2222-2222-222222222222"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test",
+          "temporary": false
         }
       ],
       "realmRoles": ["user"]

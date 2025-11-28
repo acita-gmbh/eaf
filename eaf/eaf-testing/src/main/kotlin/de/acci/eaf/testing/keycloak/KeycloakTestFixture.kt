@@ -1,0 +1,182 @@
+package de.acci.eaf.testing.keycloak
+
+import dasniko.testcontainers.keycloak.KeycloakContainer
+import de.acci.eaf.core.types.TenantId
+import de.acci.eaf.core.types.UserId
+import de.acci.eaf.testing.TestContainers
+import de.acci.eaf.testing.TestUser
+import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToMono
+import java.util.UUID
+
+/**
+ * Test fixture for Keycloak integration tests.
+ *
+ * Provides convenient access to:
+ * - Keycloak container configuration (URLs, realm, clients)
+ * - Test users with predefined tenant IDs
+ * - OAuth2 token acquisition via Resource Owner Password Grant
+ *
+ * Usage:
+ * ```kotlin
+ * val fixture = KeycloakTestFixture.create()
+ * val accessToken = fixture.getAccessToken(KeycloakTestUsers.TENANT1_USER)
+ * ```
+ */
+public class KeycloakTestFixture private constructor(
+    private val keycloak: KeycloakContainer,
+) {
+
+    public companion object {
+        public const val REALM: String = "dvmm"
+        public const val WEB_CLIENT_ID: String = "dvmm-web"
+        public const val API_CLIENT_ID: String = "dvmm-api"
+
+        /**
+         * Creates a new KeycloakTestFixture using the shared Keycloak container.
+         * The container is started lazily on first access.
+         */
+        public fun create(): KeycloakTestFixture {
+            return KeycloakTestFixture(TestContainers.keycloak)
+        }
+    }
+
+    /**
+     * Returns the Keycloak authorization server base URL.
+     * Example: "http://localhost:32768"
+     */
+    public fun getAuthServerUrl(): String = keycloak.authServerUrl
+
+    /**
+     * Returns the JWKS URI for JWT signature validation.
+     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/certs"
+     */
+    public fun getJwksUri(): String =
+        "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/certs"
+
+    /**
+     * Returns the issuer URI for JWT issuer validation.
+     * Example: "http://localhost:32768/realms/dvmm"
+     */
+    public fun getIssuerUri(): String = "${keycloak.authServerUrl}/realms/$REALM"
+
+    /**
+     * Returns the token endpoint URL.
+     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/token"
+     */
+    public fun getTokenEndpoint(): String =
+        "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/token"
+
+    /**
+     * Returns the UserInfo endpoint URL.
+     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/userinfo"
+     */
+    public fun getUserInfoEndpoint(): String =
+        "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/userinfo"
+
+    /**
+     * Obtains an access token for the specified test user using Resource Owner Password Grant.
+     *
+     * @param user The test user credentials
+     * @return Access token string
+     * @throws IllegalStateException if token acquisition fails
+     */
+    public fun getAccessToken(user: KeycloakTestUser): String {
+        val webClient = WebClient.builder()
+            .baseUrl(getTokenEndpoint())
+            .build()
+
+        val response = webClient.post()
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(
+                BodyInserters.fromFormData("grant_type", "password")
+                    .with("client_id", WEB_CLIENT_ID)
+                    .with("username", user.username)
+                    .with("password", user.password)
+                    .with("scope", "openid profile email")
+            )
+            .retrieve()
+            .bodyToMono<TokenResponse>()
+            .block() ?: throw IllegalStateException("Failed to obtain access token for ${user.username}")
+
+        return response.access_token
+    }
+
+    /**
+     * Converts a KeycloakTestUser to a TestUser with resolved user ID from token.
+     *
+     * @param user The Keycloak test user
+     * @return TestUser with actual Keycloak user ID
+     */
+    public fun toTestUser(user: KeycloakTestUser): TestUser {
+        return TestUser(
+            id = UserId.fromString(user.userId.toString()),
+            tenantId = user.tenantId,
+            email = user.email,
+            roles = user.roles,
+        )
+    }
+
+    @Suppress("PropertyName")
+    private data class TokenResponse(
+        val access_token: String,
+        val refresh_token: String?,
+        val expires_in: Int,
+        val token_type: String,
+    )
+}
+
+/**
+ * Predefined test users matching test-realm.json configuration.
+ *
+ * Each user has:
+ * - Unique UUID for consistent test assertions
+ * - tenant_id attribute for multi-tenancy testing
+ * - Appropriate realm roles
+ */
+public data class KeycloakTestUser(
+    val username: String,
+    val password: String,
+    val email: String,
+    val userId: UUID,
+    val tenantId: TenantId,
+    val roles: List<String>,
+)
+
+/**
+ * Predefined test users for Keycloak integration tests.
+ *
+ * Note: User IDs are generated by Keycloak at runtime and don't match these UUIDs.
+ * These are placeholder IDs for test data setup; actual IDs should be extracted
+ * from JWT tokens after authentication.
+ */
+public object KeycloakTestUsers {
+    public val TENANT1_USER: KeycloakTestUser = KeycloakTestUser(
+        username = "test-user",
+        password = "test",
+        email = "test@example.com",
+        userId = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        tenantId = TenantId.fromString("11111111-1111-1111-1111-111111111111"),
+        roles = listOf("user"),
+    )
+
+    public val TENANT1_ADMIN: KeycloakTestUser = KeycloakTestUser(
+        username = "test-admin",
+        password = "test",
+        email = "admin@example.com",
+        userId = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+        tenantId = TenantId.fromString("11111111-1111-1111-1111-111111111111"),
+        roles = listOf("user", "admin"),
+    )
+
+    public val TENANT2_USER: KeycloakTestUser = KeycloakTestUser(
+        username = "tenant2-user",
+        password = "test",
+        email = "user@tenant2.example.com",
+        userId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+        tenantId = TenantId.fromString("22222222-2222-2222-2222-222222222222"),
+        roles = listOf("user"),
+    )
+}

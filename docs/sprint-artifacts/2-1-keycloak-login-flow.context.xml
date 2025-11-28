@@ -1,4 +1,4 @@
-<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+<story-context id="2-1-keycloak-login-flow" v="1.0">
   <metadata>
     <epicId>2</epicId>
     <storyId>1</storyId>
@@ -16,7 +16,7 @@
     <tasks>
       <task id="1" ac="6,7,8">Setup Keycloak Testcontainer
         <subtask>Add Keycloak Testcontainer dependency to eaf-testing module</subtask>
-        <subtask>Create KeycloakTestcontainer fixture (realm import, test users)</subtask>
+        <subtask>Create KeycloakTestFixture (realm import, test users)</subtask>
         <subtask>Configure test realm JSON with dvmm realm, clients, users</subtask>
         <subtask>Verify Testcontainer starts and accepts logins</subtask>
       </task>
