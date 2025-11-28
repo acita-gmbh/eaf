@@ -572,4 +572,4 @@ Basierend auf dem Serviceportfolio von Strong IT und unseren Projektanforderunge
 ---
 
 *Dokument erstellt für die Evaluierung der Sicherheitspartnerschaft durch das Strong IT SOC-Team.*
-*Kontakt: [Projektleiter-Kontaktinformationen]*
+*Kontakt: Michael Walloschke (michael.walloschke@axians.de)*
