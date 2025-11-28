@@ -310,7 +310,7 @@ Story 1.11 delivers a comprehensive GitHub Actions CI/CD pipeline with enforced 
 | AC4 | PR merge requires passing CI | ✅ DOCUMENTED | `README.md:162-175` branch protection instructions |
 | AC5 | Main branch protected | ✅ DOCUMENTED | `README.md:171-175` configuration steps |
 
-**Summary: 5 of 5 acceptance criteria fully implemented**
+### Summary: 5 of 5 acceptance criteria fully implemented
 
 ### Task Completion Validation
 
@@ -323,7 +323,7 @@ Story 1.11 delivers a comprehensive GitHub Actions CI/CD pipeline with enforced 
 | Task 5: Architecture tests | ✅ | ✅ VERIFIED | Konsist runs via `./gradlew test` |
 | Task 6: Documentation | ✅ | ✅ VERIFIED | `README.md:141-175` complete docs |
 
-**Summary: 6 of 6 completed tasks verified, 0 questionable, 0 false completions**
+### Summary: 6 of 6 completed tasks verified, 0 questionable, 0 false completions
 
 ### Test Coverage and Gaps
 

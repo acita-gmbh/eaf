@@ -260,6 +260,7 @@ public class VcsimTestFixture(
         try {
             System.setProperty(propertyName, "true")
 
+            @Suppress("EmptyFunctionBlock") // Intentionally trust all certificates for VCSIM testing
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
                 override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
