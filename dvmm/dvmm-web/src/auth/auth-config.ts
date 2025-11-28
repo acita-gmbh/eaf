@@ -22,31 +22,62 @@ export const oidcConfig: AuthProviderProps = {
 }
 
 /**
- * Extract tenant ID from JWT access token claims.
+ * Decode base64url-encoded string to standard base64 for atob.
+ *
+ * JWTs use base64url encoding (RFC 4648 §5):
+ * - Uses '-' instead of '+'
+ * - Uses '_' instead of '/'
+ * - No padding required
+ *
+ * @param base64url - Base64url encoded string
+ * @returns Standard base64 encoded string suitable for atob()
  */
-export function getTenantIdFromToken(accessToken: string | undefined): string | null {
+function base64urlToBase64(base64url: string): string {
+  // Replace base64url chars with standard base64 chars
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/')
+  // Add padding if needed
+  const padding = base64.length % 4
+  if (padding) {
+    base64 += '='.repeat(4 - padding)
+  }
+  return base64
+}
+
+/**
+ * Parse JWT payload claims.
+ *
+ * @param accessToken - JWT access token
+ * @returns Parsed payload claims or null if parsing fails
+ */
+function parseJwtPayload(accessToken: string | undefined): Record<string, unknown> | null {
   if (!accessToken) return null
 
   try {
     const payload = accessToken.split(".")[1]
-    const decoded = JSON.parse(atob(payload))
-    return decoded.tenant_id ?? null
+    if (!payload) return null
+    const base64 = base64urlToBase64(payload)
+    return JSON.parse(atob(base64))
   } catch {
     return null
   }
 }
 
 /**
+ * Extract tenant ID from JWT access token claims.
+ */
+export function getTenantIdFromToken(accessToken: string | undefined): string | null {
+  const claims = parseJwtPayload(accessToken)
+  if (!claims) return null
+  return typeof claims.tenant_id === 'string' ? claims.tenant_id : null
+}
+
+/**
  * Extract user display name from JWT access token claims.
  */
 export function getUserNameFromToken(accessToken: string | undefined): string | null {
-  if (!accessToken) return null
-
-  try {
-    const payload = accessToken.split(".")[1]
-    const decoded = JSON.parse(atob(payload))
-    return decoded.name ?? decoded.preferred_username ?? null
-  } catch {
-    return null
-  }
+  const claims = parseJwtPayload(accessToken)
+  if (!claims) return null
+  if (typeof claims.name === 'string') return claims.name
+  if (typeof claims.preferred_username === 'string') return claims.preferred_username
+  return null
 }

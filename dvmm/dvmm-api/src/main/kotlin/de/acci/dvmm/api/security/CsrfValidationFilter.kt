@@ -10,18 +10,19 @@ import org.springframework.web.server.WebFilterChain
 import reactor.core.publisher.Mono
 
 /**
- * Custom CSRF validation filter for API mutations.
+ * Custom CSRF validation filter for API mutations using double-submit cookie pattern.
  *
  * Spring Security's default CSRF is not strictly enforced with OAuth2 Resource Server
  * because Bearer tokens already provide CSRF protection (browsers don't auto-attach
  * Authorization headers).
  *
- * This filter provides defense-in-depth by requiring X-XSRF-TOKEN header
- * for all state-changing requests to /api endpoints. The header value must
- * not be empty.
+ * This filter provides defense-in-depth by:
+ * 1. Requiring X-XSRF-TOKEN header for all state-changing requests to /api endpoints
+ * 2. Validating that the header value matches the XSRF-TOKEN cookie value
  *
  * The XSRF-TOKEN cookie is set by Spring Security (via CookieServerCsrfTokenRepository).
  * The frontend reads this cookie and sends the value as the X-XSRF-TOKEN header.
+ * The server validates that both values match (double-submit pattern).
  *
  * Note: This is an additional security layer. With JWT Bearer tokens,
  * CSRF attacks are already mitigated.
@@ -31,6 +32,7 @@ public class CsrfValidationFilter : WebFilter, Ordered {
 
     private companion object {
         private const val CSRF_HEADER = "X-XSRF-TOKEN"
+        private const val CSRF_COOKIE = "XSRF-TOKEN"
     }
 
     // Run after Spring Security filter chain (-100) but before controllers
@@ -57,9 +59,17 @@ public class CsrfValidationFilter : WebFilter, Ordered {
             return rejectRequest(exchange, "Missing CSRF header")
         }
 
-        // Token present - allow the request
-        // Note: The actual token value validation is done by comparing
-        // with the XSRF-TOKEN cookie on the client side (double-submit pattern)
+        // Get CSRF cookie value for double-submit validation
+        val csrfCookie = request.cookies.getFirst(CSRF_COOKIE)?.value
+        if (csrfCookie.isNullOrBlank()) {
+            return rejectRequest(exchange, "Missing CSRF cookie")
+        }
+
+        // Double-submit cookie pattern: header must match cookie value
+        if (!csrfHeader.equals(csrfCookie, ignoreCase = false)) {
+            return rejectRequest(exchange, "CSRF token mismatch")
+        }
+
         return chain.filter(exchange)
     }
 

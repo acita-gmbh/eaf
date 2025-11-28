@@ -98,13 +98,37 @@ export async function apiGet<T>(
 }
 
 /**
+ * Parse JSON response if body is not empty.
+ * Returns undefined for 204 No Content or empty responses.
+ */
+async function parseJsonResponse<T>(response: Response): Promise<T | undefined> {
+  // 204 No Content or empty body
+  if (response.status === 204) {
+    return undefined
+  }
+
+  const contentLength = response.headers.get('content-length')
+  if (contentLength === '0') {
+    return undefined
+  }
+
+  // Try to parse JSON, return undefined if body is empty
+  const text = await response.text()
+  if (!text) {
+    return undefined
+  }
+
+  return JSON.parse(text) as T
+}
+
+/**
  * Makes a POST request to the API.
  */
 export async function apiPost<T>(
   path: string,
   accessToken: string,
   body?: unknown
-): Promise<T> {
+): Promise<T | undefined> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: createApiHeaders(accessToken, true), // Include CSRF for mutations
@@ -116,7 +140,7 @@ export async function apiPost<T>(
     throw new Error(`API request failed: ${response.status}`)
   }
 
-  return response.json()
+  return parseJsonResponse<T>(response)
 }
 
 /**
@@ -126,7 +150,7 @@ export async function apiPut<T>(
   path: string,
   accessToken: string,
   body?: unknown
-): Promise<T> {
+): Promise<T | undefined> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PUT',
     headers: createApiHeaders(accessToken, true), // Include CSRF for mutations
@@ -138,7 +162,7 @@ export async function apiPut<T>(
     throw new Error(`API request failed: ${response.status}`)
   }
 
-  return response.json()
+  return parseJsonResponse<T>(response)
 }
 
 /**

@@ -47,7 +47,7 @@ so that I can access DVMM securely with my company credentials.
 5. **CSRF protection on mutations**
    - Given I am authenticated
    - When I make a state-changing request (POST/PUT/DELETE)
-   - Then the request includes X-CSRF-Token header
+   - Then the request includes X-XSRF-TOKEN header
    - And backend validates the token before processing.
 
 6. **Coverage restored for eaf-auth-keycloak (≥80%)**
@@ -167,7 +167,7 @@ so that I can access DVMM securely with my company credentials.
 - [ ] **Task 8: Implement CSRF protection** (AC: 5)
   - [ ] Add CSRF token endpoint to backend (/api/csrf)
   - [ ] Configure frontend to fetch CSRF token on auth
-  - [ ] Add X-CSRF-Token header to all mutation requests
+  - [ ] Add X-XSRF-TOKEN header to all mutation requests
   - [ ] Backend validates CSRF token on POST/PUT/DELETE
 
 - [ ] **Task 9: E2E tests with Playwright** (AC: 1, 2, 3)

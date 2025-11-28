@@ -1,8 +1,10 @@
 package de.acci.dvmm.api.security
 
+import org.springframework.http.HttpStatus
 import org.springframework.security.web.server.csrf.CsrfToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
@@ -32,7 +34,7 @@ public class CsrfController {
     @GetMapping
     public fun getCsrfToken(exchange: ServerWebExchange): Mono<CsrfTokenResponse> {
         val csrfToken = exchange.getAttribute<Mono<CsrfToken>>(CsrfToken::class.java.name)
-            ?: return Mono.error(IllegalStateException("CSRF token not available"))
+            ?: return Mono.error(CsrfTokenNotAvailableException())
 
         return csrfToken.map { token ->
             CsrfTokenResponse(
@@ -43,6 +45,17 @@ public class CsrfController {
         }
     }
 }
+
+/**
+ * Exception thrown when CSRF token is not available in the server exchange.
+ *
+ * This indicates a misconfiguration where Spring Security's CSRF support
+ * is not properly enabled or the CsrfToken attribute was not populated.
+ */
+@ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+public class CsrfTokenNotAvailableException : RuntimeException(
+    "CSRF token not available. Ensure CSRF protection is properly configured."
+)
 
 /**
  * Response DTO for CSRF token endpoint.

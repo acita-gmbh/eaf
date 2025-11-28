@@ -2,7 +2,6 @@ package de.acci.dvmm.api.security
 
 import de.acci.eaf.testing.keycloak.KeycloakTestFixture
 import de.acci.eaf.testing.keycloak.KeycloakTestUsers
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -40,20 +39,13 @@ class SecurityConfigIntegrationTest {
     private lateinit var webTestClient: WebTestClient
 
     companion object {
-        private lateinit var fixture: KeycloakTestFixture
-
-        @JvmStatic
-        @BeforeAll
-        fun setup() {
-            fixture = KeycloakTestFixture.create()
-        }
+        // Single shared fixture instance for all tests and configuration
+        private val fixture: KeycloakTestFixture by lazy { KeycloakTestFixture.create() }
 
         @JvmStatic
         @DynamicPropertySource
         fun properties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri") {
-                KeycloakTestFixture.create().getJwksUri()
-            }
+            registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri") { fixture.getJwksUri() }
             registry.add("eaf.auth.keycloak.client-id") { KeycloakTestFixture.WEB_CLIENT_ID }
             registry.add("eaf.cors.allowed-origins") { "http://localhost:3000" }
         }
@@ -65,9 +57,9 @@ class SecurityConfigIntegrationTest {
     class TestConfig {
         @Bean
         fun jwtDecoder(): ReactiveJwtDecoder {
-            return NimbusReactiveJwtDecoder
-                .withJwkSetUri(KeycloakTestFixture.create().getJwksUri())
-                .build()
+            // Access companion property via class - shares the same container
+            val jwksUri = SecurityConfigIntegrationTest.fixture.getJwksUri()
+            return NimbusReactiveJwtDecoder.withJwkSetUri(jwksUri).build()
         }
 
         @Bean
@@ -190,13 +182,55 @@ class SecurityConfigIntegrationTest {
         val csrfCookie = cookies["XSRF-TOKEN"]?.firstOrNull()?.value
             ?: throw AssertionError("XSRF-TOKEN cookie not found in response")
 
-        // POST with X-XSRF-TOKEN header should succeed
+        // POST with X-XSRF-TOKEN header AND cookie should succeed (double-submit pattern)
         webTestClient.post()
             .uri("/api/test")
             .header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
             .header("X-XSRF-TOKEN", csrfCookie)
+            .cookie("XSRF-TOKEN", csrfCookie)
             .exchange()
             .expectStatus().isOk
+    }
+
+    @Test
+    fun `post request with wrong csrf header is forbidden`() {
+        val accessToken = fixture.getAccessToken(KeycloakTestUsers.TENANT1_USER)
+
+        // First, get a valid CSRF token - this sets the XSRF-TOKEN cookie
+        val csrfResponse = webTestClient.get()
+            .uri("/api/csrf")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+            .exchange()
+            .expectStatus().isOk
+            .returnResult(CsrfTokenResponse::class.java)
+
+        val cookies = csrfResponse.responseCookies
+        val csrfCookie = cookies["XSRF-TOKEN"]?.firstOrNull()?.value
+            ?: throw AssertionError("XSRF-TOKEN cookie not found in response")
+
+        // POST with mismatched header value should fail (double-submit validation)
+        webTestClient.post()
+            .uri("/api/test")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+            .header("X-XSRF-TOKEN", "wrong-token-value")
+            .cookie("XSRF-TOKEN", csrfCookie)
+            .exchange()
+            .expectStatus().isForbidden
+            .expectHeader().valueEquals("X-CSRF-Error", "CSRF token mismatch")
+    }
+
+    @Test
+    fun `post request with missing csrf cookie is forbidden`() {
+        val accessToken = fixture.getAccessToken(KeycloakTestUsers.TENANT1_USER)
+
+        // POST with header but no cookie should fail
+        webTestClient.post()
+            .uri("/api/test")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+            .header("X-XSRF-TOKEN", "some-token-value")
+            .exchange()
+            .expectStatus().isForbidden
+            .expectHeader().valueEquals("X-CSRF-Error", "Missing CSRF cookie")
     }
 }
 
