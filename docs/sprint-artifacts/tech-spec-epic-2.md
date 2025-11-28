@@ -666,6 +666,56 @@ Story 2.1 (Keycloak Login) ──┬──▶ Story 2.2 (Dashboard)
 | 2.11 | Approve/Reject Actions | 2.10, 1.4 | FR27, FR28, FR29 | HIGH |
 | 2.12 | Email Notifications | 2.6, 2.11 | FR45, FR46, FR72 | MEDIUM |
 
+### 5.3 Key Acceptance Criteria (High-Risk Stories)
+
+#### Story 2.1: Keycloak Login Flow (HIGH)
+
+| AC | Given | When | Then |
+|----|-------|------|------|
+| AC-2.1.1 | Unauthenticated user | Navigates to `/dashboard` | Redirected to Keycloak login page |
+| AC-2.1.2 | User on Keycloak login | Enters valid credentials | Redirected back to `/dashboard` with session |
+| AC-2.1.3 | Authenticated user | Session JWT expires | Automatic silent refresh via refresh token |
+| AC-2.1.4 | Authenticated user | Clicks logout | Session invalidated, redirected to login |
+| AC-2.1.5 | User with invalid token | Makes API request | Receives 401 Unauthorized |
+| AC-2.1.6 | Tenant A user | Accesses Tenant B data | Receives 403 Forbidden (RLS enforced) |
+
+**Coverage Restoration:**
+- `eaf-auth-keycloak` module ≥80% line coverage (restore from exclusion)
+- `dvmm-api` module ≥80% line coverage (restore from exclusion)
+- Pitest mutation score ≥70% for both modules
+
+#### Story 2.6: VM Request Form - Submit (HIGH)
+
+| AC | Given | When | Then |
+|----|-------|------|------|
+| AC-2.6.1 | Valid form data | Clicks submit | `VmRequestCreated` event stored, request ID returned |
+| AC-2.6.2 | Valid form data | Clicks submit | User sees success toast with request ID |
+| AC-2.6.3 | Invalid VM name (spaces) | Clicks submit | Validation error shown, no event stored |
+| AC-2.6.4 | Empty justification | Clicks submit | Validation error: "Justification required" |
+| AC-2.6.5 | Request created | - | Projection updated, visible in "My Requests" |
+| AC-2.6.6 | Request created | - | Email notification queued for admins |
+
+**Validation Rules:**
+- VM Name: `^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$` (3-63 chars, lowercase alphanumeric/hyphen)
+- Justification: min 10 characters
+- Size: must be valid enum (S, M, L, XL)
+
+#### Story 2.11: Approve/Reject Actions (HIGH)
+
+| AC | Given | When | Then |
+|----|-------|------|------|
+| AC-2.11.1 | Pending request | Admin clicks Approve | `VmRequestApproved` event stored |
+| AC-2.11.2 | Pending request | Admin clicks Approve | Status changes to APPROVED, timestamp recorded |
+| AC-2.11.3 | Pending request | Admin clicks Reject | Rejection reason dialog appears |
+| AC-2.11.4 | Rejection reason < 10 chars | Clicks confirm | Validation error: "Reason must be at least 10 characters" |
+| AC-2.11.5 | Valid rejection reason | Clicks confirm | `VmRequestRejected` event stored with reason |
+| AC-2.11.6 | Already approved request | Another admin tries approve | Optimistic lock error: "Request already processed" |
+| AC-2.11.7 | Request approved/rejected | - | Email notification sent to requester |
+
+**Optimistic Locking:**
+- Use aggregate version for concurrent modification detection
+- Return 409 Conflict if version mismatch
+
 ---
 
 ## 6. Non-Functional Requirements
@@ -706,6 +756,85 @@ Story 2.1 (Keycloak Login) ──┬──▶ Story 2.2 (Dashboard)
 | Integration Tests | Critical paths | Testcontainers |
 | Mutation Tests | ≥70% | Pitest |
 | E2E Tests | Happy paths | Playwright |
+
+### 6.5 Observability
+
+| Aspect | Implementation | Details |
+|--------|----------------|---------|
+| Structured Logging | SLF4J + Logback JSON | Every log includes `tenantId`, `requestId`, `userId` |
+| Log Levels | ERROR, WARN, INFO, DEBUG | Production: INFO, Dev: DEBUG |
+| Metrics | Micrometer + Prometheus | Counters, Gauges, Histograms |
+| Health Checks | Spring Actuator | `/actuator/health`, `/actuator/info` |
+| Distributed Tracing | OpenTelemetry (future) | Correlation IDs via `X-Request-ID` header |
+
+**Key Metrics:**
+
+| Metric Name | Type | Labels | Purpose |
+|-------------|------|--------|---------|
+| `dvmm_vm_requests_total` | Counter | `tenant_id`, `status` | Total requests created |
+| `dvmm_vm_requests_approved_total` | Counter | `tenant_id` | Approved requests |
+| `dvmm_vm_requests_rejected_total` | Counter | `tenant_id` | Rejected requests |
+| `dvmm_api_request_duration_seconds` | Histogram | `endpoint`, `method` | API latency |
+| `dvmm_email_sent_total` | Counter | `template`, `status` | Email delivery tracking |
+
+**Logging Standards:**
+
+```kotlin
+// Structured logging with context
+logger.info {
+    "VM request created" to mapOf(
+        "requestId" to requestId.value,
+        "tenantId" to tenantId.value,
+        "vmName" to vmName.value,
+        "size" to size.name
+    )
+}
+```
+
+### 6.6 Reliability
+
+| Aspect | Implementation | Details |
+|--------|----------------|---------|
+| Email Retry | Exponential Backoff | 3 retries: 1s, 5s, 30s |
+| Email Dead-Letter | Database Table | Failed emails logged for manual review |
+| Idempotency | Event ID deduplication | Projections skip duplicate events |
+| Graceful Degradation | Email failures non-blocking | Request workflow continues if email fails |
+
+**Email Reliability Flow:**
+
+```
+[Event] → [EmailNotificationHandler]
+              │
+              ├─► Send Email
+              │      │
+              │      ├─► Success → Log metric (sent)
+              │      │
+              │      └─► Failure → Retry (3x)
+              │             │
+              │             ├─► Success → Log metric (sent_after_retry)
+              │             │
+              │             └─► Permanent Failure → Dead-Letter Table
+              │                    │
+              │                    └─► Log ERROR + metric (failed)
+              │
+              └─► Request workflow continues (non-blocking)
+```
+
+**Dead-Letter Table Schema:**
+
+```sql
+CREATE TABLE "EMAIL_DEAD_LETTER" (
+    "ID" UUID PRIMARY KEY,
+    "TENANT_ID" UUID NOT NULL,
+    "TEMPLATE" VARCHAR(50) NOT NULL,
+    "RECIPIENT" VARCHAR(255) NOT NULL,
+    "PAYLOAD" JSONB NOT NULL,
+    "ERROR_MESSAGE" TEXT NOT NULL,
+    "RETRY_COUNT" INT NOT NULL,
+    "CREATED_AT" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "LAST_RETRY_AT" TIMESTAMP WITH TIME ZONE
+);
+```
 
 ---
 
