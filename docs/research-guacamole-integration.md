@@ -371,6 +371,7 @@ import java.time.Duration
 public class ConsoleAccessCommandHandler(
     private val vmRepository: VmRepository,
     private val consoleAccessPort: ConsoleAccessPort,
+    private val authorizationService: AuthorizationService,
     private val clock: Clock,
 ) {
     public suspend fun handle(command: RequestConsoleAccessCommand): ConsoleSession {
@@ -406,8 +407,8 @@ public class ConsoleAccessCommandHandler(
         return session
     }
 
-    private fun canAccessConsole(userId: UserId, vm: Vm): Boolean {
-        return vm.ownerId == userId || hasRole(userId, Role.ADMIN)
+    private suspend fun canAccessConsole(userId: UserId, vm: Vm): Boolean {
+        return vm.ownerId == userId || authorizationService.hasRole(userId, Role.ADMIN)
     }
 
     private companion object {
@@ -475,7 +476,8 @@ public class GuacamoleConnectionFactory(
         }
     }
 
-    private suspend fun buildConfiguration(session: ConsoleSession): GuacamoleConfiguration {
+    @VisibleForTesting
+    internal suspend fun buildConfiguration(session: ConsoleSession): GuacamoleConfiguration {
         // RLS ensures we only see VMs for this tenant
         val vm = vmProjectionRepository.findById(session.vmId)
             ?: throw VmNotFoundException(session.vmId)
@@ -558,6 +560,7 @@ import jakarta.websocket.OnOpen
 import jakarta.websocket.Session
 import jakarta.websocket.server.ServerEndpoint
 import kotlinx.coroutines.runBlocking
+import org.apache.guacamole.GuacamoleClientException
 import org.apache.guacamole.GuacamoleException
 import org.apache.guacamole.io.GuacamoleReader
 import org.apache.guacamole.io.GuacamoleWriter
@@ -579,13 +582,13 @@ public class GuacamoleTunnelEndpoint(
         try {
             // 1. Extract and validate JWT from query parameter
             val token = session.requestParameterMap["token"]?.firstOrNull()
-                ?: throw GuacamoleSecurityException("Missing authentication token")
+                ?: throw GuacamoleClientException("Missing authentication token")
 
             val claims = jwtValidator.validate(token)
 
             // 2. Extract session ID
             val sessionIdParam = session.requestParameterMap["sessionId"]?.firstOrNull()
-                ?: throw GuacamoleSecurityException("Missing session ID")
+                ?: throw GuacamoleClientException("Missing session ID")
 
             val sessionId = ConsoleSessionId(UUID.fromString(sessionIdParam))
 
@@ -796,12 +799,19 @@ public data class ConsoleAccessResponse(
 
 ```kotlin
 // Protect against console abuse
-@RateLimiter(name = "console-access", fallbackMethod = "rateLimitFallback")
+// Note: @RateLimiter annotation requires resilience4j-kotlin for suspend function support.
+// Alternative: Use RateLimiterRegistry programmatically with coroutine wrappers.
 public suspend fun requestConsoleAccess(...): ConsoleAccessResponse {
-    // ...
+    return rateLimiterRegistry.rateLimiter("console-access")
+        .executeSuspendFunction {
+            // Actual implementation
+            commandHandler.handle(command)
+        }
 }
+```
 
-// resilience4j config
+```yaml
+# resilience4j config (application.yml)
 resilience4j:
   ratelimiter:
     instances:
@@ -896,7 +906,9 @@ export function VmConsole({ vmId, onClose }: VmConsoleProps) {
 
     // Cleanup
     return () => {
-      keyboard.onkeydown = keyboard.onkeyup = null;
+      // Remove keyboard handlers before disconnecting
+      keyboard.onkeydown = () => true;
+      keyboard.onkeyup = () => true;
       client.disconnect();
     };
   }, [consoleAccess]);
@@ -1082,6 +1094,17 @@ class GuacamoleConnectionFactoryTest {
         guacdProperties = guacdProperties,
     )
 
+    // Test helper to create ConsoleSession with default values
+    private fun createSession(
+        id: ConsoleSessionId = ConsoleSessionId.generate(),
+        vmId: VmId = VmId(UUID.randomUUID()),
+        userId: UserId = UserId(UUID.randomUUID()),
+        tenantId: TenantId = TenantId(UUID.randomUUID()),
+        protocol: ConsoleProtocol = ConsoleProtocol.SSH,
+        createdAt: Instant = Instant.now(),
+        expiresAt: Instant = Instant.now().plusMinutes(5),
+    ) = ConsoleSession(id, vmId, userId, tenantId, protocol, createdAt, expiresAt)
+
     @Test
     fun `createTunnel fails for expired session`() = runTest {
         // Given: Expired session
@@ -1142,7 +1165,8 @@ class GuacamoleConnectionFactoryTest {
 
         // Can't easily test tunnel creation without guacd
         // Instead, test the configuration building logic directly
-        val config = factory.buildConfigurationForTesting(session)
+        // Note: buildConfiguration is marked internal with @VisibleForTesting
+        val config = factory.buildConfiguration(session)
 
         assertThat(config.protocol).isEqualTo("ssh")
         assertThat(config.getParameter("hostname")).isEqualTo("192.168.1.100")
@@ -1240,6 +1264,19 @@ class GuacamoleVcsimIntegrationTest : VcsimIntegrationTest() {
         // Resume - SSH should work again
         vcsim.powerOn(vmPath)
         await().until { canConnectSsh(vmPath) }
+    }
+
+    // Helper to test SSH connectivity
+    private fun canConnectSsh(vmPath: String, timeoutMs: Long = 5000): Boolean {
+        val ip = vcsim.getGuestIp(vmPath) ?: return false
+        return try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(ip, 22), timeoutMs.toInt())
+                true
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 }
 ```
