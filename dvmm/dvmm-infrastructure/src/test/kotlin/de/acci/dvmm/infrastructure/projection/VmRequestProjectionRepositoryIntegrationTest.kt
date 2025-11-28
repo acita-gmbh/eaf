@@ -63,14 +63,24 @@ class VmRequestProjectionRepositoryIntegrationTest {
         @BeforeAll
         @JvmStatic
         fun setupSchema() {
-            val initSql = VmRequestProjectionRepositoryIntegrationTest::class.java
-                .getResourceAsStream("/db/jooq-init.sql")
-                ?.bufferedReader()
-                ?.readText()
-                ?: throw IllegalStateException("Could not read jooq-init.sql")
+            // Copy SQL file to container and execute with psql -f for proper multi-statement handling
+            // This handles DO $$ ... $$ blocks and other PostgreSQL-specific syntax correctly
+            // Note: Uses test-specific jooq-init.sql with quoted uppercase identifiers for jOOQ compatibility
+            val tmpFile = "/tmp/init.sql"
+            postgres.copyFileToContainer(
+                org.testcontainers.utility.MountableFile.forClasspathResource("db/jooq-init.sql"),
+                tmpFile
+            )
 
-            postgres.createConnection("").use { conn ->
-                conn.createStatement().execute(initSql)
+            val result = postgres.execInContainer(
+                "psql",
+                "-U", postgres.username,
+                "-d", postgres.databaseName,
+                "-v", "ON_ERROR_STOP=1",
+                "-f", tmpFile
+            )
+            if (result.exitCode != 0) {
+                throw IllegalStateException("Failed to initialize schema: ${result.stderr}")
             }
 
             // Superuser DSL bypasses RLS for test data setup/cleanup
@@ -91,7 +101,7 @@ class VmRequestProjectionRepositoryIntegrationTest {
     fun cleanup() {
         TenantTestContext.clear()
         // Clean up test data using superuser connection (bypasses RLS)
-        superuserDsl.execute("TRUNCATE TABLE vm_requests_projection")
+        superuserDsl.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" """)
     }
 
     /**
@@ -131,11 +141,12 @@ class VmRequestProjectionRepositoryIntegrationTest {
         updatedAt: OffsetDateTime = OffsetDateTime.now()
     ): UUID {
         // Use raw JDBC to properly handle OffsetDateTime -> TIMESTAMPTZ conversion
+        // Column names must be quoted uppercase to match jOOQ-generated schema
         postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
-                INSERT INTO vm_requests_projection
-                (id, tenant_id, requester_id, vm_name, cpu_cores, memory_gb, status, created_at, updated_at, version)
+                INSERT INTO public."VM_REQUESTS_PROJECTION"
+                ("ID", "TENANT_ID", "REQUESTER_ID", "VM_NAME", "CPU_CORES", "MEMORY_GB", "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                 """.trimIndent()
             ).use { stmt ->

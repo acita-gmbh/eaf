@@ -45,6 +45,32 @@ kover {
                 xmlFile = layout.buildDirectory.file("reports/kover/report.xml")
             }
         }
+        // ==========================================================================
+        // Global Exclusions for Merged Coverage Report
+        // ==========================================================================
+        // These exclusions match the per-module exclusions. They are needed here
+        // because the merged report aggregates all code, including excluded modules.
+        //
+        // Temporary exclusions (to be removed in Story 2.1):
+        // - eaf-auth-keycloak: Requires Keycloak Testcontainer
+        // - dvmm-api (SecurityConfig): Requires Spring Security integration tests
+        //
+        // Permanent exclusions:
+        // - jOOQ generated code
+        // - Spring Boot main() function (untestable bootstrap code)
+        // ==========================================================================
+        filters {
+            excludes {
+                // Temporary: eaf-auth-keycloak (until Story 2.1)
+                packages("de.acci.eaf.auth.keycloak.*")
+                // Temporary: dvmm-api SecurityConfig (until Story 2.1)
+                packages("de.acci.dvmm.api.security.*")
+                // Permanent: jOOQ generated code
+                packages("de.acci.dvmm.infrastructure.jooq.*")
+                // Permanent: Spring Boot main() function
+                classes("de.acci.dvmm.DvmmApplicationKt")
+            }
+        }
         verify {
             rule("Global Coverage") {
                 minBound(80)

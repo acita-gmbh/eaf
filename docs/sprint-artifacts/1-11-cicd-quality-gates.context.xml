@@ -1,0 +1,287 @@
+<story-context id="bmm/workflows/4-implementation/story-context" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>11</storyId>
+    <title>CI/CD Quality Gates</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-11-cicd-quality-gates.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a CI/CD pipeline with enforced quality gates</iWant>
+    <soThat>code quality standards are maintained automatically</soThat>
+    <tasks>
+      <task id="1" status="pending">
+        <title>Create GitHub Actions workflow file</title>
+        <subtasks>
+          <subtask>Create .github/workflows/ci.yml</subtask>
+          <subtask>Configure trigger on push to main and PR to main</subtask>
+          <subtask>Add checkout step with actions/checkout@v4</subtask>
+          <subtask>Add JDK 21 setup with actions/setup-java@v4</subtask>
+          <subtask>Add Gradle cache with actions/cache@v4</subtask>
+        </subtasks>
+      </task>
+      <task id="2" status="pending">
+        <title>Configure build and test steps</title>
+        <subtasks>
+          <subtask>Add Gradle build step (compile without tests)</subtask>
+          <subtask>Add unit test step with ./gradlew test</subtask>
+          <subtask>Configure test result reporting</subtask>
+          <subtask>Ensure tests fail pipeline on failure</subtask>
+        </subtasks>
+      </task>
+      <task id="3" status="pending">
+        <title>Configure code coverage gate</title>
+        <subtasks>
+          <subtask>Add Kover coverage step with ./gradlew koverVerify</subtask>
+          <subtask>Generate HTML report with ./gradlew :koverHtmlReport</subtask>
+          <subtask>Upload coverage report as artifact</subtask>
+          <subtask>Verify 80% threshold enforced</subtask>
+        </subtasks>
+      </task>
+      <task id="4" status="pending">
+        <title>Configure mutation testing gate</title>
+        <subtasks>
+          <subtask>Add Pitest step with ./gradlew pitest</subtask>
+          <subtask>Upload mutation report as artifact</subtask>
+          <subtask>Verify 70% threshold enforced</subtask>
+        </subtasks>
+      </task>
+      <task id="5" status="pending">
+        <title>Configure architecture tests</title>
+        <subtasks>
+          <subtask>Add Konsist architecture test step</subtask>
+          <subtask>Ensure Konsist tests run as part of test task</subtask>
+          <subtask>Verify architecture rules enforced</subtask>
+        </subtasks>
+      </task>
+      <task id="6" status="pending">
+        <title>Document branch protection setup</title>
+        <subtasks>
+          <subtask>Document required branch protection rules for main</subtask>
+          <subtask>Document required status checks configuration</subtask>
+          <subtask>Add instructions to README or CONTRIBUTING.md</subtask>
+          <subtask>Note: Actual GitHub settings require manual configuration</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <title>CI pipeline executes on push and PR</title>
+      <given>I push code or open a PR</given>
+      <when>GitHub Actions workflow runs</when>
+      <then>Pipeline executes: Build, Unit tests, Integration tests, Coverage (Kover 80%), Mutation (Pitest 70%), Architecture (Konsist)</then>
+    </criterion>
+    <criterion id="AC2">
+      <title>Pipeline fails on any gate failure</title>
+      <given>Any quality gate fails</given>
+      <when>Pipeline evaluates results</when>
+      <then>Entire pipeline FAILS; failing gate clearly identified in logs</then>
+    </criterion>
+    <criterion id="AC3">
+      <title>Coverage report published as artifact</title>
+      <given>Pipeline completes</given>
+      <when>Coverage analysis runs</when>
+      <then>Kover HTML report and Pitest mutation report uploaded as workflow artifacts</then>
+    </criterion>
+    <criterion id="AC4">
+      <title>PR merge requires passing pipeline</title>
+      <given>PR opened against main branch</given>
+      <when>CI pipeline fails</when>
+      <then>PR cannot be merged; status check shows as "failing"</then>
+    </criterion>
+    <criterion id="AC5">
+      <title>Main branch is protected</title>
+      <given>Main branch protection rules configured</given>
+      <when>Direct push to main attempted</when>
+      <then>Push rejected (require PR); status checks required to pass before merge</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/devops-strategy.md</path>
+        <title>DVMM DevOps Strategy</title>
+        <section>1. CI/CD Pipeline Architecture</section>
+        <snippet>GitHub Actions pipeline with quality gates: Coverage 80% (Kover), Mutation 70% (Pitest), Architecture tests (Konsist), Zero critical vulnerabilities.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>DVMM Epics</title>
+        <section>Story 1.11: CI/CD Quality Gates</section>
+        <snippet>Implement GitHub Actions workflow with build, test, coverage, mutation gates. Pipeline FAILS if ANY gate fails.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Story 1.11: CI/CD Quality Gates</section>
+        <snippet>Complete GitHub Actions workflow YAML example with services, caching, quality gate steps, and artifact uploads.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Implementation Quality Gates</section>
+        <snippet>Non-negotiable: 80% line coverage, 70% mutation score, all architecture tests pass.</snippet>
+      </doc>
+      <doc>
+        <path>CLAUDE.md</path>
+        <title>Project Instructions</title>
+        <section>Build Commands</section>
+        <snippet>./gradlew clean build, ./gradlew koverVerify, ./gradlew pitest, ./gradlew :koverHtmlReport</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>build-logic/conventions/src/main/kotlin/eaf.test-conventions.gradle.kts</path>
+        <kind>gradle-convention</kind>
+        <symbol>kover.reports.verify</symbol>
+        <lines>10-26</lines>
+        <reason>Kover configuration with 80% minBound threshold, JUnit 6 test configuration, Konsist dependency</reason>
+      </artifact>
+      <artifact>
+        <path>build-logic/conventions/src/main/kotlin/eaf.pitest-conventions.gradle.kts</path>
+        <kind>gradle-convention</kind>
+        <symbol>PitestPluginExtension</symbol>
+        <lines>11-20</lines>
+        <reason>Pitest configuration with 70% mutationThreshold, target classes de.acci.eaf.* and de.acci.dvmm.*</reason>
+      </artifact>
+      <artifact>
+        <path>build.gradle.kts</path>
+        <kind>gradle-root</kind>
+        <symbol>kover.reports</symbol>
+        <lines>20-54</lines>
+        <reason>Root Kover aggregation for merged coverage report across all EAF and DVMM modules</reason>
+      </artifact>
+      <artifact>
+        <path>dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ArchitectureTest.kt</path>
+        <kind>test</kind>
+        <symbol>ArchitectureTest</symbol>
+        <lines>1-104</lines>
+        <reason>Konsist architecture tests enforcing ADR-001 module boundaries, run as part of test task</reason>
+      </artifact>
+      <artifact>
+        <path>.github/dependabot.yml</path>
+        <kind>github-config</kind>
+        <symbol>updates</symbol>
+        <lines>1-12</lines>
+        <reason>Existing GitHub configuration for Gradle dependency updates</reason>
+      </artifact>
+      <artifact>
+        <path>gradle/libs.versions.toml</path>
+        <kind>version-catalog</kind>
+        <symbol>versions</symbol>
+        <lines>1-23</lines>
+        <reason>Version catalog with kover=0.9.3, pitest=1.17.4, konsist=0.17.3, junit=6.0.1</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="gradle">
+        <dependency>org.jetbrains.kotlin.jvm:2.2.21</dependency>
+        <dependency>org.springframework.boot:3.5.8</dependency>
+        <dependency>org.jetbrains.kotlinx.kover:0.9.3</dependency>
+        <dependency>info.solidsoft.pitest:1.19.0-rc.2</dependency>
+        <dependency>com.lemonappdev:konsist:0.17.3</dependency>
+        <dependency>org.junit.jupiter:junit-jupiter:6.0.1</dependency>
+        <dependency>org.testcontainers:testcontainers-bom:2.0.2</dependency>
+        <dependency>org.pitest:pitest:1.17.4</dependency>
+      </ecosystem>
+      <ecosystem name="runtime">
+        <dependency>JDK 21 (Temurin)</dependency>
+        <dependency>PostgreSQL 16</dependency>
+      </ecosystem>
+      <ecosystem name="github-actions">
+        <dependency>actions/checkout@v4</dependency>
+        <dependency>actions/setup-java@v4</dependency>
+        <dependency>actions/cache@v4</dependency>
+        <dependency>actions/upload-artifact@v4</dependency>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="quality-gate">Line coverage must be >= 80% (enforced by Kover koverVerify task)</constraint>
+    <constraint type="quality-gate">Mutation score must be >= 70% (enforced by Pitest mutationThreshold)</constraint>
+    <constraint type="architecture">All Konsist architecture rules must pass (ADR-001 enforcement)</constraint>
+    <constraint type="pipeline">Pipeline MUST fail if ANY gate fails - no exceptions</constraint>
+    <constraint type="branch-protection">Main branch requires PR with passing CI status checks</constraint>
+    <constraint type="pattern">Use actions/cache for Gradle packages to minimize build time</constraint>
+    <constraint type="artifact">Coverage and mutation reports must be uploaded as workflow artifacts</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GitHub Actions Workflow Triggers</name>
+      <kind>workflow-trigger</kind>
+      <signature>on: push: branches: [main] / pull_request: branches: [main]</signature>
+      <path>.github/workflows/ci.yml</path>
+    </interface>
+    <interface>
+      <name>Gradle Build Task</name>
+      <kind>gradle-task</kind>
+      <signature>./gradlew build -x test</signature>
+      <path>build.gradle.kts</path>
+    </interface>
+    <interface>
+      <name>Gradle Test Task</name>
+      <kind>gradle-task</kind>
+      <signature>./gradlew test</signature>
+      <path>eaf.test-conventions.gradle.kts</path>
+    </interface>
+    <interface>
+      <name>Kover Coverage Verification</name>
+      <kind>gradle-task</kind>
+      <signature>./gradlew koverVerify (fails if &lt;80%)</signature>
+      <path>eaf.test-conventions.gradle.kts</path>
+    </interface>
+    <interface>
+      <name>Kover HTML Report</name>
+      <kind>gradle-task</kind>
+      <signature>./gradlew :koverHtmlReport (root aggregated report)</signature>
+      <path>build.gradle.kts</path>
+    </interface>
+    <interface>
+      <name>Pitest Mutation Testing</name>
+      <kind>gradle-task</kind>
+      <signature>./gradlew pitest (fails if &lt;70%)</signature>
+      <path>eaf.pitest-conventions.gradle.kts</path>
+    </interface>
+    <interface>
+      <name>GitHub Branch Protection API</name>
+      <kind>manual-config</kind>
+      <signature>Settings -> Branches -> Add rule for main</signature>
+      <path>N/A (GitHub web UI)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Workflow YAML files cannot be unit tested directly. Verification is done by running actual builds
+      with passing and failing scenarios. Quality gate thresholds are already configured in convention
+      plugins (eaf.test-conventions.gradle.kts, eaf.pitest-conventions.gradle.kts) and enforced via
+      Gradle task failures. Architecture tests run as part of the standard test task via Konsist.
+    </standards>
+    <locations>
+      <location>.github/workflows/ (workflow files)</location>
+      <location>dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ (Konsist tests)</location>
+      <location>build/reports/kover/html/ (coverage reports)</location>
+      <location>*/build/reports/pitest/ (mutation reports)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Push a PR with all tests passing - verify pipeline succeeds and all steps complete</idea>
+      <idea ac="AC2">Push a PR with a failing unit test - verify pipeline fails at test step</idea>
+      <idea ac="AC2">Push a PR with coverage below 80% - verify pipeline fails at koverVerify step</idea>
+      <idea ac="AC2">Push a PR with mutation score below 70% - verify pipeline fails at pitest step</idea>
+      <idea ac="AC2">Push a PR with Konsist rule violation - verify pipeline fails at test step</idea>
+      <idea ac="AC3">Verify coverage-report artifact contains Kover HTML report</idea>
+      <idea ac="AC3">Verify mutation-report artifact contains Pitest HTML report</idea>
+      <idea ac="AC4">Attempt to merge PR with failed CI - verify merge blocked</idea>
+      <idea ac="AC5">Attempt direct push to main - verify push rejected (after branch protection enabled)</idea>
+    </ideas>
+  </tests>
+</story-context>

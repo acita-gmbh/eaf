@@ -94,11 +94,14 @@ class ArchitectureTest {
 
         allModules.flatMap { module ->
             Konsist.scopeFromModule(module).classes().withNameEndingWith("Test")
-        }.forEach { clazz ->
-            // Check that path contains test source directory marker
-            assert(clazz.path.contains("/src/test/")) {
-                "Class ${clazz.name} with Test suffix should be in test source set, but found at: ${clazz.path}"
-            }
         }
+            // Exclude annotation classes (e.g., @VcsimTest meta-annotation in eaf-testing)
+            .filterNot { it.hasAnnotationModifier }
+            .forEach { clazz ->
+                // Check that path contains test source directory marker
+                assert(clazz.path.contains("/src/test/")) {
+                    "Class ${clazz.name} with Test suffix should be in test source set, but found at: ${clazz.path}"
+                }
+            }
     }
 }

@@ -228,25 +228,60 @@ public class VcsimTestFixture(
     )
 
     /**
-     * Creates an HTTP client that trusts all SSL certificates.
+     * Creates an HTTP client that trusts all SSL certificates and skips hostname verification.
      *
      * **WARNING: This is ONLY safe for testing with VCSIM's self-signed certificates.**
      * **NEVER use this pattern in production code as it disables all certificate validation.**
+     *
+     * Note: In CI environments (GitHub Actions), the container may be accessed via an IP address
+     * that doesn't match the certificate's Subject Alternative Name (SAN), requiring disabled
+     * hostname verification in addition to disabled certificate validation.
+     *
+     * ## Why system property instead of SSLParameters?
+     *
+     * Java's HttpClient (since Java 11) doesn't expose a HostnameVerifier API like the older
+     * HttpsURLConnection. While SSLParameters.setEndpointIdentificationAlgorithm(null) should
+     * theoretically disable hostname verification, the HttpClient implementation may override
+     * these settings internally. The JDK-internal system property is the only reliable way
+     * to disable hostname verification for Java's HttpClient across all Java 11+ versions.
+     *
+     * The global side effect is acceptable here because:
+     * 1. VcsimTestFixture is test-only code (in eaf-testing module)
+     * 2. Test JVMs are isolated per Gradle worker
+     * 3. No production code depends on this module
      */
     private fun createInsecureJavaHttpClient(): HttpClient {
-        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-            override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        })
+        // JDK-internal property to disable hostname verification for HttpClient.
+        // Required because HttpClient doesn't support custom HostnameVerifier.
+        // See: https://bugs.openjdk.org/browse/JDK-8213309
+        val propertyName = "jdk.internal.httpclient.disableHostnameVerification"
+        val originalValue = System.getProperty(propertyName)
 
-        val sslContext = SSLContext.getInstance("TLS").apply {
-            init(null, trustAllCerts, java.security.SecureRandom())
+        try {
+            System.setProperty(propertyName, "true")
+
+            @Suppress("EmptyFunctionBlock") // Intentionally trust all certificates for VCSIM testing
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+
+            val sslContext = SSLContext.getInstance("TLS").apply {
+                init(null, trustAllCerts, java.security.SecureRandom())
+            }
+
+            return HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build()
+        } finally {
+            // Restore original property value to minimize global side effects
+            if (originalValue != null) {
+                System.setProperty(propertyName, originalValue)
+            } else {
+                System.clearProperty(propertyName)
+            }
         }
-
-        return HttpClient.newBuilder()
-            .sslContext(sslContext)
-            .build()
     }
 }
 

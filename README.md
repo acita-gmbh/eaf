@@ -112,9 +112,12 @@ cd eaf
 # Run tests only
 ./gradlew test
 
-# Generate coverage report
-./gradlew jacocoTestReport
-# Report: build/reports/jacoco/test/html/index.html
+# Generate merged coverage report (all modules)
+./gradlew :koverHtmlReport
+# Report: build/reports/kover/html/index.html
+
+# Verify coverage threshold (≥80%)
+./gradlew koverVerify
 
 # Run mutation testing
 ./gradlew pitest
@@ -139,12 +142,37 @@ cd eaf
 
 All quality gates are enforced in CI and block merges if not met:
 
-| Gate | Threshold | Tool |
-|------|-----------|------|
-| Test Coverage | ≥80% | JaCoCo |
-| Mutation Score | ≥70% | Pitest |
-| Architecture Rules | All pass | Konsist |
-| Security Scan | Zero critical | OWASP |
+| Gate | Threshold | Tool | Gradle Task |
+|------|-----------|------|-------------|
+| Test Coverage | ≥80% | Kover | `./gradlew koverVerify` |
+| Mutation Score | ≥70% | Pitest | `./gradlew pitest` |
+| Architecture Rules | All pass | Konsist | `./gradlew test` |
+
+### CI Pipeline
+
+The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) runs on every push to `main` and every PR:
+
+1. **Build** - Compile all modules
+2. **Test** - Unit and integration tests (Testcontainers)
+3. **Coverage** - Kover verification (≥80%)
+4. **Mutation** - Pitest mutation testing (≥70%)
+
+Reports are uploaded as workflow artifacts (coverage-report, mutation-report).
+
+### Branch Protection
+
+The `main` branch is protected with these rules:
+
+- **Require pull request** before merging
+- **Require status checks** - CI pipeline must pass
+- **Require branches to be up to date** before merging
+- Direct push to main is **rejected**
+
+To configure (GitHub → Settings → Branches → Add rule for `main`):
+1. Enable "Require a pull request before merging"
+2. Enable "Require status checks to pass before merging"
+3. Add `build-and-quality-gates` as required status check
+4. Enable "Require branches to be up to date before merging"
 
 ### Architecture Rules (ADR-001)
 
