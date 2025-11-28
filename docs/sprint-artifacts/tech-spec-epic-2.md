@@ -891,7 +891,7 @@ dvmm:
 |---------|------------|
 | bootJar/jar Config | Check `tasks.named("bootJar") { enabled = true/false }` in `build.gradle.kts` |
 | Security Headers | Ensure CORS, CSRF configuration in SecurityConfig |
-| Logging verbessern | Use structured logging with context (tenantId, requestId) |
+| Improve logging | Use structured logging with context (tenantId, requestId) |
 | Test Naming | Follow `should X when Y` or backtick convention |
 
 ### 12.4 Critical Risk: Frontend Tracer Bullet

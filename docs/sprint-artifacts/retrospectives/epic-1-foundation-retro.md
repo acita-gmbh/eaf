@@ -78,7 +78,7 @@ Two modules have temporary coverage exclusions that must be resolved:
 |---------|-----------------|------------|
 | bootJar/jar Config | 1.2, 1.8 | Convention Plugin improvement |
 | Security Headers | 1.7 | CORS, CSRF configuration |
-| Logging verbessern | 1.3, 1.6 | Structured Logging patterns |
+| Improve logging | 1.3, 1.6 | Structured Logging patterns |
 | Test Naming | 1.4, 1.8 | Konsist Rules enforcement |
 
 ### 3. Documentation Gaps
