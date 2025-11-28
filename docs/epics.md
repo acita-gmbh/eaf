@@ -705,7 +705,7 @@ So that I can access DVMM securely with my company credentials.
 - **Action Required:**
   1. Add Keycloak Testcontainer integration tests for `KeycloakIdentityProvider`
   2. Achieve ≥80% test coverage for `eaf-auth-keycloak` module
-  3. Remove the `kover { ... }` override block in `eaf/eaf-auth-keycloak/build.gradle.kts`
+  3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `eaf/eaf-auth-keycloak/build.gradle.kts`
 - Reason: Story 1.7 created the implementation, but testing requires Keycloak Testcontainer setup
 
 **Module 2: `dvmm-api`**
@@ -716,7 +716,7 @@ So that I can access DVMM securely with my company credentials.
      - Unauthenticated /actuator/health requests are allowed
      - Authenticated requests with valid JWT succeed
   2. Achieve ≥80% test coverage for `dvmm-api` module
-  3. Remove the `kover { ... }` override block in `dvmm/dvmm-api/build.gradle.kts`
+  3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `dvmm/dvmm-api/build.gradle.kts`
 - Reason: SecurityConfig.securityWebFilterChain() requires Spring Security WebFlux integration testing with Keycloak
 
 **Frontend Tracer Bullet Note:**
