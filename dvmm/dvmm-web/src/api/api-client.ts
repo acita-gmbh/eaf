@@ -9,10 +9,27 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
-let csrfToken: string | null = null
+/**
+ * Reads CSRF token directly from the XSRF-TOKEN cookie.
+ * Reading fresh from cookie prevents staleness in multi-tab scenarios
+ * and ensures token rotation is properly handled.
+ *
+ * @returns The CSRF token value or null if not found
+ */
+function getCsrfTokenFromCookie(): string | null {
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'XSRF-TOKEN') {
+      return value
+    }
+  }
+  return null
+}
 
 /**
- * Fetches CSRF token from the backend and stores it.
+ * Fetches CSRF token from the backend.
+ * This triggers the backend to set the XSRF-TOKEN cookie.
  * Should be called after successful authentication.
  */
 export async function fetchCsrfToken(accessToken: string): Promise<void> {
@@ -27,32 +44,23 @@ export async function fetchCsrfToken(accessToken: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Failed to fetch CSRF token: ${response.status}`)
   }
-
-  // Read the XSRF-TOKEN cookie (set by the backend)
-  // Note: This only works if the cookie is NOT httpOnly
-  const cookies = document.cookie.split(';')
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=')
-    if (name === 'XSRF-TOKEN') {
-      csrfToken = value
-      break
-    }
-  }
+  // Cookie is set by the backend response - no need to store locally
 }
 
 /**
- * Gets the current CSRF token.
+ * Gets the current CSRF token from cookie.
  */
 export function getCsrfToken(): string | null {
-  return csrfToken
+  return getCsrfTokenFromCookie()
 }
 
 /**
  * Clears the stored CSRF token.
- * Should be called on logout.
+ * Note: This doesn't clear the cookie itself, just for API consistency.
+ * The cookie will be cleared by the backend on logout.
  */
 export function clearCsrfToken(): void {
-  csrfToken = null
+  // Cookie is managed by the backend - nothing to clear locally
 }
 
 /**
@@ -70,8 +78,12 @@ export function createApiHeaders(
     'Content-Type': 'application/json',
   }
 
-  if (includeCsrf && csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken
+  if (includeCsrf) {
+    // Read fresh from cookie to handle token rotation and multi-tab scenarios
+    const token = getCsrfTokenFromCookie()
+    if (token) {
+      headers['X-XSRF-TOKEN'] = token
+    }
   }
 
   return headers

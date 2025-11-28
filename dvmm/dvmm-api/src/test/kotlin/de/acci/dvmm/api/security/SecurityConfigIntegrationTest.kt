@@ -62,8 +62,18 @@ class SecurityConfigIntegrationTest {
             return NimbusReactiveJwtDecoder.withJwkSetUri(jwksUri).build()
         }
 
-        @Bean
-        fun testController(): TestEndpointController = TestEndpointController()
+        /**
+         * Test controller to provide endpoints for security testing.
+         * Nested inside TestConfig to prevent accidental use outside tests.
+         */
+        @RestController
+        class TestEndpointController {
+            @GetMapping("/api/test")
+            fun test(): String = "OK"
+
+            @PostMapping("/api/test")
+            fun postTest(): String = "POST OK"
+        }
     }
 
     @Test
@@ -232,17 +242,4 @@ class SecurityConfigIntegrationTest {
             .expectStatus().isForbidden
             .expectHeader().valueEquals("X-CSRF-Error", "Missing CSRF cookie")
     }
-}
-
-/**
- * Test controller to provide endpoints for security testing.
- */
-@RestController
-class TestEndpointController {
-
-    @GetMapping("/api/test")
-    fun test(): String = "OK"
-
-    @PostMapping("/api/test")
-    fun postTest(): String = "POST OK"
 }

@@ -153,10 +153,10 @@ so that I can access DVMM securely with my company credentials.
   - [ ] Handle callback from Keycloak, store tokens
 
 - [ ] **Task 6: Implement session management** (AC: 2, 4)
-  - [ ] Configure httpOnly cookie storage for tokens
+  - [ ] Configure react-oidc-context token storage (browser sessionStorage)
   - [ ] Implement transparent token refresh before expiration
   - [ ] Handle refresh failure (redirect to login)
-  - [ ] Display user name and tenant in header component
+  - [ ] Display username and tenant in header component
 
 - [ ] **Task 7: Implement logout** (AC: 3)
   - [ ] Create logout button in header
@@ -180,9 +180,9 @@ so that I can access DVMM securely with my company credentials.
 
 - **Relevant architecture patterns:**
   - OIDC Authorization Code Flow with PKCE
-  - httpOnly cookies for token storage (XSS mitigation)
-  - CSRF token validation (CSRF mitigation)
-  - BFF pattern: API validates tokens, frontend handles OIDC flow
+  - Client-side SPA pattern: Frontend handles OIDC flow, tokens in browser storage
+  - CSRF double-submit cookie pattern (XSRF-TOKEN cookie + X-XSRF-TOKEN header)
+  - API Resource Server: Backend validates JWT tokens on each request
 
 - **Source tree components to touch:**
   - `eaf/eaf-testing/` — Keycloak Testcontainer fixture
