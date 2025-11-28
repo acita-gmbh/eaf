@@ -188,8 +188,9 @@ CREATE POLICY tenant_isolation ON vm_requests
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 -- Verbindungskontext (pro Anfrage gesetzt, NICHT im Connection Pool Init)
--- Hinweis: Pseudocode - tatsächliche Implementierung verwendet parametrisierte Abfragen
-SET LOCAL app.tenant_id = $1;  -- Bind-Parameter aus Anwendungscode
+-- Hinweis: SET LOCAL unterstützt keine Bind-Parameter. UUID wird im App-Code
+-- validiert und sicher quotiert. Beispiel mit validierter tenantId:
+SET LOCAL app.tenant_id = '123e4567-e89b-12d3-a456-426614174000';
 ```
 
 **Kritische Designentscheidung:**
@@ -559,7 +560,7 @@ Basierend auf dem Serviceportfolio von Strong IT und unseren Projektanforderunge
 | NFR-SEC-1 | TLS-Verschlüsselung | 100% des Datenverkehrs |
 | NFR-SEC-2 | OIDC-Authentifizierung | Erforderlich |
 | NFR-SEC-3 | Mandantenisolierung (RLS) | Datenbankgestützt |
-| NFR-SEC-4 | Session-Timeout | 30 Min. Inaktivität |
+| NFR-SEC-4 | Session-Timeout | 30 Min. Inaktivität (App-Level, unabhängig von 1h Token-Lifetime) |
 | NFR-SEC-5 | Passwortrichtlinie | Keycloak-verwaltet |
 | NFR-SEC-6 | API-Rate-Limiting | 100 Req/Min/Benutzer |
 | NFR-SEC-7 | Eingabevalidierung | Alle Endpoints |
