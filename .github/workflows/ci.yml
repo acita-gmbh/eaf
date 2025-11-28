@@ -53,8 +53,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build (compile without tests)
-        run: ./gradlew assemble --no-daemon
+      - name: Build (compile main + test sources)
+        run: ./gradlew build -x test --no-daemon
 
       - name: Unit & Integration Tests
         run: ./gradlew test --no-daemon
