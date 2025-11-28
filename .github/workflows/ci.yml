@@ -54,7 +54,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build (compile main + test sources)
-        run: ./gradlew build -x test --no-daemon
+        run: ./gradlew assemble compileTestKotlin --no-daemon
 
       - name: Unit & Integration Tests
         run: ./gradlew test --no-daemon

@@ -163,7 +163,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Build
-        run: ./gradlew build -x test
+        run: ./gradlew assemble compileTestKotlin
 
       - name: Unit Tests
         run: ./gradlew test
