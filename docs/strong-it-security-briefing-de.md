@@ -155,7 +155,7 @@ Benutzer → Keycloak Login → JWT-Token → DVMM API-Validierung
 | Aspekt | Implementierung |
 |--------|-----------------|
 | Speicherung | httpOnly Cookie (Secure, SameSite=Lax) |
-| Access-Token-Ablauf | 1 Stunde |
+| Access-Token-Ablauf | 30 Minuten |
 | Refresh-Token-Ablauf | 8 Stunden |
 | Validierung | Bei jeder Anfrage (Signatur + Ablauf) |
 | CSRF-Schutz | X-CSRF-Token Header |

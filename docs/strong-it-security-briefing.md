@@ -155,7 +155,7 @@ User → Keycloak Login → JWT Token → DVMM API Validation
 | Aspect | Implementation |
 |--------|----------------|
 | Storage | httpOnly cookie (Secure, SameSite=Lax) |
-| Access Token Expiration | 1 hour |
+| Access Token Expiration | 30 minutes |
 | Refresh Token Expiration | 8 hours |
 | Validation | Every request (signature + expiry) |
 | CSRF Protection | X-CSRF-Token header |
