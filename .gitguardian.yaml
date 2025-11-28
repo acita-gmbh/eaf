@@ -1,0 +1,14 @@
+# GitGuardian configuration
+# https://docs.gitguardian.com/ggshield-docs/reference/configuration
+
+# Paths to ignore for secret scanning
+paths-ignore:
+  # Test fixtures containing intentional test credentials
+  - "**/test-realm.json"
+  - "**/src/test/**"
+  - "**/src/testFixtures/**"
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/e2e/**"
+  - "**/playwright-report/**"
+  - "**/test-results/**"

@@ -1,13 +1,26 @@
 plugins {
     id("eaf.kotlin-conventions")
     id("eaf.logging-conventions")
+    id("eaf.spring-conventions")
     id("eaf.test-conventions")
     id("java-test-fixtures")
+}
+
+// eaf-testing is a library module, not an executable application
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    enabled = false
+}
+
+tasks.named<Jar>("jar") {
+    enabled = true
 }
 
 // eaf-testing: Test utilities for EAF-based applications
 dependencies {
     api(project(":eaf:eaf-core"))
+
+    // Spring WebFlux for test WebClient
+    api(libs.spring.boot.webflux)
 
     // JUnit 6 BOM for consistent versioning
     api(platform(libs.junit.bom))
@@ -15,6 +28,7 @@ dependencies {
     // Testing utilities exposed as API for consumers
     api(libs.junit.jupiter)
     api(libs.junit.platform.launcher)
+    api(libs.junit.platform.engine)
     api(libs.mockk)
 
     // Testcontainers 2.x

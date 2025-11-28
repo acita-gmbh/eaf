@@ -481,7 +481,9 @@ CREATE TABLE "REQUEST_TIMELINE_EVENTS" (
     "EVENT_TYPE" VARCHAR(50) NOT NULL,
     "ACTOR_ID" UUID,
     "ACTOR_NAME" VARCHAR(255),
+    -- [jooq ignore start]
     "DETAILS" JSONB,
+    -- [jooq ignore stop]
     "OCCURRED_AT" TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
@@ -780,15 +782,17 @@ Story 2.1 (Keycloak Login) ──┬──▶ Story 2.2 (Dashboard)
 **Logging Standards:**
 
 ```kotlin
-// Structured logging with context
-logger.info {
-    "VM request created" to mapOf(
-        "requestId" to requestId.value,
-        "tenantId" to tenantId.value,
-        "vmName" to vmName.value,
-        "size" to size.name
-    )
-}
+// Structured logging with kotlin-logging (mu.KotlinLogging)
+logger.info { "VM request created: requestId=${requestId.value}, tenantId=${tenantId.value}, vmName=${vmName.value}, size=${size.name}" }
+
+// Alternative: SLF4J with Logback structured arguments
+import net.logstash.logback.argument.StructuredArguments.kv
+logger.info("VM request created",
+    kv("requestId", requestId.value),
+    kv("tenantId", tenantId.value),
+    kv("vmName", vmName.value),
+    kv("size", size.name)
+)
 ```
 
 ### 6.6 Reliability
@@ -828,12 +832,23 @@ CREATE TABLE "EMAIL_DEAD_LETTER" (
     "TENANT_ID" UUID NOT NULL,
     "TEMPLATE" VARCHAR(50) NOT NULL,
     "RECIPIENT" VARCHAR(255) NOT NULL,
+    -- [jooq ignore start]
     "PAYLOAD" JSONB NOT NULL,
+    -- [jooq ignore stop]
     "ERROR_MESSAGE" TEXT NOT NULL,
     "RETRY_COUNT" INT NOT NULL,
     "CREATED_AT" TIMESTAMP WITH TIME ZONE NOT NULL,
     "LAST_RETRY_AT" TIMESTAMP WITH TIME ZONE
 );
+
+-- [jooq ignore start]
+ALTER TABLE "EMAIL_DEAD_LETTER" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "EMAIL_DEAD_LETTER" FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON "EMAIL_DEAD_LETTER"
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+-- [jooq ignore stop]
+
+CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "CREATED_AT");
 ```
 
 ---

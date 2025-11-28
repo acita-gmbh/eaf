@@ -10,6 +10,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsConfigurationSource
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
+import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler
 
 /**
  * Spring Security configuration for DVMM API.
@@ -43,11 +45,16 @@ public class SecurityConfig(
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
         return http
-            .csrf { it.disable() }
+            .csrf { csrf ->
+                csrf
+                    .csrfTokenRepository(csrfTokenRepository())
+                    .csrfTokenRequestHandler(csrfTokenRequestHandler())
+            }
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeExchange { auth ->
                 auth
                     .pathMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                    .pathMatchers("/api/csrf").authenticated()
                     .pathMatchers("/api/**").authenticated()
                     .anyExchange().authenticated()
             }
@@ -57,6 +64,28 @@ public class SecurityConfig(
                 }
             }
             .build()
+    }
+
+    /**
+     * CSRF token repository using cookies.
+     *
+     * Uses HttpOnly=false so JavaScript can read the XSRF-TOKEN cookie
+     * and send it back as X-XSRF-TOKEN header.
+     */
+    @Bean
+    public fun csrfTokenRepository(): CookieServerCsrfTokenRepository {
+        return CookieServerCsrfTokenRepository.withHttpOnlyFalse()
+    }
+
+    /**
+     * CSRF token request handler.
+     *
+     * Uses the standard handler that compares the cookie value
+     * with the X-XSRF-TOKEN header value.
+     */
+    @Bean
+    public fun csrfTokenRequestHandler(): ServerCsrfTokenRequestAttributeHandler {
+        return ServerCsrfTokenRequestAttributeHandler()
     }
 
     /**

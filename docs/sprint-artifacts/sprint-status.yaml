@@ -127,7 +127,7 @@ development_status:
   # Starts Sprint 4 with Story 2.1
   # ═══════════════════════════════════════════════════════════════════════════
   epic-2: contexted                          # Tech spec created (tech-spec-epic-2.md) 2025-11-28
-  2-1-keycloak-login-flow: backlog           # Sprint 4 (Epic 2 Start)
+  2-1-keycloak-login-flow: review            # Sprint 4 (Epic 2 Start) - Ready for review 2025-11-28
   2-2-end-user-dashboard-layout: backlog
   2-3-empty-states-onboarding: backlog
   2-4-vm-request-form-basic-fields: backlog
