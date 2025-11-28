@@ -39,3 +39,14 @@ kover {
         }
     }
 }
+
+// =============================================================================
+// PITEST CONFIGURATION - Disable Mutation Testing for Bootstrap Module
+// =============================================================================
+// dvmm-app only contains the Spring Boot main() function which is untestable
+// bootstrap code. There's no meaningful code to mutation test.
+// Pitest fails with 0% score when all classes are excluded or have no mutations.
+// =============================================================================
+tasks.named("pitest") {
+    enabled = false
+}
