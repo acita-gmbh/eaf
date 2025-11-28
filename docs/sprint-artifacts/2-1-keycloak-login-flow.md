@@ -1,6 +1,6 @@
 # Story 2.1: Keycloak Login Flow
 
-Status: drafted
+Status: ready-for-dev
 
 ## Story
 
@@ -239,7 +239,7 @@ so that I can access DVMM securely with my company credentials.
 
 ### Context Reference
 
-<!-- Path(s) to story context XML will be added here by context workflow -->
+- `docs/sprint-artifacts/2-1-keycloak-login-flow.context.xml`
 
 ### Agent Model Used
 

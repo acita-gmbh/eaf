@@ -1,0 +1,278 @@
+<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Keycloak Login Flow</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-1-keycloak-login-flow.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>end user</asA>
+    <iWant>log in via Keycloak SSO</iWant>
+    <soThat>I can access DVMM securely with my company credentials</soThat>
+    <tasks>
+      <task id="1" ac="6,7,8">Setup Keycloak Testcontainer
+        <subtask>Add Keycloak Testcontainer dependency to eaf-testing module</subtask>
+        <subtask>Create KeycloakTestcontainer fixture (realm import, test users)</subtask>
+        <subtask>Configure test realm JSON with dvmm realm, clients, users</subtask>
+        <subtask>Verify Testcontainer starts and accepts logins</subtask>
+      </task>
+      <task id="2" ac="6,8">Write eaf-auth-keycloak integration tests
+        <subtask>Create KeycloakIdentityProviderIntegrationTest</subtask>
+        <subtask>Test: getUserInfo() returns correct user details</subtask>
+        <subtask>Test: getTenantId() extracts tenant_id claim correctly</subtask>
+        <subtask>Test: Invalid token throws appropriate exception</subtask>
+        <subtask>Achieve ≥80% coverage on eaf-auth-keycloak</subtask>
+        <subtask>Remove koverVerify exclusion from build.gradle.kts</subtask>
+        <subtask>Restore Pitest threshold, achieve ≥70% mutation score</subtask>
+      </task>
+      <task id="3" ac="7">Write dvmm-api SecurityConfig tests
+        <subtask>Create SecurityConfigIntegrationTest with WebTestClient</subtask>
+        <subtask>Test: GET /api/** without token returns 401</subtask>
+        <subtask>Test: GET /actuator/health without token returns 200</subtask>
+        <subtask>Test: GET /api/** with valid JWT returns 200</subtask>
+        <subtask>Test: POST /api/** without CSRF token returns 403</subtask>
+        <subtask>Test: POST /api/** with valid CSRF token succeeds</subtask>
+        <subtask>Achieve ≥80% coverage on dvmm-api</subtask>
+        <subtask>Remove koverVerify exclusion from build.gradle.kts</subtask>
+      </task>
+      <task id="4" ac="1,2,3,4">Initialize frontend application
+        <subtask>Create dvmm/dvmm-web/ with Vite + React + TypeScript</subtask>
+        <subtask>Add shadcn/ui with Tailwind CSS (Tech Teal theme)</subtask>
+        <subtask>Configure react-oidc-context for Keycloak integration</subtask>
+        <subtask>Setup environment variables for Keycloak URL, realm, client</subtask>
+      </task>
+      <task id="5" ac="1,2">Implement login flow
+        <subtask>Create AuthProvider wrapper with Keycloak configuration</subtask>
+        <subtask>Create ProtectedRoute component</subtask>
+        <subtask>Implement login redirect to Keycloak</subtask>
+        <subtask>Handle callback from Keycloak, store tokens</subtask>
+      </task>
+      <task id="6" ac="2,4">Implement session management
+        <subtask>Configure httpOnly cookie storage for tokens</subtask>
+        <subtask>Implement transparent token refresh before expiration</subtask>
+        <subtask>Handle refresh failure (redirect to login)</subtask>
+        <subtask>Display user name and tenant in header component</subtask>
+      </task>
+      <task id="7" ac="3">Implement logout
+        <subtask>Create logout button in header</subtask>
+        <subtask>Implement Keycloak logout flow</subtask>
+        <subtask>Clear local session state</subtask>
+        <subtask>Redirect to Keycloak logout endpoint</subtask>
+      </task>
+      <task id="8" ac="5">Implement CSRF protection
+        <subtask>Add CSRF token endpoint to backend (/api/csrf)</subtask>
+        <subtask>Configure frontend to fetch CSRF token on auth</subtask>
+        <subtask>Add X-CSRF-Token header to all mutation requests</subtask>
+        <subtask>Backend validates CSRF token on POST/PUT/DELETE</subtask>
+      </task>
+      <task id="9" ac="1,2,3">E2E tests with Playwright
+        <subtask>Setup Playwright with Keycloak Testcontainer</subtask>
+        <subtask>Test: Full login flow (redirect, login, callback)</subtask>
+        <subtask>Test: Session persistence across page refresh</subtask>
+        <subtask>Test: Logout clears session</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1" title="Unauthenticated redirect to Keycloak">
+      Given I navigate to DVMM root URL (/)
+      When I am not authenticated
+      Then I am redirected to Keycloak login page
+    </ac>
+    <ac id="2" title="Successful login redirects to dashboard">
+      Given I complete Keycloak login successfully
+      When Keycloak redirects back to DVMM
+      Then I see the DVMM dashboard
+      And my session is maintained via httpOnly cookie (Secure, SameSite=Lax)
+      And my name and tenant are displayed in the header
+    </ac>
+    <ac id="3" title="Logout clears session">
+      Given I am logged in
+      When I click the logout button
+      Then I am redirected to Keycloak logout
+      And my session is cleared (cookies removed)
+      And I am redirected to login page
+    </ac>
+    <ac id="4" title="Token refresh is transparent">
+      Given my JWT token expires during a session
+      When I perform any action requiring authentication
+      Then the frontend transparently refreshes the token
+      And if refresh fails, I am redirected to login
+    </ac>
+    <ac id="5" title="CSRF protection on mutations">
+      Given I am authenticated
+      When I make a state-changing request (POST/PUT/DELETE)
+      Then the request includes X-CSRF-Token header
+      And backend validates the token before processing
+    </ac>
+    <ac id="6" title="Coverage restored for eaf-auth-keycloak">
+      Given eaf-auth-keycloak has coverage verification disabled
+      When this story is complete
+      Then Keycloak Testcontainer integration tests exist
+      And module achieves ≥80% test coverage
+      And koverVerify exclusion is removed from build.gradle.kts
+    </ac>
+    <ac id="7" title="Coverage restored for dvmm-api">
+      Given dvmm-api has coverage verification disabled
+      When this story is complete
+      Then SecurityConfig integration tests exist
+      And module achieves ≥80% test coverage
+      And koverVerify exclusion is removed from build.gradle.kts
+    </ac>
+    <ac id="8" title="Pitest restored for eaf-auth-keycloak">
+      Given eaf-auth-keycloak has mutation testing disabled
+      When this story is complete
+      Then module achieves ≥70% mutation score
+      And Pitest exclusion is removed from build.gradle.kts
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/prd.md" title="Product Requirements" section="User Account &amp; Authentication">
+        FR1: Users can authenticate via Keycloak SSO (OIDC).
+        FR2: Users can log out and terminate their session.
+        FR7a: System handles Keycloak token expiration with transparent refresh.
+      </doc>
+      <doc path="docs/architecture.md" title="System Architecture" section="IdP-Agnostic Auth">
+        eaf-auth provides IdP-agnostic interfaces; eaf-auth-keycloak implements Keycloak adapter.
+        ADR-002: Pluggable identity providers for enterprise flexibility.
+      </doc>
+      <doc path="docs/security-architecture.md" title="Security Architecture" section="Authentication Architecture">
+        JWT tokens with tenant_id claim. httpOnly cookie storage (Secure, SameSite=Lax).
+        Token expiration: 1h access, 8h refresh. CSRF protection via X-CSRF-Token header.
+        Login flow: User → Keycloak → JWT → DVMM validates → Session established.
+      </doc>
+      <doc path="docs/ux-design-specification.md" title="UX Design" section="User Journeys">
+        Login via Keycloak SSO. Land on My VMs dashboard after authentication.
+        Header displays user name and logout button. Tech Teal theme (#0D9488).
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-2.md" title="Epic 2 Tech Spec" section="Section 2.1 - Authentication Flow">
+        Keycloak OIDC login/logout. Coverage restoration for eaf-auth-keycloak and dvmm-api.
+        Token Storage: httpOnly cookie with Secure and SameSite=Lax flags.
+      </doc>
+      <doc path="docs/epics.md" title="Epics" section="Story 2.1 Keycloak Login Flow">
+        Frontend Tracer Bullet - first user-facing code. Pair Programming recommended.
+        Coverage restoration required for 2 modules. FRs: FR1, FR2, FR7a.
+      </doc>
+    </docs>
+
+    <code>
+      <file path="eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/IdentityProvider.kt" kind="interface" symbol="IdentityProvider" reason="Core authentication interface - Keycloak adapter implements this">
+        suspend fun validateToken(token: String): TokenClaims
+        suspend fun getUserInfo(accessToken: String): UserInfo
+      </file>
+      <file path="eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/TokenClaims.kt" kind="data-class" symbol="TokenClaims" reason="JWT claim extraction structure with tenantId, roles, email"/>
+      <file path="eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/UserInfo.kt" kind="data-class" symbol="UserInfo" reason="User profile from OIDC UserInfo endpoint"/>
+      <file path="eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/InvalidTokenException.kt" kind="exception" symbol="InvalidTokenException" reason="Thrown for expired, invalid, or missing claims"/>
+      <file path="eaf/eaf-auth-keycloak/src/main/kotlin/de/acci/eaf/auth/keycloak/KeycloakIdentityProvider.kt" kind="implementation" symbol="KeycloakIdentityProvider" reason="Keycloak adapter - NEEDS TESTS (AC 6, 8)">
+        Uses ReactiveJwtDecoder for JWT validation.
+        Extracts tenant_id claim, realm_access and resource_access roles.
+        Current coverage: 15% - needs Keycloak Testcontainer tests.
+      </file>
+      <file path="eaf/eaf-auth-keycloak/src/main/kotlin/de/acci/eaf/auth/keycloak/KeycloakJwtAuthenticationConverter.kt" kind="converter" symbol="KeycloakJwtAuthenticationConverter" reason="Spring Security converter for Keycloak JWT"/>
+      <file path="eaf/eaf-auth-keycloak/build.gradle.kts" kind="build-config" lines="22-27" reason="koverVerify and pitest disabled - MUST BE REMOVED">
+        tasks.named("koverVerify") { enabled = false }
+        tasks.named("pitest") { enabled = false }
+      </file>
+      <file path="dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt" kind="config" symbol="SecurityConfig" reason="Spring Security WebFlux config - NEEDS TESTS (AC 7)">
+        OAuth2 Resource Server with Keycloak JWT validation.
+        /actuator/health permitAll, /api/** authenticated.
+        CSRF disabled - needs implementation for AC 5.
+        Current coverage: 54% - needs SecurityConfig integration tests.
+      </file>
+      <file path="dvmm/dvmm-api/build.gradle.kts" kind="build-config" lines="45-47" reason="koverVerify disabled - MUST BE REMOVED">
+        tasks.named("koverVerify") { enabled = false }
+      </file>
+      <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/" kind="module" reason="Keycloak Testcontainer fixture should be added here"/>
+    </code>
+
+    <dependencies>
+      <kotlin version="2.2.21"/>
+      <springBoot version="3.5.x"/>
+      <testcontainers version="2.0.2"/>
+      <testcontainersKeycloak version="4.0.0" artifact="com.github.dasniko:testcontainers-keycloak"/>
+      <junit version="6.x"/>
+      <mockk/>
+      <konsist version="0.17.3"/>
+      <kover/>
+      <pitest/>
+      <springSecurityOauth2ResourceServer/>
+      <reactorKotlinExtensions/>
+      <frontend>
+        <react/>
+        <vite/>
+        <typescript/>
+        <shadcnUi/>
+        <tailwindCss/>
+        <reactOidcContext comment="For Keycloak OIDC integration"/>
+        <playwright comment="E2E testing"/>
+      </frontend>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">EAF modules MUST NOT import de.acci.dvmm.* (Konsist enforced)</constraint>
+    <constraint type="architecture">dvmm-domain MUST NOT import org.springframework.* (Konsist enforced)</constraint>
+    <constraint type="coverage">All modules MUST achieve ≥80% line coverage (Kover)</constraint>
+    <constraint type="mutation">All modules MUST achieve ≥70% mutation score (Pitest)</constraint>
+    <constraint type="security">Token storage: httpOnly cookie with Secure, SameSite=Lax</constraint>
+    <constraint type="security">CSRF protection: X-CSRF-Token header on all mutations</constraint>
+    <constraint type="security">JWT must contain tenant_id claim for multi-tenancy</constraint>
+    <constraint type="pattern">Tests First: Write integration tests before implementation</constraint>
+    <constraint type="pattern">Frontend Tracer Bullet: Validates complete UI stack</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="IdentityProvider" kind="kotlin-interface" path="eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/IdentityProvider.kt">
+      suspend fun validateToken(token: String): TokenClaims
+      suspend fun getUserInfo(accessToken: String): UserInfo
+    </interface>
+    <interface name="SecurityWebFilterChain" kind="spring-security" path="dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt">
+      /actuator/health/** - permitAll
+      /api/** - authenticated
+      oauth2ResourceServer with Keycloak JWT
+    </interface>
+    <interface name="Keycloak OIDC" kind="external-idp">
+      Authorization endpoint: /realms/{realm}/protocol/openid-connect/auth
+      Token endpoint: /realms/{realm}/protocol/openid-connect/token
+      UserInfo endpoint: /realms/{realm}/protocol/openid-connect/userinfo
+      Logout endpoint: /realms/{realm}/protocol/openid-connect/logout
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Tests First pattern: Write integration tests before frontend implementation.
+      JUnit 6 + MockK for unit tests. Testcontainers for integration tests.
+      Keycloak Testcontainer (dasniko/testcontainers-keycloak:4.0.0) for realistic OIDC testing.
+      ≥80% line coverage (Kover), ≥70% mutation score (Pitest).
+      Contract tests for external APIs (Keycloak OIDC). E2E with Playwright.
+    </standards>
+    <locations>
+      eaf/eaf-auth-keycloak/src/test/kotlin/ - Keycloak integration tests
+      dvmm/dvmm-api/src/test/kotlin/ - SecurityConfig integration tests
+      eaf/eaf-testing/src/main/kotlin/ - Keycloak Testcontainer fixture
+      dvmm/dvmm-web/tests/ - Frontend unit tests (Vitest)
+      dvmm/dvmm-web/e2e/ - Playwright E2E tests
+    </locations>
+    <ideas>
+      <idea ac="6">KeycloakIdentityProviderIntegrationTest: validateToken() with real Keycloak token</idea>
+      <idea ac="6">KeycloakIdentityProviderIntegrationTest: getUserInfo() returns user profile</idea>
+      <idea ac="6">KeycloakIdentityProviderIntegrationTest: getTenantId() extracts claim correctly</idea>
+      <idea ac="6">KeycloakIdentityProviderIntegrationTest: Invalid token throws InvalidTokenException</idea>
+      <idea ac="7">SecurityConfigIntegrationTest: GET /api/** without token returns 401</idea>
+      <idea ac="7">SecurityConfigIntegrationTest: GET /actuator/health without token returns 200</idea>
+      <idea ac="7">SecurityConfigIntegrationTest: GET /api/** with valid JWT returns 200</idea>
+      <idea ac="5,7">SecurityConfigIntegrationTest: POST without CSRF token returns 403</idea>
+      <idea ac="5,7">SecurityConfigIntegrationTest: POST with valid CSRF token succeeds</idea>
+      <idea ac="1,2,3">Playwright E2E: Full login/logout flow with Keycloak Testcontainer</idea>
+      <idea ac="4">Frontend unit test: Token refresh logic (mock Keycloak responses)</idea>
+    </ideas>
+  </tests>
+</story-context>
