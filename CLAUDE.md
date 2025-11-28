@@ -94,9 +94,14 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
 
 ### Adding New Tables
 
+**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations (production) and jooq-init.sql (code generation).
+
 1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
-2. Update `jooq-init.sql` with the new DDL (keep in sync with migrations)
-3. Wrap PostgreSQL-specific statements with jOOQ ignore tokens:
+2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
+   - Use quoted uppercase identifiers for table/column names (jOOQ DDLDatabase uses H2 which generates uppercase)
+   - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
+3. Update `dvmm/dvmm-infrastructure/src/test/resources/db/jooq-init.sql` (test-specific version) if it exists
+4. Wrap PostgreSQL-specific statements with jOOQ ignore tokens:
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
@@ -104,7 +109,15 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
    GRANT SELECT ON my_table TO eaf_app;
    -- [jooq ignore stop]
    ```
-4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+5. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+6. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+
+**Checklist before committing:**
+- [ ] Flyway migration created (V00X__*.sql)
+- [ ] jooq-init.sql updated with H2-compatible DDL
+- [ ] PostgreSQL-specific statements wrapped with ignore tokens
+- [ ] jOOQ code regenerated
+- [ ] Tests pass with new schema
 
 ### What Gets Ignored
 

@@ -119,14 +119,14 @@ development_status:
   1-10-vcsim-integration: done               # Sprint 4 (parallel) - Code review APPROVED 2025-11-27
   1-11-cicd-quality-gates: done              # Sprint 4 (parallel) - Code review APPROVED 2025-11-28
 
-  epic-1-retrospective: optional
+  epic-1-retrospective: completed             # Retrospective completed 2025-11-28
 
   # ═══════════════════════════════════════════════════════════════════════════
   # EPIC 2: CORE WORKFLOW (12 Stories) - TRACER BULLET
   # "Request -> Approve -> Notify" - High Risk (First UI)
   # Starts Sprint 4 with Story 2.1
   # ═══════════════════════════════════════════════════════════════════════════
-  epic-2: backlog
+  epic-2: contexted                          # Tech spec created (tech-spec-epic-2.md) 2025-11-28
   2-1-keycloak-login-flow: backlog           # Sprint 4 (Epic 2 Start)
   2-2-end-user-dashboard-layout: backlog
   2-3-empty-states-onboarding: backlog
