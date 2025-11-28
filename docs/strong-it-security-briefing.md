@@ -38,7 +38,7 @@ DVMM is a **self-service portal** enabling:
 - Complete audit trail for compliance (ISO 27001)
 
 **Core Workflow:**
-```
+```text
 User Request → Approval Workflow → VM Provisioned → Notification
      ↓              ↓                    ↓               ↓
   Form UI     Admin Dashboard       VMware API       Email/Portal
@@ -68,7 +68,7 @@ DVMM is built on a reusable **Enterprise Application Framework (EAF)** containin
 
 ### 2.1 High-Level Attack Surface
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        ATTACK SURFACE                           │
 ├─────────────────────────────────────────────────────────────────┤
@@ -132,7 +132,7 @@ DVMM is built on a reusable **Enterprise Application Framework (EAF)** containin
 ### 3.1 Authentication (Keycloak OIDC)
 
 **Current Implementation:**
-```
+```text
 User → Keycloak Login → JWT Token → DVMM API Validation
          ↓
    MFA (optional)
@@ -234,7 +234,7 @@ SET LOCAL app.tenant_id = '${tenantId}';
 
 **Crypto-Shredding Pattern (GDPR Compliance):**
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐
 │   Event Store   │     │   Key Store     │
 ├─────────────────┤     ├─────────────────┤
@@ -404,7 +404,7 @@ quality_gates:
 
 ### 6.1 Monitoring Stack
 
-```
+```text
 Grafana (Dashboards) ← Prometheus (Metrics) ← DVMM API (/actuator)
         ↑
        Loki (Logs) ← Promtail (Log Shipping)
