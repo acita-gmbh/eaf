@@ -38,7 +38,7 @@ DVMM ist ein **Self-Service-Portal**, das Folgendes ermöglicht:
 - Vollständiger Audit-Trail für Compliance (ISO 27001)
 
 **Kern-Workflow:**
-```
+```text
 Benutzeranfrage → Genehmigungsworkflow → VM provisioniert → Benachrichtigung
        ↓                  ↓                     ↓                ↓
    Formular-UI      Admin-Dashboard       VMware API        E-Mail/Portal
@@ -60,7 +60,7 @@ DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EA
 - `eaf-eventsourcing` - Event Store, Projektionen, Snapshots
 - `eaf-tenant` - Multi-Tenancy mit PostgreSQL RLS
 - `eaf-auth` - IdP-agnostische Authentifizierungsschnittstellen
-- `eaf-audit` - Audit-Trail mit Crypto-Shredding-Utilities
+- `eaf-audit` - Audit-Trail mit Crypto-Shredding-Utilities *(geplant)*
 
 ---
 
@@ -68,7 +68,7 @@ DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EA
 
 ### 2.1 Angriffsfläche auf hoher Ebene
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        ANGRIFFSFLÄCHE                           │
 ├─────────────────────────────────────────────────────────────────┤
@@ -132,7 +132,7 @@ DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EA
 ### 3.1 Authentifizierung (Keycloak OIDC)
 
 **Aktuelle Implementierung:**
-```
+```text
 Benutzer → Keycloak Login → JWT-Token → DVMM API-Validierung
               ↓
         MFA (optional)
@@ -155,7 +155,7 @@ Benutzer → Keycloak Login → JWT-Token → DVMM API-Validierung
 | Aspekt | Implementierung |
 |--------|-----------------|
 | Speicherung | httpOnly Cookie (Secure, SameSite=Lax) |
-| Access-Token-Ablauf | 30 Minuten |
+| Access-Token-Ablauf | 1 Stunde |
 | Refresh-Token-Ablauf | 8 Stunden |
 | Validierung | Bei jeder Anfrage (Signatur + Ablauf) |
 | CSRF-Schutz | X-CSRF-Token Header |
@@ -188,7 +188,8 @@ CREATE POLICY tenant_isolation ON vm_requests
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 -- Verbindungskontext (pro Anfrage gesetzt, NICHT im Connection Pool Init)
-SET LOCAL app.tenant_id = '${tenantId}';
+-- Hinweis: Pseudocode - tatsächliche Implementierung verwendet parametrisierte Abfragen
+SET LOCAL app.tenant_id = $1;  -- Bind-Parameter aus Anwendungscode
 ```
 
 **Kritische Designentscheidung:**
@@ -233,7 +234,7 @@ SET LOCAL app.tenant_id = '${tenantId}';
 
 **Crypto-Shredding-Muster (DSGVO-Konformität):**
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐
 │   Event Store   │     │ Schlüsselspeicher│
 ├─────────────────┤     ├─────────────────┤
@@ -402,7 +403,7 @@ quality_gates:
 
 ### 6.1 Monitoring-Stack
 
-```
+```text
 Grafana (Dashboards) ← Prometheus (Metriken) ← DVMM API (/actuator)
         ↑
        Loki (Logs) ← Promtail (Log-Shipping)
@@ -568,6 +569,7 @@ Basierend auf dem Serviceportfolio von Strong IT und unseren Projektanforderunge
 | NFR-SEC-11 | Secrets-Management | Vault/Umgebungsvariablen |
 | NFR-SEC-12 | Abhängigkeitsscan | Null kritische CVEs |
 | NFR-SEC-13 | Penetrationstests | Jährlich |
+| NFR-SEC-14 | MFA-Unterstützung | Keycloak-bereitgestellt (Growth) |
 
 ---
 

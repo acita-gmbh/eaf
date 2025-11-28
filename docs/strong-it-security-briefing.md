@@ -60,7 +60,7 @@ DVMM is built on a reusable **Enterprise Application Framework (EAF)** containin
 - `eaf-eventsourcing` - Event Store, projections, snapshots
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS
 - `eaf-auth` - IdP-agnostic authentication interfaces
-- `eaf-audit` - Audit trail with crypto-shredding utilities
+- `eaf-audit` - Audit trail with crypto-shredding utilities *(planned)*
 
 ---
 
@@ -156,7 +156,7 @@ User → Keycloak Login → JWT Token → DVMM API Validation
 | Aspect | Implementation |
 |--------|----------------|
 | Storage | httpOnly cookie (Secure, SameSite=Lax) |
-| Access Token Expiration | 30 minutes |
+| Access Token Expiration | 1 hour |
 | Refresh Token Expiration | 8 hours |
 | Validation | Every request (signature + expiry) |
 | CSRF Protection | X-CSRF-Token header |
@@ -189,7 +189,8 @@ CREATE POLICY tenant_isolation ON vm_requests
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 
 -- Connection context (set per-request, NOT in connection pool init)
-SET LOCAL app.tenant_id = '${tenantId}';
+-- Note: Pseudocode - actual implementation uses parameterized queries
+SET LOCAL app.tenant_id = $1;  -- Bind parameter from application code
 ```
 
 **Critical Design Decision:**
@@ -570,6 +571,7 @@ Based on Strong IT's service portfolio and our project requirements, we identify
 | NFR-SEC-11 | Secrets management | Vault/env injection |
 | NFR-SEC-12 | Dependency scanning | Zero critical CVEs |
 | NFR-SEC-13 | Penetration testing | Annual |
+| NFR-SEC-14 | MFA support | Keycloak-provided (Growth) |
 
 ---
 
