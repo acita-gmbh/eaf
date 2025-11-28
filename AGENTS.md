@@ -81,8 +81,12 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
 
 ### Adding New Tables
 
+**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations and jooq-init.sql.
+
 1. Add migration to `db/migration/`
-2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql`
+2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
+   - Use quoted uppercase identifiers (jOOQ DDLDatabase uses H2)
+   - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
 3. Wrap PostgreSQL-specific statements with ignore tokens:
    ```sql
    -- [jooq ignore start]
@@ -91,6 +95,9 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
    -- [jooq ignore stop]
    ```
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+5. Verify: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+
+**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + regenerate + tests pass.
 
 ## Code Style Requirements
 
