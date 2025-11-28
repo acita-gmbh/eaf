@@ -380,6 +380,12 @@ CMD ["powershell", "-Command", "Start-Service sshd; Wait-Event"]
 
 class VcsimContainer : GenericContainer<VcsimContainer>("vmware/vcsim:latest") {
 
+    companion object {
+        // VCSIM default credentials (these are simulator defaults, not real secrets)
+        const val DEFAULT_USER = "user"
+        const val DEFAULT_PASS = "pass"
+    }
+
     init {
         withExposedPorts(8989)
         withFileSystemBind(
