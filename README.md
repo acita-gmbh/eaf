@@ -171,7 +171,7 @@ The `main` branch is protected with these rules:
 To configure (GitHub → Settings → Branches → Add rule for `main`):
 1. Enable "Require a pull request before merging"
 2. Enable "Require status checks to pass before merging"
-3. Add `build` as required status check
+3. Add `build-and-quality-gates` as required status check
 4. Enable "Require branches to be up to date before merging"
 
 ### Architecture Rules (ADR-001)

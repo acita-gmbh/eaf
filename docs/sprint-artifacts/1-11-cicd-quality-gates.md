@@ -196,7 +196,7 @@ Configure in GitHub → Repository Settings → Branches → Add rule for `main`
 
 2. **Require status checks to pass before merging**
    - Require branches to be up to date before merging
-   - Status checks: `build`
+   - Status checks: `build-and-quality-gates`
 
 3. **Do not allow bypassing the above settings**
 
