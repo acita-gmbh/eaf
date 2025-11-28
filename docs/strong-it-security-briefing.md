@@ -574,4 +574,4 @@ Based on Strong IT's service portfolio and our project requirements, we identify
 ---
 
 *Document prepared for Strong IT SOC team security partnership evaluation.*
-*Contact: [Project Lead Contact Information]*
+*Contact: Michael Walloschke, michael.walloschke@axians.de*
