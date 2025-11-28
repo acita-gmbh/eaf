@@ -228,12 +228,23 @@ public class VcsimTestFixture(
     )
 
     /**
-     * Creates an HTTP client that trusts all SSL certificates.
+     * Creates an HTTP client that trusts all SSL certificates and skips hostname verification.
      *
      * **WARNING: This is ONLY safe for testing with VCSIM's self-signed certificates.**
      * **NEVER use this pattern in production code as it disables all certificate validation.**
+     *
+     * Note: In CI environments (GitHub Actions), the container may be accessed via an IP address
+     * that doesn't match the certificate's Subject Alternative Name (SAN), requiring disabled
+     * hostname verification in addition to disabled certificate validation.
+     *
+     * Uses system property approach as HttpClient.Builder.sslParameters() doesn't reliably
+     * disable hostname verification in all Java versions.
      */
     private fun createInsecureJavaHttpClient(): HttpClient {
+        // Set system property to disable hostname verification for HttpClient
+        // This is safe because VcsimTestFixture is only used in tests
+        System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true")
+
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
             override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
             override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
