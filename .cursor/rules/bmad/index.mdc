@@ -48,32 +48,23 @@ BMAD rules have been installed to: `.cursor/rules/bmad/`
 - @bmad/bmm/agents/architect - architect
 - @bmad/bmm/agents/dev - dev
 - @bmad/bmm/agents/pm - pm
+- @bmad/bmm/agents/quick-flow-solo-dev - quick-flow-solo-dev
 - @bmad/bmm/agents/sm - sm
 - @bmad/bmm/agents/tea - tea
 - @bmad/bmm/agents/tech-writer - tech-writer
 - @bmad/bmm/agents/ux-designer - ux-designer
 
 **Workflows:**
-- @bmad/bmm/workflows/brainstorm-project - brainstorm-project
-- @bmad/bmm/workflows/domain-research - domain-research
-- @bmad/bmm/workflows/product-brief - product-brief
-- @bmad/bmm/workflows/research - research
-- @bmad/bmm/workflows/create-ux-design - create-ux-design
-- @bmad/bmm/workflows/prd - prd
-- @bmad/bmm/workflows/tech-spec - tech-spec
-- @bmad/bmm/workflows/architecture - architecture
 - @bmad/bmm/workflows/create-epics-and-stories - create-epics-and-stories
 - @bmad/bmm/workflows/implementation-readiness - implementation-readiness
 - @bmad/bmm/workflows/code-review - code-review
 - @bmad/bmm/workflows/correct-course - correct-course
 - @bmad/bmm/workflows/create-story - create-story
 - @bmad/bmm/workflows/dev-story - dev-story
-- @bmad/bmm/workflows/epic-tech-context - epic-tech-context
 - @bmad/bmm/workflows/retrospective - retrospective
 - @bmad/bmm/workflows/sprint-planning - sprint-planning
-- @bmad/bmm/workflows/story-context - story-context
-- @bmad/bmm/workflows/story-done - story-done
-- @bmad/bmm/workflows/story-ready - story-ready
+- @bmad/bmm/workflows/create-tech-spec - create-tech-spec
+- @bmad/bmm/workflows/quick-dev - quick-dev
 - @bmad/bmm/workflows/create-excalidraw-dataflow - create-excalidraw-dataflow
 - @bmad/bmm/workflows/create-excalidraw-diagram - create-excalidraw-diagram
 - @bmad/bmm/workflows/create-excalidraw-flowchart - create-excalidraw-flowchart

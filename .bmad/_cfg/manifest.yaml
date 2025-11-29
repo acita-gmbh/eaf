@@ -1,7 +1,7 @@
 installation:
   version: 6.0.0-alpha.12
-  installDate: '2025-11-24T15:31:37.786Z'
-  lastUpdated: '2025-11-24T15:31:37.786Z'
+  installDate: '2025-11-29T17:22:21.790Z'
+  lastUpdated: '2025-11-29T17:22:21.790Z'
 modules:
   - core
   - bmm
@@ -14,3 +14,8 @@ ides:
   - windsurf
   - gemini
   - antigravity
+  - rovo-dev
+  - auggie
+  - cline
+  - crush
+  - roo
