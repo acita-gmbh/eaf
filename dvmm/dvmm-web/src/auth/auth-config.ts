@@ -1,5 +1,20 @@
 import type { AuthProviderProps } from "react-oidc-context"
 
+// Validate required environment variables at module load time
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL
+const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM
+const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID
+
+if (!KEYCLOAK_URL) {
+  throw new Error('Missing required environment variable: VITE_KEYCLOAK_URL')
+}
+if (!KEYCLOAK_REALM) {
+  throw new Error('Missing required environment variable: VITE_KEYCLOAK_REALM')
+}
+if (!KEYCLOAK_CLIENT_ID) {
+  throw new Error('Missing required environment variable: VITE_KEYCLOAK_CLIENT_ID')
+}
+
 /**
  * Keycloak OIDC configuration for react-oidc-context.
  *
@@ -9,8 +24,8 @@ import type { AuthProviderProps } from "react-oidc-context"
  * - VITE_KEYCLOAK_CLIENT_ID: OIDC client ID (e.g., dvmm-web)
  */
 export const oidcConfig: AuthProviderProps = {
-  authority: `${import.meta.env.VITE_KEYCLOAK_URL}/realms/${import.meta.env.VITE_KEYCLOAK_REALM}`,
-  client_id: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+  authority: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`,
+  client_id: KEYCLOAK_CLIENT_ID,
   redirect_uri: window.location.origin,
   post_logout_redirect_uri: window.location.origin,
   scope: "openid profile email",
@@ -57,7 +72,12 @@ function parseJwtPayload(accessToken: string | undefined): Record<string, unknow
     if (!payload) return null
     const base64 = base64urlToBase64(payload)
     return JSON.parse(atob(base64))
-  } catch {
+  } catch (error) {
+    console.warn('Failed to parse JWT payload:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      tokenPresent: !!accessToken,
+      tokenLength: accessToken?.length,
+    })
     return null
   }
 }
