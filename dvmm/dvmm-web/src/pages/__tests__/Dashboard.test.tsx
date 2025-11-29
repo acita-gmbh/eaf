@@ -1,8 +1,36 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Dashboard } from '../Dashboard'
 
+// Mock localStorage for onboarding hook
+const localStorageMock = {
+  store: {} as Record<string, string>,
+  getItem: vi.fn((key: string) => localStorageMock.store[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageMock.store[key] = value
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete localStorageMock.store[key]
+  }),
+  clear: vi.fn(() => {
+    localStorageMock.store = {}
+  }),
+}
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+
 describe('Dashboard', () => {
+  beforeEach(() => {
+    localStorageMock.clear()
+    vi.clearAllMocks()
+    // Mark onboarding as complete to avoid tooltip interference with basic tests
+    localStorageMock.store['dvmm_onboarding_completed'] = 'true'
+  })
+
+  afterEach(() => {
+    localStorageMock.clear()
+  })
+
   it('displays dashboard heading', () => {
     render(<Dashboard />)
 
@@ -51,10 +79,11 @@ describe('Dashboard', () => {
     expect(screen.getByText('Provisioned VMs')).toBeInTheDocument()
   })
 
-  it('displays My Requests section with placeholder text', () => {
+  it('displays My Requests section with German empty state', () => {
     render(<Dashboard />)
 
     expect(screen.getByText('My Requests')).toBeInTheDocument()
-    expect(screen.getByText('Your VM requests will appear here')).toBeInTheDocument()
+    // German empty state text (updated in Story 2.3)
+    expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
   })
 })
