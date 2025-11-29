@@ -56,15 +56,18 @@ export function MockAuthProvider({
   children: ReactNode
   value?: Partial<MockAuthContextValue>
 }) {
-  // Merge default values with any overrides
+  // Merge default values with any overrides, guarding against null defaults
   const authValue: MockAuthContextValue = {
     ...defaultMockAuth,
     ...value,
-    // Ensure nested user object is properly merged
-    user: value.user === null ? null : {
-      ...defaultMockAuth.user,
-      ...value.user,
-    },
+    // Deep merge user object, tolerating null defaults
+    user:
+      value.user === null
+        ? null
+        : {
+            ...(defaultMockAuth.user ?? {}),
+            ...(value.user ?? {}),
+          },
   }
 
   return (
@@ -74,9 +77,20 @@ export function MockAuthProvider({
   )
 }
 
-// Create a custom hook mock for useAuth
+// Create a custom hook mock for useAuth with consistent deep-merge behavior
 export const createMockUseAuth = (overrides: Partial<MockAuthContextValue> = {}) => {
-  const mockAuth = { ...defaultMockAuth, ...overrides }
+  const mockAuth: MockAuthContextValue = {
+    ...defaultMockAuth,
+    ...overrides,
+    // Deep merge user object, matching MockAuthProvider behavior
+    user:
+      overrides.user === null
+        ? null
+        : {
+            ...(defaultMockAuth.user ?? {}),
+            ...(overrides.user ?? {}),
+          },
+  }
   return () => mockAuth
 }
 
