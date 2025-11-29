@@ -3,6 +3,7 @@
 .cifuzz-corpus/
 .codex/
 !.codex/prompts
+.claude/audio
 
 # Operating System Files
 .DS_Store
