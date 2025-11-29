@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { Button } from '@/components/ui/button'
-import { getTenantIdFromToken, getUserNameFromToken } from '@/auth/auth-config'
+import { DashboardLayout } from '@/components/layout'
+import { Dashboard } from '@/pages/Dashboard'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
-import { LogOut, User, Building2 } from 'lucide-react'
+import { User } from 'lucide-react'
 
 function App() {
   const auth = useAuth()
@@ -71,58 +72,11 @@ function App() {
     )
   }
 
-  // Authenticated - show dashboard
-  const userName = getUserNameFromToken(auth.user?.access_token)
-  const tenantId = getTenantIdFromToken(auth.user?.access_token)
-
+  // Authenticated - show dashboard with layout
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-primary">DVMM</h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Tenant info */}
-            {tenantId && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Building2 className="h-4 w-4" />
-                <span>{tenantId}</span>
-              </div>
-            )}
-
-            {/* User info */}
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>{userName}</span>
-            </div>
-
-            {/* Logout button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => auth.signoutRedirect()}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main content - Dashboard placeholder */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-2xl font-bold mb-4">My Virtual Machines</h2>
-          <p className="text-muted-foreground">
-            Welcome to DVMM! Your virtual machine requests will appear here.
-          </p>
-        </div>
-      </main>
-    </div>
+    <DashboardLayout>
+      <Dashboard />
+    </DashboardLayout>
   )
 }
 
