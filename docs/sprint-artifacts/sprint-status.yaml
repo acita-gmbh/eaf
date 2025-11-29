@@ -129,7 +129,7 @@ development_status:
   epic-2: contexted                          # Tech spec created (tech-spec-epic-2.md) 2025-11-28
   2-1-keycloak-login-flow: done              # Sprint 4 (Epic 2 Start) - Code review APPROVED 2025-11-28
   2-2-end-user-dashboard-layout: done                # Sprint 4 - Merged 2025-11-29
-  2-3-empty-states-onboarding: in-progress         # Dev started 2025-11-29
+  2-3-empty-states-onboarding: review              # PR #38 ready for review 2025-11-29
   2-4-vm-request-form-basic-fields: backlog
   2-5-vm-request-form-size-selector: backlog
   2-6-vm-request-form-submit-command: backlog
