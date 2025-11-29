@@ -40,16 +40,7 @@ export function OnboardingTooltip({
     return () => clearTimeout(timer)
   }, [])
 
-  // Handle Escape key to dismiss
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onDismiss()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onDismiss])
+  // Note: Escape key handling is provided by Radix Popover via onOpenChange
 
   // Create a virtual element for the anchor
   const virtualRef = {
@@ -68,8 +59,15 @@ export function OnboardingTooltip({
     },
   }
 
+  // Handle click-outside via Popover's onOpenChange
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      onDismiss()
+    }
+  }
+
   return (
-    <Popover open>
+    <Popover open onOpenChange={handleOpenChange}>
       <PopoverAnchor virtualRef={virtualRef} />
       <PopoverContent
         side={side}
@@ -79,6 +77,7 @@ export function OnboardingTooltip({
           className
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onInteractOutside={() => onDismiss()}
       >
         <p className="text-sm mb-3">{content}</p>
         <Button

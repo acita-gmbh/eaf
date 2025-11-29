@@ -11,7 +11,7 @@ export function RequestsPlaceholder({ onRequestVm }: RequestsPlaceholderProps) {
   const handleCtaClick = () => {
     if (onRequestVm) {
       onRequestVm()
-    } else {
+    } else if (import.meta.env.DEV) {
       // Placeholder action until routing is implemented in Story 2.4
       console.log('[RequestsPlaceholder] Navigate to VM request form')
     }

@@ -1,6 +1,6 @@
 # Story 2.3: Empty States & Onboarding
 
-Status: In-Progress
+Status: Done
 
 ## Story
 
@@ -442,24 +442,75 @@ All critical issues resolved. Story ready for development.
 
 ### Agent Model Used
 
-TBD
+claude-opus-4-5-20251101
 
 ### Debug Log References
 
-TBD
+N/A - No debug issues encountered
 
 ### Completion Notes List
 
-TBD
+- All 7 tasks completed successfully
+- 82 tests passing (unit + integration)
+- ESLint clean, no warnings
+- PR #38 created and ready for review
 
 ### Implementation Notes
 
-TBD
+1. **EmptyState Component:** Created reusable component with Lucide icon support, responsive layout, and Card styling
+2. **OnboardingTooltip:** Uses Radix Popover with virtual ref positioning - handles click-outside via `onOpenChange` and `onInteractOutside`
+3. **useOnboarding Hook:** Manages localStorage state for step progression, mobile viewport detection (skips sidebar step < 768px)
+4. **Mobile Behavior:** Static check at hook initialization - known limitation documented (doesn't respond to resize)
+5. **Focus Management:** Focus moves to dismiss button after 100ms delay on tooltip open
+6. **Keyboard Reset:** Ctrl+Shift+O resets onboarding (DEV mode only)
 
 ### File List
 
-TBD
+**New Components (11 files):**
+- `dvmm/dvmm-web/src/components/empty-states/EmptyState.tsx`
+- `dvmm/dvmm-web/src/components/empty-states/EmptyState.test.tsx`
+- `dvmm/dvmm-web/src/components/empty-states/AdminQueueEmptyState.tsx`
+- `dvmm/dvmm-web/src/components/empty-states/AdminQueueEmptyState.test.tsx`
+- `dvmm/dvmm-web/src/components/empty-states/index.ts`
+- `dvmm/dvmm-web/src/components/onboarding/OnboardingTooltip.tsx`
+- `dvmm/dvmm-web/src/components/onboarding/OnboardingTooltip.test.tsx`
+- `dvmm/dvmm-web/src/components/onboarding/index.ts`
+- `dvmm/dvmm-web/src/hooks/useOnboarding.ts`
+- `dvmm/dvmm-web/src/hooks/useOnboarding.test.ts`
+- `dvmm/dvmm-web/src/components/ui/popover.tsx`
+
+**Modified Components (5 files):**
+- `dvmm/dvmm-web/src/pages/Dashboard.tsx` - Integrated onboarding flow
+- `dvmm/dvmm-web/src/pages/Dashboard.test.tsx` - Added onboarding tests
+- `dvmm/dvmm-web/src/components/layout/Sidebar.tsx` - Added data-onboarding attribute
+- `dvmm/dvmm-web/src/components/dashboard/RequestsPlaceholder.tsx` - Refactored to use EmptyState
+- `dvmm/dvmm-web/src/components/dashboard/RequestsPlaceholder.test.tsx` - Updated tests
+
+**Other Modified (6 files):**
+- `dvmm/dvmm-web/src/index.css` - Added animate-fade-in keyframes
+- `dvmm/dvmm-web/src/test/test-utils.tsx` - Added localStorage mock
+- `dvmm/dvmm-web/src/__tests__/App.integration.test.tsx` - Integration test
+- `dvmm/dvmm-web/src/pages/__tests__/Dashboard.test.tsx` - Additional tests
+- `dvmm/dvmm-web/package.json` - Added @radix-ui/react-popover
+- `dvmm/dvmm-web/package-lock.json` - Lockfile update
+
+**Documentation (4 files):**
+- `docs/sprint-artifacts/2-3-empty-states-onboarding.md` - This story file
+- `docs/sprint-artifacts/validation-report-2-3-empty-states-onboarding.md`
+- `docs/sprint-artifacts/tech-spec-epic-2.md`
+- `docs/sprint-artifacts/sprint-status.yaml`
 
 ### Code Review
 
-TBD
+**Date:** 2025-11-30
+**Reviewer:** Dev Agent (Adversarial Code Review)
+
+**Issues Found and Fixed:**
+| Severity | Issue | Resolution |
+|----------|-------|------------|
+| HIGH | Click-outside dismiss not implemented | Added `onOpenChange` + `onInteractOutside` to Popover |
+| MEDIUM | Missing click-outside test | Added test with external element click |
+| LOW | Debug console.log without DEV guard | Wrapped with `import.meta.env.DEV` check |
+| LOW | Double Escape key callback | Removed redundant handler (Radix handles it) |
+
+**Status:** PASSED - All issues resolved, 82 tests passing

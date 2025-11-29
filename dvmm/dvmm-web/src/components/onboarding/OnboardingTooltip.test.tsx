@@ -70,6 +70,29 @@ describe('OnboardingTooltip', () => {
     expect(handleDismiss).toHaveBeenCalledTimes(1)
   })
 
+  it('calls onDismiss when clicking outside the tooltip (click-outside)', async () => {
+    const handleDismiss = vi.fn()
+    const user = userEvent.setup()
+
+    // Render tooltip with a sibling element to click on
+    render(
+      <div>
+        <button data-testid="outside-element">Outside</button>
+        <OnboardingTooltip
+          content="Test content"
+          onDismiss={handleDismiss}
+          anchorRect={{ top: 100, left: 100, bottom: 150, right: 200, width: 100, height: 50 }}
+        />
+      </div>
+    )
+
+    // Click on an element outside the popover
+    await user.click(screen.getByTestId('outside-element'))
+
+    // onDismiss should be called via onInteractOutside handler
+    expect(handleDismiss).toHaveBeenCalled()
+  })
+
   it('has accessible dialog role', () => {
     render(
       <OnboardingTooltip

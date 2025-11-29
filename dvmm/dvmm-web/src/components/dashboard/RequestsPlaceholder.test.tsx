@@ -34,7 +34,8 @@ describe('RequestsPlaceholder', () => {
     expect(screen.getByText('My Requests')).toBeInTheDocument()
   })
 
-  it('logs to console when CTA clicked without handler (fallback path)', () => {
+  it('logs to console when CTA clicked without handler in DEV mode (fallback path)', () => {
+    // Note: import.meta.env.DEV is true in test environment (Vitest)
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     render(<RequestsPlaceholder />)
