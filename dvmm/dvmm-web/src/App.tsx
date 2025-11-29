@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { Button } from '@/components/ui/button'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { DashboardLayout } from '@/components/layout'
 import { Dashboard } from '@/pages/Dashboard'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
@@ -74,9 +75,11 @@ function App() {
 
   // Authenticated - show dashboard with layout
   return (
-    <DashboardLayout>
-      <Dashboard />
-    </DashboardLayout>
+    <ErrorBoundary>
+      <DashboardLayout>
+        <Dashboard />
+      </DashboardLayout>
+    </ErrorBoundary>
   )
 }
 

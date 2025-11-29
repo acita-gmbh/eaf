@@ -14,10 +14,11 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
   const userName = getUserNameFromToken(auth.user?.access_token) ?? 'User'
   const tenantId = getTenantIdFromToken(auth.user?.access_token)
 
-  // Get initials for avatar
+  // Get initials for avatar (handles empty strings and multiple spaces)
   const getInitials = (name: string): string => {
     return name
       .split(' ')
+      .filter(part => part.length > 0)
       .map(part => part[0])
       .join('')
       .toUpperCase()
@@ -25,7 +26,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
   }
 
   return (
-    <header className="h-14 border-b bg-card flex items-center px-4 gap-4">
+    <header className="h-14 border-b bg-card flex items-center px-4 gap-4 sticky top-0 z-40">
       {/* Mobile menu button */}
       <Button
         variant="ghost"

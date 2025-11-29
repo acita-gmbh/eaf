@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Header } from '../Header'
+
+// Mock signoutRedirect to capture calls
+const mockSignoutRedirect = vi.fn()
 
 // Mock react-oidc-context
 vi.mock('react-oidc-context', () => ({
@@ -12,7 +16,7 @@ vi.mock('react-oidc-context', () => ({
       access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsInRlbmFudF9pZCI6InRlc3QtdGVuYW50In0.signature',
     },
     signinRedirect: vi.fn(),
-    signoutRedirect: vi.fn(),
+    signoutRedirect: mockSignoutRedirect,
   }),
 }))
 
@@ -66,8 +70,7 @@ describe('Header', () => {
 
   it('calls onMobileMenuToggle when hamburger button is clicked', async () => {
     const onMobileMenuToggle = vi.fn()
-    const userEvent = await import('@testing-library/user-event')
-    const user = userEvent.default.setup()
+    const user = userEvent.setup()
 
     render(<Header onMobileMenuToggle={onMobileMenuToggle} />)
 
@@ -75,5 +78,16 @@ describe('Header', () => {
     await user.click(menuButton)
 
     expect(onMobileMenuToggle).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls signoutRedirect when sign out button is clicked', async () => {
+    const user = userEvent.setup()
+
+    render(<Header />)
+
+    const signOutButton = screen.getByRole('button', { name: /sign out/i })
+    await user.click(signOutButton)
+
+    expect(mockSignoutRedirect).toHaveBeenCalledTimes(1)
   })
 })
