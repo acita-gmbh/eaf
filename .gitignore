@@ -4,6 +4,7 @@
 .codex/
 !.codex/prompts
 .claude/audio
+.claude/*.txt
 
 # Operating System Files
 .DS_Store
