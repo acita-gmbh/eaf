@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
 import { AuthProvider } from 'react-oidc-context'
 import { vi } from 'vitest'
@@ -39,7 +39,7 @@ export function MockAuthProvider({
   children,
   value = {},
 }: {
-  children: React.ReactNode
+  children: ReactNode
   value?: Partial<MockAuthContextValue>
 }) {
   // Merge default with overrides (kept for future use when we need stateful mocks)
