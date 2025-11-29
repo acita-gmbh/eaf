@@ -1,22 +1,21 @@
-import type { ReactElement, ReactNode } from 'react'
+import { createContext, useContext, type ReactElement, type ReactNode } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
-import { AuthProvider } from 'react-oidc-context'
 import { vi } from 'vitest'
 
-// Mock auth context values
+// Mock auth context values matching react-oidc-context's AuthContextProps
 interface MockAuthContextValue {
-  isAuthenticated?: boolean
-  isLoading?: boolean
-  error?: Error | null
-  user?: {
-    access_token?: string
+  isAuthenticated: boolean
+  isLoading: boolean
+  error: Error | null
+  user: {
+    access_token: string
     profile?: {
       name?: string
       preferred_username?: string
     }
   } | null
-  signinRedirect?: () => Promise<void>
-  signoutRedirect?: () => Promise<void>
+  signinRedirect: () => Promise<void>
+  signoutRedirect: () => Promise<void>
 }
 
 const defaultMockAuth: MockAuthContextValue = {
@@ -24,7 +23,7 @@ const defaultMockAuth: MockAuthContextValue = {
   isLoading: false,
   error: null,
   user: {
-    access_token: 'mock-token',
+    access_token: 'mock-access-token',
     profile: {
       name: 'Test User',
       preferred_username: 'testuser',
@@ -34,7 +33,22 @@ const defaultMockAuth: MockAuthContextValue = {
   signoutRedirect: vi.fn(),
 }
 
-// Mock AuthProvider that provides controlled auth state
+// Create a mock context to replace react-oidc-context's AuthContext
+const MockAuthContext = createContext<MockAuthContextValue>(defaultMockAuth)
+
+/**
+ * Mock useAuth hook for tests.
+ * Use this when you need a component to access auth state in tests.
+ */
+export function useMockAuth(): MockAuthContextValue {
+  return useContext(MockAuthContext)
+}
+
+/**
+ * Mock AuthProvider that provides controlled auth state for testing.
+ * Unlike the real AuthProvider, this doesn't require OIDC configuration
+ * and provides the mock values directly to child components.
+ */
 export function MockAuthProvider({
   children,
   value = {},
@@ -42,24 +56,21 @@ export function MockAuthProvider({
   children: ReactNode
   value?: Partial<MockAuthContextValue>
 }) {
-  // Merge default with overrides (kept for future use when we need stateful mocks)
-  void value
-
-  // Create a mock OIDC config that satisfies the type requirements
-  const mockOidcConfig = {
-    authority: 'http://localhost:8180/realms/dvmm',
-    client_id: 'dvmm-web',
-    redirect_uri: 'http://localhost:5173/callback',
-    scope: 'openid profile email',
-    // Override the internal auth state
-    onSigninCallback: vi.fn(),
+  // Merge default values with any overrides
+  const authValue: MockAuthContextValue = {
+    ...defaultMockAuth,
+    ...value,
+    // Ensure nested user object is properly merged
+    user: value.user === null ? null : {
+      ...defaultMockAuth.user,
+      ...value.user,
+    },
   }
 
   return (
-    <AuthProvider {...mockOidcConfig}>
-      {/* We'll use a context override pattern in tests */}
+    <MockAuthContext.Provider value={authValue}>
       {children}
-    </AuthProvider>
+    </MockAuthContext.Provider>
   )
 }
 

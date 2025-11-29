@@ -13,7 +13,8 @@ vi.mock('react-oidc-context', () => ({
     isLoading: false,
     error: null,
     user: {
-      access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsInRlbmFudF9pZCI6InRlc3QtdGVuYW50In0.signature',
+      // Use simple placeholder instead of JWT-shaped token to avoid gitleaks false positives
+      access_token: 'test-access-token',
     },
     signinRedirect: vi.fn(),
     signoutRedirect: mockSignoutRedirect,
