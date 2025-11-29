@@ -3,29 +3,41 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
-export interface EmptyStateProps {
+// Base props without CTA
+interface EmptyStateBaseProps {
   /** Lucide icon component to display */
   icon?: LucideIcon
   /** Main title text */
   title: string
   /** Optional description text below title */
   description?: string
-  /** CTA button label */
-  ctaLabel?: string
-  /** CTA button click handler */
-  onCtaClick?: () => void
   /** Additional CSS classes */
   className?: string
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  ctaLabel,
-  onCtaClick,
-  className,
-}: EmptyStateProps) {
+// Props with CTA - both label and handler required together
+export interface EmptyStateWithCta extends EmptyStateBaseProps {
+  /** CTA button label - required when providing onCtaClick */
+  ctaLabel: string
+  /** CTA button click handler - required when providing ctaLabel */
+  onCtaClick: () => void
+}
+
+// Props without CTA - neither allowed
+interface EmptyStateWithoutCta extends EmptyStateBaseProps {
+  ctaLabel?: never
+  onCtaClick?: never
+}
+
+// Union type ensures CTA props are either both provided or both omitted
+export type EmptyStateProps = EmptyStateWithCta | EmptyStateWithoutCta
+
+export function EmptyState(props: EmptyStateProps) {
+  const { icon: Icon, title, description, className } = props
+
+  // Type guard - if ctaLabel exists, onCtaClick is guaranteed by the union type
+  const hasCta = 'ctaLabel' in props && props.ctaLabel !== undefined
+
   return (
     <Card className={cn('w-full', className)}>
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -40,9 +52,9 @@ export function EmptyState({
             {description}
           </p>
         )}
-        {ctaLabel && onCtaClick && (
-          <Button onClick={onCtaClick} className="mt-2">
-            {ctaLabel}
+        {hasCta && (
+          <Button onClick={(props as EmptyStateWithCta).onCtaClick} className="mt-2">
+            {(props as EmptyStateWithCta).ctaLabel}
           </Button>
         )}
       </CardContent>

@@ -52,8 +52,11 @@ describe('EmptyState', () => {
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
-  it('does not render CTA when only ctaLabel is provided without handler', () => {
-    render(<EmptyState title="No items" ctaLabel="Add first item" />)
+  it('does not render CTA when neither ctaLabel nor handler provided', () => {
+    // NOTE: Union type EmptyStateProps enforces at compile-time that ctaLabel
+    // and onCtaClick must both be provided together or both omitted.
+    // This test verifies the "both omitted" case renders no button.
+    render(<EmptyState title="No items" />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 

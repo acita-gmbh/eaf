@@ -33,4 +33,17 @@ describe('RequestsPlaceholder', () => {
     render(<RequestsPlaceholder />)
     expect(screen.getByText('My Requests')).toBeInTheDocument()
   })
+
+  it('logs to console when CTA clicked without handler (fallback path)', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    render(<RequestsPlaceholder />)
+    fireEvent.click(screen.getByRole('button', { name: 'Erste VM anfordern' }))
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[RequestsPlaceholder] Navigate to VM request form'
+    )
+
+    consoleSpy.mockRestore()
+  })
 })

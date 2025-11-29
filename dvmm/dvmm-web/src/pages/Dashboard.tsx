@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback, Component, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { StatsCard, RequestsPlaceholder } from '@/components/dashboard'
 import { OnboardingTooltip } from '@/components/onboarding'
@@ -10,29 +10,87 @@ const ONBOARDING_CONTENT = {
   'sidebar-nav': 'Navigieren Sie zu Ihren Anfragen',
 } as const
 
+// Error boundary to prevent onboarding issues from crashing the dashboard
+class OnboardingErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    console.error('[OnboardingErrorBoundary] Caught error:', error, errorInfo)
+  }
+
+  render(): ReactNode {
+    if (this.state.hasError) {
+      // Silently fail - don't show onboarding if it errors
+      return null
+    }
+    return this.props.children
+  }
+}
+
 export function Dashboard() {
   const ctaButtonRef = useRef<HTMLButtonElement>(null)
   const [ctaRect, setCtaRect] = useState<DOMRect | null>(null)
   const [sidebarRect, setSidebarRect] = useState<DOMRect | null>(null)
-  const onboarding = useOnboarding()
+  const { currentStep, dismissStep, resetOnboarding } = useOnboarding()
+
+  // Memoized function to update anchor rectangles
+  const updateAnchorRects = useCallback(() => {
+    if (currentStep === 'cta-button') {
+      const buttonElement = ctaButtonRef.current
+      if (buttonElement) {
+        try {
+          setCtaRect(buttonElement.getBoundingClientRect())
+        } catch (e) {
+          console.error('[Dashboard] Failed to get CTA button rect:', e)
+        }
+      }
+    } else if (currentStep === 'sidebar-nav') {
+      const sidebarNav = document.querySelector('[data-onboarding="sidebar-nav"]')
+      if (sidebarNav) {
+        try {
+          setSidebarRect(sidebarNav.getBoundingClientRect())
+        } catch (e) {
+          console.error('[Dashboard] Failed to get sidebar rect:', e)
+        }
+      } else {
+        console.warn(
+          '[Dashboard] Onboarding anchor not found: [data-onboarding="sidebar-nav"]',
+          'Skipping sidebar tooltip step.'
+        )
+        // Skip to next step since anchor is missing
+        dismissStep()
+      }
+    }
+  }, [currentStep, dismissStep])
 
   // Update anchor rectangles when step changes
   useEffect(() => {
-    if (onboarding.currentStep === 'cta-button' && ctaButtonRef.current) {
-      setCtaRect(ctaButtonRef.current.getBoundingClientRect())
-    } else if (onboarding.currentStep === 'sidebar-nav') {
-      const sidebarNav = document.querySelector('[data-onboarding="sidebar-nav"]')
-      if (sidebarNav) {
-        setSidebarRect(sidebarNav.getBoundingClientRect())
-      }
+    updateAnchorRects()
+  }, [updateAnchorRects])
+
+  // Update anchor positions on window resize
+  useEffect(() => {
+    if (currentStep) {
+      window.addEventListener('resize', updateAnchorRects)
+      return () => window.removeEventListener('resize', updateAnchorRects)
     }
-  }, [onboarding.currentStep])
+  }, [currentStep, updateAnchorRects])
 
   // Keyboard shortcut for dev reset (Ctrl+Shift+O)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'O') {
-        onboarding.resetOnboarding()
+        resetOnboarding()
         console.log('[Dev] Onboarding reset')
       }
     }
@@ -41,7 +99,7 @@ export function Dashboard() {
       window.addEventListener('keydown', handleKeyDown)
       return () => window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [onboarding])
+  }, [resetOnboarding])
 
   return (
     <div className="space-y-6">
@@ -90,23 +148,25 @@ export function Dashboard() {
       {/* My Requests section */}
       <RequestsPlaceholder />
 
-      {/* Onboarding tooltips */}
-      {onboarding.currentStep === 'cta-button' && ctaRect && (
-        <OnboardingTooltip
-          content={ONBOARDING_CONTENT['cta-button']}
-          onDismiss={onboarding.dismissStep}
-          anchorRect={ctaRect}
-          side="bottom"
-        />
-      )}
-      {onboarding.currentStep === 'sidebar-nav' && sidebarRect && (
-        <OnboardingTooltip
-          content={ONBOARDING_CONTENT['sidebar-nav']}
-          onDismiss={onboarding.dismissStep}
-          anchorRect={sidebarRect}
-          side="right"
-        />
-      )}
+      {/* Onboarding tooltips - wrapped in error boundary to prevent crashes */}
+      <OnboardingErrorBoundary>
+        {currentStep === 'cta-button' && ctaRect && (
+          <OnboardingTooltip
+            content={ONBOARDING_CONTENT['cta-button']}
+            onDismiss={dismissStep}
+            anchorRect={ctaRect}
+            side="bottom"
+          />
+        )}
+        {currentStep === 'sidebar-nav' && sidebarRect && (
+          <OnboardingTooltip
+            content={ONBOARDING_CONTENT['sidebar-nav']}
+            onDismiss={dismissStep}
+            anchorRect={sidebarRect}
+            side="right"
+          />
+        )}
+      </OnboardingErrorBoundary>
     </div>
   )
 }

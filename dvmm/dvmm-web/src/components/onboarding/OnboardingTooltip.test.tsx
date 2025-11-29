@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@/test/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, act } from '@/test/test-utils'
 import { OnboardingTooltip } from './OnboardingTooltip'
 import userEvent from '@testing-library/user-event'
 
@@ -80,5 +80,33 @@ describe('OnboardingTooltip', () => {
     )
     // Popover content should be accessible
     expect(screen.getByText('Test content')).toBeInTheDocument()
+  })
+
+  it('focuses dismiss button after appearing (accessibility)', async () => {
+    // Use fake timers only for this test to control the 100ms focus delay
+    vi.useFakeTimers()
+
+    render(
+      <OnboardingTooltip
+        content="Test content"
+        onDismiss={vi.fn()}
+        anchorRect={{ top: 100, left: 100, bottom: 150, right: 200, width: 100, height: 50 }}
+      />
+    )
+
+    const dismissButton = screen.getByRole('button', { name: 'Verstanden' })
+
+    // Before the 100ms delay, button should not be focused
+    expect(document.activeElement).not.toBe(dismissButton)
+
+    // Fast-forward past the 100ms delay
+    await act(async () => {
+      vi.advanceTimersByTime(150)
+    })
+
+    // After the delay, button should be focused
+    expect(document.activeElement).toBe(dismissButton)
+
+    vi.useRealTimers()
   })
 })

@@ -133,4 +133,32 @@ describe('Dashboard', () => {
       expect(button).toHaveAttribute('data-onboarding', 'cta-button')
     })
   })
+
+  describe('Layout', () => {
+    it('displays dashboard heading', () => {
+      localStorageMock.store['dvmm_onboarding_completed'] = 'true'
+
+      render(<Dashboard />)
+
+      expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument()
+    })
+
+    it('displays all three stats cards with 0 values', () => {
+      localStorageMock.store['dvmm_onboarding_completed'] = 'true'
+
+      render(<Dashboard />)
+
+      // All three stats should show 0
+      const zeros = screen.getAllByText('0')
+      expect(zeros).toHaveLength(3)
+    })
+
+    it('displays My Requests section', () => {
+      localStorageMock.store['dvmm_onboarding_completed'] = 'true'
+
+      render(<Dashboard />)
+
+      expect(screen.getByText('My Requests')).toBeInTheDocument()
+    })
+  })
 })

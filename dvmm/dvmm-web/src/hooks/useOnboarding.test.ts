@@ -129,4 +129,64 @@ describe('useOnboarding', () => {
     expect(result.current.currentStep).toBe('cta-button')
     expect(result.current.isComplete).toBe(false)
   })
+
+  describe('localStorage error handling', () => {
+    it('handles non-numeric step value gracefully (NaN case)', () => {
+      localStorageMock.store['dvmm_onboarding_step'] = 'invalid'
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const { result } = renderHook(() => useOnboarding())
+
+      // Should reset to step 0 when value is invalid
+      expect(result.current.currentStep).toBe('cta-button')
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid step index in storage')
+      )
+
+      consoleSpy.mockRestore()
+    })
+
+    it('handles out-of-range step index (negative)', () => {
+      localStorageMock.store['dvmm_onboarding_step'] = '-1'
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const { result } = renderHook(() => useOnboarding())
+
+      // Should reset to step 0 when value is out of range
+      expect(result.current.currentStep).toBe('cta-button')
+      expect(consoleSpy).toHaveBeenCalled()
+
+      consoleSpy.mockRestore()
+    })
+
+    it('handles out-of-range step index (too high)', () => {
+      localStorageMock.store['dvmm_onboarding_step'] = '999'
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const { result } = renderHook(() => useOnboarding())
+
+      // Should reset to step 0 when value is out of range
+      expect(result.current.currentStep).toBe('cta-button')
+      expect(consoleSpy).toHaveBeenCalled()
+
+      consoleSpy.mockRestore()
+    })
+
+    it('handles localStorage.getItem throwing (private browsing)', () => {
+      const originalGetItem = localStorageMock.getItem
+      localStorageMock.getItem = vi.fn(() => {
+        throw new Error('SecurityError: localStorage is disabled')
+      })
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const { result } = renderHook(() => useOnboarding())
+
+      // Should gracefully fallback to initial state
+      expect(result.current.currentStep).toBe('cta-button')
+      expect(result.current.isComplete).toBe(false)
+
+      localStorageMock.getItem = originalGetItem
+      consoleSpy.mockRestore()
+    })
+  })
 })
