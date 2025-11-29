@@ -1,6 +1,6 @@
 # Story 2.2: End User Dashboard Layout
 
-Status: In Review (PR #35)
+Status: Done
 
 ## Story
 
