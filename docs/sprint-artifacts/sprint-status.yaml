@@ -130,7 +130,7 @@ development_status:
   2-1-keycloak-login-flow: done              # Sprint 4 (Epic 2 Start) - Code review APPROVED 2025-11-28
   2-2-end-user-dashboard-layout: done                # Sprint 4 - Merged 2025-11-29
   2-3-empty-states-onboarding: done                # Code review PASSED 2025-11-30
-  2-4-vm-request-form-basic-fields: in-progress  # Started 2025-11-30 by Dev Agent
+  2-4-vm-request-form-basic-fields: done          # Code review PASSED 2025-11-30
   2-5-vm-request-form-size-selector: backlog
   2-6-vm-request-form-submit-command: backlog
   2-7-my-requests-list-cancel: backlog
