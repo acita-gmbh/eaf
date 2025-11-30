@@ -37,6 +37,9 @@ export function EmptyState(props: EmptyStateProps) {
 
   // Type guard - if ctaLabel exists, onCtaClick is guaranteed by the union type
   const hasCta = 'ctaLabel' in props && props.ctaLabel !== undefined
+  // Extract CTA props once to avoid repeated type assertions
+  const ctaLabel = hasCta ? (props as EmptyStateWithCta).ctaLabel : undefined
+  const onCtaClick = hasCta ? (props as EmptyStateWithCta).onCtaClick : undefined
 
   return (
     <Card className={cn('w-full', className)}>
@@ -53,8 +56,8 @@ export function EmptyState(props: EmptyStateProps) {
           </p>
         )}
         {hasCta && (
-          <Button onClick={(props as EmptyStateWithCta).onCtaClick} className="mt-2">
-            {(props as EmptyStateWithCta).ctaLabel}
+          <Button onClick={onCtaClick} className="mt-2">
+            {ctaLabel}
           </Button>
         )}
       </CardContent>

@@ -56,7 +56,7 @@ export function MockAuthProvider({
   children: ReactNode
   value?: Partial<MockAuthContextValue>
 }) {
-  // Merge default values with any overrides, guarding against null defaults
+  // Merge user object: null = no user, undefined = use default, object = merge with default
   const mergedUser = value.user === null
     ? null
     : value.user !== undefined
