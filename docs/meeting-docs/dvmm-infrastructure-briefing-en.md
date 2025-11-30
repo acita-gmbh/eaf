@@ -49,49 +49,51 @@ This is a web application serving multiple tenants (customers) who can self-serv
 
 ### Current State (Development)
 
-```
-┌─────────────────────────────────────────────────┐
-│                Docker Compose                    │
-├─────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ DVMM API │  │ Frontend │  │ Keycloak │      │
-│  │ (Spring) │  │ (Nginx)  │  │  (IdP)   │      │
-│  └────┬─────┘  └──────────┘  └──────────┘      │
-│       │                                         │
-│       ▼                                         │
-│  ┌──────────┐                                  │
-│  │PostgreSQL│                                  │
-│  └──────────┘                                  │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Docker Compose
+        API[DVMM API<br/>Spring Boot]
+        FE[Frontend<br/>Nginx]
+        KC[Keycloak<br/>IdP]
+        PG[(PostgreSQL)]
+
+        API --> PG
+        KC --> PG
+    end
 ```
 
 ### Target State (Production)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                    │
-├─────────────────────────────────────────────────────────┤
-│  Namespace: dvmm-production                              │
-│                                                          │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Ingress (TLS 1.3)                                   ││
-│  └───────────────────────────┬─────────────────────────┘│
-│                              │                           │
-│     ┌────────────────────────┼────────────────────┐     │
-│     ▼                        ▼                    ▼     │
-│  ┌──────────┐         ┌──────────┐         ┌──────────┐│
-│  │ Frontend │         │ DVMM API │         │ Keycloak ││
-│  │ (3 pods) │         │ (3 pods) │         │ (2 pods) ││
-│  └──────────┘         └────┬─────┘         └──────────┘│
-│                            │                            │
-│                            ▼                            │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ PostgreSQL (Managed or StatefulSet)              │  │
-│  │ - RLS enabled                                     │  │
-│  │ - SSL connections                                 │  │
-│  │ - WAL archiving for backup                        │  │
-│  └──────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Kubernetes Cluster
+        subgraph dvmm-production namespace
+            ING[Ingress<br/>TLS 1.3]
+
+            ING --> FE
+            ING --> API
+            ING --> KC
+
+            subgraph Frontend
+                FE[Frontend<br/>3 pods]
+            end
+
+            subgraph Backend
+                API[DVMM API<br/>3 pods]
+            end
+
+            subgraph Identity
+                KC[Keycloak<br/>2 pods]
+            end
+
+            API --> PG
+            KC --> PG
+
+            subgraph Database
+                PG[(PostgreSQL<br/>RLS enabled<br/>SSL + WAL archiving)]
+            end
+        end
+    end
 ```
 
 ---
@@ -149,22 +151,31 @@ SPRING_PROFILES_ACTIVE: production
 
 We plan to use the standard Grafana + Prometheus + Loki stack:
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Grafana    │◀────│  Prometheus  │◀────│   DVMM API   │
-│ (Dashboards) │     │  (Metrics)   │     │ (/actuator)  │
-└──────────────┘     └──────────────┘     └──────────────┘
-       ▲                                         │
-       │                                         ▼
-┌──────────────┐                         ┌──────────────┐
-│     Loki     │◀────────────────────────│   Promtail   │
-│    (Logs)    │                         │ (Log Ship)   │
-└──────────────┘                         └──────────────┘
-       │
-       ▼
-┌──────────────┐
-│ AlertManager │───▶ Slack / PagerDuty
-└──────────────┘
+```mermaid
+graph LR
+    subgraph Application
+        API[DVMM API<br/>/actuator]
+    end
+
+    subgraph Observability Stack
+        PROM[Prometheus<br/>Metrics]
+        LOKI[Loki<br/>Logs]
+        GRAF[Grafana<br/>Dashboards]
+        ALERT[AlertManager]
+        TAIL[Promtail<br/>Log Shipper]
+    end
+
+    subgraph Notifications
+        SLACK[Slack / PagerDuty]
+    end
+
+    API -->|metrics| PROM
+    API -->|logs| TAIL
+    TAIL --> LOKI
+    PROM --> GRAF
+    LOKI --> GRAF
+    PROM --> ALERT
+    ALERT --> SLACK
 ```
 
 ### Key Metrics
