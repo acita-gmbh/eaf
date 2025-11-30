@@ -1,13 +1,16 @@
 import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import { Button } from '@/components/ui/button'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { DashboardLayout } from '@/components/layout'
+import { ProtectedRoute } from '@/components/auth'
 import { Dashboard } from '@/pages/Dashboard'
+import { NewRequest } from '@/pages/NewRequest'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { User } from 'lucide-react'
 
-function App() {
+function AppRoutes() {
   const auth = useAuth()
 
   // Fetch CSRF token when authenticated
@@ -73,12 +76,30 @@ function App() {
     )
   }
 
-  // Authenticated - show dashboard with layout
+  // Authenticated - render routes within DashboardLayout
+  return (
+    <DashboardLayout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route
+          path="/requests/new"
+          element={
+            <ProtectedRoute>
+              <NewRequest />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </DashboardLayout>
+  )
+}
+
+function App() {
   return (
     <ErrorBoundary>
-      <DashboardLayout>
-        <Dashboard />
-      </DashboardLayout>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </ErrorBoundary>
   )
 }

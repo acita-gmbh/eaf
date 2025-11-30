@@ -1,7 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
+
+// Wrapper for Dashboard that provides router context
+function renderDashboard() {
+  return render(
+    <MemoryRouter>
+      <Dashboard />
+    </MemoryRouter>
+  )
+}
 
 // Mock localStorage
 const localStorageMock = {
@@ -43,7 +53,7 @@ describe('Dashboard', () => {
       // Mark onboarding as complete to avoid tooltip interference
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
       expect(screen.getByText('Fordern Sie Ihre erste virtuelle Maschine an')).toBeInTheDocument()
@@ -53,7 +63,7 @@ describe('Dashboard', () => {
     it('shows stats cards with 0 values', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.getByText('Pending Requests')).toBeInTheDocument()
       expect(screen.getByText('Approved Requests')).toBeInTheDocument()
@@ -63,7 +73,7 @@ describe('Dashboard', () => {
 
   describe('Onboarding Flow', () => {
     it('shows first tooltip on CTA button for new user', async () => {
-      render(<Dashboard />)
+      renderDashboard()
 
       // Should show first onboarding tooltip
       await waitFor(() => {
@@ -73,7 +83,7 @@ describe('Dashboard', () => {
 
     it('completes onboarding flow when tooltips are dismissed', async () => {
       const user = userEvent.setup()
-      render(<Dashboard />)
+      renderDashboard()
 
       // First tooltip should appear
       await waitFor(() => {
@@ -90,7 +100,7 @@ describe('Dashboard', () => {
     it('does not show tooltips when onboarding is complete', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.queryByText('Hier starten Sie eine neue VM-Anfrage')).not.toBeInTheDocument()
       expect(screen.queryByText('Navigieren Sie zu Ihren Anfragen')).not.toBeInTheDocument()
@@ -100,7 +110,7 @@ describe('Dashboard', () => {
       Object.defineProperty(window, 'innerWidth', { value: 600 })
       const user = userEvent.setup()
 
-      render(<Dashboard />)
+      renderDashboard()
 
       // First tooltip should appear
       await waitFor(() => {
@@ -119,7 +129,7 @@ describe('Dashboard', () => {
     it('renders Request New VM button', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.getByRole('button', { name: /Request New VM/i })).toBeInTheDocument()
     })
@@ -127,7 +137,7 @@ describe('Dashboard', () => {
     it('has data-onboarding attribute for tooltip targeting', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       const button = screen.getByRole('button', { name: /Request New VM/i })
       expect(button).toHaveAttribute('data-onboarding', 'cta-button')
@@ -138,7 +148,7 @@ describe('Dashboard', () => {
     it('displays dashboard heading', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument()
     })
@@ -146,7 +156,7 @@ describe('Dashboard', () => {
     it('displays all three stats cards with 0 values', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       // All three stats should show 0
       const zeros = screen.getAllByText('0')
@@ -156,7 +166,7 @@ describe('Dashboard', () => {
     it('displays My Requests section', () => {
       localStorageMock.store['dvmm_onboarding_completed'] = 'true'
 
-      render(<Dashboard />)
+      renderDashboard()
 
       expect(screen.getByText('My Requests')).toBeInTheDocument()
     })

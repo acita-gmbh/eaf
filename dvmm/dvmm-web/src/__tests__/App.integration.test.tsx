@@ -1,6 +1,59 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import App from '../App'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { useAuth } from 'react-oidc-context'
+import { ErrorBoundary } from '../components/ErrorBoundary'
+import { DashboardLayout } from '../components/layout'
+import { Dashboard } from '../pages/Dashboard'
+import { NewRequest } from '../pages/NewRequest'
+
+// Test-specific AppRoutes that doesn't use BrowserRouter (MemoryRouter is used instead)
+function TestableAppRoutes() {
+  const auth = useAuth()
+
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!auth.isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md p-6">
+          <h1 className="text-3xl font-bold text-foreground mb-2">DVMM</h1>
+          <p className="text-muted-foreground mb-6">
+            Dynamic Virtual Machine Manager
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <DashboardLayout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/requests/new" element={<NewRequest />} />
+      </Routes>
+    </DashboardLayout>
+  )
+}
+
+function TestApp({ initialEntries = ['/'] }: { initialEntries?: string[] }) {
+  return (
+    <ErrorBoundary>
+      <MemoryRouter initialEntries={initialEntries}>
+        <TestableAppRoutes />
+      </MemoryRouter>
+    </ErrorBoundary>
+  )
+}
 
 // Mock localStorage for onboarding hook
 const localStorageMock = {
@@ -61,7 +114,7 @@ describe('App Integration', () => {
   })
 
   it('renders dashboard layout after successful authentication', () => {
-    render(<App />)
+    render(<TestApp />)
 
     // Header elements should be visible
     expect(screen.getByText('DVMM')).toBeInTheDocument()
@@ -70,7 +123,7 @@ describe('App Integration', () => {
   })
 
   it('renders sidebar navigation in dashboard layout', () => {
-    render(<App />)
+    render(<TestApp />)
 
     // Sidebar navigation should be present
     expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument()
@@ -79,7 +132,7 @@ describe('App Integration', () => {
   })
 
   it('renders dashboard content with stats cards', () => {
-    render(<App />)
+    render(<TestApp />)
 
     // Dashboard content should be visible
     expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument()
@@ -89,7 +142,7 @@ describe('App Integration', () => {
   })
 
   it('renders Request New VM CTA button in dashboard content', () => {
-    render(<App />)
+    render(<TestApp />)
 
     // There are two "Request New VM" buttons - one in sidebar nav and one CTA in main content
     // The CTA button has the "lg" size class (px-8 from h-10 size)
@@ -102,7 +155,7 @@ describe('App Integration', () => {
   })
 
   it('renders My Requests section with German empty state', () => {
-    render(<App />)
+    render(<TestApp />)
 
     // "My Requests" appears in both sidebar nav and as a section heading
     const myRequestsElements = screen.getAllByText('My Requests')
@@ -110,6 +163,13 @@ describe('App Integration', () => {
 
     // German empty state text (updated in Story 2.3)
     expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
+  })
+
+  it('renders NewRequest page when navigating to /requests/new', () => {
+    render(<TestApp initialEntries={['/requests/new']} />)
+
+    // NewRequest page should be visible
+    expect(screen.getByRole('heading', { name: /neue vm anfordern/i })).toBeInTheDocument()
   })
 })
 
