@@ -27,7 +27,7 @@ export function OnboardingTooltip({
   onDismiss,
   anchorRect,
   side = 'bottom',
-  dismissLabel = 'Verstanden',
+  dismissLabel = 'Got it',
   className,
 }: OnboardingTooltipProps) {
   const buttonRef = useRef<HTMLButtonElement>(null)

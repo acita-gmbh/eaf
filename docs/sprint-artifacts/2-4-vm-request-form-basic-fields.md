@@ -35,40 +35,40 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
 
 1. **Navigation to request form**
    - Given I am on the dashboard (authenticated)
-   - When I click "Neue VM anfordern" button (the CTA button with `data-onboarding="cta-button"`)
+   - When I click "Request New VM" button (the CTA button with `data-onboarding="cta-button"`)
    - Then I am navigated to `/requests/new`
    - And the VM request form is displayed
-   - And the page title shows "Neue VM anfordern"
+   - And the page title shows "Request New VM"
 
 2. **VM Name field with validation**
    - Given I am on the VM request form
    - When I view the VM Name field
-   - Then I see a text input with label "VM-Name" and placeholder "z.B. web-server-01"
+   - Then I see a text input with label "VM Name" and placeholder "e.g. web-server-01"
    - And the field is marked as required
-   - And there is a help text explaining naming rules: "3-63 Zeichen, Kleinbuchstaben, Zahlen und Bindestriche"
+   - And there is a help text explaining naming rules: "3-63 characters, lowercase letters, numbers, and hyphens"
 
    **Validation rules (inline as I type):**
-   - When I enter less than 3 characters → error: "Mindestens 3 Zeichen erforderlich"
-   - When I enter more than 63 characters → error: "Maximal 63 Zeichen erlaubt"
-   - When I enter uppercase letters → error: "Nur Kleinbuchstaben erlaubt"
-   - When I enter spaces or special chars → error: "Nur Buchstaben, Zahlen und Bindestriche erlaubt"
-   - When I start with a hyphen → error: "Muss mit Buchstaben oder Zahl beginnen"
-   - When I end with a hyphen → error: "Muss mit Buchstaben oder Zahl enden"
+   - When I enter less than 3 characters → error: "Minimum 3 characters required"
+   - When I enter more than 63 characters → error: "Maximum 63 characters allowed"
+   - When I enter uppercase letters → error: "Only lowercase letters allowed"
+   - When I enter spaces or special chars → error: "Only letters, numbers, and hyphens allowed"
+   - When I start with a hyphen → error: "Must start with a letter or number"
+   - When I end with a hyphen → error: "Must end with a letter or number"
    - When value matches regex `^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$` → no error, field shows valid state
 
 3. **Project dropdown**
    - Given I am on the VM request form
    - When I view the Project field
-   - Then I see a dropdown/select with label "Projekt" marked as required
+   - Then I see a dropdown/select with label "Project" marked as required
    - And the dropdown is populated with my accessible projects (mock data for now)
    - And each option shows: `{projectName}` with quota info as secondary text
-   - And there is a "Kein passendes Projekt?" link below the dropdown
+   - And there is a "No suitable project?" link below the dropdown
 
    **Mock project data (until backend integration):**
    ```typescript
    const MOCK_PROJECTS = [
-     { id: 'proj-1', name: 'Entwicklung', quota: { used: 5, total: 10 } },
-     { id: 'proj-2', name: 'Produktion', quota: { used: 8, total: 10 } },
+     { id: 'proj-1', name: 'Development', quota: { used: 5, total: 10 } },
+     { id: 'proj-2', name: 'Production', quota: { used: 8, total: 10 } },
      { id: 'proj-3', name: 'Testing', quota: { used: 0, total: 5 } },
    ];
    ```
@@ -77,25 +77,25 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
    - Given I select a project from the dropdown
    - When the selection is confirmed
    - Then I see the project's remaining quota displayed below the dropdown
-   - And the quota shows: "Verfügbar: X von Y VMs" with a progress bar
+   - And the quota shows: "Available: X of Y VMs" with a progress bar
    - And if quota is nearly exhausted (>80%), the text is styled in warning color (Orange)
 
 5. **Justification field with validation**
    - Given I am on the VM request form
    - When I view the Justification field
-   - Then I see a textarea with label "Begründung" marked as required
-   - And there is a placeholder: "Beschreiben Sie den Zweck dieser VM..."
-   - And there is a character counter showing current/minimum (e.g., "0/10 Zeichen")
+   - Then I see a textarea with label "Justification" marked as required
+   - And there is a placeholder: "Describe the purpose of this VM..."
+   - And there is a character counter showing current/minimum (e.g., "0/10 characters")
 
    **Validation rules:**
-   - When I enter less than 10 characters → error: "Mindestens 10 Zeichen erforderlich"
+   - When I enter less than 10 characters → error: "Minimum 10 characters required"
    - When I enter 10+ characters → no error, field shows valid state
    - Max length: 1000 characters (soft limit with counter, hard limit on submit)
 
 6. **Form state persistence (warn on leave)**
    - Given I have entered data in any form field
    - When I attempt to navigate away (browser back, click other link, close tab)
-   - Then I see a browser confirmation dialog: "Änderungen werden nicht gespeichert. Fortfahren?"
+   - Then I see a browser confirmation dialog: "Changes will not be saved. Continue?"
    - And if I confirm, navigation proceeds and form data is lost
    - And if I cancel, I stay on the form with data preserved
 
@@ -110,9 +110,9 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
    - And fields remain touch-friendly (min 44px height for inputs)
 
 8. **"No Project" help link**
-   - Given I see the "Kein passendes Projekt?" link
+   - Given I see the "No suitable project?" link
    - When I click the link
-   - Then a tooltip or small dialog appears explaining: "Kontaktieren Sie Ihren Admin um Projektzugang zu erhalten"
+   - Then a tooltip or small dialog appears explaining: "Contact your admin to request project access"
    - And the dialog can be dismissed by clicking outside or pressing Escape
 
 ## Test Plan
@@ -268,7 +268,7 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
   - [x] Display project name with quota as secondary text
   - [x] Show quota progress bar on selection
   - [x] Style warning color when quota > 80%
-  - [x] Add "Kein passendes Projekt?" link
+  - [x] Add "No suitable project?" link
   - [x] Use mock data constant (MOCK_PROJECTS)
   - [x] Write unit tests for rendering and selection
 
@@ -289,7 +289,7 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
 - [x] **Task 8: Create NewRequest page** (AC: 1)
   - [x] Create `src/pages/NewRequest.tsx`
   - [x] Wrap with DashboardLayout
-  - [x] Add page header: "Neue VM anfordern"
+  - [x] Add page header: "Request New VM"
   - [x] Render VmRequestForm component
   - [x] Integrate useFormPersistence hook
 
@@ -381,8 +381,8 @@ export interface MockProject {
 }
 
 export const MOCK_PROJECTS: MockProject[] = [
-  { id: 'proj-1', name: 'Entwicklung', quota: { used: 5, total: 10 } },
-  { id: 'proj-2', name: 'Produktion', quota: { used: 8, total: 10 } },
+  { id: 'proj-1', name: 'Development', quota: { used: 5, total: 10 } },
+  { id: 'proj-2', name: 'Production', quota: { used: 8, total: 10 } },
   { id: 'proj-3', name: 'Testing', quota: { used: 0, total: 5 } },
 ];
 ```
@@ -398,47 +398,47 @@ import { z } from 'zod';
 // Using superRefine for granular error messages (better UX than regex-only)
 export const vmNameSchema = z
   .string()
-  .min(3, 'Mindestens 3 Zeichen erforderlich')
-  .max(63, 'Maximal 63 Zeichen erlaubt')
+  .min(3, 'Minimum 3 characters required')
+  .max(63, 'Maximum 63 characters allowed')
   .superRefine((val, ctx) => {
     // Check for uppercase letters
     if (/[A-Z]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Nur Kleinbuchstaben erlaubt',
+        message: 'Only lowercase letters allowed',
       });
     }
     // Check for invalid characters (spaces, special chars)
     if (/[^a-z0-9-]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Nur Buchstaben, Zahlen und Bindestriche erlaubt',
+        message: 'Only letters, numbers, and hyphens allowed',
       });
     }
     // Check start character
     if (val.startsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstaben oder Zahl beginnen',
+        message: 'Must start with a letter or number',
       });
     }
     // Check end character
     if (val.endsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstaben oder Zahl enden',
+        message: 'Must end with a letter or number',
       });
     }
   });
 
 export const justificationSchema = z
   .string()
-  .min(10, 'Mindestens 10 Zeichen erforderlich')
-  .max(1000, 'Maximal 1000 Zeichen erlaubt');
+  .min(10, 'Minimum 10 characters required')
+  .max(1000, 'Maximum 1000 characters allowed');
 
 export const projectIdSchema = z
   .string()
-  .min(1, 'Projekt ist erforderlich');
+  .min(1, 'Project is required');
 
 export const vmRequestFormSchema = z.object({
   vmName: vmNameSchema,
@@ -495,7 +495,7 @@ export function useFormPersistence(isDirty: boolean) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        e.returnValue = 'Änderungen werden nicht gespeichert. Fortfahren?';
+        e.returnValue = 'Changes will not be saved. Continue?';
       }
     };
 
@@ -524,7 +524,7 @@ Use `vi.spyOn(window, 'addEventListener')` to verify listener registration.
   >
     {watch('justification').length}
   </span>
-  /10 Zeichen (min)
+  /10 characters (min)
 </div>
 ```
 
@@ -725,8 +725,8 @@ export default App
 **Positive:**
 - Inline validation gives immediate feedback - reduces "submit and pray" anxiety
 - Character counter shows progress toward minimum - users feel completion
-- German localized error messages reduce cognitive load
-- "Kein passendes Projekt?" help link acknowledges user frustration proactively
+- Clear English error messages reduce cognitive load
+- "No suitable project?" help link acknowledges user frustration proactively
 
 **Concerns for Future Polish:**
 | Item | Note | Priority |
@@ -821,11 +821,11 @@ N/A
 
 **Key Implementation Decisions:**
 
-1. **Zod Validation with superRefine**: Used `superRefine` for granular German error messages instead of chained `.refine()` calls - cleaner code, better UX
+1. **Zod Validation with superRefine**: Used `superRefine` for granular error messages instead of chained `.refine()` calls - cleaner code, better UX
 2. **React Hook Form mode: onChange**: Enables inline validation as user types (AC #2)
 3. **Division by zero guard**: ProjectQuotaDisplay treats zero-quota projects as 100% used
 4. **beforeunload hook**: useFormPersistence uses browser API for navigation warnings
-5. **CTA button language**: Dashboard uses English "Request New VM" (consistent with existing English UI), page title uses German "Neue VM anfordern" (per AC #1)
+5. **CTA button language**: Dashboard uses English "Request New VM" and page title uses English "Request New VM" (consistent with existing English UI)
 
 **Deferred to Future Stories:**
 - VM Size Selector (Story 2.5 placeholder in form)

@@ -590,21 +590,21 @@ Usage pattern: `text-[hsl(var(--status-pending))] bg-[hsl(var(--status-pending)/
 
 ```html
 <!-- resources/templates/email/request-created.html -->
-Subject: [DVMM] Neuer VM-Request: {{vmName}}
+Subject: [DVMM] New VM Request: {{vmName}}
 
-Hallo Admin,
+Hello Admin,
 
-Ein neuer VM-Request wurde eingereicht:
+A new VM request has been submitted:
 
-Antragsteller: {{requesterName}}
-VM-Name: {{vmName}}
-Größe: {{size}} ({{cpuCores}} vCPU, {{memoryGb}} GB RAM)
-Projekt: {{projectName}}
-Begründung: {{justification}}
+Requester: {{requesterName}}
+VM Name: {{vmName}}
+Size: {{size}} ({{cpuCores}} vCPU, {{memoryGb}} GB RAM)
+Project: {{projectName}}
+Justification: {{justification}}
 
-Request prüfen: {{approvalLink}}
+Review request: {{approvalLink}}
 
-Mit freundlichen Grüßen,
+Best regards,
 DVMM System
 ```
 
@@ -612,22 +612,22 @@ DVMM System
 
 ```html
 <!-- resources/templates/email/request-approved.html -->
-Subject: [DVMM] Request genehmigt: {{vmName}}
+Subject: [DVMM] Request Approved: {{vmName}}
 
-Hallo {{requesterName}},
+Hello {{requesterName}},
 
-Ihr VM-Request wurde genehmigt!
+Your VM request has been approved!
 
-VM-Name: {{vmName}}
-Genehmigt von: {{approverName}}
-Genehmigt am: {{approvedAt}}
+VM Name: {{vmName}}
+Approved by: {{approverName}}
+Approved at: {{approvedAt}}
 
-Die VM wird nun bereitgestellt. Sie erhalten eine weitere E-Mail,
-sobald die VM verfügbar ist.
+The VM is now being provisioned. You will receive another email
+once the VM is available.
 
-Details ansehen: {{requestLink}}
+View details: {{requestLink}}
 
-Mit freundlichen Grüßen,
+Best regards,
 DVMM System
 ```
 

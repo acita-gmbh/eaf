@@ -20,7 +20,7 @@ interface ProjectSelectProps {
  *
  * Shows available projects with their quota usage.
  * Displays quota progress bar and warning styling when >80% used.
- * Includes "Kein passendes Projekt?" help link.
+ * Includes "No suitable project?" help link.
  *
  * @see AC #3, #4
  */
@@ -35,7 +35,7 @@ export function ProjectSelect({ value, onValueChange }: ProjectSelectProps) {
           aria-required="true"
           data-testid="project-select-trigger"
         >
-          <SelectValue placeholder="Projekt auswählen..." />
+          <SelectValue placeholder="Select project..." />
         </SelectTrigger>
         <SelectContent>
           {MOCK_PROJECTS.map(project => (
@@ -67,7 +67,7 @@ function ProjectSelectItem({ project }: ProjectSelectItemProps) {
       <div className="flex flex-col gap-0.5">
         <span>{project.name}</span>
         <span className="text-xs text-muted-foreground">
-          {remaining} von {project.quota.total} VMs verfügbar
+          {remaining} of {project.quota.total} VMs available
         </span>
       </div>
     </SelectItem>
@@ -94,7 +94,7 @@ function ProjectQuotaDisplay({ project }: ProjectQuotaDisplayProps) {
             isWarning ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'
           )}
         >
-          Verfügbar: {remaining} von {project.quota.total} VMs
+          Available: {remaining} of {project.quota.total} VMs
         </span>
       </div>
       <Progress

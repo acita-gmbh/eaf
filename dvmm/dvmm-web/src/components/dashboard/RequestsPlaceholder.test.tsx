@@ -3,29 +3,29 @@ import { render, screen, fireEvent } from '@/test/test-utils'
 import { RequestsPlaceholder } from './RequestsPlaceholder'
 
 describe('RequestsPlaceholder', () => {
-  it('renders German empty state title', () => {
+  it('renders empty state title', () => {
     render(<RequestsPlaceholder />)
-    expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
+    expect(screen.getByText('No VMs requested yet')).toBeInTheDocument()
   })
 
-  it('renders German description', () => {
+  it('renders description', () => {
     render(<RequestsPlaceholder />)
     expect(
-      screen.getByText('Fordern Sie Ihre erste virtuelle Maschine an')
+      screen.getByText('Request your first virtual machine')
     ).toBeInTheDocument()
   })
 
   it('renders CTA button with correct text', () => {
     render(<RequestsPlaceholder />)
     expect(
-      screen.getByRole('button', { name: 'Erste VM anfordern' })
+      screen.getByRole('button', { name: 'Request First VM' })
     ).toBeInTheDocument()
   })
 
   it('calls onRequestVm when CTA button is clicked', () => {
     const handleRequest = vi.fn()
     render(<RequestsPlaceholder onRequestVm={handleRequest} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Erste VM anfordern' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Request First VM' }))
     expect(handleRequest).toHaveBeenCalledTimes(1)
   })
 
@@ -39,7 +39,7 @@ describe('RequestsPlaceholder', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     render(<RequestsPlaceholder />)
-    fireEvent.click(screen.getByRole('button', { name: 'Erste VM anfordern' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Request First VM' }))
 
     expect(consoleSpy).toHaveBeenCalledWith(
       '[RequestsPlaceholder] Navigate to VM request form'

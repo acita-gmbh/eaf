@@ -8,11 +8,11 @@ import { ProjectSelect } from './ProjectSelect'
 // is covered by E2E tests in e2e/requests.spec.ts
 
 // Mock data reference:
-// proj-1: "Entwicklung", 5/10 VMs (50%)
-// proj-2: "Produktion", 8/10 VMs (80%) - at threshold, not warning
+// proj-1: "Development", 5/10 VMs (50%)
+// proj-2: "Production", 8/10 VMs (80%) - at threshold, not warning
 // proj-3: "Testing", 0/5 VMs (0%)
 // proj-4: "Legacy", 9/10 VMs (90%) - warning state
-// proj-5: "Archiv", 0/0 VMs (0%) - zero quota, exhausted
+// proj-5: "Archive", 0/0 VMs (0%) - zero quota, exhausted
 
 describe('ProjectSelect', () => {
   describe('rendering', () => {
@@ -20,13 +20,13 @@ describe('ProjectSelect', () => {
       render(<ProjectSelect value="" onValueChange={vi.fn()} />)
 
       expect(screen.getByTestId('project-select-trigger')).toBeInTheDocument()
-      expect(screen.getByText('Projekt auswählen...')).toBeInTheDocument()
+      expect(screen.getByText('Select project...')).toBeInTheDocument()
     })
 
     it('renders help link for no project', () => {
       render(<ProjectSelect value="" onValueChange={vi.fn()} />)
 
-      expect(screen.getByText('Kein passendes Projekt?')).toBeInTheDocument()
+      expect(screen.getByText('No suitable project?')).toBeInTheDocument()
       expect(screen.getByTestId('no-project-help-trigger')).toBeInTheDocument()
     })
 
@@ -48,7 +48,7 @@ describe('ProjectSelect', () => {
       render(<ProjectSelect value="proj-1" onValueChange={vi.fn()} />)
 
       // When value is set, the trigger should show the project name
-      expect(screen.getByTestId('project-select-trigger')).toHaveTextContent('Entwicklung')
+      expect(screen.getByTestId('project-select-trigger')).toHaveTextContent('Development')
     })
 
     it('shows quota display when project is selected', () => {
@@ -61,8 +61,8 @@ describe('ProjectSelect', () => {
     it('shows VM availability count', () => {
       render(<ProjectSelect value="proj-1" onValueChange={vi.fn()} />)
 
-      // Entwicklung has 5 used of 10 total, so 5 available
-      expect(screen.getByText(/Verfügbar: 5 von 10 VMs/)).toBeInTheDocument()
+      // Development has 5 used of 10 total, so 5 available
+      expect(screen.getByText(/Available: 5 of 10 VMs/)).toBeInTheDocument()
     })
 
     it('shows progress bar with correct label', () => {
@@ -75,16 +75,16 @@ describe('ProjectSelect', () => {
     it('has normal styling when quota is below 80%', () => {
       render(<ProjectSelect value="proj-1" onValueChange={vi.fn()} />)
 
-      // Entwicklung is at 50% - should have normal styling
-      const availText = screen.getByText(/Verfügbar: 5 von 10 VMs/)
+      // Development is at 50% - should have normal styling
+      const availText = screen.getByText(/Available: 5 of 10 VMs/)
       expect(availText).toHaveClass('text-muted-foreground')
     })
 
     it('has normal styling when quota is exactly at 80%', () => {
       render(<ProjectSelect value="proj-2" onValueChange={vi.fn()} />)
 
-      // Produktion is at exactly 80% - should NOT have warning (>80% required)
-      const availText = screen.getByText(/Verfügbar: 2 von 10 VMs/)
+      // Production is at exactly 80% - should NOT have warning (>80% required)
+      const availText = screen.getByText(/Available: 2 of 10 VMs/)
       expect(availText).toHaveClass('text-muted-foreground')
     })
 
@@ -92,15 +92,15 @@ describe('ProjectSelect', () => {
       render(<ProjectSelect value="proj-4" onValueChange={vi.fn()} />)
 
       // Legacy is at 90% - should have warning styling
-      const availText = screen.getByText(/Verfügbar: 1 von 10 VMs/)
+      const availText = screen.getByText(/Available: 1 of 10 VMs/)
       expect(availText).toHaveClass('text-orange-600')
     })
 
     it('handles zero-quota projects without division by zero', () => {
       render(<ProjectSelect value="proj-5" onValueChange={vi.fn()} />)
 
-      // Archiv has 0/0 VMs - should show warning (treated as 100% used)
-      const availText = screen.getByText(/Verfügbar: 0 von 0 VMs/)
+      // Archive has 0/0 VMs - should show warning (treated as 100% used)
+      const availText = screen.getByText(/Available: 0 of 0 VMs/)
       expect(availText).toHaveClass('text-orange-600')
       // Progress bar should be at 100%
       expect(screen.getByRole('progressbar')).toBeInTheDocument()

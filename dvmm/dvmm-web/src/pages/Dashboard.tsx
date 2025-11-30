@@ -7,8 +7,8 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { Plus, Clock, CheckCircle, Server } from 'lucide-react'
 
 const ONBOARDING_CONTENT = {
-  'cta-button': 'Hier starten Sie eine neue VM-Anfrage',
-  'sidebar-nav': 'Navigieren Sie zu Ihren Anfragen',
+  'cta-button': 'Start a new VM request here',
+  'sidebar-nav': 'Navigate to your requests',
 } as const
 
 // Error boundary to prevent onboarding issues from crashing the dashboard

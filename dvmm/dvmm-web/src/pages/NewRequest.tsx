@@ -12,9 +12,9 @@ export function NewRequest() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Neue VM anfordern</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Request New VM</h1>
         <p className="text-muted-foreground">
-          Füllen Sie das Formular aus, um eine neue virtuelle Maschine anzufordern.
+          Fill out the form to request a new virtual machine.
         </p>
       </div>
 

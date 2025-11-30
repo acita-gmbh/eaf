@@ -55,9 +55,9 @@ describe('Dashboard', () => {
 
       renderDashboard()
 
-      expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
-      expect(screen.getByText('Fordern Sie Ihre erste virtuelle Maschine an')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Erste VM anfordern' })).toBeInTheDocument()
+      expect(screen.getByText('No VMs requested yet')).toBeInTheDocument()
+      expect(screen.getByText('Request your first virtual machine')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Request First VM' })).toBeInTheDocument()
     })
 
     it('shows stats cards with 0 values', () => {
@@ -77,7 +77,7 @@ describe('Dashboard', () => {
 
       // Should show first onboarding tooltip
       await waitFor(() => {
-        expect(screen.getByText('Hier starten Sie eine neue VM-Anfrage')).toBeInTheDocument()
+        expect(screen.getByText('Start a new VM request here')).toBeInTheDocument()
       })
     })
 
@@ -87,11 +87,11 @@ describe('Dashboard', () => {
 
       // First tooltip should appear
       await waitFor(() => {
-        expect(screen.getByText('Hier starten Sie eine neue VM-Anfrage')).toBeInTheDocument()
+        expect(screen.getByText('Start a new VM request here')).toBeInTheDocument()
       })
 
       // Dismiss first tooltip
-      await user.click(screen.getByRole('button', { name: 'Verstanden' }))
+      await user.click(screen.getByRole('button', { name: 'Got it' }))
 
       // Should advance to next step (or complete on mobile)
       expect(localStorageMock.setItem).toHaveBeenCalled()
@@ -102,8 +102,8 @@ describe('Dashboard', () => {
 
       renderDashboard()
 
-      expect(screen.queryByText('Hier starten Sie eine neue VM-Anfrage')).not.toBeInTheDocument()
-      expect(screen.queryByText('Navigieren Sie zu Ihren Anfragen')).not.toBeInTheDocument()
+      expect(screen.queryByText('Start a new VM request here')).not.toBeInTheDocument()
+      expect(screen.queryByText('Navigate to your requests')).not.toBeInTheDocument()
     })
 
     it('skips sidebar tooltip on mobile viewport', async () => {
@@ -114,11 +114,11 @@ describe('Dashboard', () => {
 
       // First tooltip should appear
       await waitFor(() => {
-        expect(screen.getByText('Hier starten Sie eine neue VM-Anfrage')).toBeInTheDocument()
+        expect(screen.getByText('Start a new VM request here')).toBeInTheDocument()
       })
 
       // Dismiss first tooltip
-      await user.click(screen.getByRole('button', { name: 'Verstanden' }))
+      await user.click(screen.getByRole('button', { name: 'Got it' }))
 
       // On mobile, should skip sidebar and complete directly
       expect(localStorageMock.setItem).toHaveBeenCalledWith('dvmm_onboarding_completed', 'true')

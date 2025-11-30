@@ -8,7 +8,7 @@ describe('NoProjectHelpDialog', () => {
     it('renders trigger button with help text', () => {
       render(<NoProjectHelpDialog />)
 
-      expect(screen.getByText('Kein passendes Projekt?')).toBeInTheDocument()
+      expect(screen.getByText('No suitable project?')).toBeInTheDocument()
       expect(screen.getByTestId('no-project-help-trigger')).toBeInTheDocument()
     })
 
@@ -26,14 +26,14 @@ describe('NoProjectHelpDialog', () => {
       render(<NoProjectHelpDialog />)
 
       // Popover content should not be visible initially
-      expect(screen.queryByText('Projektzugang benötigt')).not.toBeInTheDocument()
+      expect(screen.queryByText('Project access required')).not.toBeInTheDocument()
 
       // Click the trigger
       await user.click(screen.getByTestId('no-project-help-trigger'))
 
       // Popover content should now be visible
-      expect(screen.getByText('Projektzugang benötigt')).toBeInTheDocument()
-      expect(screen.getByText(/Kontaktieren Sie Ihren Admin/)).toBeInTheDocument()
+      expect(screen.getByText('Project access required')).toBeInTheDocument()
+      expect(screen.getByText(/Contact your admin/)).toBeInTheDocument()
     })
 
     it('shows admin contact info in popover', async () => {
@@ -42,7 +42,7 @@ describe('NoProjectHelpDialog', () => {
 
       await user.click(screen.getByTestId('no-project-help-trigger'))
 
-      expect(screen.getByText(/Admins können Sie zu bestehenden Projekten hinzufügen/)).toBeInTheDocument()
+      expect(screen.getByText(/Admins can add you to existing projects/)).toBeInTheDocument()
     })
 
     it('closes popover when Escape is pressed', async () => {
@@ -51,13 +51,13 @@ describe('NoProjectHelpDialog', () => {
 
       // Open the popover
       await user.click(screen.getByTestId('no-project-help-trigger'))
-      expect(screen.getByText('Projektzugang benötigt')).toBeInTheDocument()
+      expect(screen.getByText('Project access required')).toBeInTheDocument()
 
       // Press Escape to close
       await user.keyboard('{Escape}')
 
       // Popover should be closed (content not visible)
-      expect(screen.queryByText('Projektzugang benötigt')).not.toBeInTheDocument()
+      expect(screen.queryByText('Project access required')).not.toBeInTheDocument()
     })
   })
 

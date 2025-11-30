@@ -154,22 +154,22 @@ describe('App Integration', () => {
     expect(ctaButton).toBeDefined()
   })
 
-  it('renders My Requests section with German empty state', () => {
+  it('renders My Requests section with empty state', () => {
     render(<TestApp />)
 
     // "My Requests" appears in both sidebar nav and as a section heading
     const myRequestsElements = screen.getAllByText('My Requests')
     expect(myRequestsElements.length).toBeGreaterThanOrEqual(1)
 
-    // German empty state text (updated in Story 2.3)
-    expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
+    // Empty state text
+    expect(screen.getByText('No VMs requested yet')).toBeInTheDocument()
   })
 
   it('renders NewRequest page when navigating to /requests/new', () => {
     render(<TestApp initialEntries={['/requests/new']} />)
 
     // NewRequest page should be visible
-    expect(screen.getByRole('heading', { name: /neue vm anfordern/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /request new vm/i })).toBeInTheDocument()
   })
 })
 

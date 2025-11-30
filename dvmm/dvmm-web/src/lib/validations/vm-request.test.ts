@@ -12,7 +12,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0].message).toBe('Mindestens 3 Zeichen erforderlich')
+        expect(result.error.issues[0].message).toBe('Minimum 3 characters required')
       }
     })
 
@@ -20,7 +20,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('ab')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0].message).toBe('Mindestens 3 Zeichen erforderlich')
+        expect(result.error.issues[0].message).toBe('Minimum 3 characters required')
       }
     })
 
@@ -28,7 +28,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('a'.repeat(64))
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0].message).toBe('Maximal 63 Zeichen erlaubt')
+        expect(result.error.issues[0].message).toBe('Maximum 63 characters allowed')
       }
     })
 
@@ -48,7 +48,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('Web-Server')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Nur Kleinbuchstaben erlaubt')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Only lowercase letters allowed')).toBe(true)
       }
     })
 
@@ -56,7 +56,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('web server')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Nur Buchstaben, Zahlen und Bindestriche erlaubt')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Only letters, numbers, and hyphens allowed')).toBe(true)
       }
     })
 
@@ -64,7 +64,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('web_server_01')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Nur Buchstaben, Zahlen und Bindestriche erlaubt')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Only letters, numbers, and hyphens allowed')).toBe(true)
       }
     })
 
@@ -72,7 +72,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('web.server.01')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Nur Buchstaben, Zahlen und Bindestriche erlaubt')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Only letters, numbers, and hyphens allowed')).toBe(true)
       }
     })
   })
@@ -82,7 +82,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('-web-server')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Muss mit Buchstaben oder Zahl beginnen')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Must start with a letter or number')).toBe(true)
       }
     })
 
@@ -90,7 +90,7 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('web-server-')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Muss mit Buchstaben oder Zahl enden')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Must end with a letter or number')).toBe(true)
       }
     })
 
@@ -98,8 +98,8 @@ describe('vmNameSchema', () => {
       const result = vmNameSchema.safeParse('-web-server-')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues.some(i => i.message === 'Muss mit Buchstaben oder Zahl beginnen')).toBe(true)
-        expect(result.error.issues.some(i => i.message === 'Muss mit Buchstaben oder Zahl enden')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Must start with a letter or number')).toBe(true)
+        expect(result.error.issues.some(i => i.message === 'Must end with a letter or number')).toBe(true)
       }
     })
   })
@@ -147,7 +147,7 @@ describe('justificationSchema', () => {
     const result = justificationSchema.safeParse('')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('Mindestens 10 Zeichen erforderlich')
+      expect(result.error.issues[0].message).toBe('Minimum 10 characters required')
     }
   })
 
@@ -155,7 +155,7 @@ describe('justificationSchema', () => {
     const result = justificationSchema.safeParse('Too short')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('Mindestens 10 Zeichen erforderlich')
+      expect(result.error.issues[0].message).toBe('Minimum 10 characters required')
     }
   })
 
@@ -173,7 +173,7 @@ describe('justificationSchema', () => {
     const result = justificationSchema.safeParse('a'.repeat(1001))
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('Maximal 1000 Zeichen erlaubt')
+      expect(result.error.issues[0].message).toBe('Maximum 1000 characters allowed')
     }
   })
 
@@ -188,7 +188,7 @@ describe('projectIdSchema', () => {
     const result = projectIdSchema.safeParse('')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('Projekt ist erforderlich')
+      expect(result.error.issues[0].message).toBe('Project is required')
     }
   })
 

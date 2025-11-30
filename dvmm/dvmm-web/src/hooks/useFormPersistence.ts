@@ -20,7 +20,7 @@ export function useFormPersistence(isDirty: boolean) {
       if (isDirty) {
         e.preventDefault()
         // Modern browsers ignore custom messages, but setting returnValue is required
-        e.returnValue = 'Änderungen werden nicht gespeichert. Fortfahren?'
+        e.returnValue = 'Changes will not be saved. Continue?'
       }
     }
 

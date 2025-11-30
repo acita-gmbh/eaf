@@ -64,7 +64,7 @@ describe('useFormPersistence', () => {
     handler(mockEvent)
 
     expect(mockEvent.preventDefault).toHaveBeenCalled()
-    expect(mockEvent.returnValue).toBe('Änderungen werden nicht gespeichert. Fortfahren?')
+    expect(mockEvent.returnValue).toBe('Changes will not be saved. Continue?')
   })
 
   it('does not call preventDefault when isDirty is false', () => {

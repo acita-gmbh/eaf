@@ -63,17 +63,17 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                VM-Name <span className="text-destructive">*</span>
+                VM Name <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
                 <Input
-                  placeholder="z.B. web-server-01"
+                  placeholder="e.g. web-server-01"
                   aria-required="true"
                   {...field}
                 />
               </FormControl>
               <FormDescription>
-                3-63 Zeichen, Kleinbuchstaben, Zahlen und Bindestriche
+                3-63 characters, lowercase letters, numbers, and hyphens
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -87,7 +87,7 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Projekt <span className="text-destructive">*</span>
+                Project <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
                 <ProjectSelect
@@ -107,11 +107,11 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Begründung <span className="text-destructive">*</span>
+                Justification <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Beschreiben Sie den Zweck dieser VM..."
+                  placeholder="Describe the purpose of this VM..."
                   aria-required="true"
                   className="min-h-24 resize-y"
                   maxLength={1000}
@@ -129,7 +129,7 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
                   )}
                   aria-live="polite"
                 >
-                  {justificationLength}/10 Zeichen (min)
+                  {justificationLength}/10 characters (min)
                 </div>
               </div>
             </FormItem>
@@ -138,12 +138,12 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
 
         {/* Size Selector placeholder - Story 2.5 */}
         <div className="rounded-lg border border-dashed border-muted-foreground/25 p-4 text-sm text-muted-foreground">
-          VM-Größe Auswahl (Story 2.5)
+          VM Size Selector (Story 2.5)
         </div>
 
         {/* Submit Button placeholder - Story 2.6 */}
         <div className="rounded-lg border border-dashed border-muted-foreground/25 p-4 text-sm text-muted-foreground">
-          Absenden Button (Story 2.6)
+          Submit Button (Story 2.6)
         </div>
       </form>
     </Form>

@@ -26,7 +26,7 @@ export function NoProjectHelpDialog() {
           data-testid="no-project-help-trigger"
         >
           <HelpCircle className="h-4 w-4" />
-          <span>Kein passendes Projekt?</span>
+          <span>No suitable project?</span>
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -35,11 +35,11 @@ export function NoProjectHelpDialog() {
         data-testid="no-project-help-content"
       >
         <div className="space-y-2">
-          <h4 className="font-medium">Projektzugang benötigt</h4>
+          <h4 className="font-medium">Project access required</h4>
           <p className="text-sm text-muted-foreground">
-            Kontaktieren Sie Ihren Admin um Projektzugang zu erhalten.
-            Admins können Sie zu bestehenden Projekten hinzufügen oder
-            neue Projekte für Ihr Team erstellen.
+            Contact your admin to get project access.
+            Admins can add you to existing projects or
+            create new projects for your team.
           </p>
         </div>
       </PopoverContent>

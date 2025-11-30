@@ -9,39 +9,39 @@ import { z } from 'zod'
  * - Must start with letter or number
  * - Must end with letter or number
  *
- * Uses superRefine for granular German error messages per AC #2
+ * Uses superRefine for granular error messages per AC #2
  */
 export const vmNameSchema = z
   .string()
-  .min(3, 'Mindestens 3 Zeichen erforderlich')
-  .max(63, 'Maximal 63 Zeichen erlaubt')
+  .min(3, 'Minimum 3 characters required')
+  .max(63, 'Maximum 63 characters allowed')
   .superRefine((val, ctx) => {
     // Check for uppercase letters
     if (/[A-Z]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Nur Kleinbuchstaben erlaubt',
+        message: 'Only lowercase letters allowed',
       })
     }
     // Check for invalid characters (spaces, special chars)
     if (/[^a-z0-9-]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Nur Buchstaben, Zahlen und Bindestriche erlaubt',
+        message: 'Only letters, numbers, and hyphens allowed',
       })
     }
     // Check start character
     if (val.startsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstaben oder Zahl beginnen',
+        message: 'Must start with a letter or number',
       })
     }
     // Check end character
     if (val.endsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstaben oder Zahl enden',
+        message: 'Must end with a letter or number',
       })
     }
   })
@@ -55,8 +55,8 @@ export const vmNameSchema = z
  */
 export const justificationSchema = z
   .string()
-  .min(10, 'Mindestens 10 Zeichen erforderlich')
-  .max(1000, 'Maximal 1000 Zeichen erlaubt')
+  .min(10, 'Minimum 10 characters required')
+  .max(1000, 'Maximum 1000 characters allowed')
 
 /**
  * Project ID validation schema
@@ -66,7 +66,7 @@ export const justificationSchema = z
  */
 export const projectIdSchema = z
   .string()
-  .min(1, 'Projekt ist erforderlich')
+  .min(1, 'Project is required')
 
 /**
  * Complete VM Request form schema
