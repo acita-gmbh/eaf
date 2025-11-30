@@ -1,21 +1,21 @@
 # DVMM Infrastruktur-Briefing
 
-**Fuer:** Infrastruktur-Team (Ansible, OpenShift, Kubernetes-Experten)
+**Für:** Infrastruktur-Team (Ansible, OpenShift, Kubernetes-Experten)
 **Datum:** 2025-11-30
-**Zweck:** Beratung und Unterstuetzung fuer die DVMM/EAF Deployment-Strategie
+**Zweck:** Beratung und Unterstützung für die DVMM/EAF Deployment-Strategie
 
 ---
 
-## Was ihr wissen muesst
+## Was ihr wissen müsst
 
 ### ZEWSSP-Nachfolger: DVMM
 
-Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DVMM (Dynamic Virtual Machine Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschraenkungen zu ueberwinden:
+Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DVMM (Dynamic Virtual Machine Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschränkungen zu überwinden:
 
-| Problem (ZEWSSP) | Loesung (DVMM) |
-|------------------|----------------|
+| Problem (ZEWSSP) | Lösung (DVMM) |
+|------------------|---------------|
 | Nur Single-Tenant | Multi-Tenant mit PostgreSQL Row-Level Security |
-| Keine Compliance-Faehigkeit | ISO 27001 / DSGVO-ready von Anfang an |
+| Keine Compliance-Fähigkeit | ISO 27001 / DSGVO-ready von Anfang an |
 | Monolithischer Legacy-Code | Moderne modulare Architektur |
 | Manuelle Deployments | Container-basiert, CI/CD-automatisiert |
 
@@ -23,25 +23,25 @@ Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DVMM (Dynamic Virtual Machin
 
 **Kern-Workflow:** Benutzer beantragt VM → Genehmigungsworkflow → Automatische Provisionierung auf VMware vSphere → Benachrichtigung
 
-Dies ist eine Webanwendung fuer mehrere Mandanten (Kunden), die Self-Service VM-Provisionierung mit konfigurierbaren Genehmigungsworkflows ermoeglicht.
+Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-Provisionierung mit konfigurierbaren Genehmigungsworkflows ermöglicht.
 
 ---
 
-## Technischer Stack Ueberblick
+## Technischer Stack Überblick
 
 ### Backend
 - **Kotlin 2.2** + **Spring Boot 3.5** (WebFlux/Coroutines)
-- **PostgreSQL 16** mit Row-Level Security fuer Mandantentrennung
-- **Keycloak** fuer Authentifizierung (OIDC/JWT)
-- Event Sourcing Architektur (alle Zustandsaenderungen als unveraenderliche Events gespeichert)
+- **PostgreSQL 16** mit Row-Level Security für Mandantentrennung
+- **Keycloak** für Authentifizierung (OIDC/JWT)
+- Event Sourcing Architektur (alle Zustandsänderungen als unveränderliche Events gespeichert)
 
 ### Frontend
 - **React 19** + TypeScript + Vite
 - Tailwind CSS mit shadcn/ui Komponenten
 
 ### Integrationen
-- **VMware vSphere API** fuer VM-Provisionierung
-- **E-Mail (SMTP)** fuer Benachrichtigungen
+- **VMware vSphere API** für VM-Provisionierung
+- **E-Mail (SMTP)** für Benachrichtigungen
 
 ---
 
@@ -89,7 +89,7 @@ Dies ist eine Webanwendung fuer mehrere Mandanten (Kunden), die Self-Service VM-
 │  │ PostgreSQL (Managed oder StatefulSet)            │  │
 │  │ - RLS aktiviert                                   │  │
 │  │ - SSL-Verbindungen                                │  │
-│  │ - WAL-Archivierung fuer Backup                    │  │
+│  │ - WAL-Archivierung für Backup                     │  │
 │  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -130,13 +130,13 @@ KEYCLOAK_REALM: dvmm
 KEYCLOAK_CLIENT_ID: dvmm-api
 
 # VMware (pro Mandant, in DB gespeichert)
-# Zugangsdaten werden ueber die Anwendung verwaltet, nicht ueber Env-Vars
+# Zugangsdaten werden über die Anwendung verwaltet, nicht über Env-Vars
 
 # Spring
 SPRING_PROFILES_ACTIVE: production
 ```
 
-### Benoetigte Secrets
+### Benötigte Secrets
 
 | Secret | Inhalt | Hinweise |
 |--------|--------|----------|
@@ -171,7 +171,7 @@ Wir planen den Standard Grafana + Prometheus + Loki Stack:
 
 | Metrik | Ziel | Alarm-Schwelle |
 |--------|------|----------------|
-| API Verfuegbarkeit | 99,5% | < 99% |
+| API Verfügbarkeit | 99,5% | < 99% |
 | API P95 Latenz | < 500ms | > 1s |
 | Fehlerrate | < 1% | > 5% |
 | DB-Verbindungen | < 80% | > 90% |
@@ -182,19 +182,19 @@ Wir planen den Standard Grafana + Prometheus + Loki Stack:
 
 ### Blue-Green Deployments
 
-Fuer unterbrechungsfreie Releases wollen wir Blue-Green Deployments implementieren:
+Für unterbrechungsfreie Releases wollen wir Blue-Green Deployments implementieren:
 
 1. Neue Version in "Green"-Umgebung deployen
-2. Smoke Tests gegen Green ausfuehren
+2. Smoke Tests gegen Green ausführen
 3. Ingress/Load Balancer auf Green umschalten
-4. Blue fuer sofortiges Rollback verfuegbar halten
+4. Blue für sofortiges Rollback verfügbar halten
 
 **Rollback-Zielzeit:** < 5 Minuten
 
 ### Datenbank-Migrationen
 
-Wir nutzen **Flyway** fuer Schema-Migrationen mit diesen Regeln:
-- Nur rueckwaertskompatible Aenderungen
+Wir nutzen **Flyway** für Schema-Migrationen mit diesen Regeln:
+- Nur rückwärtskompatible Änderungen
 - Kein DROP/RENAME in Produktions-Releases
 - Migrationen laufen automatisch beim Anwendungsstart
 
@@ -204,7 +204,7 @@ Wir nutzen **Flyway** fuer Schema-Migrationen mit diesen Regeln:
 
 | Anforderung | Ziel |
 |-------------|------|
-| Verfuegbarkeit | 99,5% Uptime |
+| Verfügbarkeit | 99,5% Uptime |
 | RTO (Recovery Time Objective) | < 4 Stunden |
 | RPO (Recovery Point Objective) | < 1 Stunde |
 | Gleichzeitige Benutzer | 100+ |
@@ -218,25 +218,25 @@ Wir nutzen **Flyway** fuer Schema-Migrationen mit diesen Regeln:
 ### 1. Kubernetes/OpenShift Deployment
 
 - Sollten wir Vanilla Kubernetes Manifeste oder Helm Charts verwenden?
-- OpenShift-spezifische Ueberlegungen?
-- Namespace-Strategie fuer Multi-Environment (Dev/Staging/Prod)?
-- Network Policies fuer Mandantentrennung?
+- OpenShift-spezifische Überlegungen?
+- Namespace-Strategie für Multi-Environment (Dev/Staging/Prod)?
+- Network Policies für Mandantentrennung?
 
 ### 2. Configuration Management
 
-- Ansible fuer Infrastruktur-Provisionierung?
+- Ansible für Infrastruktur-Provisionierung?
 - Wie verwalten wir umgebungsspezifische Konfigurationen?
 - Secrets Management (Vault? Sealed Secrets? OpenShift Secrets?)
 
 ### 3. Datenbank-Betrieb
 
 - PostgreSQL Operator Empfehlungen?
-- Backup-Strategie fuer WAL-Archivierung?
-- Connection Pooling (PgBouncer?) Ueberlegungen?
+- Backup-Strategie für WAL-Archivierung?
+- Connection Pooling (PgBouncer?) Überlegungen?
 
 ### 4. Observability
 
-- Vorhandene Prometheus/Grafana-Infrastruktur, die wir nutzen koennen?
+- Vorhandene Prometheus/Grafana-Infrastruktur, die wir nutzen können?
 - Log-Aggregations-Patterns im Einsatz?
 - Alerting Best Practices?
 
@@ -249,12 +249,12 @@ Wir nutzen **Flyway** fuer Schema-Migrationen mit diesen Regeln:
 ### 6. Sicherheit
 
 - Zertifikatsverwaltung (cert-manager)?
-- Ingress Controller Praeferenzen?
+- Ingress Controller Präferenzen?
 - Pod Security Policies / Standards?
 
 ---
 
-## EAF: Das groessere Bild
+## EAF: Das größere Bild
 
 DVMM ist das erste Produkt, das auf unserem neuen **Enterprise Application Framework (EAF)** aufbaut. Das Framework bietet:
 
@@ -263,15 +263,15 @@ DVMM ist das erste Produkt, das auf unserem neuen **Enterprise Application Frame
 - Authentifizierungs-Abstraktionen (IdP-agnostisch)
 - Observability Tooling
 
-Zukuenftige Produkte werden ebenfalls EAF nutzen, daher werden die Deployment-Patterns, die wir jetzt etablieren, wiederverwendet. Euer Input hilft uns, eine Grundlage zu schaffen, die skaliert.
+Zukünftige Produkte werden ebenfalls EAF nutzen, daher werden die Deployment-Patterns, die wir jetzt etablieren, wiederverwendet. Euer Input hilft uns, eine Grundlage zu schaffen, die skaliert.
 
 ---
 
-## Naechste Schritte
+## Nächste Schritte
 
 1. **Dieses Meeting:** Deployment-Strategie diskutieren und eure Empfehlungen einholen
-2. **Follow-up:** Wir teilen spezifische Deployment-Manifeste zur Pruefung
-3. **Pilot:** Deployment in einer Testumgebung mit eurer Unterstuetzung
+2. **Follow-up:** Wir teilen spezifische Deployment-Manifeste zur Prüfung
+3. **Pilot:** Deployment in einer Testumgebung mit eurer Unterstützung
 
 ---
 
