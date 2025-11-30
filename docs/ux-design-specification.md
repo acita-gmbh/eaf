@@ -667,6 +667,31 @@ Request Rejected → User sees reason
 **Base:** shadcn-admin-kit components (copy-paste, full control)
 **Customization:** Tailwind theme extension for DVMM colors
 
+### 6.1.1 React Coding Standards
+
+**React Compiler Optimization:**
+- Project uses React Compiler for automatic memoization
+- **PROHIBITED:** `useMemo`, `useCallback`, `React.memo` (ESLint enforced)
+- Write straightforward code; compiler handles optimization
+
+**Component Patterns:**
+- Function components only (no class components)
+- TypeScript interfaces for props
+- Named exports for components
+- PascalCase for component names, camelCase for hooks
+
+```tsx
+// ✅ Correct pattern
+interface VMCardProps {
+  vm: VirtualMachine
+  onSelect: (id: string) => void
+}
+
+export function VMCard({ vm, onSelect }: VMCardProps) {
+  return <Card onClick={() => onSelect(vm.id)}>...</Card>
+}
+```
+
 ### 6.2 shadcn Components Used
 
 | Component | shadcn Name | DVMM Usage |

@@ -75,6 +75,70 @@ Convention plugins for consistent configuration:
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Frontend (dvmm-web)
+
+The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.
+
+### Frontend Tech Stack
+
+- **React 19.2** with React Compiler (automatic optimization)
+- **Vite 7.2** with @vitejs/plugin-react (Babel-based)
+- **TypeScript 5.9**
+- **Tailwind CSS 4** with shadcn/ui components
+- **Vitest** for unit tests, **Playwright** for E2E tests
+
+### Frontend Commands
+
+```bash
+cd dvmm/dvmm-web
+
+npm run dev          # Start dev server (port 5173)
+npm run build        # Type-check and build for production
+npm run test         # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests
+npm run lint         # Run ESLint
+```
+
+### React Coding Standards (Zero-Tolerance)
+
+**React Compiler handles memoization automatically. Manual optimization is PROHIBITED.**
+
+```tsx
+// ❌ FORBIDDEN - Manual memoization (ESLint will error)
+import { useMemo, useCallback, memo } from 'react'
+const memoizedValue = useMemo(() => computeExpensive(a, b), [a, b])
+const memoizedFn = useCallback(() => doSomething(a), [a])
+const MemoizedComponent = memo(MyComponent)
+
+// ✅ CORRECT - Let React Compiler optimize automatically
+const value = computeExpensive(a, b)
+const handleClick = () => doSomething(a)
+function MyComponent() { ... }
+```
+
+**Rationale:**
+- React Compiler analyzes code at build time and adds memoization where beneficial
+- Manual memoization is often applied incorrectly (wrong deps, unnecessary overhead)
+- Compiler optimization is more consistent and maintainable
+- See: https://react.dev/learn/react-compiler
+
+### Component Patterns
+
+```tsx
+// ✅ REQUIRED - Function components with TypeScript
+interface Props {
+  title: string
+  onAction: () => void
+}
+
+export function MyComponent({ title, onAction }: Props) {
+  return <button onClick={onAction}>{title}</button>
+}
+
+// ❌ FORBIDDEN - Class components
+class MyComponent extends React.Component { ... }
+```
+
 ## jOOQ Code Generation
 
 jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).
