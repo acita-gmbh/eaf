@@ -33,7 +33,7 @@ describe('VmSizeQuotaInfo', () => {
     })
   })
 
-  describe('warning state (>80% used)', () => {
+  describe('warning state (≥80% used)', () => {
     const warningQuota: MockProject['quota'] = { used: 9, total: 10 } // 90% used
 
     it('shows warning styling when quota >80% used', () => {
@@ -114,6 +114,21 @@ describe('VmSizeQuotaInfo', () => {
       expect(screen.getByText(/Available: 10 of 10 VMs/)).toBeInTheDocument()
       const progressbar = screen.getByRole('progressbar')
       expect(progressbar).toHaveAttribute('aria-valuenow', '0')
+    })
+
+    it('handles used > total gracefully (defensive case)', () => {
+      // Edge case: data inconsistency where used exceeds total
+      const overusedQuota: MockProject['quota'] = { used: 15, total: 10 }
+      render(<VmSizeQuotaInfo projectQuota={overusedQuota} />)
+
+      // Remaining should be clamped to 0 (not negative)
+      expect(screen.getByText(/Available: 0 of 10 VMs/)).toBeInTheDocument()
+      // Usage percentage should be clamped to 100
+      const progressbar = screen.getByRole('progressbar')
+      expect(progressbar).toHaveAttribute('aria-valuenow', '100')
+      // Should show warning (100% >= 80%)
+      const container = screen.getByRole('region')
+      expect(container.className).toContain('border-amber')
     })
   })
 

@@ -117,15 +117,23 @@ describe('VmSizeSelector', () => {
       expect(mediumRadio).toHaveAttribute('aria-checked', 'true')
     })
 
-    it('radio items are focusable for keyboard navigation', () => {
+    it('radiogroup is configured for keyboard navigation', () => {
       render(<VmSizeSelector value="M" onValueChange={vi.fn()} />)
 
-      // All radio items should be part of the radiogroup for keyboard nav
+      const radioGroup = screen.getByRole('radiogroup')
       const radios = screen.getAllByRole('radio')
 
+      // RadioGroup is properly structured for keyboard nav
+      expect(radioGroup).toBeInTheDocument()
       expect(radios).toHaveLength(4)
-      // Radix RadioGroup provides built-in keyboard navigation
-      // (arrow keys move focus, space/enter select) via its accessibility implementation
+
+      // Each radio has a value for selection
+      for (const radio of radios) {
+        expect(radio).toHaveAttribute('value')
+      }
+
+      // Note: Arrow key navigation is provided by Radix RadioGroup
+      // but cannot be tested in JSDOM. Covered by E2E tests.
     })
   })
 
@@ -157,6 +165,16 @@ describe('VmSizeSelector', () => {
       // Find the Small card's label
       const smallLabel = screen.getByText('S').closest('label')
       expect(smallLabel?.className).not.toContain('ring-2')
+    })
+
+    it('size cards have minimum height for consistent layout', () => {
+      render(<VmSizeSelector value="M" onValueChange={vi.fn()} />)
+
+      // Each card should have min-h class for visual consistency
+      for (const size of VM_SIZES) {
+        const label = screen.getByText(size.id).closest('label')
+        expect(label?.className).toContain('min-h-')
+      }
     })
   })
 })

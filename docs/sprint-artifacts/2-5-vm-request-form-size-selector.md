@@ -1,6 +1,6 @@
 # Story 2.5: VM Request Form - Size Selector
 
-Status: review
+Status: done
 
 ## Story
 

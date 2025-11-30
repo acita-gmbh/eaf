@@ -87,16 +87,18 @@ describe('VmRequestForm Integration', () => {
       expect(screen.getAllByRole('radio')).toHaveLength(4)
     })
 
-    it('size validation error appears when size is somehow cleared', async () => {
+    it('always has one size selected (RadioGroup prevents empty state)', () => {
       // Note: In practice, size can't be cleared via UI since one radio is always selected.
-      // This test verifies the validation schema is wired correctly at the form level.
-      // The schema tests in vm-request.test.ts cover validation edge cases.
+      // RadioGroup enforces single selection - there's no way to deselect all options.
+      // This test verifies the constraint is maintained at the form level.
 
       render(<VmRequestForm />)
 
-      // Form should render with size selector
-      const radioGroup = screen.getByRole('radiogroup', { name: /select vm size/i })
-      expect(radioGroup).toBeInTheDocument()
+      const radios = screen.getAllByRole('radio')
+      const checkedRadios = radios.filter(r => r.getAttribute('aria-checked') === 'true')
+
+      // Exactly one size should always be selected
+      expect(checkedRadios).toHaveLength(1)
     })
   })
 
