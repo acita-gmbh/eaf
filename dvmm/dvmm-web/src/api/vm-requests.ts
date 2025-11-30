@@ -72,12 +72,15 @@ export interface VmSizeSpec {
 
 /**
  * Response from successful VM request creation.
+ *
+ * Note: projectName is null on creation response (command side) and will be
+ * populated when reading from projections (query side).
  */
 export interface VmRequestResponse {
   id: string
   vmName: string
   projectId: string
-  projectName: string
+  projectName: string | null
   size: VmSizeSpec
   status: 'PENDING'
   createdAt: string

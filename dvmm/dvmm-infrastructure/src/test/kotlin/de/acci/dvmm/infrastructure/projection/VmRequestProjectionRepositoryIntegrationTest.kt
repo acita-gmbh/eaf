@@ -133,9 +133,15 @@ class VmRequestProjectionRepositoryIntegrationTest {
         id: UUID = UUID.randomUUID(),
         tenantId: TenantId,
         requesterId: UUID = UUID.randomUUID(),
+        requesterName: String = "Test User",
+        projectId: UUID = UUID.randomUUID(),
+        projectName: String = "Test Project",
         vmName: String = "test-vm",
+        size: String = "M",
         cpuCores: Int = DEFAULT_CPU_CORES,
         memoryGb: Int = DEFAULT_MEMORY_GB,
+        diskGb: Int = 100,
+        justification: String = "Test justification for VM request",
         status: String = "PENDING",
         createdAt: OffsetDateTime = OffsetDateTime.now(),
         updatedAt: OffsetDateTime = OffsetDateTime.now()
@@ -146,19 +152,27 @@ class VmRequestProjectionRepositoryIntegrationTest {
             conn.prepareStatement(
                 """
                 INSERT INTO public."VM_REQUESTS_PROJECTION"
-                ("ID", "TENANT_ID", "REQUESTER_ID", "VM_NAME", "CPU_CORES", "MEMORY_GB", "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ("ID", "TENANT_ID", "REQUESTER_ID", "REQUESTER_NAME", "PROJECT_ID", "PROJECT_NAME",
+                 "VM_NAME", "SIZE", "CPU_CORES", "MEMORY_GB", "DISK_GB", "JUSTIFICATION",
+                 "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                 """.trimIndent()
             ).use { stmt ->
                 stmt.setObject(1, id)
                 stmt.setObject(2, tenantId.value)
                 stmt.setObject(3, requesterId)
-                stmt.setString(4, vmName)
-                stmt.setInt(5, cpuCores)
-                stmt.setInt(6, memoryGb)
-                stmt.setString(7, status)
-                stmt.setObject(8, createdAt)
-                stmt.setObject(9, updatedAt)
+                stmt.setString(4, requesterName)
+                stmt.setObject(5, projectId)
+                stmt.setString(6, projectName)
+                stmt.setString(7, vmName)
+                stmt.setString(8, size)
+                stmt.setInt(9, cpuCores)
+                stmt.setInt(10, memoryGb)
+                stmt.setInt(11, diskGb)
+                stmt.setString(12, justification)
+                stmt.setString(13, status)
+                stmt.setObject(14, createdAt)
+                stmt.setObject(15, updatedAt)
                 stmt.executeUpdate()
             }
         }
