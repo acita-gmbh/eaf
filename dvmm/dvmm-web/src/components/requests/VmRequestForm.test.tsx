@@ -1,11 +1,21 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { VmRequestForm } from './VmRequestForm'
 
 // Mock useFormPersistence hook - we test it separately
 vi.mock('@/hooks/useFormPersistence', () => ({
   useFormPersistence: vi.fn(),
+}))
+
+// Mock useCreateVmRequest hook
+vi.mock('@/hooks/useCreateVmRequest', () => ({
+  useCreateVmRequest: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+  }),
 }))
 
 describe('VmRequestForm', () => {
@@ -60,10 +70,17 @@ describe('VmRequestForm', () => {
       expect(mediumRadio).toHaveAttribute('aria-checked', 'true')
     })
 
-    it('renders Submit button placeholder for Story 2.6', () => {
+    it('renders Submit button', () => {
       render(<VmRequestForm />)
 
-      expect(screen.getByText(/submit button \(story 2\.6\)/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /submit request/i })).toBeInTheDocument()
+    })
+
+    it('submit button is disabled when form is invalid', () => {
+      render(<VmRequestForm />)
+
+      const submitButton = screen.getByTestId('submit-button')
+      expect(submitButton).toBeDisabled()
     })
   })
 

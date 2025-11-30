@@ -8,13 +8,25 @@ plugins {
 // dvmm-app: Main application, assembles all modules
 dependencies {
     implementation(project(":dvmm:dvmm-api"))
+    implementation(project(":dvmm:dvmm-application"))
     implementation(project(":dvmm:dvmm-infrastructure"))
     implementation(project(":eaf:eaf-auth-keycloak"))
+    implementation(project(":eaf:eaf-eventsourcing"))
+    implementation(project(":eaf:eaf-tenant"))
     implementation(libs.spring.boot.actuator)
+    implementation(libs.spring.boot.jdbc)
+
+    // jOOQ for type-safe SQL
+    implementation(libs.jooq)
+    implementation(libs.jooq.kotlin)
+
+    // PostgreSQL JDBC driver for DataSource
+    runtimeOnly(libs.postgresql)
 
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
     testImplementation(libs.spring.boot.oauth2.resource.server)
     testImplementation(libs.spring.security.test)
+    testImplementation(libs.kotlin.coroutines.test)
 }
 
 springBoot {

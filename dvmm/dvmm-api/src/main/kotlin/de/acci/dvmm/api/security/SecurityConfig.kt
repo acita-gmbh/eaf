@@ -4,6 +4,7 @@ import de.acci.eaf.auth.keycloak.KeycloakJwtAuthenticationConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -33,6 +34,7 @@ public class SecurityConfig(
     private val keycloakClientId: String,
     @Value("\${eaf.cors.allowed-origins:http://localhost:3000}")
     private val allowedOrigins: String,
+    private val environment: Environment,
 ) {
 
     /**
@@ -44,12 +46,21 @@ public class SecurityConfig(
      */
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        return http
-            .csrf { csrf ->
+        // Configure CSRF based on property (defaults to true if not set)
+        val csrfEnabled = environment.getProperty("eaf.security.csrf.enabled", Boolean::class.java, true)
+        println(">>> CSRF enabled: $csrfEnabled")
+
+        if (csrfEnabled) {
+            http.csrf { csrf ->
                 csrf
                     .csrfTokenRepository(csrfTokenRepository())
                     .csrfTokenRequestHandler(csrfTokenRequestHandler())
             }
+        } else {
+            http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        }
+
+        return http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeExchange { auth ->
                 auth

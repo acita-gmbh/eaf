@@ -22,6 +22,11 @@ eaf:
   cors:
     allowed-origins: http://localhost:3000
 
+  # Disable CSRF for stateless JWT API tests
+  security:
+    csrf:
+      enabled: false
+
 # Actuator - enable more endpoints for testing
 management:
   endpoints:

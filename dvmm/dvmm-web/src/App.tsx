@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { useAuth } from 'react-oidc-context'
+import { Toaster } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { DashboardLayout } from '@/components/layout'
@@ -8,6 +10,7 @@ import { ProtectedRoute } from '@/components/auth'
 import { Dashboard } from '@/pages/Dashboard'
 import { NewRequest } from '@/pages/NewRequest'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
+import { queryClient } from '@/lib/query-client'
 import { User } from 'lucide-react'
 
 function AppRoutes() {
@@ -97,9 +100,12 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+        <Toaster richColors position="top-right" />
+      </QueryClientProvider>
     </ErrorBoundary>
   )
 }

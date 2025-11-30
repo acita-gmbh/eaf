@@ -18,11 +18,16 @@ public object TenantContext {
         val direct = coroutineContext[TenantContextElement]?.tenantId
         if (direct != null) return direct
 
-        val reactorContext = coroutineContext[ReactorContext]?.context
-        val fromReactor = reactorContext
-            ?.getOrDefault(REACTOR_TENANT_KEY, null)
-            ?.let { it as? TenantId }
+        val reactorContext = coroutineContext[ReactorContext]?.context ?: return null
 
-        return fromReactor
+        // Use hasKey + get pattern to avoid type inference issues with value classes.
+        // getOrDefault(key, null) can cause ClassCastException with @JvmInline value classes
+        // due to Kotlin/Reactor generic type inference mismatch.
+        return if (reactorContext.hasKey(REACTOR_TENANT_KEY)) {
+            @Suppress("UNCHECKED_CAST")
+            reactorContext.get<Any>(REACTOR_TENANT_KEY) as? TenantId
+        } else {
+            null
+        }
     }
 }

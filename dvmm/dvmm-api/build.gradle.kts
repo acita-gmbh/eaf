@@ -21,10 +21,12 @@ dependencies {
     implementation(project(":eaf:eaf-tenant"))
 
     implementation(libs.spring.boot.oauth2.resource.server)
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     testImplementation(libs.spring.security.test)
     testImplementation(libs.spring.boot.actuator)
     testImplementation(project(":eaf:eaf-testing"))
+    testImplementation(libs.kotlin.coroutines.test)
 }
 
 // Coverage and mutation testing quality gates restored in Story 2.1

@@ -1,6 +1,23 @@
 import { createContext, useContext, type ReactElement, type ReactNode } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
+
+// Create a new QueryClient for each test to ensure isolation
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  })
+}
 
 // Mock auth context values matching react-oidc-context's AuthContextProps
 interface MockAuthContextValue {
@@ -95,15 +112,21 @@ export const createMockUseAuth = (overrides: Partial<MockAuthContextValue> = {})
 // Custom render function with providers
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   authState?: Partial<MockAuthContextValue>
+  initialEntries?: string[]
 }
 
 export function customRender(
   ui: ReactElement,
-  { authState, ...options }: CustomRenderOptions = {}
+  { authState, initialEntries = ['/'], ...options }: CustomRenderOptions = {}
 ) {
+  const queryClient = createTestQueryClient()
   return render(ui, {
     wrapper: ({ children }) => (
-      <MockAuthProvider value={authState}>{children}</MockAuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <MockAuthProvider value={authState}>{children}</MockAuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
     ),
     ...options,
   })
