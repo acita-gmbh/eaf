@@ -186,7 +186,7 @@ If shadcn radio-group is missing, complete Task 1 first.
 ### UX Design Reference
 
 **VMSizeSelector visual spec (from UX Design):**
-```
+```text
 ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐
 │  S  │ │  M  │ │  L  │ │ XL  │
 │2CPU │ │4CPU │ │8CPU │ │16CPU│
@@ -196,7 +196,7 @@ If shadcn radio-group is missing, complete Task 1 first.
 ```
 
 **QuotaIndicator visual spec:**
-```
+```text
 Your Quota                      75% used
 [████████████████░░░░░░]
 This request uses 8 of 32 remaining vCPUs
@@ -287,7 +287,7 @@ This request uses 8 of 32 remaining vCPUs
 
 ### New Files to Create
 
-```
+```text
 dvmm/dvmm-web/src/
 ├── components/
 │   └── requests/
