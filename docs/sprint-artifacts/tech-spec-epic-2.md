@@ -507,7 +507,9 @@ CREATE INDEX idx_timeline_request ON "REQUEST_TIMELINE_EVENTS"("REQUEST_ID", "OC
 | TypeScript | 5.x | Type Safety |
 | Vite | 5.x | Build Tool |
 | shadcn/ui | Latest | Component Library |
-| Tailwind CSS | 3.x | Styling |
+| Tailwind CSS | 4.x | Styling |
+| Vitest | 3.x | Unit Testing |
+| @testing-library/react | 16.x | Component Testing |
 | React Query | 5.x | Server State |
 | React Hook Form | 7.x | Form Management |
 | Zod | 3.x | Validation |
@@ -516,13 +518,17 @@ CREATE INDEX idx_timeline_request ON "REQUEST_TIMELINE_EVENTS"("REQUEST_ID", "OC
 #### 4.4.2 Component Structure
 
 ```
-frontend/src/
+dvmm/dvmm-web/src/
 ├── components/
 │   ├── ui/                    # shadcn/ui components
 │   ├── layout/
 │   │   ├── Header.tsx
 │   │   ├── Sidebar.tsx
+│   │   ├── MobileNav.tsx
 │   │   └── DashboardLayout.tsx
+│   ├── dashboard/
+│   │   ├── StatsCard.tsx
+│   │   └── RequestsPlaceholder.tsx
 │   ├── requests/
 │   │   ├── VmRequestCard.tsx
 │   │   ├── VmRequestForm.tsx
@@ -544,9 +550,13 @@ frontend/src/
 │   ├── useAuth.ts
 │   ├── useRequests.ts
 │   └── useAdmin.ts
-├── services/
-│   ├── api.ts
-│   └── auth.ts
+├── api/
+│   └── api-client.ts
+├── auth/
+│   └── auth-config.ts
+├── test/
+│   ├── setup.ts
+│   └── test-utils.tsx
 └── types/
     └── index.ts
 ```
@@ -554,22 +564,25 @@ frontend/src/
 #### 4.4.3 Design System (Tech Teal Theme)
 
 ```css
-/* Primary Colors */
---color-primary: #0f766e;      /* Tech Teal 700 */
---color-primary-hover: #0d9488; /* Tech Teal 600 */
---color-primary-light: #14b8a6; /* Tech Teal 500 */
+/* Primary Colors (oklch format in index.css) */
+--color-primary: #0D9488;      /* Tech Teal 600 - Primary actions */
+--color-primary-hover: #0f766e; /* Tech Teal 700 - Hover state (darker) */
+--color-primary-light: #14b8a6; /* Tech Teal 500 - Accents */
 
-/* Status Colors */
---color-pending: #f59e0b;       /* Amber 500 */
---color-approved: #10b981;      /* Emerald 500 */
---color-rejected: #ef4444;      /* Red 500 */
---color-cancelled: #6b7280;     /* Gray 500 */
+/* Status Colors (HSL format as CSS variables) */
+--status-pending: 43 96% 56%;    /* Amber 500 - #f59e0b */
+--status-approved: 160 84% 39%;  /* Emerald 500 - #10b981 */
+--status-rejected: 347 77% 50%;  /* Rose 500 - #f43f5e */
+--status-info: 199 89% 48%;      /* Sky 500 - #0ea5e9 */
 
 /* Background */
 --color-bg-primary: #ffffff;
 --color-bg-secondary: #f9fafb;
 --color-bg-tertiary: #f3f4f6;
 ```
+
+**Note:** Tailwind 4 uses CSS variables in `src/index.css`. There is NO `tailwind.config.js` file.
+Usage pattern: `text-[hsl(var(--status-pending))] bg-[hsl(var(--status-pending)/0.1)]`
 
 ### 4.5 Email Templates
 
@@ -955,11 +968,39 @@ CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "C
 ```bash
 # Create React frontend (if not exists)
 cd dvmm
-npm create vite@latest dvmm-frontend -- --template react-ts
-cd dvmm-frontend
-npm install @radix-ui/react-* tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-npx shadcn-ui@latest init
+npm create vite@latest dvmm-web -- --template react-ts
+cd dvmm-web
+
+# Install shadcn/ui and dependencies
+npx shadcn@latest init
+
+# Install testing infrastructure (REQUIRED before writing tests)
+npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
+
+# Add shadcn components as needed
+npx shadcn@latest add card badge avatar separator sheet
+```
+
+**Vitest Configuration (`vitest.config.ts`):**
+
+```typescript
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+})
 ```
 
 ### 10.3 Email Configuration

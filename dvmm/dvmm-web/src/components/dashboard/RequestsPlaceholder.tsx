@@ -1,7 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText } from 'lucide-react'
+import { EmptyState } from '@/components/empty-states'
 
-export function RequestsPlaceholder() {
+interface RequestsPlaceholderProps {
+  /** Callback when user clicks the CTA to request a VM */
+  onRequestVm?: () => void
+}
+
+export function RequestsPlaceholder({ onRequestVm }: RequestsPlaceholderProps) {
+  const handleCtaClick = () => {
+    if (onRequestVm) {
+      onRequestVm()
+    } else if (import.meta.env.DEV) {
+      // Placeholder action until routing is implemented in Story 2.4
+      console.log('[RequestsPlaceholder] Navigate to VM request form')
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -10,15 +25,15 @@ export function RequestsPlaceholder() {
           My Requests
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="p-4 rounded-full bg-muted mb-4">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground">
-            Your VM requests will appear here
-          </p>
-        </div>
+      <CardContent className="p-0">
+        <EmptyState
+          icon={FileText}
+          title="Noch keine VMs angefordert"
+          description="Fordern Sie Ihre erste virtuelle Maschine an"
+          ctaLabel="Erste VM anfordern"
+          onCtaClick={handleCtaClick}
+          className="border-0 shadow-none"
+        />
       </CardContent>
     </Card>
   )

@@ -36,7 +36,12 @@ interface SidebarProps {
 export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
   return (
     <aside className={cn('w-56 border-r bg-card', className)}>
-      <nav className="p-4 space-y-2" role="navigation" aria-label="Main navigation">
+      <nav
+        className="p-4 space-y-2"
+        role="navigation"
+        aria-label="Main navigation"
+        data-onboarding="sidebar-nav"
+      >
         {navItems.map((item) => {
           const isActive = currentPath === item.href
 
