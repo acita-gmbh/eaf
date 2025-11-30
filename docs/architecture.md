@@ -965,7 +965,7 @@ These are runtime concerns that don't affect generated jOOQ code.
 | Read Projections | jOOQ | 3.20+ | FR-03-09, FR-08 | Type-Safe Queries |
 | API Style | REST + OpenAPI | 3.1 | All | Code Generation |
 | Auth Provider | Keycloak | 26+ | FR-01, FR-10 | OIDC, Multi-Realm |
-| Frontend | React + TypeScript | 19+ | FR-02-07 | shadcn-admin-kit |
+| Frontend | React + TypeScript | 19+ | FR-02-07 | React Compiler, shadcn-admin-kit |
 | Multi-Tenancy | PostgreSQL RLS | - | FR-10 | Database-enforced |
 | Architecture Tests | Konsist | 0.17+ | All | Kotlin-native |
 | Reactive Model | WebFlux + Coroutines | - | All | Non-blocking I/O |
@@ -1007,7 +1007,7 @@ See **ADR-001: EAF Framework-First Architecture** above for the complete monorep
 | **Event Store** | PostgreSQL Custom Schema | - | No external dependency, RLS-compatible |
 | **API Style** | REST + OpenAPI | 3.1 | Standard, Code Generation |
 | **Auth** | Keycloak | 26+ | OIDC, Multi-Realm for Tenants |
-| **Frontend** | React + TypeScript | 19+ | Server Components, shadcn-admin-kit |
+| **Frontend** | React + TypeScript | 19+ | React Compiler (auto-memoization), shadcn-admin-kit |
 | **Testing** | JUnit + Testcontainers | 6+ / 2.0+ | Kotlin suspend support, Container-based |
 | **Architecture Tests** | Konsist | 0.17+ | Kotlin-native Architecture Enforcement |
 

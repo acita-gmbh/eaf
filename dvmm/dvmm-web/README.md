@@ -1,15 +1,38 @@
-# React + TypeScript + Vite
+# DVMM Web Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite frontend for the Dynamic Virtual Machine Manager.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19.2** with React Compiler (automatic optimization)
+- **Vite 7.2** with @vitejs/plugin-react
+- **TypeScript 5.9**
+- **Tailwind CSS 4** with shadcn/ui components
+- **Vitest** for unit tests
+- **Playwright** for E2E tests
 
 ## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This project uses [React Compiler](https://react.dev/learn/react-compiler) for automatic memoization optimization.
+
+**Key Rule: Manual memoization is PROHIBITED.**
+
+```tsx
+// ❌ FORBIDDEN - ESLint will error on these imports
+import { useMemo, useCallback, memo } from 'react'
+
+// ✅ CORRECT - Write normal code, compiler optimizes automatically
+const value = computeExpensive(a, b)
+const handleClick = () => doSomething(a)
+```
+
+The compiler analyzes your code at build time and automatically adds memoization where it provides benefit. This is more reliable than manual optimization because:
+
+1. Developers often memoize incorrectly (wrong dependencies, unnecessary overhead)
+2. Compiler can optimize more aggressively than manual patterns
+3. Code stays cleaner and more maintainable
+
+See [CLAUDE.md](/CLAUDE.md#react-coding-standards-zero-tolerance) for full coding standards.
 
 ## Expanding the ESLint configuration
 

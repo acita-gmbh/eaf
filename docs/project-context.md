@@ -16,6 +16,17 @@ _Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvio
 | jOOQ | 3.20 | DDLDatabase code generation |
 | JUnit | 6 | With MockK + Testcontainers |
 
+### Frontend (dvmm-web)
+
+| Technology | Version | Notes |
+|------------|---------|-------|
+| React | 19.2 | With React Compiler for automatic optimization |
+| TypeScript | 5.9 | Strict mode enabled |
+| Vite | 7.2 | @vitejs/plugin-react with Babel |
+| Tailwind CSS | 4 | With shadcn/ui components |
+| Vitest | 4 | Unit testing |
+| Playwright | 1.57 | E2E testing |
+
 ---
 
 ## Architecture Rules (Konsist-Enforced)
@@ -140,6 +151,8 @@ CREATE POLICY tenant_isolation ON my_table ...;
 | Abstractions for single use | Over-engineering | Simple function until reuse proven |
 | `ConcurrentHashMap` "for performance" | Premature optimization | Measure first (TC-003 tests) |
 | Copy-paste from other modules | Context mismatch | Understand + adapt |
+| `useMemo`/`useCallback`/`memo` | Manual memoization | React Compiler handles this automatically |
+| Class components in React | Legacy pattern | Function components with hooks |
 
 ---
 

@@ -26,6 +26,21 @@ export default defineConfig([
         'warn',
         { allowConstantExport: true },
       ],
+      // Prohibit manual memoization - React Compiler handles optimization automatically
+      // See: https://react.dev/learn/react-compiler
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['useMemo', 'useCallback', 'memo'],
+              message:
+                'Manual memoization is prohibited. React Compiler handles optimization automatically.',
+            },
+          ],
+        },
+      ],
     },
   },
 ])
