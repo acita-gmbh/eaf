@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -42,8 +42,8 @@ export function OnboardingTooltip({
 
   // Note: Escape key handling is provided by Radix Popover via onOpenChange
 
-  // Create a virtual element for the anchor
-  const virtualRef = {
+  // Memoize virtual element to prevent unnecessary Radix recalculations
+  const virtualRef = useMemo(() => ({
     current: {
       getBoundingClientRect: () => ({
         top: anchorRect.top,
@@ -57,7 +57,7 @@ export function OnboardingTooltip({
         toJSON: () => ({}),
       }),
     },
-  }
+  }), [anchorRect.top, anchorRect.left, anchorRect.bottom, anchorRect.right, anchorRect.width, anchorRect.height])
 
   // Handle click-outside via Popover's onOpenChange
   const handleOpenChange = (isOpen: boolean) => {
