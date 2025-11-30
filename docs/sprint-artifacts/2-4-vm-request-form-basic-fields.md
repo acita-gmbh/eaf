@@ -52,8 +52,8 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
    - When I enter more than 63 characters → error: "Maximal 63 Zeichen erlaubt"
    - When I enter uppercase letters → error: "Nur Kleinbuchstaben erlaubt"
    - When I enter spaces or special chars → error: "Nur Buchstaben, Zahlen und Bindestriche erlaubt"
-   - When I start with a hyphen → error: "Muss mit Buchstabe oder Zahl beginnen"
-   - When I end with a hyphen → error: "Muss mit Buchstabe oder Zahl enden"
+   - When I start with a hyphen → error: "Muss mit Buchstaben oder Zahl beginnen"
+   - When I end with a hyphen → error: "Muss mit Buchstaben oder Zahl enden"
    - When value matches regex `^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$` → no error, field shows valid state
 
 3. **Project dropdown**
@@ -419,14 +419,14 @@ export const vmNameSchema = z
     if (val.startsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstabe oder Zahl beginnen',
+        message: 'Muss mit Buchstaben oder Zahl beginnen',
       });
     }
     // Check end character
     if (val.endsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Muss mit Buchstabe oder Zahl enden',
+        message: 'Muss mit Buchstaben oder Zahl enden',
       });
     }
   });
