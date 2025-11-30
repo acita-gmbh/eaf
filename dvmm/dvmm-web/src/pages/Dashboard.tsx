@@ -78,7 +78,7 @@ export function Dashboard() {
   // Update anchor rectangles when step changes
   useEffect(() => {
     updateAnchorRects()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects depends on currentStep/dismissStep
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects is intentionally not in deps; we only want to re-run when currentStep changes
   }, [currentStep])
 
   // Update anchor positions on window resize
@@ -87,7 +87,7 @@ export function Dashboard() {
       window.addEventListener('resize', updateAnchorRects)
       return () => window.removeEventListener('resize', updateAnchorRects)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects depends on currentStep/dismissStep
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects is intentionally not in deps; we only want to re-run when currentStep changes
   }, [currentStep])
 
   // Keyboard shortcut for dev reset (Ctrl+Shift+O)
