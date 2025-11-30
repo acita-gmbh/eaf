@@ -3,6 +3,7 @@ import {
   vmNameSchema,
   justificationSchema,
   projectIdSchema,
+  vmSizeSchema,
   vmRequestFormSchema,
 } from './vm-request'
 
@@ -203,14 +204,92 @@ describe('projectIdSchema', () => {
   })
 })
 
+describe('vmSizeSchema', () => {
+  describe('valid sizes', () => {
+    it('accepts "S" (Small)', () => {
+      const result = vmSizeSchema.safeParse('S')
+      expect(result.success).toBe(true)
+    })
+
+    it('accepts "M" (Medium)', () => {
+      const result = vmSizeSchema.safeParse('M')
+      expect(result.success).toBe(true)
+    })
+
+    it('accepts "L" (Large)', () => {
+      const result = vmSizeSchema.safeParse('L')
+      expect(result.success).toBe(true)
+    })
+
+    it('accepts "XL" (Extra Large)', () => {
+      const result = vmSizeSchema.safeParse('XL')
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('invalid sizes', () => {
+    it('rejects undefined', () => {
+      const result = vmSizeSchema.safeParse(undefined)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Please select a VM size')
+      }
+    })
+
+    it('rejects empty string', () => {
+      const result = vmSizeSchema.safeParse('')
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Please select a VM size')
+      }
+    })
+
+    it('rejects "XXL" (not a valid size)', () => {
+      const result = vmSizeSchema.safeParse('XXL')
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Please select a VM size')
+      }
+    })
+
+    it('rejects "small" (lowercase)', () => {
+      const result = vmSizeSchema.safeParse('small')
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects "m" (lowercase)', () => {
+      const result = vmSizeSchema.safeParse('m')
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects numbers', () => {
+      const result = vmSizeSchema.safeParse(1)
+      expect(result.success).toBe(false)
+    })
+  })
+})
+
 describe('vmRequestFormSchema', () => {
-  it('accepts valid form data', () => {
+  it('accepts valid form data with size', () => {
     const result = vmRequestFormSchema.safeParse({
       vmName: 'web-server-01',
       projectId: 'proj-1',
       justification: 'This is a valid justification for requesting a VM.',
+      size: 'M',
     })
     expect(result.success).toBe(true)
+  })
+
+  it('accepts valid form data with different sizes', () => {
+    for (const size of ['S', 'M', 'L', 'XL']) {
+      const result = vmRequestFormSchema.safeParse({
+        vmName: 'web-server-01',
+        projectId: 'proj-1',
+        justification: 'This is a valid justification for requesting a VM.',
+        size,
+      })
+      expect(result.success).toBe(true)
+    }
   })
 
   it('rejects form with invalid vmName', () => {
@@ -218,6 +297,7 @@ describe('vmRequestFormSchema', () => {
       vmName: 'Web-Server', // Invalid: uppercase
       projectId: 'proj-1',
       justification: 'This is a valid justification for requesting a VM.',
+      size: 'M',
     })
     expect(result.success).toBe(false)
   })
@@ -227,6 +307,7 @@ describe('vmRequestFormSchema', () => {
       vmName: 'web-server-01',
       projectId: '',
       justification: 'This is a valid justification for requesting a VM.',
+      size: 'M',
     })
     expect(result.success).toBe(false)
   })
@@ -236,6 +317,26 @@ describe('vmRequestFormSchema', () => {
       vmName: 'web-server-01',
       projectId: 'proj-1',
       justification: 'Too short',
+      size: 'M',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects form with missing size', () => {
+    const result = vmRequestFormSchema.safeParse({
+      vmName: 'web-server-01',
+      projectId: 'proj-1',
+      justification: 'This is a valid justification for requesting a VM.',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects form with invalid size', () => {
+    const result = vmRequestFormSchema.safeParse({
+      vmName: 'web-server-01',
+      projectId: 'proj-1',
+      justification: 'This is a valid justification for requesting a VM.',
+      size: 'XXL', // Invalid size
     })
     expect(result.success).toBe(false)
   })
@@ -247,16 +348,17 @@ describe('vmRequestFormSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('infers correct TypeScript type', () => {
+  it('infers correct TypeScript type with size', () => {
     const validData = {
       vmName: 'web-server-01',
       projectId: 'proj-1',
       justification: 'Valid justification text here.',
+      size: 'L' as const,
     }
     const result = vmRequestFormSchema.parse(validData)
-    // TypeScript should infer: { vmName: string; projectId: string; justification: string }
     expect(result.vmName).toBe('web-server-01')
     expect(result.projectId).toBe('proj-1')
     expect(result.justification).toBe('Valid justification text here.')
+    expect(result.size).toBe('L')
   })
 })

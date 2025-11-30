@@ -38,15 +38,26 @@ describe('VmRequestForm', () => {
     it('renders required indicators on all fields', () => {
       render(<VmRequestForm />)
 
-      // Three required field indicators (one for each field)
+      // Four required field indicators (VM Name, Project, Justification, Size)
       const asterisks = screen.getAllByText('*')
-      expect(asterisks.length).toBe(3)
+      expect(asterisks.length).toBe(4)
     })
 
-    it('renders Size Selector placeholder for Story 2.5', () => {
+    it('renders Size Selector with 4 size options', () => {
       render(<VmRequestForm />)
 
-      expect(screen.getByText(/vm size selector \(story 2\.5\)/i)).toBeInTheDocument()
+      // Size selector should have all 4 options
+      expect(screen.getByText('S')).toBeInTheDocument()
+      expect(screen.getByText('M')).toBeInTheDocument()
+      expect(screen.getByText('L')).toBeInTheDocument()
+      expect(screen.getByText('XL')).toBeInTheDocument()
+    })
+
+    it('pre-selects Medium size by default', () => {
+      render(<VmRequestForm />)
+
+      const mediumRadio = screen.getByRole('radio', { name: /medium.*4 vcpu/i })
+      expect(mediumRadio).toHaveAttribute('aria-checked', 'true')
     })
 
     it('renders Submit button placeholder for Story 2.6', () => {
