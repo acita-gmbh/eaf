@@ -77,7 +77,6 @@ export function OnboardingTooltip({
           className
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={() => onDismiss()}
       >
         <p className="text-sm mb-3">{content}</p>
         <Button

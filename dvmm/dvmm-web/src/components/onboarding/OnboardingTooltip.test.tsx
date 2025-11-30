@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, act } from '@/test/test-utils'
 import { OnboardingTooltip } from './OnboardingTooltip'
 import userEvent from '@testing-library/user-event'
@@ -89,7 +89,7 @@ describe('OnboardingTooltip', () => {
     // Click on an element outside the popover
     await user.click(screen.getByTestId('outside-element'))
 
-    // onDismiss should be called via onInteractOutside handler
+    // onDismiss should be called via onOpenChange handler
     expect(handleDismiss).toHaveBeenCalled()
   })
 
