@@ -15,3 +15,15 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 })
+
+// Mock ResizeObserver for Radix UI components
+class MockResizeObserver implements ResizeObserver {
+  observe(_target: Element) {}
+  unobserve(_target: Element) {}
+  disconnect() {}
+}
+
+Object.defineProperty(window, 'ResizeObserver', {
+  writable: true,
+  value: MockResizeObserver,
+})

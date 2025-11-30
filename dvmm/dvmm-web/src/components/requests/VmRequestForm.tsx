@@ -13,8 +13,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { vmRequestFormSchema, type VmRequestFormData } from '@/lib/validations/vm-request'
 import { ProjectSelect } from './ProjectSelect'
+import { VmSizeSelector } from './VmSizeSelector'
+import { VmSizeQuotaInfo } from './VmSizeQuotaInfo'
 import { useFormPersistence } from '@/hooks/useFormPersistence'
 import { cn } from '@/lib/utils'
+import { DEFAULT_VM_SIZE } from '@/lib/config/vm-sizes'
+import { MOCK_PROJECTS } from '@/lib/mock-data/projects'
 
 interface VmRequestFormProps {
   onSubmit?: (data: VmRequestFormData) => void
@@ -27,6 +31,7 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
       vmName: '',
       projectId: '',
       justification: '',
+      size: DEFAULT_VM_SIZE,
     },
     mode: 'onChange', // Validate on change for inline errors per AC #2
   })
@@ -42,6 +47,10 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
   const justificationValue = watch('justification')
   const justificationLength = justificationValue?.length || 0
   const isJustificationBelowMin = justificationLength < 10
+
+  // Watch project selection for quota display
+  const selectedProjectId = watch('projectId')
+  const selectedProject = MOCK_PROJECTS.find((p) => p.id === selectedProjectId)
 
   const handleSubmit = (data: VmRequestFormData) => {
     // Will be implemented in Story 2.6
@@ -136,10 +145,26 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           )}
         />
 
-        {/* Size Selector placeholder - Story 2.5 */}
-        <div className="rounded-lg border border-dashed border-muted-foreground/25 p-4 text-sm text-muted-foreground">
-          VM Size Selector (Story 2.5)
-        </div>
+        {/* Size Selector - Story 2.5 */}
+        <FormField
+          control={form.control}
+          name="size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                VM Size <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <VmSizeSelector
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              </FormControl>
+              <VmSizeQuotaInfo projectQuota={selectedProject?.quota} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Submit Button placeholder - Story 2.6 */}
         <div className="rounded-lg border border-dashed border-muted-foreground/25 p-4 text-sm text-muted-foreground">

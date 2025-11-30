@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VM_SIZE_IDS } from '@/lib/config/vm-sizes'
 
 /**
  * VM Name validation schema
@@ -69,16 +70,27 @@ export const projectIdSchema = z
   .min(1, 'Project is required')
 
 /**
+ * VM Size validation schema
+ *
+ * Uses z.enum with literal values from config.
+ * Custom error message for user-friendly validation feedback.
+ *
+ * @see Story 2.5 AC #5 - Form validation requires size selection
+ */
+export const vmSizeSchema = z.enum(VM_SIZE_IDS, {
+  message: 'Please select a VM size',
+})
+
+/**
  * Complete VM Request form schema
  *
- * Combines all field validations.
- * Size selector will be added in Story 2.5.
+ * Combines all field validations including size selector (Story 2.5).
  */
 export const vmRequestFormSchema = z.object({
   vmName: vmNameSchema,
   projectId: projectIdSchema,
   justification: justificationSchema,
-  // size will be added in Story 2.5
+  size: vmSizeSchema,
 })
 
 export type VmRequestFormData = z.infer<typeof vmRequestFormSchema>

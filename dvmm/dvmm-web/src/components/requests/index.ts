@@ -1,3 +1,5 @@
 export { VmRequestForm } from './VmRequestForm'
 export { ProjectSelect } from './ProjectSelect'
 export { NoProjectHelpDialog } from './NoProjectHelpDialog'
+export { VmSizeSelector } from './VmSizeSelector'
+export { VmSizeQuotaInfo } from './VmSizeQuotaInfo'
