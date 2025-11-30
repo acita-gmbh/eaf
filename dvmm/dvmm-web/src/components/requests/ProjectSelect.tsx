@@ -79,7 +79,10 @@ interface ProjectQuotaDisplayProps {
 }
 
 function ProjectQuotaDisplay({ project }: ProjectQuotaDisplayProps) {
-  const quotaPercentage = (project.quota.used / project.quota.total) * 100
+  // Guard against division by zero when quota.total is 0
+  const quotaPercentage = project.quota.total > 0
+    ? (project.quota.used / project.quota.total) * 100
+    : 100 // Treat zero-quota projects as fully used
   const remaining = project.quota.total - project.quota.used
   const isWarning = quotaPercentage > 80
 

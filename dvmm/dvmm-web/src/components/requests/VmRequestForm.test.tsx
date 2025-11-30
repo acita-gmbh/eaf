@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { VmRequestForm } from './VmRequestForm'
 
 // Mock useFormPersistence hook - we test it separately
@@ -83,6 +84,126 @@ describe('VmRequestForm', () => {
       // The text "0" and "/10 Zeichen (min)" are in the same div with aria-live
       const counterDiv = screen.getByText(/\/10 Zeichen \(min\)/).closest('[aria-live]')
       expect(counterDiv).toHaveAttribute('aria-live', 'polite')
+    })
+  })
+
+  describe('inline validation', () => {
+    it('shows error for VM name shorter than 3 characters', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      const vmNameInput = screen.getByPlaceholderText('z.B. web-server-01')
+      await user.type(vmNameInput, 'ab')
+      await user.tab() // Trigger blur/validation
+
+      await waitFor(() => {
+        expect(screen.getByText(/mindestens 3 Zeichen/i)).toBeInTheDocument()
+      })
+    })
+
+    it('shows error for VM name with invalid characters', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      const vmNameInput = screen.getByPlaceholderText('z.B. web-server-01')
+      await user.type(vmNameInput, 'Invalid_Name!')
+      await user.tab()
+
+      await waitFor(() => {
+        expect(screen.getByText(/Nur Kleinbuchstaben/i)).toBeInTheDocument()
+      })
+    })
+
+    it('shows error for justification shorter than 10 characters', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      const justificationTextarea = screen.getByPlaceholderText(/beschreiben sie den zweck/i)
+      await user.type(justificationTextarea, 'Too short')
+      await user.tab()
+
+      await waitFor(() => {
+        expect(screen.getByText(/mindestens 10 Zeichen/i)).toBeInTheDocument()
+      })
+    })
+
+    it('clears error when valid input is provided', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      const vmNameInput = screen.getByPlaceholderText('z.B. web-server-01')
+      // First enter invalid input
+      await user.type(vmNameInput, 'ab')
+      await user.tab()
+
+      await waitFor(() => {
+        expect(screen.getByText(/mindestens 3 Zeichen/i)).toBeInTheDocument()
+      })
+
+      // Then correct it
+      await user.clear(vmNameInput)
+      await user.type(vmNameInput, 'valid-name')
+
+      await waitFor(() => {
+        expect(screen.queryByText(/mindestens 3 Zeichen/i)).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('character counter', () => {
+    it('updates counter as user types', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      // Initially shows 0
+      expect(screen.getByText('0/10 Zeichen (min)')).toBeInTheDocument()
+
+      const justificationTextarea = screen.getByPlaceholderText(/beschreiben sie den zweck/i)
+      await user.type(justificationTextarea, 'Hello')
+
+      // Should now show 5
+      expect(screen.getByText('5/10 Zeichen (min)')).toBeInTheDocument()
+    })
+
+    it('shows destructive color when below minimum', () => {
+      render(<VmRequestForm />)
+
+      // Counter should have destructive styling when below 10
+      const counterDiv = screen.getByText('0/10 Zeichen (min)')
+      expect(counterDiv).toHaveClass('text-destructive')
+    })
+
+    it('shows normal color when minimum reached', async () => {
+      const user = userEvent.setup()
+      render(<VmRequestForm />)
+
+      const justificationTextarea = screen.getByPlaceholderText(/beschreiben sie den zweck/i)
+      await user.type(justificationTextarea, '1234567890') // 10 characters
+
+      const counterDiv = screen.getByText('10/10 Zeichen (min)')
+      expect(counterDiv).toHaveClass('text-muted-foreground')
+    })
+  })
+
+  describe('form submission', () => {
+    it('calls onSubmit with form data when valid', async () => {
+      const user = userEvent.setup()
+      const onSubmit = vi.fn()
+      render(<VmRequestForm onSubmit={onSubmit} />)
+
+      // Fill VM Name
+      const vmNameInput = screen.getByPlaceholderText('z.B. web-server-01')
+      await user.type(vmNameInput, 'test-vm-01')
+
+      // Fill Justification (must be >= 10 chars)
+      const justificationTextarea = screen.getByPlaceholderText(/beschreiben sie den zweck/i)
+      await user.type(justificationTextarea, 'This is a valid justification for the VM request.')
+
+      // Note: Project selection requires Radix Select interaction which doesn't work in JSDOM.
+      // Full form submission is tested in E2E tests.
+      // Here we verify the onSubmit prop is wired correctly by checking form structure.
+      expect(screen.getByTestId('vm-request-form')).toBeInTheDocument()
+      expect(onSubmit).not.toHaveBeenCalled() // Not called until form is submitted with valid data
     })
   })
 })

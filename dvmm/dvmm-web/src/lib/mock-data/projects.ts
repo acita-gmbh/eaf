@@ -17,4 +17,5 @@ export const MOCK_PROJECTS: MockProject[] = [
   { id: 'proj-2', name: 'Produktion', quota: { used: 8, total: 10 } },
   { id: 'proj-3', name: 'Testing', quota: { used: 0, total: 5 } },
   { id: 'proj-4', name: 'Legacy', quota: { used: 9, total: 10 } }, // 90% - warning state
+  { id: 'proj-5', name: 'Archiv', quota: { used: 0, total: 0 } }, // Zero quota - exhausted
 ]

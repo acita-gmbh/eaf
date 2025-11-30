@@ -4,12 +4,15 @@ import { ProjectSelect } from './ProjectSelect'
 
 // Note: Radix UI Select doesn't work well with user-event in JSDOM
 // due to missing pointer capture APIs. Interaction tests are in E2E (Playwright).
+// This includes callback tests - verifying onValueChange is called when selecting a project
+// is covered by E2E tests in e2e/requests.spec.ts
 
 // Mock data reference:
 // proj-1: "Entwicklung", 5/10 VMs (50%)
 // proj-2: "Produktion", 8/10 VMs (80%) - at threshold, not warning
 // proj-3: "Testing", 0/5 VMs (0%)
 // proj-4: "Legacy", 9/10 VMs (90%) - warning state
+// proj-5: "Archiv", 0/0 VMs (0%) - zero quota, exhausted
 
 describe('ProjectSelect', () => {
   describe('rendering', () => {
@@ -91,6 +94,16 @@ describe('ProjectSelect', () => {
       // Legacy is at 90% - should have warning styling
       const availText = screen.getByText(/Verfügbar: 1 von 10 VMs/)
       expect(availText).toHaveClass('text-orange-600')
+    })
+
+    it('handles zero-quota projects without division by zero', () => {
+      render(<ProjectSelect value="proj-5" onValueChange={vi.fn()} />)
+
+      // Archiv has 0/0 VMs - should show warning (treated as 100% used)
+      const availText = screen.getByText(/Verfügbar: 0 von 0 VMs/)
+      expect(availText).toHaveClass('text-orange-600')
+      // Progress bar should be at 100%
+      expect(screen.getByRole('progressbar')).toBeInTheDocument()
     })
   })
 

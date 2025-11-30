@@ -21,6 +21,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirect to login if not authenticated
   if (!auth.isAuthenticated) {
+    console.info('[ProtectedRoute] User not authenticated, redirecting to login', {
+      returnTo: location.pathname,
+    })
     // Trigger Keycloak login
     auth.signinRedirect({ state: { returnTo: location.pathname } })
     return null

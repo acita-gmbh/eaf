@@ -119,9 +119,9 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
                 />
               </FormControl>
               <div className="flex justify-between items-center">
-                <FormDescription className="flex-1">
+                <div className="flex-1">
                   <FormMessage />
-                </FormDescription>
+                </div>
                 <div
                   className={cn(
                     'text-sm text-right',
