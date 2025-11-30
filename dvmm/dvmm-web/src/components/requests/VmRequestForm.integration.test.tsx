@@ -100,8 +100,8 @@ describe('VmRequestForm Integration', () => {
     })
   })
 
-  describe('form submission includes size', () => {
-    it('form state includes selected size value', async () => {
+  describe('size field state management', () => {
+    it('updates size field state when selecting L', async () => {
       const user = userEvent.setup()
       const onSubmit = vi.fn()
       render(<VmRequestForm onSubmit={onSubmit} />)

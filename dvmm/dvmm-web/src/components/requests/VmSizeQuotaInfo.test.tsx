@@ -47,9 +47,8 @@ describe('VmSizeQuotaInfo', () => {
     it('displays AlertTriangle icon in warning state', () => {
       render(<VmSizeQuotaInfo projectQuota={warningQuota} />)
 
-      // lucide-react renders SVG with class based on icon ID (triangle-alert)
-      const icon = document.querySelector('svg.lucide-triangle-alert')
-      expect(icon).toBeInTheDocument()
+      // Use aria-label for accessible and robust icon testing
+      expect(screen.getByLabelText('Quota warning')).toBeInTheDocument()
     })
 
     it('shows warning for exactly 80% used (boundary condition)', () => {
@@ -83,8 +82,8 @@ describe('VmSizeQuotaInfo', () => {
       const normalQuota: MockProject['quota'] = { used: 5, total: 10 }
       render(<VmSizeQuotaInfo projectQuota={normalQuota} />)
 
-      const icon = document.querySelector('svg.lucide-triangle-alert')
-      expect(icon).not.toBeInTheDocument()
+      // Use queryByLabelText for accessible and robust icon testing
+      expect(screen.queryByLabelText('Quota warning')).not.toBeInTheDocument()
     })
   })
 

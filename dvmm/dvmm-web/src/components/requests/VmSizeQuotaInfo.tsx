@@ -44,7 +44,10 @@ export function VmSizeQuotaInfo({ projectQuota }: VmSizeQuotaInfoProps) {
           Available: {remaining} of {projectQuota.total} VMs
         </span>
         {isWarning && (
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+          <AlertTriangle
+            className="w-4 h-4 text-amber-600 dark:text-amber-500"
+            aria-label="Quota warning"
+          />
         )}
       </div>
       <Progress
