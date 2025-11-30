@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState, useCallback, Component, type ReactNode } from 'react'
+import { useRef, useEffect, useState, Component, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StatsCard, RequestsPlaceholder } from '@/components/dashboard'
 import { OnboardingTooltip } from '@/components/onboarding'
@@ -6,8 +7,8 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { Plus, Clock, CheckCircle, Server } from 'lucide-react'
 
 const ONBOARDING_CONTENT = {
-  'cta-button': 'Hier starten Sie eine neue VM-Anfrage',
-  'sidebar-nav': 'Navigieren Sie zu Ihren Anfragen',
+  'cta-button': 'Start a new VM request here',
+  'sidebar-nav': 'Navigate to your requests',
 } as const
 
 // Error boundary to prevent onboarding issues from crashing the dashboard
@@ -38,13 +39,14 @@ class OnboardingErrorBoundary extends Component<
 }
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const ctaButtonRef = useRef<HTMLButtonElement>(null)
   const [ctaRect, setCtaRect] = useState<DOMRect | null>(null)
   const [sidebarRect, setSidebarRect] = useState<DOMRect | null>(null)
   const { currentStep, dismissStep, resetOnboarding } = useOnboarding()
 
-  // Memoized function to update anchor rectangles
-  const updateAnchorRects = useCallback(() => {
+  // Function to update anchor rectangles - React Compiler handles optimization
+  const updateAnchorRects = () => {
     if (currentStep === 'cta-button') {
       const buttonElement = ctaButtonRef.current
       if (buttonElement) {
@@ -71,12 +73,13 @@ export function Dashboard() {
         dismissStep()
       }
     }
-  }, [currentStep, dismissStep])
+  }
 
   // Update anchor rectangles when step changes
   useEffect(() => {
     updateAnchorRects()
-  }, [updateAnchorRects])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects is intentionally not in deps; we only want to re-run when currentStep changes
+  }, [currentStep])
 
   // Update anchor positions on window resize
   useEffect(() => {
@@ -84,7 +87,8 @@ export function Dashboard() {
       window.addEventListener('resize', updateAnchorRects)
       return () => window.removeEventListener('resize', updateAnchorRects)
     }
-  }, [currentStep, updateAnchorRects])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateAnchorRects is intentionally not in deps; we only want to re-run when currentStep changes
+  }, [currentStep])
 
   // Keyboard shortcut for dev reset (Ctrl+Shift+O)
   useEffect(() => {
@@ -116,7 +120,7 @@ export function Dashboard() {
           size="lg"
           className="gap-2"
           data-onboarding="cta-button"
-          // Note: Navigation will be functional when React Router is added in Story 2.4
+          onClick={() => navigate('/requests/new')}
         >
           <Plus className="h-5 w-5" />
           Request New VM

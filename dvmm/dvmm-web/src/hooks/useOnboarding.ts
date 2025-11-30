@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 
 // Exported for testing utilities
 export const STORAGE_KEYS = {
@@ -64,7 +64,8 @@ export const isMobile = (): boolean => {
  * 2. 'sidebar-nav' - Highlight sidebar navigation (desktop only)
  */
 export function useOnboarding(): UseOnboardingReturn {
-  const readFromStorage = useCallback(() => {
+  // Read initial state from storage
+  const readFromStorage = () => {
     const completed = safeGetItem(STORAGE_KEYS.completed)
     if (completed === 'true') {
       return { stepIndex: ONBOARDING_STEPS.length, isComplete: true }
@@ -85,17 +86,18 @@ export function useOnboarding(): UseOnboardingReturn {
     }
 
     return { stepIndex, isComplete: false }
-  }, [])
+  }
 
   const [state, setState] = useState(() => readFromStorage())
 
-  const getCurrentStep = useCallback((): OnboardingStep | null => {
+  // Derive current step from state - React Compiler handles optimization
+  const getCurrentStep = (): OnboardingStep | null => {
     if (state.isComplete) return null
     if (state.stepIndex >= ONBOARDING_STEPS.length) return null
     return ONBOARDING_STEPS[state.stepIndex]
-  }, [state.stepIndex, state.isComplete])
+  }
 
-  const dismissStep = useCallback(() => {
+  const dismissStep = () => {
     setState((prev) => {
       let nextIndex = prev.stepIndex + 1
 
@@ -113,13 +115,13 @@ export function useOnboarding(): UseOnboardingReturn {
       safeSetItem(STORAGE_KEYS.step, String(nextIndex))
       return { stepIndex: nextIndex, isComplete: false }
     })
-  }, [])
+  }
 
-  const resetOnboarding = useCallback(() => {
+  const resetOnboarding = () => {
     safeRemoveItem(STORAGE_KEYS.step)
     safeRemoveItem(STORAGE_KEYS.completed)
     setState({ stepIndex: 0, isComplete: false })
-  }, [])
+  }
 
   return {
     currentStep: getCurrentStep(),

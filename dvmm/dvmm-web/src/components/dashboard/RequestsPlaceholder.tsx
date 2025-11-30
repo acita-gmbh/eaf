@@ -28,9 +28,9 @@ export function RequestsPlaceholder({ onRequestVm }: RequestsPlaceholderProps) {
       <CardContent className="p-0">
         <EmptyState
           icon={FileText}
-          title="Noch keine VMs angefordert"
-          description="Fordern Sie Ihre erste virtuelle Maschine an"
-          ctaLabel="Erste VM anfordern"
+          title="No VMs requested yet"
+          description="Request your first virtual machine"
+          ctaLabel="Request First VM"
           onCtaClick={handleCtaClick}
           className="border-0 shadow-none"
         />

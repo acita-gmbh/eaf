@@ -5,12 +5,12 @@ import { AdminQueueEmptyState } from './AdminQueueEmptyState'
 describe('AdminQueueEmptyState', () => {
   it('renders main message', () => {
     render(<AdminQueueEmptyState />)
-    expect(screen.getByText('Keine ausstehenden Genehmigungen')).toBeInTheDocument()
+    expect(screen.getByText('No pending approvals')).toBeInTheDocument()
   })
 
   it('renders positive description', () => {
     render(<AdminQueueEmptyState />)
-    expect(screen.getByText('Alle Anfragen wurden bearbeitet')).toBeInTheDocument()
+    expect(screen.getByText('All requests have been processed')).toBeInTheDocument()
   })
 
   it('renders with check circle icon (emerald color)', () => {

@@ -14,8 +14,8 @@ export function AdminQueueEmptyState({ className }: AdminQueueEmptyStateProps) {
   return (
     <EmptyState
       icon={CheckCircle2}
-      title="Keine ausstehenden Genehmigungen"
-      description="Alle Anfragen wurden bearbeitet"
+      title="No pending approvals"
+      description="All requests have been processed"
       className={cn('[&_svg]:text-emerald-500', className)}
     />
   )

@@ -23,7 +23,7 @@ describe('OnboardingTooltip', () => {
         anchorRect={{ top: 100, left: 100, bottom: 150, right: 200, width: 100, height: 50 }}
       />
     )
-    expect(screen.getByRole('button', { name: 'Verstanden' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Got it' })).toBeInTheDocument()
   })
 
   it('renders custom dismiss label when provided', () => {
@@ -50,7 +50,7 @@ describe('OnboardingTooltip', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'Verstanden' }))
+    await user.click(screen.getByRole('button', { name: 'Got it' }))
     expect(handleDismiss).toHaveBeenCalledTimes(1)
   })
 
@@ -117,7 +117,7 @@ describe('OnboardingTooltip', () => {
       />
     )
 
-    const dismissButton = screen.getByRole('button', { name: 'Verstanden' })
+    const dismissButton = screen.getByRole('button', { name: 'Got it' })
 
     // Before the 100ms delay, button should not be focused
     expect(document.activeElement).not.toBe(dismissButton)
