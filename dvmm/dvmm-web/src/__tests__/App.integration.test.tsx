@@ -1,6 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App from '../App'
+
+// Mock localStorage for onboarding hook
+const localStorageMock = {
+  store: {} as Record<string, string>,
+  getItem: vi.fn((key: string) => localStorageMock.store[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageMock.store[key] = value
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete localStorageMock.store[key]
+  }),
+  clear: vi.fn(() => {
+    localStorageMock.store = {}
+  }),
+}
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 
 // Mock react-oidc-context with authenticated state
 const mockSigninRedirect = vi.fn()
@@ -34,6 +51,13 @@ vi.mock('@/api/api-client', () => ({
 describe('App Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorageMock.clear()
+    // Mark onboarding as complete to avoid tooltip interference
+    localStorageMock.store['dvmm_onboarding_completed'] = 'true'
+  })
+
+  afterEach(() => {
+    localStorageMock.clear()
   })
 
   it('renders dashboard layout after successful authentication', () => {
@@ -77,21 +101,22 @@ describe('App Integration', () => {
     expect(ctaButton).toBeDefined()
   })
 
-  it('renders My Requests placeholder section', () => {
+  it('renders My Requests section with German empty state', () => {
     render(<App />)
 
     // "My Requests" appears in both sidebar nav and as a section heading
     const myRequestsElements = screen.getAllByText('My Requests')
     expect(myRequestsElements.length).toBeGreaterThanOrEqual(1)
 
-    // The placeholder text is unique to the section
-    expect(screen.getByText('Your VM requests will appear here')).toBeInTheDocument()
+    // German empty state text (updated in Story 2.3)
+    expect(screen.getByText('Noch keine VMs angefordert')).toBeInTheDocument()
   })
 })
 
 describe('App Integration - Unauthenticated', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorageMock.clear()
     // Override mock for unauthenticated state
     vi.doMock('react-oidc-context', () => ({
       useAuth: () => ({
@@ -103,6 +128,10 @@ describe('App Integration - Unauthenticated', () => {
         signoutRedirect: mockSignoutRedirect,
       }),
     }))
+  })
+
+  afterEach(() => {
+    localStorageMock.clear()
   })
 
   // Note: This test would require re-importing App after doMock
