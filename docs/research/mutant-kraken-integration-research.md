@@ -40,7 +40,8 @@ Mutant-Kraken can mutate Kotlin-specific constructs that Pitest struggles with:
 val name = user?.name ?: "Unknown"  // mutates to: user?.name
 
 // NotNullAssertion: Mutates !! operator
-val name = user!!.name  // mutates to: user?.name or removes assertion
+val name = user!!.name  // mutates to: user?.name
+val name = user!!.name  // mutates to: user.name
 
 // FunctionalReplacement: Swaps functional methods
 list.any { it > 0 }  // mutates to: list.all { it > 0 }
@@ -110,9 +111,9 @@ The project now uses **Arcmutate** (commercial Pitest plugins) for production-re
 - `arcmutate-spring:1.1.2` - Spring annotation mutations
 
 **Features Enabled:**
-- `+KOTLIN` - Full Kotlin support
-- `+KOTLIN_NO_NULLS` - Filters null-check intrinsics
-- `+KOTLIN_EXTRA` - Additional junk mutation filters
+- `KOTLIN` - Full Kotlin support
+- `KOTLIN_NO_NULLS` - Filters null-check intrinsics
+- `KOTLIN_EXTRA` - Additional junk mutation filters
 - `KOTLIN_RETURNS`, `KOTLIN_REMOVE_DISTINCT`, `KOTLIN_REMOVE_SORTED` - Kotlin-specific mutators
 - `SPRING` - Spring annotation mutations (validation, security, response)
 
@@ -263,7 +264,7 @@ mutant-kraken-dist/
 
 ```bash
 # Single experimental run
-cd /home/user/eaf/eaf/eaf-core
+cd eaf/eaf-core
 mutant-kraken mutate src/main/kotlin/de/acci/eaf/core
 ```
 
