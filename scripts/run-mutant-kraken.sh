@@ -73,14 +73,27 @@ check_prerequisites() {
         exit 1
     fi
 
-    log_info "mutant-kraken version: $(mutant-kraken -v 2>/dev/null || echo 'unknown')"
+    local version_output
+    if version_output=$(mutant-kraken -v 2>&1); then
+        log_info "mutant-kraken version: $version_output"
+    else
+        log_warn "Could not determine mutant-kraken version (command failed)"
+        log_warn "Output: $version_output"
+        log_warn "Continuing anyway, but you may encounter compatibility issues"
+    fi
 }
 
 create_module_config() {
     local module=$1
-    local config_file="$PROJECT_ROOT/eaf/$module/mutantkraken.config.json"
+    local module_dir="$PROJECT_ROOT/eaf/$module"
+    local config_file="$module_dir/mutantkraken.config.json"
 
-    cat > "$config_file" << 'EOFCONFIG'
+    if [[ ! -d "$module_dir" ]]; then
+        log_error "Module directory does not exist: $module_dir"
+        return 1
+    fi
+
+    if ! cat > "$config_file" << 'EOFCONFIG'
 {
   "general": {
     "timeout": 180,
@@ -119,6 +132,11 @@ create_module_config() {
   }
 }
 EOFCONFIG
+    then
+        log_error "Failed to create config file: $config_file"
+        log_error "Check write permissions and disk space"
+        return 1
+    fi
 
     log_info "Created config: $config_file"
 }
@@ -151,10 +169,23 @@ run_module() {
         # Move results to a module-specific location
         if [[ -d "mutant-kraken-dist" ]]; then
             local results_dir="$PROJECT_ROOT/mutant-kraken-results/$module"
-            mkdir -p "$results_dir"
-            mv mutant-kraken-dist/* "$results_dir/" 2>/dev/null || true
+            if ! mkdir -p "$results_dir"; then
+                log_error "Failed to create results directory: $results_dir"
+                return 1
+            fi
+
+            # Check if there are files to move
+            if compgen -G "mutant-kraken-dist/*" > /dev/null; then
+                if ! mv mutant-kraken-dist/* "$results_dir/"; then
+                    log_error "Failed to move results from mutant-kraken-dist to $results_dir"
+                    log_error "Check disk space and permissions"
+                    return 1
+                fi
+                log_info "Results moved to: $results_dir"
+            else
+                log_warn "No result files found in mutant-kraken-dist"
+            fi
             rm -rf mutant-kraken-dist
-            log_info "Results moved to: $results_dir"
         fi
     else
         log_error "$module: Mutation testing failed"
@@ -167,6 +198,12 @@ run_module() {
 run_all_modules() {
     local modules=("${EAF_MODULES[@]}")
     local failed=()
+
+    # Validate modules array is not empty
+    if [[ ${#modules[@]} -eq 0 ]]; then
+        log_error "No modules configured to test!"
+        exit 1
+    fi
 
     log_info "Running mutant-kraken on ${#modules[@]} EAF modules"
     echo ""
@@ -184,12 +221,13 @@ run_all_modules() {
     log_info "SUMMARY"
     log_info "=========================================="
 
-    if [[ ${#failed[@]} -eq 0 ]]; then
-        log_success "All modules completed successfully!"
-    else
+    if [[ ${#failed[@]} -gt 0 ]]; then
         log_error "Failed modules: ${failed[*]}"
+        log_info "Results directory: $PROJECT_ROOT/mutant-kraken-results/"
+        exit 1
     fi
 
+    log_success "All modules completed successfully!"
     log_info "Results directory: $PROJECT_ROOT/mutant-kraken-results/"
 }
 

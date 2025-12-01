@@ -86,9 +86,14 @@ jobs:
         run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
       - name: Mutation Testing - Pitest with Arcmutate (≥70%)
+        if: ${{ secrets.ARCMUTATE_LICENSE != '' }}
         run: ./gradlew pitest --no-daemon
         env:
           ARCMUTATE_LICENSE: ${{ secrets.ARCMUTATE_LICENSE }}
+
+      - name: Mutation Testing Skipped (No License)
+        if: ${{ secrets.ARCMUTATE_LICENSE == '' }}
+        run: echo "Mutation testing skipped - ARCMUTATE_LICENSE secret not configured (expected for fork PRs)"
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4

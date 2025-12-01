@@ -63,8 +63,12 @@ configure<PitestPluginExtension> {
 
 // Add Arcmutate plugins to pitest classpath
 dependencies {
-    "pitest"(libs.findLibrary("arcmutate-kotlin").get())
-    "pitest"(libs.findLibrary("arcmutate-spring").get())
+    "pitest"(libs.findLibrary("arcmutate-kotlin").orElseThrow {
+        GradleException("Library 'arcmutate-kotlin' not found in libs.versions.toml - add it to [libraries] section")
+    })
+    "pitest"(libs.findLibrary("arcmutate-spring").orElseThrow {
+        GradleException("Library 'arcmutate-spring' not found in libs.versions.toml - add it to [libraries] section")
+    })
 }
 
 // Validate license file exists before running pitest
@@ -72,7 +76,7 @@ tasks.named("pitest") {
     doFirst {
         val licenseFile = rootProject.file("arcmutate-licence.txt")
         if (!licenseFile.exists()) {
-            val envLicense = System.getenv("ARCMUTATE_LICENSE")
+            val envLicense = System.getenv("ARCMUTATE_LICENSE")?.trim()
             if (envLicense.isNullOrBlank()) {
                 throw GradleException(
                     """
@@ -86,10 +90,45 @@ tasks.named("pitest") {
                     |In CI, the license is injected from GitHub Secrets.
                     """.trimMargin()
                 )
-            } else {
-                // Write license from environment variable
+            }
+
+            // Validate license content appears reasonable
+            if (envLicense.length < 50) {
+                logger.warn("ARCMUTATE_LICENSE appears unusually short (${envLicense.length} chars) - verify content is complete")
+            }
+
+            // Write license from environment variable with proper error handling
+            try {
                 licenseFile.writeText(envLicense)
-                logger.lifecycle("Arcmutate license written from ARCMUTATE_LICENSE environment variable")
+
+                // Verify file was written correctly
+                if (!licenseFile.exists()) {
+                    throw GradleException("License file write appeared to succeed but file does not exist: ${licenseFile.absolutePath}")
+                }
+                val writtenContent = licenseFile.readText()
+                if (writtenContent != envLicense) {
+                    throw GradleException("License file content verification failed - file may be corrupted")
+                }
+
+                logger.lifecycle("Arcmutate license written and verified from ARCMUTATE_LICENSE environment variable")
+            } catch (e: GradleException) {
+                throw e
+            } catch (e: Exception) {
+                throw GradleException(
+                    """
+                    |Failed to write Arcmutate license file to: ${licenseFile.absolutePath}
+                    |
+                    |Error: ${e.message}
+                    |
+                    |Possible causes:
+                    |  - No write permission to project root directory
+                    |  - Disk full
+                    |  - Read-only file system
+                    |
+                    |Workaround: Manually create the file with license content.
+                    """.trimMargin(),
+                    e
+                )
             }
         } else {
             logger.lifecycle("Arcmutate license found at: ${licenseFile.absolutePath}")
