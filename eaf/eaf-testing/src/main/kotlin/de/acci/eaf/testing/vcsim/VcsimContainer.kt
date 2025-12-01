@@ -175,9 +175,10 @@ public class VcsimContainer(
         // Clean up temporary certificate directory
         certDirectory?.let { dir ->
             try {
-                Files.walk(dir)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(Files::delete)
+                Files.walk(dir).use { stream ->
+                    stream.sorted(Comparator.reverseOrder())
+                        .forEach(Files::delete)
+                }
             } catch (e: Exception) {
                 // Best-effort cleanup - temp directory will be cleaned by OS eventually
                 logger.debug(e) { "Failed to clean up temp certificate directory: $dir" }

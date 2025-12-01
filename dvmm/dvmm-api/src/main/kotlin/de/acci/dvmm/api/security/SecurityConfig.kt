@@ -43,7 +43,9 @@ public class SecurityConfig(
      * 1. SecurityWebFilter (Spring Security) - runs first (highest precedence)
      * 2. TenantContextWebFilter - runs after (HIGHEST_PRECEDENCE + 10)
      *
-     * CSRF is always enabled. Tests use SecurityMockServerConfigurers.csrf() to add tokens.
+     * CSRF protection uses cookie-based double-submit pattern. Note that Bearer token
+     * authentication is inherently CSRF-resistant, so this primarily protects browser-based
+     * flows. Tests use SecurityMockServerConfigurers.csrf() to add tokens.
      */
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {

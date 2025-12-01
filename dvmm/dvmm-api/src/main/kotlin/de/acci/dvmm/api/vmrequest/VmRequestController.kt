@@ -39,7 +39,7 @@ import java.time.Instant
  * - **400 Bad Request**: Validation errors (field-level)
  * - **401 Unauthorized**: Missing or invalid JWT
  * - **403 Forbidden**: Cross-tenant access attempt
- * - **409 Conflict**: Quota exceeded
+ * - **409 Conflict**: Quota exceeded or concurrency conflict
  */
 @RestController
 @RequestMapping("/api/requests")

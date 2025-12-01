@@ -87,21 +87,15 @@ class VmRequestIntegrationTest {
         @Bean
         @Primary
         fun testJwtDecoder(): ReactiveJwtDecoder = ReactiveJwtDecoder { token ->
-            println(">>> JWT Decoder received token: ${token.take(50)}...")
             when {
                 token == TENANT_A_TOKEN -> {
-                    println(">>> Matched tenant A token")
                     Mono.just(createJwt(tenantId = tenantAId, userId = userAId, tokenValue = token))
                 }
                 token == TENANT_B_TOKEN -> {
-                    println(">>> Matched tenant B token")
                     Mono.just(createJwt(tenantId = tenantBId, userId = userBId, tokenValue = token))
                 }
                 token == "invalid-token" -> Mono.error(BadJwtException("Invalid token"))
-                else -> {
-                    println(">>> Unknown token - expected: ${TENANT_A_TOKEN.take(50)}...")
-                    Mono.error(BadJwtException("Unknown token"))
-                }
+                else -> Mono.error(BadJwtException("Unknown token"))
             }
         }
 

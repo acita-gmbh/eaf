@@ -47,10 +47,10 @@ import javax.net.ssl.TrustManagerFactory
  * ## Usage
  * ```kotlin
  * val bundle = VcsimCertificateGenerator.generate()
- * bundle.writeTo(tempDir)
  *
  * val container = VcsimContainer()
- *     .withCertificates(tempDir)
+ *     .withCertificates(bundle)
+ * container.start()
  *
  * val sslContext = bundle.createSslContext()
  * val httpClient = HttpClient.newBuilder()
