@@ -86,7 +86,7 @@ tasks.named("pitest") {
                     |  1. Place arcmutate-licence.txt at project root
                     |  2. Set ARCMUTATE_LICENSE environment variable with license content
                     |
-                    |For local development, contact team lead for license file.
+                    |For local development, see docs/research/mutant-kraken-integration-research.md for license setup instructions.
                     |In CI, the license is injected from GitHub Secrets.
                     """.trimMargin()
                 )

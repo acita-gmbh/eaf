@@ -112,13 +112,18 @@ create_module_config() {
   "ignore": {
     "ignore_files": [
       "^.*Test\\.kt$",
-      "^.*IntegrationTest\\.kt$"
+      "^.*IntegrationTest\\.kt$",
+      "^.*Spec\\.kt$",
+      "^.*TestFixtures\\.kt$"
     ],
     "ignore_directories": [
       "build",
       "bin",
       ".gradle",
-      "test"
+      ".idea",
+      "gradle",
+      "test",
+      "mutant-kraken-dist"
     ]
   },
   "threading": {

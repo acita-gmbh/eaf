@@ -41,7 +41,7 @@ val name = user?.name ?: "Unknown"  // mutates to: user?.name
 
 // NotNullAssertion: Mutates !! operator
 val name = user!!.name  // mutates to: user?.name
-val name = user!!.name  // mutates to: user.name
+val id = user!!.id      // mutates to: user.id
 
 // FunctionalReplacement: Swaps functional methods
 list.any { it > 0 }  // mutates to: list.all { it > 0 }
@@ -120,7 +120,7 @@ The project now uses **Arcmutate** (commercial Pitest plugins) for production-re
 ### License Management
 
 **For Local Development:**
-1. Obtain `arcmutate-licence.txt` from team lead
+1. Download `arcmutate-licence.txt` from your Arcmutate subscription portal: `https://subscriptions.arcmutate.com/<subscription-id>/arcmutate-licence.txt`
 2. Place at project root (gitignored)
 
 **For CI (GitHub Actions):**
