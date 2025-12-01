@@ -37,7 +37,7 @@ export function MyRequests() {
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10)
 
-  const { data, isLoading, isError, error } = useMyRequests({ page, size: pageSize })
+  const { data, isLoading, isError, error, refetch } = useMyRequests({ page, size: pageSize })
 
   const handlePageSizeChange = (value: string) => {
     const newSize = parseInt(value, 10) as (typeof PAGE_SIZE_OPTIONS)[number]
@@ -81,7 +81,7 @@ export function MyRequests() {
           <p className="text-muted-foreground mb-4">
             {error?.message || 'Could not load requests.'}
           </p>
-          <Button variant="outline" onClick={() => window.location.reload()}>
+          <Button variant="outline" onClick={() => refetch()}>
             Try Again
           </Button>
         </div>

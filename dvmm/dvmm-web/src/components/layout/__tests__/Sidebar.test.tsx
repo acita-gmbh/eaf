@@ -49,8 +49,8 @@ describe('Sidebar', () => {
 
     const dashboardLink = screen.getByRole('link', { name: /dashboard/i })
     // Check that active styling classes are applied
-    expect(dashboardLink.className).toContain('border-l-2')
-    expect(dashboardLink.className).toContain('border-primary')
+    expect(dashboardLink).toHaveClass('border-l-2')
+    expect(dashboardLink).toHaveClass('border-primary')
   })
 
   it('shows active state on requests page', () => {
@@ -58,7 +58,7 @@ describe('Sidebar', () => {
 
     const requestsLink = screen.getByRole('link', { name: /my requests/i })
     expect(requestsLink).toHaveAttribute('aria-current', 'page')
-    expect(requestsLink.className).toContain('border-l-2')
+    expect(requestsLink).toHaveClass('border-l-2')
   })
 
   it('supports keyboard navigation through nav items', async () => {
@@ -98,7 +98,7 @@ describe('Sidebar', () => {
     )
 
     const sidebar = screen.getByRole('navigation', { name: /main navigation/i }).parentElement
-    expect(sidebar?.className).toContain('hidden')
-    expect(sidebar?.className).toContain('md:block')
+    expect(sidebar).toHaveClass('hidden')
+    expect(sidebar).toHaveClass('md:block')
   })
 })

@@ -1,5 +1,6 @@
 package de.acci.dvmm.infrastructure.eventsourcing
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
@@ -22,7 +23,14 @@ public class JacksonVmRequestEventDeserializer(
 
     override fun deserialize(storedEvent: StoredEvent): DomainEvent {
         val eventClass = resolveEventClass(storedEvent.eventType)
-        return objectMapper.readValue(storedEvent.payload, eventClass)
+        return try {
+            objectMapper.readValue(storedEvent.payload, eventClass)
+        } catch (e: JsonProcessingException) {
+            throw IllegalStateException(
+                "Failed to deserialize ${storedEvent.eventType} for aggregate ${storedEvent.aggregateId}: ${e.message}",
+                e
+            )
+        }
     }
 
     private fun resolveEventClass(eventType: String): Class<out DomainEvent> {

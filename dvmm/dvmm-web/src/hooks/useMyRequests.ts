@@ -32,8 +32,12 @@ export function useMyRequests(params: GetMyRequestsParams = {}) {
   const auth = useAuth()
   const accessToken = auth.user?.access_token
 
+  // Use full params object in queryKey for cache extensibility
+  // when future filters are added (status, search, etc.)
+  const queryParams = { page: params.page ?? 0, size: params.size ?? 20 }
+
   return useQuery<PagedVmRequestsResponse, ApiError>({
-    queryKey: ['my-requests', params.page ?? 0, params.size ?? 20],
+    queryKey: ['my-requests', queryParams],
     queryFn: async () => {
       if (!accessToken) {
         throw new ApiError(401, 'Unauthorized', { message: 'Not authenticated' })
