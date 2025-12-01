@@ -22,6 +22,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.oauth2.jwt.BadJwtException
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -170,7 +171,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request with valid auth
-            val response = webTestClient.post()
+            val response = webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -206,7 +207,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request with valid auth
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -250,7 +251,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -277,7 +278,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -304,7 +305,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -328,7 +329,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request without Authorization header
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .bodyValue(requestBody)
@@ -351,7 +352,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: POST request with invalid token
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -390,7 +391,7 @@ class VmRequestIntegrationTest {
             """.trimIndent()
 
             // When: Both tenants create requests
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -398,7 +399,7 @@ class VmRequestIntegrationTest {
                 .exchange()
                 .expectStatus().isCreated
 
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantB()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -448,7 +449,7 @@ class VmRequestIntegrationTest {
                 }
             """.trimIndent()
 
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -474,7 +475,7 @@ class VmRequestIntegrationTest {
                 }
             """.trimIndent()
 
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -500,7 +501,7 @@ class VmRequestIntegrationTest {
                 }
             """.trimIndent()
 
-            webTestClient.post()
+            webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

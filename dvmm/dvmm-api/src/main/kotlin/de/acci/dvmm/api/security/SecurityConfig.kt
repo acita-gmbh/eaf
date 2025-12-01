@@ -4,7 +4,6 @@ import de.acci.eaf.auth.keycloak.KeycloakJwtAuthenticationConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -26,11 +25,10 @@ import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttrib
  * - CORS configuration for frontend origin
  * - Actuator health endpoint publicly accessible
  * - All /api/ endpoints require authentication
- * - CSRF protection always enabled (test profile uses TestSecurityConfig)
+ * - CSRF protection always enabled (tests use SecurityMockServerConfigurers.csrf())
  */
 @Configuration
 @EnableWebFluxSecurity
-@Profile("!test")
 public class SecurityConfig(
     @Value("\${eaf.auth.keycloak.client-id:dvmm-web}")
     private val keycloakClientId: String,
@@ -45,7 +43,7 @@ public class SecurityConfig(
      * 1. SecurityWebFilter (Spring Security) - runs first (highest precedence)
      * 2. TenantContextWebFilter - runs after (HIGHEST_PRECEDENCE + 10)
      *
-     * CSRF is always enabled in production. Tests use TestSecurityConfig with @Profile("test").
+     * CSRF is always enabled. Tests use SecurityMockServerConfigurers.csrf() to add tokens.
      */
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
