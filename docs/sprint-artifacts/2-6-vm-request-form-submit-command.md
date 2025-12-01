@@ -294,7 +294,7 @@ const handleSubmit = (data: VmRequestFormData) => {
 
 ### Phase 5: Backend Integration Tests
 
-- [x] **Task 5.1: Full stack integration test** (AC: 2)
+- [x] **Task 5.1: Full-stack integration test** (AC: 2)
   - [x] Create integration test with Testcontainers (PostgreSQL)
   - [x] Test complete flow: HTTP -> Command -> Event -> Projection
   - [x] Test tenant isolation
@@ -675,7 +675,7 @@ data-testid="error-toast"               // Error notification
 - [x] Prerequisites are met (Story 2.4, 2.5 done)
 - [x] FRs mapped to acceptance criteria (FR16, FR45)
 - [x] Architecture patterns documented (CQRS/ES with EAF interfaces)
-- [x] Technical notes include full stack implementation
+- [x] Technical notes include full-stack implementation
 - [x] Accessibility requirements documented
 - [x] Test plan covers all ACs
 - [x] Deferred items clearly documented
