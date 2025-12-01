@@ -90,6 +90,18 @@ npm run lint         # Run ESLint
 
 - **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
 - Use function components with TypeScript - class components are FORBIDDEN
+- **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
 
 ### E2E Testing with Playwright
 

@@ -1,10 +1,23 @@
 package de.acci.dvmm.api.vmrequest
 
+import de.acci.dvmm.application.vmrequest.CancelVmRequestCommand
+import de.acci.dvmm.application.vmrequest.CancelVmRequestError
+import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
+import de.acci.dvmm.application.vmrequest.CancelVmRequestResult
 import de.acci.dvmm.application.vmrequest.CreateVmRequestCommand
 import de.acci.dvmm.application.vmrequest.CreateVmRequestError
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestResult
+import de.acci.dvmm.application.vmrequest.GetMyRequestsError
+import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
+import de.acci.dvmm.application.vmrequest.GetMyRequestsQuery
+import de.acci.dvmm.application.vmrequest.VmRequestSummary
+import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmRequestId
+import de.acci.dvmm.domain.vmrequest.VmRequestStatus
+import de.acci.dvmm.domain.vmrequest.VmSize
+import de.acci.eaf.core.types.UserId
+import de.acci.eaf.eventsourcing.projection.PagedResponse
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
@@ -31,13 +44,19 @@ import java.util.UUID
 @DisplayName("VmRequestController")
 class VmRequestControllerTest {
 
-    private val handler = mockk<CreateVmRequestHandler>()
+    private val createHandler = mockk<CreateVmRequestHandler>()
+    private val getMyRequestsHandler = mockk<GetMyRequestsHandler>()
+    private val cancelHandler = mockk<CancelVmRequestHandler>()
     private lateinit var controller: VmRequestController
     private val testTenantId = TenantId.generate()
 
     @BeforeEach
     fun setup() {
-        controller = VmRequestController(handler)
+        controller = VmRequestController(
+            createVmRequestHandler = createHandler,
+            getMyRequestsHandler = getMyRequestsHandler,
+            cancelVmRequestHandler = cancelHandler
+        )
     }
 
     private fun createJwt(subject: String = UUID.randomUUID().toString()): Jwt {
@@ -76,7 +95,7 @@ class VmRequestControllerTest {
             val requestId = VmRequestId.generate()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(requestId).success()
 
             // When
@@ -101,7 +120,7 @@ class VmRequestControllerTest {
             val requestId = VmRequestId.generate()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(requestId).success()
 
             // When
@@ -128,7 +147,7 @@ class VmRequestControllerTest {
             val commandSlot = slot<CreateVmRequestCommand>()
 
             coEvery {
-                handler.handle(capture(commandSlot), any())
+                createHandler.handle(capture(commandSlot), any())
             } returns CreateVmRequestResult(VmRequestId.generate()).success()
 
             // When
@@ -222,7 +241,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestError.QuotaExceeded(
                 available = 0,
                 requested = 1
@@ -249,7 +268,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestError.ConcurrencyConflict(
                 message = "Concurrent modification detected"
             ).failure()
@@ -274,7 +293,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(VmRequestId.generate()).success()
 
             // When
@@ -289,5 +308,374 @@ class VmRequestControllerTest {
             assertEquals(32, body.size.memoryGb)
             assertEquals(500, body.size.diskGb)
         }
+
+        @Test
+        @DisplayName("should return 500 for persistence failure")
+        fun `should return 500 for persistence failure`() = runTest {
+            // Given
+            val request = createValidRequest()
+            val jwt = createJwt()
+
+            coEvery {
+                createHandler.handle(any(), any())
+            } returns CreateVmRequestError.PersistenceFailure(
+                message = "Database connection failed"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.createVmRequest(request, jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            val body = response.body as InternalErrorResponse
+            assertEquals("internal_error", body.type)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/requests/my")
+    inner class GetMyRequestsTests {
+
+        @Test
+        @DisplayName("should return 200 OK with paginated requests")
+        fun `should return 200 OK with paginated requests`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestSummary = createTestSummary()
+
+            coEvery {
+                getMyRequestsHandler.handle(any())
+            } returns PagedResponse(
+                items = listOf(requestSummary),
+                page = 0,
+                size = 20,
+                totalElements = 1L
+            ).success()
+
+            // When
+            val response = withTenant {
+                controller.getMyRequests(page = 0, size = 20, jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as PagedVmRequestsResponse
+            assertEquals(1, body.items.size)
+            assertEquals(requestSummary.id.value.toString(), body.items[0].id)
+        }
+
+        @Test
+        @DisplayName("should return empty page when no requests")
+        fun `should return empty page when no requests`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            coEvery {
+                getMyRequestsHandler.handle(any())
+            } returns PagedResponse<VmRequestSummary>(
+                items = emptyList(),
+                page = 0,
+                size = 20,
+                totalElements = 0L
+            ).success()
+
+            // When
+            val response = withTenant {
+                controller.getMyRequests(page = 0, size = 20, jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as PagedVmRequestsResponse
+            assertEquals(0, body.items.size)
+            assertEquals(0L, body.totalElements)
+        }
+
+        @Test
+        @DisplayName("should validate and coerce pagination parameters")
+        fun `should validate and coerce pagination parameters`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val querySlot = slot<GetMyRequestsQuery>()
+
+            coEvery {
+                getMyRequestsHandler.handle(capture(querySlot))
+            } returns PagedResponse<VmRequestSummary>(
+                items = emptyList(),
+                page = 0,
+                size = 100,
+                totalElements = 0L
+            ).success()
+
+            // When - page size > 100 should be coerced to 100
+            withTenant {
+                controller.getMyRequests(page = -1, size = 200, jwt = jwt)
+            }
+
+            // Then
+            val query = querySlot.captured
+            assertEquals(0, query.pageRequest.page) // Negative page coerced to 0
+            assertEquals(100, query.pageRequest.size) // Size > 100 coerced to 100
+        }
+
+        @Test
+        @DisplayName("should return 500 for query failure")
+        fun `should return 500 for query failure`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            coEvery {
+                getMyRequestsHandler.handle(any())
+            } returns GetMyRequestsError.QueryFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.getMyRequests(page = 0, size = 20, jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            val body = response.body as InternalErrorResponse
+            assertEquals("internal_error", body.type)
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/requests/{id}/cancel")
+    inner class CancelRequestTests {
+
+        @Test
+        @DisplayName("should return 200 OK on successful cancellation with type field")
+        fun `should return 200 OK on successful cancellation with type field`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestResult(requestId).success()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as CancelSuccessResponse
+            assertEquals("cancelled", body.type)
+            assertEquals("Request cancelled successfully", body.message)
+            assertEquals(requestId.value.toString(), body.requestId)
+        }
+
+        @Test
+        @DisplayName("should accept optional cancellation reason")
+        fun `should accept optional cancellation reason`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+            val commandSlot = slot<CancelVmRequestCommand>()
+
+            coEvery {
+                cancelHandler.handle(capture(commandSlot), any())
+            } returns CancelVmRequestResult(requestId).success()
+
+            // When
+            withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = CancelVmRequestRequest(reason = "No longer needed"),
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            val command = commandSlot.captured
+            assertEquals("No longer needed", command.reason)
+        }
+
+        @Test
+        @DisplayName("should return 400 for invalid request ID format")
+        fun `should return 400 for invalid request ID format`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = "not-a-valid-uuid",
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            val body = response.body as ValidationErrorResponse
+            assertTrue(body.errors.any { it.field == "id" })
+        }
+
+        @Test
+        @DisplayName("should return 404 when request not found")
+        fun `should return 404 when request not found`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestError.NotFound(requestId).failure()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 403 when user is not request owner")
+        fun `should return 403 when user is not request owner`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestError.Forbidden().failure()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+            val body = response.body as ForbiddenResponse
+            assertEquals("forbidden", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 409 when request is not in cancellable state")
+        fun `should return 409 when request is not in cancellable state`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestError.InvalidState(
+                currentState = "APPROVED"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT, response.statusCode)
+            val body = response.body as InvalidStateResponse
+            assertEquals("invalid_state", body.type)
+            assertEquals("APPROVED", body.currentState)
+        }
+
+        @Test
+        @DisplayName("should return 409 for concurrency conflict")
+        fun `should return 409 for concurrency conflict`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestError.ConcurrencyConflict(
+                message = "Concurrent modification"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT, response.statusCode)
+            val body = response.body as ConcurrencyConflictResponse
+            assertEquals("concurrency_conflict", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 500 for persistence failure")
+        fun `should return 500 for persistence failure`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                cancelHandler.handle(any(), any())
+            } returns CancelVmRequestError.PersistenceFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.cancelRequest(
+                    id = requestId.value.toString(),
+                    request = null,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            val body = response.body as InternalErrorResponse
+            assertEquals("internal_error", body.type)
+        }
+    }
+
+    private fun createTestSummary(): VmRequestSummary {
+        val now = Instant.now()
+        return VmRequestSummary(
+            id = VmRequestId.generate(),
+            tenantId = testTenantId,
+            requesterId = UserId.generate(),
+            requesterName = "Test User",
+            projectId = ProjectId.generate(),
+            projectName = "Test Project",
+            vmName = "test-vm",
+            size = VmSize.M,
+            justification = "Test justification",
+            status = VmRequestStatus.PENDING,
+            createdAt = now,
+            updatedAt = now
+        )
     }
 }

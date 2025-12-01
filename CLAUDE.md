@@ -122,6 +122,27 @@ function MyComponent() { ... }
 - Compiler optimization is more consistent and maintainable
 - See: https://react.dev/learn/react-compiler
 
+### React Hook Form: useWatch over watch
+
+**Use `useWatch` instead of `watch()` for React Compiler compatibility.**
+
+```tsx
+// ❌ FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')  // ESLint: react-hooks/incompatible-library
+
+// ✅ CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+**Rationale:**
+- `watch()` returns a subscription that React Compiler cannot safely memoize
+- `useWatch` is a separate hook designed to work with React's rules of hooks
+- Both provide the same functionality, but `useWatch` integrates properly with the compiler
+
 ### Component Patterns
 
 ```tsx

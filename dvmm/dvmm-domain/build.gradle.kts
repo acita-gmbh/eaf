@@ -9,4 +9,6 @@ plugins {
 dependencies {
     api(project(":eaf:eaf-core"))
     api(project(":eaf:eaf-eventsourcing"))
+
+    testImplementation(testFixtures(project(":eaf:eaf-testing")))
 }

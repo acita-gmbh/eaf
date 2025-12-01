@@ -1,12 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   createVmRequest,
+  getMyRequests,
+  cancelRequest,
   ApiError,
   isValidationError,
   isQuotaExceededError,
+  isNotFoundError,
+  isForbiddenError,
+  isInvalidStateError,
   type CreateVmRequestPayload,
   type ValidationErrorResponse,
   type QuotaExceededResponse,
+  type NotFoundErrorResponse,
+  type ForbiddenErrorResponse,
+  type InvalidStateErrorResponse,
+  type VmRequestSummary,
 } from './vm-requests'
 
 // Mock fetch globally
@@ -323,6 +332,437 @@ describe('vm-requests API', () => {
       expect(error.statusText).toBe('Bad Request')
       expect(error.body).toEqual({ message: 'Test' })
       expect(error.message).toBe('API Error: 400 Bad Request')
+    })
+  })
+
+  describe('getMyRequests', () => {
+    const accessToken = 'test-token'
+
+    it('transforms nested size object to flat fields', async () => {
+      // Backend returns nested size object
+      const backendResponse = {
+        items: [
+          {
+            id: 'req-1',
+            requesterName: 'John Doe',
+            projectId: 'proj-1',
+            projectName: 'Test Project',
+            vmName: 'test-vm',
+            size: { code: 'M', cpuCores: 4, memoryGb: 16, diskGb: 100 },
+            justification: 'Test reason',
+            status: 'PENDING',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({}, accessToken)
+
+      // Verify size is flattened
+      expect(result.items).toHaveLength(1)
+      const item = result.items[0]
+      expect(item.size).toBe('M')
+      expect(item.cpuCores).toBe(4)
+      expect(item.memoryGb).toBe(16)
+      expect(item.diskGb).toBe(100)
+    })
+
+    it('sends GET request with correct query parameters', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () =>
+          JSON.stringify({
+            items: [],
+            page: 1,
+            size: 25,
+            totalElements: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          }),
+      })
+
+      await getMyRequests({ page: 1, size: 25 }, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/requests/my?page=1&size=25'),
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+    })
+
+    it('preserves pagination metadata from backend', async () => {
+      const backendResponse = {
+        items: [],
+        page: 2,
+        size: 10,
+        totalElements: 50,
+        totalPages: 5,
+        hasNext: true,
+        hasPrevious: true,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({ page: 2, size: 10 }, accessToken)
+
+      expect(result.page).toBe(2)
+      expect(result.size).toBe(10)
+      expect(result.totalElements).toBe(50)
+      expect(result.totalPages).toBe(5)
+      expect(result.hasNext).toBe(true)
+      expect(result.hasPrevious).toBe(true)
+    })
+
+    it('throws ApiError on 401 Unauthorized', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers(),
+        text: async () => JSON.stringify({ message: 'Token expired' }),
+      })
+
+      await expect(getMyRequests({}, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await getMyRequests({}, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(401)
+      }
+    })
+
+    it('transforms multiple items in response', async () => {
+      const backendResponse = {
+        items: [
+          {
+            id: 'req-1',
+            requesterName: 'User 1',
+            projectId: 'proj-1',
+            projectName: 'Project 1',
+            vmName: 'vm-1',
+            size: { code: 'S', cpuCores: 2, memoryGb: 4, diskGb: 50 },
+            justification: 'Reason 1',
+            status: 'PENDING',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+          {
+            id: 'req-2',
+            requesterName: 'User 2',
+            projectId: 'proj-2',
+            projectName: 'Project 2',
+            vmName: 'vm-2',
+            size: { code: 'XL', cpuCores: 16, memoryGb: 64, diskGb: 500 },
+            justification: 'Reason 2',
+            status: 'APPROVED',
+            createdAt: '2024-01-02T00:00:00Z',
+            updatedAt: '2024-01-02T00:00:00Z',
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 2,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({}, accessToken)
+
+      expect(result.items).toHaveLength(2)
+
+      // First item - size S
+      expect(result.items[0].size).toBe('S')
+      expect(result.items[0].cpuCores).toBe(2)
+      expect(result.items[0].memoryGb).toBe(4)
+      expect(result.items[0].diskGb).toBe(50)
+
+      // Second item - size XL
+      expect(result.items[1].size).toBe('XL')
+      expect(result.items[1].cpuCores).toBe(16)
+      expect(result.items[1].memoryGb).toBe(64)
+      expect(result.items[1].diskGb).toBe(500)
+    })
+  })
+
+  describe('cancelRequest', () => {
+    const accessToken = 'test-token'
+    const requestId = 'req-123'
+
+    it('sends POST request to cancel endpoint with reason', async () => {
+      const mockResponse = {
+        message: 'Request cancelled successfully',
+        requestId,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(mockResponse),
+      })
+
+      const result = await cancelRequest(requestId, { reason: 'No longer needed' }, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/requests/${requestId}/cancel`),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ reason: 'No longer needed' }),
+        })
+      )
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('sends POST request with empty body when no reason provided', async () => {
+      const mockResponse = {
+        message: 'Request cancelled successfully',
+        requestId,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(mockResponse),
+      })
+
+      await cancelRequest(requestId, undefined, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/requests/${requestId}/cancel`),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: '{}', // Empty object for Content-Type consistency
+        })
+      )
+    })
+
+    it('throws ApiError with not found on 404', async () => {
+      const notFoundError: NotFoundErrorResponse = {
+        type: 'not_found',
+        message: 'Request not found',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => JSON.stringify(notFoundError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(404)
+        expect(isNotFoundError(apiError.body)).toBe(true)
+      }
+    })
+
+    it('throws ApiError with forbidden on 403', async () => {
+      const forbiddenError: ForbiddenErrorResponse = {
+        type: 'forbidden',
+        message: 'Not authorized to cancel this request',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers(),
+        text: async () => JSON.stringify(forbiddenError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(403)
+        expect(isForbiddenError(apiError.body)).toBe(true)
+      }
+    })
+
+    it('throws ApiError with invalid state on 409', async () => {
+      const invalidStateError: InvalidStateErrorResponse = {
+        type: 'invalid_state',
+        message: 'Request cannot be cancelled',
+        currentState: 'APPROVED',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        headers: new Headers(),
+        text: async () => JSON.stringify(invalidStateError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(409)
+        expect(isInvalidStateError(apiError.body)).toBe(true)
+        if (isInvalidStateError(apiError.body)) {
+          expect(apiError.body.currentState).toBe('APPROVED')
+        }
+      }
+    })
+
+    it('throws ApiError on 500 Internal Server Error', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers(),
+        text: async () => JSON.stringify({ message: 'Something went wrong' }),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(500)
+      }
+    })
+  })
+
+  describe('isNotFoundError', () => {
+    it('returns true for valid not found error', () => {
+      const notFoundError: NotFoundErrorResponse = {
+        type: 'not_found',
+        message: 'Request not found',
+      }
+      expect(isNotFoundError(notFoundError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isNotFoundError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isNotFoundError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isNotFoundError('string')).toBe(false)
+      expect(isNotFoundError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isNotFoundError({ type: 'validation', message: 'test' })).toBe(false)
+    })
+  })
+
+  describe('isForbiddenError', () => {
+    it('returns true for valid forbidden error', () => {
+      const forbiddenError: ForbiddenErrorResponse = {
+        type: 'forbidden',
+        message: 'Not authorized',
+      }
+      expect(isForbiddenError(forbiddenError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isForbiddenError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isForbiddenError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isForbiddenError('string')).toBe(false)
+      expect(isForbiddenError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isForbiddenError({ type: 'not_found', message: 'test' })).toBe(false)
+    })
+  })
+
+  describe('isInvalidStateError', () => {
+    it('returns true for valid invalid state error', () => {
+      const invalidStateError: InvalidStateErrorResponse = {
+        type: 'invalid_state',
+        message: 'Cannot cancel',
+        currentState: 'APPROVED',
+      }
+      expect(isInvalidStateError(invalidStateError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isInvalidStateError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isInvalidStateError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isInvalidStateError('string')).toBe(false)
+      expect(isInvalidStateError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isInvalidStateError({ type: 'forbidden', message: 'test', currentState: 'X' })).toBe(
+        false
+      )
     })
   })
 })
