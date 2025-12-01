@@ -22,7 +22,7 @@ flyway = "10.7.1"
 testcontainers-keycloak = "4.0.0"
 jjwt = "0.12.5"
 slf4j = "2.0.17"
-kotlinLogging = "7.0.7"
+kotlinLogging = "7.0.13"
 
 [libraries]
 # Kotlin
