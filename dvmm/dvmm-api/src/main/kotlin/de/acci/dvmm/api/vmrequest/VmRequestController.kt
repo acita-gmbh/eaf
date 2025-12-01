@@ -132,18 +132,12 @@ public class VmRequestController(
             }
             is CreateVmRequestError.ConcurrencyConflict -> {
                 ResponseEntity.status(HttpStatus.CONFLICT).body(
-                    mapOf(
-                        "type" to "concurrency_conflict",
-                        "message" to error.message
-                    )
+                    ConcurrencyConflictResponse(message = error.message)
                 )
             }
             is CreateVmRequestError.PersistenceFailure -> {
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    mapOf(
-                        "type" to "internal_error",
-                        "message" to "Failed to persist request"
-                    )
+                    InternalErrorResponse(message = "Failed to persist request")
                 )
             }
         }

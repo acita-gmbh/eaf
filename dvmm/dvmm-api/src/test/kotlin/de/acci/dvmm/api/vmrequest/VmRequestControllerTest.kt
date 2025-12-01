@@ -261,9 +261,9 @@ class VmRequestControllerTest {
 
             // Then
             assertEquals(HttpStatus.CONFLICT, response.statusCode)
-            @Suppress("UNCHECKED_CAST")
-            val body = response.body as Map<String, Any>
-            assertEquals("concurrency_conflict", body["type"])
+            val body = response.body as ConcurrencyConflictResponse
+            assertEquals("concurrency_conflict", body.type)
+            assertEquals("Concurrent modification detected", body.message)
         }
 
         @Test

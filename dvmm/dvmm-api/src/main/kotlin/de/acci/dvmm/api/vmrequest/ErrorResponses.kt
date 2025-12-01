@@ -22,3 +22,19 @@ public data class QuotaExceededResponse(
     val available: Int,
     val requested: Int
 )
+
+/**
+ * Response DTO for concurrency conflict errors (HTTP 409).
+ */
+public data class ConcurrencyConflictResponse(
+    val type: String = "concurrency_conflict",
+    val message: String
+)
+
+/**
+ * Response DTO for internal server errors (HTTP 500).
+ */
+public data class InternalErrorResponse(
+    val type: String = "internal_error",
+    val message: String
+)
