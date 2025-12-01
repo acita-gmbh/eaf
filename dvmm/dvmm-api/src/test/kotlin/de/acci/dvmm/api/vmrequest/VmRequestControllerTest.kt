@@ -449,8 +449,8 @@ class VmRequestControllerTest {
     inner class CancelRequestTests {
 
         @Test
-        @DisplayName("should return 200 OK on successful cancellation")
-        fun `should return 200 OK on successful cancellation`() = runTest {
+        @DisplayName("should return 200 OK on successful cancellation with type field")
+        fun `should return 200 OK on successful cancellation with type field`() = runTest {
             // Given
             val requestId = VmRequestId.generate()
             val jwt = createJwt()
@@ -470,6 +470,10 @@ class VmRequestControllerTest {
 
             // Then
             assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as CancelSuccessResponse
+            assertEquals("cancelled", body.type)
+            assertEquals("Request cancelled successfully", body.message)
+            assertEquals(requestId.value.toString(), body.requestId)
         }
 
         @Test
@@ -668,9 +672,6 @@ class VmRequestControllerTest {
             projectName = "Test Project",
             vmName = "test-vm",
             size = VmSize.M,
-            cpuCores = VmSize.M.cpuCores,
-            memoryGb = VmSize.M.memoryGb,
-            diskGb = VmSize.M.diskGb,
             justification = "Test justification",
             status = VmRequestStatus.PENDING,
             createdAt = now,

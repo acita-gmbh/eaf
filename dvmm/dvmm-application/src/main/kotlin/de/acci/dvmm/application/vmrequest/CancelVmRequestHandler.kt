@@ -159,7 +159,7 @@ public class CancelVmRequestHandler(
             aggregate.cancel(reason = command.reason, metadata = metadata)
         } catch (e: InvalidStateException) {
             return CancelVmRequestError.InvalidState(
-                currentState = e.currentState
+                currentState = e.currentState.name
             ).failure()
         }
 

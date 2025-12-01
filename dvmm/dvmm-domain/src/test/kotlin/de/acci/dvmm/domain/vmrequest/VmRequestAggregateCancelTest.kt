@@ -232,7 +232,7 @@ class VmRequestAggregateCancelTest {
             val exception = assertThrows<InvalidStateException> {
                 aggregate.cancel(reason = "Too late", metadata = cancelMetadata)
             }
-            assertEquals("APPROVED", exception.currentState)
+            assertEquals(VmRequestStatus.APPROVED, exception.currentState)
             assertEquals("cancel", exception.operation)
         }
 
@@ -248,7 +248,7 @@ class VmRequestAggregateCancelTest {
             val exception = assertThrows<InvalidStateException> {
                 aggregate.cancel(reason = "Too late", metadata = cancelMetadata)
             }
-            assertEquals("REJECTED", exception.currentState)
+            assertEquals(VmRequestStatus.REJECTED, exception.currentState)
             assertEquals("cancel", exception.operation)
         }
 
@@ -264,7 +264,7 @@ class VmRequestAggregateCancelTest {
             val exception = assertThrows<InvalidStateException> {
                 aggregate.cancel(reason = "Too late", metadata = cancelMetadata)
             }
-            assertEquals("PROVISIONING", exception.currentState)
+            assertEquals(VmRequestStatus.PROVISIONING, exception.currentState)
             assertEquals("cancel", exception.operation)
         }
 
@@ -280,7 +280,7 @@ class VmRequestAggregateCancelTest {
             val exception = assertThrows<InvalidStateException> {
                 aggregate.cancel(reason = "Too late", metadata = cancelMetadata)
             }
-            assertEquals("READY", exception.currentState)
+            assertEquals(VmRequestStatus.READY, exception.currentState)
             assertEquals("cancel", exception.operation)
         }
 
@@ -296,7 +296,7 @@ class VmRequestAggregateCancelTest {
             val exception = assertThrows<InvalidStateException> {
                 aggregate.cancel(reason = "Too late", metadata = cancelMetadata)
             }
-            assertEquals("FAILED", exception.currentState)
+            assertEquals(VmRequestStatus.FAILED, exception.currentState)
             assertEquals("cancel", exception.operation)
         }
     }

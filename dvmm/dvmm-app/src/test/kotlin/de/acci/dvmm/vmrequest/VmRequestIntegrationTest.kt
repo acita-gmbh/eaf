@@ -29,6 +29,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import reactor.core.publisher.Mono
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.util.UUID
 
 /**
@@ -68,6 +69,52 @@ class VmRequestIntegrationTest {
                 VmRequestIntegrationTest::class.java
                     .getResource("/db/migration/V001__create_event_store.sql")!!
                     .readText()
+            }
+            // Initialize projection table
+            ensureProjectionSchema()
+        }
+
+        private fun ensureProjectionSchema() {
+            TestContainers.postgres.createConnection("").use { conn ->
+                conn.autoCommit = true
+                conn.createStatement().use { stmt ->
+                    // Create projection table with quoted uppercase identifiers to match jOOQ-generated code
+                    // jOOQ uses H2's DDLDatabase which stores names in UPPERCASE
+                    stmt.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS public."VM_REQUESTS_PROJECTION" (
+                            "ID"                UUID PRIMARY KEY,
+                            "TENANT_ID"         UUID NOT NULL,
+                            "REQUESTER_ID"      UUID NOT NULL,
+                            "REQUESTER_NAME"    VARCHAR(255) NOT NULL,
+                            "PROJECT_ID"        UUID NOT NULL,
+                            "PROJECT_NAME"      VARCHAR(255) NOT NULL,
+                            "VM_NAME"           VARCHAR(255) NOT NULL,
+                            "SIZE"              VARCHAR(10) NOT NULL,
+                            "CPU_CORES"         INT NOT NULL,
+                            "MEMORY_GB"         INT NOT NULL,
+                            "DISK_GB"           INT NOT NULL,
+                            "JUSTIFICATION"     TEXT NOT NULL,
+                            "STATUS"            VARCHAR(50) NOT NULL,
+                            "APPROVED_BY"       UUID,
+                            "APPROVED_BY_NAME"  VARCHAR(255),
+                            "REJECTED_BY"       UUID,
+                            "REJECTED_BY_NAME"  VARCHAR(255),
+                            "REJECTION_REASON"  TEXT,
+                            "CREATED_AT"        TIMESTAMPTZ NOT NULL,
+                            "UPDATED_AT"        TIMESTAMPTZ NOT NULL,
+                            "VERSION"           INT NOT NULL DEFAULT 1
+                        )
+                        """.trimIndent()
+                    )
+                    // Create indexes with quoted uppercase identifiers
+                    stmt.execute(
+                        """CREATE INDEX IF NOT EXISTS "IDX_VM_REQUESTS_PROJECTION_TENANT" ON public."VM_REQUESTS_PROJECTION" ("TENANT_ID")"""
+                    )
+                    stmt.execute(
+                        """CREATE INDEX IF NOT EXISTS "IDX_VM_REQUESTS_PROJECTION_REQUESTER" ON public."VM_REQUESTS_PROJECTION" ("REQUESTER_ID")"""
+                    )
+                }
             }
         }
 
@@ -138,11 +185,64 @@ class VmRequestIntegrationTest {
 
     @BeforeEach
     fun cleanDatabase() {
-        // Truncate event store between tests
+        // Truncate event store and projection table between tests
+        // Use quoted uppercase identifiers to match jOOQ-generated schema
         TestContainers.postgres.createConnection("").use { conn ->
             conn.autoCommit = true
             conn.createStatement().use { stmt ->
                 stmt.execute("TRUNCATE TABLE eaf_events.events RESTART IDENTITY CASCADE")
+                stmt.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" RESTART IDENTITY CASCADE""")
+            }
+        }
+    }
+
+    /**
+     * Insert a projection record directly into the database for testing.
+     * Uses quoted uppercase identifiers to match jOOQ-generated schema.
+     */
+    private fun insertProjection(
+        id: UUID,
+        tenantId: UUID,
+        requesterId: UUID,
+        requesterName: String = "Test User",
+        projectId: UUID = UUID.randomUUID(),
+        projectName: String = "Test Project",
+        vmName: String = "test-vm",
+        size: String = "M",
+        cpuCores: Int = 4,
+        memoryGb: Int = 8,
+        diskGb: Int = 100,
+        justification: String = "Test justification for VM request",
+        status: String = "PENDING",
+        createdAt: OffsetDateTime = OffsetDateTime.now(),
+        updatedAt: OffsetDateTime = OffsetDateTime.now()
+    ) {
+        TestContainers.postgres.createConnection("").use { conn ->
+            conn.prepareStatement(
+                """
+                INSERT INTO public."VM_REQUESTS_PROJECTION"
+                ("ID", "TENANT_ID", "REQUESTER_ID", "REQUESTER_NAME", "PROJECT_ID", "PROJECT_NAME",
+                 "VM_NAME", "SIZE", "CPU_CORES", "MEMORY_GB", "DISK_GB", "JUSTIFICATION",
+                 "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                """.trimIndent()
+            ).use { stmt ->
+                stmt.setObject(1, id)
+                stmt.setObject(2, tenantId)
+                stmt.setObject(3, requesterId)
+                stmt.setString(4, requesterName)
+                stmt.setObject(5, projectId)
+                stmt.setString(6, projectName)
+                stmt.setString(7, vmName)
+                stmt.setString(8, size)
+                stmt.setInt(9, cpuCores)
+                stmt.setInt(10, memoryGb)
+                stmt.setInt(11, diskGb)
+                stmt.setString(12, justification)
+                stmt.setString(13, status)
+                stmt.setObject(14, createdAt)
+                stmt.setObject(15, updatedAt)
+                stmt.executeUpdate()
             }
         }
     }
@@ -507,6 +607,430 @@ class VmRequestIntegrationTest {
                 .jsonPath("$.size.cpuCores").isEqualTo(16)
                 .jsonPath("$.size.memoryGb").isEqualTo(32)
                 .jsonPath("$.size.diskGb").isEqualTo(500)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/requests/my")
+    inner class GetMyRequests {
+
+        @Test
+        @DisplayName("should return 200 OK with empty list when no requests exist")
+        fun `should return empty list when no requests exist`() {
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items").isArray
+                .jsonPath("$.items.length()").isEqualTo(0)
+                .jsonPath("$.totalElements").isEqualTo(0)
+                .jsonPath("$.page").isEqualTo(0)
+        }
+
+        @Test
+        @DisplayName("should return user's requests from projection")
+        fun `should return users requests from projection`() {
+            // Given: A projection exists for user A
+            val requestId = UUID.randomUUID()
+            insertProjection(
+                id = requestId,
+                tenantId = tenantAId,
+                requesterId = userAId,
+                requesterName = "User A",
+                vmName = "user-a-server",
+                size = "L",
+                cpuCores = 8,
+                memoryGb = 16,
+                diskGb = 200,
+                justification = "Production server for team A"
+            )
+
+            // When: User A requests their list
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: 200 OK with the request
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items.length()").isEqualTo(1)
+                .jsonPath("$.items[0].id").isEqualTo(requestId.toString())
+                .jsonPath("$.items[0].vmName").isEqualTo("user-a-server")
+                .jsonPath("$.items[0].size.code").isEqualTo("L")
+                .jsonPath("$.items[0].size.cpuCores").isEqualTo(8)
+                .jsonPath("$.items[0].size.memoryGb").isEqualTo(16)
+                .jsonPath("$.items[0].size.diskGb").isEqualTo(200)
+                .jsonPath("$.items[0].status").isEqualTo("PENDING")
+                .jsonPath("$.totalElements").isEqualTo(1)
+        }
+
+        @Test
+        @DisplayName("should not return other users' requests (tenant isolation)")
+        fun `should not return other users requests`() {
+            // Given: Projections for both tenants
+            insertProjection(
+                id = UUID.randomUUID(),
+                tenantId = tenantAId,
+                requesterId = userAId,
+                vmName = "tenant-a-vm"
+            )
+            insertProjection(
+                id = UUID.randomUUID(),
+                tenantId = tenantBId,
+                requesterId = userBId,
+                vmName = "tenant-b-vm"
+            )
+
+            // When: User A requests their list
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: Only tenant A's requests returned
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items.length()").isEqualTo(1)
+                .jsonPath("$.items[0].vmName").isEqualTo("tenant-a-vm")
+        }
+
+        @Test
+        @DisplayName("should return all pagination metadata fields correctly")
+        fun `should return all pagination metadata fields correctly`() {
+            // Given: Multiple projections for user A (5 total)
+            repeat(5) { i ->
+                insertProjection(
+                    id = UUID.randomUUID(),
+                    tenantId = tenantAId,
+                    requesterId = userAId,
+                    vmName = "vm-$i"
+                )
+            }
+
+            // When: Request with pagination (page 0, size 2)
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my?page=0&size=2")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: All pagination fields correctly populated
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items.length()").isEqualTo(2)
+                .jsonPath("$.page").isEqualTo(0)
+                .jsonPath("$.size").isEqualTo(2)
+                .jsonPath("$.totalElements").isEqualTo(5)
+                .jsonPath("$.totalPages").isEqualTo(3) // ceil(5/2) = 3 pages
+                .jsonPath("$.hasNext").isEqualTo(true) // page 0 of 3 has next
+                .jsonPath("$.hasPrevious").isEqualTo(false) // page 0 has no previous
+        }
+
+        @Test
+        @DisplayName("should return correct hasNext/hasPrevious for middle page")
+        fun `should return correct hasNext and hasPrevious for middle page`() {
+            // Given: Multiple projections for user A (6 total)
+            repeat(6) { i ->
+                insertProjection(
+                    id = UUID.randomUUID(),
+                    tenantId = tenantAId,
+                    requesterId = userAId,
+                    vmName = "middle-page-vm-$i"
+                )
+            }
+
+            // When: Request middle page (page 1, size 2 -> pages 0,1,2)
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my?page=1&size=2")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: Middle page has both next and previous
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items.length()").isEqualTo(2)
+                .jsonPath("$.page").isEqualTo(1)
+                .jsonPath("$.totalPages").isEqualTo(3) // ceil(6/2) = 3 pages
+                .jsonPath("$.hasNext").isEqualTo(true) // page 1 has page 2
+                .jsonPath("$.hasPrevious").isEqualTo(true) // page 1 has page 0
+        }
+
+        @Test
+        @DisplayName("should return correct hasNext for last page")
+        fun `should return correct hasNext for last page`() {
+            // Given: Multiple projections for user A (4 total)
+            repeat(4) { i ->
+                insertProjection(
+                    id = UUID.randomUUID(),
+                    tenantId = tenantAId,
+                    requesterId = userAId,
+                    vmName = "last-page-vm-$i"
+                )
+            }
+
+            // When: Request last page (page 1, size 2 -> pages 0,1)
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my?page=1&size=2")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: Last page has no next
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.items.length()").isEqualTo(2)
+                .jsonPath("$.page").isEqualTo(1)
+                .jsonPath("$.totalPages").isEqualTo(2) // ceil(4/2) = 2 pages
+                .jsonPath("$.hasNext").isEqualTo(false) // last page has no next
+                .jsonPath("$.hasPrevious").isEqualTo(true) // page 1 has page 0
+        }
+
+        @Test
+        @DisplayName("should return 401 Unauthorized without auth token")
+        fun `should return 401 without auth token`() {
+            webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/my")
+                .exchange()
+                .expectStatus().isUnauthorized
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/requests/{id}/cancel")
+    inner class CancelRequest {
+
+        @Test
+        @DisplayName("should return 200 OK when cancelling own PENDING request")
+        fun `should cancel own pending request`() {
+            // Given: Create a request first (stores VmRequestCreated event)
+            val projectId = UUID.randomUUID()
+            val requestBody = """
+                {
+                    "vmName": "cancel-test-vm",
+                    "projectId": "$projectId",
+                    "size": "M",
+                    "justification": "Test VM that will be cancelled"
+                }
+            """.trimIndent()
+
+            val createResponse = webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isCreated
+                .expectBody()
+                .returnResult()
+
+            // Extract the request ID from response
+            val responseJson = String(createResponse.responseBody!!)
+            val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
+
+            // Insert projection record (since CreateHandler doesn't populate it)
+            insertProjection(
+                id = UUID.fromString(requestId),
+                tenantId = tenantAId,
+                requesterId = userAId,
+                vmName = "cancel-test-vm",
+                status = "PENDING"
+            )
+
+            // When: Cancel the request
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$requestId/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue("""{"reason": "No longer needed"}""")
+                .exchange()
+                // Then: 200 OK with type field
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("cancelled")
+                .jsonPath("$.message").isEqualTo("Request cancelled successfully")
+                .jsonPath("$.requestId").isEqualTo(requestId)
+        }
+
+        @Test
+        @DisplayName("should return 200 OK when cancelling without reason")
+        fun `should cancel without reason`() {
+            // Given: Create a request
+            val requestBody = """
+                {
+                    "vmName": "no-reason-cancel-vm",
+                    "projectId": "${UUID.randomUUID()}",
+                    "size": "S",
+                    "justification": "Test VM for cancellation without reason"
+                }
+            """.trimIndent()
+
+            val createResponse = webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isCreated
+                .expectBody()
+                .returnResult()
+
+            val responseJson = String(createResponse.responseBody!!)
+            val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
+
+            insertProjection(
+                id = UUID.fromString(requestId),
+                tenantId = tenantAId,
+                requesterId = userAId,
+                vmName = "no-reason-cancel-vm",
+                status = "PENDING"
+            )
+
+            // When: Cancel without body
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$requestId/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                // Then: 200 OK with type field
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("cancelled")
+                .jsonPath("$.message").isEqualTo("Request cancelled successfully")
+        }
+
+        @Test
+        @DisplayName("should return 404 Not Found for non-existent request")
+        fun `should return 404 for non-existent request`() {
+            val nonExistentId = UUID.randomUUID()
+
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$nonExistentId/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                .expectStatus().isNotFound
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("not_found")
+        }
+
+        @Test
+        @DisplayName("should return 400 Bad Request for invalid ID format")
+        fun `should return 400 for invalid id format`() {
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/invalid-uuid/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+                .expectStatus().isBadRequest
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("validation")
+                .jsonPath("$.errors[0].field").isEqualTo("id")
+        }
+
+        @Test
+        @DisplayName("should return 403 Forbidden when cancelling another user's request")
+        fun `should return 403 when cancelling others request`() {
+            // Given: Create a request as tenant A
+            val requestBody = """
+                {
+                    "vmName": "tenant-a-vm",
+                    "projectId": "${UUID.randomUUID()}",
+                    "size": "M",
+                    "justification": "Tenant A's VM request"
+                }
+            """.trimIndent()
+
+            val createResponse = webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isCreated
+                .expectBody()
+                .returnResult()
+
+            val responseJson = String(createResponse.responseBody!!)
+            val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
+
+            // When: Tenant B tries to cancel it
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$requestId/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantB()}")
+                .exchange()
+                // Then: 403 Forbidden - authorization check rejects cross-tenant access
+                .expectStatus().isForbidden
+        }
+
+        @Test
+        @DisplayName("should return 401 Unauthorized without auth token")
+        fun `should return 401 without auth token`() {
+            val requestId = UUID.randomUUID()
+
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$requestId/cancel")
+                .exchange()
+                .expectStatus().isUnauthorized
+        }
+
+        @Test
+        @DisplayName("should persist VmRequestCancelled event to event store")
+        fun `should persist cancel event to event store`() {
+            // Given: Create a request
+            val requestBody = """
+                {
+                    "vmName": "event-check-vm",
+                    "projectId": "${UUID.randomUUID()}",
+                    "size": "M",
+                    "justification": "VM to verify event persistence"
+                }
+            """.trimIndent()
+
+            val createResponse = webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isCreated
+                .expectBody()
+                .returnResult()
+
+            val responseJson = String(createResponse.responseBody!!)
+            val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
+
+            insertProjection(
+                id = UUID.fromString(requestId),
+                tenantId = tenantAId,
+                requesterId = userAId,
+                vmName = "event-check-vm",
+                status = "PENDING"
+            )
+
+            // When: Cancel
+            webTestClient.mutateWith(csrf()).post()
+                .uri("/api/requests/$requestId/cancel")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue("""{"reason": "Testing event persistence"}""")
+                .exchange()
+                .expectStatus().isOk
+
+            // Then: VmRequestCancelled event is persisted
+            TestContainers.postgres.createConnection("").use { conn ->
+                conn.createStatement().use { stmt ->
+                    val rs = stmt.executeQuery(
+                        """
+                        SELECT event_type, payload::text
+                        FROM eaf_events.events
+                        WHERE aggregate_id = '$requestId'::uuid
+                        ORDER BY version
+                        """.trimIndent()
+                    )
+                    // First event: VmRequestCreated
+                    assertTrue(rs.next())
+                    assertEquals("VmRequestCreated", rs.getString("event_type"))
+
+                    // Second event: VmRequestCancelled
+                    assertTrue(rs.next())
+                    assertEquals("VmRequestCancelled", rs.getString("event_type"))
+                    val payload = rs.getString("payload")
+                    assertTrue(payload.contains("Testing event persistence"))
+                }
+            }
         }
     }
 }

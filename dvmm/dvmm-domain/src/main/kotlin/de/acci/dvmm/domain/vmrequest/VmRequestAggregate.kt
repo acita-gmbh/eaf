@@ -110,8 +110,8 @@ public class VmRequestAggregate private constructor(
         // Only PENDING requests can be cancelled
         if (status != VmRequestStatus.PENDING) {
             throw InvalidStateException(
-                currentState = status.name,
-                expectedState = VmRequestStatus.PENDING.name,
+                currentState = status,
+                expectedState = VmRequestStatus.PENDING,
                 operation = "cancel"
             )
         }

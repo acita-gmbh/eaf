@@ -37,6 +37,7 @@ class CancelVmRequestHandlerTest {
 
     private val eventStore = mockk<EventStore>()
     private val eventDeserializer = mockk<VmRequestEventDeserializer>()
+    private val projectionUpdater = mockk<VmRequestProjectionUpdater>()
 
     private fun createMetadata(
         tenantId: TenantId = TenantId.generate(),
@@ -394,12 +395,17 @@ class CancelVmRequestHandlerTest {
     }
 
     @Nested
-    @DisplayName("invalid state scenarios")
+    @DisplayName("invalid state and idempotent scenarios")
     inner class InvalidStateTests {
 
+        // Note: InvalidState error for APPROVED/REJECTED/PROVISIONING/READY/FAILED states
+        // is thoroughly tested in VmRequestAggregateCancelTest.kt and VmRequestControllerTest.kt.
+        // The handler correctly propagates InvalidStateException as CancelVmRequestError.InvalidState.
+        // These tests focus on the CANCELLED state idempotent behavior.
+
         @Test
-        @DisplayName("should return InvalidState when request is not PENDING")
-        fun `should return InvalidState when request is not PENDING`() = runTest {
+        @DisplayName("should return success when cancelling already-cancelled request (idempotent)")
+        fun `should return success when cancelling already-cancelled request (idempotent)`() = runTest {
             // Given - simulate an aggregate that was already cancelled
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
@@ -610,6 +616,208 @@ class CancelVmRequestHandlerTest {
             assertTrue(result is Result.Failure)
             val failure = result as Result.Failure
             assertTrue(failure.error is CancelVmRequestError.PersistenceFailure)
+        }
+    }
+
+    @Nested
+    @DisplayName("projection updater integration")
+    inner class ProjectionUpdaterTests {
+
+        @Test
+        @DisplayName("should call projection updater with correct status after successful cancellation")
+        fun `should call projection updater with correct status after successful cancellation`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val userId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                userId = userId,
+                reason = "Project cancelled"
+            )
+            val updateSlot = slot<VmRequestStatusUpdate>()
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+            coEvery { eventStore.append(any(), any(), any()) } returns 2L.success()
+            coEvery { projectionUpdater.updateStatus(capture(updateSlot)) } returns Unit
+
+            val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+
+            // When
+            val result = handler.handle(command)
+
+            // Then
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 1) { projectionUpdater.updateStatus(any()) }
+
+            val capturedUpdate = updateSlot.captured
+            assertEquals(requestId, capturedUpdate.id)
+            assertEquals(VmRequestStatus.CANCELLED, capturedUpdate.status)
+            assertEquals(2, capturedUpdate.version)
+        }
+
+        @Test
+        @DisplayName("should not call projection updater when aggregate not found")
+        fun `should not call projection updater when aggregate not found`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val command = createCommand(requestId = requestId)
+
+            coEvery { eventStore.load(requestId.value) } returns emptyList()
+
+            val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+
+            // When
+            handler.handle(command)
+
+            // Then
+            coVerify(exactly = 0) { projectionUpdater.updateStatus(any()) }
+        }
+
+        @Test
+        @DisplayName("should not call projection updater when authorization fails")
+        fun `should not call projection updater when authorization fails`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val originalRequester = UserId.generate()
+            val differentUser = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = createMetadata(tenantId = tenantId, userId = originalRequester)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                userId = differentUser  // Different user trying to cancel
+            )
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+
+            val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+
+            // When
+            handler.handle(command)
+
+            // Then
+            coVerify(exactly = 0) { projectionUpdater.updateStatus(any()) }
+        }
+
+        @Test
+        @DisplayName("should not call projection updater when persistence fails")
+        fun `should not call projection updater when persistence fails`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val userId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                userId = userId
+            )
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+            coEvery {
+                eventStore.append(any(), any(), any())
+            } returns EventStoreError.ConcurrencyConflict(
+                aggregateId = requestId.value,
+                expectedVersion = 1,
+                actualVersion = 2
+            ).failure()
+
+            val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+
+            // When
+            handler.handle(command)
+
+            // Then
+            coVerify(exactly = 0) { projectionUpdater.updateStatus(any()) }
+        }
+
+        @Test
+        @DisplayName("should not call projection updater for idempotent already-cancelled request")
+        fun `should not call projection updater for idempotent already-cancelled request`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val userId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata
+            )
+            val cancelledEvent = VmRequestCancelled(
+                aggregateId = requestId,
+                reason = "Already cancelled",
+                metadata = originalMetadata
+            )
+            val storedCreated = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val storedCancelled = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCancelled",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 2
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                userId = userId
+            )
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedCreated, storedCancelled)
+            coEvery { eventDeserializer.deserialize(storedCreated) } returns createdEvent
+            coEvery { eventDeserializer.deserialize(storedCancelled) } returns cancelledEvent
+
+            val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+
+            // When
+            handler.handle(command)
+
+            // Then - Idempotent: projection already updated, don't update again
+            coVerify(exactly = 0) { projectionUpdater.updateStatus(any()) }
         }
     }
 }

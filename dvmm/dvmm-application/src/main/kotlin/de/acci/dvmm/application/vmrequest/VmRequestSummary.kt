@@ -13,6 +13,9 @@ import java.time.Instant
  *
  * This is an application-layer DTO used for queries, not tied to
  * any specific persistence implementation (jOOQ, JPA, etc.).
+ *
+ * Resource specifications (cpuCores, memoryGb, diskGb) are derived
+ * from the [size] property to maintain a single source of truth.
  */
 public data class VmRequestSummary(
     val id: VmRequestId,
@@ -23,9 +26,6 @@ public data class VmRequestSummary(
     val projectName: String,
     val vmName: String,
     val size: VmSize,
-    val cpuCores: Int,
-    val memoryGb: Int,
-    val diskGb: Int,
     val justification: String,
     val status: VmRequestStatus,
     val createdAt: Instant,

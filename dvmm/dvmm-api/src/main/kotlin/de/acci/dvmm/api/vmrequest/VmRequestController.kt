@@ -249,9 +249,9 @@ public class VmRequestController(
         return when (val result = cancelVmRequestHandler.handle(command)) {
             is Result.Success -> {
                 ResponseEntity.ok().body(
-                    mapOf(
-                        "message" to "Request cancelled successfully",
-                        "requestId" to result.value.requestId.value.toString()
+                    CancelSuccessResponse(
+                        message = "Request cancelled successfully",
+                        requestId = result.value.requestId.value.toString()
                     )
                 )
             }

@@ -113,9 +113,10 @@ class VmRequestReadRepositoryAdapterTest {
             assertEquals(projection.projectName, summary.projectName)
             assertEquals(projection.vmName, summary.vmName)
             assertEquals(VmSize.L, summary.size)
-            assertEquals(8, summary.cpuCores)
-            assertEquals(32, summary.memoryGb)
-            assertEquals(200, summary.diskGb)
+            // Resource specs derived from VmSize
+            assertEquals(VmSize.L.cpuCores, summary.size.cpuCores)
+            assertEquals(VmSize.L.memoryGb, summary.size.memoryGb)
+            assertEquals(VmSize.L.diskGb, summary.size.diskGb)
             assertEquals(projection.justification, summary.justification)
             assertEquals(VmRequestStatus.APPROVED, summary.status)
         }

@@ -1,5 +1,7 @@
 package de.acci.dvmm.domain.exceptions
 
+import de.acci.dvmm.domain.vmrequest.VmRequestStatus
+
 /**
  * Exception thrown when an operation is attempted on an aggregate in an invalid state.
  *
@@ -10,9 +12,9 @@ package de.acci.dvmm.domain.exceptions
  */
 public class InvalidStateException(
     /** The current state of the aggregate */
-    public val currentState: String,
+    public val currentState: VmRequestStatus,
     /** The expected state(s) for this operation (null if terminal state) */
-    public val expectedState: String?,
+    public val expectedState: VmRequestStatus?,
     /** The name of the operation that was attempted */
     public val operation: String
 ) : RuntimeException(
@@ -24,13 +26,13 @@ public class InvalidStateException(
 ) {
     private companion object {
         private fun buildMessage(
-            currentState: String,
-            expectedState: String?,
+            currentState: VmRequestStatus,
+            expectedState: VmRequestStatus?,
             operation: String
         ): String = if (expectedState != null) {
-            "Cannot perform '$operation': expected state '$expectedState', but current state is '$currentState'"
+            "Cannot perform '$operation': expected state '${expectedState.name}', but current state is '${currentState.name}'"
         } else {
-            "Cannot perform '$operation': current state '$currentState' does not allow this operation"
+            "Cannot perform '$operation': current state '${currentState.name}' does not allow this operation"
         }
     }
 }

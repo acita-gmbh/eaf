@@ -10,8 +10,8 @@ class InvalidStateExceptionTest {
     @Test
     fun `should be a RuntimeException`() {
         val exception = InvalidStateException(
-            currentState = VmRequestStatus.APPROVED.name,
-            expectedState = VmRequestStatus.PENDING.name,
+            currentState = VmRequestStatus.APPROVED,
+            expectedState = VmRequestStatus.PENDING,
             operation = "cancel"
         )
         assertTrue(exception is RuntimeException)
@@ -20,21 +20,21 @@ class InvalidStateExceptionTest {
     @Test
     fun `should contain current state, expected state, and operation`() {
         val exception = InvalidStateException(
-            currentState = "APPROVED",
-            expectedState = "PENDING",
+            currentState = VmRequestStatus.APPROVED,
+            expectedState = VmRequestStatus.PENDING,
             operation = "cancel"
         )
 
-        assertEquals("APPROVED", exception.currentState)
-        assertEquals("PENDING", exception.expectedState)
+        assertEquals(VmRequestStatus.APPROVED, exception.currentState)
+        assertEquals(VmRequestStatus.PENDING, exception.expectedState)
         assertEquals("cancel", exception.operation)
     }
 
     @Test
     fun `should have descriptive message`() {
         val exception = InvalidStateException(
-            currentState = "APPROVED",
-            expectedState = "PENDING",
+            currentState = VmRequestStatus.APPROVED,
+            expectedState = VmRequestStatus.PENDING,
             operation = "cancel"
         )
 
@@ -46,12 +46,12 @@ class InvalidStateExceptionTest {
     @Test
     fun `should support nullable expected state for terminal state errors`() {
         val exception = InvalidStateException(
-            currentState = "CANCELLED",
+            currentState = VmRequestStatus.CANCELLED,
             expectedState = null,
             operation = "cancel"
         )
 
-        assertEquals("CANCELLED", exception.currentState)
+        assertEquals(VmRequestStatus.CANCELLED, exception.currentState)
         assertEquals(null, exception.expectedState)
     }
 }

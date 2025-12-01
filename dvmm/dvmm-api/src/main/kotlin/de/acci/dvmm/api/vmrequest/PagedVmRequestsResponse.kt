@@ -63,9 +63,9 @@ public data class VmRequestSummaryResponse(
                 vmName = summary.vmName,
                 size = VmSizeResponse(
                     code = summary.size.name,
-                    cpuCores = summary.cpuCores,
-                    memoryGb = summary.memoryGb,
-                    diskGb = summary.diskGb
+                    cpuCores = summary.size.cpuCores,
+                    memoryGb = summary.size.memoryGb,
+                    diskGb = summary.size.diskGb
                 ),
                 justification = summary.justification,
                 status = summary.status.name,

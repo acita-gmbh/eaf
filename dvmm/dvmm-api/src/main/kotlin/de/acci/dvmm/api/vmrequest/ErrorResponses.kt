@@ -63,3 +63,12 @@ public data class InvalidStateResponse(
     val message: String,
     val currentState: String
 )
+
+/**
+ * Response DTO for successful VM request cancellation (HTTP 200).
+ */
+public data class CancelSuccessResponse(
+    val type: String = "cancelled",
+    val message: String,
+    val requestId: String
+)
