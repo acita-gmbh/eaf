@@ -1,5 +1,6 @@
 package de.acci.eaf.testing.vcsim
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -7,6 +8,8 @@ import org.testcontainers.utility.DockerImageName
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Testcontainers wrapper for VMware vCenter Simulator (VCSIM).
@@ -150,7 +153,7 @@ public class VcsimContainer(
             // Write certificate files
             val certFiles = bundle.writeTo(tempDir)
 
-            // Mount certificate files into container
+            // Mount certificate files into container (hostPath, containerPath, mode)
             withFileSystemBind(
                 certFiles.serverCert.toAbsolutePath().toString(),
                 CONTAINER_CERT_PATH,
@@ -175,8 +178,9 @@ public class VcsimContainer(
                 Files.walk(dir)
                     .sorted(Comparator.reverseOrder())
                     .forEach(Files::delete)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // Best-effort cleanup - temp directory will be cleaned by OS eventually
+                logger.debug(e) { "Failed to clean up temp certificate directory: $dir" }
             }
         }
     }
