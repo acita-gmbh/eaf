@@ -1,16 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
 
-// Wrapper for Dashboard that provides router context
+// Dashboard now uses render from test-utils which provides MemoryRouter
 function renderDashboard() {
-  return render(
-    <MemoryRouter>
-      <Dashboard />
-    </MemoryRouter>
-  )
+  return render(<Dashboard />)
 }
 
 // Mock localStorage

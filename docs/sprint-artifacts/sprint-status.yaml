@@ -1,5 +1,5 @@
 # Sprint Status - DVMM Project
-# generated: 2025-11-30
+# generated: 2025-12-01
 # project: EAF
 # project_key: DVMM
 # tracking_system: file-system
@@ -132,7 +132,7 @@ development_status:
   2-3-empty-states-onboarding: done                # Code review PASSED 2025-11-30
   2-4-vm-request-form-basic-fields: done          # Code review PASSED 2025-11-30
   2-5-vm-request-form-size-selector: done         # Code review PASSED 2025-11-30
-  2-6-vm-request-form-submit-command: backlog
+  2-6-vm-request-form-submit-command: done            # Code review PASSED, merged 2025-12-01
   2-7-my-requests-list-cancel: backlog
   2-8-request-status-timeline: backlog
   2-9-admin-approval-queue: backlog

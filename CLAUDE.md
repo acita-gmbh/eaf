@@ -140,6 +140,49 @@ export function MyComponent({ title, onAction }: Props) {
 class MyComponent extends React.Component { ... }
 ```
 
+### E2E Testing with Playwright
+
+The project uses **Playwright** with **@seontechnologies/playwright-utils** for enhanced E2E testing.
+
+```bash
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Run with Playwright UI mode
+```
+
+**Use playwright-utils fixtures** for consistent testing patterns:
+
+```tsx
+// ✅ CORRECT - Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status, body } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// ✅ CORRECT - Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key playwright-utils features:**
+- `apiRequest` fixture - Typed HTTP client for backend API testing
+- `recurse` - Polling utility for async conditions
+- `log` - Integrated logging with Playwright reports
+- Network interception and mocking utilities
+- Auth session persistence between test runs
+
 ## jOOQ Code Generation
 
 jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).

@@ -11,6 +11,7 @@ import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SortField
 import org.jooq.Table
+import java.time.OffsetDateTime
 import java.util.UUID
 
 /**
@@ -25,18 +26,29 @@ public class VmRequestProjectionRepository(
 ) : BaseProjectionRepository<VmRequestsProjection>(dsl) {
 
     override fun mapRecord(record: Record): VmRequestsProjection {
-        // All fields are NOT NULL in the database schema, so we can safely use !!
+        // All NOT NULL fields use !! assertion, nullable fields use null-safe access
         return VmRequestsProjection(
             id = record.get(VM_REQUESTS_PROJECTION.ID)!!,
             tenantId = record.get(VM_REQUESTS_PROJECTION.TENANT_ID)!!,
             requesterId = record.get(VM_REQUESTS_PROJECTION.REQUESTER_ID)!!,
+            requesterName = record.get(VM_REQUESTS_PROJECTION.REQUESTER_NAME)!!,
+            projectId = record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!,
+            projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!,
             vmName = record.get(VM_REQUESTS_PROJECTION.VM_NAME)!!,
+            size = record.get(VM_REQUESTS_PROJECTION.SIZE)!!,
             cpuCores = record.get(VM_REQUESTS_PROJECTION.CPU_CORES)!!,
             memoryGb = record.get(VM_REQUESTS_PROJECTION.MEMORY_GB)!!,
+            diskGb = record.get(VM_REQUESTS_PROJECTION.DISK_GB)!!,
+            justification = record.get(VM_REQUESTS_PROJECTION.JUSTIFICATION)!!,
             status = record.get(VM_REQUESTS_PROJECTION.STATUS)!!,
+            approvedBy = record.get(VM_REQUESTS_PROJECTION.APPROVED_BY),
+            approvedByName = record.get(VM_REQUESTS_PROJECTION.APPROVED_BY_NAME),
+            rejectedBy = record.get(VM_REQUESTS_PROJECTION.REJECTED_BY),
+            rejectedByName = record.get(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME),
+            rejectionReason = record.get(VM_REQUESTS_PROJECTION.REJECTION_REASON),
             createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!,
             updatedAt = record.get(VM_REQUESTS_PROJECTION.UPDATED_AT)!!,
-            version = record.get(VM_REQUESTS_PROJECTION.VERSION)!!
+            version = record.get(VM_REQUESTS_PROJECTION.VERSION)
         )
     }
 
@@ -49,6 +61,71 @@ public class VmRequestProjectionRepository(
     override fun defaultOrderBy(): List<SortField<*>> = listOf(
         VM_REQUESTS_PROJECTION.CREATED_AT.desc()
     )
+
+    /**
+     * Inserts a new VM request projection.
+     *
+     * Used when handling VmRequestCreated events from the event store.
+     *
+     * @param projection The projection data to insert
+     */
+    public suspend fun insert(projection: VmRequestsProjection): Unit = withContext(Dispatchers.IO) {
+        dsl.insertInto(VM_REQUESTS_PROJECTION)
+            .set(VM_REQUESTS_PROJECTION.ID, projection.id)
+            .set(VM_REQUESTS_PROJECTION.TENANT_ID, projection.tenantId)
+            .set(VM_REQUESTS_PROJECTION.REQUESTER_ID, projection.requesterId)
+            .set(VM_REQUESTS_PROJECTION.REQUESTER_NAME, projection.requesterName)
+            .set(VM_REQUESTS_PROJECTION.PROJECT_ID, projection.projectId)
+            .set(VM_REQUESTS_PROJECTION.PROJECT_NAME, projection.projectName)
+            .set(VM_REQUESTS_PROJECTION.VM_NAME, projection.vmName)
+            .set(VM_REQUESTS_PROJECTION.SIZE, projection.size)
+            .set(VM_REQUESTS_PROJECTION.CPU_CORES, projection.cpuCores)
+            .set(VM_REQUESTS_PROJECTION.MEMORY_GB, projection.memoryGb)
+            .set(VM_REQUESTS_PROJECTION.DISK_GB, projection.diskGb)
+            .set(VM_REQUESTS_PROJECTION.JUSTIFICATION, projection.justification)
+            .set(VM_REQUESTS_PROJECTION.STATUS, projection.status)
+            .set(VM_REQUESTS_PROJECTION.CREATED_AT, projection.createdAt)
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, projection.updatedAt)
+            .set(VM_REQUESTS_PROJECTION.VERSION, projection.version)
+            .execute()
+    }
+
+    /**
+     * Updates an existing VM request projection.
+     *
+     * Used when handling state change events (approval, rejection, etc.).
+     *
+     * @param id The ID of the projection to update
+     * @param status The new status
+     * @param approvedBy Optional approver ID (for APPROVED status)
+     * @param approvedByName Optional approver name
+     * @param rejectedBy Optional rejector ID (for REJECTED status)
+     * @param rejectedByName Optional rejector name
+     * @param rejectionReason Optional rejection reason
+     * @param version The new version (for optimistic locking)
+     */
+    public suspend fun updateStatus(
+        id: UUID,
+        status: String,
+        approvedBy: UUID? = null,
+        approvedByName: String? = null,
+        rejectedBy: UUID? = null,
+        rejectedByName: String? = null,
+        rejectionReason: String? = null,
+        version: Int?
+    ): Int = withContext(Dispatchers.IO) {
+        dsl.update(VM_REQUESTS_PROJECTION)
+            .set(VM_REQUESTS_PROJECTION.STATUS, status)
+            .set(VM_REQUESTS_PROJECTION.APPROVED_BY, approvedBy)
+            .set(VM_REQUESTS_PROJECTION.APPROVED_BY_NAME, approvedByName)
+            .set(VM_REQUESTS_PROJECTION.REJECTED_BY, rejectedBy)
+            .set(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME, rejectedByName)
+            .set(VM_REQUESTS_PROJECTION.REJECTION_REASON, rejectionReason)
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
+            .set(VM_REQUESTS_PROJECTION.VERSION, version)
+            .where(VM_REQUESTS_PROJECTION.ID.eq(id))
+            .execute()
+    }
 
     /**
      * Finds a VM request projection by its ID.
