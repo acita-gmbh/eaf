@@ -34,18 +34,18 @@ If any backend modules are missing, create them first following the build-logic 
 1. **Submit button displayed**
    - Given I have filled all required fields (vmName, projectId, size, justification)
    - When I view the form
-   - Then I see a "Request absenden" button (German per UX spec)
+   - Then I see a "Submit Request" button
    - And the button is disabled until form is valid
    - And the button shows loading state during submission
 
 2. **Successful submission**
    - Given I have filled all required fields correctly
-   - When I click "Request absenden"
+   - When I click "Submit Request"
    - Then a `CreateVmRequestCommand` is dispatched to the backend
    - And the command handler creates `VmRequestAggregate`
    - And `VmRequestCreated` event is persisted to the event store
    - And the projection is updated in the read model
-   - And I see success toast: "Request eingereicht!"
+   - And I see success toast: "Request submitted!"
    - And I am redirected to request detail view (`/requests/{id}`)
 
 3. **Validation errors (frontend)**
@@ -65,19 +65,19 @@ If any backend modules are missing, create them first following the build-logic 
    - Given the request violates project quota
    - When I submit
    - Then the command fails with `QuotaExceeded` error
-   - And I see inline error: "Projektquota überschritten. Verfügbar: X VMs"
+   - And I see inline error: "Project quota exceeded. Available: X VMs"
    - And no event is persisted (transactional)
 
 6. **Network error handling**
    - Given network connectivity issues
    - When I submit
-   - Then I see error toast: "Verbindungsfehler. Bitte erneut versuchen."
+   - Then I see error toast: "Connection error. Please try again."
    - And the submit button is re-enabled for retry
 
 7. **Unsaved changes protection**
    - Given I have partially filled the form
    - When I navigate away without submitting
-   - Then I see confirmation dialog: "Ungespeicherte Änderungen verwerfen?"
+   - Then I see confirmation dialog: "Discard unsaved changes?"
 
 ## Test Plan
 
@@ -490,10 +490,10 @@ val VM_NAME_REGEX = Regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$")
   {mutation.isPending ? (
     <>
       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      Wird eingereicht...
+      Submitting...
     </>
   ) : (
-    'Request absenden'
+    'Submit Request'
   )}
 </Button>
 ```
@@ -503,7 +503,7 @@ val VM_NAME_REGEX = Regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$")
 const handleSubmit = (data: VmRequestFormData) => {
   mutation.mutate(data, {
     onSuccess: (result) => {
-      toast.success('Request eingereicht!')
+      toast.success('Request submitted!')
       navigate(`/requests/${result.id}`)
     },
     onError: (error) => {
@@ -518,7 +518,7 @@ const handleSubmit = (data: VmRequestFormData) => {
           form.setError('root', { message: error.body.message })
         }
       } else {
-        toast.error('Verbindungsfehler. Bitte erneut versuchen.')
+        toast.error('Connection error. Please try again.')
       }
     },
   })
