@@ -173,3 +173,207 @@ async function parseResponseBody(response: Response): Promise<unknown> {
     return { message: text }
   }
 }
+
+// ==================== My Requests List API ====================
+
+/**
+ * VM request status values.
+ */
+export type VmRequestStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'PROVISIONING'
+  | 'READY'
+  | 'FAILED'
+
+/**
+ * VM request summary for list view.
+ */
+export interface VmRequestSummary {
+  id: string
+  tenantId: string
+  requesterId: string
+  requesterName: string
+  projectId: string
+  projectName: string
+  vmName: string
+  size: string
+  cpuCores: number
+  memoryGb: number
+  diskGb: number
+  justification: string
+  status: VmRequestStatus
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Paginated response for VM requests.
+ */
+export interface PagedVmRequestsResponse {
+  items: VmRequestSummary[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+/**
+ * Parameters for fetching my requests.
+ */
+export interface GetMyRequestsParams {
+  page?: number
+  size?: number
+}
+
+/**
+ * Gets the current user's VM requests.
+ *
+ * @param params - Pagination parameters
+ * @param accessToken - OAuth2 access token
+ * @returns Paginated list of VM requests
+ * @throws ApiError on failure
+ */
+export async function getMyRequests(
+  params: GetMyRequestsParams,
+  accessToken: string
+): Promise<PagedVmRequestsResponse> {
+  const queryParams = new URLSearchParams()
+  if (params.page !== undefined) {
+    queryParams.set('page', String(params.page))
+  }
+  if (params.size !== undefined) {
+    queryParams.set('size', String(params.size))
+  }
+
+  const queryString = queryParams.toString()
+  const url = queryString
+    ? `${API_BASE_URL}/api/requests/my?${queryString}`
+    : `${API_BASE_URL}/api/requests/my`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: createApiHeaders(accessToken, false),
+    credentials: 'include',
+  })
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as PagedVmRequestsResponse
+}
+
+// ==================== Cancel Request API ====================
+
+/**
+ * Not found error response from backend.
+ */
+export interface NotFoundErrorResponse {
+  type: 'not_found'
+  message: string
+}
+
+/**
+ * Forbidden error response from backend.
+ */
+export interface ForbiddenErrorResponse {
+  type: 'forbidden'
+  message: string
+}
+
+/**
+ * Invalid state error response from backend.
+ */
+export interface InvalidStateErrorResponse {
+  type: 'invalid_state'
+  message: string
+  currentState: string
+}
+
+/**
+ * Type guard for not found error response.
+ */
+export function isNotFoundError(body: unknown): body is NotFoundErrorResponse {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'type' in body &&
+    (body as Record<string, unknown>).type === 'not_found'
+  )
+}
+
+/**
+ * Type guard for forbidden error response.
+ */
+export function isForbiddenError(body: unknown): body is ForbiddenErrorResponse {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'type' in body &&
+    (body as Record<string, unknown>).type === 'forbidden'
+  )
+}
+
+/**
+ * Type guard for invalid state error response.
+ */
+export function isInvalidStateError(body: unknown): body is InvalidStateErrorResponse {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'type' in body &&
+    (body as Record<string, unknown>).type === 'invalid_state'
+  )
+}
+
+/**
+ * Response from successful request cancellation.
+ */
+export interface CancelRequestResponse {
+  message: string
+  requestId: string
+}
+
+/**
+ * Payload for cancelling a request.
+ */
+export interface CancelRequestPayload {
+  reason?: string
+}
+
+/**
+ * Cancels a pending VM request.
+ *
+ * @param requestId - The ID of the request to cancel
+ * @param payload - Optional cancellation reason
+ * @param accessToken - OAuth2 access token
+ * @returns Success response with request ID
+ * @throws ApiError on failure (404 not found, 403 forbidden, 409 invalid state)
+ */
+export async function cancelRequest(
+  requestId: string,
+  payload: CancelRequestPayload | undefined,
+  accessToken: string
+): Promise<CancelRequestResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/cancel`, {
+    method: 'POST',
+    headers: createApiHeaders(accessToken, true), // Include CSRF for mutations
+    credentials: 'include',
+    body: payload ? JSON.stringify(payload) : undefined,
+  })
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as CancelRequestResponse
+}

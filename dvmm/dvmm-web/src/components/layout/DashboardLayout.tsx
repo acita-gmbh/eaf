@@ -23,7 +23,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <MobileNav
           open={mobileNavOpen}
           onOpenChange={setMobileNavOpen}
-          currentPath="/"
         />
 
         {/* Main content */}

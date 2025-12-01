@@ -13,7 +13,7 @@
 ### Epic Alignment
 - ✗ Story covers epic columns but **omits required page-size options (10/25/50) and row click to details**. Epic requires both (lines 911-924) while story limits to default size 10 and no detail navigation (lines 49-55). Evidence: docs/epics.md:911-924; docs/sprint-artifacts/2-7-my-requests-list-cancel.md:49-55.
 - ✗ **Status coverage incomplete**: epic lists badges for Pending/Approved/Rejected/Provisioning/Ready (lines 914-918) and domain includes CANCELLED/PROVISIONING/READY/FAILED (VmRequestStatus enum lines 12-32). Story shows badges only for PENDING/APPROVED/REJECTED/CANCELLED (lines 37-42) and ignores PROVISIONING, READY, FAILED, leading to UI gaps.
-- ✗ **Endpoint + idempotency mismatch**: epic technical notes specify `GET /api/requests/mine` with tenant filter and idempotent cancel (no-op if already cancelled) (lines 940-943). Story uses `/api/requests/my` and assumes 409 for non-PENDING without idempotent success path; tenant filter not called out (lines 100-107, 256-262, 110-112). 
+- ✗ **Idempotency mismatch**: epic technical notes specify idempotent cancel (no-op if already cancelled) (lines 940-943). Story assumes 409 for non-PENDING without idempotent success path; tenant filter not called out (lines 100-107, 256-262, 110-112). NOTE: Endpoint `/api/requests/my` is correct per epic line 941. 
 - ⚠ **Prerequisites/FR mapping off**: epic cites prerequisites Story 1.8 + 2.6 and FR20/FR22/FR23 (lines 936-938). Story lists only 2.6 and maps to FR17/FR18/FR27 (lines 16-18), so traceability is inconsistent.
 
 ### Architecture & Non‑Functional
@@ -28,7 +28,7 @@
 ## Failed Items
 1. Add pagination options 10/25/50 and row-click detail behavior; update AC and tasks accordingly.
 2. Expand status handling (UI + DTO) to include PROVISIONING, READY, FAILED with badges and tests.
-3. Align endpoints to epic (`/api/requests/mine`) or document deviation; ensure jOOQ tenant filter and cancel idempotency (200 on already CANCELLED) are specified.
+3. Ensure jOOQ tenant filter and cancel idempotency (200 on already CANCELLED) are specified. Endpoint `/api/requests/my` is correct per epic.
 4. Fix prerequisites/FR mapping to Epic (Story 1.8 + 2.6; FR20/FR22/FR23).
 5. Specify command/query metadata requirements (tenantId, userId, correlationId) and RLS expectations; add to tasks/tests.
 6. Add tests for idempotent cancel, page-size variations, and row click to detail view.

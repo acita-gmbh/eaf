@@ -38,3 +38,28 @@ public data class InternalErrorResponse(
     val type: String = "internal_error",
     val message: String
 )
+
+/**
+ * Response DTO for not found errors (HTTP 404).
+ */
+public data class NotFoundResponse(
+    val type: String = "not_found",
+    val message: String
+)
+
+/**
+ * Response DTO for forbidden errors (HTTP 403).
+ */
+public data class ForbiddenResponse(
+    val type: String = "forbidden",
+    val message: String
+)
+
+/**
+ * Response DTO for invalid state errors (HTTP 409).
+ */
+public data class InvalidStateResponse(
+    val type: String = "invalid_state",
+    val message: String,
+    val currentState: String
+)

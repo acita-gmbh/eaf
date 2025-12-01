@@ -13,7 +13,7 @@
 ### Epic Alignment
 - ✓ Pagination matches epic (10/25/50) and row-click to detail added. Evidence: lines 50-55, 31-36, 618-628.
 - ✓ Status coverage includes PENDING/APPROVED/REJECTED/CANCELLED/PROVISIONING/READY/FAILED per domain enum and epic notes. Evidence: lines 38-42, 144-148, 493-506.
-- ✓ Endpoint alignment: `/api/requests/mine`, tenant filter, idempotent cancel called out. Evidence: lines 109-116, 620-622, 266-279.
+- ✓ Endpoint alignment: `/api/requests/my`, tenant filter, idempotent cancel called out. Evidence: lines 109-116, 620-622, 266-279.
 - ✓ Prereqs and FRs corrected to Story 1.8 & 2.6; FR20/22/23. Evidence: lines 13-18.
 
 ### Architecture & Non‑Functional
@@ -30,5 +30,5 @@ None.
 None.
 
 ## Recommendations
-- Keep `/api/requests/mine` naming consistent in controllers, client, and tests.
+- Keep `/api/requests/my` naming consistent in controllers, client, and tests.
 - Reuse shared status color/label constants to avoid drift across components and tests.

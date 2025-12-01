@@ -26,17 +26,11 @@ vi.mock('../MobileNav', () => ({
   MobileNav: ({
     open,
     onOpenChange,
-    currentPath,
   }: {
     open: boolean
     onOpenChange: (open: boolean) => void
-    currentPath: string
   }) => (
-    <div
-      data-testid="mock-mobile-nav"
-      data-open={open}
-      data-current-path={currentPath}
-    >
+    <div data-testid="mock-mobile-nav" data-open={open}>
       <button onClick={() => onOpenChange(false)} data-testid="close-mobile-nav">
         Close
       </button>
@@ -105,17 +99,6 @@ describe('DashboardLayout', () => {
     await user.click(closeButton)
 
     expect(mobileNav).toHaveAttribute('data-open', 'false')
-  })
-
-  it('passes currentPath to MobileNav', () => {
-    render(
-      <DashboardLayout>
-        <div>Content</div>
-      </DashboardLayout>
-    )
-
-    const mobileNav = screen.getByTestId('mock-mobile-nav')
-    expect(mobileNav).toHaveAttribute('data-current-path', '/')
   })
 
   it('applies correct responsive classes to sidebar', () => {

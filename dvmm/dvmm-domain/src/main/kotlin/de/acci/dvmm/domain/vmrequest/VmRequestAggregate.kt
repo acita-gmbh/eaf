@@ -1,5 +1,7 @@
 package de.acci.dvmm.domain.vmrequest
 
+import de.acci.dvmm.domain.exceptions.InvalidStateException
+import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -69,6 +71,7 @@ public class VmRequestAggregate private constructor(
     override fun handleEvent(event: DomainEvent) {
         when (event) {
             is VmRequestCreated -> apply(event)
+            is VmRequestCancelled -> apply(event)
             // Future: VmRequestApproved, VmRequestRejected, etc.
         }
     }
@@ -81,6 +84,45 @@ public class VmRequestAggregate private constructor(
         size = event.size
         justification = event.justification
         status = VmRequestStatus.PENDING
+    }
+
+    private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestCancelled) {
+        status = VmRequestStatus.CANCELLED
+    }
+
+    /**
+     * Cancels this VM request.
+     *
+     * Only PENDING requests can be cancelled. Attempting to cancel an already
+     * cancelled request is idempotent (no-op). Cancelling requests in other
+     * states throws [InvalidStateException].
+     *
+     * @param reason Optional reason for cancellation
+     * @param metadata Event metadata with tenant context
+     * @throws InvalidStateException if request is not in PENDING or CANCELLED state
+     */
+    public fun cancel(reason: String?, metadata: EventMetadata) {
+        // Idempotent: already cancelled, no-op
+        if (status == VmRequestStatus.CANCELLED) {
+            return
+        }
+
+        // Only PENDING requests can be cancelled
+        if (status != VmRequestStatus.PENDING) {
+            throw InvalidStateException(
+                currentState = status.name,
+                expectedState = VmRequestStatus.PENDING.name,
+                operation = "cancel"
+            )
+        }
+
+        val event = VmRequestCancelled(
+            aggregateId = id,
+            reason = reason,
+            metadata = metadata
+        )
+
+        applyEvent(event)
     }
 
     public companion object {
