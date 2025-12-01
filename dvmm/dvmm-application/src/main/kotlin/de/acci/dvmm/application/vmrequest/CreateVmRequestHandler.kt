@@ -9,6 +9,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
  * Errors that can occur when creating a VM request.
@@ -66,6 +67,7 @@ public class CreateVmRequestHandler(
     private val eventStore: EventStore,
     private val quotaChecker: QuotaChecker = AlwaysAvailableQuotaChecker
 ) {
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Handle the create VM request command.
@@ -105,11 +107,24 @@ public class CreateVmRequestHandler(
         )
 
         // Persist events to the event store
-        val appendResult = eventStore.append(
-            aggregateId = aggregate.id.value,
-            events = aggregate.uncommittedEvents,
-            expectedVersion = 0 // New aggregate starts at version 0
-        )
+        val appendResult = try {
+            eventStore.append(
+                aggregateId = aggregate.id.value,
+                events = aggregate.uncommittedEvents,
+                expectedVersion = 0 // New aggregate starts at version 0
+            )
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Failed to persist VM request: " +
+                    "requestId=${aggregate.id.value}, " +
+                    "tenantId=${command.tenantId.value}, " +
+                    "userId=${command.requesterId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return CreateVmRequestError.PersistenceFailure(
+                message = "Failed to persist request: ${e.message}"
+            ).failure()
+        }
 
         return when (appendResult) {
             is Result.Success -> {

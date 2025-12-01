@@ -313,6 +313,29 @@ class CreateVmRequestHandlerTest {
             val failure = result as Result.Failure
             assertTrue(failure.error is CreateVmRequestError.ConcurrencyConflict)
         }
+
+        @Test
+        @DisplayName("should return PersistenceFailure when event store throws exception")
+        fun `should return PersistenceFailure when event store throws exception`() = runTest {
+            // Given
+            val command = createCommand()
+
+            coEvery {
+                eventStore.append(any(), any(), any())
+            } throws RuntimeException("Database connection failed")
+
+            val handler = CreateVmRequestHandler(eventStore)
+
+            // When
+            val result = handler.handle(command)
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val failure = result as Result.Failure
+            assertTrue(failure.error is CreateVmRequestError.PersistenceFailure)
+            val persistenceError = failure.error as CreateVmRequestError.PersistenceFailure
+            assertTrue(persistenceError.message.contains("Database connection failed"))
+        }
     }
 
     @Nested
