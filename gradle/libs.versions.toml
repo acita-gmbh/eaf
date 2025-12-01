@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.2.21"
-spring-boot = "3.5.8"
+spring-boot = "4.0.0"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.9"
 jooq-gradle-plugin = "9.0"
