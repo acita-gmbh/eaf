@@ -30,24 +30,32 @@ class TenantContextWebFilterTest {
     }
 
     @Test
-    fun `missing tenant header returns 403`() {
+    fun `missing tenant header passes through without context`() {
+        // When no Authorization header is present, filter passes through
+        // to let Spring Security handle authentication (return 401)
         val exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/"))
-        val chain = CapturingChain()
+        val chain = PassThroughChain()
 
         StepVerifier.create(filter.filter(exchange, chain))
-            .expectError(TenantContextMissingException::class.java)
+            .expectComplete()
             .verify()
+
+        assertEquals(true, chain.wasInvoked, "Filter chain should be invoked")
     }
 
     @Test
-    fun `invalid tenant claim returns 403`() {
+    fun `invalid tenant claim passes through without context`() {
+        // When JWT has invalid tenant_id, filter passes through
+        // to let controllers handle missing tenant (return 403 via TenantContext.current())
         val badToken = jwtRaw("{\"tenant_id\":\"not-a-uuid\"}")
         val exchange = exchangeWithAuth(badToken)
-        val chain = CapturingChain()
+        val chain = PassThroughChain()
 
         StepVerifier.create(filter.filter(exchange, chain))
-            .expectError(TenantContextMissingException::class.java)
+            .expectComplete()
             .verify()
+
+        assertEquals(true, chain.wasInvoked, "Filter chain should be invoked")
     }
 
     private fun exchangeWithAuth(token: String): ServerWebExchange =
@@ -68,6 +76,15 @@ class TenantContextWebFilterTest {
                     Unit
                 }
             }.then()
+    }
+
+    private class PassThroughChain : WebFilterChain {
+        var wasInvoked = false
+
+        override fun filter(exchange: ServerWebExchange): Mono<Void> {
+            wasInvoked = true
+            return Mono.empty()
+        }
     }
 
     private fun jwtWithTenant(tenantId: TenantId): String =
