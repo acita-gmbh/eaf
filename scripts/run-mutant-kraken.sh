@@ -174,8 +174,8 @@ run_module() {
                 return 1
             fi
 
-            # Check if there are files to move
-            if compgen -G "mutant-kraken-dist/*" > /dev/null; then
+            # Check if there are files to move (use ls instead of compgen for better compatibility with set -e)
+            if ls mutant-kraken-dist/* >/dev/null 2>&1; then
                 if ! mv mutant-kraken-dist/* "$results_dir/"; then
                     log_error "Failed to move results from mutant-kraken-dist to $results_dir"
                     log_error "Check disk space and permissions"

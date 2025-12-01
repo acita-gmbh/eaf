@@ -92,9 +92,18 @@ tasks.named("pitest") {
                 )
             }
 
-            // Validate license content appears reasonable
+            // Validate license content appears reasonable - short content usually means truncated or invalid
             if (envLicense.length < 50) {
-                logger.warn("ARCMUTATE_LICENSE appears unusually short (${envLicense.length} chars) - verify content is complete")
+                throw GradleException(
+                    """
+                    |ARCMUTATE_LICENSE appears unusually short (${envLicense.length} chars).
+                    |
+                    |This typically indicates a truncated or invalid license.
+                    |Expected format is the full license file content, not just the subscription UUID.
+                    |
+                    |Download full license from: https://subscriptions.arcmutate.com/<your-subscription-id>/arcmutate-licence.txt
+                    """.trimMargin()
+                )
             }
 
             // Write license from environment variable with proper error handling
@@ -106,7 +115,10 @@ tasks.named("pitest") {
                     throw GradleException("License file write appeared to succeed but file does not exist: ${licenseFile.absolutePath}")
                 }
                 val writtenContent = licenseFile.readText()
-                if (writtenContent != envLicense) {
+                // Normalize line endings for cross-platform comparison (Windows CRLF vs Unix LF)
+                val normalizedWritten = writtenContent.replace("\r\n", "\n").replace("\r", "\n")
+                val normalizedExpected = envLicense.replace("\r\n", "\n").replace("\r", "\n")
+                if (normalizedWritten != normalizedExpected) {
                     throw GradleException("License file content verification failed - file may be corrupted")
                 }
 

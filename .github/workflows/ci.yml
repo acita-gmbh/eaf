@@ -25,6 +25,11 @@ jobs:
     name: Build & Quality Gates
     runs-on: ubuntu-latest
 
+    # Define at job level so env context is available for step conditionals
+    # (secrets context cannot be used in if: conditions)
+    env:
+      ARCMUTATE_LICENSE: ${{ secrets.ARCMUTATE_LICENSE }}
+
     services:
       postgres:
         image: postgres:16
@@ -86,13 +91,11 @@ jobs:
         run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
       - name: Mutation Testing - Pitest with Arcmutate (≥70%)
-        if: ${{ secrets.ARCMUTATE_LICENSE != '' }}
+        if: ${{ env.ARCMUTATE_LICENSE != '' }}
         run: ./gradlew pitest --no-daemon
-        env:
-          ARCMUTATE_LICENSE: ${{ secrets.ARCMUTATE_LICENSE }}
 
       - name: Mutation Testing Skipped (No License)
-        if: ${{ secrets.ARCMUTATE_LICENSE == '' }}
+        if: ${{ env.ARCMUTATE_LICENSE == '' }}
         run: echo "Mutation testing skipped - ARCMUTATE_LICENSE secret not configured (expected for fork PRs)"
 
       - name: Upload Coverage Report

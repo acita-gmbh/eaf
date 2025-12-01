@@ -65,7 +65,7 @@ EAF has 11 modules across two component groups. Mutant-Kraken expects:
 
 **Problem:** When mutating a file in `eaf-core`, running `./gradlew test` will execute ALL tests across ALL modules, including dvmm modules that may have complex Spring Boot test contexts.
 
-```
+```text
 eaf/
 ├── eaf-core/            # If file here is mutated...
 ├── eaf-eventsourcing/
@@ -240,7 +240,7 @@ mutant-kraken mutate .
 
 ### 4. Add to .gitignore
 
-```gitignore
+```text
 # Mutant-Kraken output
 mutant-kraken-dist/
 ```
