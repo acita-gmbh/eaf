@@ -32,7 +32,7 @@ import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttrib
 public class SecurityConfig(
     @Value("\${eaf.auth.keycloak.client-id:dvmm-web}")
     private val keycloakClientId: String,
-    @Value("\${eaf.cors.allowed-origins:http://localhost:3000}")
+    @Value("\${eaf.cors.allowed-origins:http://localhost:5173}")
     private val allowedOrigins: String,
 ) {
 
@@ -106,7 +106,7 @@ public class SecurityConfig(
      * CORS configuration for frontend access.
      *
      * Allows:
-     * - Origins from configuration (default: http://localhost:3000)
+     * - Origins from configuration (default: http://localhost:5173 for Vite)
      * - Methods: GET, POST, PUT, DELETE, OPTIONS
      * - All headers
      * - Credentials (cookies, Authorization header)

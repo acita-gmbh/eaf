@@ -19,8 +19,8 @@ public data class CreateVmRequestRequest(
     @field:NotBlank(message = "VM name is required")
     @field:Size(min = 3, max = 63, message = "VM name must be between 3 and 63 characters")
     @field:Pattern(
-        regexp = "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{3}$",
-        message = "VM name must contain only lowercase letters, numbers, and hyphens, must start and end with alphanumeric"
+        regexp = "^(?!.*--)[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{3}$",
+        message = "VM name must contain only lowercase letters, numbers, and hyphens, must start and end with alphanumeric, no consecutive hyphens"
     )
     val vmName: String,
 

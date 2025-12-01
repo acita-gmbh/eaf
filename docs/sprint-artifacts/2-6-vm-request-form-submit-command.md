@@ -626,7 +626,7 @@ data-testid="error-toast"               // Error notification
 
 | File | Action |
 |------|--------|
-| `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/CommandHandlerConfig.kt` | Created |
+| `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt` | Modified |
 | `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmRequestIntegrationTest.kt` | Created |
 | `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/security/SecurityIntegrationTest.kt` | Modified |
 

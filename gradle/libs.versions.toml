@@ -23,7 +23,7 @@ testcontainers-keycloak = "4.0.0"
 jjwt = "0.12.5"
 slf4j = "2.0.17"
 kotlinLogging = "7.0.13"
-bouncycastle = "1.79"
+bouncycastle = "1.83"
 
 [libraries]
 # Kotlin

@@ -168,6 +168,30 @@ class VmRequestControllerTest {
         }
 
         @Test
+        @DisplayName("should return 400 for VM name with consecutive hyphens")
+        fun `should return 400 for VM name with consecutive hyphens`() = runTest {
+            // Given
+            val request = CreateVmRequestRequest(
+                vmName = "web--server", // Consecutive hyphens not allowed
+                projectId = UUID.randomUUID().toString(),
+                size = "M",
+                justification = "Valid justification for testing purposes"
+            )
+            val jwt = createJwt()
+
+            // When
+            val response = withTenant {
+                controller.createVmRequest(request, jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            val body = response.body as ValidationErrorResponse
+            assertEquals("validation", body.type)
+            assertTrue(body.errors.any { it.field == "vmName" })
+        }
+
+        @Test
         @DisplayName("should return 400 for invalid size")
         fun `should return 400 for invalid size`() = runTest {
             // Given
