@@ -26,7 +26,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew :koverHtmlReport         # Merged report (root)
 ./gradlew koverVerify              # Verify 80% threshold
 
-# Run mutation testing (Pitest) - 70% threshold
+# Run mutation testing (Pitest + Arcmutate) - 70% threshold
+# Requires arcmutate-licence.txt at project root OR ARCMUTATE_LICENSE env var
 ./gradlew pitest
 ```
 
@@ -55,7 +56,7 @@ Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
 - `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
-- `eaf.pitest-conventions` - Mutation testing (70% threshold)
+- `eaf.pitest-conventions` - Mutation testing (70% threshold) with Arcmutate Kotlin/Spring
 
 ## Critical Architecture Rules (ADR-001)
 
@@ -73,7 +74,7 @@ Convention plugins for consistent configuration:
 - **jOOQ 3.20** with DDLDatabase for type-safe SQL
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
-- **Pitest** for mutation testing
+- **Pitest + Arcmutate** for mutation testing (Kotlin/Spring support)
 
 ## Frontend (dvmm-web)
 
