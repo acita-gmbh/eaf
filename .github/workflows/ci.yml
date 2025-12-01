@@ -1,6 +1,11 @@
 # CI Pipeline - DVMM/EAF Monorepo
 # Quality Gates: Coverage ≥80%, Mutation ≥70%, Architecture tests pass
 # See: docs/devops-strategy.md, CLAUDE.md
+#
+# NOTE: Mutation testing (Pitest + Arcmutate) requires a commercial license.
+# For security reasons, GitHub does not expose secrets to fork PRs.
+# Fork PRs will skip mutation testing but maintainers will run the full
+# quality gates before merging. This is documented behavior.
 
 name: CI Pipeline
 
@@ -90,13 +95,25 @@ jobs:
       - name: Code Coverage - Kover (≥80%)
         run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
+      # Mutation testing requires Arcmutate commercial license.
+      # For security, GitHub does not expose secrets to fork PRs.
+      # Fork PRs skip this gate but maintainers run full quality gates before merge.
       - name: Mutation Testing - Pitest with Arcmutate (≥70%)
         if: ${{ env.ARCMUTATE_LICENSE != '' }}
         run: ./gradlew pitest --no-daemon
 
-      - name: Mutation Testing Skipped (No License)
+      # Explicit step to inform contributors when mutation testing is skipped
+      - name: Mutation Testing Skipped (Fork PR - No License Access)
         if: ${{ env.ARCMUTATE_LICENSE == '' }}
-        run: echo "Mutation testing skipped - ARCMUTATE_LICENSE secret not configured (expected for fork PRs)"
+        run: |
+          echo "::warning::Mutation testing skipped - fork PRs don't have access to ARCMUTATE_LICENSE secret"
+          echo ""
+          echo "This is expected behavior for security reasons:"
+          echo "  - GitHub does not expose repository secrets to fork PRs"
+          echo "  - Arcmutate requires a commercial license stored as a secret"
+          echo ""
+          echo "Maintainers will run the full quality gates (including ≥70% mutation score)"
+          echo "before merging this PR. Your PR can still be reviewed and approved."
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
