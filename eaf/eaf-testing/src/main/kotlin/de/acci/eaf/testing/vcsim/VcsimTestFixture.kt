@@ -4,12 +4,9 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 /**
  * Test fixture for VMware vCenter Simulator (VCSIM) integration tests.
@@ -46,7 +43,7 @@ import javax.net.ssl.X509TrustManager
 public class VcsimTestFixture(
     private val container: VcsimContainer
 ) {
-    private val httpClient: HttpClient = createInsecureJavaHttpClient()
+    private val httpClient: HttpClient = createSecureHttpClient()
     private val vmCounter = AtomicInteger(0)
     private val networkCounter = AtomicInteger(0)
     private val datastoreCounter = AtomicInteger(0)
@@ -228,60 +225,35 @@ public class VcsimTestFixture(
     )
 
     /**
-     * Creates an HTTP client that trusts all SSL certificates and skips hostname verification.
+     * Creates an HTTP client that securely connects to VCSIM using generated certificates.
      *
-     * **WARNING: This is ONLY safe for testing with VCSIM's self-signed certificates.**
-     * **NEVER use this pattern in production code as it disables all certificate validation.**
+     * This method uses the certificate bundle configured on the container to create
+     * a proper SSLContext with TrustManagerFactory. This approach:
+     * - Uses standard Java security APIs (no custom TrustManager)
+     * - Trusts only the CA certificate that signed the VCSIM server certificate
+     * - Passes CodeQL security scans (no java/insecure-trustmanager alert)
      *
-     * Note: In CI environments (GitHub Actions), the container may be accessed via an IP address
-     * that doesn't match the certificate's Subject Alternative Name (SAN), requiring disabled
-     * hostname verification in addition to disabled certificate validation.
+     * The certificate bundle includes Subject Alternative Names (SANs) for:
+     * - localhost, vcsim (DNS names)
+     * - 127.0.0.1, Docker bridge IPs, GitHub Actions subnets (IP addresses)
      *
-     * ## Why system property instead of SSLParameters?
+     * This eliminates the need for hostname verification workarounds.
      *
-     * Java's HttpClient (since Java 11) doesn't expose a HostnameVerifier API like the older
-     * HttpsURLConnection. While SSLParameters.setEndpointIdentificationAlgorithm(null) should
-     * theoretically disable hostname verification, the HttpClient implementation may override
-     * these settings internally. The JDK-internal system property is the only reliable way
-     * to disable hostname verification for Java's HttpClient across all Java 11+ versions.
-     *
-     * The global side effect is acceptable here because:
-     * 1. VcsimTestFixture is test-only code (in eaf-testing module)
-     * 2. Test JVMs are isolated per Gradle worker
-     * 3. No production code depends on this module
+     * @return HttpClient configured with secure SSL context
+     * @throws IllegalStateException if container has no certificate bundle configured
      */
-    private fun createInsecureJavaHttpClient(): HttpClient {
-        // JDK-internal property to disable hostname verification for HttpClient.
-        // Required because HttpClient doesn't support custom HostnameVerifier.
-        // See: https://bugs.openjdk.org/browse/JDK-8213309
-        val propertyName = "jdk.internal.httpclient.disableHostnameVerification"
-        val originalValue = System.getProperty(propertyName)
+    private fun createSecureHttpClient(): HttpClient {
+        val bundle = container.getCertificateBundle()
+            ?: throw IllegalStateException(
+                "VcsimContainer must have certificates configured. " +
+                    "Use VcsimContainer().withCertificates(VcsimCertificateGenerator.generate())"
+            )
 
-        try {
-            System.setProperty(propertyName, "true")
+        val sslContext: SSLContext = bundle.createSslContext()
 
-            @Suppress("EmptyFunctionBlock") // Intentionally trust all certificates for VCSIM testing
-            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-                override fun checkServerTrusted(chain: Array<X509Certificate>?, authType: String?) {}
-                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-            })
-
-            val sslContext = SSLContext.getInstance("TLS").apply {
-                init(null, trustAllCerts, java.security.SecureRandom())
-            }
-
-            return HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .build()
-        } finally {
-            // Restore original property value to minimize global side effects
-            if (originalValue != null) {
-                System.setProperty(propertyName, originalValue)
-            } else {
-                System.clearProperty(propertyName)
-            }
-        }
+        return HttpClient.newBuilder()
+            .sslContext(sslContext)
+            .build()
     }
 }
 

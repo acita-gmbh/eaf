@@ -48,6 +48,10 @@ dependencies {
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
 
+    // Bouncy Castle for certificate generation (VCSIM TLS)
+    api(libs.bouncycastle.bcpkix)
+    api(libs.bouncycastle.bcprov)
+
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
 
     // Coroutines test for testing suspend functions

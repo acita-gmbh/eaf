@@ -23,6 +23,7 @@ testcontainers-keycloak = "4.0.0"
 jjwt = "0.12.5"
 slf4j = "2.0.17"
 kotlinLogging = "7.0.13"
+bouncycastle = "1.79"
 
 [libraries]
 # Kotlin
@@ -90,6 +91,10 @@ konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 # Logging
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlinLogging" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+# Security / Cryptography
+bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 
 # Pitest mutation testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }

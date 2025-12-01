@@ -1,8 +1,11 @@
 package de.acci.eaf.testing.vcsim
 
+import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Duration
 
 /**
@@ -20,13 +23,21 @@ import java.time.Duration
  *
  * ## Usage
  * ```kotlin
- * // Via TestContainers singleton (recommended)
+ * // Via TestContainers singleton (recommended - includes TLS certificates)
  * val vcsim = TestContainers.vcsim
  * val sdkUrl = vcsim.getSdkUrl()
  *
- * // Or direct instantiation
+ * // Or direct instantiation with certificates
+ * val bundle = VcsimCertificateGenerator.generate()
  * val vcsim = VcsimContainer()
+ *     .withCertificates(bundle)
  * vcsim.start()
+ *
+ * // Secure HTTP client using the bundle
+ * val sslContext = bundle.createSslContext()
+ * val httpClient = HttpClient.newBuilder()
+ *     .sslContext(sslContext)
+ *     .build()
  * ```
  *
  * ## Environment Variables
@@ -38,6 +49,7 @@ import java.time.Duration
  * - `VCSIM_FOLDER`: VM folders (default: 3)
  *
  * @see <a href="https://github.com/vmware/govmomi/blob/main/vcsim/README.md">VCSIM Documentation</a>
+ * @see VcsimCertificateGenerator
  */
 public class VcsimContainer(
     dockerImageName: DockerImageName = DockerImageName.parse(DEFAULT_IMAGE)
@@ -70,7 +82,16 @@ public class VcsimContainer(
 
         /** Default number of VM folders */
         public const val DEFAULT_FOLDERS: Int = 3
+
+        /** Container path for TLS certificate */
+        private const val CONTAINER_CERT_PATH: String = "/tmp/vcsim/server.crt"
+
+        /** Container path for TLS private key */
+        private const val CONTAINER_KEY_PATH: String = "/tmp/vcsim/server.key"
     }
+
+    private var certificateBundle: VcsimCertificateBundle? = null
+    private var certDirectory: Path? = null
 
     init {
         withExposedPorts(DEFAULT_PORT)
@@ -86,6 +107,64 @@ public class VcsimContainer(
                 .withStartupTimeout(Duration.ofMinutes(2))
         )
         withReuse(true)
+    }
+
+    /**
+     * Configures VCSIM to use generated TLS certificates.
+     *
+     * When certificates are configured:
+     * - Certificate files are written to a temporary directory
+     * - Files are mounted into the container
+     * - VCSIM is started with -tlscert and -tlskey flags
+     *
+     * Use [getCertificateBundle] to obtain an SSLContext for secure connections.
+     *
+     * @param bundle Certificate bundle from [VcsimCertificateGenerator.generate]
+     * @return This container for method chaining
+     */
+    public fun withCertificates(bundle: VcsimCertificateBundle): VcsimContainer {
+        this.certificateBundle = bundle
+        return this
+    }
+
+    /**
+     * Returns the certificate bundle if configured.
+     *
+     * Use this to create an SSLContext for HTTP clients:
+     * ```kotlin
+     * val sslContext = container.getCertificateBundle()?.createSslContext()
+     * ```
+     *
+     * @return Certificate bundle, or null if not configured
+     */
+    public fun getCertificateBundle(): VcsimCertificateBundle? = certificateBundle
+
+    override fun configure() {
+        super.configure()
+
+        certificateBundle?.let { bundle ->
+            // Create temp directory for certificates
+            val tempDir = Files.createTempDirectory("vcsim-certs")
+            certDirectory = tempDir
+
+            // Write certificate files
+            val certFiles = bundle.writeTo(tempDir)
+
+            // Mount certificate files into container
+            withFileSystemBind(
+                certFiles.serverCert.toAbsolutePath().toString(),
+                CONTAINER_CERT_PATH,
+                BindMode.READ_ONLY
+            )
+            withFileSystemBind(
+                certFiles.serverKey.toAbsolutePath().toString(),
+                CONTAINER_KEY_PATH,
+                BindMode.READ_ONLY
+            )
+
+            // Configure VCSIM to use our certificates
+            withCommand("-tlscert=$CONTAINER_CERT_PATH", "-tlskey=$CONTAINER_KEY_PATH")
+        }
     }
 
     /**
