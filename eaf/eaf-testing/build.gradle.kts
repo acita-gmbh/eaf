@@ -18,6 +18,7 @@ tasks.named<Jar>("jar") {
 // eaf-testing: Test utilities for EAF-based applications
 dependencies {
     api(project(":eaf:eaf-core"))
+    api(project(":eaf:eaf-eventsourcing"))
 
     // Spring WebFlux for test WebClient
     api(libs.spring.boot.webflux)

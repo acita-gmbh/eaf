@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { DashboardLayout } from '@/components/layout'
 import { ProtectedRoute } from '@/components/auth'
 import { Dashboard } from '@/pages/Dashboard'
+import { MyRequests } from '@/pages/MyRequests'
 import { NewRequest } from '@/pages/NewRequest'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { queryClient } from '@/lib/query-client'
@@ -82,6 +83,14 @@ function AppRoutes() {
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <MyRequests />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/requests/new"
           element={

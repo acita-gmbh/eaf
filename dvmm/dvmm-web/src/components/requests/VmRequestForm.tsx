@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -47,19 +47,20 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
 
   const {
     formState: { isDirty, isValid },
-    watch,
+    control,
     setError,
   } = form
 
   // Warn on navigation when form is dirty (AC #6)
   useFormPersistence(isDirty)
 
-  const justificationValue = watch('justification')
+  // Use useWatch instead of watch() for React Compiler compatibility
+  const justificationValue = useWatch({ control, name: 'justification' })
   const justificationLength = justificationValue?.length || 0
   const isJustificationBelowMin = justificationLength < 10
 
   // Watch project selection for quota display
-  const selectedProjectId = watch('projectId')
+  const selectedProjectId = useWatch({ control, name: 'projectId' })
   const selectedProject = MOCK_PROJECTS.find((p) => p.id === selectedProjectId)
 
   const handleSubmit = (data: VmRequestFormData) => {

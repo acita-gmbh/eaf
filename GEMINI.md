@@ -116,6 +116,26 @@ const value = computeExpensive(a, b)
 function MyComponent() { ... }
 ```
 
+### React Hook Form: useWatch over watch
+
+**Use `useWatch` instead of `watch()` for React Compiler compatibility.**
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')  // ESLint: react-hooks/incompatible-library
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+**Rationale:**
+- `watch()` returns a subscription that React Compiler cannot safely memoize
+- `useWatch` is a separate hook designed to work with React's rules of hooks
+
 ### E2E Testing with Playwright
 
 **Use playwright-utils fixtures** for consistent testing patterns:
