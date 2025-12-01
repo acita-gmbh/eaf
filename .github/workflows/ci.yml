@@ -85,8 +85,10 @@ jobs:
       - name: Code Coverage - Kover (≥80%)
         run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
-      - name: Mutation Testing - Pitest (≥70%)
+      - name: Mutation Testing - Pitest with Arcmutate (≥70%)
         run: ./gradlew pitest --no-daemon
+        env:
+          ARCMUTATE_LICENSE: ${{ secrets.ARCMUTATE_LICENSE }}
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4

@@ -13,9 +13,11 @@ spring-security = "7.0.0"
 jackson = "2.20.1"
 mockk = "1.14.6"
 junit = "6.0.1"
-pitest = "1.17.4"
+pitest = "1.22.0"
 pitest-junit5-plugin = "1.2.3"
 pitest-gradle-plugin = "1.19.0-rc.2"
+arcmutate-kotlin = "1.5.0"
+arcmutate-spring = "1.1.2"
 kover = "0.9.3"
 postgresql = "42.7.2"
 flyway = "11.18.0"
@@ -91,6 +93,8 @@ slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 # Pitest mutation testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }
+arcmutate-kotlin = { module = "com.arcmutate:pitest-kotlin-plugin", version.ref = "arcmutate-kotlin" }
+arcmutate-spring = { module = "com.arcmutate:arcmutate-spring", version.ref = "arcmutate-spring" }
 
 [bundles]
 kotlin-coroutines = ["kotlin-coroutines-core", "kotlin-coroutines-reactor"]

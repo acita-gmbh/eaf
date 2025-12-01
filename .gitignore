@@ -326,3 +326,6 @@ mutant-kraken-dist/
 mutant-kraken-results/
 **/mutantkraken.config.json
 !mutantkraken.config.json
+
+# Arcmutate license (injected via CI secrets, do not commit)
+arcmutate-licence.txt

@@ -99,19 +99,65 @@ Running both tools would require:
 - Different coverage thresholds (current: 70% Pitest)
 - Potentially conflicting reports
 
-## Current Pitest Configuration Comparison
+## Arcmutate Integration (Implemented)
 
-| Aspect | Pitest (Current) | Mutant-Kraken |
-|--------|------------------|---------------|
-| **Integration** | Gradle plugin | CLI only |
+The project now uses **Arcmutate** (commercial Pitest plugins) for production-ready Kotlin and Spring mutation testing.
+
+### Configuration
+
+**Gradle Plugin** (`build-logic/conventions/src/main/kotlin/eaf.pitest-conventions.gradle.kts`):
+- `pitest-kotlin-plugin:1.5.0` - Kotlin bytecode understanding
+- `arcmutate-spring:1.1.2` - Spring annotation mutations
+
+**Features Enabled:**
+- `+KOTLIN` - Full Kotlin support
+- `+KOTLIN_NO_NULLS` - Filters null-check intrinsics
+- `+KOTLIN_EXTRA` - Additional junk mutation filters
+- `KOTLIN_RETURNS`, `KOTLIN_REMOVE_DISTINCT`, `KOTLIN_REMOVE_SORTED` - Kotlin-specific mutators
+- `SPRING` - Spring annotation mutations (validation, security, response)
+
+### License Management
+
+**For Local Development:**
+1. Obtain `arcmutate-licence.txt` from team lead
+2. Place at project root (gitignored)
+
+**For CI (GitHub Actions):**
+1. Add license content to GitHub Secret: `ARCMUTATE_LICENSE`
+2. CI workflow automatically injects via environment variable
+3. Pitest task writes license file before execution
+
+```bash
+# GitHub Secret setup (repo admin only)
+# Settings → Secrets and variables → Actions → New repository secret
+# Name: ARCMUTATE_LICENSE
+# Value: <paste full license file content>
+```
+
+### Running Locally
+
+```bash
+# Ensure license file exists
+ls arcmutate-licence.txt
+
+# Run mutation testing
+./gradlew pitest
+```
+
+## Pitest + Arcmutate vs Mutant-Kraken Comparison
+
+| Aspect | Pitest + Arcmutate (Current) | Mutant-Kraken |
+|--------|------------------------------|---------------|
+| **Integration** | ✅ Gradle plugin | CLI only |
 | **Mutation Level** | JVM bytecode | Source code |
 | **Multi-module** | ✅ Per-module execution | ❌ Root-level only |
-| **Kotlin Support** | Limited (needs Arcmutate) | Native operators |
-| **Inline Functions** | ❌ Not supported | Theoretically supported |
-| **Coroutines** | ⚠️ Many false positives | Unknown |
-| **Spring Boot** | ✅ With spring plugin | ❌ No awareness |
-| **CI Integration** | ✅ Gradle task | ❌ Manual CLI |
+| **Kotlin Support** | ✅ Full (Arcmutate) | Native operators |
+| **Inline Functions** | ✅ Bytecode rewriting | Theoretically supported |
+| **Coroutines** | ✅ Filtered (Arcmutate) | Unknown |
+| **Spring Boot** | ✅ Spring plugin | ❌ No awareness |
+| **CI Integration** | ✅ Gradle task + secrets | ❌ Manual CLI |
 | **Maturity** | Production | Beta |
+| **License** | Commercial (Arcmutate) | Open source |
 
 ## Experimental Integration Approach
 
