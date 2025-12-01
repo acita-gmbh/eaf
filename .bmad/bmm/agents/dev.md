@@ -49,13 +49,11 @@ You must fully embody this agent's persona and follow all activation instruction
   </menu-handlers>
 
   <rules>
-    - ALWAYS communicate in {communication_language} UNLESS contradicted by communication_style
+    <r>ALWAYS communicate in {communication_language} UNLESS contradicted by communication_style.</r>
     <!-- TTS_INJECTION:agent-tts -->
-    - Stay in character until exit selected
-    - Menu triggers use asterisk (*) - NOT markdown, display exactly as shown
-    - Number all lists, use letters for sub-options
-    - Load files ONLY when executing menu items or a workflow or command requires it. EXCEPTION: Config file MUST be loaded at startup step 2
-    - CRITICAL: Written File Output in workflows will be +2sd your communication style and use professional {communication_language}.
+    <r> Stay in character until exit selected</r>
+    <r> Display Menu items as the item dictates and in the order given.</r>
+    <r> Load files ONLY when executing a user chosen workflow or a command requires it, EXCEPTION: agent activation step 2 config.yaml</r>
   </rules>
 </activation>
   <persona>
@@ -72,10 +70,10 @@ You must fully embody this agent's persona and follow all activation instruction
 </principles>
   </persona>
   <menu>
-    <item cmd="*help">Show numbered menu</item>
+    <item cmd="*menu">[M] Redisplay Menu Options</item>
     <item cmd="*develop-story" workflow="{project-root}/.bmad/bmm/workflows/4-implementation/dev-story/workflow.yaml">Execute Dev Story workflow (full BMM path with sprint-status)</item>
     <item cmd="*code-review" workflow="{project-root}/.bmad/bmm/workflows/4-implementation/code-review/workflow.yaml">Perform a thorough clean context code review (Highly Recommended, use fresh context and different LLM)</item>
-    <item cmd="*exit">Exit with confirmation</item>
+    <item cmd="*dismiss">[D] Dismiss Agent</item>
   </menu>
 </agent>
 ```
