@@ -3,10 +3,9 @@ package de.acci.dvmm.domain.vmrequest
 import de.acci.dvmm.domain.exceptions.InvalidStateException
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
-import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
-import de.acci.eaf.eventsourcing.EventMetadata
+import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -17,20 +16,11 @@ import org.junit.jupiter.api.assertThrows
 @DisplayName("VmRequestAggregate cancel()")
 class VmRequestAggregateCancelTest {
 
-    private fun createMetadata(
-        tenantId: TenantId = TenantId.generate(),
-        userId: UserId = UserId.generate()
-    ) = EventMetadata.create(
-        tenantId = tenantId,
-        userId = userId,
-        correlationId = CorrelationId.generate()
-    )
-
     private fun createPendingAggregate(
         tenantId: TenantId = TenantId.generate(),
         userId: UserId = UserId.generate()
     ): VmRequestAggregate {
-        val metadata = createMetadata(tenantId = tenantId, userId = userId)
+        val metadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
         return VmRequestAggregate.create(
             requesterId = userId,
             projectId = ProjectId.generate(),
@@ -51,7 +41,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When
             aggregate.cancel(reason = "No longer needed", metadata = cancelMetadata)
@@ -67,7 +57,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When
             aggregate.cancel(reason = "No longer needed", metadata = cancelMetadata)
@@ -82,7 +72,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
             val reason = "Project cancelled"
 
             // When
@@ -99,7 +89,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When
             aggregate.cancel(reason = null, metadata = cancelMetadata)
@@ -115,7 +105,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When
             aggregate.cancel(reason = "No longer needed", metadata = cancelMetadata)
@@ -133,7 +123,7 @@ class VmRequestAggregateCancelTest {
             aggregate.clearUncommittedEvents()
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
-            val cancelMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val cancelMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
 
             // When
             aggregate.cancel(reason = "No longer needed", metadata = cancelMetadata)
@@ -151,7 +141,7 @@ class VmRequestAggregateCancelTest {
             val aggregate = createPendingAggregate()
             val initialVersion = aggregate.version
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When
             aggregate.cancel(reason = "No longer needed", metadata = cancelMetadata)
@@ -171,7 +161,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
             aggregate.cancel(reason = "First cancel", metadata = cancelMetadata)
             aggregate.clearUncommittedEvents()
 
@@ -188,7 +178,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
             aggregate.cancel(reason = "First cancel", metadata = cancelMetadata)
 
             // When
@@ -204,7 +194,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createPendingAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
             aggregate.cancel(reason = "First cancel", metadata = cancelMetadata)
             val versionAfterFirstCancel = aggregate.version
 
@@ -226,7 +216,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createApprovedAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When/Then
             val exception = assertThrows<InvalidStateException> {
@@ -242,7 +232,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createRejectedAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When/Then
             val exception = assertThrows<InvalidStateException> {
@@ -258,7 +248,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When/Then
             val exception = assertThrows<InvalidStateException> {
@@ -274,7 +264,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createReadyAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When/Then
             val exception = assertThrows<InvalidStateException> {
@@ -290,7 +280,7 @@ class VmRequestAggregateCancelTest {
             // Given
             val aggregate = createFailedAggregate()
             aggregate.clearUncommittedEvents()
-            val cancelMetadata = createMetadata()
+            val cancelMetadata = TestMetadataFactory.create()
 
             // When/Then
             val exception = assertThrows<InvalidStateException> {
@@ -310,7 +300,7 @@ class VmRequestAggregateCancelTest {
         fun `should reconstitute CANCELLED status from events`() {
             // Given
             val requestId = VmRequestId.generate()
-            val metadata = createMetadata()
+            val metadata = TestMetadataFactory.create()
             val events = listOf(
                 VmRequestCreated(
                     aggregateId = requestId,

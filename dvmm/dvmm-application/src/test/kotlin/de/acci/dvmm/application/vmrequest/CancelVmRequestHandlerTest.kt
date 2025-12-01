@@ -19,6 +19,7 @@ import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.StoredEvent
+import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -38,15 +39,6 @@ class CancelVmRequestHandlerTest {
     private val eventStore = mockk<EventStore>()
     private val eventDeserializer = mockk<VmRequestEventDeserializer>()
     private val projectionUpdater = mockk<VmRequestProjectionUpdater>()
-
-    private fun createMetadata(
-        tenantId: TenantId = TenantId.generate(),
-        userId: UserId = UserId.generate()
-    ) = EventMetadata.create(
-        tenantId = tenantId,
-        userId = userId,
-        correlationId = CorrelationId.generate()
-    )
 
     private fun createCommand(
         tenantId: TenantId = TenantId.generate(),
@@ -101,7 +93,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -149,7 +141,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -189,7 +181,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -232,7 +224,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -323,7 +315,7 @@ class CancelVmRequestHandlerTest {
             val originalRequester = UserId.generate()
             val differentUser = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = originalRequester)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = originalRequester)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -363,7 +355,7 @@ class CancelVmRequestHandlerTest {
             val originalRequester = UserId.generate()
             val differentUser = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = originalRequester)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = originalRequester)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -410,7 +402,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -460,7 +452,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -515,7 +507,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -561,7 +553,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -630,7 +622,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -696,7 +688,7 @@ class CancelVmRequestHandlerTest {
             val originalRequester = UserId.generate()
             val differentUser = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = originalRequester)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = originalRequester)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -733,7 +725,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata
@@ -777,7 +769,7 @@ class CancelVmRequestHandlerTest {
             val requestId = VmRequestId.generate()
             val userId = UserId.generate()
             val tenantId = TenantId.generate()
-            val originalMetadata = createMetadata(tenantId = tenantId, userId = userId)
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
             val createdEvent = createCreatedEvent(
                 aggregateId = requestId,
                 metadata = originalMetadata

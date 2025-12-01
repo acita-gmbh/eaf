@@ -4,23 +4,14 @@ import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmSize
-import de.acci.eaf.core.types.CorrelationId
-import de.acci.eaf.core.types.TenantId
-import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
-import de.acci.eaf.eventsourcing.EventMetadata
+import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class VmRequestCreatedTest {
-
-    private fun createMetadata() = EventMetadata.create(
-        tenantId = TenantId.generate(),
-        userId = UserId.generate(),
-        correlationId = CorrelationId.generate()
-    )
 
     @Test
     fun `should implement DomainEvent interface`() {
@@ -42,7 +33,7 @@ class VmRequestCreatedTest {
         val vmName = VmName.of("test-vm-01")
         val size = VmSize.M
         val justification = "Testing the VM request system"
-        val metadata = createMetadata()
+        val metadata = TestMetadataFactory.create()
 
         val event = VmRequestCreated(
             aggregateId = requestId,
@@ -90,7 +81,7 @@ class VmRequestCreatedTest {
             vmName = VmName.of("test-vm-01"),
             size = VmSize.M,
             justification = "Test justification for VM request",
-            metadata = createMetadata()
+            metadata = TestMetadataFactory.create()
         )
     }
 }

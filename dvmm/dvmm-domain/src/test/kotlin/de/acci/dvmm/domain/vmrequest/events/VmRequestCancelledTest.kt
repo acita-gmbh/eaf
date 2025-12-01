@@ -1,23 +1,14 @@
 package de.acci.dvmm.domain.vmrequest.events
 
 import de.acci.dvmm.domain.vmrequest.VmRequestId
-import de.acci.eaf.core.types.CorrelationId
-import de.acci.eaf.core.types.TenantId
-import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
-import de.acci.eaf.eventsourcing.EventMetadata
+import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class VmRequestCancelledTest {
-
-    private fun createMetadata() = EventMetadata.create(
-        tenantId = TenantId.generate(),
-        userId = UserId.generate(),
-        correlationId = CorrelationId.generate()
-    )
 
     @Test
     fun `should implement DomainEvent interface`() {
@@ -35,7 +26,7 @@ class VmRequestCancelledTest {
     @Test
     fun `should contain aggregateId and metadata`() {
         val requestId = VmRequestId.generate()
-        val metadata = createMetadata()
+        val metadata = TestMetadataFactory.create()
 
         val event = VmRequestCancelled(
             aggregateId = requestId,
@@ -53,7 +44,7 @@ class VmRequestCancelledTest {
         val event = VmRequestCancelled(
             aggregateId = VmRequestId.generate(),
             reason = null,
-            metadata = createMetadata()
+            metadata = TestMetadataFactory.create()
         )
 
         assertEquals(null, event.reason)
@@ -85,7 +76,7 @@ class VmRequestCancelledTest {
         return VmRequestCancelled(
             aggregateId = VmRequestId.generate(),
             reason = "User cancelled request",
-            metadata = createMetadata()
+            metadata = TestMetadataFactory.create()
         )
     }
 }
