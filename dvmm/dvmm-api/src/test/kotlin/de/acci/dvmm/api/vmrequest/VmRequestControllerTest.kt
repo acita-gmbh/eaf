@@ -1,9 +1,11 @@
 package de.acci.dvmm.api.vmrequest
 
+import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestCommand
 import de.acci.dvmm.application.vmrequest.CreateVmRequestError
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestResult
+import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -31,13 +33,19 @@ import java.util.UUID
 @DisplayName("VmRequestController")
 class VmRequestControllerTest {
 
-    private val handler = mockk<CreateVmRequestHandler>()
+    private val createHandler = mockk<CreateVmRequestHandler>()
+    private val getMyRequestsHandler = mockk<GetMyRequestsHandler>()
+    private val cancelHandler = mockk<CancelVmRequestHandler>()
     private lateinit var controller: VmRequestController
     private val testTenantId = TenantId.generate()
 
     @BeforeEach
     fun setup() {
-        controller = VmRequestController(handler)
+        controller = VmRequestController(
+            createVmRequestHandler = createHandler,
+            getMyRequestsHandler = getMyRequestsHandler,
+            cancelVmRequestHandler = cancelHandler
+        )
     }
 
     private fun createJwt(subject: String = UUID.randomUUID().toString()): Jwt {
@@ -76,7 +84,7 @@ class VmRequestControllerTest {
             val requestId = VmRequestId.generate()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(requestId).success()
 
             // When
@@ -101,7 +109,7 @@ class VmRequestControllerTest {
             val requestId = VmRequestId.generate()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(requestId).success()
 
             // When
@@ -128,7 +136,7 @@ class VmRequestControllerTest {
             val commandSlot = slot<CreateVmRequestCommand>()
 
             coEvery {
-                handler.handle(capture(commandSlot), any())
+                createHandler.handle(capture(commandSlot), any())
             } returns CreateVmRequestResult(VmRequestId.generate()).success()
 
             // When
@@ -222,7 +230,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestError.QuotaExceeded(
                 available = 0,
                 requested = 1
@@ -249,7 +257,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestError.ConcurrencyConflict(
                 message = "Concurrent modification detected"
             ).failure()
@@ -274,7 +282,7 @@ class VmRequestControllerTest {
             val jwt = createJwt()
 
             coEvery {
-                handler.handle(any(), any())
+                createHandler.handle(any(), any())
             } returns CreateVmRequestResult(VmRequestId.generate()).success()
 
             // When
