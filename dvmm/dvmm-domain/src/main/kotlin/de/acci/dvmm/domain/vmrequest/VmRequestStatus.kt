@@ -31,8 +31,12 @@ public enum class VmRequestStatus {
     /** VM provisioning failed due to technical error */
     FAILED;
 
+    private companion object {
+        private val TERMINAL_STATES = setOf(REJECTED, CANCELLED, READY, FAILED)
+    }
+
     /** Returns true if this is a terminal state that cannot transition. */
-    public fun isTerminal(): Boolean = this in setOf(REJECTED, CANCELLED, READY, FAILED)
+    public fun isTerminal(): Boolean = this in TERMINAL_STATES
 
     /** Returns true if admin action (approve/reject) is allowed. */
     public fun canBeActedOnByAdmin(): Boolean = this == PENDING

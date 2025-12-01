@@ -175,7 +175,6 @@ public object VcsimCertificateGenerator {
                 GeneralName(GeneralName.dNSName, "vcsim"),
                 GeneralName(GeneralName.dNSName, "*.local"),
                 GeneralName(GeneralName.iPAddress, "127.0.0.1"),
-                GeneralName(GeneralName.iPAddress, "0.0.0.0"),
                 // Docker default bridge network
                 GeneralName(GeneralName.iPAddress, "172.17.0.1"),
                 GeneralName(GeneralName.iPAddress, "172.17.0.2"),
@@ -269,13 +268,8 @@ public class VcsimCertificateBundle(
      * @return SSLContext configured with a truststore containing only our CA
      */
     public fun createSslContext(): SSLContext {
-        val trustStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply {
-            load(null, null)
-            setCertificateEntry("vcsim-ca", caCertificate)
-        }
-
         val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        tmf.init(trustStore)
+        tmf.init(createTrustStore())
 
         return SSLContext.getInstance("TLS").apply {
             init(null, tmf.trustManagers, SecureRandom())

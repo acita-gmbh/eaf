@@ -167,6 +167,20 @@ public class VcsimContainer(
         }
     }
 
+    override fun close() {
+        super.close()
+        // Clean up temporary certificate directory
+        certDirectory?.let { dir ->
+            try {
+                Files.walk(dir)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(Files::delete)
+            } catch (_: Exception) {
+                // Best-effort cleanup - temp directory will be cleaned by OS eventually
+            }
+        }
+    }
+
     /**
      * Returns the full vSphere SDK URL for connecting to VCSIM.
      *
