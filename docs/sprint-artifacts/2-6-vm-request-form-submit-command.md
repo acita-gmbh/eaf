@@ -368,7 +368,7 @@ const handleSubmit = (data: VmRequestFormData) => {
 
 ```text
 dvmm/dvmm-infrastructure/src/main/resources/db/migration/
-└── V003__update_vm_requests_projection.sql
+└── V004__update_vm_requests_projection_for_submit.sql
 
 dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/
 ├── VmRequestId.kt
