@@ -13,6 +13,7 @@ import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmSize
+import de.acci.eaf.core.error.InvalidIdentifierFormatException
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.projection.PageRequest
@@ -226,7 +227,7 @@ public class VmRequestController(
 
         val requestId = try {
             VmRequestId.fromString(id)
-        } catch (e: IllegalArgumentException) {
+        } catch (e: InvalidIdentifierFormatException) {
             return ResponseEntity.badRequest().body(
                 ValidationErrorResponse(
                     errors = listOf(

@@ -76,7 +76,7 @@ On macOS, the native `say` provider is automatically detected and recommended.
 ## Getting Voice IDs (ElevenLabs)
 
 To add your own custom ElevenLabs voices:
-1. Go to https://elevenlabs.io/app/voice-library
+1. Go to [ElevenLabs Voice Library](https://elevenlabs.io/app/voice-library)
 2. Select or create a voice
 3. Copy the voice ID (15-30 character alphanumeric string)
 4. Use `/agent-vibes:add` to add it

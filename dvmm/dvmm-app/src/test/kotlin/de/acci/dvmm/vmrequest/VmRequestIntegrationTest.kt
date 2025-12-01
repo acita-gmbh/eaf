@@ -1011,15 +1011,16 @@ class VmRequestIntegrationTest {
 
             // Then: VmRequestCancelled event is persisted
             TestContainers.postgres.createConnection("").use { conn ->
-                conn.createStatement().use { stmt ->
-                    val rs = stmt.executeQuery(
-                        """
-                        SELECT event_type, payload::text
-                        FROM eaf_events.events
-                        WHERE aggregate_id = '$requestId'::uuid
-                        ORDER BY version
-                        """.trimIndent()
-                    )
+                conn.prepareStatement(
+                    """
+                    SELECT event_type, payload::text
+                    FROM eaf_events.events
+                    WHERE aggregate_id = ?::uuid
+                    ORDER BY version
+                    """.trimIndent()
+                ).use { prepStmt ->
+                    prepStmt.setObject(1, java.util.UUID.fromString(requestId))
+                    val rs = prepStmt.executeQuery()
                     // First event: VmRequestCreated
                     assertTrue(rs.next())
                     assertEquals("VmRequestCreated", rs.getString("event_type"))

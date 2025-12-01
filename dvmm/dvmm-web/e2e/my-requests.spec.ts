@@ -1,5 +1,7 @@
-// TODO: Use @seontechnologies/playwright-utils fixtures when moduleResolution is updated
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit)
+// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
+// when moduleResolution is updated to support ESM exports from the package.
+// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
+// Tracking: Story TBD - E2E test infrastructure improvements
 import { test, expect } from '@playwright/test'
 
 /**
@@ -258,12 +260,12 @@ test.describe('My Requests Page - Unauthenticated', () => {
  * Navigation tests - can run without auth to verify route exists.
  */
 test.describe('My Requests Navigation', () => {
-  test('sidebar shows "My Requests" navigation link', async ({ page }) => {
+  // This test requires authentication because unauthenticated users see the login screen,
+  // not the sidebar navigation. Marking as skip until auth E2E setup is complete.
+  test.skip('sidebar shows "My Requests" navigation link', async ({ page }) => {
     await page.goto('/')
 
-    // Sidebar navigation should have the link (even if not logged in, layout shows)
-    // Note: This depends on how the app handles unauthenticated state
-    // In this app, unauthenticated users see a login screen, not the layout
-    // So this test would need auth. Marking as skip.
+    // After authentication, verify the My Requests link is in the sidebar
+    await expect(page.getByRole('link', { name: /my requests/i })).toBeVisible()
   })
 })
