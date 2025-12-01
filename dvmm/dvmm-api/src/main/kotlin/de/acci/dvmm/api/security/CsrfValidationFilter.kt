@@ -1,6 +1,6 @@
 package de.acci.dvmm.api.security
 
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.core.Ordered
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -28,13 +28,11 @@ import reactor.core.publisher.Mono
  * Note: This is an additional security layer. With JWT Bearer tokens,
  * CSRF attacks are already mitigated.
  *
- * Can be disabled via `eaf.security.csrf.enabled=false` property (useful for testing).
+ * This filter is disabled in test profile (see TestSecurityConfig).
  */
 @Component
-public class CsrfValidationFilter(
-    @Value("\${eaf.security.csrf.enabled:true}")
-    private val csrfEnabled: Boolean,
-) : WebFilter, Ordered {
+@Profile("!test")
+public class CsrfValidationFilter : WebFilter, Ordered {
 
     private companion object {
         private const val CSRF_HEADER = "X-XSRF-TOKEN"
@@ -45,11 +43,6 @@ public class CsrfValidationFilter(
     override fun getOrder(): Int = 0
 
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-        // Skip CSRF validation if disabled via property
-        if (!csrfEnabled) {
-            return chain.filter(exchange)
-        }
-
         val request = exchange.request
         val path = request.path.value()
         val method = request.method

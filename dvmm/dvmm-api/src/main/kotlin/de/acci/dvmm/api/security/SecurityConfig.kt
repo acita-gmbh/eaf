@@ -4,7 +4,7 @@ import de.acci.eaf.auth.keycloak.KeycloakJwtAuthenticationConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.env.Environment
+import org.springframework.context.annotation.Profile
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -26,15 +26,16 @@ import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttrib
  * - CORS configuration for frontend origin
  * - Actuator health endpoint publicly accessible
  * - All /api/ endpoints require authentication
+ * - CSRF protection always enabled (test profile uses TestSecurityConfig)
  */
 @Configuration
 @EnableWebFluxSecurity
+@Profile("!test")
 public class SecurityConfig(
     @Value("\${eaf.auth.keycloak.client-id:dvmm-web}")
     private val keycloakClientId: String,
     @Value("\${eaf.cors.allowed-origins:http://localhost:3000}")
     private val allowedOrigins: String,
-    private val environment: Environment,
 ) {
 
     /**
@@ -43,21 +44,16 @@ public class SecurityConfig(
      * Filter chain order:
      * 1. SecurityWebFilter (Spring Security) - runs first (highest precedence)
      * 2. TenantContextWebFilter - runs after (HIGHEST_PRECEDENCE + 10)
+     *
+     * CSRF is always enabled in production. Tests use TestSecurityConfig with @Profile("test").
      */
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        // Configure CSRF based on property (defaults to true if not set)
-        val csrfEnabled = environment.getProperty("eaf.security.csrf.enabled", Boolean::class.java, true)
-        println(">>> CSRF enabled: $csrfEnabled")
-
-        if (csrfEnabled) {
-            http.csrf { csrf ->
-                csrf
-                    .csrfTokenRepository(csrfTokenRepository())
-                    .csrfTokenRequestHandler(csrfTokenRequestHandler())
-            }
-        } else {
-            http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        // CSRF always enabled in production - uses cookie-based double-submit pattern
+        http.csrf { csrf ->
+            csrf
+                .csrfTokenRepository(csrfTokenRepository())
+                .csrfTokenRequestHandler(csrfTokenRequestHandler())
         }
 
         return http

@@ -1,26 +1,17 @@
 package de.acci.dvmm.api.security
 
-import io.mockk.every
-import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.springframework.core.env.Environment
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.server.MockServerWebExchange
-import org.springframework.web.cors.CorsConfiguration
 
 class SecurityConfigTest {
-
-    private val mockEnvironment: Environment = mockk {
-        every { getProperty("eaf.security.csrf.enabled", Boolean::class.java, true) } returns true
-    }
 
     private val securityConfig = SecurityConfig(
         keycloakClientId = "test-client",
         allowedOrigins = "http://localhost:3000",
-        environment = mockEnvironment,
     )
 
     private fun createExchange(path: String): MockServerWebExchange {
@@ -33,7 +24,6 @@ class SecurityConfigTest {
         val config = SecurityConfig(
             keycloakClientId = "test-client",
             allowedOrigins = "http://localhost:3000,http://localhost:4200",
-            environment = mockEnvironment,
         )
 
         val corsSource = config.corsConfigurationSource()
@@ -116,7 +106,6 @@ class SecurityConfigTest {
         val config = SecurityConfig(
             keycloakClientId = "test-client",
             allowedOrigins = " http://localhost:3000 , http://localhost:4200 ",
-            environment = mockEnvironment,
         )
 
         val corsSource = config.corsConfigurationSource()

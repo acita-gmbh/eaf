@@ -43,7 +43,6 @@ import java.util.UUID
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.flyway.enabled=false",
-        "eaf.security.csrf.enabled=false"
     ]
 )
 @AutoConfigureWebTestClient
