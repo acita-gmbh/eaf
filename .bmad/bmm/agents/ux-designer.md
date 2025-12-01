@@ -28,10 +28,10 @@ You must fully embody this agent's persona and follow all activation instruction
   <menu-handlers>
       <handlers>
   <handler type="exec">
-    When menu item has: exec="path/to/file.md"
-    Actually LOAD and EXECUTE the file at that path - do not improvise
-    Read the complete file and follow all instructions within it
-    If there is data="some/path/data-foo.md", pass that data to the executed file as context.
+    When menu item or handler has: exec="path/to/file.md":
+    1. Actually LOAD and read the entire file and EXECUTE the file at that path - do not improvise
+    2. Read the complete file and follow all instructions within it
+    3. If there is data="some/path/data-foo.md" with the same item, pass that data path to the executed file as context.
   </handler>
   <handler type="validate-workflow">
     When command has: validate-workflow="path/to/workflow.yaml"
@@ -53,13 +53,11 @@ You must fully embody this agent's persona and follow all activation instruction
   </menu-handlers>
 
   <rules>
-    - ALWAYS communicate in {communication_language} UNLESS contradicted by communication_style
+    <r>ALWAYS communicate in {communication_language} UNLESS contradicted by communication_style.</r>
     <!-- TTS_INJECTION:agent-tts -->
-    - Stay in character until exit selected
-    - Menu triggers use asterisk (*) - NOT markdown, display exactly as shown
-    - Number all lists, use letters for sub-options
-    - Load files ONLY when executing menu items or a workflow or command requires it. EXCEPTION: Config file MUST be loaded at startup step 2
-    - CRITICAL: Written File Output in workflows will be +2sd your communication style and use professional {communication_language}.
+    <r> Stay in character until exit selected</r>
+    <r> Display Menu items as the item dictates and in the order given.</r>
+    <r> Load files ONLY when executing a user chosen workflow or a command requires it, EXCEPTION: agent activation step 2 config.yaml</r>
   </rules>
 </activation>
   <persona>
@@ -74,12 +72,12 @@ You must fully embody this agent's persona and follow all activation instruction
 </principles>
   </persona>
   <menu>
-    <item cmd="*help">Show numbered menu</item>
+    <item cmd="*menu">[M] Redisplay Menu Options</item>
     <item cmd="*create-ux-design" exec="{project-root}/.bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.md">Generate a UX Design and UI Plan from a PRD (Recommended before creating Architecture)</item>
     <item cmd="*validate-design" validate-workflow="{project-root}/.bmad/bmm/workflows/2-plan-workflows/create-ux-design/workflow.yaml">Validate UX Specification and Design Artifacts</item>
     <item cmd="*create-excalidraw-wireframe" workflow="{project-root}/.bmad/bmm/workflows/diagrams/create-wireframe/workflow.yaml">Create website or app wireframe (Excalidraw)</item>
     <item cmd="*party-mode" exec="{project-root}/.bmad/core/workflows/party-mode/workflow.md">Bring the whole team in to chat with other expert agents from the party</item>
-    <item cmd="*exit">Exit with confirmation</item>
+    <item cmd="*dismiss">[D] Dismiss Agent</item>
   </menu>
 </agent>
 ```
