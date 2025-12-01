@@ -8,8 +8,10 @@ import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmRequestStatus
 import de.acci.dvmm.domain.vmrequest.VmSize
 import de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection
+import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
+import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -17,6 +19,7 @@ import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -45,7 +48,7 @@ class VmRequestProjectionUpdaterAdapterTest {
     inner class Insert {
 
         @Test
-        fun `inserts projection with correct field mappings`() = runBlocking {
+        fun `inserts projection with correct field mappings and returns success`() = runBlocking {
             // Given: A new projection to insert
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
@@ -66,9 +69,12 @@ class VmRequestProjectionUpdaterAdapterTest {
             coEvery { projectionRepository.insert(capture(capturedProjection)) } returns Unit
 
             // When: Insert the projection
-            adapter.insert(projection)
+            val result = adapter.insert(projection)
 
-            // Then: Repository was called with correct mapping
+            // Then: Returns success
+            assertTrue(result is Result.Success)
+
+            // And: Repository was called with correct mapping
             coVerify(exactly = 1) { projectionRepository.insert(any()) }
 
             val inserted = capturedProjection.captured
@@ -152,7 +158,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `handles insert failure gracefully by logging`() = runBlocking {
+        fun `returns DatabaseError on insert failure`() = runBlocking {
             // Given: Insert will fail
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
@@ -170,10 +176,15 @@ class VmRequestProjectionUpdaterAdapterTest {
             )
             coEvery { projectionRepository.insert(any()) } throws RuntimeException("Database error")
 
-            // When: Insert (should not throw)
-            adapter.insert(projection)
+            // When: Insert
+            val result = adapter.insert(projection)
 
-            // Then: Method completes without exception (error is logged)
+            // Then: Returns failure with DatabaseError
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is ProjectionError.DatabaseError)
+            assertEquals(testVmRequestId.value.toString(), (error as ProjectionError.DatabaseError).aggregateId)
+            assertTrue(error.message.contains("Database error"))
             coVerify(exactly = 1) { projectionRepository.insert(any()) }
         }
     }
@@ -183,7 +194,7 @@ class VmRequestProjectionUpdaterAdapterTest {
     inner class UpdateStatus {
 
         @Test
-        fun `updates to CANCELLED status`() = runBlocking {
+        fun `updates to CANCELLED status and returns success`() = runBlocking {
             // Given: A status update to CANCELLED
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -204,9 +215,12 @@ class VmRequestProjectionUpdaterAdapterTest {
             } returns 1
 
             // When: Update status
-            adapter.updateStatus(update)
+            val result = adapter.updateStatus(update)
 
-            // Then: Repository was called with correct parameters
+            // Then: Returns success
+            assertTrue(result is Result.Success)
+
+            // And: Repository was called with correct parameters
             coVerify(exactly = 1) {
                 projectionRepository.updateStatus(
                     id = testVmRequestId.value,
@@ -307,7 +321,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `handles update when projection not found`() = runBlocking {
+        fun `returns NotFound when projection not found`() = runBlocking {
             // Given: Update returns 0 rows
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -318,15 +332,19 @@ class VmRequestProjectionUpdaterAdapterTest {
                 projectionRepository.updateStatus(any(), any(), any(), any(), any(), any(), any(), any())
             } returns 0
 
-            // When: Update status (should not throw, just log warning)
-            adapter.updateStatus(update)
+            // When: Update status
+            val result = adapter.updateStatus(update)
 
-            // Then: Method completes
+            // Then: Returns failure with NotFound
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is ProjectionError.NotFound)
+            assertEquals(testVmRequestId.value.toString(), (error as ProjectionError.NotFound).aggregateId)
             coVerify(exactly = 1) { projectionRepository.updateStatus(any(), any(), any(), any(), any(), any(), any(), any()) }
         }
 
         @Test
-        fun `handles update failure gracefully by logging`() = runBlocking {
+        fun `returns DatabaseError on update failure`() = runBlocking {
             // Given: Update will fail
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -337,10 +355,15 @@ class VmRequestProjectionUpdaterAdapterTest {
                 projectionRepository.updateStatus(any(), any(), any(), any(), any(), any(), any(), any())
             } throws RuntimeException("Database error")
 
-            // When: Update (should not throw)
-            adapter.updateStatus(update)
+            // When: Update
+            val result = adapter.updateStatus(update)
 
-            // Then: Method completes without exception (error is logged)
+            // Then: Returns failure with DatabaseError
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is ProjectionError.DatabaseError)
+            assertEquals(testVmRequestId.value.toString(), (error as ProjectionError.DatabaseError).aggregateId)
+            assertTrue(error.message.contains("Database error"))
             coVerify(exactly = 1) { projectionRepository.updateStatus(any(), any(), any(), any(), any(), any(), any(), any()) }
         }
 

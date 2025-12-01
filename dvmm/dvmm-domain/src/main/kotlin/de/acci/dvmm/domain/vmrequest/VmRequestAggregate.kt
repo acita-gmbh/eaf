@@ -97,9 +97,10 @@ public class VmRequestAggregate private constructor(
      * cancelled request is idempotent (no-op). Cancelling requests in other
      * states throws [InvalidStateException].
      *
-     * @param reason Optional reason for cancellation
+     * @param reason Optional reason for cancellation (max [VmRequestCancelled.MAX_REASON_LENGTH] chars)
      * @param metadata Event metadata with tenant context
      * @throws InvalidStateException if request is not in PENDING or CANCELLED state
+     * @throws IllegalArgumentException if reason exceeds max length
      */
     public fun cancel(reason: String?, metadata: EventMetadata) {
         // Idempotent: already cancelled, no-op
@@ -116,7 +117,7 @@ public class VmRequestAggregate private constructor(
             )
         }
 
-        val event = VmRequestCancelled(
+        val event = VmRequestCancelled.create(
             aggregateId = id,
             reason = reason,
             metadata = metadata

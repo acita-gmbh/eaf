@@ -6,11 +6,13 @@ import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmRequestStatus
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
+import de.acci.eaf.core.result.onFailure
 import de.acci.eaf.core.result.success
 import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
+import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
@@ -158,6 +160,9 @@ public class CancelVmRequestHandler(
         try {
             aggregate.cancel(reason = command.reason, metadata = metadata)
         } catch (e: InvalidStateException) {
+            logger.debug {
+                "Cancel rejected: requestId=${command.requestId.value}, currentState=${e.currentState.name}"
+            }
             return CancelVmRequestError.InvalidState(
                 currentState = e.currentState.name
             ).failure()
@@ -193,14 +198,17 @@ public class CancelVmRequestHandler(
             is Result.Success -> {
                 aggregate.clearUncommittedEvents()
 
-                // Update projection (fire-and-forget, errors logged but not propagated)
+                // Update projection - log errors but don't fail the command
+                // (eventual consistency: projection can be rebuilt from event store)
                 projectionUpdater.updateStatus(
                     VmRequestStatusUpdate(
                         id = command.requestId,
                         status = VmRequestStatus.CANCELLED,
                         version = aggregate.version.toInt()
                     )
-                )
+                ).onFailure { projectionError ->
+                    logProjectionError(projectionError, command.requestId, correlationId)
+                }
 
                 CancelVmRequestResult(requestId = command.requestId).success()
             }
@@ -209,6 +217,29 @@ public class CancelVmRequestHandler(
                     CancelVmRequestError.ConcurrencyConflict(
                         message = "Concurrent modification detected for request ${error.aggregateId}"
                     ).failure()
+                }
+            }
+        }
+    }
+
+    private fun logProjectionError(
+        error: ProjectionError,
+        requestId: VmRequestId,
+        correlationId: CorrelationId
+    ) {
+        when (error) {
+            is ProjectionError.DatabaseError -> {
+                logger.warn {
+                    "Projection update failed for request ${requestId.value}: ${error.message}. " +
+                        "correlationId=${correlationId.value}. " +
+                        "Projection can be rebuilt from event store."
+                }
+            }
+            is ProjectionError.NotFound -> {
+                logger.warn {
+                    "Projection not found for request ${requestId.value}. " +
+                        "correlationId=${correlationId.value}. " +
+                        "Projection may need to be reconstructed from event store."
                 }
             }
         }

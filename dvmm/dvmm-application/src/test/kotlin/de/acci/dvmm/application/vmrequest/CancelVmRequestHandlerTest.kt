@@ -645,7 +645,7 @@ class CancelVmRequestHandlerTest {
             coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
             coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
             coEvery { eventStore.append(any(), any(), any()) } returns 2L.success()
-            coEvery { projectionUpdater.updateStatus(capture(updateSlot)) } returns Unit
+            coEvery { projectionUpdater.updateStatus(capture(updateSlot)) } returns Unit.success()
 
             val handler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
 

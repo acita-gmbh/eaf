@@ -190,6 +190,14 @@ export type VmRequestStatus =
 
 /**
  * VM request summary for list view.
+ *
+ * Note: This interface includes fields like tenantId and requesterId that are
+ * not currently returned by the backend API. These are included for:
+ * 1. Future-proofing when admin views are implemented
+ * 2. Type consistency if backend adds these fields
+ *
+ * The size is flattened (cpuCores, memoryGb, diskGb) from the backend's nested
+ * VmSizeResponse object for easier display rendering.
  */
 export interface VmRequestSummary {
   id: string

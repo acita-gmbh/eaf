@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class VmRequestCancelledTest {
 
@@ -70,6 +71,50 @@ class VmRequestCancelledTest {
         assertEquals(newReason, copied.reason)
         assertEquals(event.aggregateId, copied.aggregateId)
         assertEquals(event.metadata, copied.metadata)
+    }
+
+    @Test
+    fun `create factory should accept null reason`() {
+        val event = VmRequestCancelled.create(
+            aggregateId = VmRequestId.generate(),
+            reason = null,
+            metadata = TestMetadataFactory.create()
+        )
+
+        assertEquals(null, event.reason)
+    }
+
+    @Test
+    fun `create factory should accept reason at max length`() {
+        val maxLengthReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH)
+
+        val event = VmRequestCancelled.create(
+            aggregateId = VmRequestId.generate(),
+            reason = maxLengthReason,
+            metadata = TestMetadataFactory.create()
+        )
+
+        assertEquals(maxLengthReason, event.reason)
+    }
+
+    @Test
+    fun `create factory should reject reason exceeding max length`() {
+        val tooLongReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH + 1)
+
+        val exception = assertThrows<IllegalArgumentException> {
+            VmRequestCancelled.create(
+                aggregateId = VmRequestId.generate(),
+                reason = tooLongReason,
+                metadata = TestMetadataFactory.create()
+            )
+        }
+
+        assertTrue(exception.message!!.contains("${VmRequestCancelled.MAX_REASON_LENGTH}"))
+    }
+
+    @Test
+    fun `MAX_REASON_LENGTH constant should be 500`() {
+        assertEquals(500, VmRequestCancelled.MAX_REASON_LENGTH)
     }
 
     private fun createTestEvent(): VmRequestCancelled {

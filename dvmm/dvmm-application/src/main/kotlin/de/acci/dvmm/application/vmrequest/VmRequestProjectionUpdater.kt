@@ -5,8 +5,10 @@ import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmRequestStatus
 import de.acci.dvmm.domain.vmrequest.VmSize
+import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
+import de.acci.eaf.eventsourcing.projection.ProjectionError
 import java.time.Instant
 
 /**
@@ -23,9 +25,10 @@ import java.time.Instant
  *
  * ## Error Handling
  *
- * Projection updates should be resilient to failures - if an update fails,
- * it can be retried or reconstructed from the event store. Implementations
- * should log errors but may not need to propagate them to callers.
+ * Projection updates return [Result] types to make errors explicit.
+ * Callers should log errors for monitoring but typically allow the
+ * command to succeed - failed projections can be reconstructed from
+ * the event store.
  */
 public interface VmRequestProjectionUpdater {
 
@@ -35,8 +38,9 @@ public interface VmRequestProjectionUpdater {
      * Called after a VmRequestCreated event is persisted.
      *
      * @param data The projection data to insert
+     * @return Success with Unit, or Failure with [ProjectionError]
      */
-    public suspend fun insert(data: NewVmRequestProjection)
+    public suspend fun insert(data: NewVmRequestProjection): Result<Unit, ProjectionError>
 
     /**
      * Update status of an existing VM request projection.
@@ -45,8 +49,9 @@ public interface VmRequestProjectionUpdater {
      * are persisted.
      *
      * @param data The projection update data
+     * @return Success with Unit, or Failure with [ProjectionError]
      */
-    public suspend fun updateStatus(data: VmRequestStatusUpdate)
+    public suspend fun updateStatus(data: VmRequestStatusUpdate): Result<Unit, ProjectionError>
 }
 
 /**
@@ -88,11 +93,11 @@ public data class VmRequestStatusUpdate(
  * or as a placeholder during development.
  */
 public object NoOpVmRequestProjectionUpdater : VmRequestProjectionUpdater {
-    override suspend fun insert(data: NewVmRequestProjection) {
-        // No-op
+    override suspend fun insert(data: NewVmRequestProjection): Result<Unit, ProjectionError> {
+        return Result.Success(Unit)
     }
 
-    override suspend fun updateStatus(data: VmRequestStatusUpdate) {
-        // No-op
+    override suspend fun updateStatus(data: VmRequestStatusUpdate): Result<Unit, ProjectionError> {
+        return Result.Success(Unit)
     }
 }

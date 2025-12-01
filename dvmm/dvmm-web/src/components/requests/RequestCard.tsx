@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Card,
   CardHeader,
@@ -11,7 +12,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CancelConfirmDialog } from './CancelConfirmDialog'
-import { type VmRequestSummary } from '@/api/vm-requests'
+import {
+  ApiError,
+  isNotFoundError,
+  isForbiddenError,
+  isInvalidStateError,
+  type VmRequestSummary,
+} from '@/api/vm-requests'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
 
 interface RequestCardProps {
@@ -51,6 +58,32 @@ export function RequestCard({ request }: RequestCardProps) {
       {
         onSuccess: () => {
           setCancelDialogOpen(false)
+          toast.success('Request cancelled successfully')
+        },
+        onError: (error) => {
+          if (error instanceof ApiError) {
+            if (error.status === 404 && isNotFoundError(error.body)) {
+              toast.error('Request not found', {
+                description: 'The request may have been deleted.',
+              })
+            } else if (error.status === 403 && isForbiddenError(error.body)) {
+              toast.error('Not authorized', {
+                description: 'You can only cancel your own requests.',
+              })
+            } else if (error.status === 409 && isInvalidStateError(error.body)) {
+              toast.error('Cannot cancel request', {
+                description: `Request is ${error.body.currentState.toLowerCase()} and cannot be cancelled.`,
+              })
+            } else {
+              toast.error('Failed to cancel request', {
+                description: error.message,
+              })
+            }
+          } else {
+            toast.error('Failed to cancel request', {
+              description: 'An unexpected error occurred.',
+            })
+          }
         },
       }
     )

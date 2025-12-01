@@ -4,6 +4,10 @@ import de.acci.dvmm.application.vmrequest.NewVmRequestProjection
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
 import de.acci.dvmm.application.vmrequest.VmRequestStatusUpdate
 import de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection
+import de.acci.eaf.core.result.Result
+import de.acci.eaf.core.result.failure
+import de.acci.eaf.core.result.success
+import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -17,8 +21,9 @@ import java.time.ZoneOffset
  *
  * ## Error Handling
  *
- * Projection updates are designed to be resilient. If an update fails,
- * errors are logged but not propagated to allow the command to succeed.
+ * Projection updates return [Result] types to make errors explicit.
+ * Errors are logged at the infrastructure layer, but callers decide
+ * whether to propagate failures or allow the command to succeed.
  * Failed projections can be reconstructed from the event store.
  */
 public class VmRequestProjectionUpdaterAdapter(
@@ -27,8 +32,8 @@ public class VmRequestProjectionUpdaterAdapter(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun insert(data: NewVmRequestProjection) {
-        try {
+    override suspend fun insert(data: NewVmRequestProjection): Result<Unit, ProjectionError> {
+        return try {
             val now = OffsetDateTime.now(ZoneOffset.UTC)
             val projection = VmRequestsProjection(
                 id = data.id.value,
@@ -55,16 +60,22 @@ public class VmRequestProjectionUpdaterAdapter(
             )
             projectionRepository.insert(projection)
             logger.debug { "Inserted projection for VM request: ${data.id.value}" }
+            Unit.success()
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to insert projection for VM request: ${data.id.value}. " +
                     "Projection can be reconstructed from event store."
             }
+            ProjectionError.DatabaseError(
+                aggregateId = data.id.value.toString(),
+                message = "Failed to insert projection: ${e.message}",
+                cause = e
+            ).failure()
         }
     }
 
-    override suspend fun updateStatus(data: VmRequestStatusUpdate) {
-        try {
+    override suspend fun updateStatus(data: VmRequestStatusUpdate): Result<Unit, ProjectionError> {
+        return try {
             val rowsUpdated = projectionRepository.updateStatus(
                 id = data.id.value,
                 status = data.status.name,
@@ -80,17 +91,26 @@ public class VmRequestProjectionUpdaterAdapter(
                     "Updated projection status for VM request: " +
                         "${data.id.value} -> ${data.status}"
                 }
+                Unit.success()
             } else {
                 logger.warn {
                     "No projection found to update for VM request: ${data.id.value}. " +
                         "Projection may need to be reconstructed from event store."
                 }
+                ProjectionError.NotFound(
+                    aggregateId = data.id.value.toString()
+                ).failure()
             }
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to update projection for VM request: ${data.id.value}. " +
                     "Projection can be reconstructed from event store."
             }
+            ProjectionError.DatabaseError(
+                aggregateId = data.id.value.toString(),
+                message = "Failed to update projection: ${e.message}",
+                cause = e
+            ).failure()
         }
     }
 }

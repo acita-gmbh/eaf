@@ -40,6 +40,21 @@ public data class PagedVmRequestsResponse(
 
 /**
  * Response DTO for a single VM request summary.
+ *
+ * ## Field Design Notes
+ *
+ * - **tenantId/requesterId omitted**: These are internal identifiers used for
+ *   authorization and tenant isolation. They are intentionally not exposed in
+ *   the API response. Row-Level Security (RLS) at the database layer ensures
+ *   users only see their own tenant's data.
+ *
+ * - **size as object**: The size is returned as a [VmSizeResponse] object
+ *   containing cpuCores, memoryGb, and diskGb fields for display purposes.
+ *   Frontend may flatten these for convenience.
+ *
+ * - **version omitted in list view**: Version is used for optimistic locking
+ *   in write operations but is not needed for read-only list display.
+ *   Individual request detail endpoints include version when needed.
  */
 public data class VmRequestSummaryResponse(
     val id: String,

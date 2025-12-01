@@ -1,5 +1,6 @@
 package de.acci.dvmm.domain.vmrequest
 
+import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -311,6 +312,69 @@ class VmRequestAggregateTest {
             // Then
             assertEquals(tenantId, event.metadata.tenantId)
             assertEquals(userId, event.metadata.userId)
+        }
+    }
+
+    @Nested
+    @DisplayName("cancel()")
+    inner class CancelTests {
+
+        @Test
+        @DisplayName("should reject reason exceeding max length")
+        fun `should reject reason exceeding max length`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+            val tooLongReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH + 1)
+
+            // When/Then
+            val exception = assertThrows<IllegalArgumentException> {
+                aggregate.cancel(
+                    reason = tooLongReason,
+                    metadata = TestMetadataFactory.create()
+                )
+            }
+
+            assertTrue(exception.message!!.contains("${VmRequestCancelled.MAX_REASON_LENGTH}"))
+        }
+
+        @Test
+        @DisplayName("should accept reason at max length")
+        fun `should accept reason at max length`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+            val maxLengthReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH)
+
+            // When
+            aggregate.cancel(
+                reason = maxLengthReason,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(VmRequestStatus.CANCELLED, aggregate.status)
+            val event = aggregate.uncommittedEvents[0] as VmRequestCancelled
+            assertEquals(maxLengthReason, event.reason)
+        }
+
+        @Test
+        @DisplayName("should accept null reason")
+        fun `should accept null reason`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+
+            // When
+            aggregate.cancel(
+                reason = null,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(VmRequestStatus.CANCELLED, aggregate.status)
+            val event = aggregate.uncommittedEvents[0] as VmRequestCancelled
+            assertEquals(null, event.reason)
         }
     }
 
