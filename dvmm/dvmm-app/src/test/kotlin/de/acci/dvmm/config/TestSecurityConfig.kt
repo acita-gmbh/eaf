@@ -32,10 +32,12 @@ public class TestSecurityConfig(
 ) {
 
     @Bean
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
         // CSRF disabled for test profile only - simplifies integration testing
-        // lgtm[java/spring-disabled-csrf-protection] - intentional for test profile
-        http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        // This is intentional - test code doesn't need CSRF protection
+        @Suppress("DEPRECATION") // CodeQL: intentionally disabled for tests
+        http.csrf { it.disable() } // codeql[java/spring-disabled-csrf-protection] suppressed - test code
 
         return http
             .cors { it.configurationSource(corsConfigurationSource()) }

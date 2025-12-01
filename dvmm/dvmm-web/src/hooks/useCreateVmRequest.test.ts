@@ -108,7 +108,7 @@ describe('useCreateVmRequest', () => {
   it('throws ApiError when access_token is undefined', async () => {
     mockUseAuth.mockReturnValue({
       user: { access_token: undefined },
-    } as ReturnType<typeof useAuth>)
+    } as unknown as ReturnType<typeof useAuth>)
 
     const { result } = renderHook(() => useCreateVmRequest(), {
       wrapper: createWrapper(),

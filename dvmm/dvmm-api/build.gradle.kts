@@ -21,7 +21,7 @@ dependencies {
     implementation(project(":eaf:eaf-tenant"))
 
     implementation(libs.spring.boot.oauth2.resource.server)
-    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation(libs.spring.boot.validation)
 
     testImplementation(libs.spring.security.test)
     testImplementation(libs.spring.boot.actuator)

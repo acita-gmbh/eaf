@@ -9,9 +9,9 @@ import {
   type QuotaExceededResponse,
 } from './vm-requests'
 
-// Mock fetch
+// Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+vi.stubGlobal('fetch', mockFetch)
 
 // Mock createApiHeaders
 vi.mock('./api-client', () => ({

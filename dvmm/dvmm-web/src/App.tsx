@@ -16,17 +16,15 @@ import { User } from 'lucide-react'
 function AppRoutes() {
   const auth = useAuth()
 
-  // Fetch CSRF token when authenticated
+  // Fetch CSRF token when authenticated, clear on logout
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.access_token) {
       fetchCsrfToken(auth.user.access_token).catch((error) => {
         console.error('Failed to fetch CSRF token:', error)
       })
-    }
-    return () => {
-      if (!auth.isAuthenticated) {
-        clearCsrfToken()
-      }
+    } else {
+      // When not authenticated, ensure any CSRF token is cleared immediately
+      clearCsrfToken()
     }
   }, [auth.isAuthenticated, auth.user?.access_token])
 
