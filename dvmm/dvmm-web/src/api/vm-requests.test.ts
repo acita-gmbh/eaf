@@ -2,12 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   createVmRequest,
   getMyRequests,
+  cancelRequest,
   ApiError,
   isValidationError,
   isQuotaExceededError,
+  isNotFoundError,
+  isForbiddenError,
+  isInvalidStateError,
   type CreateVmRequestPayload,
   type ValidationErrorResponse,
   type QuotaExceededResponse,
+  type NotFoundErrorResponse,
+  type ForbiddenErrorResponse,
+  type InvalidStateErrorResponse,
   type VmRequestSummary,
 } from './vm-requests'
 
@@ -512,6 +519,250 @@ describe('vm-requests API', () => {
       expect(result.items[1].cpuCores).toBe(16)
       expect(result.items[1].memoryGb).toBe(64)
       expect(result.items[1].diskGb).toBe(500)
+    })
+  })
+
+  describe('cancelRequest', () => {
+    const accessToken = 'test-token'
+    const requestId = 'req-123'
+
+    it('sends POST request to cancel endpoint with reason', async () => {
+      const mockResponse = {
+        message: 'Request cancelled successfully',
+        requestId,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(mockResponse),
+      })
+
+      const result = await cancelRequest(requestId, { reason: 'No longer needed' }, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/requests/${requestId}/cancel`),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ reason: 'No longer needed' }),
+        })
+      )
+      expect(result).toEqual(mockResponse)
+    })
+
+    it('sends POST request with empty body when no reason provided', async () => {
+      const mockResponse = {
+        message: 'Request cancelled successfully',
+        requestId,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(mockResponse),
+      })
+
+      await cancelRequest(requestId, undefined, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/requests/${requestId}/cancel`),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: '{}', // Empty object for Content-Type consistency
+        })
+      )
+    })
+
+    it('throws ApiError with not found on 404', async () => {
+      const notFoundError: NotFoundErrorResponse = {
+        type: 'not_found',
+        message: 'Request not found',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => JSON.stringify(notFoundError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(404)
+        expect(isNotFoundError(apiError.body)).toBe(true)
+      }
+    })
+
+    it('throws ApiError with forbidden on 403', async () => {
+      const forbiddenError: ForbiddenErrorResponse = {
+        type: 'forbidden',
+        message: 'Not authorized to cancel this request',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers(),
+        text: async () => JSON.stringify(forbiddenError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(403)
+        expect(isForbiddenError(apiError.body)).toBe(true)
+      }
+    })
+
+    it('throws ApiError with invalid state on 409', async () => {
+      const invalidStateError: InvalidStateErrorResponse = {
+        type: 'invalid_state',
+        message: 'Request cannot be cancelled',
+        currentState: 'APPROVED',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        headers: new Headers(),
+        text: async () => JSON.stringify(invalidStateError),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(409)
+        expect(isInvalidStateError(apiError.body)).toBe(true)
+        if (isInvalidStateError(apiError.body)) {
+          expect(apiError.body.currentState).toBe('APPROVED')
+        }
+      }
+    })
+
+    it('throws ApiError on 500 Internal Server Error', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers(),
+        text: async () => JSON.stringify({ message: 'Something went wrong' }),
+      })
+
+      await expect(cancelRequest(requestId, undefined, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await cancelRequest(requestId, undefined, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(500)
+      }
+    })
+  })
+
+  describe('isNotFoundError', () => {
+    it('returns true for valid not found error', () => {
+      const notFoundError: NotFoundErrorResponse = {
+        type: 'not_found',
+        message: 'Request not found',
+      }
+      expect(isNotFoundError(notFoundError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isNotFoundError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isNotFoundError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isNotFoundError('string')).toBe(false)
+      expect(isNotFoundError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isNotFoundError({ type: 'validation', message: 'test' })).toBe(false)
+    })
+  })
+
+  describe('isForbiddenError', () => {
+    it('returns true for valid forbidden error', () => {
+      const forbiddenError: ForbiddenErrorResponse = {
+        type: 'forbidden',
+        message: 'Not authorized',
+      }
+      expect(isForbiddenError(forbiddenError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isForbiddenError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isForbiddenError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isForbiddenError('string')).toBe(false)
+      expect(isForbiddenError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isForbiddenError({ type: 'not_found', message: 'test' })).toBe(false)
+    })
+  })
+
+  describe('isInvalidStateError', () => {
+    it('returns true for valid invalid state error', () => {
+      const invalidStateError: InvalidStateErrorResponse = {
+        type: 'invalid_state',
+        message: 'Cannot cancel',
+        currentState: 'APPROVED',
+      }
+      expect(isInvalidStateError(invalidStateError)).toBe(true)
+    })
+
+    it('returns false for null', () => {
+      expect(isInvalidStateError(null)).toBe(false)
+    })
+
+    it('returns false for undefined', () => {
+      expect(isInvalidStateError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-object', () => {
+      expect(isInvalidStateError('string')).toBe(false)
+      expect(isInvalidStateError(123)).toBe(false)
+    })
+
+    it('returns false for wrong type field', () => {
+      expect(isInvalidStateError({ type: 'forbidden', message: 'test', currentState: 'X' })).toBe(
+        false
+      )
     })
   })
 })

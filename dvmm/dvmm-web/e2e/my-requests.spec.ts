@@ -1,3 +1,5 @@
+// TODO: Use @seontechnologies/playwright-utils fixtures when moduleResolution is updated
+// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit)
 import { test, expect } from '@playwright/test'
 
 /**

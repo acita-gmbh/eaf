@@ -449,7 +449,7 @@ export async function cancelRequest(
     method: 'POST',
     headers: createApiHeaders(accessToken, true), // Include CSRF for mutations
     credentials: 'include',
-    body: payload ? JSON.stringify(payload) : undefined,
+    body: JSON.stringify(payload ?? {}), // Always send body for Content-Type consistency
   })
 
   const responseBody = await parseResponseBody(response)
