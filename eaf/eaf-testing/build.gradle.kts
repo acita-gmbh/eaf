@@ -18,6 +18,7 @@ tasks.named<Jar>("jar") {
 // eaf-testing: Test utilities for EAF-based applications
 dependencies {
     api(project(":eaf:eaf-core"))
+    api(project(":eaf:eaf-eventsourcing"))
 
     // Spring WebFlux for test WebClient
     api(libs.spring.boot.webflux)
@@ -47,6 +48,11 @@ dependencies {
     api(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
+
+    // Bouncy Castle for certificate generation (VCSIM TLS)
+    // Implementation scope since BC types aren't exposed in public API
+    implementation(libs.bouncycastle.bcpkix)
+    implementation(libs.bouncycastle.bcprov)
 
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
 

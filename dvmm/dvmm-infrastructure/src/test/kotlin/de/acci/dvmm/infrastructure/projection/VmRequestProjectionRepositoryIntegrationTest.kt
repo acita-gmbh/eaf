@@ -133,9 +133,15 @@ class VmRequestProjectionRepositoryIntegrationTest {
         id: UUID = UUID.randomUUID(),
         tenantId: TenantId,
         requesterId: UUID = UUID.randomUUID(),
+        requesterName: String = "Test User",
+        projectId: UUID = UUID.randomUUID(),
+        projectName: String = "Test Project",
         vmName: String = "test-vm",
+        size: String = "M",
         cpuCores: Int = DEFAULT_CPU_CORES,
         memoryGb: Int = DEFAULT_MEMORY_GB,
+        diskGb: Int = 100,
+        justification: String = "Test justification for VM request",
         status: String = "PENDING",
         createdAt: OffsetDateTime = OffsetDateTime.now(),
         updatedAt: OffsetDateTime = OffsetDateTime.now()
@@ -146,19 +152,27 @@ class VmRequestProjectionRepositoryIntegrationTest {
             conn.prepareStatement(
                 """
                 INSERT INTO public."VM_REQUESTS_PROJECTION"
-                ("ID", "TENANT_ID", "REQUESTER_ID", "VM_NAME", "CPU_CORES", "MEMORY_GB", "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ("ID", "TENANT_ID", "REQUESTER_ID", "REQUESTER_NAME", "PROJECT_ID", "PROJECT_NAME",
+                 "VM_NAME", "SIZE", "CPU_CORES", "MEMORY_GB", "DISK_GB", "JUSTIFICATION",
+                 "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
                 """.trimIndent()
             ).use { stmt ->
                 stmt.setObject(1, id)
                 stmt.setObject(2, tenantId.value)
                 stmt.setObject(3, requesterId)
-                stmt.setString(4, vmName)
-                stmt.setInt(5, cpuCores)
-                stmt.setInt(6, memoryGb)
-                stmt.setString(7, status)
-                stmt.setObject(8, createdAt)
-                stmt.setObject(9, updatedAt)
+                stmt.setString(4, requesterName)
+                stmt.setObject(5, projectId)
+                stmt.setString(6, projectName)
+                stmt.setString(7, vmName)
+                stmt.setString(8, size)
+                stmt.setInt(9, cpuCores)
+                stmt.setInt(10, memoryGb)
+                stmt.setInt(11, diskGb)
+                stmt.setString(12, justification)
+                stmt.setString(13, status)
+                stmt.setObject(14, createdAt)
+                stmt.setObject(15, updatedAt)
                 stmt.executeUpdate()
             }
         }
@@ -420,6 +434,250 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 // Then: Projection is returned
                 assertNotNull(result)
                 assertEquals("delayed-vm", result.vmName)
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Write Operations")
+    inner class WriteOperations {
+
+        @Test
+        fun `insert persists new projection correctly`() = runBlocking {
+            val id = UUID.randomUUID()
+            val requesterId = UUID.randomUUID()
+            val projectId = UUID.randomUUID()
+            val now = OffsetDateTime.now()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // Given: A new projection to insert
+                val projection = de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection(
+                    id = id,
+                    tenantId = tenantA.value,
+                    requesterId = requesterId,
+                    requesterName = "John Doe",
+                    projectId = projectId,
+                    projectName = "Project Alpha",
+                    vmName = "web-server-01",
+                    size = "L",
+                    cpuCores = 8,
+                    memoryGb = 32,
+                    diskGb = 200,
+                    justification = "Production web server for new application",
+                    status = "PENDING",
+                    approvedBy = null,
+                    approvedByName = null,
+                    rejectedBy = null,
+                    rejectedByName = null,
+                    rejectionReason = null,
+                    createdAt = now,
+                    updatedAt = now,
+                    version = 1
+                )
+
+                // When: Insert the projection
+                repository.insert(projection)
+
+                // Then: Projection can be retrieved
+                val result = repository.findById(id)
+                assertNotNull(result)
+                assertEquals(id, result?.id)
+                assertEquals(tenantA.value, result?.tenantId)
+                assertEquals(requesterId, result?.requesterId)
+                assertEquals("John Doe", result?.requesterName)
+                assertEquals(projectId, result?.projectId)
+                assertEquals("Project Alpha", result?.projectName)
+                assertEquals("web-server-01", result?.vmName)
+                assertEquals("L", result?.size)
+                assertEquals(8, result?.cpuCores)
+                assertEquals(32, result?.memoryGb)
+                assertEquals(200, result?.diskGb)
+                assertEquals("Production web server for new application", result?.justification)
+                assertEquals("PENDING", result?.status)
+                assertNull(result?.approvedBy)
+                assertNull(result?.rejectedBy)
+            }
+        }
+
+        @Test
+        fun `updateStatus updates to APPROVED with approver details`() = runBlocking {
+            // Given: An existing pending projection
+            val id = insertTestProjection(
+                tenantId = tenantA,
+                vmName = "pending-vm",
+                status = "PENDING"
+            )
+            val approverId = UUID.randomUUID()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Update to APPROVED
+                val rowsUpdated = repository.updateStatus(
+                    id = id,
+                    status = "APPROVED",
+                    approvedBy = approverId,
+                    approvedByName = "Jane Admin",
+                    version = 2
+                )
+
+                // Then: Update succeeded
+                assertEquals(1, rowsUpdated)
+
+                // And: Data is correctly updated
+                val result = repository.findById(id)
+                assertNotNull(result)
+                assertEquals("APPROVED", result?.status)
+                assertEquals(approverId, result?.approvedBy)
+                assertEquals("Jane Admin", result?.approvedByName)
+                assertNull(result?.rejectedBy)
+                assertNull(result?.rejectionReason)
+                assertEquals(2, result?.version)
+            }
+        }
+
+        @Test
+        fun `updateStatus updates to REJECTED with rejector details and reason`() = runBlocking {
+            // Given: An existing pending projection
+            val id = insertTestProjection(
+                tenantId = tenantA,
+                vmName = "pending-vm",
+                status = "PENDING"
+            )
+            val rejectorId = UUID.randomUUID()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Update to REJECTED
+                val rowsUpdated = repository.updateStatus(
+                    id = id,
+                    status = "REJECTED",
+                    rejectedBy = rejectorId,
+                    rejectedByName = "Bob Reviewer",
+                    rejectionReason = "Insufficient resource justification provided",
+                    version = 2
+                )
+
+                // Then: Update succeeded
+                assertEquals(1, rowsUpdated)
+
+                // And: Data is correctly updated
+                val result = repository.findById(id)
+                assertNotNull(result)
+                assertEquals("REJECTED", result?.status)
+                assertEquals(rejectorId, result?.rejectedBy)
+                assertEquals("Bob Reviewer", result?.rejectedByName)
+                assertEquals("Insufficient resource justification provided", result?.rejectionReason)
+                assertNull(result?.approvedBy)
+                assertEquals(2, result?.version)
+            }
+        }
+
+        @Test
+        fun `updateStatus returns zero when projection does not exist`() = runBlocking {
+            val nonExistentId = UUID.randomUUID()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Try to update non-existent projection
+                val rowsUpdated = repository.updateStatus(
+                    id = nonExistentId,
+                    status = "APPROVED",
+                    version = 2
+                )
+
+                // Then: No rows updated
+                assertEquals(0, rowsUpdated)
+            }
+        }
+
+        @Test
+        fun `updateStatus respects RLS - cannot update other tenant projection`() = runBlocking {
+            // Given: A projection for tenant B
+            val id = insertTestProjection(
+                tenantId = tenantB,
+                vmName = "tenant-b-vm",
+                status = "PENDING"
+            )
+
+            // When: Tenant A tries to update it
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+
+                val rowsUpdated = repoA.updateStatus(
+                    id = id,
+                    status = "APPROVED",
+                    approvedBy = UUID.randomUUID(),
+                    approvedByName = "Malicious Admin",
+                    version = 2
+                )
+
+                // Then: RLS prevents the update
+                assertEquals(0, rowsUpdated, "Tenant A should not be able to update Tenant B's projection")
+            }
+
+            // And: Verify the projection is unchanged using tenant B context
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findById(id)
+                assertNotNull(result)
+                assertEquals("PENDING", result?.status, "Status should remain PENDING")
+                assertNull(result?.approvedBy, "ApprovedBy should remain null")
+            }
+        }
+
+        @Test
+        fun `insert respects RLS - inserted projection belongs to current tenant`() = runBlocking {
+            val id = UUID.randomUUID()
+            val now = OffsetDateTime.now()
+
+            // Insert via tenant A
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+
+                val projection = de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection(
+                    id = id,
+                    tenantId = tenantA.value,
+                    requesterId = UUID.randomUUID(),
+                    requesterName = "Tenant A User",
+                    projectId = UUID.randomUUID(),
+                    projectName = "Tenant A Project",
+                    vmName = "tenant-a-vm",
+                    size = "M",
+                    cpuCores = 4,
+                    memoryGb = 16,
+                    diskGb = 100,
+                    justification = "Tenant A justification",
+                    status = "PENDING",
+                    approvedBy = null,
+                    approvedByName = null,
+                    rejectedBy = null,
+                    rejectedByName = null,
+                    rejectionReason = null,
+                    createdAt = now,
+                    updatedAt = now,
+                    version = 1
+                )
+
+                repoA.insert(projection)
+            }
+
+            // Then: Tenant A can see it
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val result = repoA.findById(id)
+                assertNotNull(result, "Tenant A should see their own inserted projection")
+            }
+
+            // And: Tenant B cannot see it
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findById(id)
+                assertNull(result, "Tenant B should NOT see Tenant A's projection")
             }
         }
     }

@@ -9,4 +9,7 @@ plugins {
 dependencies {
     api(project(":dvmm:dvmm-domain"))
     api(project(":eaf:eaf-eventsourcing"))
+
+    testImplementation(testFixtures(project(":eaf:eaf-testing")))
+    testImplementation(libs.kotlin.coroutines.test)
 }

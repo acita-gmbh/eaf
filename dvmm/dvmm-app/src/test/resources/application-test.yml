@@ -2,6 +2,14 @@ spring:
   application:
     name: dvmm-test
 
+  # Allow mock beans to override real beans in tests
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Flyway for tests that don't use Testcontainers
+  flyway:
+    enabled: false
+
   # Disable actual Keycloak connection for tests
   security:
     oauth2:
@@ -21,6 +29,11 @@ eaf:
   # CORS for tests
   cors:
     allowed-origins: http://localhost:3000
+
+  # Disable CSRF for stateless JWT API tests
+  security:
+    csrf:
+      enabled: false
 
 # Actuator - enable more endpoints for testing
 management:

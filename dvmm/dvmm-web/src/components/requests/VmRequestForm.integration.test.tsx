@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { VmRequestForm } from './VmRequestForm'
 import { DEFAULT_VM_SIZE } from '@/lib/config/vm-sizes'
@@ -7,6 +7,16 @@ import { DEFAULT_VM_SIZE } from '@/lib/config/vm-sizes'
 // Mock useFormPersistence hook
 vi.mock('@/hooks/useFormPersistence', () => ({
   useFormPersistence: vi.fn(),
+}))
+
+// Mock useCreateVmRequest hook
+vi.mock('@/hooks/useCreateVmRequest', () => ({
+  useCreateVmRequest: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+  }),
 }))
 
 describe('VmRequestForm Integration', () => {

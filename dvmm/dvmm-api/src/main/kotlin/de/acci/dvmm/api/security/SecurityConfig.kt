@@ -25,13 +25,14 @@ import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttrib
  * - CORS configuration for frontend origin
  * - Actuator health endpoint publicly accessible
  * - All /api/ endpoints require authentication
+ * - CSRF protection always enabled (tests use SecurityMockServerConfigurers.csrf())
  */
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig(
     @Value("\${eaf.auth.keycloak.client-id:dvmm-web}")
     private val keycloakClientId: String,
-    @Value("\${eaf.cors.allowed-origins:http://localhost:3000}")
+    @Value("\${eaf.cors.allowed-origins:http://localhost:5173}")
     private val allowedOrigins: String,
 ) {
 
@@ -41,15 +42,21 @@ public class SecurityConfig(
      * Filter chain order:
      * 1. SecurityWebFilter (Spring Security) - runs first (highest precedence)
      * 2. TenantContextWebFilter - runs after (HIGHEST_PRECEDENCE + 10)
+     *
+     * CSRF protection uses cookie-based double-submit pattern. Note that Bearer token
+     * authentication is inherently CSRF-resistant, so this primarily protects browser-based
+     * flows. Tests use SecurityMockServerConfigurers.csrf() to add tokens.
      */
     @Bean
     public fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+        // CSRF always enabled in production - uses cookie-based double-submit pattern
+        http.csrf { csrf ->
+            csrf
+                .csrfTokenRepository(csrfTokenRepository())
+                .csrfTokenRequestHandler(csrfTokenRequestHandler())
+        }
+
         return http
-            .csrf { csrf ->
-                csrf
-                    .csrfTokenRepository(csrfTokenRepository())
-                    .csrfTokenRequestHandler(csrfTokenRequestHandler())
-            }
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeExchange { auth ->
                 auth
@@ -101,7 +108,7 @@ public class SecurityConfig(
      * CORS configuration for frontend access.
      *
      * Allows:
-     * - Origins from configuration (default: http://localhost:3000)
+     * - Origins from configuration (default: http://localhost:5173 for Vite)
      * - Methods: GET, POST, PUT, DELETE, OPTIONS
      * - All headers
      * - Credentials (cookies, Authorization header)

@@ -1,6 +1,7 @@
 package de.acci.eaf.testing
 
 import dasniko.testcontainers.keycloak.KeycloakContainer
+import de.acci.eaf.testing.vcsim.VcsimCertificateGenerator
 import de.acci.eaf.testing.vcsim.VcsimContainer
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -29,16 +30,22 @@ public object TestContainers {
      * Provides a vSphere API-compatible `/sdk` endpoint with default configuration:
      * - 2 clusters, 4 hosts per cluster, 10 VMs per host (80 total VMs)
      * - Default credentials: user/pass
+     * - Generated TLS certificates for secure connections (no trust-all required)
      *
      * Usage:
      * ```kotlin
      * val sdkUrl = TestContainers.vcsim.getSdkUrl()
      * val username = TestContainers.vcsim.getUsername()
      * val password = TestContainers.vcsim.getPassword()
+     *
+     * // For secure HTTP clients:
+     * val sslContext = TestContainers.vcsim.getCertificateBundle()?.createSslContext()
      * ```
      */
     public val vcsim: VcsimContainer by lazy {
+        val certificateBundle = VcsimCertificateGenerator.generate()
         VcsimContainer()
+            .withCertificates(certificateBundle)
             .apply { start() }
     }
 

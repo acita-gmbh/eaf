@@ -909,7 +909,7 @@ So that I can track and manage my requests.
 **Acceptance Criteria:**
 
 **Given** I am on the dashboard
-**When** I view "Meine Requests"
+**When** I view "My Requests"
 **Then** I see a table/list with columns:
   - VM Name
   - Project
@@ -923,7 +923,7 @@ So that I can track and manage my requests.
 **And** I can click a row to see details
 
 **Given** a request is in "Pending" status
-**When** I click "Abbrechen" action
+**When** I click "Cancel" action
 **Then** confirmation dialog appears
 **And** on confirm, `CancelVmRequestCommand` is dispatched
 **And** `VmRequestCancelled` event is persisted
@@ -931,14 +931,14 @@ So that I can track and manage my requests.
 
 **Given** a request is not Pending (Approved, Rejected, etc.)
 **When** I view the actions
-**Then** "Abbrechen" is not available
+**Then** "Cancel" is not available
 
 **Prerequisites:** Story 1.8 (jOOQ Projections), Story 2.6
 
 **FRs Satisfied:** FR20, FR22, FR23
 
 **Technical Notes:**
-- Query endpoint: `GET /api/requests/mine`
+- Query endpoint: `GET /api/requests/my`
 - Uses jOOQ projection with tenant filter
 - Cancel command idempotent (no-op if already cancelled)
 

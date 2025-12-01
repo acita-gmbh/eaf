@@ -136,22 +136,34 @@ ALTER TABLE eaf_events.snapshots FORCE ROW LEVEL SECURITY;
 -- Projection table for VM requests read model
 -- Note: Explicit PUBLIC schema prefix ensures jOOQ generates code in the 'public' package
 CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
-    id              UUID PRIMARY KEY,
-    tenant_id       UUID NOT NULL,
-    requester_id    UUID NOT NULL,
-    vm_name         VARCHAR(255) NOT NULL,
-    cpu_cores       INT NOT NULL,
-    memory_gb       INT NOT NULL,
-    status          VARCHAR(50) NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL,
-    updated_at      TIMESTAMPTZ NOT NULL,
-    version         INT NOT NULL DEFAULT 1
+    id                  UUID PRIMARY KEY,
+    tenant_id           UUID NOT NULL,
+    requester_id        UUID NOT NULL,
+    requester_name      VARCHAR(255) NOT NULL,
+    project_id          UUID NOT NULL,
+    project_name        VARCHAR(255) NOT NULL,
+    vm_name             VARCHAR(255) NOT NULL,
+    size                VARCHAR(10) NOT NULL,
+    cpu_cores           INT NOT NULL,
+    memory_gb           INT NOT NULL,
+    disk_gb             INT NOT NULL,
+    justification       TEXT NOT NULL,
+    status              VARCHAR(50) NOT NULL,
+    approved_by         UUID,
+    approved_by_name    VARCHAR(255),
+    rejected_by         UUID,
+    rejected_by_name    VARCHAR(255),
+    rejection_reason    TEXT,
+    created_at          TIMESTAMPTZ NOT NULL,
+    updated_at          TIMESTAMPTZ NOT NULL,
+    version             INT NOT NULL DEFAULT 1
 );
 
 CREATE INDEX idx_vm_requests_projection_tenant ON PUBLIC.vm_requests_projection (tenant_id);
 CREATE INDEX idx_vm_requests_projection_status ON PUBLIC.vm_requests_projection (status);
 CREATE INDEX idx_vm_requests_projection_requester ON PUBLIC.vm_requests_projection (requester_id);
 CREATE INDEX idx_vm_requests_projection_created ON PUBLIC.vm_requests_projection (created_at DESC);
+CREATE INDEX idx_vm_requests_projection_project ON PUBLIC.vm_requests_projection (project_id);
 
 -- [jooq ignore start]
 -- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)

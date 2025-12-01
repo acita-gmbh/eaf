@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, FileText, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -19,7 +20,6 @@ const navItems: NavItem[] = [
     label: 'My Requests',
     icon: <FileText className="h-5 w-5" />,
     href: '/requests',
-    badge: 0, // Pending count - will be dynamic in future stories
   },
   {
     label: 'Request New VM',
@@ -30,10 +30,12 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   className?: string
-  currentPath?: string
 }
 
-export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
+export function Sidebar({ className }: SidebarProps) {
+  const location = useLocation()
+  const currentPath = location.pathname
+
   return (
     <aside className={cn('w-56 border-r bg-card', className)}>
       <nav
@@ -46,8 +48,9 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
           const isActive = currentPath === item.href
 
           return (
-            <button
+            <Link
               key={item.href}
+              to={item.href}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 'hover:bg-accent hover:text-accent-foreground',
@@ -55,10 +58,6 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
                 isActive && 'border-l-2 border-primary bg-primary/10 text-primary rounded-l-none'
               )}
               aria-current={isActive ? 'page' : undefined}
-              // Note: Navigation will be functional when React Router is added in Story 2.4
-              onClick={() => {
-                // Placeholder - routing not implemented yet per ADR
-              }}
             >
               {item.icon}
               <span className="flex-1 text-left">{item.label}</span>
@@ -67,7 +66,7 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
                   {item.badge}
                 </Badge>
               )}
-            </button>
+            </Link>
           )
         })}
       </nav>

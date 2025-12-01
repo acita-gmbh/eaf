@@ -70,6 +70,70 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Frontend (dvmm-web)
+
+The frontend is a **React 19 + TypeScript + Vite** application at `dvmm/dvmm-web/`.
+
+### Frontend Commands
+
+```bash
+cd dvmm/dvmm-web
+
+npm run dev          # Start dev server (port 5173)
+npm run build        # Type-check and build for production
+npm run test         # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests
+npm run lint         # Run ESLint
+```
+
+### Key Constraints
+
+- **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
+- Use function components with TypeScript - class components are FORBIDDEN
+- **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+### E2E Testing with Playwright
+
+Use **@seontechnologies/playwright-utils** fixtures for consistent patterns:
+
+```tsx
+// Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key features:** `apiRequest` fixture, `recurse` polling, `log` integration, network interception, auth session persistence.
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.

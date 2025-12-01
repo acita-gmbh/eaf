@@ -76,6 +76,102 @@ Convention plugins for consistent configuration:
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Frontend (dvmm-web)
+
+The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.
+
+### Frontend Tech Stack
+
+- **React 19.2** with React Compiler (automatic optimization)
+- **Vite 7.2** with @vitejs/plugin-react (Babel-based)
+- **TypeScript 5.9**
+- **Tailwind CSS 4** with shadcn/ui components
+- **Vitest** for unit tests, **Playwright** for E2E tests
+- **@seontechnologies/playwright-utils** for E2E test fixtures
+
+### Frontend Commands
+
+```bash
+cd dvmm/dvmm-web
+
+npm run dev          # Start dev server (port 5173)
+npm run build        # Type-check and build for production
+npm run test         # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Run with Playwright UI mode
+npm run lint         # Run ESLint
+```
+
+### React Coding Standards
+
+**React Compiler handles memoization automatically. Manual optimization is PROHIBITED.**
+
+```tsx
+// FORBIDDEN - Manual memoization (ESLint will error)
+import { useMemo, useCallback, memo } from 'react'
+const memoizedValue = useMemo(() => computeExpensive(a, b), [a, b])
+
+// CORRECT - Let React Compiler optimize automatically
+const value = computeExpensive(a, b)
+function MyComponent() { ... }
+```
+
+### React Hook Form: useWatch over watch
+
+**Use `useWatch` instead of `watch()` for React Compiler compatibility.**
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')  // ESLint: react-hooks/incompatible-library
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+**Rationale:**
+- `watch()` returns a subscription that React Compiler cannot safely memoize
+- `useWatch` is a separate hook designed to work with React's rules of hooks
+
+### E2E Testing with Playwright
+
+**Use playwright-utils fixtures** for consistent testing patterns:
+
+```tsx
+// Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status, body } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key playwright-utils features:**
+- `apiRequest` fixture - Typed HTTP client for backend API testing
+- `recurse` - Polling utility for async conditions
+- `log` - Integrated logging with Playwright reports
+- Network interception and mocking utilities
+- Auth session persistence between test runs
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.

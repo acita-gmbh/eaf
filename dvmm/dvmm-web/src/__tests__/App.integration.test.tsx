@@ -1,11 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuth } from 'react-oidc-context'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { DashboardLayout } from '../components/layout'
 import { Dashboard } from '../pages/Dashboard'
 import { NewRequest } from '../pages/NewRequest'
+
+// Create a new QueryClient for each test
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  })
+}
 
 // Test-specific AppRoutes that doesn't use BrowserRouter (MemoryRouter is used instead)
 function TestableAppRoutes() {
@@ -46,11 +57,14 @@ function TestableAppRoutes() {
 }
 
 function TestApp({ initialEntries = ['/'] }: { initialEntries?: string[] }) {
+  const queryClient = createTestQueryClient()
   return (
     <ErrorBoundary>
-      <MemoryRouter initialEntries={initialEntries}>
-        <TestableAppRoutes />
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <TestableAppRoutes />
+        </MemoryRouter>
+      </QueryClientProvider>
     </ErrorBoundary>
   )
 }
@@ -125,10 +139,10 @@ describe('App Integration', () => {
   it('renders sidebar navigation in dashboard layout', () => {
     render(<TestApp />)
 
-    // Sidebar navigation should be present
+    // Sidebar navigation should be present with links (not buttons)
     expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /my requests/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /my requests/i })).toBeInTheDocument()
   })
 
   it('renders dashboard content with stats cards', () => {
@@ -144,24 +158,27 @@ describe('App Integration', () => {
   it('renders Request New VM CTA button in dashboard content', () => {
     render(<TestApp />)
 
-    // There are two "Request New VM" buttons - one in sidebar nav and one CTA in main content
-    // The CTA button has the "lg" size class (px-8 from h-10 size)
-    const ctaButtons = screen.getAllByRole('button', { name: /request new vm/i })
-    expect(ctaButtons.length).toBe(2) // One in sidebar, one CTA
+    // Sidebar has a link, main content has a CTA button
+    // Check the sidebar link
+    expect(screen.getByRole('link', { name: /request new vm/i })).toBeInTheDocument()
 
+    // Check the CTA button in main content
+    const ctaButton = screen.getByRole('button', { name: /request new vm/i })
+    expect(ctaButton).toBeInTheDocument()
     // The CTA button should have the primary styling (bg-primary)
-    const ctaButton = ctaButtons.find(btn => btn.className.includes('bg-primary'))
-    expect(ctaButton).toBeDefined()
+    expect(ctaButton.className).toContain('bg-primary')
   })
 
   it('renders My Requests section with empty state', () => {
     render(<TestApp />)
 
-    // "My Requests" appears in both sidebar nav and as a section heading
-    const myRequestsElements = screen.getAllByText('My Requests')
-    expect(myRequestsElements.length).toBeGreaterThanOrEqual(1)
+    // "My Requests" appears in sidebar nav as a link
+    expect(screen.getByRole('link', { name: /my requests/i })).toBeInTheDocument()
 
-    // Empty state text
+    // Dashboard shows "My Requests" section with empty state (in card title)
+    // The text appears twice: once in sidebar link, once in card title
+    const myRequestsElements = screen.getAllByText('My Requests')
+    expect(myRequestsElements).toHaveLength(2)
     expect(screen.getByText('No VMs requested yet')).toBeInTheDocument()
   })
 
