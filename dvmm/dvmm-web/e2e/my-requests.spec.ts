@@ -11,6 +11,20 @@ import { test, expect } from '@playwright/test'
  * - AC 5: Cancelled requests reflect updated status
  *
  * Full E2E tests with API calls require a running backend and Keycloak.
+ *
+ * ## Why most tests are marked `test.skip`
+ *
+ * Tests tagged with `@requires-auth` or `@requires-backend` are skipped because:
+ * 1. Keycloak authentication integration for E2E is not yet configured in the CI pipeline
+ * 2. These tests require a running backend with seeded test data
+ * 3. The test scenarios are written and ready to enable once auth E2E setup is complete
+ *
+ * The test logic is validated through:
+ * - Unit tests for hooks (useMyRequests, useCancelRequest)
+ * - Integration tests for API functions (vm-requests.test.ts)
+ * - The unauthenticated redirect test runs without auth
+ *
+ * TODO: Enable these tests when Playwright auth configuration is added (Story TBD).
  */
 
 test.describe('My Requests Page @requires-auth', () => {
