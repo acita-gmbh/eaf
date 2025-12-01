@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   createVmRequest,
+  getMyRequests,
   ApiError,
   isValidationError,
   isQuotaExceededError,
   type CreateVmRequestPayload,
   type ValidationErrorResponse,
   type QuotaExceededResponse,
+  type VmRequestSummary,
 } from './vm-requests'
 
 // Mock fetch globally
@@ -323,6 +325,193 @@ describe('vm-requests API', () => {
       expect(error.statusText).toBe('Bad Request')
       expect(error.body).toEqual({ message: 'Test' })
       expect(error.message).toBe('API Error: 400 Bad Request')
+    })
+  })
+
+  describe('getMyRequests', () => {
+    const accessToken = 'test-token'
+
+    it('transforms nested size object to flat fields', async () => {
+      // Backend returns nested size object
+      const backendResponse = {
+        items: [
+          {
+            id: 'req-1',
+            requesterName: 'John Doe',
+            projectId: 'proj-1',
+            projectName: 'Test Project',
+            vmName: 'test-vm',
+            size: { code: 'M', cpuCores: 4, memoryGb: 16, diskGb: 100 },
+            justification: 'Test reason',
+            status: 'PENDING',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({}, accessToken)
+
+      // Verify size is flattened
+      expect(result.items).toHaveLength(1)
+      const item = result.items[0]
+      expect(item.size).toBe('M')
+      expect(item.cpuCores).toBe(4)
+      expect(item.memoryGb).toBe(16)
+      expect(item.diskGb).toBe(100)
+    })
+
+    it('sends GET request with correct query parameters', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () =>
+          JSON.stringify({
+            items: [],
+            page: 1,
+            size: 25,
+            totalElements: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrevious: false,
+          }),
+      })
+
+      await getMyRequests({ page: 1, size: 25 }, accessToken)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/requests/my?page=1&size=25'),
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'include',
+        })
+      )
+    })
+
+    it('preserves pagination metadata from backend', async () => {
+      const backendResponse = {
+        items: [],
+        page: 2,
+        size: 10,
+        totalElements: 50,
+        totalPages: 5,
+        hasNext: true,
+        hasPrevious: true,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({ page: 2, size: 10 }, accessToken)
+
+      expect(result.page).toBe(2)
+      expect(result.size).toBe(10)
+      expect(result.totalElements).toBe(50)
+      expect(result.totalPages).toBe(5)
+      expect(result.hasNext).toBe(true)
+      expect(result.hasPrevious).toBe(true)
+    })
+
+    it('throws ApiError on 401 Unauthorized', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers(),
+        text: async () => JSON.stringify({ message: 'Token expired' }),
+      })
+
+      await expect(getMyRequests({}, accessToken)).rejects.toThrow(ApiError)
+
+      try {
+        await getMyRequests({}, accessToken)
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        const apiError = error as ApiError
+        expect(apiError.status).toBe(401)
+      }
+    })
+
+    it('transforms multiple items in response', async () => {
+      const backendResponse = {
+        items: [
+          {
+            id: 'req-1',
+            requesterName: 'User 1',
+            projectId: 'proj-1',
+            projectName: 'Project 1',
+            vmName: 'vm-1',
+            size: { code: 'S', cpuCores: 2, memoryGb: 4, diskGb: 50 },
+            justification: 'Reason 1',
+            status: 'PENDING',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+          {
+            id: 'req-2',
+            requesterName: 'User 2',
+            projectId: 'proj-2',
+            projectName: 'Project 2',
+            vmName: 'vm-2',
+            size: { code: 'XL', cpuCores: 16, memoryGb: 64, diskGb: 500 },
+            justification: 'Reason 2',
+            status: 'APPROVED',
+            createdAt: '2024-01-02T00:00:00Z',
+            updatedAt: '2024-01-02T00:00:00Z',
+          },
+        ],
+        page: 0,
+        size: 20,
+        totalElements: 2,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: async () => JSON.stringify(backendResponse),
+      })
+
+      const result = await getMyRequests({}, accessToken)
+
+      expect(result.items).toHaveLength(2)
+
+      // First item - size S
+      expect(result.items[0].size).toBe('S')
+      expect(result.items[0].cpuCores).toBe(2)
+      expect(result.items[0].memoryGb).toBe(4)
+      expect(result.items[0].diskGb).toBe(50)
+
+      // Second item - size XL
+      expect(result.items[1].size).toBe('XL')
+      expect(result.items[1].cpuCores).toBe(16)
+      expect(result.items[1].memoryGb).toBe(64)
+      expect(result.items[1].diskGb).toBe(500)
     })
   })
 })

@@ -20,9 +20,9 @@ import { test, expect } from '@playwright/test'
  * 3. The test scenarios are written and ready to enable once auth E2E setup is complete
  *
  * The test logic is validated through:
- * - Unit tests for hooks (useMyRequests, useCancelRequest)
  * - Integration tests for API functions (vm-requests.test.ts)
  * - The unauthenticated redirect test runs without auth
+ * - Component-level behavior verified by API and component structure
  *
  * TODO: Enable these tests when Playwright auth configuration is added (Story TBD).
  */
