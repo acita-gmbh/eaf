@@ -90,11 +90,11 @@ class VmRequestIntegrationTest {
             when {
                 token == TENANT_A_TOKEN -> {
                     println(">>> Matched tenant A token")
-                    Mono.just(createJwt(tenantAId, userAId, token))
+                    Mono.just(createJwt(tenantId = tenantAId, userId = userAId, tokenValue = token))
                 }
                 token == TENANT_B_TOKEN -> {
                     println(">>> Matched tenant B token")
-                    Mono.just(createJwt(tenantBId, userBId, token))
+                    Mono.just(createJwt(tenantId = tenantBId, userId = userBId, tokenValue = token))
                 }
                 token == "invalid-token" -> Mono.error(BadJwtException("Invalid token"))
                 else -> {

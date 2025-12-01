@@ -44,6 +44,7 @@ public class TestSecurityConfig(
             .authorizeExchange { auth ->
                 auth
                     .pathMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                    .pathMatchers("/api/csrf").authenticated()
                     .pathMatchers("/api/**").authenticated()
                     .anyExchange().authenticated()
             }
