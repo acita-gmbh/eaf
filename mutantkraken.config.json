@@ -1,0 +1,50 @@
+{
+  "general": {
+    "timeout": 300,
+    "operators": [
+      "NotNullAssertionOperator",
+      "ElvisRemoveOperator",
+      "ElvisLiteralChangeOperator",
+      "WhenRemoveBranchOperator",
+      "FunctionalReplacementOperator",
+      "FunctionalBinaryReplacementOperator",
+      "ArithmeticReplacementOperator",
+      "LogicalReplacementOperator",
+      "RelationalReplacementOperator",
+      "AssignmentReplacementOperator",
+      "UnaryRemovalOperator",
+      "UnaryReplacementOperator",
+      "LiteralChangeOperator"
+    ]
+  },
+  "ignore": {
+    "ignore_files": [
+      "^.*Test\\.kt$",
+      "^.*IntegrationTest\\.kt$",
+      "^.*Spec\\.kt$",
+      "^.*TestFixtures\\.kt$"
+    ],
+    "ignore_directories": [
+      "build",
+      "bin",
+      ".gradle",
+      ".idea",
+      "gradle",
+      "mutant-kraken-dist",
+      "dvmm",
+      "dvmm-web",
+      "build-logic",
+      "docs",
+      "scripts"
+    ]
+  },
+  "threading": {
+    "max_threads": 4
+  },
+  "output": {
+    "display_end_table": true
+  },
+  "logging": {
+    "log_level": "INFO"
+  }
+}

@@ -320,3 +320,9 @@ jspm_packages/
 node_modules/
 vendor/
 # BMAD (local only)
+
+# Mutant-Kraken (experimental mutation testing)
+mutant-kraken-dist/
+mutant-kraken-results/
+**/mutantkraken.config.json
+!mutantkraken.config.json

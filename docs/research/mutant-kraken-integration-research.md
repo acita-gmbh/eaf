@@ -248,6 +248,60 @@ Compare results with Pitest to identify:
 | Wait for Gradle plugin | None | None | High - proper integration later |
 | Arcmutate commercial | Medium (1 day) | Low | High - production-ready Kotlin support |
 
+## Experimental Setup (Implemented)
+
+The following experimental setup has been added to the project for evaluating Mutant-Kraken on EAF core modules.
+
+### Files Added
+
+| File | Purpose |
+|------|---------|
+| `mutantkraken.config.json` | Root configuration for experimental runs |
+| `scripts/run-mutant-kraken.sh` | Wrapper script for per-module execution |
+
+### Target Modules
+
+**Pure Kotlin (Recommended for testing):**
+- `eaf-core` - Domain primitives (Entity, AggregateRoot, ValueObject)
+- `eaf-auth` - IdP-agnostic authentication interfaces
+- `eaf-tenant` - Multi-tenancy primitives
+
+**Spring Modules (Higher risk of timeouts):**
+- `eaf-eventsourcing` - Event Store with PostgreSQL
+- `eaf-auth-keycloak` - Keycloak integration
+
+### Running the Experiment
+
+```bash
+# 1. Install mutant-kraken
+cargo install mutant-kraken
+
+# 2. Run on all pure Kotlin modules
+./scripts/run-mutant-kraken.sh --all
+
+# 3. Run on specific module
+./scripts/run-mutant-kraken.sh eaf-core
+
+# 4. View results
+open mutant-kraken-results/eaf-core/index.html
+```
+
+### Expected Output
+
+Results are collected in `mutant-kraken-results/<module>/`:
+- `index.html` - Interactive mutation report
+- `mutations.json` - Raw mutation data
+- Individual mutant files for inspection
+
+### Configuration Details
+
+The root `mutantkraken.config.json` excludes:
+- All DVMM product modules (focus on framework only)
+- Test files (`*Test.kt`, `*IntegrationTest.kt`)
+- Build directories
+
+Timeout is set to 300s to accommodate first-run compilation.
+
 ## Conclusion
 
 Mutant-Kraken represents a promising future for Kotlin-native mutation testing with its source-level approach and Kotlin-specific operators. However, for the EAF monorepo:
