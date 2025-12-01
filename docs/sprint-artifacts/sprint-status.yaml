@@ -133,7 +133,7 @@ development_status:
   2-4-vm-request-form-basic-fields: done          # Code review PASSED 2025-11-30
   2-5-vm-request-form-size-selector: done         # Code review PASSED 2025-11-30
   2-6-vm-request-form-submit-command: done            # Code review PASSED, merged 2025-12-01
-  2-7-my-requests-list-cancel: backlog
+  2-7-my-requests-list-cancel: ready-for-dev       # Validated and ready 2025-12-01
   2-8-request-status-timeline: backlog
   2-9-admin-approval-queue: backlog
   2-10-request-detail-view-admin: backlog
