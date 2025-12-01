@@ -1,6 +1,6 @@
 # Story 2.6: VM Request Form - Submit Command
 
-Status: review
+Status: done
 
 ## Story
 
