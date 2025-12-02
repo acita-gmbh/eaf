@@ -1,9 +1,21 @@
 package de.acci.dvmm.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import de.acci.dvmm.application.vmrequest.*
+import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
+import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
+import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
+import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
+import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
+import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
+import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
-import de.acci.dvmm.infrastructure.projection.*
+import de.acci.dvmm.infrastructure.projection.TimelineEventReadRepositoryAdapter
+import de.acci.dvmm.infrastructure.projection.VmRequestDetailRepositoryAdapter
+import de.acci.dvmm.infrastructure.projection.VmRequestProjectionRepository
+import de.acci.dvmm.infrastructure.projection.VmRequestProjectionUpdaterAdapter
+import de.acci.dvmm.infrastructure.projection.VmRequestReadRepositoryAdapter
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreObjectMapper
 import de.acci.eaf.eventsourcing.PostgresEventStore

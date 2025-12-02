@@ -1,5 +1,6 @@
 package de.acci.dvmm.application.vmrequest
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.acci.dvmm.domain.exceptions.InvalidStateException
 import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -101,6 +102,10 @@ public class CancelVmRequestHandler(
     private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater
 ) {
     private val logger = KotlinLogging.logger {}
+
+    private companion object {
+        private val objectMapper = jacksonObjectMapper()
+    }
 
     /**
      * Handle the cancel VM request command.
@@ -223,7 +228,9 @@ public class CancelVmRequestHandler(
                         eventType = TimelineEventType.CANCELLED,
                         actorId = command.userId,
                         actorName = null, // MVP: Actor name resolved at query time or left null
-                        details = command.reason?.let { """{"reason":"$it"}""" },
+                        details = command.reason?.let { reason ->
+                            objectMapper.writeValueAsString(mapOf("reason" to reason))
+                        },
                         occurredAt = metadata.timestamp
                     )
                 ).onFailure { projectionError ->
