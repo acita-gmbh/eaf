@@ -56,7 +56,11 @@ export function usePendingRequests(params: GetPendingRequestsParams = {}) {
       return getPendingRequests(queryParams, accessToken)
     },
     enabled: !!accessToken,
-    staleTime: 30000, // 30 seconds - reasonable for list data
+    staleTime: 10000, // 10 seconds before data considered stale
+    // AC requirement: 30s polling with jitter to prevent thundering herd
+    // Jitter: random 0-5s added to base 30s interval
+    refetchInterval: 30000 + Math.floor(Math.random() * 5000),
+    refetchIntervalInBackground: false, // Don't poll when tab inactive
     refetchOnWindowFocus: true,
   })
 }

@@ -258,7 +258,7 @@ GET /api/admin/projects - Distinct projects for filter
   - Accept optional `projectId` query parameter plus pagination (page,size default 0,25; max size 100)
   - Add audit log for admin fetch (tenant, adminId, project filter)
 
-- [ ] **Task 2.2: Add Backend Tests** (AC: All)
+- [x] **Task 2.2: Add Backend Tests** (AC: All)
   - Unit tests for `GetPendingRequestsHandler`
   - Integration tests for tenant isolation
   - Integration tests for pagination defaults/max size
@@ -267,19 +267,19 @@ GET /api/admin/projects - Distinct projects for filter
 
 ### Phase 3: Frontend - API & Hooks
 
-- [ ] **Task 3.1: Add API Function** (AC: 1, 2)
+- [x] **Task 3.1: Add API Function** (AC: 1, 2)
   - Create `src/api/admin-requests.ts`
   - Add `getPendingRequests(projectId?: string, page?: number, size?: number)` function
   - Add `getDistinctProjects()` function
   - Define `PendingRequest` TypeScript type
 
-- [ ] **Task 3.2: Create usePendingRequests Hook** (AC: 1, 2, 3, 8)
+- [x] **Task 3.2: Create usePendingRequests Hook** (AC: 1, 2, 3, 8)
   - Create `src/hooks/usePendingRequests.ts`
   - Use `useQuery` with `refetchInterval: 30000` and jitter; allow polling disable for tests
   - Set `staleTime: 10000` to prevent thrashing
   - Accept optional `projectId` filter plus pagination inputs
 
-- [ ] **Task 3.3: Create useProjects Hook (Dynamic)** (AC: 5)
+- [x] **Task 3.3: Create useProjects Hook (Dynamic)** (AC: 5)
   - Create `src/hooks/useProjects.ts` if not exists
   - Fetch distinct projects from backend `GET /api/admin/projects` (no mocks!)
   - Surface loading + error states to dropdown UI
@@ -287,7 +287,7 @@ GET /api/admin/projects - Distinct projects for filter
 
 ### Phase 4: Frontend - Components
 
-- [ ] **Task 4.1: Create PendingRequestsPage** (AC: 1, 7, 8, 9)
+- [x] **Task 4.1: Create PendingRequestsPage** (AC: 1, 7, 8, 9)
   - Create `src/pages/admin/PendingRequests.tsx`
   - Render "Open Requests" header with count badge
   - Handle loading and empty states
@@ -295,7 +295,7 @@ GET /api/admin/projects - Distinct projects for filter
   - **Reuse existing `components/admin/ApprovalQueue.tsx` scaffold if present**
   - **NO `useMemo`/`useCallback` allowed**
 
-- [ ] **Task 4.2: Create PendingRequestsTable** (AC: 2, 3, 4, 9, 10)
+- [x] **Task 4.2: Create PendingRequestsTable** (AC: 2, 3, 4, 9, 10)
   - Create `src/components/admin/PendingRequestsTable.tsx`
   - Columns: Requester, VM Name, Project, Size, Age, Actions (6 columns total)
   - **Reuse `StatusBadge` component from Story 2.7**
@@ -305,21 +305,21 @@ GET /api/admin/projects - Distinct projects for filter
   - Action buttons disabled with tooltip and `aria-label` for accessibility
   - Skeleton loader must match 6-column table structure
 
-- [ ] **Task 4.3: Create ProjectFilter** (AC: 5)
+- [x] **Task 4.3: Create ProjectFilter** (AC: 5)
   - Create `src/components/admin/ProjectFilter.tsx`
   - Dropdown with project list
   - Trigger filter on selection
   - Show "All Projects" as default option
   - Show spinner/skeleton on load and inline error with retry on failure
 
-- [ ] **Task 4.4: Add Route & Navigation** (AC: 1, 9)
+- [x] **Task 4.4: Add Route & Navigation** (AC: 1, 9)
   - Add route `/admin/requests` to `App.tsx`
   - Add admin navigation item to Sidebar (if not exists)
   - Ensure route protected for admin role and uses Admin Dashboard layout container
 
 ### Phase 5: E2E Tests
 
-- [ ] **Task 5.1: Playwright Tests** (AC: 1-9)
+- [x] **Task 5.1: Playwright Tests** (AC: 1-9)
   - Test admin login and sees pending requests
   - Test age highlighting for old requests
   - Test project filtering
@@ -519,11 +519,17 @@ Test coverage:
 ### New Files (Frontend)
 - `dvmm/dvmm-web/src/api/admin.ts`
 - `dvmm/dvmm-web/src/hooks/usePendingRequests.ts`
+- `dvmm/dvmm-web/src/hooks/usePendingRequests.test.ts`
 - `dvmm/dvmm-web/src/hooks/useProjects.ts`
+- `dvmm/dvmm-web/src/hooks/useProjects.test.ts`
+- `dvmm/dvmm-web/src/hooks/useIsAdmin.ts`
+- `dvmm/dvmm-web/src/hooks/useIsAdmin.test.ts`
 - `dvmm/dvmm-web/src/pages/admin/PendingRequests.tsx`
 - `dvmm/dvmm-web/src/components/admin/PendingRequestsTable.tsx`
+- `dvmm/dvmm-web/src/components/admin/__tests__/PendingRequestsTable.test.tsx`
 - `dvmm/dvmm-web/src/components/admin/ProjectFilter.tsx`
 - `dvmm/dvmm-web/src/components/auth/AdminProtectedRoute.tsx`
+- `dvmm/dvmm-web/src/components/auth/__tests__/AdminProtectedRoute.test.tsx`
 - `dvmm/dvmm-web/src/components/ui/table.tsx` (shadcn)
 - `dvmm/dvmm-web/src/components/ui/tooltip.tsx` (shadcn)
 - `dvmm/dvmm-web/src/components/ui/skeleton.tsx` (shadcn)
@@ -531,6 +537,7 @@ Test coverage:
 
 ### Modified Files
 - `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt`
+- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt` (bean registration)
 - `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestReadRepository.kt`
 - `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepository.kt`
 - `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
