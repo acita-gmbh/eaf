@@ -1,14 +1,15 @@
 # Tech Spec: DVMM TUI Admin Interface
 
-**Author:** Claude (AI Assistant)
+**Author:** DVMM Team
 **Date:** 2025-11-29
+**Version:** 2.0
 **Status:** Draft
-**Epic:** Post-MVP Enhancement
-**Related Analysis:** [TUI Analysis](../tui-analysis.md)
+**Epic:** 6 (Post-MVP Enhancement)
+**Related:** [TUI Analysis](../tui-analysis.md) | [Architecture](../architecture.md)
 
 ---
 
-## Overview
+## Executive Summary
 
 ### Problem Statement
 
@@ -16,228 +17,349 @@ Experienced administrators need a fast, keyboard-driven interface for routine op
 
 ### Solution
 
-Implement an optional Terminal User Interface (TUI) module using Lanterna, providing admin-focused workflows with full keyboard navigation.
+A standalone Terminal User Interface (TUI) application using Lanterna, communicating with `dvmm-app` via gRPC streaming over Unix socket for real-time updates and sub-millisecond latency.
 
-### Scope
+### Key Benefits
 
-**In Scope:**
-- Approval queue management
-- System health dashboard
-- Audit log viewer
-- CSV export functionality
-- Request filtering and search
-
-**Out of Scope:**
-- VM request creation (web-only)
-- User management (web-only)
-- Full reporting dashboards (web-only)
+| Benefit | Description |
+|---------|-------------|
+| **Real-time** | Server pushes events instantly when requests change state |
+| **Fast auth** | Unix user mapping for zero-friction SSH admin access |
+| **Low latency** | Unix socket (~0.1ms) vs HTTP overhead |
+| **Type-safe** | Protobuf contracts shared between client and server |
+| **Lightweight** | Single fat JAR, ~1s startup, no Spring in client |
 
 ---
 
-## Technical Design
+## Scope
 
-### Architecture Overview
+### In Scope
 
-The TUI is a **standalone CLI application** that communicates with the main `dvmm-app` via **gRPC streaming over Unix socket**. This enables:
+| Feature | Priority | Story |
+|---------|----------|-------|
+| Approval queue with real-time updates | Must | 6.1 |
+| Approve/Reject with keyboard shortcuts | Must | 6.2 |
+| System health dashboard (live) | Must | 6.3 |
+| Request detail view | Must | 6.4 |
+| Audit log viewer | Should | 6.5 |
+| CSV export | Should | 6.6 |
+| Unix user authentication | Must | 6.7 |
+| Token-based authentication (fallback) | Must | 6.8 |
 
-- **Real-time updates** - Server pushes events when requests change state
-- **Low latency** - Unix socket (~0.1ms) for local admin access
-- **Type safety** - Protobuf contracts shared between client and server
-- **Simple deployment** - Single binary, no embedded infrastructure
+### Out of Scope
+
+- VM request creation (web-only for MVP)
+- User management (web-only)
+- Full reporting dashboards (web-only)
+- Windows support (Linux/macOS only due to Unix sockets)
+
+### Dependencies
+
+| Dependency | Type | Required By |
+|------------|------|-------------|
+| Epic 2 (Core Workflow) complete | Epic | All stories |
+| Epic 3 (VM Provisioning) complete | Epic | Health dashboard |
+| gRPC server in dvmm-infrastructure | Story | 6.1 |
+| Event store subscription API | Story | 6.1, 6.3 |
+
+---
+
+## Functional Requirements
+
+| ID | Requirement | Story | Priority |
+|----|-------------|-------|----------|
+| TUI-FR1 | Admins can view pending approvals in real-time | 6.1 | Must |
+| TUI-FR2 | Admins can approve requests with keyboard shortcut | 6.2 | Must |
+| TUI-FR3 | Admins can reject requests with mandatory reason | 6.2 | Must |
+| TUI-FR4 | System displays live health status for all services | 6.3 | Must |
+| TUI-FR5 | Admins can view full request details | 6.4 | Must |
+| TUI-FR6 | Admins can view audit log entries | 6.5 | Should |
+| TUI-FR7 | Admins can export data to CSV | 6.6 | Should |
+| TUI-FR8 | System authenticates via Unix user mapping | 6.7 | Must |
+| TUI-FR9 | System falls back to token authentication | 6.8 | Must |
+| TUI-FR10 | UI updates automatically when events occur | 6.1 | Must |
+
+## Non-Functional Requirements
+
+| ID | Requirement | Target | Measurement |
+|----|-------------|--------|-------------|
+| TUI-NFR1 | Startup time | < 2s | Time from launch to login screen |
+| TUI-NFR2 | gRPC latency (local) | < 1ms | Round-trip via Unix socket |
+| TUI-NFR3 | Event propagation | < 100ms | Server event to UI update |
+| TUI-NFR4 | Memory footprint | < 128MB | JVM heap at steady state |
+| TUI-NFR5 | Terminal compatibility | xterm, iTerm2, GNOME Terminal | Manual testing matrix |
+| TUI-NFR6 | Concurrent sessions | 10 per server | Load test |
+
+---
+
+## Architecture
+
+### System Overview
 
 ```
-┌──────────────────────┐                    ┌─────────────────────────┐
-│  dvmm-tui (CLI)      │  Unix Socket       │  dvmm-app (Spring Boot) │
-│                      │  /var/run/dvmm.sock│                         │
-│  ┌────────────────┐  │ ←───────────────── │  ┌───────────────────┐  │
-│  │ gRPC Client    │  │  Server streaming  │  │ gRPC TUI Service  │  │
-│  │ - Commands     │  │  (push events)     │  │                   │  │
-│  │ - Subscriptions│  │ ──────────────────→│  │                   │  │
-│  └────────────────┘  │  Unary requests    │  └───────────────────┘  │
-│                      │                    │           ↓             │
-│  ┌────────────────┐  │                    │  ┌───────────────────┐  │
-│  │ Lanterna TUI   │  │                    │  │ Application Layer │  │
-│  └────────────────┘  │                    │  │ (CQRS/ES)         │  │
-└──────────────────────┘                    └─────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              DVMM TUI Architecture                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌───────────────────────┐              ┌─────────────────────────────────┐│
+│  │                       │              │                                 ││
+│  │    dvmm-tui (CLI)     │   Unix       │     dvmm-app (Spring Boot)      ││
+│  │    ════════════════   │   Socket     │     ══════════════════════      ││
+│  │                       │              │                                 ││
+│  │  ┌─────────────────┐  │  /var/run/   │  ┌───────────────────────────┐  ││
+│  │  │  gRPC Client    │◄─┼──dvmm.sock──►┼─►│    TuiGrpcService         │  ││
+│  │  │  ─────────────  │  │              │  │    ───────────────        │  ││
+│  │  │  • Commands     │  │   Streams    │  │    @GrpcService           │  ││
+│  │  │  • Subscriptions│  │   ◄────────  │  │                           │  ││
+│  │  └────────┬────────┘  │   Push       │  └─────────────┬─────────────┘  ││
+│  │           │           │   Events     │                │                ││
+│  │  ┌────────▼────────┐  │              │  ┌─────────────▼─────────────┐  ││
+│  │  │  Lanterna TUI   │  │              │  │   Application Layer       │  ││
+│  │  │  ─────────────  │  │              │  │   ─────────────────       │  ││
+│  │  │  Terminal UI    │  │              │  │   CommandGateway          │  ││
+│  │  └─────────────────┘  │              │  │   QueryGateway            │  ││
+│  │                       │              │  │   EventStore.subscribe()  │  ││
+│  └───────────────────────┘              │  └───────────────────────────┘  ││
+│                                         │                                 ││
+│           Standalone JAR                │         Spring Boot App         ││
+│           (no Spring)                   │                                 ││
+│                                         └─────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Module Structure
 
 ```
 dvmm/
-├── dvmm-tui-protocol/                      # Shared protobuf definitions
+├── dvmm-tui-protocol/                    ◄── Shared Protobuf definitions
 │   ├── build.gradle.kts
 │   └── src/main/proto/
 │       └── dvmm_tui.proto
 │
-├── dvmm-tui/                               # TUI client application
+├── dvmm-tui/                             ◄── Standalone TUI client (NO Spring)
 │   ├── build.gradle.kts
 │   └── src/
-│       ├── main/
-│       │   ├── kotlin/
-│       │   │   └── de/acci/dvmm/tui/
-│       │   │       ├── DvmmTuiApplication.kt       # Entry point (no Spring)
-│       │   │       ├── TuiRunner.kt                # Main loop
-│       │   │       │
-│       │   │       ├── config/
-│       │   │       │   └── TuiConfig.kt            # CLI config loading
-│       │   │       │
-│       │   │       ├── auth/
-│       │   │       │   ├── TuiAuthenticator.kt     # Unix user / token auth
-│       │   │       │   └── TuiSecurityContext.kt   # User/Tenant context
-│       │   │       │
-│       │   │       ├── grpc/
-│       │   │       │   ├── TuiGrpcClient.kt        # gRPC channel setup
-│       │   │       │   └── EventSubscriber.kt      # Stream handler
-│       │   │       │
-│       │   │       ├── dsl/                        # Kotlin DSL wrapper
-│       │   │       │   ├── DvmmWindow.kt
-│       │   │       │   ├── DvmmPanel.kt
-│       │   │       │   ├── DvmmTable.kt
-│       │   │       │   └── DvmmActionList.kt
-│       │   │       │
-│       │   │       ├── screens/
-│       │   │       │   ├── MainScreen.kt           # Main dashboard
-│       │   │       │   ├── ApprovalScreen.kt       # Approval queue
-│       │   │       │   ├── RequestDetailScreen.kt  # Single request view
-│       │   │       │   ├── HealthScreen.kt         # System health
-│       │   │       │   ├── AuditScreen.kt          # Audit log viewer
-│       │   │       │   └── LoginScreen.kt          # Authentication
-│       │   │       │
-│       │   │       └── widgets/
-│       │   │           ├── StatusIndicator.kt      # ● OK / ● Error
-│       │   │           ├── RequestTable.kt         # VM request list
-│       │   │           ├── HealthPanel.kt          # Health metrics
-│       │   │           └── KeyHelpBar.kt           # Bottom help bar
-│       │   │
-│       │   └── resources/
-│       │       ├── tui-config.yml                  # Default config
-│       │       └── banner-tui.txt                  # ASCII banner
-│       │
-│       └── test/
-│           └── kotlin/
-│               └── de/acci/dvmm/tui/
-│                   ├── screens/
-│                   │   └── ApprovalScreenTest.kt
-│                   └── grpc/
-│                       └── TuiGrpcClientTest.kt
+│       ├── main/kotlin/de/acci/dvmm/tui/
+│       │   ├── DvmmTuiApplication.kt           # Entry point
+│       │   ├── TuiRunner.kt                    # Main loop
+│       │   ├── config/TuiConfig.kt             # YAML config loading
+│       │   ├── auth/
+│       │   │   ├── TuiAuthenticator.kt         # Unix user / token auth
+│       │   │   └── TuiSecurityContext.kt       # Session state
+│       │   ├── grpc/
+│       │   │   ├── TuiGrpcClient.kt            # Unix socket channel
+│       │   │   └── EventSubscriber.kt          # Stream handler
+│       │   ├── dsl/                            # Kotlin DSL for Lanterna
+│       │   │   ├── DvmmWindow.kt
+│       │   │   ├── DvmmPanel.kt
+│       │   │   └── DvmmTable.kt
+│       │   ├── screens/
+│       │   │   ├── MainScreen.kt
+│       │   │   ├── ApprovalScreen.kt
+│       │   │   ├── RequestDetailScreen.kt
+│       │   │   ├── HealthScreen.kt
+│       │   │   ├── AuditScreen.kt
+│       │   │   └── LoginScreen.kt
+│       │   └── widgets/
+│       │       ├── StatusIndicator.kt
+│       │       ├── RequestTable.kt
+│       │       └── KeyHelpBar.kt
+│       └── test/kotlin/de/acci/dvmm/tui/
+│           ├── grpc/TuiGrpcClientTest.kt       # gRPC mock tests
+│           └── screens/ApprovalScreenTest.kt
 │
 └── dvmm-infrastructure/
-    └── src/main/kotlin/de/acci/dvmm/infrastructure/
-        └── grpc/
-            └── TuiGrpcService.kt                   # Server-side gRPC impl
+    └── src/main/kotlin/.../grpc/
+        ├── TuiGrpcService.kt             ◄── Server-side gRPC impl
+        └── TuiAuthService.kt             ◄── Unix user validation
 ```
 
-### Dependencies
+### Dependency Rules
 
-#### Protocol Module (shared)
-
-```kotlin
-// dvmm-tui-protocol/build.gradle.kts
-plugins {
-    id("eaf.kotlin-conventions")
-    id("com.google.protobuf") version "0.9.4"
-}
-
-dependencies {
-    api("io.grpc:grpc-kotlin-stub:1.4.1")
-    api("io.grpc:grpc-protobuf:1.62.2")
-    api("com.google.protobuf:protobuf-kotlin:3.25.3")
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.25.3"
-    }
-    plugins {
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.62.2"
-        }
-        create("grpckt") {
-            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.1:jdk8@jar"
-        }
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                create("grpc")
-                create("grpckt")
-            }
-            it.builtins {
-                create("kotlin")
-            }
-        }
-    }
-}
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Module Dependency Graph                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   dvmm-tui-protocol ◄───────────────────────────────────────┐   │
+│         │                                                    │   │
+│         │ (Protobuf stubs)                                  │   │
+│         │                                                    │   │
+│         ▼                                                    │   │
+│   ┌───────────┐                                    ┌────────┴─┐ │
+│   │ dvmm-tui  │                                    │ dvmm-    │ │
+│   │ (client)  │                                    │ infra    │ │
+│   └───────────┘                                    └────────┬─┘ │
+│         │                                                   │   │
+│         │ NO dependency                                     │   │
+│         ╳ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ╳   │
+│                                                                  │
+│   Client and Server share ONLY the protocol module               │
+│   Client has NO Spring dependencies                              │
+│   Client has NO access to dvmm-application internals             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-#### TUI Client (standalone, no Spring)
+---
 
-```kotlin
-// dvmm-tui/build.gradle.kts
-plugins {
-    id("eaf.kotlin-conventions")
-    application
-}
+## Screen Designs
 
-dependencies {
-    // Shared protocol definitions
-    implementation(project(":dvmm:dvmm-tui-protocol"))
+### Main Dashboard
 
-    // gRPC client with Unix socket support
-    implementation("io.grpc:grpc-netty-shaded:1.62.2")
-    implementation("io.grpc:grpc-kotlin-stub:1.4.1")
-
-    // Netty Unix socket transport
-    implementation("io.netty:netty-transport-native-epoll:4.1.107.Final:linux-x86_64")
-    implementation("io.netty:netty-transport-native-unix-common:4.1.107.Final")
-
-    // TUI framework
-    implementation("com.googlecode.lanterna:lanterna:3.1.2")
-
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
-
-    // Config loading (lightweight, no Spring)
-    implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
-    implementation("com.sksamuel.hoplite:hoplite-yaml:2.7.5")
-
-    // Testing
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("io.grpc:grpc-testing:1.62.2")
-}
-
-application {
-    mainClass.set("de.acci.dvmm.tui.DvmmTuiApplicationKt")
-}
-
-// Build native executable (optional, for faster startup)
-tasks.register<Jar>("fatJar") {
-    archiveClassifier.set("all")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest { attributes["Main-Class"] = "de.acci.dvmm.tui.DvmmTuiApplicationKt" }
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get())
-}
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  DVMM Admin Console v1.0                              Tenant: acme-corp      ║
+║  User: admin@acme.de                                  Session: 2h 15m   ● ○  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  ╭─────────────────────────── Quick Stats ───────────────────────────────╮   ║
+║  │                                                                       │   ║
+║  │    🟡 Pending: 3          🟢 Active VMs: 47         🔴 Failed: 2      │   ║
+║  │                                                                       │   ║
+║  ╰───────────────────────────────────────────────────────────────────────╯   ║
+║                                                                              ║
+║  ┌─────────────── Navigation ───────────────┐  ┌─── System Health ────────┐  ║
+║  │                                          │  │                          │  ║
+║  │   [1]  Approval Queue              (3)   │  │  VMware API    ● 42ms    │  ║
+║  │   [2]  Request History                   │  │  Keycloak      ● 18ms    │  ║
+║  │   [3]  Audit Log                         │  │  Event Store   ●  5ms    │  ║
+║  │   [4]  System Health                     │  │  PostgreSQL    ●  3ms    │  ║
+║  │   [5]  Export Reports                    │  │                          │  ║
+║  │   ─────────────────────────────────────  │  │  Last: 5s ago   ● Live   │  ║
+║  │   [Q]  Quit                              │  │                          │  ║
+║  │                                          │  └──────────────────────────┘  ║
+║  └──────────────────────────────────────────┘                                ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  [1-5] Navigate    [Q] Quit    [?] Help                          ● Connected ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-#### Server-side gRPC (in dvmm-infrastructure)
+### Approval Queue (with Real-Time Updates)
 
-```kotlin
-// dvmm-infrastructure/build.gradle.kts (add to existing)
-dependencies {
-    // ... existing dependencies ...
-
-    // gRPC server for TUI
-    implementation(project(":dvmm:dvmm-tui-protocol"))
-    implementation("io.grpc:grpc-netty-shaded:1.62.2")
-    implementation("io.grpc:grpc-kotlin-stub:1.4.1")
-    implementation("net.devh:grpc-server-spring-boot-starter:3.0.0.RELEASE")
-}
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  Approval Queue                                          3 Pending Requests  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  ┏━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓  ║
+║  ┃     ┃ ID           ┃ VM Name              ┃  Size  ┃ Requester         ┃  ║
+║  ┣━━━━━╋━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━╋━━━━━━━━━━━━━━━━━━━┫  ║
+║  ┃ ▶▶  ┃ REQ-0042     ┃ web-server-prod      ┃   L    ┃ john@acme.de      ┃  ║
+║  ┃     ┃ REQ-0043     ┃ db-staging           ┃   M    ┃ jane@acme.de      ┃  ║
+║  ┃     ┃ REQ-0044     ┃ dev-sandbox          ┃   S    ┃ dev@acme.de       ┃  ║
+║  ┗━━━━━┻━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━┻━━━━━━━━━━━━━━━━━━━┛  ║
+║                                                                              ║
+║  ╭──────────────────────────── Request Details ─────────────────────────────╮║
+║  │                                                                          │║
+║  │  Request ID      REQ-0042                                                │║
+║  │  VM Name         web-server-prod                                         │║
+║  │  Size            L  (8 vCPU, 32 GB RAM, 500 GB Disk)                     │║
+║  │  Project         Production Infrastructure                               │║
+║  │  Requester       john@acme.de                                            │║
+║  │  Submitted       2025-11-29 14:23:45                                     │║
+║  │  ───────────────────────────────────────────────────────────────────     │║
+║  │  Justification   Production web server for Q4 product launch.            │║
+║  │                  Expected traffic: 10k concurrent users.                 │║
+║  │                                                                          │║
+║  ╰──────────────────────────────────────────────────────────────────────────╯║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  [A]pprove  [R]eject  [↑↓] Navigate  [Enter] Details  [Esc] Back    ● Live  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-### Protobuf Service Definition
+### Rejection Dialog
+
+```
+                    ╔═══════════════════════════════════════════╗
+                    ║        Reject Request REQ-0042            ║
+                    ╠═══════════════════════════════════════════╣
+                    ║                                           ║
+                    ║  Reason (required):                       ║
+                    ║  ┌─────────────────────────────────────┐  ║
+                    ║  │ Exceeds department quota for this   │  ║
+                    ║  │ quarter. Please resubmit in Q1 or   │  ║
+                    ║  │ request budget increase first.      │  ║
+                    ║  │                                     │  ║
+                    ║  │                                     │  ║
+                    ║  └─────────────────────────────────────┘  ║
+                    ║                                           ║
+                    ║      [ Confirm ]        [ Cancel ]        ║
+                    ║                                           ║
+                    ╚═══════════════════════════════════════════╝
+```
+
+### System Health Dashboard
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  System Health                                              ● Live Updates   ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────┐ ║
+║  │  Service              Status      Latency       Last Check              │ ║
+║  ├─────────────────────────────────────────────────────────────────────────┤ ║
+║  │  VMware vSphere API   ● Healthy     42ms        2s ago                  │ ║
+║  │  Keycloak             ● Healthy     18ms        2s ago                  │ ║
+║  │  Event Store          ● Healthy      5ms        2s ago                  │ ║
+║  │  PostgreSQL           ● Healthy      3ms        2s ago                  │ ║
+║  │  Email Service        ● Healthy     89ms        2s ago                  │ ║
+║  │  ─────────────────────────────────────────────────────────────────────  │ ║
+║  │  Redis Cache          ○ Degraded   450ms        2s ago                  │ ║
+║  │                       └─ High latency detected                          │ ║
+║  └─────────────────────────────────────────────────────────────────────────┘ ║
+║                                                                              ║
+║  ╭─────────────────────────── Uptime Summary ───────────────────────────────╮║
+║  │                                                                          │║
+║  │   Today: 100%        This Week: 99.8%        This Month: 99.95%         │║
+║  │                                                                          │║
+║  ╰──────────────────────────────────────────────────────────────────────────╯║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  [R] Refresh Now    [Esc] Back                               Last: 2s ago   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Legend:  ● Healthy (< 100ms)   ○ Degraded (100-500ms)   ✖ Unhealthy (> 500ms/error)
+```
+
+### Audit Log Viewer
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  Audit Log                                                    Filter: All    ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  ┌─────────────────────────────────────────────────────────────────────────┐ ║
+║  │ Timestamp            Event                Actor           Entity        │ ║
+║  ├─────────────────────────────────────────────────────────────────────────┤ ║
+║  │ 2025-11-29 14:45:02  REQUEST_APPROVED     admin@acme.de   REQ-0041      │ ║
+║  │ 2025-11-29 14:44:58  VM_PROVISIONED       system          VM-web-03     │ ║
+║  │ 2025-11-29 14:42:11  REQUEST_SUBMITTED    john@acme.de    REQ-0042      │ ║
+║  │ 2025-11-29 14:40:33  REQUEST_REJECTED     admin@acme.de   REQ-0040      │ ║
+║  │ 2025-11-29 14:38:01  USER_LOGIN           jane@acme.de    session-xyz   │ ║
+║  │ 2025-11-29 14:35:22  REQUEST_APPROVED     admin@acme.de   REQ-0039      │ ║
+║  │                                                                         │ ║
+║  │                           ─ ─ ─ ─ ─ ─ ─ ─                               │ ║
+║  │                        Page 1 of 15 (142 entries)                       │ ║
+║  └─────────────────────────────────────────────────────────────────────────┘ ║
+║                                                                              ║
+║  ╭─ Event Detail ───────────────────────────────────────────────────────────╮║
+║  │ Event:    REQUEST_APPROVED                                               │║
+║  │ Actor:    admin@acme.de (Admin)                                          │║
+║  │ Entity:   REQ-0041                                                       │║
+║  │ Details:  VM request approved. Comment: "Approved for Q4 launch"         │║
+║  ╰──────────────────────────────────────────────────────────────────────────╯║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  [/] Filter  [E] Export CSV  [PgUp/Dn] Page  [↑↓] Select  [Esc] Back        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## Protobuf Service Definition
 
 ```protobuf
 // dvmm-tui-protocol/src/main/proto/dvmm_tui.proto
@@ -247,7 +369,6 @@ package de.acci.dvmm.tui;
 option java_multiple_files = true;
 option java_package = "de.acci.dvmm.tui.proto";
 
-// Main TUI service - all operations for the admin interface
 service DvmmTuiService {
   // Authentication
   rpc Authenticate(AuthRequest) returns (AuthResponse);
@@ -261,7 +382,7 @@ service DvmmTuiService {
   rpc GetRequestDetails(GetDetailsRequest) returns (VmRequestDetails);
   rpc GetAuditLog(GetAuditLogRequest) returns (GetAuditLogResponse);
 
-  // Subscriptions (server streaming) - real-time updates
+  // Subscriptions (server streaming)
   rpc SubscribeApprovals(SubscribeRequest) returns (stream ApprovalEvent);
   rpc SubscribeHealth(SubscribeRequest) returns (stream HealthUpdate);
 }
@@ -269,8 +390,8 @@ service DvmmTuiService {
 // === Authentication ===
 message AuthRequest {
   oneof method {
-    string token = 1;           // JWT token
-    string unix_user = 2;       // Local Unix username (server validates)
+    string token = 1;
+    string unix_user = 2;
   }
 }
 
@@ -279,7 +400,7 @@ message AuthResponse {
   string user_id = 2;
   string tenant_id = 3;
   repeated string roles = 4;
-  string session_token = 5;     // Short-lived session token for subsequent calls
+  string session_token = 5;
   string error_message = 6;
 }
 
@@ -291,7 +412,7 @@ message ApproveCommand {
 
 message RejectCommand {
   string request_id = 1;
-  string reason = 2;            // Required
+  string reason = 2;
 }
 
 message CommandResult {
@@ -302,8 +423,8 @@ message CommandResult {
 
 // === Queries ===
 message GetApprovalsRequest {
-  optional int32 limit = 1;
-  optional int32 offset = 2;
+  int32 limit = 1;
+  int32 offset = 2;
 }
 
 message GetApprovalsResponse {
@@ -314,9 +435,9 @@ message GetApprovalsResponse {
 message VmRequestSummary {
   string id = 1;
   string vm_name = 2;
-  string size = 3;              // S, M, L, XL
+  string size = 3;
   string requester_email = 4;
-  int64 submitted_at = 5;       // Unix timestamp
+  int64 submitted_at = 5;
   string project = 6;
 }
 
@@ -342,11 +463,13 @@ message GetAuditLogRequest {
   optional int64 from_timestamp = 1;
   optional int64 to_timestamp = 2;
   optional string event_type = 3;
-  optional int32 limit = 4;
+  int32 limit = 4;
+  int32 offset = 5;
 }
 
 message GetAuditLogResponse {
   repeated AuditLogEntry entries = 1;
+  int32 total_count = 2;
 }
 
 message AuditLogEntry {
@@ -358,16 +481,14 @@ message AuditLogEntry {
 }
 
 // === Subscriptions ===
-message SubscribeRequest {
-  // Empty - tenant scoped via auth context
-}
+message SubscribeRequest {}
 
 message ApprovalEvent {
   string request_id = 1;
   ApprovalEventType type = 2;
   string actor_id = 3;
   int64 timestamp = 4;
-  optional VmRequestSummary request = 5;  // Included for SUBMITTED events
+  optional VmRequestSummary request = 5;
 }
 
 enum ApprovalEventType {
@@ -386,645 +507,17 @@ message HealthUpdate {
 }
 
 message ServiceHealth {
-  string name = 1;              // e.g., "vmware", "keycloak", "postgres"
-  bool healthy = 2;
+  string name = 1;
+  HealthStatus status = 2;
   int32 response_time_ms = 3;
   optional string error_message = 4;
 }
-```
 
-### Entry Point (TUI Client)
-
-```kotlin
-// DvmmTuiApplication.kt
-package de.acci.dvmm.tui
-
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory
-import com.googlecode.lanterna.screen.TerminalScreen
-import com.googlecode.lanterna.gui2.MultiWindowTextGUI
-import com.googlecode.lanterna.gui2.DefaultWindowManager
-import com.googlecode.lanterna.gui2.EmptySpace
-import de.acci.dvmm.tui.auth.TuiAuthenticator
-import de.acci.dvmm.tui.config.TuiConfig
-import de.acci.dvmm.tui.grpc.TuiGrpcClient
-import de.acci.dvmm.tui.screens.MainScreen
-import kotlinx.coroutines.runBlocking
-
-fun main(args: Array<String>) = runBlocking {
-    val config = TuiConfig.load()
-    val grpcClient = TuiGrpcClient(config.socketPath)
-
-    val terminal = DefaultTerminalFactory().createTerminal()
-    val screen = TerminalScreen(terminal).apply { startScreen() }
-
-    try {
-        val gui = MultiWindowTextGUI(screen, DefaultWindowManager(), EmptySpace())
-
-        // Authenticate (Unix user or token)
-        val authenticator = TuiAuthenticator(grpcClient, config)
-        val authContext = authenticator.authenticate(gui, args)
-
-        // Launch main screen with real-time subscriptions
-        val mainScreen = MainScreen(grpcClient, authContext)
-        mainScreen.show(gui)
-
-    } finally {
-        grpcClient.close()
-        screen.stopScreen()
-        terminal.close()
-    }
-}
-```
-
-### gRPC Client with Unix Socket
-
-```kotlin
-// grpc/TuiGrpcClient.kt
-package de.acci.dvmm.tui.grpc
-
-import de.acci.dvmm.tui.proto.*
-import io.grpc.ManagedChannel
-import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
-import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel
-import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup
-import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress
-import kotlinx.coroutines.flow.Flow
-import java.util.concurrent.TimeUnit
-
-class TuiGrpcClient(socketPath: String) : AutoCloseable {
-
-    private val channel: ManagedChannel = NettyChannelBuilder
-        .forAddress(DomainSocketAddress(socketPath))
-        .eventLoopGroup(EpollEventLoopGroup())
-        .channelType(EpollDomainSocketChannel::class.java)
-        .usePlaintext()  // Unix socket is already secure (filesystem permissions)
-        .build()
-
-    private val stub = DvmmTuiServiceGrpcKt.DvmmTuiServiceCoroutineStub(channel)
-
-    // Session token set after authentication
-    private var sessionToken: String? = null
-
-    private fun authenticatedStub() = sessionToken?.let {
-        stub.withCallCredentials(SessionTokenCredentials(it))
-    } ?: stub
-
-    // === Authentication ===
-
-    suspend fun authenticate(request: AuthRequest): AuthResponse {
-        val response = stub.authenticate(request)
-        if (response.success) {
-            sessionToken = response.sessionToken
-        }
-        return response
-    }
-
-    // === Commands ===
-
-    suspend fun approveRequest(requestId: String, comment: String? = null): CommandResult {
-        return authenticatedStub().approveRequest(
-            ApproveCommand.newBuilder()
-                .setRequestId(requestId)
-                .apply { comment?.let { setComment(it) } }
-                .build()
-        )
-    }
-
-    suspend fun rejectRequest(requestId: String, reason: String): CommandResult {
-        return authenticatedStub().rejectRequest(
-            RejectCommand.newBuilder()
-                .setRequestId(requestId)
-                .setReason(reason)
-                .build()
-        )
-    }
-
-    // === Queries ===
-
-    suspend fun getPendingApprovals(limit: Int = 50): List<VmRequestSummary> {
-        val response = authenticatedStub().getPendingApprovals(
-            GetApprovalsRequest.newBuilder().setLimit(limit).build()
-        )
-        return response.requestsList
-    }
-
-    suspend fun getRequestDetails(requestId: String): VmRequestDetails {
-        return authenticatedStub().getRequestDetails(
-            GetDetailsRequest.newBuilder().setRequestId(requestId).build()
-        )
-    }
-
-    // === Subscriptions (real-time) ===
-
-    fun subscribeToApprovals(): Flow<ApprovalEvent> {
-        return authenticatedStub().subscribeApprovals(SubscribeRequest.getDefaultInstance())
-    }
-
-    fun subscribeToHealth(): Flow<HealthUpdate> {
-        return authenticatedStub().subscribeHealth(SubscribeRequest.getDefaultInstance())
-    }
-
-    override fun close() {
-        channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
-    }
-}
-```
-
-### Server-side gRPC Service
-
-```kotlin
-// dvmm-infrastructure/src/main/kotlin/.../grpc/TuiGrpcService.kt
-package de.acci.dvmm.infrastructure.grpc
-
-import de.acci.dvmm.application.commands.ApproveVmRequestCommand
-import de.acci.dvmm.application.commands.RejectVmRequestCommand
-import de.acci.dvmm.application.queries.GetPendingApprovalsQuery
-import de.acci.dvmm.tui.proto.*
-import de.acci.eaf.cqrs.command.CommandGateway
-import de.acci.eaf.cqrs.query.QueryGateway
-import de.acci.eaf.eventsourcing.EventStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import net.devh.boot.grpc.server.service.GrpcService
-
-@GrpcService
-class TuiGrpcService(
-    private val commandGateway: CommandGateway,
-    private val queryGateway: QueryGateway,
-    private val eventStore: EventStore,
-    private val authService: TuiAuthService
-) : DvmmTuiServiceGrpcKt.DvmmTuiServiceCoroutineImplBase() {
-
-    override suspend fun authenticate(request: AuthRequest): AuthResponse {
-        return authService.authenticate(request)
-    }
-
-    override suspend fun approveRequest(request: ApproveCommand): CommandResult {
-        val context = currentTenantContext()
-        return try {
-            commandGateway.send(ApproveVmRequestCommand(
-                requestId = VmRequestId(request.requestId),
-                tenantId = context.tenantId,
-                approverId = context.userId,
-                comment = request.comment.takeIf { it.isNotBlank() }
-            ))
-            CommandResult.newBuilder().setSuccess(true).build()
-        } catch (e: Exception) {
-            CommandResult.newBuilder()
-                .setSuccess(false)
-                .setErrorMessage(e.message ?: "Unknown error")
-                .build()
-        }
-    }
-
-    override suspend fun rejectRequest(request: RejectCommand): CommandResult {
-        val context = currentTenantContext()
-        return try {
-            commandGateway.send(RejectVmRequestCommand(
-                requestId = VmRequestId(request.requestId),
-                tenantId = context.tenantId,
-                rejecterId = context.userId,
-                reason = request.reason
-            ))
-            CommandResult.newBuilder().setSuccess(true).build()
-        } catch (e: Exception) {
-            CommandResult.newBuilder()
-                .setSuccess(false)
-                .setErrorMessage(e.message ?: "Unknown error")
-                .build()
-        }
-    }
-
-    override suspend fun getPendingApprovals(request: GetApprovalsRequest): GetApprovalsResponse {
-        val context = currentTenantContext()
-        val approvals = queryGateway.query(
-            GetPendingApprovalsQuery(tenantId = context.tenantId)
-        )
-        return GetApprovalsResponse.newBuilder()
-            .addAllRequests(approvals.map { it.toProto() })
-            .setTotalCount(approvals.size)
-            .build()
-    }
-
-    // Real-time subscription - streams events as they occur
-    override fun subscribeApprovals(request: SubscribeRequest): Flow<ApprovalEvent> {
-        val context = currentTenantContext()
-        return eventStore
-            .subscribeToCategory("VmRequest", context.tenantId)
-            .map { event -> event.toApprovalEvent() }
-    }
-
-    override fun subscribeHealth(request: SubscribeRequest): Flow<HealthUpdate> {
-        return healthMonitor.healthUpdates()
-    }
-}
-```
-
----
-
-## Kotlin DSL Wrapper
-
-To provide idiomatic Kotlin syntax over Lanterna's Java API:
-
-```kotlin
-// dsl/DvmmWindow.kt
-package de.acci.dvmm.tui.dsl
-
-import com.googlecode.lanterna.gui2.*
-
-fun dvmmWindow(
-    title: String,
-    hints: Set<Window.Hint> = setOf(Window.Hint.CENTERED),
-    init: DvmmWindowBuilder.() -> Unit
-): BasicWindow {
-    return DvmmWindowBuilder(title, hints).apply(init).build()
-}
-
-class DvmmWindowBuilder(
-    private val title: String,
-    private val hints: Set<Window.Hint>
-) {
-    private val components = mutableListOf<Component>()
-    private var layout: LayoutManager = LinearLayout(Direction.VERTICAL)
-
-    fun gridLayout(columns: Int, init: GridPanelBuilder.() -> Unit) {
-        layout = GridLayout(columns)
-        components.addAll(GridPanelBuilder().apply(init).components)
-    }
-
-    fun linearLayout(direction: Direction = Direction.VERTICAL, init: LinearPanelBuilder.() -> Unit) {
-        layout = LinearLayout(direction)
-        components.addAll(LinearPanelBuilder().apply(init).components)
-    }
-
-    fun build(): BasicWindow {
-        val panel = Panel(layout)
-        components.forEach { panel.addComponent(it) }
-        return BasicWindow(title).apply {
-            setHints(hints)
-            component = panel
-        }
-    }
-}
-```
-
-```kotlin
-// dsl/DvmmTable.kt
-package de.acci.dvmm.tui.dsl
-
-import com.googlecode.lanterna.gui2.table.Table
-
-fun <T> dvmmTable(
-    vararg columns: String,
-    init: DvmmTableBuilder<T>.() -> Unit
-): Table<T> {
-    return DvmmTableBuilder<T>(columns.toList()).apply(init).build()
-}
-
-class DvmmTableBuilder<T>(private val columns: List<String>) {
-    private val rows = mutableListOf<List<T>>()
-    var onSelect: ((row: Int, data: List<T>) -> Unit)? = null
-
-    fun row(vararg cells: T) {
-        rows.add(cells.toList())
-    }
-
-    fun rows(data: List<List<T>>) {
-        rows.addAll(data)
-    }
-
-    fun build(): Table<T> {
-        val table = Table<T>(*columns.toTypedArray())
-        rows.forEach { table.tableModel.addRow(it) }
-        onSelect?.let { handler ->
-            table.setSelectAction {
-                handler(table.selectedRow, table.tableModel.getRow(table.selectedRow))
-            }
-        }
-        return table
-    }
-}
-```
-
-### DSL Usage Example
-
-```kotlin
-// screens/ApprovalScreen.kt
-package de.acci.dvmm.tui.screens
-
-class ApprovalScreen(
-    private val queryAdapter: TuiQueryAdapter,
-    private val commandAdapter: TuiCommandAdapter
-) {
-    fun show(gui: MultiWindowTextGUI, context: TuiSecurityContext) {
-        val requests = queryAdapter.getPendingApprovals(context.tenantId)
-
-        val window = dvmmWindow("Pending Approvals - ${context.tenantId}") {
-            gridLayout(2) {
-                // Left panel: Request list
-                panel("Requests") {
-                    table<String>("ID", "VM Name", "Size", "Requester") {
-                        rows(requests.map { listOf(
-                            it.id.short(),
-                            it.vmName,
-                            it.size.label,
-                            it.requesterEmail
-                        )})
-                        onSelect = { row, _ -> showDetails(requests[row]) }
-                    }
-                }
-
-                // Right panel: Actions
-                panel("Actions") {
-                    actionList {
-                        action("Approve Selected", Key.A) { approveSelected() }
-                        action("Reject Selected", Key.R) { rejectSelected() }
-                        separator()
-                        action("Refresh", Key.F5) { refresh() }
-                        action("Export CSV", Key.E) { exportCsv() }
-                        separator()
-                        action("Back", Key.ESC) { window.close() }
-                    }
-                }
-            }
-
-            // Bottom: Key help
-            keyHelpBar("[A]pprove  [R]eject  [Enter]Details  [F5]Refresh  [Esc]Back")
-        }
-
-        gui.addWindowAndWait(window)
-    }
-}
-```
-
----
-
-## Screen Specifications
-
-### Main Dashboard
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  DVMM Admin Console v1.0                          Tenant: acme-corp  │
-│  User: admin@acme.de                              Session: 2h 15m    │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─ Quick Stats ─────────────────────────────────────────────────┐  │
-│  │  Pending Approvals: 3     Active VMs: 47     Failed: 2        │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-│  ┌─ Navigation ──────────────┐  ┌─ System Health ────────────────┐  │
-│  │  [1] Approval Queue (3)   │  │  VMware API     ● OK    42ms   │  │
-│  │  [2] Request History      │  │  Keycloak       ● OK    18ms   │  │
-│  │  [3] Audit Log            │  │  Event Store    ● OK     5ms   │  │
-│  │  [4] System Health        │  │  PostgreSQL     ● OK     3ms   │  │
-│  │  [5] Export Reports       │  │                                │  │
-│  │  ─────────────────────    │  │  Last Check: 5s ago            │  │
-│  │  [Q] Quit                 │  └────────────────────────────────┘  │
-│  └────────────────────────────┘                                      │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────┤
-│  [1-5] Navigate  [Q] Quit  [?] Help                                  │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Approval Queue
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Approval Queue                                   3 Pending Requests │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─ Pending Requests ────────────────────────────────────────────┐  │
-│  │  [ ] │ ID         │ VM Name          │ Size │ Requester       │  │
-│  │  ────┼────────────┼──────────────────┼──────┼─────────────────│  │
-│  │  [X] │ REQ-0042   │ web-server-prod  │ L    │ john@acme.de    │  │
-│  │  [ ] │ REQ-0043   │ db-staging       │ M    │ jane@acme.de    │  │
-│  │  [ ] │ REQ-0044   │ dev-sandbox      │ S    │ dev@acme.de     │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-│  ┌─ Request Details ─────────────────────────────────────────────┐  │
-│  │  Request ID:    REQ-0042                                      │  │
-│  │  VM Name:       web-server-prod                               │  │
-│  │  Size:          L (8 vCPU, 32 GB RAM, 500 GB Disk)           │  │
-│  │  Project:       Production Infrastructure                     │  │
-│  │  Requester:     john@acme.de                                  │  │
-│  │  Submitted:     2025-11-29 14:23:45                          │  │
-│  │  Justification: Production web server for Q4 launch          │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────┤
-│  [Space] Toggle  [A] Approve  [R] Reject  [Enter] Details  [Esc] Back│
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Rejection Dialog
-
-```
-┌───────────────────────────────────────┐
-│  Reject Request REQ-0042              │
-├───────────────────────────────────────┤
-│                                       │
-│  Reason (required):                   │
-│  ┌─────────────────────────────────┐  │
-│  │ Exceeds department quota for    │  │
-│  │ this quarter.                   │  │
-│  │                                 │  │
-│  └─────────────────────────────────┘  │
-│                                       │
-│    [ Confirm ]      [ Cancel ]        │
-│                                       │
-└───────────────────────────────────────┘
-```
-
----
-
-## Real-Time Updates
-
-The TUI maintains live views by subscribing to server-pushed events via gRPC streaming.
-
-### Approval Screen with Live Updates
-
-```kotlin
-// screens/ApprovalScreen.kt
-package de.acci.dvmm.tui.screens
-
-import com.googlecode.lanterna.gui2.*
-import de.acci.dvmm.tui.auth.TuiSecurityContext
-import de.acci.dvmm.tui.grpc.TuiGrpcClient
-import de.acci.dvmm.tui.proto.*
-import de.acci.dvmm.tui.dsl.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import java.util.concurrent.CopyOnWriteArrayList
-
-class ApprovalScreen(
-    private val client: TuiGrpcClient,
-    private val context: TuiSecurityContext,
-    private val scope: CoroutineScope
-) {
-    private val requests = CopyOnWriteArrayList<VmRequestSummary>()
-    private var table: Table<String>? = null
-    private var subscriptionJob: Job? = null
-
-    fun show(gui: MultiWindowTextGUI) {
-        // Load initial data
-        runBlocking {
-            requests.addAll(client.getPendingApprovals())
-        }
-
-        // Start real-time subscription
-        subscriptionJob = scope.launch {
-            client.subscribeToApprovals()
-                .catch { e -> showError("Connection lost: ${e.message}") }
-                .collect { event -> handleEvent(event) }
-        }
-
-        val window = buildWindow()
-        gui.addWindowAndWait(window)
-
-        // Cleanup on exit
-        subscriptionJob?.cancel()
-    }
-
-    private fun handleEvent(event: ApprovalEvent) {
-        when (event.type) {
-            ApprovalEventType.SUBMITTED -> {
-                // New request appeared - add to list
-                event.request?.let { requests.add(it) }
-                refreshTable()
-                showNotification("New request: ${event.request?.vmName}")
-            }
-            ApprovalEventType.APPROVED,
-            ApprovalEventType.REJECTED -> {
-                // Request resolved - remove from pending list
-                requests.removeIf { it.id == event.requestId }
-                refreshTable()
-            }
-            else -> { /* Ignore provisioning events in approval queue */ }
-        }
-    }
-
-    private fun refreshTable() {
-        table?.let { t ->
-            // Clear and repopulate
-            while (t.tableModel.rowCount > 0) {
-                t.tableModel.removeRow(0)
-            }
-            requests.forEach { req ->
-                t.tableModel.addRow(
-                    req.id.takeLast(8),
-                    req.vmName,
-                    req.size,
-                    req.requesterEmail
-                )
-            }
-        }
-    }
-
-    private fun buildWindow(): BasicWindow {
-        return dvmmWindow("Pending Approvals (${requests.size})") {
-            gridLayout(2) {
-                // Left: Request table
-                panel("Requests") {
-                    table = dvmmTable<String>("ID", "VM Name", "Size", "Requester") {
-                        rows(requests.map { listOf(
-                            it.id.takeLast(8),
-                            it.vmName,
-                            it.size,
-                            it.requesterEmail
-                        )})
-                        onSelect = { row, _ -> showDetails(requests[row]) }
-                    }
-                    add(table!!)
-                }
-
-                // Right: Actions
-                panel("Actions") {
-                    actionList {
-                        action("Approve", Key.A) { approveSelected() }
-                        action("Reject", Key.R) { rejectSelected() }
-                        separator()
-                        action("Back", Key.ESC) { close() }
-                    }
-                }
-            }
-            keyHelpBar("[A]pprove  [R]eject  [Enter]Details  [Esc]Back  ● Live")
-        }
-    }
-
-    private fun approveSelected() {
-        val selected = table?.selectedRow ?: return
-        val request = requests.getOrNull(selected) ?: return
-
-        scope.launch {
-            val result = client.approveRequest(request.id)
-            if (!result.success) {
-                showError(result.errorMessage)
-            }
-            // Note: List updates automatically via subscription
-        }
-    }
-
-    private fun rejectSelected() {
-        val selected = table?.selectedRow ?: return
-        val request = requests.getOrNull(selected) ?: return
-
-        // Show rejection dialog
-        val reason = showRejectDialog(request.id) ?: return
-
-        scope.launch {
-            val result = client.rejectRequest(request.id, reason)
-            if (!result.success) {
-                showError(result.errorMessage)
-            }
-        }
-    }
-}
-```
-
-### Health Dashboard with Live Updates
-
-```kotlin
-// screens/HealthScreen.kt
-package de.acci.dvmm.tui.screens
-
-class HealthScreen(
-    private val client: TuiGrpcClient,
-    private val scope: CoroutineScope
-) {
-    private val healthStatus = mutableMapOf<String, ServiceHealth>()
-    private var subscriptionJob: Job? = null
-
-    fun show(gui: MultiWindowTextGUI) {
-        // Subscribe to health updates
-        subscriptionJob = scope.launch {
-            client.subscribeToHealth()
-                .collect { update ->
-                    update.servicesList.forEach { service ->
-                        healthStatus[service.name] = service
-                    }
-                    refreshDisplay()
-                }
-        }
-
-        val window = buildWindow()
-        gui.addWindowAndWait(window)
-        subscriptionJob?.cancel()
-    }
-
-    private fun buildWindow(): BasicWindow {
-        return dvmmWindow("System Health") {
-            linearLayout {
-                healthStatus.forEach { (name, health) ->
-                    val indicator = if (health.healthy) "●" else "●"
-                    val color = if (health.healthy) TextColor.ANSI.GREEN else TextColor.ANSI.RED
-                    label("$indicator $name: ${health.responseTimeMs}ms", color)
-                }
-            }
-            keyHelpBar("[Esc]Back  ● Live updates")
-        }
-    }
+enum HealthStatus {
+  HEALTH_UNKNOWN = 0;
+  HEALTHY = 1;
+  DEGRADED = 2;
+  UNHEALTHY = 3;
 }
 ```
 
@@ -1032,231 +525,55 @@ class HealthScreen(
 
 ## Authentication Flow
 
-The TUI supports multiple authentication methods, prioritized for local admin convenience:
+### Priority Order
 
-### Authentication Methods (Priority Order)
+1. **Unix User Mapping** - Fastest for local SSH admins
+2. **Token File** - For automation/scripting (`~/.config/dvmm-tui/token`)
+3. **CLI Token Argument** - Explicit override (`--token=...`)
+4. **Interactive Login** - Fallback with username/password
 
-1. **Unix User Mapping** (fastest for local SSH admins)
-2. **Token File** (for automation/scripting)
-3. **CLI Token Argument** (explicit override)
-4. **Interactive Login** (fallback)
+### Flow Diagram
 
-### TUI Authenticator
-
-```kotlin
-// auth/TuiAuthenticator.kt
-package de.acci.dvmm.tui.auth
-
-import de.acci.dvmm.tui.config.TuiConfig
-import de.acci.dvmm.tui.grpc.TuiGrpcClient
-import de.acci.dvmm.tui.proto.AuthRequest
-import com.googlecode.lanterna.gui2.MultiWindowTextGUI
-
-class TuiAuthenticator(
-    private val client: TuiGrpcClient,
-    private val config: TuiConfig
-) {
-    suspend fun authenticate(gui: MultiWindowTextGUI, args: Array<String>): TuiSecurityContext {
-        // 1. Check for explicit token argument
-        args.findToken()?.let { token ->
-            return authenticateWithToken(token)
-        }
-
-        // 2. Try Unix user (if enabled and running locally)
-        if (config.auth.preferUnixUser) {
-            val unixUser = System.getProperty("user.name")
-            val response = client.authenticate(
-                AuthRequest.newBuilder().setUnixUser(unixUser).build()
-            )
-            if (response.success) {
-                return TuiSecurityContext(
-                    userId = response.userId,
-                    tenantId = response.tenantId,
-                    roles = response.rolesList.toSet(),
-                    sessionToken = response.sessionToken,
-                    authMethod = AuthMethod.UNIX_USER
-                )
-            }
-            // Unix user not mapped - fall through to other methods
-        }
-
-        // 3. Try token file
-        config.auth.tokenFile?.let { path ->
-            val tokenFile = Path.of(path.expandUser())
-            if (tokenFile.exists()) {
-                return authenticateWithToken(tokenFile.readText().trim())
-            }
-        }
-
-        // 4. Interactive login (fallback)
-        val loginScreen = LoginScreen(client)
-        return loginScreen.show(gui)
-    }
-
-    private suspend fun authenticateWithToken(token: String): TuiSecurityContext {
-        val response = client.authenticate(
-            AuthRequest.newBuilder().setToken(token).build()
-        )
-        if (!response.success) {
-            throw AuthenticationException(response.errorMessage)
-        }
-        return TuiSecurityContext(
-            userId = response.userId,
-            tenantId = response.tenantId,
-            roles = response.rolesList.toSet(),
-            sessionToken = response.sessionToken,
-            authMethod = AuthMethod.TOKEN
-        )
-    }
-}
-
-data class TuiSecurityContext(
-    val userId: String,
-    val tenantId: String,
-    val roles: Set<String>,
-    val sessionToken: String,
-    val authMethod: AuthMethod
-)
-
-enum class AuthMethod { UNIX_USER, TOKEN, INTERACTIVE }
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TUI Authentication Flow                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐     ┌──────────────────────────────────────────────────┐ │
+│  │ dvmm-tui     │     │                   Priority Chain                 │ │
+│  │ starts       │────►│                                                  │ │
+│  └──────────────┘     │  1. --token=... arg?  ──Yes──► Validate Token    │ │
+│                       │          │                           │           │ │
+│                       │          No                          │           │ │
+│                       │          ▼                           ▼           │ │
+│                       │  2. Unix socket +     ──Yes──► Validate Unix     │ │
+│                       │     prefer-unix-user?          User Mapping      │ │
+│                       │          │                           │           │ │
+│                       │          No                          │           │ │
+│                       │          ▼                           ▼           │ │
+│                       │  3. Token file exists? ──Yes──► Validate Token   │ │
+│                       │          │                           │           │ │
+│                       │          No                          │           │ │
+│                       │          ▼                           ▼           │ │
+│                       │  4. Show Login Screen ──────► Validate Creds     │ │
+│                       │                                      │           │ │
+│                       └──────────────────────────────────────┼───────────┘ │
+│                                                              │             │
+│                                                              ▼             │
+│                                                     ┌────────────────┐     │
+│                                                     │ Session Token  │     │
+│                                                     │ + User Context │     │
+│                                                     └────────────────┘     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Server-side Unix User Validation
-
-```kotlin
-// infrastructure/grpc/TuiAuthService.kt
-package de.acci.dvmm.infrastructure.grpc
-
-import de.acci.dvmm.tui.proto.AuthRequest
-import de.acci.dvmm.tui.proto.AuthResponse
-import io.grpc.Context
-import org.springframework.stereotype.Service
-
-@Service
-class TuiAuthService(
-    private val tuiProperties: TuiProperties,
-    private val tokenValidator: TokenValidator,
-    private val sessionManager: TuiSessionManager
-) {
-    fun authenticate(request: AuthRequest): AuthResponse {
-        return when {
-            request.hasToken() -> authenticateWithToken(request.token)
-            request.hasUnixUser() -> authenticateUnixUser(request.unixUser)
-            else -> AuthResponse.newBuilder()
-                .setSuccess(false)
-                .setErrorMessage("No authentication method provided")
-                .build()
-        }
-    }
-
-    private fun authenticateUnixUser(unixUser: String): AuthResponse {
-        // Verify request comes from Unix socket (not TCP)
-        val peerCredentials = PEER_CREDENTIALS_KEY.get()
-            ?: return errorResponse("Unix auth only available via Unix socket")
-
-        // Verify claimed user matches socket peer
-        if (peerCredentials.uid != getUidForUser(unixUser)) {
-            return errorResponse("Unix user mismatch")
-        }
-
-        // Look up mapping
-        val mapping = tuiProperties.unixUserMappings[unixUser]
-            ?: return errorResponse("Unix user '$unixUser' not mapped to DVMM identity")
-
-        // Create session
-        val session = sessionManager.createSession(
-            userId = mapping.userId,
-            tenantId = mapping.tenantId,
-            roles = mapping.roles
-        )
-
-        return AuthResponse.newBuilder()
-            .setSuccess(true)
-            .setUserId(mapping.userId)
-            .setTenantId(mapping.tenantId)
-            .addAllRoles(mapping.roles)
-            .setSessionToken(session.token)
-            .build()
-    }
-}
-```
-
-### CLI Usage
-
-```bash
-# Fast path - instant auth for mapped Unix users
-$ dvmm-tui
-# → Authenticated as admin@example.com via Unix user 'admin'
-# → Dashboard appears immediately
-
-# Explicit token (CI/automation)
-$ dvmm-tui --token=eyJhbGciOiJSUzI1NiIs...
-
-# Token file (scripting)
-$ echo "$DVMM_TOKEN" > ~/.config/dvmm-tui/token
-$ dvmm-tui
-# → Uses token from file
-
-# Interactive (unmapped users)
-$ dvmm-tui
-# → Shows login dialog if Unix user not mapped
-```
-
----
-
-## Configuration
-
-### TUI Client Config (standalone)
+### Unix User Mapping (Server Config)
 
 ```yaml
-# ~/.config/dvmm-tui/config.yml (or /etc/dvmm-tui/config.yml)
-
-# Connection
-socket-path: /var/run/dvmm/tui.sock
-connection-timeout: 5s
-request-timeout: 30s
-
-# Authentication
-auth:
-  # Try Unix user mapping first (fastest for local admins)
-  prefer-unix-user: true
-  # Fallback token file (for automation)
-  token-file: ~/.config/dvmm-tui/token
-
-# UI Settings
-ui:
-  date-format: "yyyy-MM-dd HH:mm:ss"
-  colors:
-    primary: cyan
-    success: green
-    warning: yellow
-    error: red
-  keybindings:
-    approve: a
-    reject: r
-    quit: q
-    help: "?"
-```
-
-### Server-side Config (dvmm-app)
-
-```yaml
-# application.yml (add to existing)
-
-grpc:
-  server:
-    # TCP port for remote gRPC (optional)
-    port: 9090
-    # Unix socket for local TUI access (recommended)
-    unix-socket:
-      enabled: true
-      path: /var/run/dvmm/tui.sock
-      permissions: 660           # Owner + group read/write
-      group: dvmm-admins         # Unix group with access
-
+# application.yml (dvmm-app)
 dvmm:
   tui:
-    # Unix user → DVMM identity mapping
     unix-user-mappings:
       admin:
         user-id: admin@example.com
@@ -1266,232 +583,254 @@ dvmm:
         user-id: operator@example.com
         tenant-id: default
         roles: [OPERATOR]
-
-    # Session settings
-    session-timeout: 4h
-    max-concurrent-sessions: 10
-
-    # Health streaming
-    health-push-interval: 10s
-```
-
-### systemd Socket Activation (Optional)
-
-For production deployments, systemd can manage the socket:
-
-```ini
-# /etc/systemd/system/dvmm-tui.socket
-[Unit]
-Description=DVMM TUI gRPC Socket
-
-[Socket]
-ListenStream=/var/run/dvmm/tui.sock
-SocketMode=0660
-SocketGroup=dvmm-admins
-
-[Install]
-WantedBy=sockets.target
-```
-
-```ini
-# /etc/systemd/system/dvmm-app.service (add to existing)
-[Service]
-# ... existing config ...
-
-# Receive socket from systemd
-Environment=GRPC_UNIX_SOCKET_FD=3
 ```
 
 ---
 
-## Testing Strategy
-
-### Unit Tests
-
-```kotlin
-// screens/ApprovalScreenTest.kt
-class ApprovalScreenTest {
-
-    private val queryAdapter = mockk<TuiQueryAdapter>()
-    private val commandAdapter = mockk<TuiCommandAdapter>()
-    private val screen = ApprovalScreen(queryAdapter, commandAdapter)
-
-    @Test
-    fun `approve action sends command with correct parameters`() = runTest {
-        // Given
-        val request = aVmRequestSummary(id = "REQ-0042")
-        coEvery { queryAdapter.getPendingApprovals(any()) } returns listOf(request)
-        coEvery { commandAdapter.approveRequest(any(), any(), any(), any()) } returns Result.success(Unit)
-
-        val context = aTuiSecurityContext(tenantId = "acme-corp", userId = "admin")
-
-        // When
-        screen.approveRequest(request.id, context)
-
-        // Then
-        coVerify {
-            commandAdapter.approveRequest(
-                requestId = VmRequestId("REQ-0042"),
-                tenantId = TenantId("acme-corp"),
-                approverId = UserId("admin"),
-                comment = null
-            )
-        }
-    }
-}
-```
-
-### Integration Tests
-
-```kotlin
-// TuiIntegrationTest.kt
-@SpringBootTest(classes = [DvmmTuiApplication::class])
-@ActiveProfiles("tui", "test")
-class TuiIntegrationTest {
-
-    @Autowired
-    private lateinit var commandAdapter: TuiCommandAdapter
-
-    @Autowired
-    private lateinit var queryAdapter: TuiQueryAdapter
-
-    @Test
-    fun `approval flow integrates with application layer`() = runTest {
-        // Given
-        val tenantContext = TenantTestContext("test-tenant")
-        val requestId = createPendingRequest(tenantContext)
-
-        // When
-        val result = commandAdapter.approveRequest(
-            requestId = requestId,
-            tenantId = tenantContext.tenantId,
-            approverId = UserId("admin"),
-            comment = "Approved via TUI"
-        )
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
-
-        val details = queryAdapter.getRequestDetails(requestId, tenantContext.tenantId)
-        assertThat(details?.status).isEqualTo(RequestStatus.APPROVED)
-    }
-}
-```
-
----
-
-## Keyboard Shortcuts Reference
+## Keyboard Shortcuts
 
 | Key | Action | Context |
 |-----|--------|---------|
 | `1-9` | Navigate to menu item | Main screen |
 | `Enter` | Select / Confirm | All screens |
-| `Space` | Toggle checkbox | Lists |
-| `A` | Approve selected | Approval queue |
-| `R` | Reject selected | Approval queue |
+| `Space` | Toggle selection | Lists with checkboxes |
+| `A` | Approve selected request | Approval queue |
+| `R` | Reject selected request | Approval queue |
 | `E` | Export to CSV | Lists |
-| `F5` | Refresh data | All screens |
-| `/` | Search / Filter | Lists |
+| `/` | Open filter/search | Lists |
+| `PgUp/PgDn` | Page through results | Lists |
+| `↑↓` | Navigate rows | Tables |
+| `F5` | Force refresh | All screens |
 | `Esc` | Back / Cancel | All screens |
 | `Q` | Quit application | Main screen |
 | `?` / `F1` | Show help | All screens |
-| `Tab` | Next field | Forms |
-| `Shift+Tab` | Previous field | Forms |
 
 ---
 
-## Acceptance Criteria
+## Story Breakdown (Epic 6)
 
-### Story: TUI Module Foundation
+### Story 6.1: TUI Module Foundation
 
-**Given** the TUI module is configured
-**When** I run `./gradlew :dvmm:dvmm-tui:build`
-**Then** the build succeeds with zero errors
+**As an** administrator
+**I want** a working TUI that connects to the server
+**So that** I can access admin functions from the terminal
 
-**And** the module has correct dependencies:
-- `dvmm-application` (not `dvmm-api` or `dvmm-infrastructure`)
-- `eaf-cqrs-core`
-- `lanterna:3.1.2`
+**Acceptance Criteria:**
 
-**And** architecture tests verify:
-- TUI module cannot import from `dvmm-domain` internals
-- TUI module cannot bypass application layer
+- [ ] `./gradlew :dvmm:dvmm-tui:build` succeeds
+- [ ] `./gradlew :dvmm:dvmm-tui-protocol:build` succeeds
+- [ ] gRPC client connects via Unix socket
+- [ ] Main dashboard displays with navigation menu
+- [ ] Architecture tests verify module boundaries
 
-### Story: Approval Queue Screen
+**Technical Tasks:**
 
-**Given** I am authenticated as an admin
-**And** there are 3 pending approval requests
-**When** I navigate to the Approval Queue
-**Then** I see all 3 requests in a table
+1. Create `dvmm-tui-protocol` module with Protobuf setup
+2. Create `dvmm-tui` module with Lanterna dependency
+3. Implement `TuiGrpcClient` with Unix socket support
+4. Implement `MainScreen` with navigation
+5. Add `TuiGrpcService` stub in infrastructure
 
-**And** I can select requests with Space
-**And** I can approve with 'A' key
-**And** I can reject with 'R' key (prompts for reason)
-**And** the list refreshes after each action
+---
 
-### Story: System Health Dashboard
+### Story 6.2: Approval Queue with Actions
 
-**Given** I am on the main screen
-**When** the health check runs (every 30s)
-**Then** I see status indicators for:
-- VMware API connection
-- Keycloak connectivity
-- Event Store health
-- PostgreSQL connection
+**As an** administrator
+**I want** to approve and reject requests via keyboard
+**So that** I can process approvals faster than via web
 
-**And** each indicator shows:
-- Green dot (●) for healthy
-- Red dot (●) for unhealthy
-- Response time in milliseconds
+**Acceptance Criteria:**
+
+- [ ] Pending requests display in table
+- [ ] `A` key approves selected request
+- [ ] `R` key opens rejection dialog with mandatory reason
+- [ ] Commands execute via gRPC and update backend
+- [ ] Table reflects changes after action
+
+**Technical Tasks:**
+
+1. Implement `ApprovalScreen` with request table
+2. Implement approve/reject gRPC calls
+3. Create rejection dialog with text input
+4. Wire keyboard shortcuts
+
+---
+
+### Story 6.3: Real-Time Updates via Streaming
+
+**As an** administrator
+**I want** the approval queue to update automatically
+**So that** I see new requests without refreshing
+
+**Acceptance Criteria:**
+
+- [ ] New requests appear in table within 100ms of submission
+- [ ] Approved/rejected requests disappear from pending list
+- [ ] Visual indicator shows "Live" connection status
+- [ ] Graceful reconnection on stream disconnect
+
+**Technical Tasks:**
+
+1. Implement `subscribeApprovals` server streaming
+2. Add `EventSubscriber` with reconnection logic
+3. Update `ApprovalScreen` to handle events
+4. Add connection status indicator
+
+---
+
+### Story 6.4: Request Detail View
+
+**As an** administrator
+**I want** to view full request details
+**So that** I can make informed approval decisions
+
+**Acceptance Criteria:**
+
+- [ ] `Enter` on a request opens detail view
+- [ ] All request fields displayed (name, size, specs, justification)
+- [ ] Approve/Reject actions available from detail view
+- [ ] `Esc` returns to list
+
+---
+
+### Story 6.5: System Health Dashboard
+
+**As an** administrator
+**I want** to see service health in real-time
+**So that** I know when infrastructure issues affect operations
+
+**Acceptance Criteria:**
+
+- [ ] Health screen shows all monitored services
+- [ ] Status indicators: ● Healthy, ○ Degraded, ✖ Unhealthy
+- [ ] Response times displayed per service
+- [ ] Updates stream automatically (every 10s)
+
+---
+
+### Story 6.6: Audit Log Viewer
+
+**As an** administrator
+**I want** to browse the audit log
+**So that** I can investigate actions and compliance
+
+**Acceptance Criteria:**
+
+- [ ] Paginated list of audit entries
+- [ ] Filter by event type
+- [ ] Detail view for selected entry
+- [ ] Export to CSV
+
+---
+
+### Story 6.7: Unix User Authentication
+
+**As an** SSH administrator
+**I want** to authenticate automatically via Unix user
+**So that** I don't need to enter credentials each time
+
+**Acceptance Criteria:**
+
+- [ ] Unix user detected from environment
+- [ ] Server validates user via peer credentials
+- [ ] Mapped users get session token automatically
+- [ ] Unmapped users fall through to token/interactive auth
+
+---
+
+### Story 6.8: Token Authentication (Fallback)
+
+**As an** administrator
+**I want** to authenticate with a token
+**So that** I can use TUI in automation scripts
+
+**Acceptance Criteria:**
+
+- [ ] `--token=...` CLI argument accepted
+- [ ] Token file at `~/.config/dvmm-tui/token` read if present
+- [ ] Interactive login screen as final fallback
+- [ ] Session token stored for subsequent calls
 
 ---
 
 ## Risks and Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Terminal compatibility issues | Test on xterm, iTerm2, Windows Terminal, PuTTY; use Lanterna's Swing fallback for unsupported terminals |
-| Concurrent modification | Real-time streaming ensures TUI sees latest state; handle optimistic locking errors gracefully |
-| Session timeout during long operations | Show warning before timeout; gRPC keepalive extends active sessions |
-| gRPC stream disconnection | Auto-reconnect with exponential backoff; show connection indicator in UI |
-| Unix socket permission issues | Use systemd socket activation; validate group membership on startup |
-| Event store subscription lag | Initial query + subscription ensures no missed events during startup |
-
-## Architecture Decision Summary
-
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Communication** | gRPC over Unix socket | Real-time streaming, type-safe, ~0.1ms latency for local access |
-| **Auth (local)** | Unix user mapping | Zero-friction for SSH admins, leverages existing OS authentication |
-| **Auth (remote)** | JWT via gRPC metadata | Consistent with web API authentication |
-| **Real-time updates** | Server streaming | Eliminates polling, instant UI updates when events occur |
-| **Client runtime** | Standalone (no Spring) | Fast startup (~1s), minimal dependencies, single fat JAR |
-| **Server integration** | grpc-spring-boot-starter | Reuses existing application layer, event store subscriptions |
-| **Protocol definition** | Protobuf | Type-safe contract, efficient binary encoding, Kotlin coroutine support |
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Terminal compatibility issues | Medium | Medium | Test matrix: xterm, iTerm2, GNOME Terminal, PuTTY. Use Lanterna's Swing fallback. |
+| gRPC stream disconnection | Medium | Low | Auto-reconnect with exponential backoff. Connection indicator in UI. |
+| Unix socket permission issues | Low | High | Use systemd socket activation. Validate group membership on startup. Document setup clearly. |
+| Event ordering during subscription | Low | Medium | Initial query + subscription ensures no missed events. Sequence numbers in events. |
+| Performance on slow terminals | Low | Low | Minimize redraws. Batch table updates. |
 
 ---
 
-## Future Considerations
+## Configuration Reference
 
-### Phase 2 Enhancements
+### TUI Client (`~/.config/dvmm-tui/config.yml`)
 
-- Batch approval (approve multiple at once)
-- Saved filters/views
-- Custom keyboard shortcuts
-- Notification sound on new requests
+```yaml
+socket-path: /var/run/dvmm/tui.sock
+connection-timeout: 5s
+request-timeout: 30s
 
-### Phase 3 Enhancements
+auth:
+  prefer-unix-user: true
+  token-file: ~/.config/dvmm-tui/token
 
-- Split-screen mode (approvals + health)
-- SSH key authentication
-- Audit log search with regex
-- Performance metrics graphs (ASCII)
+ui:
+  date-format: "yyyy-MM-dd HH:mm:ss"
+  page-size: 20
+```
+
+### Server (`application.yml`)
+
+```yaml
+grpc:
+  server:
+    port: 9090
+    unix-socket:
+      enabled: true
+      path: /var/run/dvmm/tui.sock
+      permissions: 660
+      group: dvmm-admins
+
+dvmm:
+  tui:
+    session-timeout: 4h
+    max-concurrent-sessions: 10
+    health-push-interval: 10s
+    unix-user-mappings:
+      admin:
+        user-id: admin@example.com
+        tenant-id: default
+        roles: [ADMIN]
+```
+
+---
+
+## Definition of Done
+
+For each story in Epic 6:
+
+- [ ] Code compiles with zero warnings
+- [ ] Unit tests pass with ≥80% coverage
+- [ ] Integration tests verify gRPC contract
+- [ ] Keyboard shortcuts work as documented
+- [ ] Screen renders correctly in test terminals
+- [ ] No architecture violations (Konsist)
+- [ ] Code reviewed and approved
+- [ ] Documentation updated
 
 ---
 
 ## References
 
-- [Lanterna 3.1.2 JavaDoc](http://mabe02.github.io/lanterna/apidocs/3.1/)
-- [Lanterna Examples](https://github.com/mabe02/lanterna/tree/master/docs/examples)
+- [Lanterna 3.1.2 Documentation](https://github.com/mabe02/lanterna/tree/master/docs)
+- [gRPC Kotlin Documentation](https://grpc.io/docs/languages/kotlin/)
 - [DVMM Architecture](../architecture.md)
-- [DVMM PRD](../prd.md)
+- [TUI Analysis](../tui-analysis.md)
+
+---
+
+_Last Updated: 2025-11-29_
