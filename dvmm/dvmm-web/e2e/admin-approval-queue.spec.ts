@@ -21,19 +21,51 @@ import { test, expect } from '@playwright/test'
  * - AC 9: Navigation to request detail
  * - AC 10: Approve/Reject buttons visible but disabled
  *
- * ## Why most tests are marked `test.skip`
+ * ## Running Authenticated Tests
  *
- * Tests tagged with `@requires-auth` or `@requires-backend` are skipped because:
- * 1. Keycloak authentication integration for E2E is not yet configured in the CI pipeline
- * 2. These tests require a running backend with seeded test data
- * 3. The test scenarios are written and ready to enable once auth E2E setup is complete
+ * Tests tagged with `@requires-auth` or `@requires-backend` require:
+ * 1. Backend API running with Keycloak authentication
+ * 2. Keycloak container with test users configured
+ * 3. Auth setup to create authenticated sessions
  *
- * The test logic is validated through:
+ * ### Setup Instructions
+ *
+ * 1. Start the backend with Keycloak:
+ * ```bash
+ * ./gradlew :dvmm:dvmm-app:bootRun
+ * ```
+ *
+ * 2. Run the auth setup to create authenticated sessions:
+ * ```bash
+ * cd dvmm/dvmm-web
+ * npm run test:e2e -- --project=setup
+ * ```
+ *
+ * 3. Run authenticated tests with the appropriate project:
+ * ```bash
+ * # Run as admin user
+ * npm run test:e2e -- --project=chromium-admin admin-approval-queue.spec.ts
+ *
+ * # Run as regular user
+ * npm run test:e2e -- --project=chromium-user admin-approval-queue.spec.ts
+ * ```
+ *
+ * ### CI Execution
+ *
+ * In CI, these tests are skipped by default (marked with `test.skip`).
+ * To enable them in CI:
+ * 1. Configure Keycloak Testcontainer in CI pipeline
+ * 2. Set environment variables (KEYCLOAK_URL, API_URL)
+ * 3. Run setup project first
+ * 4. Run authenticated test projects
+ *
+ * ## Test Coverage Without Full E2E
+ *
+ * The test scenarios are validated through:
  * - Unit tests for components (PendingRequestsTable, ProjectFilter)
  * - Integration tests for API functions (admin.ts)
  * - Backend integration tests (AdminRequestControllerIntegrationTest)
- *
- * TODO: Enable these tests when Playwright auth configuration is added (Story TBD).
+ * - Unauthenticated tests (below) for basic page structure
  */
 
 test.describe('Admin Approval Queue - Access Control @requires-auth', () => {
