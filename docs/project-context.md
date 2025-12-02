@@ -140,6 +140,8 @@ CREATE POLICY tenant_isolation ON my_table ...;
 ./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
 
+**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first (use `ON CONFLICT DO NOTHING` for idempotency), and cleanup must use `TRUNCATE ... CASCADE`.
+
 ---
 
 ## Anti-Patterns (Prohibited)
