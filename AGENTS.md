@@ -149,6 +149,18 @@ vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
 mockGetData.mockResolvedValueOnce({ status: 'PENDING' }).mockResolvedValueOnce({ status: 'APPROVED' })
 ```
 
+### TanStack Query Polling
+
+For real-time data (admin queues, dashboards), use both `staleTime` AND `refetchInterval`:
+
+```tsx
+useQuery({
+  staleTime: 10000,  // Stale after 10s (triggers refetch on access)
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000), // Jitter prevents thundering herd
+  refetchIntervalInBackground: false,
+})
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.

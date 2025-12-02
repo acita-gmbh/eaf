@@ -1,5 +1,6 @@
 package de.acci.dvmm.infrastructure.projection
 
+import de.acci.dvmm.application.vmrequest.ProjectSummary
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.domain.vmrequest.ProjectId
@@ -32,6 +33,43 @@ public class VmRequestReadRepositoryAdapter(
             pageRequest = pageRequest
         )
 
+        return mapToSummaryResponse(pagedProjections)
+    }
+
+    override suspend fun findPendingByTenantId(
+        tenantId: TenantId,
+        projectId: ProjectId?,
+        pageRequest: PageRequest
+    ): PagedResponse<VmRequestSummary> {
+        // Note: tenantId is not passed to repository - RLS handles tenant filtering
+        val pagedProjections = projectionRepository.findPendingByTenantId(
+            projectId = projectId?.value,
+            pageRequest = pageRequest
+        )
+
+        return mapToSummaryResponse(pagedProjections)
+    }
+
+    override suspend fun findDistinctProjects(
+        tenantId: TenantId
+    ): List<ProjectSummary> {
+        // Note: tenantId is not passed to repository - RLS handles tenant filtering
+        val projects = projectionRepository.findDistinctProjects()
+
+        return projects.map { projectInfo ->
+            ProjectSummary(
+                id = ProjectId(projectInfo.projectId),
+                name = projectInfo.projectName
+            )
+        }
+    }
+
+    /**
+     * Maps jOOQ projection POJOs to application layer VmRequestSummary.
+     */
+    private fun mapToSummaryResponse(
+        pagedProjections: PagedResponse<de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection>
+    ): PagedResponse<VmRequestSummary> {
         return PagedResponse(
             items = pagedProjections.items.map { projection ->
                 VmRequestSummary(

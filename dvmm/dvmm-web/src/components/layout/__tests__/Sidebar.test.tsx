@@ -1,8 +1,33 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { Sidebar } from '../Sidebar'
+
+/**
+ * Mock useAuth from react-oidc-context.
+ * Using vi.hoisted() to ensure mock is created before module import.
+ */
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+  }))
+)
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
+}))
+
+beforeEach(() => {
+  // Reset to non-admin user by default
+  mockUseAuth.mockReturnValue({
+    user: null,
+    isAuthenticated: true,
+    isLoading: false,
+  })
+})
 
 /**
  * Helper to render Sidebar with router context.

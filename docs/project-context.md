@@ -119,6 +119,15 @@ class VmService {
 
 ---
 
+## Frontend Patterns
+
+**TanStack Query Polling (for admin queues, dashboards):**
+- Use both `staleTime` (cache freshness) AND `refetchInterval` (active background polling)
+- Add jitter to `refetchInterval` to prevent thundering herd: `30000 + Math.floor(Math.random() * 5000)`
+- Set `refetchIntervalInBackground: false` to stop polling when tab inactive
+
+---
+
 ## jOOQ Code Generation (Critical Gotchas)
 
 **Two SQL files must stay in sync:**

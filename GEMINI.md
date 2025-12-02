@@ -197,6 +197,25 @@ mockGetData
   .mockResolvedValueOnce({ status: 'APPROVED' })  // After refetch
 ```
 
+### TanStack Query Polling Patterns
+
+**Real-time data needs both `staleTime` AND `refetchInterval`:**
+- `staleTime` controls when cached data is stale (triggers refetch on next access)
+- `refetchInterval` actively polls in background (for admin queues, dashboards)
+
+```tsx
+// CORRECT - Active polling with jitter to prevent thundering herd
+useQuery({
+  queryKey: ['admin', 'pending-requests'],
+  staleTime: 10000,  // Stale after 10s
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000), // 30-35s with jitter
+  refetchIntervalInBackground: false,  // Don't poll when tab inactive
+})
+
+// WRONG - Only staleTime = no automatic polling (users must interact)
+useQuery({ staleTime: 30000 })  // Admin won't see new requests!
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.

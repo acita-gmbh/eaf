@@ -6,11 +6,12 @@ import { Toaster } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { DashboardLayout } from '@/components/layout'
-import { ProtectedRoute } from '@/components/auth'
+import { ProtectedRoute, AdminProtectedRoute } from '@/components/auth'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyRequests } from '@/pages/MyRequests'
 import { NewRequest } from '@/pages/NewRequest'
 import { RequestDetail } from '@/pages/RequestDetail'
+import { PendingRequests } from '@/pages/admin/PendingRequests'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { queryClient } from '@/lib/query-client'
 import { User } from 'lucide-react'
@@ -106,6 +107,14 @@ function AppRoutes() {
             <ProtectedRoute>
               <RequestDetail />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/requests"
+          element={
+            <AdminProtectedRoute>
+              <PendingRequests />
+            </AdminProtectedRoute>
           }
         />
       </Routes>
