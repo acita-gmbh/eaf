@@ -39,7 +39,7 @@ class GetPendingRequestsHandlerTest {
     ) = GetPendingRequestsQuery(
         tenantId = tenantId,
         projectId = projectId,
-        pageRequest = PageRequest(page = page, size = size.coerceAtMost(100))
+        pageRequest = PageRequest(page = page, size = size)
     )
 
     private fun createSummary(
@@ -180,8 +180,8 @@ class GetPendingRequestsHandlerTest {
         @Test
         @DisplayName("should cap page size at 100")
         fun `should cap page size at 100`() = runTest {
-            // Given
-            val query = createQuery(size = 200) // Requesting more than max
+            // Given: Query with exactly MAX_PAGE_SIZE (100) should work
+            val query = createQuery(size = GetPendingRequestsQuery.MAX_PAGE_SIZE)
 
             coEvery {
                 readRepository.findPendingByTenantId(any(), any(), any())
@@ -192,13 +192,18 @@ class GetPendingRequestsHandlerTest {
             // When
             handler.handle(query)
 
-            // Then
+            // Then: Verify the max size is passed correctly
             coVerify(exactly = 1) {
                 readRepository.findPendingByTenantId(
                     tenantId = any(),
                     projectId = any(),
-                    pageRequest = match { it.size <= 100 }
+                    pageRequest = match { it.size == GetPendingRequestsQuery.MAX_PAGE_SIZE }
                 )
+            }
+
+            // Verify that requesting more than max throws (handled by query validation)
+            org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+                createQuery(size = GetPendingRequestsQuery.MAX_PAGE_SIZE + 1)
             }
         }
     }
