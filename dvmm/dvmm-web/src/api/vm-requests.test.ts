@@ -15,7 +15,6 @@ import {
   type NotFoundErrorResponse,
   type ForbiddenErrorResponse,
   type InvalidStateErrorResponse,
-  type VmRequestSummary,
 } from './vm-requests'
 
 // Mock fetch globally

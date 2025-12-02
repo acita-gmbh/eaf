@@ -13,7 +13,7 @@ This document defines the **system-level testability strategy** for DVMM/EAF bef
 
 **Key Findings:**
 - Architecture is **highly testable** due to CQRS/Event Sourcing, Hexagonal patterns, and Ports & Adapters
-- **4 testability concerns** identified requiring mitigation (Coroutine context, RLS isolation, Event store growth, Projection sync)
+- **5 testability concerns** identified requiring mitigation (Coroutine context, RLS isolation, Event store growth, Projection sync, FK constraint sync)
 - **Test pyramid** optimized for CQRS: Heavy unit/integration, selective E2E
 - **NFR testing** requires k6 (performance), Playwright (security/reliability), CI tools (maintainability)
 
@@ -513,6 +513,54 @@ fun `projection rebuild produces consistent state`() {
 
 **Test Requirement:** Every projection MUST have rebuild verification test.
 
+### 6.5 TC-005: FK Constraint Test Synchronization
+
+**Risk Level:** 🟡 Medium (Score: 4)
+
+**Problem:** When adding FK constraints to projection tables, integration tests that directly insert child records will fail:
+- Test helpers insert child records without parent records
+- FK constraint violations cause `IntegrityConstraintViolationException`
+- Cleanup with simple TRUNCATE fails when child tables exist
+
+**Impact:** Tests fail after adding FK constraints; requires coordinated updates to test helpers.
+
+**Mitigation:**
+```kotlin
+// ✅ CORRECT - Test helper creates parent record first
+private fun insertTestTimelineEvent(requestId: UUID, tenantId: TenantId, ...) {
+    // Create parent record first (idempotent)
+    insertParentRequest(id = requestId, tenantId = tenantId)
+
+    // Then insert child record
+    postgres.createConnection("").use { conn ->
+        conn.prepareStatement("""
+            INSERT INTO "REQUEST_TIMELINE_EVENTS" (...)
+            VALUES (?, ?, ...)
+        """).use { stmt -> ... }
+    }
+}
+
+// ✅ CORRECT - Parent insert is idempotent
+private fun insertParentRequest(id: UUID, tenantId: TenantId) {
+    postgres.createConnection("").use { conn ->
+        conn.prepareStatement("""
+            INSERT INTO "VM_REQUESTS_PROJECTION" (...)
+            VALUES (?, ?, ...)
+            ON CONFLICT ("ID") DO NOTHING
+        """).use { stmt -> ... }
+    }
+}
+
+// ✅ CORRECT - Cleanup uses CASCADE for FK constraints
+@AfterEach
+fun cleanup() {
+    superuserDsl.execute("""TRUNCATE TABLE "CHILD_TABLE" """)
+    superuserDsl.execute("""TRUNCATE TABLE "PARENT_TABLE" CASCADE""")
+}
+```
+
+**Test Requirement:** When adding FK constraints, update ALL test helpers that insert child records to create parent records first using `ON CONFLICT DO NOTHING` for idempotency.
+
 ---
 
 ## 7. Test Environment Strategy
@@ -749,7 +797,7 @@ test:
 - [x] ASRs identified and prioritized (6 critical, 4 high-priority)
 - [x] Test levels defined (60% unit, 30% integration, 10% E2E)
 - [x] NFR test approach documented (Security, Performance, Reliability, Maintainability)
-- [x] Testability concerns flagged (4 concerns with mitigations)
+- [x] Testability concerns flagged (5 concerns with mitigations)
 - [x] Test environment strategy defined (TestContainers, Docker Compose)
 - [x] CI/CD integration planned (Quality gates, timing constraints)
 - [x] Test data strategy defined (Factories, isolation rules)
@@ -762,6 +810,7 @@ test:
 | TC-002 | RLS test isolation | 6 | EAF Team | RLS-aware test DB config | Open |
 | TC-003 | Event store growth | 4 | EAF Team | Per-test isolation extension | Open |
 | TC-004 | jOOQ projection sync | 4 | DVMM Team | Rebuild verification tests | Open |
+| TC-005 | FK constraint test sync | 4 | DVMM Team | Parent record helpers + CASCADE cleanup | Mitigated |
 
 ---
 
@@ -770,6 +819,7 @@ test:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-11-25 | Murat (TEA) | Initial System-Level Test Design |
+| 1.1 | 2025-12-02 | Claude | Added TC-005: FK Constraint Test Synchronization |
 
 ---
 

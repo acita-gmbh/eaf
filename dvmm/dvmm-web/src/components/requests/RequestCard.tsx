@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Card,
@@ -20,22 +21,10 @@ import {
   type VmRequestSummary,
 } from '@/api/vm-requests'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
+import { formatDateTime } from '@/lib/date-utils'
 
 interface RequestCardProps {
   request: VmRequestSummary
-}
-
-/**
- * Formats an ISO date string to German locale format.
- */
-function formatDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 /**
@@ -49,8 +38,13 @@ function formatDate(isoDate: string): string {
  * - Cancel button (only for PENDING requests)
  */
 export function RequestCard({ request }: RequestCardProps) {
+  const navigate = useNavigate()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const cancelMutation = useCancelRequest()
+
+  const handleCardClick = () => {
+    navigate(`/requests/${request.id}`)
+  }
 
   const handleCancelConfirm = (reason?: string) => {
     cancelMutation.mutate(
@@ -93,7 +87,20 @@ export function RequestCard({ request }: RequestCardProps) {
 
   return (
     <>
-      <Card data-testid={`request-card-${request.id}`}>
+      <Card
+        data-testid={`request-card-${request.id}`}
+        className="cursor-pointer transition-colors hover:border-primary/50"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleCardClick()
+          }
+        }}
+        aria-label={`View details for ${request.vmName}`}
+      >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span data-testid="request-vm-name">{request.vmName}</span>
@@ -107,7 +114,19 @@ export function RequestCard({ request }: RequestCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCancelDialogOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCancelDialogOpen(true)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setCancelDialogOpen(true)
+                  } else {
+                    e.stopPropagation()
+                  }
+                }}
                 data-testid="cancel-request-button"
               >
                 Cancel
@@ -141,7 +160,7 @@ export function RequestCard({ request }: RequestCardProps) {
 
         <CardFooter className="text-muted-foreground text-sm">
           <span data-testid="request-created-at">
-            Created {formatDate(request.createdAt)}
+            Created {formatDateTime(request.createdAt)}
           </span>
         </CardFooter>
       </Card>

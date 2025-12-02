@@ -460,3 +460,111 @@ export async function cancelRequest(
 
   return responseBody as CancelRequestResponse
 }
+
+// ==================== Request Detail & Timeline API ====================
+
+/**
+ * Timeline event types.
+ */
+export type TimelineEventType =
+  | 'CREATED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'PROVISIONING_STARTED'
+  | 'PROVISIONING_QUEUED'
+  | 'VM_READY'
+
+/**
+ * A single timeline event for display.
+ */
+export interface TimelineEvent {
+  /** Event type (CREATED, APPROVED, REJECTED, CANCELLED, etc.) */
+  eventType: TimelineEventType
+  /** Display name of the actor (null for system events) */
+  actorName: string | null
+  /** Additional event details (e.g., rejection reason as JSON) */
+  details: string | null
+  /** ISO 8601 timestamp when the event occurred */
+  occurredAt: string
+}
+
+/**
+ * Backend response for VM request detail with timeline.
+ */
+interface BackendVmRequestDetailResponse {
+  id: string
+  vmName: string
+  size: BackendVmSizeResponse
+  justification: string
+  status: VmRequestStatus
+  projectName: string
+  requesterName: string
+  createdAt: string
+  timeline: TimelineEvent[]
+}
+
+/**
+ * VM size response with resource specifications.
+ */
+export interface VmSizeResponse {
+  code: string
+  cpuCores: number
+  memoryGb: number
+  diskGb: number
+}
+
+/**
+ * VM request detail with timeline.
+ * Size is a nested object containing resource specifications.
+ */
+export interface VmRequestDetailResponse {
+  id: string
+  vmName: string
+  size: VmSizeResponse
+  justification: string
+  status: VmRequestStatus
+  projectName: string
+  requesterName: string
+  createdAt: string
+  timeline: TimelineEvent[]
+}
+
+/**
+ * Gets detailed information about a specific VM request with timeline.
+ *
+ * @param requestId - The ID of the request to retrieve
+ * @param accessToken - OAuth2 access token
+ * @returns Request detail with timeline events
+ * @throws ApiError on failure (404 not found)
+ */
+export async function getRequestDetail(
+  requestId: string,
+  accessToken: string
+): Promise<VmRequestDetailResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}`, {
+    method: 'GET',
+    headers: createApiHeaders(accessToken, false),
+    credentials: 'include',
+  })
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  // Backend response matches our interface structure directly
+  const backendResponse = responseBody as BackendVmRequestDetailResponse
+  return {
+    id: backendResponse.id,
+    vmName: backendResponse.vmName,
+    size: backendResponse.size,
+    justification: backendResponse.justification,
+    status: backendResponse.status,
+    projectName: backendResponse.projectName,
+    requesterName: backendResponse.requesterName,
+    createdAt: backendResponse.createdAt,
+    timeline: backendResponse.timeline,
+  }
+}

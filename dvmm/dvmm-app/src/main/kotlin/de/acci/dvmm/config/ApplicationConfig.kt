@@ -4,10 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
+import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
+import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
+import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
+import de.acci.dvmm.infrastructure.projection.TimelineEventProjectionUpdaterAdapter
+import de.acci.dvmm.infrastructure.projection.TimelineEventReadRepositoryAdapter
+import de.acci.dvmm.infrastructure.projection.TimelineEventRepository
+import de.acci.dvmm.infrastructure.projection.VmRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionRepository
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionUpdaterAdapter
 import de.acci.dvmm.infrastructure.projection.VmRequestReadRepositoryAdapter
@@ -30,7 +38,6 @@ import javax.sql.DataSource
  */
 @Configuration
 public class ApplicationConfig {
-
     // ==================== Core Infrastructure ====================
 
     /**
@@ -38,11 +45,10 @@ public class ApplicationConfig {
      *
      * Uses PostgreSQL dialect and the Spring-managed DataSource.
      *
-     * @param dataSource Spring-managed DataSource (auto-configured by Spring Boot)
+     * @param dataSource Spring-managed DataSource (autoconfigured by Spring Boot)
      */
     @Bean
-    public fun dslContext(dataSource: DataSource): DSLContext =
-        DSL.using(dataSource, SQLDialect.POSTGRES)
+    public fun dslContext(dataSource: DataSource): DSLContext = DSL.using(dataSource, SQLDialect.POSTGRES)
 
     /**
      * ObjectMapper configured for event store serialization.
@@ -59,8 +65,10 @@ public class ApplicationConfig {
      * @param objectMapper Jackson ObjectMapper for JSON serialization
      */
     @Bean
-    public fun eventStore(dsl: DSLContext, objectMapper: ObjectMapper): EventStore =
-        PostgresEventStore(dsl, objectMapper)
+    public fun eventStore(
+        dsl: DSLContext,
+        objectMapper: ObjectMapper,
+    ): EventStore = PostgresEventStore(dsl, objectMapper)
 
     // ==================== Projection Infrastructure ====================
 
@@ -68,8 +76,7 @@ public class ApplicationConfig {
      * Repository for querying VM request projections.
      */
     @Bean
-    public fun vmRequestProjectionRepository(dsl: DSLContext): VmRequestProjectionRepository =
-        VmRequestProjectionRepository(dsl)
+    public fun vmRequestProjectionRepository(dsl: DSLContext): VmRequestProjectionRepository = VmRequestProjectionRepository(dsl)
 
     /**
      * Adapter for updating VM request projections.
@@ -77,9 +84,7 @@ public class ApplicationConfig {
      * Implements the application-layer VmRequestProjectionUpdater port.
      */
     @Bean
-    public fun vmRequestProjectionUpdater(
-        projectionRepository: VmRequestProjectionRepository
-    ): VmRequestProjectionUpdater =
+    public fun vmRequestProjectionUpdater(projectionRepository: VmRequestProjectionRepository): VmRequestProjectionUpdater =
         VmRequestProjectionUpdaterAdapter(projectionRepository)
 
     /**
@@ -88,10 +93,24 @@ public class ApplicationConfig {
      * Implements the application-layer VmRequestReadRepository port.
      */
     @Bean
-    public fun vmRequestReadRepository(
-        projectionRepository: VmRequestProjectionRepository
-    ): VmRequestReadRepository =
+    public fun vmRequestReadRepository(projectionRepository: VmRequestProjectionRepository): VmRequestReadRepository =
         VmRequestReadRepositoryAdapter(projectionRepository)
+
+    /**
+     * Repository for timeline event database operations.
+     */
+    @Bean
+    public fun timelineEventRepository(dsl: DSLContext): TimelineEventRepository = TimelineEventRepository(dsl)
+
+    /**
+     * Adapter for updating timeline event projections.
+     *
+     * Implements the application-layer TimelineEventProjectionUpdater port.
+     * Used by command handlers to persist timeline events when request status changes.
+     */
+    @Bean
+    public fun timelineEventProjectionUpdater(repository: TimelineEventRepository): TimelineEventProjectionUpdater =
+        TimelineEventProjectionUpdaterAdapter(repository)
 
     // ==================== Event Deserializer ====================
 
@@ -110,10 +129,16 @@ public class ApplicationConfig {
      * Handler for creating VM requests.
      *
      * @param eventStore Event store for persisting domain events
+     * @param timelineUpdater Updater for persisting timeline events
      */
     @Bean
-    public fun createVmRequestHandler(eventStore: EventStore): CreateVmRequestHandler =
-        CreateVmRequestHandler(eventStore)
+    public fun createVmRequestHandler(
+        eventStore: EventStore,
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): CreateVmRequestHandler = CreateVmRequestHandler(
+        eventStore = eventStore,
+        timelineUpdater = timelineUpdater
+    )
 
     /**
      * Handler for cancelling VM requests.
@@ -121,14 +146,20 @@ public class ApplicationConfig {
      * @param eventStore Event store for loading and persisting events
      * @param eventDeserializer Deserializer for converting stored events to domain events
      * @param projectionUpdater Updater for keeping projections in sync
+     * @param timelineUpdater Updater for persisting timeline events
      */
     @Bean
     public fun cancelVmRequestHandler(
         eventStore: EventStore,
         eventDeserializer: VmRequestEventDeserializer,
-        projectionUpdater: VmRequestProjectionUpdater
-    ): CancelVmRequestHandler =
-        CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+        projectionUpdater: VmRequestProjectionUpdater,
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): CancelVmRequestHandler = CancelVmRequestHandler(
+        eventStore = eventStore,
+        eventDeserializer = eventDeserializer,
+        projectionUpdater = projectionUpdater,
+        timelineUpdater = timelineUpdater
+    )
 
     // ==================== Query Handlers ====================
 
@@ -138,6 +169,36 @@ public class ApplicationConfig {
      * @param readRepository Repository for querying VM request projections
      */
     @Bean
-    public fun getMyRequestsHandler(readRepository: VmRequestReadRepository): GetMyRequestsHandler =
-        GetMyRequestsHandler(readRepository)
+    public fun getMyRequestsHandler(readRepository: VmRequestReadRepository): GetMyRequestsHandler = GetMyRequestsHandler(readRepository)
+
+    /**
+     * Adapter for reading detailed VM request information.
+     *
+     * Implements the application-layer VmRequestDetailRepository port.
+     */
+    @Bean
+    public fun vmRequestDetailRepository(dsl: DSLContext): VmRequestDetailRepository = VmRequestDetailRepositoryAdapter(dsl)
+
+    /**
+     * Adapter for reading timeline events.
+     *
+     * Implements the application-layer TimelineEventReadRepository port.
+     */
+    @Bean
+    public fun timelineEventReadRepository(dsl: DSLContext): TimelineEventReadRepository = TimelineEventReadRepositoryAdapter(dsl)
+
+    /**
+     * Handler for retrieving detailed VM request information with timeline.
+     *
+     * @param requestRepository Repository for querying VM request details
+     * @param timelineRepository Repository for querying timeline events
+     */
+    @Bean
+    public fun getRequestDetailHandler(
+        requestRepository: VmRequestDetailRepository,
+        timelineRepository: TimelineEventReadRepository,
+    ): GetRequestDetailHandler = GetRequestDetailHandler(
+        requestRepository = requestRepository,
+        timelineRepository = timelineRepository
+    )
 }

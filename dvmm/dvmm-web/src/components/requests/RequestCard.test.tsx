@@ -3,6 +3,16 @@ import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { RequestCard } from './RequestCard'
 import { type VmRequestSummary } from '@/api/vm-requests'
 
+// Mock useNavigate
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 // Mock useCancelRequest hook
 const mockMutate = vi.fn()
 vi.mock('@/hooks/useCancelRequest', () => ({
@@ -46,10 +56,11 @@ const createMockRequest = (overrides: Partial<VmRequestSummary> = {}): VmRequest
 describe('RequestCard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockNavigate.mockClear()
     mockUseCancelRequest.mockReturnValue({
       mutate: mockMutate,
       isPending: false,
-    } as ReturnType<typeof useCancelRequest>)
+    } as unknown as ReturnType<typeof useCancelRequest>)
   })
 
   it('renders VM name', () => {
@@ -159,6 +170,54 @@ describe('RequestCard', () => {
     it('does not show cancel button for FAILED requests', () => {
       render(<RequestCard request={createMockRequest({ status: 'FAILED' })} />)
       expect(screen.queryByTestId('cancel-request-button')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('navigation', () => {
+    it('navigates to detail page when card is clicked', () => {
+      render(<RequestCard request={createMockRequest({ id: 'req-123' })} />)
+
+      fireEvent.click(screen.getByTestId('request-card-req-123'))
+
+      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-123')
+    })
+
+    it('navigates to detail page when Enter key is pressed', () => {
+      render(<RequestCard request={createMockRequest({ id: 'req-456' })} />)
+
+      fireEvent.keyDown(screen.getByTestId('request-card-req-456'), { key: 'Enter' })
+
+      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-456')
+    })
+
+    it('navigates to detail page when Space key is pressed', () => {
+      render(<RequestCard request={createMockRequest({ id: 'req-789' })} />)
+
+      fireEvent.keyDown(screen.getByTestId('request-card-req-789'), { key: ' ' })
+
+      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-789')
+    })
+
+    it('does not navigate when Cancel button is clicked', async () => {
+      render(<RequestCard request={createMockRequest()} />)
+
+      fireEvent.click(screen.getByTestId('cancel-request-button'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cancel-confirm-dialog')).toBeInTheDocument()
+      })
+
+      // Navigation should not have been triggered
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('card has proper accessibility attributes', () => {
+      render(<RequestCard request={createMockRequest({ vmName: 'test-vm' })} />)
+
+      const card = screen.getByTestId('request-card-req-123')
+      expect(card).toHaveAttribute('role', 'button')
+      expect(card).toHaveAttribute('tabIndex', '0')
+      expect(card).toHaveAttribute('aria-label', 'View details for test-vm')
     })
   })
 

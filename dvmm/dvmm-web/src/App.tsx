@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/auth'
 import { Dashboard } from '@/pages/Dashboard'
 import { MyRequests } from '@/pages/MyRequests'
 import { NewRequest } from '@/pages/NewRequest'
+import { RequestDetail } from '@/pages/RequestDetail'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { queryClient } from '@/lib/query-client'
 import { User } from 'lucide-react'
@@ -96,6 +97,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <NewRequest />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/:id"
+          element={
+            <ProtectedRoute>
+              <RequestDetail />
             </ProtectedRoute>
           }
         />

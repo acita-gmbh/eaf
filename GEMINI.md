@@ -172,6 +172,31 @@ const result = await recurse(
 - Network interception and mocking utilities
 - Auth session persistence between test runs
 
+### Vitest Unit Testing Patterns
+
+**Use `vi.hoisted()` for module mocks** - ensures mock is created before ES modules are imported:
+
+```tsx
+// CORRECT - vi.hoisted() ensures mock exists before import
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({ user: { access_token: 'test-token' }, isAuthenticated: true }))
+)
+
+vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
+
+// Override in tests:
+mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
+```
+
+**Use `mockResolvedValueOnce()` for sequential responses** - deterministic ordering for refetch/retry tests:
+
+```tsx
+// CORRECT - Different response per call
+mockGetData
+  .mockResolvedValueOnce({ status: 'PENDING' })   // First call
+  .mockResolvedValueOnce({ status: 'APPROVED' })  // After refetch
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
@@ -193,13 +218,19 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
+   -- CRITICAL: RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
    -- [jooq ignore stop]
    ```
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 5. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, jOOQ regenerated, tests pass.
+**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, RLS policies include both USING AND WITH CHECK, jOOQ regenerated, integration tests updated for FK constraints, tests pass.
+
+**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
 
 ## Git Conventions
 
