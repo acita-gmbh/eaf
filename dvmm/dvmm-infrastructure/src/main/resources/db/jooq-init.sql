@@ -198,33 +198,34 @@ COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version 
 
 -- Projection table for VM request timeline events
 -- Story 2.8: Request Status Timeline
-CREATE TABLE IF NOT EXISTS PUBLIC.request_timeline_events (
-    id              UUID PRIMARY KEY,
-    request_id      UUID NOT NULL,
-    tenant_id       UUID NOT NULL,
-    event_type      VARCHAR(50) NOT NULL,
-    actor_id        UUID,
-    actor_name      VARCHAR(255),
-    details         VARCHAR(4000),
-    occurred_at     TIMESTAMP WITH TIME ZONE NOT NULL
+-- Note: Quoted uppercase identifiers required for H2 DDL compatibility (jOOQ DDLDatabase)
+CREATE TABLE IF NOT EXISTS PUBLIC."REQUEST_TIMELINE_EVENTS" (
+    "ID"              UUID PRIMARY KEY,
+    "REQUEST_ID"      UUID NOT NULL,
+    "TENANT_ID"       UUID NOT NULL,
+    "EVENT_TYPE"      VARCHAR(50) NOT NULL,
+    "ACTOR_ID"        UUID,
+    "ACTOR_NAME"      VARCHAR(255),
+    "DETAILS"         VARCHAR(4000),
+    "OCCURRED_AT"     TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
-CREATE INDEX idx_timeline_events_request ON PUBLIC.request_timeline_events (request_id, occurred_at);
-CREATE INDEX idx_timeline_events_tenant ON PUBLIC.request_timeline_events (tenant_id);
+CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_REQUEST" ON PUBLIC."REQUEST_TIMELINE_EVENTS" ("REQUEST_ID", "OCCURRED_AT");
+CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_TENANT" ON PUBLIC."REQUEST_TIMELINE_EVENTS" ("TENANT_ID");
 
 -- [jooq ignore start]
 -- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
 
-ALTER TABLE request_timeline_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation_timeline_events ON request_timeline_events
+CREATE POLICY tenant_isolation_timeline_events ON PUBLIC."REQUEST_TIMELINE_EVENTS"
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
-ALTER TABLE request_timeline_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON request_timeline_events TO eaf_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON PUBLIC."REQUEST_TIMELINE_EVENTS" TO eaf_app;
 
-COMMENT ON TABLE request_timeline_events IS 'Projection table for VM request timeline events';
-COMMENT ON COLUMN request_timeline_events.event_type IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
+COMMENT ON TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" IS 'Projection table for VM request timeline events';
+COMMENT ON COLUMN PUBLIC."REQUEST_TIMELINE_EVENTS"."EVENT_TYPE" IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
 -- [jooq ignore stop]

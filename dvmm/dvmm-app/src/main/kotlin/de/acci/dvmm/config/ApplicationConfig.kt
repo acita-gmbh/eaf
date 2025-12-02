@@ -5,13 +5,16 @@ import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
+import de.acci.dvmm.infrastructure.projection.TimelineEventProjectionUpdaterAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventReadRepositoryAdapter
+import de.acci.dvmm.infrastructure.projection.TimelineEventRepository
 import de.acci.dvmm.infrastructure.projection.VmRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionRepository
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionUpdaterAdapter
@@ -93,6 +96,22 @@ public class ApplicationConfig {
     public fun vmRequestReadRepository(projectionRepository: VmRequestProjectionRepository): VmRequestReadRepository =
         VmRequestReadRepositoryAdapter(projectionRepository)
 
+    /**
+     * Repository for timeline event database operations.
+     */
+    @Bean
+    public fun timelineEventRepository(dsl: DSLContext): TimelineEventRepository = TimelineEventRepository(dsl)
+
+    /**
+     * Adapter for updating timeline event projections.
+     *
+     * Implements the application-layer TimelineEventProjectionUpdater port.
+     * Used by command handlers to persist timeline events when request status changes.
+     */
+    @Bean
+    public fun timelineEventProjectionUpdater(repository: TimelineEventRepository): TimelineEventProjectionUpdater =
+        TimelineEventProjectionUpdaterAdapter(repository)
+
     // ==================== Event Deserializer ====================
 
     /**
@@ -120,13 +139,20 @@ public class ApplicationConfig {
      * @param eventStore Event store for loading and persisting events
      * @param eventDeserializer Deserializer for converting stored events to domain events
      * @param projectionUpdater Updater for keeping projections in sync
+     * @param timelineUpdater Updater for persisting timeline events
      */
     @Bean
     public fun cancelVmRequestHandler(
         eventStore: EventStore,
         eventDeserializer: VmRequestEventDeserializer,
         projectionUpdater: VmRequestProjectionUpdater,
-    ): CancelVmRequestHandler = CancelVmRequestHandler(eventStore, eventDeserializer, projectionUpdater)
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): CancelVmRequestHandler = CancelVmRequestHandler(
+        eventStore = eventStore,
+        eventDeserializer = eventDeserializer,
+        projectionUpdater = projectionUpdater,
+        timelineUpdater = timelineUpdater
+    )
 
     // ==================== Query Handlers ====================
 

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS PUBLIC.request_timeline_events (
     event_type      VARCHAR(50) NOT NULL,
     actor_id        UUID,
     actor_name      VARCHAR(255),
-    details         JSONB,
+    details         VARCHAR(4000),
     occurred_at     TIMESTAMPTZ NOT NULL
 );
 
