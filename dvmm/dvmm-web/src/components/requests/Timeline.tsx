@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { TimelineEvent, TimelineEventType } from '@/api/vm-requests'
+import { formatDateTime } from '@/lib/date-utils'
 
 interface TimelineProps {
   /** List of timeline events to display (should be sorted chronologically, oldest first) */
@@ -64,19 +65,6 @@ const eventConfig: Record<
     colorClass: 'text-green-500 bg-green-100 dark:bg-green-950',
     label: 'VM Ready',
   },
-}
-
-/**
- * Formats an ISO date string to localized format with time.
- */
-function formatDateTime(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 /**
