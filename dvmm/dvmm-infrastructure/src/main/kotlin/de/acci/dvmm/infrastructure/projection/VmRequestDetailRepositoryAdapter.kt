@@ -4,6 +4,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestDetailProjection
 import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Companion.VM_REQUESTS_PROJECTION
+import de.acci.eaf.core.types.UserId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -26,6 +27,7 @@ public class VmRequestDetailRepositoryAdapter(
                 ?.let { record ->
                     VmRequestDetailProjection(
                         id = VmRequestId(record.get(VM_REQUESTS_PROJECTION.ID)!!),
+                        requesterId = UserId(record.get(VM_REQUESTS_PROJECTION.REQUESTER_ID)!!),
                         vmName = record.get(VM_REQUESTS_PROJECTION.VM_NAME)!!,
                         size = record.get(VM_REQUESTS_PROJECTION.SIZE)!!,
                         cpuCores = record.get(VM_REQUESTS_PROJECTION.CPU_CORES)!!,

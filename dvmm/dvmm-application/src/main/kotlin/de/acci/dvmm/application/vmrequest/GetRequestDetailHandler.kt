@@ -35,6 +35,14 @@ public sealed class GetRequestDetailError {
     ) : GetRequestDetailError()
 
     /**
+     * User is not authorized to view this request.
+     * Only the original requester can view their request details.
+     */
+    public data class Forbidden(
+        val message: String = "Not authorized to view this request"
+    ) : GetRequestDetailError()
+
+    /**
      * Unexpected failure when querying the read model.
      */
     public data class QueryFailure(
@@ -130,6 +138,17 @@ public class GetRequestDetailHandler(
             val requestDetails = requestRepository.findById(query.requestId)
                 ?: return GetRequestDetailError.NotFound(query.requestId).failure()
 
+            // Authorization check: only the original requester can view details
+            if (requestDetails.requesterId != query.userId) {
+                logger.warn {
+                    "Unauthorized access attempt: " +
+                        "requestId=${query.requestId.value}, " +
+                        "requesterId=${requestDetails.requesterId.value}, " +
+                        "userId=${query.userId.value}"
+                }
+                return GetRequestDetailError.Forbidden().failure()
+            }
+
             // Then, fetch the timeline events
             val timelineEvents = timelineRepository.findByRequestId(query.requestId)
 
@@ -184,6 +203,7 @@ public interface VmRequestDetailRepository {
  */
 public data class VmRequestDetailProjection(
     val id: VmRequestId,
+    val requesterId: UserId,
     val vmName: String,
     val size: String,
     val cpuCores: Int,

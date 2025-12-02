@@ -129,9 +129,16 @@ public class ApplicationConfig {
      * Handler for creating VM requests.
      *
      * @param eventStore Event store for persisting domain events
+     * @param timelineUpdater Updater for persisting timeline events
      */
     @Bean
-    public fun createVmRequestHandler(eventStore: EventStore): CreateVmRequestHandler = CreateVmRequestHandler(eventStore)
+    public fun createVmRequestHandler(
+        eventStore: EventStore,
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): CreateVmRequestHandler = CreateVmRequestHandler(
+        eventStore = eventStore,
+        timelineUpdater = timelineUpdater
+    )
 
     /**
      * Handler for cancelling VM requests.

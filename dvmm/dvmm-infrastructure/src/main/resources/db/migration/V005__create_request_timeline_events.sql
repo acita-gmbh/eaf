@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS PUBLIC.request_timeline_events (
     id              UUID PRIMARY KEY,
-    request_id      UUID NOT NULL,
+    request_id      UUID NOT NULL REFERENCES vm_requests_projection(id) ON DELETE CASCADE,
     tenant_id       UUID NOT NULL,
     event_type      VARCHAR(50) NOT NULL,
     actor_id        UUID,

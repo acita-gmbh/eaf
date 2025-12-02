@@ -201,7 +201,7 @@ COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version 
 -- Note: Quoted uppercase identifiers required for H2 DDL compatibility (jOOQ DDLDatabase)
 CREATE TABLE IF NOT EXISTS PUBLIC."REQUEST_TIMELINE_EVENTS" (
     "ID"              UUID PRIMARY KEY,
-    "REQUEST_ID"      UUID NOT NULL,
+    "REQUEST_ID"      UUID NOT NULL REFERENCES "VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
     "TENANT_ID"       UUID NOT NULL,
     "EVENT_TYPE"      VARCHAR(50) NOT NULL,
     "ACTOR_ID"        UUID,

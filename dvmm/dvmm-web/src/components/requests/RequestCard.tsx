@@ -21,22 +21,10 @@ import {
   type VmRequestSummary,
 } from '@/api/vm-requests'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
+import { formatDateTime } from '@/lib/date-utils'
 
 interface RequestCardProps {
   request: VmRequestSummary
-}
-
-/**
- * Formats an ISO date string to German locale format.
- */
-function formatDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 /**
@@ -164,7 +152,7 @@ export function RequestCard({ request }: RequestCardProps) {
 
         <CardFooter className="text-muted-foreground text-sm">
           <span data-testid="request-created-at">
-            Created {formatDate(request.createdAt)}
+            Created {formatDateTime(request.createdAt)}
           </span>
         </CardFooter>
       </Card>

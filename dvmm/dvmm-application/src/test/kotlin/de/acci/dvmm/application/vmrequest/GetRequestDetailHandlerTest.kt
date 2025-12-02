@@ -45,6 +45,7 @@ class GetRequestDetailHandlerTest {
             // Given
             val projection = VmRequestDetailProjection(
                 id = testRequestId,
+                requesterId = testUserId,
                 vmName = "web-server-01",
                 size = "MEDIUM",
                 cpuCores = 4,
@@ -97,6 +98,7 @@ class GetRequestDetailHandlerTest {
             // Given
             val projection = VmRequestDetailProjection(
                 id = testRequestId,
+                requesterId = testUserId,
                 vmName = "db-server-01",
                 size = "LARGE",
                 cpuCores = 8,
@@ -142,6 +144,47 @@ class GetRequestDetailHandlerTest {
             assertEquals(TimelineEventType.CREATED, detail.timeline[0].eventType)
             assertEquals(TimelineEventType.CANCELLED, detail.timeline[1].eventType)
             assertNotNull(detail.timeline[1].details)
+        }
+    }
+
+    @Nested
+    @DisplayName("when user is not authorized")
+    inner class WhenUserIsNotAuthorized {
+
+        @Test
+        fun `returns Forbidden error when accessing another user's request`() = runBlocking {
+            // Given
+            val otherUserId = UserId(UUID.randomUUID())
+            val projection = VmRequestDetailProjection(
+                id = testRequestId,
+                requesterId = otherUserId, // Different from testUserId
+                vmName = "web-server-01",
+                size = "MEDIUM",
+                cpuCores = 4,
+                memoryGb = 16,
+                diskGb = 100,
+                justification = "Production deployment",
+                status = "PENDING",
+                projectName = "E-Commerce Platform",
+                requesterName = "Other User",
+                createdAt = testTimestamp
+            )
+
+            coEvery { requestRepository.findById(testRequestId) } returns projection
+
+            // When
+            val result = handler.handle(
+                GetRequestDetailQuery(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId // Different from projection.requesterId
+                )
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is GetRequestDetailError.Forbidden)
         }
     }
 

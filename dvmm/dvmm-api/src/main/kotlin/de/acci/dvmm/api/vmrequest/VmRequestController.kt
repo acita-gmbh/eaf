@@ -264,6 +264,11 @@ public class VmRequestController(
                     NotFoundResponse(message = error.message)
                 )
             }
+            is GetRequestDetailError.Forbidden -> {
+                ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    ForbiddenResponse(message = error.message)
+                )
+            }
             is GetRequestDetailError.QueryFailure -> {
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     InternalErrorResponse(message = "Failed to retrieve request details")
