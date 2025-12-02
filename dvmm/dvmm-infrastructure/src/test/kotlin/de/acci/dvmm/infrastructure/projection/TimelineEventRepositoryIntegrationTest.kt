@@ -358,7 +358,7 @@ class TimelineEventRepositoryIntegrationTest {
         fun `stores all event types correctly`() = runBlocking {
             val requestId = UUID.randomUUID()
             val now = OffsetDateTime.now()
-            val eventTypes = listOf("CREATED", "APPROVED", "REJECTED", "CANCELLED", "PROVISIONING_STARTED", "VM_READY")
+            val eventTypes = listOf("CREATED", "APPROVED", "REJECTED", "CANCELLED", "PROVISIONING_STARTED", "PROVISIONING_QUEUED", "VM_READY")
 
             eventTypes.forEachIndexed { index, eventType ->
                 insertTestTimelineEvent(
@@ -373,7 +373,7 @@ class TimelineEventRepositoryIntegrationTest {
                 repository = TimelineEventRepository(dsl)
                 val events = repository.findByRequestId(requestId)
 
-                assertEquals(6, events.size)
+                assertEquals(7, events.size)
                 assertEquals(eventTypes, events.map { it.eventType })
             }
         }

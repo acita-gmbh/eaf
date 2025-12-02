@@ -155,7 +155,8 @@ ALTER TABLE public."REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_timeline_events ON public."REQUEST_TIMELINE_EVENTS"
     FOR ALL
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE public."REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
 -- [jooq ignore stop]

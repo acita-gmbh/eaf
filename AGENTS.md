@@ -134,6 +134,21 @@ const result = await recurse(
 
 **Key features:** `apiRequest` fixture, `recurse` polling, `log` integration, network interception, auth session persistence.
 
+### Vitest Unit Testing Patterns
+
+**Module mocking:** Use `vi.hoisted()` to ensure mocks exist before ES module imports:
+
+```tsx
+const mockUseAuth = vi.hoisted(() => vi.fn(() => ({ user: { access_token: 'token' } })))
+vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
+```
+
+**Sequential responses:** Use `mockResolvedValueOnce()` for deterministic refetch/retry tests:
+
+```tsx
+mockGetData.mockResolvedValueOnce({ status: 'PENDING' }).mockResolvedValueOnce({ status: 'APPROVED' })
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
@@ -155,13 +170,17 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
+   -- RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = ...)
+       WITH CHECK (tenant_id = ...);
    -- [jooq ignore stop]
    ```
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 5. Verify: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + regenerate + integration tests updated for FK constraints + tests pass.
+**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + RLS WITH CHECK + regenerate + integration tests for FK + tests pass.
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
 

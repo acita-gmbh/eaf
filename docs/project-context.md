@@ -113,6 +113,10 @@ class VmService {
 }
 ```
 
+**Vitest Mocking Patterns:**
+- Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
+- Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests
+
 ---
 
 ## jOOQ Code Generation (Critical Gotchas)
@@ -130,7 +134,11 @@ CREATE TABLE domain_events (...)    -- ❌ Wrong
 -- Wrap PostgreSQL-specific statements
 -- [jooq ignore start]
 ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON my_table ...;
+-- RLS policies MUST have both USING (reads) AND WITH CHECK (writes)
+CREATE POLICY tenant_isolation ON my_table
+    FOR ALL
+    USING (tenant_id = ...)
+    WITH CHECK (tenant_id = ...);
 -- [jooq ignore stop]
 ```
 

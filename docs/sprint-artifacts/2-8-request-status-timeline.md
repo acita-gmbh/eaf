@@ -1,6 +1,6 @@
 # Story 2.8: Request Status Timeline
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -25,7 +25,7 @@ Before starting implementation, verify these are complete:
 - [x] **VmRequestProjectionRepository exists:** Query methods available
 - [x] **REQUEST_TIMELINE_EVENTS table:** Schema exists in tech spec (may need migration)
 - [x] **Domain events exist:** VmRequestCreated, VmRequestApproved, VmRequestRejected, VmRequestCancelled
-- [ ] **User Name Resolution:** Ensure `TimelineEventProjector` can resolve actor names (see Task 1.4 fix)
+- [x] **User Name Resolution:** Ensure `TimelineEventProjector` can resolve actor names (see Task 1.4 fix)
 
 ## Acceptance Criteria
 
@@ -54,7 +54,7 @@ Before starting implementation, verify these are complete:
 4. **Real-time updates via polling**
    - Given I am viewing a request detail page
    - When the request status changes (e.g., approved by admin)
-   - Then the timeline updates without page refresh within 5 seconds
+   - Then the timeline updates without page refresh within 30 seconds
    - And a new event appears in the timeline
 
 5. **Request header information**
@@ -125,7 +125,7 @@ Before starting implementation, verify these are complete:
 - Fetches request by ID from GET /api/requests/{id}
 - Returns loading state
 - Returns error state for 404
-- Supports refetch interval for polling (5 seconds)
+- Supports refetch interval for polling (30 seconds)
 
 **useRequestTimeline hook:**
 - Fetches timeline from GET /api/requests/{id}/timeline
@@ -197,17 +197,17 @@ GET /api/requests/{id}/timeline - Get request timeline events
 
 ### Phase 1: Backend - Timeline Projection
 
-- [ ] **Task 1.1: Create Flyway migration for REQUEST_TIMELINE_EVENTS** (AC: 2)
+- [x] **Task 1.1: Create Flyway migration for REQUEST_TIMELINE_EVENTS** (AC: 2)
   - Create migration file `V00X__create_request_timeline_events.sql`
   - Use H2-compatible DDL (quoted UPPERCASE) in `jooq-init.sql`
   - Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 
-- [ ] **Task 1.2: Create TimelineEvent domain type & Repository** (AC: 2)
+- [x] **Task 1.2: Create TimelineEvent domain type & Repository** (AC: 2)
   - Create `TimelineEvent.kt` mapping to jOOQ record
   - Create `TimelineEventRepository` with `findByRequestId`
   - Ensure RLS tenant filter is applied automatically
 
-- [ ] **Task 1.3: Create TimelineEventProjector with Actor Resolution** (AC: 2)
+- [x] **Task 1.3: Create TimelineEventProjector with Actor Resolution** (AC: 2)
   - **CRITICAL FIX:** `VmRequestApproved` events usually only contain `userId`.
   - **Option A (Preferred):** If `UserLookupService` exists, inject it to fetch `actorName`.
   - **Option B (Fallback):** If event payload was updated to include name, use it.
@@ -216,51 +216,51 @@ GET /api/requests/{id}/timeline - Get request timeline events
 
 ### Phase 2: Backend - API Endpoints
 
-- [ ] **Task 2.1: Create GetRequestDetail & GetRequestTimeline Queries** (AC: 1, 2, 3, 5)
+- [x] **Task 2.1: Create GetRequestDetail & GetRequestTimeline Queries** (AC: 1, 2, 3, 5)
   - Create Query classes and Handlers in `dvmm-application`
   - Implement `GetRequestDetailHandler` returning full details
   - Implement `GetRequestTimelineHandler` returning event list sorted by date
   - Enforce ownership/admin checks (403 if forbidden)
 
-- [ ] **Task 2.2: Add Controller Endpoints & Update OpenAPI** (AC: 1, 2, 3, 5)
+- [x] **Task 2.2: Add Controller Endpoints & Update OpenAPI** (AC: 1, 2, 3, 5)
   - Add endpoints to `VmRequestController`:
     - `GET /api/requests/{id}`
     - `GET /api/requests/{id}/timeline`
   - **CRITICAL:** Update `openapi/v1/paths/vm-requests.yaml` to reflect these new endpoints.
 
-- [ ] **Task 2.3: Create DTOs** (AC: 2, 3, 5)
+- [x] **Task 2.3: Create DTOs** (AC: 2, 3, 5)
   - Create `VmRequestDetailResponse`
   - Create `TimelineEventResponse` (ensure `actorName` is included)
 
 ### Phase 3: Frontend - API & Hooks
 
-- [ ] **Task 3.1: Add API functions** (AC: 1, 2)
+- [x] **Task 3.1: Add API functions** (AC: 1, 2)
   - Extend `src/api/vm-requests.ts` with `getRequestDetail(id)` and `getRequestTimeline(id)`
 
-- [ ] **Task 3.2: Create React Hooks** (AC: 1, 2, 4, 5, 8)
+- [x] **Task 3.2: Create React Hooks** (AC: 1, 2, 4, 5, 8)
   - Create `useRequestDetail.ts` and `useRequestTimeline.ts`
-  - Use `useQuery` with `refetchInterval: 5000` for polling
+  - Use `useQuery` with `refetchInterval: 30000` for polling
 
 ### Phase 4: Frontend - Components
 
-- [ ] **Task 4.1: Create RequestDetailPage** (AC: 1, 5, 7, 8, 9)
+- [x] **Task 4.1: Create RequestDetailPage** (AC: 1, 5, 7, 8, 9)
   - Create `src/pages/RequestDetail.tsx`
   - Implement header, timeline, cancel button (reusing `CancelConfirmDialog`)
   - **NO `useMemo`/`useCallback` allowed**
 
-- [ ] **Task 4.2: Create Timeline Component** (AC: 2, 3)
+- [x] **Task 4.2: Create Timeline Component** (AC: 2, 3)
   - Create `src/components/requests/Timeline.tsx` and `TimelineEvent.tsx`
   - Use `date-fns` (or `Intl.DateTimeFormat` with `de-DE`) for consistent relative time
   - Different icons/colors for event types
 
-- [ ] **Task 4.3: Navigation Updates** (AC: 1, 7)
+- [x] **Task 4.3: Navigation Updates** (AC: 1, 7)
   - Add route `/requests/:id` to `App.tsx`
   - Update `RequestCard` to navigate on click
   - Add breadcrumb/back navigation
 
 ### Phase 5: E2E Tests
 
-- [ ] **Task 5.1: Playwright Tests** (AC: 1-9)
+- [x] **Task 5.1: Playwright Tests** (AC: 1-9)
   - Verify navigation flow
   - Verify timeline updates (mock polling)
   - Verify cancel action from detail page

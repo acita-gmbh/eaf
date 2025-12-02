@@ -505,16 +505,23 @@ interface BackendVmRequestDetailResponse {
 }
 
 /**
- * VM request detail with timeline (frontend format).
- * Size fields are flattened for easier display.
+ * VM size response with resource specifications.
+ */
+export interface VmSizeResponse {
+  code: string
+  cpuCores: number
+  memoryGb: number
+  diskGb: number
+}
+
+/**
+ * VM request detail with timeline.
+ * Size is a nested object containing resource specifications.
  */
 export interface VmRequestDetailResponse {
   id: string
   vmName: string
-  size: string
-  cpuCores: number
-  memoryGb: number
-  diskGb: number
+  size: VmSizeResponse
   justification: string
   status: VmRequestStatus
   projectName: string

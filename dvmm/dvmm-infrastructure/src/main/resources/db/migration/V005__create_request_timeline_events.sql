@@ -23,7 +23,8 @@ ALTER TABLE request_timeline_events ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_timeline_events ON request_timeline_events
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE request_timeline_events FORCE ROW LEVEL SECURITY;
 

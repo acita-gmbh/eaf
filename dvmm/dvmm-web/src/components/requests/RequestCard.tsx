@@ -118,7 +118,15 @@ export function RequestCard({ request }: RequestCardProps) {
                   e.stopPropagation()
                   setCancelDialogOpen(true)
                 }}
-                onKeyDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setCancelDialogOpen(true)
+                  } else {
+                    e.stopPropagation()
+                  }
+                }}
                 data-testid="cancel-request-button"
               >
                 Cancel

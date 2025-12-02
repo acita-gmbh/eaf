@@ -207,7 +207,7 @@ export function RequestDetail() {
               <div>
                 <p className="text-sm text-muted-foreground">CPU</p>
                 <p className="font-medium" data-testid="request-detail-cpu">
-                  {data.cpuCores} cores
+                  {data.size.cpuCores} cores
                 </p>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function RequestDetail() {
               <div>
                 <p className="text-sm text-muted-foreground">Memory</p>
                 <p className="font-medium" data-testid="request-detail-memory">
-                  {data.memoryGb} GB
+                  {data.size.memoryGb} GB
                 </p>
               </div>
             </div>
@@ -231,7 +231,7 @@ export function RequestDetail() {
               <div>
                 <p className="text-sm text-muted-foreground">Disk</p>
                 <p className="font-medium" data-testid="request-detail-disk">
-                  {data.diskGb} GB
+                  {data.size.diskGb} GB
                 </p>
               </div>
             </div>

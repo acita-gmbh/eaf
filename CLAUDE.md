@@ -205,6 +205,73 @@ const result = await recurse(
 - Network interception and mocking utilities
 - Auth session persistence between test runs
 
+### Vitest Unit Testing Patterns
+
+**Use `vi.hoisted()` for module mocks that need to be available before imports.**
+
+When mocking modules like `react-oidc-context` or other external dependencies, the mock must be created before ES modules are imported. Use `vi.hoisted()` to ensure proper hoisting:
+
+```tsx
+// ✅ CORRECT - vi.hoisted() ensures mock exists before import
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
+    user: { access_token: 'test-token' },
+    isAuthenticated: true,
+  }))
+)
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
+}))
+
+// In tests, you can now override the mock:
+beforeEach(() => {
+  mockUseAuth.mockReturnValue({
+    user: { access_token: 'test-token' },
+    isAuthenticated: true,
+  })
+})
+
+it('handles unauthenticated state', () => {
+  mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
+  // ... test code
+})
+```
+
+```tsx
+// ❌ WRONG - Dynamic import and re-mock doesn't work reliably
+it('test', async () => {
+  const { useAuth } = await import('react-oidc-context')
+  vi.mocked(useAuth).mockReturnValue({ ... })  // May not apply!
+})
+```
+
+**Use `mockResolvedValueOnce()` for sequential responses in async tests.**
+
+When testing refetch behavior or sequential API calls, use `mockResolvedValueOnce()` to return different values for each call:
+
+```tsx
+// ✅ CORRECT - Deterministic sequential responses
+mockGetData
+  .mockResolvedValueOnce({ status: 'PENDING' })   // First call
+  .mockResolvedValueOnce({ status: 'APPROVED' })  // After refetch
+
+const { result } = renderHook(() => useMyHook())
+await waitFor(() => expect(result.current.data?.status).toBe('PENDING'))
+
+await result.current.refetch()
+await waitFor(() => expect(mockGetData).toHaveBeenCalledTimes(2))
+expect(result.current.data?.status).toBe('APPROVED')
+```
+
+```tsx
+// ❌ WRONG - Changing mock between calls is unreliable
+mockGetData.mockResolvedValue({ status: 'PENDING' })
+// ... initial fetch
+mockGetData.mockResolvedValue({ status: 'APPROVED' })  // May still return PENDING!
+await result.current.refetch()
+```
+
 ## jOOQ Code Generation
 
 jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).
@@ -235,10 +302,15 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
-   GRANT SELECT ON my_table TO eaf_app;
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+   ALTER TABLE my_table FORCE ROW LEVEL SECURITY;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON my_table TO eaf_app;
    -- [jooq ignore stop]
    ```
+   **CRITICAL: Always include `WITH CHECK` in RLS policies.** Without it, RLS only filters reads but allows writes to any tenant, enabling cross-tenant data injection.
 5. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 6. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
@@ -246,6 +318,7 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
 - [ ] Flyway migration created (V00X__*.sql)
 - [ ] jooq-init.sql updated with H2-compatible DDL
 - [ ] PostgreSQL-specific statements wrapped with ignore tokens
+- [ ] RLS policies include both `USING` AND `WITH CHECK` clauses
 - [ ] FK constraints added for related tables (e.g., `REFERENCES parent_table(id) ON DELETE CASCADE`)
 - [ ] jOOQ code regenerated
 - [ ] Integration tests updated for FK constraints (see below)
