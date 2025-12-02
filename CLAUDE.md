@@ -248,7 +248,34 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
 - [ ] PostgreSQL-specific statements wrapped with ignore tokens
 - [ ] FK constraints added for related tables (e.g., `REFERENCES parent_table(id) ON DELETE CASCADE`)
 - [ ] jOOQ code regenerated
+- [ ] Integration tests updated for FK constraints (see below)
 - [ ] Tests pass with new schema
+
+### FK Constraints and Integration Tests
+
+When adding FK constraints, integration tests that directly insert child records will fail. Update test helpers:
+
+```kotlin
+// ✅ CORRECT - Test helper creates parent record first
+private fun insertTestTimelineEvent(requestId: UUID, tenantId: TenantId, ...) {
+    // Ensure parent exists (FK constraint)
+    insertParentRequest(id = requestId, tenantId = tenantId)
+    // Then insert child record
+    // ...
+}
+
+// ✅ CORRECT - Parent insert is idempotent
+private fun insertParentRequest(id: UUID, tenantId: TenantId) {
+    // Use ON CONFLICT to avoid duplicates when same parent used multiple times
+    """INSERT INTO ... VALUES (...) ON CONFLICT ("ID") DO NOTHING"""
+}
+
+// ✅ CORRECT - Cleanup uses CASCADE for FK constraints
+@AfterEach
+fun cleanup() {
+    superuserDsl.execute("""TRUNCATE TABLE "PARENT_TABLE" CASCADE""")
+}
+```
 
 ### What Gets Ignored
 

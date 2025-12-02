@@ -199,7 +199,9 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 5. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, jOOQ regenerated, tests pass.
+**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, jOOQ regenerated, integration tests updated for FK constraints, tests pass.
+
+**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
 
 ## Git Conventions
 
