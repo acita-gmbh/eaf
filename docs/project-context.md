@@ -117,6 +117,10 @@ class VmService {
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests
 
+---
+
+## Frontend Patterns
+
 **TanStack Query Polling (for admin queues, dashboards):**
 - Use both `staleTime` (cache freshness) AND `refetchInterval` (active background polling)
 - Add jitter to `refetchInterval` to prevent thundering herd: `30000 + Math.floor(Math.random() * 5000)`
