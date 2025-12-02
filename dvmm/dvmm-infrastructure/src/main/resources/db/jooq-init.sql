@@ -191,3 +191,40 @@ COMMENT ON COLUMN vm_requests_projection.updated_at IS 'Timestamp when the reque
 COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version for concurrent updates';
 
 -- [jooq ignore stop]
+
+-- ============================================================================
+-- V005__create_request_timeline_events.sql content
+-- ============================================================================
+
+-- Projection table for VM request timeline events
+-- Story 2.8: Request Status Timeline
+CREATE TABLE IF NOT EXISTS PUBLIC.request_timeline_events (
+    id              UUID PRIMARY KEY,
+    request_id      UUID NOT NULL,
+    tenant_id       UUID NOT NULL,
+    event_type      VARCHAR(50) NOT NULL,
+    actor_id        UUID,
+    actor_name      VARCHAR(255),
+    details         VARCHAR(4000),
+    occurred_at     TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE INDEX idx_timeline_events_request ON PUBLIC.request_timeline_events (request_id, occurred_at);
+CREATE INDEX idx_timeline_events_tenant ON PUBLIC.request_timeline_events (tenant_id);
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
+
+ALTER TABLE request_timeline_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_timeline_events ON request_timeline_events
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+ALTER TABLE request_timeline_events FORCE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON request_timeline_events TO eaf_app;
+
+COMMENT ON TABLE request_timeline_events IS 'Projection table for VM request timeline events';
+COMMENT ON COLUMN request_timeline_events.event_type IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
+-- [jooq ignore stop]

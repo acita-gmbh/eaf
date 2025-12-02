@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Card,
@@ -49,8 +50,13 @@ function formatDate(isoDate: string): string {
  * - Cancel button (only for PENDING requests)
  */
 export function RequestCard({ request }: RequestCardProps) {
+  const navigate = useNavigate()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const cancelMutation = useCancelRequest()
+
+  const handleCardClick = () => {
+    navigate(`/requests/${request.id}`)
+  }
 
   const handleCancelConfirm = (reason?: string) => {
     cancelMutation.mutate(
@@ -93,7 +99,20 @@ export function RequestCard({ request }: RequestCardProps) {
 
   return (
     <>
-      <Card data-testid={`request-card-${request.id}`}>
+      <Card
+        data-testid={`request-card-${request.id}`}
+        className="cursor-pointer transition-colors hover:border-primary/50"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleCardClick()
+          }
+        }}
+        aria-label={`View details for ${request.vmName}`}
+      >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span data-testid="request-vm-name">{request.vmName}</span>
@@ -107,7 +126,11 @@ export function RequestCard({ request }: RequestCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCancelDialogOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCancelDialogOpen(true)
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
                 data-testid="cancel-request-button"
               >
                 Cancel

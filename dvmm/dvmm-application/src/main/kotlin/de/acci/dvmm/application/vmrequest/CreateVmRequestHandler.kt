@@ -4,12 +4,15 @@ import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
+import de.acci.eaf.core.result.onFailure
 import de.acci.eaf.core.result.success
 import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
+import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.util.UUID
 
 /**
  * Errors that can occur when creating a VM request.
@@ -65,7 +68,8 @@ public data class CreateVmRequestResult(
  */
 public class CreateVmRequestHandler(
     private val eventStore: EventStore,
-    private val quotaChecker: QuotaChecker = AlwaysAvailableQuotaChecker
+    private val quotaChecker: QuotaChecker = AlwaysAvailableQuotaChecker,
+    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -129,6 +133,25 @@ public class CreateVmRequestHandler(
         return when (appendResult) {
             is Result.Success -> {
                 aggregate.clearUncommittedEvents()
+
+                // Update timeline projection
+                timelineUpdater.addTimelineEvent(
+                    NewTimelineEvent(
+                        id = UUID.nameUUIDFromBytes(
+                            "CREATED:${correlationId.value}".toByteArray()
+                        ),
+                        requestId = aggregate.id,
+                        tenantId = command.tenantId,
+                        eventType = TimelineEventType.CREATED,
+                        actorId = command.requesterId,
+                        actorName = null, // MVP: Actor name resolved at query time or left null
+                        details = null,
+                        occurredAt = metadata.timestamp
+                    )
+                ).onFailure { projectionError ->
+                    logProjectionError(projectionError, aggregate.id, correlationId)
+                }
+
                 CreateVmRequestResult(requestId = aggregate.id).success()
             }
             is Result.Failure -> when (val error = appendResult.error) {
@@ -136,6 +159,29 @@ public class CreateVmRequestHandler(
                     CreateVmRequestError.ConcurrencyConflict(
                         message = "Concurrent modification detected for aggregate ${error.aggregateId}"
                     ).failure()
+                }
+            }
+        }
+    }
+
+    private fun logProjectionError(
+        error: ProjectionError,
+        requestId: VmRequestId,
+        correlationId: CorrelationId
+    ) {
+        when (error) {
+            is ProjectionError.DatabaseError -> {
+                logger.warn {
+                    "Timeline projection update failed for request ${requestId.value}: ${error.message}. " +
+                        "correlationId=${correlationId.value}. " +
+                        "Projection can be rebuilt from event store."
+                }
+            }
+            is ProjectionError.NotFound -> {
+                logger.warn {
+                    "Timeline projection not found for request ${requestId.value}. " +
+                        "correlationId=${correlationId.value}. " +
+                        "Projection may need to be reconstructed from event store."
                 }
             }
         }

@@ -11,6 +11,12 @@ import de.acci.dvmm.application.vmrequest.CreateVmRequestResult
 import de.acci.dvmm.application.vmrequest.GetMyRequestsError
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsQuery
+import de.acci.dvmm.application.vmrequest.GetRequestDetailError
+import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.GetRequestDetailQuery
+import de.acci.dvmm.application.vmrequest.TimelineEventItem
+import de.acci.dvmm.application.vmrequest.TimelineEventType
+import de.acci.dvmm.application.vmrequest.VmRequestDetail
 import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -47,6 +53,7 @@ class VmRequestControllerTest {
     private val createHandler = mockk<CreateVmRequestHandler>()
     private val getMyRequestsHandler = mockk<GetMyRequestsHandler>()
     private val cancelHandler = mockk<CancelVmRequestHandler>()
+    private val getRequestDetailHandler = mockk<GetRequestDetailHandler>()
     private lateinit var controller: VmRequestController
     private val testTenantId = TenantId.generate()
 
@@ -55,7 +62,8 @@ class VmRequestControllerTest {
         controller = VmRequestController(
             createVmRequestHandler = createHandler,
             getMyRequestsHandler = getMyRequestsHandler,
-            cancelVmRequestHandler = cancelHandler
+            cancelVmRequestHandler = cancelHandler,
+            getRequestDetailHandler = getRequestDetailHandler
         )
     }
 
@@ -441,6 +449,172 @@ class VmRequestControllerTest {
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
             val body = response.body as InternalErrorResponse
             assertEquals("internal_error", body.type)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/requests/{id}")
+    inner class GetRequestDetailTests {
+
+        @Test
+        @DisplayName("should return 200 OK with request detail")
+        fun `should return 200 OK with request detail`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+            val detail = createTestDetail(requestId)
+
+            coEvery {
+                getRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as VmRequestDetailResponse
+            assertEquals(requestId.value.toString(), body.id)
+            assertEquals(detail.vmName, body.vmName)
+            assertEquals(detail.status, body.status)
+        }
+
+        @Test
+        @DisplayName("should include timeline events in response")
+        fun `should include timeline events in response`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+            val detail = createTestDetail(requestId)
+
+            coEvery {
+                getRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            val body = response.body as VmRequestDetailResponse
+            assertEquals(1, body.timeline.size)
+            assertEquals("CREATED", body.timeline[0].eventType)
+        }
+
+        @Test
+        @DisplayName("should pass correct query parameters to handler")
+        fun `should pass correct query parameters to handler`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val userId = UUID.randomUUID().toString()
+            val jwt = createJwt(subject = userId)
+            val querySlot = slot<GetRequestDetailQuery>()
+
+            coEvery {
+                getRequestDetailHandler.handle(capture(querySlot))
+            } returns createTestDetail(requestId).success()
+
+            // When
+            withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            val query = querySlot.captured
+            assertEquals(testTenantId, query.tenantId)
+            assertEquals(requestId, query.requestId)
+            assertEquals(userId, query.userId.value.toString())
+        }
+
+        @Test
+        @DisplayName("should return 400 for invalid request ID format")
+        fun `should return 400 for invalid request ID format`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = "not-a-valid-uuid", jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            val body = response.body as ValidationErrorResponse
+            assertTrue(body.errors.any { it.field == "id" })
+        }
+
+        @Test
+        @DisplayName("should return 404 when request not found")
+        fun `should return 404 when request not found`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                getRequestDetailHandler.handle(any())
+            } returns GetRequestDetailError.NotFound(requestId).failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 500 for query failure")
+        fun `should return 500 for query failure`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                getRequestDetailHandler.handle(any())
+            } returns GetRequestDetailError.QueryFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            val body = response.body as InternalErrorResponse
+            assertEquals("internal_error", body.type)
+        }
+
+        private fun createTestDetail(requestId: VmRequestId): VmRequestDetail {
+            val now = Instant.now()
+            return VmRequestDetail(
+                id = requestId,
+                vmName = "test-vm",
+                size = "M",
+                cpuCores = 4,
+                memoryGb = 16,
+                diskGb = 200,
+                justification = "Test justification",
+                status = "PENDING",
+                projectName = "Test Project",
+                requesterName = "Test User",
+                createdAt = now,
+                timeline = listOf(
+                    TimelineEventItem(
+                        eventType = TimelineEventType.CREATED,
+                        actorName = "Test User",
+                        details = null,
+                        occurredAt = now
+                    )
+                )
+            )
         }
     }
 

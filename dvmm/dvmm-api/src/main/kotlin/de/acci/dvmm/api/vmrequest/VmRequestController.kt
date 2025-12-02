@@ -9,6 +9,9 @@ import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsError
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsQuery
+import de.acci.dvmm.application.vmrequest.GetRequestDetailError
+import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.GetRequestDetailQuery
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -43,6 +46,7 @@ import java.time.Instant
  *
  * - `POST /api/requests` - Create a new VM request
  * - `GET /api/requests/my` - Get current user's requests (paginated)
+ * - `GET /api/requests/{id}` - Get detailed request with timeline
  * - `POST /api/requests/{id}/cancel` - Cancel a pending request
  *
  * ## Error Handling
@@ -58,6 +62,7 @@ import java.time.Instant
 public class VmRequestController(
     private val createVmRequestHandler: CreateVmRequestHandler,
     private val getMyRequestsHandler: GetMyRequestsHandler,
+    private val getRequestDetailHandler: GetRequestDetailHandler,
     private val cancelVmRequestHandler: CancelVmRequestHandler
 ) {
 
@@ -200,6 +205,68 @@ public class VmRequestController(
             is GetMyRequestsError.QueryFailure -> {
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     InternalErrorResponse(message = "Failed to retrieve requests")
+                )
+            }
+        }
+    }
+
+    /**
+     * Get detailed information about a specific VM request with timeline.
+     *
+     * Returns the full request details including all timeline events
+     * in chronological order (oldest first).
+     *
+     * @param id The ID of the request to retrieve
+     * @param jwt The authenticated user's JWT
+     * @return 200 OK with request detail, or error response
+     */
+    @GetMapping("/{id}")
+    public suspend fun getRequestDetail(
+        @PathVariable id: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<Any> {
+        val tenantId = TenantContext.current()
+        val userId = UserId.fromString(jwt.subject)
+
+        val requestId = try {
+            VmRequestId.fromString(id)
+        } catch (e: InvalidIdentifierFormatException) {
+            return ResponseEntity.badRequest().body(
+                ValidationErrorResponse(
+                    errors = listOf(
+                        ValidationErrorResponse.FieldError(
+                            field = "id",
+                            message = "Invalid request ID format"
+                        )
+                    )
+                )
+            )
+        }
+
+        val query = GetRequestDetailQuery(
+            tenantId = tenantId,
+            requestId = requestId,
+            userId = userId
+        )
+
+        return when (val result = getRequestDetailHandler.handle(query)) {
+            is Result.Success -> {
+                ResponseEntity.ok(VmRequestDetailResponse.fromDomain(result.value))
+            }
+            is Result.Failure -> handleGetRequestDetailError(result.error)
+        }
+    }
+
+    private fun handleGetRequestDetailError(error: GetRequestDetailError): ResponseEntity<Any> {
+        return when (error) {
+            is GetRequestDetailError.NotFound -> {
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotFoundResponse(message = error.message)
+                )
+            }
+            is GetRequestDetailError.QueryFailure -> {
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    InternalErrorResponse(message = "Failed to retrieve request details")
                 )
             }
         }
