@@ -272,6 +272,37 @@ mockGetData.mockResolvedValue({ status: 'APPROVED' })  // May still return PENDI
 await result.current.refetch()
 ```
 
+### TanStack Query Polling Patterns
+
+**Understand when to use `staleTime` vs `refetchInterval` for real-time data.**
+
+- `staleTime`: Controls when cached data is considered stale. Stale data triggers a refetch on the *next access* (component mount, window focus, etc.)
+- `refetchInterval`: Actively polls in the background, regardless of user interaction
+
+For admin queues and dashboards where new data should appear automatically:
+
+```tsx
+// ✅ CORRECT - Real-time data needs both staleTime AND refetchInterval
+useQuery({
+  queryKey: ['admin', 'pending-requests'],
+  queryFn: fetchPendingRequests,
+  staleTime: 10000,  // Data stale after 10s (triggers refetch on access)
+  // Jitter prevents "thundering herd" when many clients poll simultaneously
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000),
+  refetchIntervalInBackground: false,  // Don't poll when tab inactive
+  refetchOnWindowFocus: true,  // Immediate refresh when user returns
+})
+
+// ❌ WRONG - Only staleTime means no automatic background polling
+useQuery({
+  staleTime: 30000,  // Admin won't see new requests until they interact!
+})
+```
+
+**Jitter Pattern Rationale:**
+- Without jitter: 100 admins polling at exactly 30s intervals → 100 simultaneous requests
+- With jitter (`+ Math.random() * 5000`): Requests spread over 5s window, reducing server load spikes
+
 ## jOOQ Code Generation
 
 jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).
