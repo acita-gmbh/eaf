@@ -64,6 +64,7 @@ Convention plugins for consistent configuration:
 - EAF modules MUST NOT import from `de.acci.dvmm.*`
 - DVMM modules CAN import from `de.acci.eaf.*`
 - `dvmm-domain` MUST NOT import from `org.springframework.*`
+- Detail query handlers (`Get*DetailHandler`, `Get*ByIdHandler`) MUST have `Forbidden` error type
 
 ## Tech Stack
 
@@ -245,6 +246,7 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
 - [ ] Flyway migration created (V00X__*.sql)
 - [ ] jooq-init.sql updated with H2-compatible DDL
 - [ ] PostgreSQL-specific statements wrapped with ignore tokens
+- [ ] FK constraints added for related tables (e.g., `REFERENCES parent_table(id) ON DELETE CASCADE`)
 - [ ] jOOQ code regenerated
 - [ ] Tests pass with new schema
 

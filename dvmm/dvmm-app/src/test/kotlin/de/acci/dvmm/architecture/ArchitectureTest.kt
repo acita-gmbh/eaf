@@ -2,6 +2,7 @@ package de.acci.dvmm.architecture
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
+import com.lemonappdev.konsist.api.ext.list.withNameMatching
 import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -103,5 +104,50 @@ class ArchitectureTest {
                     "Class ${clazz.name} with Test suffix should be in test source set, but found at: ${clazz.path}"
                 }
             }
+    }
+
+    /**
+     * Ensures query handlers that fetch single entities by ID include a Forbidden error type
+     * for proper authorization handling.
+     *
+     * Pattern: Get*DetailHandler or Get*ByIdHandler must have corresponding *Error sealed class
+     * with a Forbidden subtype.
+     *
+     * Rationale: Authorization belongs in the application layer. Handlers that retrieve
+     * specific resources must verify the requesting user is authorized to access them.
+     */
+    @Test
+    fun `detail query handlers must have Forbidden error type for authorization`() {
+        val applicationScope = Konsist.scopeFromModule("dvmm/dvmm-application")
+
+        // Find all Get*Detail*Handler or Get*ById*Handler classes
+        val detailHandlers = applicationScope
+            .classes()
+            .withNameMatching(Regex("Get.*Detail.*Handler|Get.*ById.*Handler"))
+
+        detailHandlers.forEach { handler ->
+            // Derive expected error class name (e.g., GetRequestDetailHandler -> GetRequestDetailError)
+            val errorClassName = handler.name.replace("Handler", "Error")
+
+            // Find the corresponding error sealed class in the same package
+            val errorClass = applicationScope
+                .classes()
+                .firstOrNull { it.name == errorClassName }
+
+            assert(errorClass != null) {
+                "Handler ${handler.name} must have corresponding $errorClassName sealed class"
+            }
+
+            // Check that error class has a Forbidden subtype
+            val hasForbiddenSubtype = applicationScope
+                .classes()
+                .any { it.name == "Forbidden" && it.resideInPackage(errorClass!!.packagee!!.name) }
+                    || errorClass?.text?.contains("Forbidden") == true
+
+            assert(hasForbiddenSubtype) {
+                "$errorClassName must include a Forbidden subtype for authorization errors. " +
+                    "Add: data class Forbidden(val message: String = \"Not authorized\") : $errorClassName()"
+            }
+        }
     }
 }
