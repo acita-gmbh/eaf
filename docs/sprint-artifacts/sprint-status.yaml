@@ -125,7 +125,7 @@ development_status:
   2-6-vm-request-form-submit-command: done       # Code review PASSED, merged 2025-12-01
   2-7-my-requests-list-cancel: done              # Code review PASSED 2025-12-01
   2-8-request-status-timeline: done              # Code review PASSED 2025-12-02
-  2-9-admin-approval-queue: review               # Implementation complete, pending PR review 2025-12-02
+  2-9-admin-approval-queue: done                 # Code review PASSED 2025-12-02
   2-10-request-detail-view-admin: backlog
   2-11-approve-reject-actions: backlog
   2-12-email-notifications: backlog

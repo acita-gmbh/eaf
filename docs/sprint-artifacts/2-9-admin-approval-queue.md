@@ -1,6 +1,6 @@
 # Story 2.9: Admin Approval Queue
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
