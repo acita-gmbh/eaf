@@ -73,8 +73,12 @@ check_prerequisites() {
         exit 1
     fi
 
+    # Capture version output without letting set -e abort on failure
     local version_output
-    if version_output=$(mutant-kraken -v 2>&1); then
+    version_output="$(mutant-kraken -v 2>&1)" || true
+
+    # Test command success separately
+    if mutant-kraken -v >/dev/null 2>&1; then
         log_info "mutant-kraken version: $version_output"
     else
         log_warn "Could not determine mutant-kraken version (command failed)"

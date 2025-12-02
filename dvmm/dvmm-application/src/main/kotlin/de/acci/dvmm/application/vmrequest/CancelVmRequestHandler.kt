@@ -1,5 +1,6 @@
 package de.acci.dvmm.application.vmrequest
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.acci.dvmm.domain.exceptions.InvalidStateException
 import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -14,6 +15,7 @@ import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.util.UUID
 
 /**
  * Errors that can occur when cancelling a VM request.
@@ -96,9 +98,14 @@ public data class CancelVmRequestResult(
 public class CancelVmRequestHandler(
     private val eventStore: EventStore,
     private val eventDeserializer: VmRequestEventDeserializer,
-    private val projectionUpdater: VmRequestProjectionUpdater = NoOpVmRequestProjectionUpdater
+    private val projectionUpdater: VmRequestProjectionUpdater = NoOpVmRequestProjectionUpdater,
+    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater
 ) {
     private val logger = KotlinLogging.logger {}
+
+    private companion object {
+        private val objectMapper = jacksonObjectMapper()
+    }
 
     /**
      * Handle the cancel VM request command.
@@ -205,6 +212,26 @@ public class CancelVmRequestHandler(
                         id = command.requestId,
                         status = VmRequestStatus.CANCELLED,
                         version = aggregate.version.toInt()
+                    )
+                ).onFailure { projectionError ->
+                    logProjectionError(projectionError, command.requestId, correlationId)
+                }
+
+                // Update timeline projection
+                timelineUpdater.addTimelineEvent(
+                    NewTimelineEvent(
+                        id = UUID.nameUUIDFromBytes(
+                            "CANCELLED:${correlationId.value}".toByteArray()
+                        ),
+                        requestId = command.requestId,
+                        tenantId = command.tenantId,
+                        eventType = TimelineEventType.CANCELLED,
+                        actorId = command.userId,
+                        actorName = null, // MVP: Actor name resolved at query time or left null
+                        details = command.reason?.let { reason ->
+                            objectMapper.writeValueAsString(mapOf("reason" to reason))
+                        },
+                        occurredAt = metadata.timestamp
                     )
                 ).onFailure { projectionError ->
                     logProjectionError(projectionError, command.requestId, correlationId)

@@ -114,6 +114,24 @@ class VmRequestIntegrationTest {
                     stmt.execute(
                         """CREATE INDEX IF NOT EXISTS "IDX_VM_REQUESTS_PROJECTION_REQUESTER" ON public."VM_REQUESTS_PROJECTION" ("REQUESTER_ID")"""
                     )
+                    // Create timeline events table (Story 2.8)
+                    stmt.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS public."REQUEST_TIMELINE_EVENTS" (
+                            "ID"              UUID PRIMARY KEY,
+                            "REQUEST_ID"      UUID NOT NULL REFERENCES public."VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
+                            "TENANT_ID"       UUID NOT NULL,
+                            "EVENT_TYPE"      VARCHAR(50) NOT NULL,
+                            "ACTOR_ID"        UUID,
+                            "ACTOR_NAME"      VARCHAR(255),
+                            "DETAILS"         VARCHAR(4000),
+                            "OCCURRED_AT"     TIMESTAMPTZ NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+                    stmt.execute(
+                        """CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_REQUEST" ON public."REQUEST_TIMELINE_EVENTS" ("REQUEST_ID", "OCCURRED_AT")"""
+                    )
                 }
             }
         }
@@ -185,12 +203,14 @@ class VmRequestIntegrationTest {
 
     @BeforeEach
     fun cleanDatabase() {
-        // Truncate event store and projection table between tests
+        // Truncate event store and projection tables between tests
         // Use quoted uppercase identifiers to match jOOQ-generated schema
+        // Timeline events first (FK constraint), then projections
         TestContainers.postgres.createConnection("").use { conn ->
             conn.autoCommit = true
             conn.createStatement().use { stmt ->
                 stmt.execute("TRUNCATE TABLE eaf_events.events RESTART IDENTITY CASCADE")
+                stmt.execute("""TRUNCATE TABLE public."REQUEST_TIMELINE_EVENTS" RESTART IDENTITY CASCADE""")
                 stmt.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" RESTART IDENTITY CASCADE""")
             }
         }
@@ -788,6 +808,98 @@ class VmRequestIntegrationTest {
                 .uri("/api/requests/my")
                 .exchange()
                 .expectStatus().isUnauthorized
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/requests/{id}")
+    inner class GetRequestDetail {
+
+        @Test
+        @DisplayName("should return 200 OK with request detail when user is owner")
+        fun `should return request detail when user is owner`() {
+            // Given: A request owned by user A in tenant A
+            val requestId = UUID.randomUUID()
+            insertProjection(
+                id = requestId,
+                tenantId = tenantAId,
+                requesterId = userAId,
+                vmName = "detail-test-vm",
+                status = "PENDING"
+            )
+
+            // When: User A requests their own request
+            val response = webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/$requestId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+
+            // Then: 200 OK with request details
+            response
+                .expectStatus().isOk
+                .expectBody()
+                .jsonPath("$.id").isEqualTo(requestId.toString())
+                .jsonPath("$.vmName").isEqualTo("detail-test-vm")
+                .jsonPath("$.status").isEqualTo("PENDING")
+        }
+
+        @Test
+        @DisplayName("should return 403 Forbidden when user tries to view another user's request")
+        fun `should return 403 when viewing another user request`() {
+            // Given: A request owned by user B in tenant A
+            val requestId = UUID.randomUUID()
+            insertProjection(
+                id = requestId,
+                tenantId = tenantAId,
+                requesterId = userBId, // Owned by user B
+                vmName = "other-user-vm",
+                status = "PENDING"
+            )
+
+            // When: User A (different user) tries to view user B's request
+            val response = webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/$requestId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+
+            // Then: 403 Forbidden
+            response
+                .expectStatus().isForbidden
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("forbidden")
+        }
+
+        @Test
+        @DisplayName("should return 404 Not Found when request does not exist")
+        fun `should return 404 when request not found`() {
+            // Given: A non-existent request ID
+            val nonExistentId = UUID.randomUUID()
+
+            // When: User tries to view non-existent request
+            val response = webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/$nonExistentId")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+
+            // Then: 404 Not Found
+            response
+                .expectStatus().isNotFound
+                .expectBody()
+                .jsonPath("$.type").isEqualTo("not_found")
+        }
+
+        @Test
+        @DisplayName("should return 400 Bad Request for invalid UUID format")
+        fun `should return 400 for invalid uuid`() {
+            // When: Request with invalid UUID format
+            val response = webTestClient.mutateWith(csrf()).get()
+                .uri("/api/requests/not-a-valid-uuid")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
+                .exchange()
+
+            // Then: 400 Bad Request
+            response
+                .expectStatus().isBadRequest
         }
     }
 

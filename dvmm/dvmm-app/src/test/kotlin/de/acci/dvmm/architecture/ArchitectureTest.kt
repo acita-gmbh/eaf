@@ -2,6 +2,7 @@ package de.acci.dvmm.architecture
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
+import com.lemonappdev.konsist.api.ext.list.withNameMatching
 import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -103,5 +104,50 @@ class ArchitectureTest {
                     "Class ${clazz.name} with Test suffix should be in test source set, but found at: ${clazz.path}"
                 }
             }
+    }
+
+    /**
+     * Ensures query handlers that fetch single entities by ID include a Forbidden error type
+     * for proper authorization handling.
+     *
+     * Pattern: Matches `Get*Detail*Handler` or `Get*ById*Handler` (regex allows flexible naming).
+     * Each must have a corresponding `*Error` sealed class containing a `Forbidden` data class.
+     *
+     * Rationale: Authorization belongs in the application layer. Handlers that retrieve
+     * specific resources must verify the requesting user is authorized to access them.
+     */
+    @Test
+    fun `detail query handlers must have Forbidden error type for authorization`() {
+        val applicationScope = Konsist.scopeFromModule("dvmm/dvmm-application")
+
+        // Find all Get*Detail*Handler or Get*ById*Handler classes
+        val detailHandlers = applicationScope
+            .classes()
+            .withNameMatching(Regex("Get.*Detail.*Handler|Get.*ById.*Handler"))
+
+        detailHandlers.forEach { handler ->
+            // Derive expected error class name (e.g., GetRequestDetailHandler -> GetRequestDetailError)
+            val errorClassName = handler.name.replace("Handler", "Error")
+
+            // Find the corresponding error sealed class in the same package
+            val errorClass = applicationScope
+                .classes()
+                .firstOrNull { it.name == errorClassName }
+
+            assert(errorClass != null) {
+                "Handler ${handler.name} must have corresponding $errorClassName sealed class"
+            }
+
+            // Verify Forbidden is a nested class within the error sealed class.
+            // We check the error class source for "data class Forbidden" or "class Forbidden"
+            // to ensure it's an actual subtype declaration, not just a comment mention.
+            val errorClassSource = errorClass?.text ?: ""
+            val hasForbiddenSubtype = errorClassSource.contains(Regex("""(data\s+)?class\s+Forbidden"""))
+
+            assert(hasForbiddenSubtype) {
+                "$errorClassName must include a Forbidden subtype for authorization errors. " +
+                    "Add: data class Forbidden(val message: String = \"Not authorized\") : $errorClassName()"
+            }
+        }
     }
 }
