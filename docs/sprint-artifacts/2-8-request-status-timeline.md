@@ -316,6 +316,17 @@ fun project(event: VmRequestEvent) {
 ```
 Or use `ON CONFLICT DO NOTHING` in the repository query.
 
+### Tech Debt: OpenAPI Specification
+
+**Status:** N/A for this story - infrastructure doesn't exist yet.
+
+Task 2.2 references updating `openapi/v1/paths/vm-requests.yaml`, but the OpenAPI directory structure has not been scaffolded. The architecture docs (docs/architecture.md) describe the planned structure, and PRD lists OpenAPI 3.0+ as MVP requirement (NFR-COMPAT-7), but no dedicated story exists to create this infrastructure.
+
+**Recommendation:** Track as a separate chore or add to Epic 1 backlog:
+- Create `openapi/v1/` directory structure per architecture spec
+- Add base `openapi.yaml` with paths for all existing endpoints
+- Set up OpenAPI code generation plugin (already in version catalog)
+
 ### Files to Modify (Existing)
 
 | File | Changes Required |
