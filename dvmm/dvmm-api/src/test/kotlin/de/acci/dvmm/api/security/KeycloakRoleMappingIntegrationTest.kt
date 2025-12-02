@@ -3,6 +3,7 @@ package de.acci.dvmm.api.security
 import de.acci.eaf.testing.keycloak.KeycloakTestFixture
 import de.acci.eaf.testing.keycloak.KeycloakTestUsers
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -189,8 +190,8 @@ class KeycloakRoleMappingIntegrationTest {
         )
         
         // Verify admin role is NOT present
-        assertTrue(
-            !response.authorities.contains("ROLE_admin"),
+        assertFalse(
+            response.authorities.contains("ROLE_admin"),
             "Regular user should NOT have ROLE_admin authority"
         )
 

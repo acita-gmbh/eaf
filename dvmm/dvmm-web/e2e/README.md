@@ -92,12 +92,13 @@ npm run test:e2e -- --project=chromium-user --ui
 
 Optional environment variables for custom setup:
 
+- `BASE_URL` - Frontend application URL (default: `http://localhost:5173`)
 - `KEYCLOAK_URL` - Keycloak server URL (default: `http://localhost:8080`)
 - `API_URL` - Backend API URL (default: `http://localhost:8081`)
 
 Example:
 ```bash
-KEYCLOAK_URL=http://localhost:9090 npm run test:e2e -- --project=setup
+BASE_URL=http://localhost:3000 KEYCLOAK_URL=http://localhost:9090 npm run test:e2e -- --project=setup
 ```
 
 ## CI/CD Configuration

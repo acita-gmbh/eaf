@@ -11,6 +11,7 @@ import { test as setup, expect } from '@playwright/test'
  * - Keycloak must have test users configured (see test-realm.json)
  *
  * Environment variables:
+ * - BASE_URL: Frontend application URL (default: http://localhost:5173)
  * - KEYCLOAK_URL: Keycloak server URL (default: http://localhost:8080)
  * - API_URL: Backend API URL (default: http://localhost:8081)
  *
@@ -27,6 +28,7 @@ import { test as setup, expect } from '@playwright/test'
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'
 const API_URL = process.env.API_URL || 'http://localhost:8081'
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
 
 const adminFile = 'playwright/.auth/admin.json'
 const userFile = 'playwright/.auth/user.json'
@@ -56,7 +58,9 @@ setup('authenticate as admin', async ({ page }) => {
   await page.getByRole('button', { name: /sign in/i }).click()
 
   // Wait for redirect back to app
-  await page.waitForURL(/^(http:\/\/localhost:5173)/, { timeout: 10000 })
+  await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
+    timeout: 10000,
+  })
 
   // Verify authentication succeeded
   await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
@@ -92,7 +96,9 @@ setup('authenticate as user', async ({ page }) => {
   await page.getByRole('button', { name: /sign in/i }).click()
 
   // Wait for redirect back to app
-  await page.waitForURL(/^(http:\/\/localhost:5173)/, { timeout: 10000 })
+  await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
+    timeout: 10000,
+  })
 
   // Verify authentication succeeded
   await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
