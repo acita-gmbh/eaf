@@ -157,7 +157,7 @@ class AdminRequestControllerIntegrationTest {
         @DisplayName("Invalid JWT gets 401 Unauthorized")
         fun `invalid jwt gets 401 unauthorized`() {
             // Given - Malformed/expired token (intentionally invalid for testing)
-            // ggignore - This is a fake test token, not a real secret
+            // ggignore (GitGuardian) - This is a fake test token, not a real secret
             val invalidToken = "not-a-valid-jwt-token"
 
             // When/Then - Should return 401

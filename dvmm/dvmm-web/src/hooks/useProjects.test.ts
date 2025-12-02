@@ -6,27 +6,27 @@ import { useProjects } from './useProjects'
 import { ApiError } from '@/api/vm-requests'
 import type { Project } from '@/api/admin'
 
-// Mock react-oidc-context
-vi.mock('react-oidc-context', () => ({
-  useAuth: vi.fn(() => ({
+// Mock react-oidc-context with vi.hoisted() per coding standards
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
     user: { access_token: 'test-token' },
-  })),
+  }))
+)
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
 }))
 
-// Mock admin API
+// Mock admin API with vi.hoisted() per coding standards
+const mockGetProjects = vi.hoisted(() => vi.fn())
+
 vi.mock('@/api/admin', async () => {
   const actual = await vi.importActual<typeof import('@/api/admin')>('@/api/admin')
   return {
     ...actual,
-    getProjects: vi.fn(),
+    getProjects: mockGetProjects,
   }
 })
-
-import { useAuth } from 'react-oidc-context'
-import { getProjects } from '@/api/admin'
-
-const mockUseAuth = vi.mocked(useAuth)
-const mockGetProjects = vi.mocked(getProjects)
 
 function createWrapper() {
   const queryClient = new QueryClient({

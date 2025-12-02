@@ -19,7 +19,7 @@ import de.acci.eaf.eventsourcing.projection.PageRequest
 public data class GetPendingRequestsQuery(
     val tenantId: TenantId,
     val projectId: ProjectId? = null,
-    val pageRequest: PageRequest = PageRequest(size = 25)
+    val pageRequest: PageRequest = PageRequest(size = DEFAULT_PAGE_SIZE)
 ) {
     init {
         // Cap page size at 100 to prevent abuse
