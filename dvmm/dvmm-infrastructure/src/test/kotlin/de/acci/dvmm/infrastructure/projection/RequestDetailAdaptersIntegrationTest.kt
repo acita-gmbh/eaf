@@ -309,7 +309,8 @@ class RequestDetailAdaptersIntegrationTest {
         fun `findByRequestId maps all event fields correctly`() = runBlocking {
             // Given: A timeline event with all fields
             val requestId = UUID.randomUUID()
-            val now = OffsetDateTime.now()
+            // Truncate to seconds to avoid precision mismatches between Java and PostgreSQL
+            val now = OffsetDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
 
             insertTestTimelineEvent(
                 requestId = requestId,
