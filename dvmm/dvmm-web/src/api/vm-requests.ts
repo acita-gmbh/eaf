@@ -554,15 +554,12 @@ export async function getRequestDetail(
     throw new ApiError(response.status, response.statusText, responseBody)
   }
 
-  // Transform backend response to flatten nested size object
+  // Backend response matches our interface structure directly
   const backendResponse = responseBody as BackendVmRequestDetailResponse
   return {
     id: backendResponse.id,
     vmName: backendResponse.vmName,
-    size: backendResponse.size.code,
-    cpuCores: backendResponse.size.cpuCores,
-    memoryGb: backendResponse.size.memoryGb,
-    diskGb: backendResponse.size.diskGb,
+    size: backendResponse.size,
     justification: backendResponse.justification,
     status: backendResponse.status,
     projectName: backendResponse.projectName,

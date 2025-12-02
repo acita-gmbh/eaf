@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
 // Mock react-oidc-context with hoisted mock function for testability
 const mockUseAuth = vi.hoisted(() =>
   vi.fn(() => ({
-    user: { access_token: 'test-access-token' },
+    user: { access_token: 'test-access-token' } as { access_token: string } | null,
     isAuthenticated: true,
   }))
 )
