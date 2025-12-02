@@ -440,6 +440,301 @@ class VmRequestProjectionRepositoryIntegrationTest {
     }
 
     @Nested
+    @DisplayName("Story 2.9: findDistinctProjects for Project Filter")
+    inner class FindDistinctProjects {
+
+        @Test
+        fun `returns distinct projects from VM requests`() = runBlocking {
+            // Given: Requests for different projects
+            val projectA = UUID.randomUUID()
+            val projectB = UUID.randomUUID()
+            insertTestProjection(tenantId = tenantA, projectId = projectA, projectName = "Project Alpha", status = "PENDING")
+            insertTestProjection(tenantId = tenantA, projectId = projectA, projectName = "Project Alpha", status = "PENDING") // duplicate
+            insertTestProjection(tenantId = tenantA, projectId = projectB, projectName = "Project Beta", status = "PENDING")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find distinct projects
+                val result = repository.findDistinctProjects()
+
+                // Then: Only distinct projects returned
+                assertEquals(2, result.size, "Should return 2 distinct projects")
+                assertTrue(result.any { it.projectId == projectA && it.projectName == "Project Alpha" })
+                assertTrue(result.any { it.projectId == projectB && it.projectName == "Project Beta" })
+            }
+        }
+
+        @Test
+        fun `returns empty list when no projects`() = runBlocking {
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find distinct projects (no data)
+                val result = repository.findDistinctProjects()
+
+                // Then: Empty list
+                assertTrue(result.isEmpty())
+            }
+        }
+
+        @Test
+        fun `includes projects from all statuses`() = runBlocking {
+            // Given: Requests with different statuses
+            val projectPending = UUID.randomUUID()
+            val projectApproved = UUID.randomUUID()
+            val projectRejected = UUID.randomUUID()
+
+            insertTestProjection(tenantId = tenantA, projectId = projectPending, projectName = "Pending Project", status = "PENDING")
+            insertTestProjection(tenantId = tenantA, projectId = projectApproved, projectName = "Approved Project", status = "APPROVED")
+            insertTestProjection(tenantId = tenantA, projectId = projectRejected, projectName = "Rejected Project", status = "REJECTED")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find distinct projects
+                val result = repository.findDistinctProjects()
+
+                // Then: All projects returned regardless of status
+                assertEquals(3, result.size, "Should include projects from all statuses")
+            }
+        }
+
+        @Test
+        fun `respects RLS tenant isolation`() = runBlocking {
+            // Given: Projects in different tenants
+            val tenantAProject = UUID.randomUUID()
+            val tenantBProject = UUID.randomUUID()
+            insertTestProjection(tenantId = tenantA, projectId = tenantAProject, projectName = "Tenant A Project", status = "PENDING")
+            insertTestProjection(tenantId = tenantB, projectId = tenantBProject, projectName = "Tenant B Project", status = "PENDING")
+
+            // When: Tenant A queries
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val result = repoA.findDistinctProjects()
+
+                // Then: Only tenant A projects
+                assertEquals(1, result.size, "Should only see tenant A's projects")
+                assertEquals(tenantAProject, result[0].projectId)
+            }
+
+            // And: Tenant B queries
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findDistinctProjects()
+
+                // Then: Only tenant B projects
+                assertEquals(1, result.size, "Should only see tenant B's projects")
+                assertEquals(tenantBProject, result[0].projectId)
+            }
+        }
+
+        @Test
+        fun `returns projects sorted by name`() = runBlocking {
+            // Given: Multiple projects
+            insertTestProjection(tenantId = tenantA, projectId = UUID.randomUUID(), projectName = "Zebra Project", status = "PENDING")
+            insertTestProjection(tenantId = tenantA, projectId = UUID.randomUUID(), projectName = "Alpha Project", status = "PENDING")
+            insertTestProjection(tenantId = tenantA, projectId = UUID.randomUUID(), projectName = "Mike Project", status = "PENDING")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find distinct projects
+                val result = repository.findDistinctProjects()
+
+                // Then: Sorted alphabetically by name
+                assertEquals("Alpha Project", result[0].projectName)
+                assertEquals("Mike Project", result[1].projectName)
+                assertEquals("Zebra Project", result[2].projectName)
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Story 2.9: findPendingByTenantId for Admin Queue")
+    inner class FindPendingByTenantId {
+
+        @Test
+        fun `returns only PENDING status requests`() = runBlocking {
+            // Given: Requests with different statuses
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "pending-1")
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "pending-2")
+            insertTestProjection(tenantId = tenantA, status = "APPROVED", vmName = "approved-1")
+            insertTestProjection(tenantId = tenantA, status = "REJECTED", vmName = "rejected-1")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find pending requests
+                val result = repository.findPendingByTenantId()
+
+                // Then: Only PENDING requests returned
+                assertEquals(2, result.totalElements, "Should return only PENDING requests")
+                assertTrue(result.items.all { it.status == "PENDING" }, "All items should be PENDING")
+            }
+        }
+
+        @Test
+        fun `returns empty response when no pending requests`() = runBlocking {
+            // Given: Only non-pending requests
+            insertTestProjection(tenantId = tenantA, status = "APPROVED")
+            insertTestProjection(tenantId = tenantA, status = "REJECTED")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find pending requests
+                val result = repository.findPendingByTenantId()
+
+                // Then: Empty response
+                assertEquals(0, result.totalElements)
+                assertTrue(result.items.isEmpty())
+            }
+        }
+
+        @Test
+        fun `filters by projectId when provided`() = runBlocking {
+            // Given: Pending requests for different projects
+            val projectA = UUID.randomUUID()
+            val projectB = UUID.randomUUID()
+            insertTestProjection(tenantId = tenantA, projectId = projectA, status = "PENDING", vmName = "proj-a-1")
+            insertTestProjection(tenantId = tenantA, projectId = projectA, status = "PENDING", vmName = "proj-a-2")
+            insertTestProjection(tenantId = tenantA, projectId = projectB, status = "PENDING", vmName = "proj-b-1")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find pending requests for project A
+                val result = repository.findPendingByTenantId(projectId = projectA)
+
+                // Then: Only project A requests returned
+                assertEquals(2, result.totalElements, "Should return only project A requests")
+                assertTrue(result.items.all { it.projectId == projectA }, "All items should belong to project A")
+            }
+        }
+
+        @Test
+        fun `sorts by createdAt ascending - oldest first per AC3`() = runBlocking {
+            // Given: Pending requests with different creation times
+            val now = OffsetDateTime.now()
+            val oldest = now.minusHours(3)
+            val middle = now.minusHours(2)
+            val newest = now.minusHours(1)
+
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "newest", createdAt = newest)
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "oldest", createdAt = oldest)
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "middle", createdAt = middle)
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Find pending requests
+                val result = repository.findPendingByTenantId()
+
+                // Then: Ordered oldest first (AC3: "sorted oldest→newest by submission time")
+                assertEquals(3, result.items.size)
+                assertEquals("oldest", result.items[0].vmName, "First item should be oldest")
+                assertEquals("middle", result.items[1].vmName, "Second item should be middle")
+                assertEquals("newest", result.items[2].vmName, "Third item should be newest")
+            }
+        }
+
+        @Test
+        fun `handles pagination correctly`() = runBlocking {
+            // Given: 5 pending requests
+            repeat(5) { i ->
+                insertTestProjection(
+                    tenantId = tenantA,
+                    status = "PENDING",
+                    vmName = "vm-$i",
+                    createdAt = OffsetDateTime.now().minusHours(5L - i)
+                )
+            }
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Request first page of 2
+                val page1 = repository.findPendingByTenantId(pageRequest = PageRequest(page = 0, size = 2))
+
+                // Then: Pagination metadata is correct
+                assertEquals(2, page1.items.size, "Should return 2 items")
+                assertEquals(5, page1.totalElements, "Total should be 5")
+                assertEquals(3, page1.totalPages, "Should have 3 pages")
+                assertTrue(page1.hasNext, "Should have next page")
+                assertFalse(page1.hasPrevious, "Should not have previous page")
+
+                // When: Request second page
+                val page2 = repository.findPendingByTenantId(pageRequest = PageRequest(page = 1, size = 2))
+
+                // Then: Different items returned
+                assertEquals(2, page2.items.size)
+                assertTrue(page2.hasNext)
+                assertTrue(page2.hasPrevious)
+            }
+        }
+
+        @Test
+        fun `respects RLS tenant isolation`() = runBlocking {
+            // Given: Pending requests for both tenants
+            insertTestProjection(tenantId = tenantA, status = "PENDING", vmName = "tenant-a-vm")
+            insertTestProjection(tenantId = tenantB, status = "PENDING", vmName = "tenant-b-vm")
+
+            // When: Tenant A queries pending requests
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+                val result = repoA.findPendingByTenantId()
+
+                // Then: Only tenant A's pending requests returned
+                assertEquals(1, result.totalElements, "Should only see tenant A's requests")
+                assertEquals("tenant-a-vm", result.items[0].vmName)
+            }
+
+            // And: Tenant B only sees their own
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findPendingByTenantId()
+
+                assertEquals(1, result.totalElements, "Should only see tenant B's requests")
+                assertEquals("tenant-b-vm", result.items[0].vmName)
+            }
+        }
+
+        @Test
+        fun `combines projectId filter with pagination`() = runBlocking {
+            // Given: Many pending requests for one project
+            val targetProject = UUID.randomUUID()
+            val otherProject = UUID.randomUUID()
+
+            repeat(5) { i ->
+                insertTestProjection(
+                    tenantId = tenantA,
+                    projectId = targetProject,
+                    status = "PENDING",
+                    vmName = "target-$i",
+                    createdAt = OffsetDateTime.now().minusHours(5L - i)
+                )
+            }
+            insertTestProjection(tenantId = tenantA, projectId = otherProject, status = "PENDING", vmName = "other")
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Query with both filter and pagination
+                val result = repository.findPendingByTenantId(
+                    projectId = targetProject,
+                    pageRequest = PageRequest(page = 0, size = 2)
+                )
+
+                // Then: Filter applied before pagination
+                assertEquals(2, result.items.size, "Should return page size items")
+                assertEquals(5, result.totalElements, "Total should be filtered count (5, not 6)")
+                assertTrue(result.items.all { it.projectId == targetProject })
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("Write Operations")
     inner class WriteOperations {
 

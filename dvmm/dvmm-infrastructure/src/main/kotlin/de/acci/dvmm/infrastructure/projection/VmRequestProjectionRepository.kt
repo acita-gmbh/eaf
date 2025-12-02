@@ -15,6 +15,16 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 /**
+ * Simple data class representing a project for filter dropdowns.
+ *
+ * Story 2.9: Admin Approval Queue (AC 5)
+ */
+public data class ProjectInfo(
+    val projectId: UUID,
+    val projectName: String
+)
+
+/**
  * Repository for querying VM request projections.
  *
  * RLS NOTE: Tenant filtering is handled automatically by PostgreSQL Row-Level Security.
@@ -171,6 +181,82 @@ public class VmRequestProjectionRepository(
             condition = VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId),
             pageRequest = pageRequest
         )
+
+    /**
+     * Finds all pending VM request projections for admin queue.
+     *
+     * Story 2.9: Admin Approval Queue (AC 1, 2, 3, 5, 6)
+     *
+     * Returns PENDING status requests, sorted by creation date ascending
+     * (oldest first) per AC 3: "sorted oldest→newest by submission time"
+     *
+     * RLS NOTE: Tenant filtering is automatic via PostgreSQL RLS.
+     *
+     * @param projectId Optional project filter (AC 5)
+     * @param pageRequest Pagination parameters
+     * @return A paginated response of pending projections
+     */
+    public suspend fun findPendingByTenantId(
+        projectId: UUID? = null,
+        pageRequest: PageRequest = PageRequest()
+    ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
+        // Build condition: always filter by PENDING status
+        var condition: Condition = VM_REQUESTS_PROJECTION.STATUS.eq("PENDING")
+
+        // Add optional project filter (AC 5)
+        if (projectId != null) {
+            condition = condition.and(VM_REQUESTS_PROJECTION.PROJECT_ID.eq(projectId))
+        }
+
+        // Count total elements matching the condition
+        val totalElements = dsl.selectCount()
+            .from(VM_REQUESTS_PROJECTION)
+            .where(condition)
+            .fetchOne(0, Long::class.java) ?: 0L
+
+        // Query with oldest first ordering (AC 3)
+        val items = dsl.selectFrom(VM_REQUESTS_PROJECTION)
+            .where(condition)
+            .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.asc())
+            .limit(pageRequest.size)
+            .offset(pageRequest.offset)
+            .fetch()
+            .map { mapRecord(it) }
+
+        PagedResponse(
+            items = items,
+            page = pageRequest.page,
+            size = pageRequest.size,
+            totalElements = totalElements
+        )
+    }
+
+    /**
+     * Finds distinct projects that have VM requests.
+     *
+     * Story 2.9: Admin Approval Queue (AC 5)
+     *
+     * Used to populate the project filter dropdown. Returns projects
+     * from all VM request statuses (pending, approved, rejected).
+     *
+     * RLS NOTE: Tenant filtering is automatic via PostgreSQL RLS.
+     *
+     * @return List of distinct projects, sorted alphabetically by name
+     */
+    public suspend fun findDistinctProjects(): List<ProjectInfo> = withContext(Dispatchers.IO) {
+        dsl.selectDistinct(
+            VM_REQUESTS_PROJECTION.PROJECT_ID,
+            VM_REQUESTS_PROJECTION.PROJECT_NAME
+        )
+            .from(VM_REQUESTS_PROJECTION)
+            .orderBy(VM_REQUESTS_PROJECTION.PROJECT_NAME.asc())
+            .fetch { record ->
+                ProjectInfo(
+                    projectId = record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!,
+                    projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!
+                )
+            }
+    }
 
     /**
      * Shared pagination logic for filtered queries.

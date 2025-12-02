@@ -1,7 +1,32 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { MobileNav } from '../MobileNav'
+
+/**
+ * Mock useAuth from react-oidc-context.
+ * Using vi.hoisted() to ensure mock is created before module import.
+ */
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+  }))
+)
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
+}))
+
+beforeEach(() => {
+  // Reset to non-admin user by default
+  mockUseAuth.mockReturnValue({
+    user: null,
+    isAuthenticated: true,
+    isLoading: false,
+  })
+})
 
 /**
  * Helper to render MobileNav with router context.

@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FileText, Plus } from 'lucide-react'
+import { useAuth } from 'react-oidc-context'
+import { LayoutDashboard, FileText, Plus, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -8,6 +9,7 @@ interface NavItem {
   icon: React.ReactNode
   href: string
   badge?: number
+  adminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -26,15 +28,38 @@ const navItems: NavItem[] = [
     icon: <Plus className="h-5 w-5" />,
     href: '/requests/new',
   },
+  {
+    label: 'Admin Queue',
+    icon: <Shield className="h-5 w-5" />,
+    href: '/admin/requests',
+    adminOnly: true,
+  },
 ]
 
 interface SidebarProps {
   className?: string
 }
 
+/**
+ * Checks if user has admin role from JWT claims.
+ * Keycloak stores roles in realm_access.roles.
+ */
+function useIsAdmin(): boolean {
+  const auth = useAuth()
+  const user = auth.user
+  if (!user) return false
+
+  const realmRoles = (user.profile as { realm_access?: { roles?: string[] } })?.realm_access?.roles
+  return realmRoles?.includes('admin') ?? false
+}
+
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation()
   const currentPath = location.pathname
+  const isAdmin = useIsAdmin()
+
+  // Filter out admin-only items for non-admin users
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <aside className={cn('w-56 border-r bg-card', className)}>
@@ -44,7 +69,7 @@ export function Sidebar({ className }: SidebarProps) {
         aria-label="Main navigation"
         data-onboarding="sidebar-nav"
       >
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = currentPath === item.href
 
           return (
