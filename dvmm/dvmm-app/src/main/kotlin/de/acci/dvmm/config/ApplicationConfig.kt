@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
+import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
@@ -170,6 +171,17 @@ public class ApplicationConfig {
      */
     @Bean
     public fun getMyRequestsHandler(readRepository: VmRequestReadRepository): GetMyRequestsHandler = GetMyRequestsHandler(readRepository)
+
+    /**
+     * Handler for retrieving pending VM requests for admin approval.
+     *
+     * Story 2.9: Admin Approval Queue
+     *
+     * @param readRepository Repository for querying VM request projections
+     */
+    @Bean
+    public fun getPendingRequestsHandler(readRepository: VmRequestReadRepository): GetPendingRequestsHandler =
+        GetPendingRequestsHandler(readRepository)
 
     /**
      * Adapter for reading detailed VM request information.

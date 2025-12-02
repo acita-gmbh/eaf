@@ -1,8 +1,8 @@
-import { useAuth } from 'react-oidc-context'
 import { ShieldX } from 'lucide-react'
 import { ProtectedRoute } from './ProtectedRoute'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 import type { ReactNode } from 'react'
 
 interface AdminProtectedRouteProps {
@@ -21,28 +21,12 @@ interface AdminProtectedRouteProps {
  * this is a UX improvement to show appropriate error before API call.
  */
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
-  const auth = useAuth()
   const navigate = useNavigate()
-
-  // Check for admin role in JWT claims
-  // Keycloak stores roles in realm_access.roles or resource_access.[client].roles
-  const hasAdminRole = (): boolean => {
-    const user = auth.user
-    if (!user) return false
-
-    // Check realm_access.roles (typical Keycloak structure)
-    const realmRoles = (user.profile as { realm_access?: { roles?: string[] } })?.realm_access?.roles
-    if (realmRoles?.includes('admin')) {
-      return true
-    }
-
-    // Could also check resource_access if needed
-    return false
-  }
+  const isAdmin = useIsAdmin()
 
   return (
     <ProtectedRoute>
-      {hasAdminRole() ? (
+      {isAdmin ? (
         children
       ) : (
         <ForbiddenPage onGoBack={() => navigate('/')} />

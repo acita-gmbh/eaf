@@ -57,7 +57,23 @@ public data class PendingRequestsPageResponse(
     val size: Int,
     val totalElements: Long,
     val totalPages: Int
-)
+) {
+    public companion object {
+        /**
+         * Maps from application layer PagedResponse to API response DTO.
+         */
+        public fun fromPagedResponse(
+            response: de.acci.eaf.eventsourcing.projection.PagedResponse<VmRequestSummary>
+        ): PendingRequestsPageResponse =
+            PendingRequestsPageResponse(
+                items = response.items.map { PendingRequestResponse.fromSummary(it) },
+                page = response.page,
+                size = response.size,
+                totalElements = response.totalElements,
+                totalPages = response.totalPages
+            )
+    }
+}
 
 /**
  * Response DTO for a project in the filter dropdown.
@@ -70,4 +86,15 @@ public data class PendingRequestsPageResponse(
 public data class ProjectResponse(
     val id: String,
     val name: String
-)
+) {
+    public companion object {
+        /**
+         * Maps from application layer ProjectSummary to API response DTO.
+         */
+        public fun fromSummary(summary: de.acci.dvmm.application.vmrequest.ProjectSummary): ProjectResponse =
+            ProjectResponse(
+                id = summary.id.value.toString(),
+                name = summary.name
+            )
+    }
+}

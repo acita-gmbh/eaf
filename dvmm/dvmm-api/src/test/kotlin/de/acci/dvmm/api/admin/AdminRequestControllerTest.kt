@@ -497,8 +497,8 @@ class AdminRequestControllerTest {
         }
 
         @Test
-        @DisplayName("should return 500 with empty list on error")
-        fun `should return 500 with empty list on error`() = runTest {
+        @DisplayName("should return 500 with error details on failure")
+        fun `should return 500 with error details on failure`() = runTest {
             // Given
             val jwt = createJwt()
 
@@ -513,8 +513,10 @@ class AdminRequestControllerTest {
 
             // Then
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
-            val body = response.body as List<*>
-            assertTrue(body.isEmpty())
+            @Suppress("UNCHECKED_CAST")
+            val body = response.body as Map<String, String>
+            assertEquals("QUERY_FAILURE", body["error"])
+            assertEquals("Failed to retrieve projects", body["message"])
         }
 
         @Test

@@ -53,7 +53,7 @@ export function usePendingRequests(params: GetPendingRequestsParams = {}) {
       if (!accessToken) {
         throw new ApiError(401, 'Unauthorized', { message: 'Not authenticated' })
       }
-      return getPendingRequests(params, accessToken)
+      return getPendingRequests(queryParams, accessToken)
     },
     enabled: !!accessToken,
     staleTime: 30000, // 30 seconds - reasonable for list data

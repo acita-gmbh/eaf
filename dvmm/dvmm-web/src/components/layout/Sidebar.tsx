@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from 'react-oidc-context'
 import { LayoutDashboard, FileText, Plus, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 interface NavItem {
   label: string
@@ -38,19 +38,6 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   className?: string
-}
-
-/**
- * Checks if user has admin role from JWT claims.
- * Keycloak stores roles in realm_access.roles.
- */
-function useIsAdmin(): boolean {
-  const auth = useAuth()
-  const user = auth.user
-  if (!user) return false
-
-  const realmRoles = (user.profile as { realm_access?: { roles?: string[] } })?.realm_access?.roles
-  return realmRoles?.includes('admin') ?? false
 }
 
 export function Sidebar({ className }: SidebarProps) {

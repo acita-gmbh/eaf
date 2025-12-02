@@ -114,14 +114,7 @@ public class AdminRequestController(
 
         return when (val result = getPendingRequestsHandler.handle(query)) {
             is Result.Success -> {
-                val response = PendingRequestsPageResponse(
-                    items = result.value.items.map { PendingRequestResponse.fromSummary(it) },
-                    page = result.value.page,
-                    size = result.value.size,
-                    totalElements = result.value.totalElements,
-                    totalPages = result.value.totalPages
-                )
-                ResponseEntity.ok(response)
+                ResponseEntity.ok(PendingRequestsPageResponse.fromPagedResponse(result.value))
             }
             is Result.Failure -> handleGetPendingRequestsError(result.error)
         }
@@ -159,12 +152,12 @@ public class AdminRequestController(
      * AC 5: Project filter dropdown
      *
      * @param jwt The authenticated admin's JWT
-     * @return 200 OK with list of projects
+     * @return 200 OK with list of projects, or error response on failure
      */
     @GetMapping("/projects")
     public suspend fun getProjects(
         @AuthenticationPrincipal jwt: Jwt
-    ): ResponseEntity<List<ProjectResponse>> {
+    ): ResponseEntity<Any> {
         val tenantId = TenantContext.current()
         val adminId = jwt.subject
 
@@ -172,16 +165,15 @@ public class AdminRequestController(
 
         return try {
             val projects = readRepository.findDistinctProjects(tenantId)
-            val response = projects.map { project ->
-                ProjectResponse(
-                    id = project.id.value.toString(),
-                    name = project.name
-                )
-            }
-            ResponseEntity.ok(response)
+            ResponseEntity.ok(projects.map { ProjectResponse.fromSummary(it) })
         } catch (e: Exception) {
-            logger.error(e) { "Failed to retrieve projects for admin" }
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emptyList())
+            logger.error(e) { "Failed to retrieve projects for tenant ${tenantId.value}: ${e.message}" }
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                mapOf(
+                    "error" to "QUERY_FAILURE",
+                    "message" to "Failed to retrieve projects"
+                )
+            )
         }
     }
 }
