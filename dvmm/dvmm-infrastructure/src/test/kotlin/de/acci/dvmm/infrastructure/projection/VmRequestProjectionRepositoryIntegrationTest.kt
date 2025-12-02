@@ -101,7 +101,8 @@ class VmRequestProjectionRepositoryIntegrationTest {
     fun cleanup() {
         TenantTestContext.clear()
         // Clean up test data using superuser connection (bypasses RLS)
-        superuserDsl.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" """)
+        // Use CASCADE due to FK constraint from REQUEST_TIMELINE_EVENTS
+        superuserDsl.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" CASCADE""")
     }
 
     /**

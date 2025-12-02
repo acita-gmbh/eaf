@@ -200,6 +200,19 @@ public interface VmRequestDetailRepository {
 
 /**
  * Projection data for detailed VM request view.
+ *
+ * @property id Unique identifier for the request
+ * @property requesterId User who created the request (used for authorization checks)
+ * @property vmName Name of the requested virtual machine
+ * @property size Size category (S, M, L, XL)
+ * @property cpuCores Number of CPU cores
+ * @property memoryGb Memory allocation in gigabytes
+ * @property diskGb Disk storage in gigabytes
+ * @property justification Business justification for the request
+ * @property status Current status (PENDING, APPROVED, REJECTED, etc.)
+ * @property projectName Name of the associated project
+ * @property requesterName Display name of the requester
+ * @property createdAt Timestamp when the request was created
  */
 public data class VmRequestDetailProjection(
     val id: VmRequestId,

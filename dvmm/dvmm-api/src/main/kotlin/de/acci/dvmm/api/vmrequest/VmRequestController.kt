@@ -21,6 +21,7 @@ import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.tenant.TenantContext
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -57,6 +58,8 @@ import java.time.Instant
  * - **404 Not Found**: Request not found
  * - **409 Conflict**: Quota exceeded, concurrency conflict, or invalid state
  */
+private val logger = KotlinLogging.logger {}
+
 @RestController
 @RequestMapping("/api/requests")
 public class VmRequestController(
@@ -260,16 +263,19 @@ public class VmRequestController(
     private fun handleGetRequestDetailError(error: GetRequestDetailError): ResponseEntity<Any> {
         return when (error) {
             is GetRequestDetailError.NotFound -> {
+                logger.info { "Request not found: ${error.requestId.value}" }
                 ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     NotFoundResponse(message = error.message)
                 )
             }
             is GetRequestDetailError.Forbidden -> {
+                logger.warn { "Forbidden access to request: ${error.message}" }
                 ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                     ForbiddenResponse(message = error.message)
                 )
             }
             is GetRequestDetailError.QueryFailure -> {
+                logger.error { "Failed to retrieve request details: ${error.message}" }
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     InternalErrorResponse(message = "Failed to retrieve request details")
                 )

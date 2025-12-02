@@ -81,7 +81,39 @@ class TimelineEventRepositoryIntegrationTest {
     @AfterEach
     fun cleanup() {
         TenantTestContext.clear()
+        // Truncate child table first due to FK constraint
         superuserDsl.execute("""TRUNCATE TABLE public."REQUEST_TIMELINE_EVENTS" """)
+        superuserDsl.execute("""TRUNCATE TABLE public."VM_REQUESTS_PROJECTION" CASCADE""")
+    }
+
+    /**
+     * Inserts a parent VM request projection record.
+     * Required for FK constraint on REQUEST_TIMELINE_EVENTS.REQUEST_ID.
+     */
+    private fun insertParentRequest(
+        id: UUID,
+        tenantId: TenantId
+    ) {
+        postgres.createConnection("").use { conn ->
+            conn.prepareStatement(
+                """
+                INSERT INTO public."VM_REQUESTS_PROJECTION"
+                ("ID", "TENANT_ID", "REQUESTER_ID", "REQUESTER_NAME", "PROJECT_ID", "PROJECT_NAME",
+                 "VM_NAME", "SIZE", "CPU_CORES", "MEMORY_GB", "DISK_GB", "JUSTIFICATION",
+                 "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
+                VALUES (?, ?, ?, 'Test User', ?, 'Test Project',
+                        'test-vm', 'M', 4, 16, 100, 'Test justification',
+                        'PENDING', NOW(), NOW(), 1)
+                ON CONFLICT ("ID") DO NOTHING
+                """.trimIndent()
+            ).use { stmt ->
+                stmt.setObject(1, id)
+                stmt.setObject(2, tenantId.value)
+                stmt.setObject(3, UUID.randomUUID())
+                stmt.setObject(4, UUID.randomUUID())
+                stmt.executeUpdate()
+            }
+        }
     }
 
     private fun createTenantDsl(tenant: TenantId): Pair<Connection, DSLContext> {
@@ -109,6 +141,9 @@ class TimelineEventRepositoryIntegrationTest {
         details: String? = null,
         occurredAt: OffsetDateTime = OffsetDateTime.now()
     ): UUID {
+        // First ensure parent request exists (FK constraint)
+        insertParentRequest(id = requestId, tenantId = tenantId)
+
         postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
@@ -213,6 +248,9 @@ class TimelineEventRepositoryIntegrationTest {
             val requestId = UUID.randomUUID()
             val now = OffsetDateTime.now()
 
+            // Create parent request first (FK constraint)
+            insertParentRequest(id = requestId, tenantId = tenantA)
+
             withTenantDsl(tenantA) { dsl ->
                 repository = TimelineEventRepository(dsl)
 
@@ -240,6 +278,9 @@ class TimelineEventRepositoryIntegrationTest {
             val id = UUID.randomUUID()
             val requestId = UUID.randomUUID()
             val now = OffsetDateTime.now()
+
+            // Create parent request first (FK constraint)
+            insertParentRequest(id = requestId, tenantId = tenantA)
 
             withTenantDsl(tenantA) { dsl ->
                 repository = TimelineEventRepository(dsl)

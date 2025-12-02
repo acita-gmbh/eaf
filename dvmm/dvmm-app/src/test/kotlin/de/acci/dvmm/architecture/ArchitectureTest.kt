@@ -110,8 +110,8 @@ class ArchitectureTest {
      * Ensures query handlers that fetch single entities by ID include a Forbidden error type
      * for proper authorization handling.
      *
-     * Pattern: Get*DetailHandler or Get*ByIdHandler must have corresponding *Error sealed class
-     * with a Forbidden subtype.
+     * Pattern: Matches `Get*Detail*Handler` or `Get*ById*Handler` (regex allows flexible naming).
+     * Each must have a corresponding `*Error` sealed class containing a `Forbidden` data class.
      *
      * Rationale: Authorization belongs in the application layer. Handlers that retrieve
      * specific resources must verify the requesting user is authorized to access them.
@@ -138,11 +138,11 @@ class ArchitectureTest {
                 "Handler ${handler.name} must have corresponding $errorClassName sealed class"
             }
 
-            // Check that error class has a Forbidden subtype
-            val hasForbiddenSubtype = applicationScope
-                .classes()
-                .any { it.name == "Forbidden" && it.resideInPackage(errorClass!!.packagee!!.name) }
-                    || errorClass?.text?.contains("Forbidden") == true
+            // Verify Forbidden is a nested class within the error sealed class.
+            // We check the error class source for "data class Forbidden" or "class Forbidden"
+            // to ensure it's an actual subtype declaration, not just a comment mention.
+            val errorClassSource = errorClass?.text ?: ""
+            val hasForbiddenSubtype = errorClassSource.contains(Regex("""(data\s+)?class\s+Forbidden"""))
 
             assert(hasForbiddenSubtype) {
                 "$errorClassName must include a Forbidden subtype for authorization errors. " +

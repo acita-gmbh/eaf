@@ -569,6 +569,28 @@ class VmRequestControllerTest {
         }
 
         @Test
+        @DisplayName("should return 403 when user is not authorized to view request")
+        fun `should return 403 when user is not authorized`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                getRequestDetailHandler.handle(any())
+            } returns GetRequestDetailError.Forbidden().failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+            val body = response.body as ForbiddenResponse
+            assertEquals("forbidden", body.type)
+        }
+
+        @Test
         @DisplayName("should return 500 for query failure")
         fun `should return 500 for query failure`() = runTest {
             // Given

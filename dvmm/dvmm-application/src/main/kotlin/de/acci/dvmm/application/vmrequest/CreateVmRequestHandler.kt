@@ -58,7 +58,7 @@ public data class CreateVmRequestResult(
  * ## Usage
  *
  * ```kotlin
- * val handler = CreateVmRequestHandler(eventStore, quotaService)
+ * val handler = CreateVmRequestHandler(eventStore, quotaChecker, timelineUpdater)
  * val result = handler.handle(command)
  * result.fold(
  *     onSuccess = { println("Created request: ${it.requestId}") },

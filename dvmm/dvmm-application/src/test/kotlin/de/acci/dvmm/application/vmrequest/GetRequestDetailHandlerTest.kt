@@ -219,7 +219,7 @@ class GetRequestDetailHandlerTest {
     inner class WhenRepositoryThrowsException {
 
         @Test
-        fun `returns QueryFailure error`() = runBlocking {
+        fun `returns QueryFailure error when request repository fails`() = runBlocking {
             // Given
             coEvery { requestRepository.findById(testRequestId) } throws RuntimeException("Database connection failed")
 
@@ -237,6 +237,43 @@ class GetRequestDetailHandlerTest {
             val error = (result as Result.Failure).error
             assertTrue(error is GetRequestDetailError.QueryFailure)
             assertTrue((error as GetRequestDetailError.QueryFailure).message.contains("Database connection failed"))
+        }
+
+        @Test
+        fun `returns QueryFailure error when timeline repository fails after auth`() = runBlocking {
+            // Given - request exists and user is authorized, but timeline query fails
+            val projection = VmRequestDetailProjection(
+                id = testRequestId,
+                requesterId = testUserId, // Same as query userId = authorized
+                vmName = "web-server-01",
+                size = "MEDIUM",
+                cpuCores = 4,
+                memoryGb = 16,
+                diskGb = 100,
+                justification = "Production deployment",
+                status = "PENDING",
+                projectName = "E-Commerce Platform",
+                requesterName = "John Doe",
+                createdAt = testTimestamp
+            )
+
+            coEvery { requestRepository.findById(testRequestId) } returns projection
+            coEvery { timelineRepository.findByRequestId(testRequestId) } throws RuntimeException("Timeline query failed")
+
+            // When
+            val result = handler.handle(
+                GetRequestDetailQuery(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is GetRequestDetailError.QueryFailure)
+            assertTrue((error as GetRequestDetailError.QueryFailure).message.contains("Timeline query failed"))
         }
     }
 }

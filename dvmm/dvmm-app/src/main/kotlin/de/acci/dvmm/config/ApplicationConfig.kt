@@ -197,5 +197,8 @@ public class ApplicationConfig {
     public fun getRequestDetailHandler(
         requestRepository: VmRequestDetailRepository,
         timelineRepository: TimelineEventReadRepository,
-    ): GetRequestDetailHandler = GetRequestDetailHandler(requestRepository, timelineRepository)
+    ): GetRequestDetailHandler = GetRequestDetailHandler(
+        requestRepository = requestRepository,
+        timelineRepository = timelineRepository
+    )
 }

@@ -123,6 +123,7 @@ class RequestDetailAdaptersIntegrationTest {
                  "VM_NAME", "SIZE", "CPU_CORES", "MEMORY_GB", "DISK_GB", "JUSTIFICATION",
                  "STATUS", "CREATED_AT", "UPDATED_AT", "VERSION")
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ON CONFLICT ("ID") DO NOTHING
                 """.trimIndent()
             ).use { stmt ->
                 stmt.setObject(1, id)
@@ -156,6 +157,13 @@ class RequestDetailAdaptersIntegrationTest {
         details: String? = null,
         occurredAt: OffsetDateTime = OffsetDateTime.now()
     ): UUID {
+        // Ensure parent projection exists (FK constraint) using ON CONFLICT to be idempotent
+        insertTestProjection(
+            id = requestId,
+            tenantId = tenantId,
+            vmName = "test-vm-$requestId"
+        )
+
         postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
