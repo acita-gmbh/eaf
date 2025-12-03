@@ -1,4 +1,4 @@
-import { test as setup, expect } from '@playwright/test'
+import { test as setup, expect, Page } from '@playwright/test'
 import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
@@ -34,10 +34,17 @@ const TEST_PASSWORD = process.env.TEST_PASSWORD || 'test'
 const adminFile = 'playwright/.auth/admin.json'
 const userFile = 'playwright/.auth/user.json'
 
+/** Regex to match BASE_URL for redirect verification */
+const baseUrlRegex = new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+
 /**
- * Authenticates as admin user and saves session state.
+ * Authenticates a user via Keycloak and saves the session state.
+ *
+ * @param page - Playwright page instance
+ * @param username - Keycloak username
+ * @param outputFile - Path to save the storageState
  */
-setup('authenticate as admin', async ({ page }) => {
+async function authenticateUser(page: Page, username: string, outputFile: string): Promise<void> {
   await log.step('Navigate to app and find login button')
   await page.goto('/')
   const loginButton = page.getByRole('button', { name: /Sign in with Keycloak/i })
@@ -47,15 +54,13 @@ setup('authenticate as admin', async ({ page }) => {
   await loginButton.click()
   await page.waitForURL(`${KEYCLOAK_URL}/**`, { timeout: 10000 })
 
-  await log.step('Enter admin credentials')
-  await page.getByLabel(/username/i).fill('test-admin')
+  await log.step(`Enter credentials for ${username}`)
+  await page.getByLabel(/username/i).fill(username)
   await page.getByLabel(/password/i).fill(TEST_PASSWORD)
   await page.getByRole('button', { name: /sign in/i }).click()
 
   await log.step('Verify redirect back to app')
-  await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
-    timeout: 10000,
-  })
+  await page.waitForURL(baseUrlRegex, { timeout: 10000 })
 
   await log.step('Verify authentication succeeded')
   await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
@@ -63,39 +68,20 @@ setup('authenticate as admin', async ({ page }) => {
   })
 
   await log.step('Save authenticated state')
-  await page.context().storageState({ path: adminFile })
-  await log.success(`Admin session saved to ${adminFile}`)
+  await page.context().storageState({ path: outputFile })
+  await log.success(`Session saved to ${outputFile}`)
+}
+
+/**
+ * Authenticates as admin user and saves session state.
+ */
+setup('authenticate as admin', async ({ page }) => {
+  await authenticateUser(page, 'test-admin', adminFile)
 })
 
 /**
  * Authenticates as regular user and saves session state.
  */
 setup('authenticate as user', async ({ page }) => {
-  await log.step('Navigate to app and find login button')
-  await page.goto('/')
-  const loginButton = page.getByRole('button', { name: /Sign in with Keycloak/i })
-  await expect(loginButton).toBeVisible({ timeout: 10000 })
-
-  await log.step('Click login and redirect to Keycloak')
-  await loginButton.click()
-  await page.waitForURL(`${KEYCLOAK_URL}/**`, { timeout: 10000 })
-
-  await log.step('Enter user credentials')
-  await page.getByLabel(/username/i).fill('test-user')
-  await page.getByLabel(/password/i).fill(TEST_PASSWORD)
-  await page.getByRole('button', { name: /sign in/i }).click()
-
-  await log.step('Verify redirect back to app')
-  await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
-    timeout: 10000,
-  })
-
-  await log.step('Verify authentication succeeded')
-  await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
-    timeout: 10000,
-  })
-
-  await log.step('Save authenticated state')
-  await page.context().storageState({ path: userFile })
-  await log.success(`User session saved to ${userFile}`)
+  await authenticateUser(page, 'test-user', userFile)
 })

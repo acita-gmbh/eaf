@@ -91,9 +91,19 @@ class KeycloakRoleMappingIntegrationTest {
                         AuthInfo(
                             authorities = authorities,
                             realmRoles = extractRealmRoles(jwt),
-                            subject = jwt.subject
+                            subject = jwt.subject,
+                            tenantId = jwt.getClaimAsString("tenant_id")
                         )
                     }
+            }
+
+            /**
+             * Admin-only endpoint for testing hasRole() authorization.
+             */
+            @GetMapping("/api/auth/admin-only")
+            @PreAuthorize("hasRole('admin')")
+            fun adminOnly(): Mono<Map<String, String>> {
+                return Mono.just(mapOf("message" to "Admin access granted"))
             }
 
             @Suppress("UNCHECKED_CAST")
@@ -105,7 +115,8 @@ class KeycloakRoleMappingIntegrationTest {
             data class AuthInfo(
                 val authorities: List<String>,
                 val realmRoles: List<String>,
-                val subject: String
+                val subject: String,
+                val tenantId: String?
             )
         }
     }
@@ -210,33 +221,36 @@ class KeycloakRoleMappingIntegrationTest {
 
     /**
      * Verifies that hasRole() check works correctly with the ROLE_ prefix.
-     * Spring Security's hasRole() expects authorities without ROLE_ prefix.
+     * Spring Security's hasRole('admin') should allow admin users and deny regular users.
      */
     @Test
     fun `PreAuthorize hasRole works with Keycloak JWT roles`() {
-        // This test is implicitly validated by MethodSecurityIntegrationTest,
-        // but we explicitly verify the role mapping here as well.
         val adminToken = fixture.getAccessToken(KeycloakTestUsers.TENANT1_ADMIN)
         val userToken = fixture.getAccessToken(KeycloakTestUsers.TENANT1_USER)
 
-        // Admin can access their own info
+        // Admin can access the admin-only endpoint
         webTestClient.get()
-            .uri("/api/auth/roles")
+            .uri("/api/auth/admin-only")
             .header(HttpHeaders.AUTHORIZATION, "Bearer $adminToken")
             .exchange()
             .expectStatus().isOk
 
-        // Regular user can also access (endpoint requires authentication, not admin role)
+        // Regular user is forbidden from accessing admin-only endpoint
         webTestClient.get()
-            .uri("/api/auth/roles")
+            .uri("/api/auth/admin-only")
             .header(HttpHeaders.AUTHORIZATION, "Bearer $userToken")
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().isForbidden
     }
 
     /**
      * Verifies tenant isolation by checking tenant_id claim mapping.
      * Ensures different tenants have different tenant IDs in their tokens.
+     *
+     * Note: This test validates the tenant_id claim is present and different for users
+     * from different tenants. If tenant_id is not configured in Keycloak, this test
+     * documents the current behavior (null tenant_id) and verifies user isolation
+     * via subject IDs instead.
      */
     @Test
     fun `different tenant users have different tenant IDs in JWT`() {
@@ -261,10 +275,24 @@ class KeycloakRoleMappingIntegrationTest {
             .returnResult()
             .responseBody!!
 
-        // Verify subjects are different
+        // Verify subjects are different (user isolation)
         assertTrue(
             tenant1Info.subject != tenant2Info.subject,
             "Different users should have different subject IDs"
         )
+
+        // Verify tenant_id claims if present
+        if (tenant1Info.tenantId != null && tenant2Info.tenantId != null) {
+            assertTrue(
+                tenant1Info.tenantId != tenant2Info.tenantId,
+                "Users from different tenants should have different tenant_id claims. " +
+                    "Got: tenant1=${tenant1Info.tenantId}, tenant2=${tenant2Info.tenantId}"
+            )
+        } else {
+            // Document that tenant_id claim is not configured in Keycloak test realm
+            // This is acceptable as long as we have user isolation via subject IDs
+            // TODO: Configure tenant_id claim in test-realm.json when multi-tenancy is implemented
+        }
     }
 }
+

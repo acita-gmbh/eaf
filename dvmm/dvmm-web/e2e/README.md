@@ -35,7 +35,7 @@ These tests are marked with `@requires-auth` and/or `@requires-backend` tags.
    ```
    
    This starts:
-   - Keycloak Testcontainer on port 8080 (dynamic)
+   - Keycloak Testcontainer (dynamic port; check backend logs for actual URL)
    - Backend API on port 8081
    - PostgreSQL database
 
