@@ -91,6 +91,11 @@ t('Are you sure you want to cancel this request?')
 - Gradual migration - add translations as needed
 - Missing key = displays English (perfect fallback)
 
+**Limitations (avoid in natural language keys):**
+- **No dots** - With `keySeparator: false`, dots work but can cause confusion. Prefer: `t('e.g. web-server-01')` over keys with multiple dots
+- **No HTML tags** - Keys like `t('Click <strong>here</strong>')` cause matching issues. Use the `Trans` component instead for HTML content
+- **Watch for special chars** - Avoid `{{`, `}}` in static parts (reserved for interpolation)
+
 #### Semantic Keys (High-Reuse Elements)
 Use structured keys only for frequently reused elements:
 
@@ -253,7 +258,16 @@ Create `vite-plugin-i18n-missing-keys.ts`:
 ```typescript
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import type { Plugin } from 'vite'
+
+// ESM compatibility for __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Whitelist of allowed locales and namespaces (security: prevent path traversal)
+const ALLOWED_LOCALES = ['en', 'de']
+const ALLOWED_NAMESPACES = ['common', 'requests', 'admin', 'errors', 'validation']
 
 /**
  * Vite plugin that collects missing i18n keys during development.
@@ -272,10 +286,19 @@ export function i18nMissingKeysPlugin(): Plugin {
         req.on('data', (chunk) => (body += chunk))
         req.on('end', () => {
           try {
-            // URL: /api/i18n/add/en/common → lng=en, ns=common
+            // URL: /api/i18n/add/en/common
+            // After split('/') and filter: ['api', 'i18n', 'add', 'en', 'common']
             const urlParts = req.url?.split('/').filter(Boolean) || []
-            const lng = urlParts[0] || 'en'
-            const ns = urlParts[1] || 'common'
+            const lng = urlParts[3] || 'en'
+            const ns = urlParts[4] || 'common'
+
+            // Security: validate against whitelist to prevent path traversal
+            if (!ALLOWED_LOCALES.includes(lng) || !ALLOWED_NAMESPACES.includes(ns)) {
+              console.warn(`[i18n] Invalid locale/namespace: ${lng}/${ns}`)
+              res.statusCode = 400
+              res.end('Invalid locale or namespace')
+              return
+            }
 
             const data = JSON.parse(body)
             const localeFile = path.resolve(
@@ -307,14 +330,14 @@ export function i18nMissingKeysPlugin(): Plugin {
 
             if (added > 0) {
               // Sort keys alphabetically for consistency
-              const sorted = Object.keys(translations)
+              const sortedTranslations = Object.keys(translations)
                 .sort()
-                .reduce((acc, key) => {
-                  acc[key] = translations[key]
-                  return acc
+                .reduce((result, key) => {
+                  result[key] = translations[key]
+                  return result
                 }, {} as Record<string, string>)
 
-              fs.writeFileSync(localeFile, JSON.stringify(sorted, null, 2) + '\n')
+              fs.writeFileSync(localeFile, JSON.stringify(sortedTranslations, null, 2) + '\n')
               console.log(`[i18n] Added ${added} key(s) to ${lng}/${ns}.json`)
             }
 
@@ -721,55 +744,67 @@ import { Trans } from 'react-i18next'
 
 ### 2.6 Zod Integration
 
-Update `src/lib/validations/vm-request.ts`:
+First, configure the Zod error map with the validation namespace in `src/lib/i18n/config.ts`:
+
+```typescript
+import { makeZodI18nMap } from 'zod-i18n-map'
+
+// After i18n.init(), configure Zod with the validation namespace
+i18n.init({ /* ... */ }).then(() => {
+  z.setErrorMap(makeZodI18nMap({
+    ns: 'validation',  // Default namespace for Zod errors
+  }))
+})
+```
+
+Then update `src/lib/validations/vm-request.ts`:
 
 ```typescript
 import { z } from 'zod'
-import i18n from '@/lib/i18n/config'
 
 export const vmNameSchema = z
   .string()
-  .min(3)  // Uses validation:errors.too_small.string.inclusive
-  .max(63) // Uses validation:errors.too_big.string.inclusive
+  .min(3)  // Auto-translates via validation:errors.too_small.string.inclusive
+  .max(63) // Auto-translates via validation:errors.too_big.string.inclusive
   .superRefine((val, ctx) => {
     if (/[A-Z]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        params: { i18n: { key: 'custom.vmName.lowercase', ns: 'validation' } },
+        // zod-i18n-map uses simple string key (namespace set globally)
+        params: { i18n: 'custom.vmName.lowercase' },
       })
     }
     if (/[^a-z0-9-]/.test(val)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        params: { i18n: { key: 'custom.vmName.invalidChars', ns: 'validation' } },
+        params: { i18n: 'custom.vmName.invalidChars' },
       })
     }
     if (val.startsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        params: { i18n: { key: 'custom.vmName.startWithLetterOrNumber', ns: 'validation' } },
+        params: { i18n: 'custom.vmName.startWithLetterOrNumber' },
       })
     }
     if (val.endsWith('-')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        params: { i18n: { key: 'custom.vmName.endWithLetterOrNumber', ns: 'validation' } },
+        params: { i18n: 'custom.vmName.endWithLetterOrNumber' },
       })
     }
   })
 
 export const projectIdSchema = z
   .string()
-  .min(1, { message: i18n.t('validation:custom.project.required') })
+  .min(1)  // Auto-translates via validation:errors.too_small.string.inclusive
 
 export const justificationSchema = z
   .string()
   .min(10)
   .max(1000)
 
-export const vmSizeSchema = z.enum(VM_SIZE_IDS, {
-  errorMap: () => ({ message: i18n.t('validation:custom.vmSize.required') }),
-})
+export const vmSizeSchema = z.enum(VM_SIZE_IDS)
+// Custom enum message handled via validation:errors.invalid_enum_value
 ```
 
 ### 2.7 Language Switcher Component
@@ -969,6 +1004,10 @@ Update domain value objects to return structured errors:
 
 ```kotlin
 // dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmName.kt
+
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 
 /**
  * Domain-layer validation error, distinct from API-layer ValidationErrorResponse.
@@ -1452,13 +1491,24 @@ cat public/locales/en/common.json
 
 #### Pluralization
 ```tsx
-// Use count parameter
-{t('{{count}} request', { count: requests.length })}
-{t('{{count}} requests', { count: requests.length })}
+// Use count parameter with a single key
+{t('request_count', { count: requests.length })}
+```
 
-// i18next handles plural forms automatically
-// en: "1 request" / "5 requests"
-// de: "1 Anfrage" / "5 Anfragen"
+In translation files, use `_one` and `_other` suffixes:
+```json
+{
+  "request_count_one": "{{count}} request",
+  "request_count_other": "{{count}} requests"
+}
+```
+
+German uses the same pattern:
+```json
+{
+  "request_count_one": "{{count}} Anfrage",
+  "request_count_other": "{{count}} Anfragen"
+}
 ```
 
 #### HTML in Text
@@ -1472,20 +1522,37 @@ import { Trans } from 'react-i18next'
 
 ## Appendix A: TypeScript Types for i18n
 
-Create `src/lib/i18n/types.ts`:
+Create `src/lib/i18n/types.ts` to enable TypeScript autocomplete for translation keys:
 
 ```typescript
-import type resources from './resources'
+// Import the JSON translation files as types
+import type common from '../../../public/locales/en/common.json'
+import type requests from '../../../public/locales/en/requests.json'
+import type admin from '../../../public/locales/en/admin.json'
+import type errors from '../../../public/locales/en/errors.json'
+import type validation from '../../../public/locales/en/validation.json'
 
+// Define the resources type from actual translation files
+export interface Resources {
+  common: typeof common
+  requests: typeof requests
+  admin: typeof admin
+  errors: typeof errors
+  validation: typeof validation
+}
+
+// Extend i18next type definitions
 declare module 'i18next' {
   interface CustomTypeOptions {
     defaultNS: 'common'
-    resources: typeof resources
+    resources: Resources
   }
 }
 ```
 
-This enables TypeScript autocomplete for translation keys.
+**Note:** This requires `resolveJsonModule: true` in `tsconfig.json`.
+
+This enables TypeScript autocomplete and type checking for translation keys.
 
 ---
 
