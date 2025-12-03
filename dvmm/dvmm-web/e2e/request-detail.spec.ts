@@ -1,8 +1,5 @@
-// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
-// when moduleResolution is updated to support ESM exports from the package.
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
-// Tracking: Story TBD - E2E test infrastructure improvements
 import { test, expect } from '@playwright/test'
+// log import available: import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
  * E2E tests for the Request Detail page (Story 2.8).
@@ -16,14 +13,15 @@ import { test, expect } from '@playwright/test'
  * - AC-6: Error states (not found, generic errors) are displayed appropriately
  * - AC-7: Cancel action works from detail page (for pending requests)
  *
- * ## Why most tests are marked `test.skip`
+ * ## Running Authenticated Tests
  *
- * Tests tagged with `@requires-auth` or `@requires-backend` are skipped because:
- * 1. Keycloak authentication integration for E2E is not yet configured in the CI pipeline
- * 2. These tests require a running backend with seeded test data
- * 3. The test scenarios are written and ready to enable once auth E2E setup is complete
+ * Tests marked `test.skip` require authentication setup:
+ * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
+ * 2. Run auth setup: `npm run test:e2e -- --project=setup`
+ * 3. Run tests: `npm run test:e2e -- --project=chromium-user request-detail.spec.ts`
  *
- * TODO: Enable these tests when Playwright auth configuration is added (Story TBD).
+ * In CI, these tests are skipped by default. Enable them by configuring
+ * Keycloak Testcontainer in the CI pipeline. See `e2e/README.md` for details.
  */
 
 test.describe('Request Detail Page @requires-auth', () => {

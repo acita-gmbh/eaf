@@ -27,3 +27,6 @@ dist-ssr
 playwright-report/
 test-results/
 blob-report/
+
+# Playwright auth state files (contains session tokens)
+playwright/.auth/

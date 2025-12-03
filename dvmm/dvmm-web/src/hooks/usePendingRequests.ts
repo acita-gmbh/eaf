@@ -7,6 +7,11 @@ import {
 } from '@/api/admin'
 import { ApiError } from '@/api/vm-requests'
 
+// Jitter computed once at module load to prevent thundering herd
+// Each browser tab gets a unique offset (0-5s) added to base polling interval
+// This spreads requests across time when many admins have the queue open
+const POLLING_JITTER_MS = Math.floor(Math.random() * 5000)
+
 /**
  * Hook for fetching pending VM requests for admin approval.
  *
@@ -18,6 +23,12 @@ import { ApiError } from '@/api/vm-requests'
  * The query only runs when:
  * - User is authenticated (has access token)
  * - User role validation is done by the backend (returns 403 if not admin)
+ *
+ * @remarks
+ * **Polling Jitter:** The `POLLING_JITTER_MS` constant is computed at module load
+ * (not per-render) to ensure a consistent polling interval throughout the session.
+ * This prevents the interval from changing on every re-render while still providing
+ * unique offsets across different browser tabs to prevent thundering herd.
  *
  * @param params - Query parameters (projectId filter, page, size)
  * @returns Query result with paginated pending requests
@@ -58,8 +69,7 @@ export function usePendingRequests(params: GetPendingRequestsParams = {}) {
     enabled: !!accessToken,
     staleTime: 10000, // 10 seconds before data considered stale
     // AC requirement: 30s polling with jitter to prevent thundering herd
-    // Jitter: random 0-5s added to base 30s interval
-    refetchInterval: 30000 + Math.floor(Math.random() * 5000),
+    refetchInterval: 30000 + POLLING_JITTER_MS,
     refetchIntervalInBackground: false, // Don't poll when tab inactive
     refetchOnWindowFocus: true,
   })

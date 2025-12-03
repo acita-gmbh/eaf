@@ -10,11 +10,19 @@ import { test, expect } from '@playwright/test'
  *
  * Full E2E tests with API calls require a running backend and Keycloak.
  * Basic UI tests verify form behavior without authentication.
+ *
+ * ## Running Authenticated Tests
+ *
+ * Tests marked `test.skip` require authentication setup:
+ * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
+ * 2. Run auth setup: `npm run test:e2e -- --project=setup`
+ * 3. Run tests: `npm run test:e2e -- --project=chromium-user vm-request-form.spec.ts`
+ *
+ * See `e2e/README.md` for full instructions.
  */
 
 test.describe('VM Request Form @requires-auth', () => {
-  // These tests require authentication, which needs Keycloak
-  // For now we skip them and rely on unit/integration tests
+  // Skip: Requires Keycloak auth. Enable with `--project=chromium-user` after setup.
 
   test.skip('displays form with all required fields', async ({ page }) => {
     await page.goto('/requests/new')

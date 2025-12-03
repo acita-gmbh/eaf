@@ -1,8 +1,5 @@
-// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
-// when moduleResolution is updated to support ESM exports from the package.
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
-// Tracking: Story TBD - E2E test infrastructure improvements
 import { test, expect } from '@playwright/test'
+// log import available: import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
  * E2E tests for the My Requests page.
@@ -16,19 +13,19 @@ import { test, expect } from '@playwright/test'
  *
  * Full E2E tests with API calls require a running backend and Keycloak.
  *
- * ## Why most tests are marked `test.skip`
+ * ## Running Authenticated Tests
  *
- * Tests tagged with `@requires-auth` or `@requires-backend` are skipped because:
- * 1. Keycloak authentication integration for E2E is not yet configured in the CI pipeline
- * 2. These tests require a running backend with seeded test data
- * 3. The test scenarios are written and ready to enable once auth E2E setup is complete
+ * Tests marked `test.skip` require authentication setup:
+ * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
+ * 2. Run auth setup: `npm run test:e2e -- --project=setup`
+ * 3. Run tests: `npm run test:e2e -- --project=chromium-user my-requests.spec.ts`
  *
- * The test logic is validated through:
+ * In CI, these tests are skipped by default. Enable them by configuring
+ * Keycloak Testcontainer in the CI pipeline. See `e2e/README.md` for details.
+ *
+ * Test coverage without E2E is provided by:
  * - Integration tests for API functions (vm-requests.test.ts)
- * - The unauthenticated redirect test runs without auth
- * - Component-level behavior verified by API and component structure
- *
- * TODO: Enable these tests when Playwright auth configuration is added (Story TBD).
+ * - Component unit tests
  */
 
 test.describe('My Requests Page @requires-auth', () => {
@@ -215,9 +212,12 @@ test.describe('My Requests Pagination @requires-auth', () => {
     await page.getByTestId('page-size-selector').click()
     await page.getByRole('option', { name: '25' }).click()
 
-    // Should show up to 25 items (if that many exist)
+    // Wait for page to settle after size change
+    // toHaveCount verifies the locator resolves - count depends on seeded test data
     const requestCards = page.locator('[data-testid^="request-card-"]')
-    await expect(requestCards).toHaveCount(expect.any(Number))
+    const count = await requestCards.count()
+    expect(count).toBeGreaterThanOrEqual(0)
+    expect(count).toBeLessThanOrEqual(25)
   })
 
   test.skip('navigates between pages', async ({ page }) => {
