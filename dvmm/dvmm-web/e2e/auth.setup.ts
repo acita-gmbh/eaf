@@ -1,3 +1,7 @@
+// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
+// when moduleResolution is updated to support ESM exports from the package.
+// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
+// Tracking: Story TBD - E2E test infrastructure improvements
 import { test as setup, expect } from '@playwright/test'
 
 /**
@@ -27,8 +31,8 @@ import { test as setup, expect } from '@playwright/test'
  */
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'
-const API_URL = process.env.API_URL || 'http://localhost:8081'
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
+const TEST_PASSWORD = process.env.TEST_PASSWORD || 'test'
 
 const adminFile = 'playwright/.auth/admin.json'
 const userFile = 'playwright/.auth/user.json'
@@ -52,7 +56,7 @@ setup('authenticate as admin', async ({ page }) => {
 
   // Fill in credentials
   await page.getByLabel(/username/i).fill('test-admin')
-  await page.getByLabel(/password/i).fill('test')
+  await page.getByLabel(/password/i).fill(TEST_PASSWORD)
 
   // Submit the form
   await page.getByRole('button', { name: /sign in/i }).click()
@@ -90,7 +94,7 @@ setup('authenticate as user', async ({ page }) => {
 
   // Fill in credentials
   await page.getByLabel(/username/i).fill('test-user')
-  await page.getByLabel(/password/i).fill('test')
+  await page.getByLabel(/password/i).fill(TEST_PASSWORD)
 
   // Submit the form
   await page.getByRole('button', { name: /sign in/i }).click()

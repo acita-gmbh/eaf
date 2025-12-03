@@ -49,32 +49,36 @@ export default defineConfig({
 
   projects: [
     // Setup project - runs first to create authenticated sessions
+    // Creates playwright/.auth/*.json files with OAuth tokens
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
     },
 
     // Authenticated admin user tests
+    // Uses pre-authenticated session from auth.setup.ts
     {
       name: 'chromium-admin',
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/admin.json',
       },
-      dependencies: ['setup'],
+      dependencies: ['setup'], // Ensures auth.setup.ts runs first
     },
 
     // Authenticated regular user tests
+    // Uses pre-authenticated session from auth.setup.ts
     {
       name: 'chromium-user',
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
+      dependencies: ['setup'], // Ensures auth.setup.ts runs first
     },
 
     // Unauthenticated tests (default)
+    // Runs without any stored authentication state
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },

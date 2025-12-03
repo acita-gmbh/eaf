@@ -94,7 +94,7 @@ Optional environment variables for custom setup:
 
 - `BASE_URL` - Frontend application URL (default: `http://localhost:5173`)
 - `KEYCLOAK_URL` - Keycloak server URL (default: `http://localhost:8080`)
-- `API_URL` - Backend API URL (default: `http://localhost:8081`)
+- `TEST_PASSWORD` - Password for test users (default: `test`)
 
 Example:
 ```bash

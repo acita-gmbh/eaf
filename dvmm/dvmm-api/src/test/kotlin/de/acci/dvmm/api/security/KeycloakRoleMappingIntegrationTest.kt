@@ -80,10 +80,14 @@ class KeycloakRoleMappingIntegrationTest {
             fun getRoles(): Mono<AuthInfo> {
                 return ReactiveSecurityContextHolder.getContext()
                     .map { securityContext ->
-                        val authentication = securityContext.authentication as JwtAuthenticationToken
+                        val authentication = securityContext.authentication as? JwtAuthenticationToken
+                            ?: error(
+                                "Expected JwtAuthenticationToken but got " +
+                                    "${securityContext.authentication::class.simpleName}"
+                            )
                         val authorities = authentication.authorities.map { it.authority }
                         val jwt = authentication.token
-                        
+
                         AuthInfo(
                             authorities = authorities,
                             realmRoles = extractRealmRoles(jwt),
@@ -196,10 +200,11 @@ class KeycloakRoleMappingIntegrationTest {
         )
 
         // Verify realm_access.roles structure
+        // Note: assertEquals(expected, actual, message) - Java method, named args not supported
         assertEquals(
-            listOf("user"),
-            response.realmRoles,
-            "Regular user should only have 'user' in realm_access.roles"
+            /* expected = */ listOf("user"),
+            /* actual = */ response.realmRoles,
+            /* message = */ "Regular user should only have 'user' in realm_access.roles"
         )
     }
 
