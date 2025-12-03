@@ -43,7 +43,8 @@ interface UseAdminRequestDetailOptions {
  * - Requester history (up to 5 recent requests) [AC 6]
  *
  * Supports optional polling for real-time updates on the request detail page.
- * Per AC-4: Polling fetches updates every 30 seconds while page is visible.
+ * Per FR44 (real-time updates without page refresh) and NFR-PERF-8 (<500ms update latency):
+ * Polling fetches updates every 30 seconds (with jitter) while page is visible.
  *
  * @param requestId - The ID of the request to fetch
  * @param options - Optional configuration for polling behavior

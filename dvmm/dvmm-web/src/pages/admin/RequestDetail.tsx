@@ -46,7 +46,7 @@ export function AdminRequestDetail() {
   // Fetch request detail with polling enabled
   const { data, isLoading, isError, error, refetch } = useAdminRequestDetail(id, {
     polling: true,
-    pollInterval: 30000, // 30 seconds per AC-4
+    pollInterval: 30000, // 30 seconds per FR44/NFR-PERF-8
   })
 
   const handleBack = () => {
@@ -103,7 +103,9 @@ export function AdminRequestDetail() {
     )
   }
 
-  // Data loaded
+  // TypeScript type guard: After isLoading and isError checks, TanStack Query
+  // guarantees data is defined. This check satisfies TypeScript's type narrowing
+  // and provides defense-in-depth for unexpected edge cases.
   if (!data) {
     return null
   }

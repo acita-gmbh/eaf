@@ -471,6 +471,7 @@ Claude Opus 4.5 (validation), Story draft by previous session
 ### Completion Notes List
 
 - Story validated and enhanced by Scrum Master (2025-12-03)
+- **Backlog Suggestion (Epic 5):** Consider breadcrumb navigation for admin detail pages (e.g., "Admin > Pending Requests > Request Details") to improve UX when navigating via direct links or notifications
 - Added error types per CLAUDE.md architecture rules
 - Added requester history implementation (Task 1.3)
 - Added comprehensive test scenarios
@@ -495,3 +496,6 @@ Claude Opus 4.5 (validation), Story draft by previous session
 | 2025-12-03 | Fix: Added library version table with React 19, TanStack Query 5 |
 | 2025-12-03 | Fix: Checked Timeline components in preflight (Story 2.8 dependency) |
 | 2025-12-03 | Fix: Clarified Approve/Reject disabled state references FR26/Story 2.11 |
+| 2025-12-03 | Fix: Corrected polling comment from AC-4 to FR44/NFR-PERF-8 |
+| 2025-12-03 | Fix: Added TypeScript type guard comment for data null check |
+| 2025-12-03 | Doc: Added breadcrumb navigation as Epic 5 backlog suggestion |
