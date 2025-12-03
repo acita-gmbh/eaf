@@ -39,15 +39,15 @@ So that I understand how to get started.
    - Given I am a first-time user (no onboarding flag in localStorage)
    - When I view the dashboard
    - Then I see tooltip hints on:
-     - "Request New VM" button: "Hier starten Sie eine neue VM-Anfrage"
-     - Sidebar navigation: "Navigieren Sie zu Ihren Anfragen" *(desktop only)*
+     - "Request New VM" button: "Start a new VM request here"
+     - Sidebar navigation: "Navigate to your requests" *(desktop only)*
    - And tooltips appear with a subtle animation (fade-in)
    - And only one tooltip is visible at a time (sequential flow)
    - **Mobile behavior (< 768px):** Skip sidebar tooltip step (sidebar is hidden in Sheet)
 
 4. **Tooltip dismissal and persistence**
    - Given I see onboarding tooltips
-   - When I click "Verstanden" on a tooltip OR click elsewhere
+   - When I click "Got it" on a tooltip OR click elsewhere
    - Then the tooltip dismisses
    - And my progress is saved to localStorage (`dvmm_onboarding_step`)
    - And dismissed tooltips do not reappear on page refresh
@@ -64,8 +64,8 @@ So that I understand how to get started.
    - Given I am an admin with no pending approvals
    - When I would view the approval queue (future story)
    - Then an `AdminQueueEmptyState` component exists for future use
-   - And it displays: "Keine ausstehenden Genehmigungen"
-   - And it shows a positive message: "Alle Anfragen wurden bearbeitet"
+   - And it displays: "No pending approvals"
+   - And it shows a positive message: "All requests have been processed"
 
 7. **Responsive empty states**
    - Given I view empty states on mobile
@@ -179,8 +179,8 @@ So that I understand how to get started.
 
 - [x] **Task 6: Create AdminQueueEmptyState** (AC: 6)
   - [x] Create `components/empty-states/AdminQueueEmptyState.tsx`
-  - [x] Display: "Keine ausstehenden Genehmigungen"
-  - [x] Positive message: "Alle Anfragen wurden bearbeitet"
+  - [x] Display: "No pending approvals"
+  - [x] Positive message: "All requests have been processed"
   - [x] Use CheckCircle2 icon in Emerald color
   - [x] Export for future Admin Queue story
 
@@ -253,13 +253,13 @@ const ONBOARDING_STEPS = [
   {
     id: 'cta-button',
     targetSelector: '[data-onboarding="cta-button"]',
-    content: 'Hier starten Sie eine neue VM-Anfrage',
+    content: 'Start a new VM request here',
     position: 'bottom' as const,
   },
   {
     id: 'sidebar-nav',
     targetSelector: '[data-onboarding="sidebar-nav"]',
-    content: 'Navigieren Sie zu Ihren Anfragen',
+    content: 'Navigate to your requests',
     position: 'right' as const,
   },
 ] as const;
