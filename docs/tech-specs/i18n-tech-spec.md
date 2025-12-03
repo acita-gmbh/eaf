@@ -1587,6 +1587,43 @@ location /locales/ {
 
 ---
 
+## Appendix C: Related Documentation Updates
+
+When implementing i18n, the following existing documentation files will need updates to maintain consistency:
+
+### Required Updates
+
+| Document | Section | Change Required |
+|----------|---------|-----------------|
+| `docs/prd.md` | Localization (lines 806-814) | Update NFR-L10N-5 from `React-intl` → `react-i18next`; clarify primary language strategy |
+| `docs/ux-design-specification.md` | 8.6 Internationalization (lines 942-951) | Add reference to this tech spec; update implementation details |
+| `docs/epics.md` | — | Add i18n epic with stories for each implementation phase |
+
+### PRD NFR Alignment
+
+The PRD currently specifies:
+```
+| NFR-L10N-1 | Primary language | German (de-DE) | MVP |
+| NFR-L10N-2 | Secondary language | English (en-US) | MVP |
+| NFR-L10N-5 | i18n framework | React-intl | MVP |
+```
+
+**Recommended update:**
+```
+| NFR-L10N-1 | Primary language | English (en-US) | MVP |
+| NFR-L10N-2 | Secondary language | German (de-DE) | MVP |
+| NFR-L10N-5 | i18n framework | react-i18next + zod-i18n-map | MVP |
+```
+
+**Rationale:** English-first with natural language keys reduces initial development friction. German translations added incrementally as needed. react-i18next chosen for better plugin ecosystem and Zod integration.
+
+### Sprint Artifacts
+
+Existing sprint artifacts with hardcoded strings that will need i18n extraction:
+- `docs/sprint-artifacts/2-3-empty-states-onboarding.md` - Notes German text hardcoded for MVP
+
+---
+
 ## References
 
 - [react-i18next Documentation](https://react.i18next.com/)
