@@ -1,5 +1,6 @@
 package de.acci.dvmm.api.admin
 
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
 /**
@@ -21,6 +22,7 @@ public data class ApproveRequestBody(
  */
 public data class RejectRequestBody(
     val version: Long,
+    @field:NotBlank(message = "Reason is required")
     @field:Size(min = 10, max = 500, message = "Reason must be 10-500 characters")
     val reason: String
 )

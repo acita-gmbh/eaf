@@ -1,6 +1,6 @@
 # Story 2.11: Approve/Reject Actions
 
-Status: ready-for-dev
+Status: implemented
 
 ## Story
 
@@ -110,7 +110,7 @@ so that I can process requests efficiently.
 
 ### Valid Status Transitions (from `VmRequestStatus.kt`)
 
-```
+```text
 PENDING → APPROVED (via approve)
 PENDING → REJECTED (via reject)
 PENDING → CANCELLED (via cancel - requester only)

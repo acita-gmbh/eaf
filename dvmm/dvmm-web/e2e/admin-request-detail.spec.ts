@@ -279,7 +279,7 @@ test.describe('Admin Request Detail - Action Buttons @requires-auth @requires-ba
     await expect(rejectButton).toBeEnabled()
   })
 
-  test.skip('hides action buttons for non-PENDING requests', async ({ page }) => {
+  test.skip('hides action buttons for non-PENDING requests', async () => {
     // Story 2.11: AC - Buttons only shown for PENDING status
     // This test requires an APPROVED request in the database
     // Navigate to a known approved request or filter by status
@@ -509,7 +509,10 @@ test.describe('Admin Request Detail - Concurrency Handling @requires-auth @requi
       await route.fulfill({
         status: 409,
         contentType: 'application/json',
-        body: JSON.stringify({ message: 'Request has been modified by another user' }),
+        body: JSON.stringify({
+          type: 'concurrency_conflict',
+          message: 'Request has been modified by another user',
+        }),
       })
     })
 

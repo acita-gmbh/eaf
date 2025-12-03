@@ -161,7 +161,7 @@ public class ApproveVmRequestHandler(
         try {
             aggregate.approve(adminId = command.adminId, metadata = metadata)
         } catch (e: SelfApprovalException) {
-            logger.warn {
+            logger.warn(e) {
                 "Self-approval attempt: " +
                     "requestId=${command.requestId.value}, " +
                     "adminId=${command.adminId.value}"
@@ -169,7 +169,7 @@ public class ApproveVmRequestHandler(
             return ApproveVmRequestError.Forbidden().failure()
         } catch (e: InvalidStateException) {
             logger.debug {
-                "Approval rejected: requestId=${command.requestId.value}, currentState=${e.currentState.name}"
+                "Approval failed: requestId=${command.requestId.value}, currentState=${e.currentState.name}"
             }
             return ApproveVmRequestError.InvalidState(
                 currentState = e.currentState.name

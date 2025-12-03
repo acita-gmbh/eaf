@@ -181,7 +181,7 @@ public class RejectVmRequestHandler(
                 metadata = metadata
             )
         } catch (e: SelfApprovalException) {
-            logger.warn {
+            logger.warn(e) {
                 "Self-rejection attempt: " +
                     "requestId=${command.requestId.value}, " +
                     "adminId=${command.adminId.value}"
@@ -189,7 +189,7 @@ public class RejectVmRequestHandler(
             return RejectVmRequestError.Forbidden().failure()
         } catch (e: InvalidStateException) {
             logger.debug {
-                "Rejection rejected: requestId=${command.requestId.value}, currentState=${e.currentState.name}"
+                "Rejection failed: requestId=${command.requestId.value}, currentState=${e.currentState.name}"
             }
             return RejectVmRequestError.InvalidState(
                 currentState = e.currentState.name

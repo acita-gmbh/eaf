@@ -464,7 +464,7 @@ interface BackButtonProps {
   onClick: () => void
 }
 
-function BackButton({ onClick }: BackButtonProps) {
+function BackButton({ onClick }: Readonly<BackButtonProps>) {
   return (
     <Button variant="ghost" size="sm" className="gap-2" onClick={onClick}>
       <ArrowLeft className="h-4 w-4" />
