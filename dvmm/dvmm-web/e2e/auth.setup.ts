@@ -1,5 +1,5 @@
-import { test as setup, expect, Page } from '@playwright/test'
-import { log } from '@seontechnologies/playwright-utils/log'
+import {expect, Page, test as setup} from '@playwright/test'
+import {log} from '@seontechnologies/playwright-utils/log'
 
 /**
  * Authentication setup for E2E tests.
@@ -45,43 +45,43 @@ const baseUrlRegex = new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$
  * @param outputFile - Path to save the storageState
  */
 async function authenticateUser(page: Page, username: string, outputFile: string): Promise<void> {
-  await log.step('Navigate to app and find login button')
-  await page.goto('/')
-  const loginButton = page.getByRole('button', { name: /Sign in with Keycloak/i })
-  await expect(loginButton).toBeVisible({ timeout: 10000 })
+    await log.step('Navigate to app and find login button')
+    await page.goto('/')
+    const loginButton = page.getByRole('button', {name: /Sign in with Keycloak/i})
+    await expect(loginButton).toBeVisible({timeout: 10000})
 
-  await log.step('Click login and redirect to Keycloak')
-  await loginButton.click()
-  await page.waitForURL(`${KEYCLOAK_URL}/**`, { timeout: 10000 })
+    await log.step('Click login and redirect to Keycloak')
+    await loginButton.click()
+    await page.waitForURL(`${KEYCLOAK_URL}/**`, {timeout: 10000})
 
-  await log.step(`Enter credentials for ${username}`)
-  await page.getByLabel(/username/i).fill(username)
-  await page.getByLabel(/password/i).fill(TEST_PASSWORD)
-  await page.getByRole('button', { name: /sign in/i }).click()
+    await log.step(`Enter credentials for ${username}`)
+    await page.getByLabel(/username/i).fill(username)
+    await page.getByLabel(/password/i).fill(TEST_PASSWORD)
+    await page.getByRole('button', {name: /sign in/i}).click()
 
-  await log.step('Verify redirect back to app')
-  await page.waitForURL(baseUrlRegex, { timeout: 10000 })
+    await log.step('Verify redirect back to app')
+    await page.waitForURL(baseUrlRegex, {timeout: 10000})
 
-  await log.step('Verify authentication succeeded')
-  await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
-    timeout: 10000,
-  })
+    await log.step('Verify authentication succeeded')
+    await expect(page.getByRole('heading', {name: /My Virtual Machines/i})).toBeVisible({
+        timeout: 10000,
+    })
 
-  await log.step('Save authenticated state')
-  await page.context().storageState({ path: outputFile })
-  await log.success(`Session saved to ${outputFile}`)
+    await log.step('Save authenticated state')
+    await page.context().storageState({path: outputFile})
+    await log.success(`Session saved to ${outputFile}`)
 }
 
 /**
  * Authenticates as admin user and saves session state.
  */
-setup('authenticate as admin', async ({ page }) => {
-  await authenticateUser(page, 'test-admin', adminFile)
+setup('authenticate as admin', async ({page}) => {
+    await authenticateUser(page, 'test-admin', adminFile)
 })
 
 /**
  * Authenticates as regular user and saves session state.
  */
-setup('authenticate as user', async ({ page }) => {
-  await authenticateUser(page, 'test-user', userFile)
+setup('authenticate as user', async ({page}) => {
+    await authenticateUser(page, 'test-user', userFile)
 })

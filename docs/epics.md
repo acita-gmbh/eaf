@@ -22,12 +22,12 @@ This document provides the complete epic and story breakdown for DVMM (Dynamic V
 | Epic | Name | Stories | Key Value | Risk |
 |------|------|---------|-----------|------|
 | 1 | Foundation | 11 | Technical base for all features | Low |
-| 2 | Core Workflow | 12 | "Request → Approve → Notify" | High |
+| 2 | Core Workflow | 13 | "Request → Approve → Notify" | High |
 | 3 | VM Provisioning | 9 | "VM is actually created" | **Critical** |
 | 4 | Projects & Quota | 9 | "Resources organized & controlled" | Medium |
 | 5 | Compliance & Oversight | 10 | "Audit-ready in 30 seconds" | Medium |
 
-**Total: 51 Stories for MVP**
+**Total: 52 Stories for MVP**
 
 ### Epic Sequence & Dependencies
 
@@ -662,7 +662,7 @@ So that code quality standards are maintained automatically.
 
 **FRs Covered:** FR1, FR2, FR7a, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86
 
-**Stories:** 12 | **Risk:** High (first user-facing features)
+**Stories:** 13 | **Risk:** High (first user-facing features)
 
 **Tracer Bullet Note:** VM "provisioning" in Epic 2 creates a Docker container as mock. Real VMware integration comes in Epic 3.
 
@@ -1021,6 +1021,33 @@ So that I can efficiently process approvals.
 - Admin role check in SecurityConfig
 - Query: `GET /api/admin/requests/pending`
 - See UX Design: Admin Dashboard mockup
+
+---
+
+### Story 2.9a: E2E Auth Setup & Keycloak Role Mapping Tests
+
+As a **developer**,
+I want E2E authentication setup and Keycloak role mapping integration tests,
+So that I can verify authentication works correctly in E2E and backend tests.
+
+**Acceptance Criteria:**
+
+**Given** a Playwright E2E test suite
+**When** the setup project runs
+**Then** it authenticates users via Keycloak and saves session to `storageState`
+
+**And** integration tests verify `realm_access.roles` maps to `ROLE_*` authorities
+**And** `@PreAuthorize("hasRole('admin')")` is tested (admin=200, user=403)
+**And** different tenant users have different subject IDs
+
+**Prerequisites:** Story 2.1, Story 2.9
+
+**FRs Satisfied:** Supports FR1 (Keycloak SSO), FR25 (Admin role verification)
+
+**Technical Notes:**
+- E2E: Playwright `storageState` for session persistence
+- Backend: `KeycloakRoleMappingIntegrationTest` with real Keycloak Testcontainer
+- See: GitHub Issue #58, PR #59
 
 ---
 
@@ -2422,11 +2449,11 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 | Epic | Stories | User Value |
 |------|---------|------------|
 | Epic 1: Foundation | 11 | Technical enabler |
-| Epic 2: Core Workflow | 12 | Request → Approve → Notify |
+| Epic 2: Core Workflow | 13 | Request → Approve → Notify |
 | Epic 3: VM Provisioning | 9 | VM is created |
 | Epic 4: Projects & Quota | 9 | Organization & Control |
 | Epic 5: Compliance & Oversight | 10 | Audit-ready + GDPR |
-| **Total** | **51** | |
+| **Total** | **52** | |
 
 ### FR Coverage Summary
 
