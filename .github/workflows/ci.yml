@@ -76,8 +76,8 @@ jobs:
       - name: Build (compile main + test sources)
         run: ./gradlew assemble compileTestKotlin --no-daemon
 
-      - name: Unit & Integration Tests
-        run: ./gradlew test --no-daemon
+      - name: Unit & Integration Tests + Coverage (≥80%)
+        run: ./gradlew test :koverHtmlReport koverVerify --no-daemon
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
           SPRING_DATASOURCE_USERNAME: eaf
@@ -91,9 +91,6 @@ jobs:
           include_passed: false
           detailed_summary: true
           fail_on_failure: false
-
-      - name: Code Coverage - Kover (≥80%)
-        run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
       # Mutation testing requires Arcmutate commercial license.
       # For security, GitHub does not expose secrets to fork PRs.
@@ -137,4 +134,46 @@ jobs:
         with:
           name: test-results
           path: '**/build/test-results/'
+          retention-days: 14
+
+  frontend-quality-gates:
+    name: Frontend Quality Gates
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: dvmm/dvmm-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: dvmm/dvmm-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type Check (TypeScript)
+        run: npx tsc --noEmit
+
+      - name: Unit Tests + Coverage (≥80%)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Frontend Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage-report
+          path: dvmm/dvmm-web/coverage/
           retention-days: 14

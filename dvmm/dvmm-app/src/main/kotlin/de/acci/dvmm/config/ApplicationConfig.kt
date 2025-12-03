@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
+import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
@@ -13,6 +15,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
+import de.acci.dvmm.infrastructure.projection.AdminRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventProjectionUpdaterAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventReadRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventRepository
@@ -211,6 +214,43 @@ public class ApplicationConfig {
         timelineRepository: TimelineEventReadRepository,
     ): GetRequestDetailHandler = GetRequestDetailHandler(
         requestRepository = requestRepository,
+        timelineRepository = timelineRepository
+    )
+
+    // ==================== Admin Query Handlers (Story 2.10) ====================
+
+    /**
+     * Adapter for reading admin-specific VM request details.
+     *
+     * Story 2.10: Request Detail View (Admin)
+     *
+     * Provides access to requester info (email, role) and requester history
+     * that are only visible to admins.
+     */
+    @Bean
+    public fun adminRequestDetailRepository(dsl: DSLContext): AdminRequestDetailRepository =
+        AdminRequestDetailRepositoryAdapter(dsl)
+
+    /**
+     * Handler for retrieving admin-specific VM request details.
+     *
+     * Story 2.10: Request Detail View (Admin)
+     *
+     * Returns full request details including:
+     * - Requester info (name, email, role)
+     * - Request specs and justification
+     * - Timeline events
+     * - Requester history (up to 5 recent requests)
+     *
+     * @param adminRequestRepository Repository for admin-specific request queries
+     * @param timelineRepository Repository for querying timeline events
+     */
+    @Bean
+    public fun getAdminRequestDetailHandler(
+        adminRequestRepository: AdminRequestDetailRepository,
+        timelineRepository: TimelineEventReadRepository,
+    ): GetAdminRequestDetailHandler = GetAdminRequestDetailHandler(
+        requestRepository = adminRequestRepository,
         timelineRepository = timelineRepository
     )
 }

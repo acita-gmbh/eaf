@@ -1,11 +1,19 @@
 package de.acci.dvmm.api.admin
 
+import de.acci.dvmm.application.vmrequest.AdminRequestDetail
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailError
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailQuery
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsError
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsQuery
 import de.acci.dvmm.application.vmrequest.ProjectSummary
+import de.acci.dvmm.application.vmrequest.RequesterInfo
+import de.acci.dvmm.application.vmrequest.TimelineEventItem
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestSummary
+import de.acci.dvmm.application.vmrequest.TimelineEventType
+import de.acci.dvmm.application.vmrequest.VmSizeInfo
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmRequestStatus
@@ -38,6 +46,7 @@ import java.util.UUID
  * Unit tests for AdminRequestController.
  *
  * Story 2.9: Admin Approval Queue
+ * Story 2.10: Request Detail View (Admin)
  *
  * Tests controller behavior in isolation using MockK.
  * Integration tests with Spring Security are in AdminRequestControllerIntegrationTest.
@@ -46,6 +55,7 @@ import java.util.UUID
 class AdminRequestControllerTest {
 
     private val getPendingRequestsHandler = mockk<GetPendingRequestsHandler>()
+    private val getAdminRequestDetailHandler = mockk<GetAdminRequestDetailHandler>()
     private val readRepository = mockk<VmRequestReadRepository>()
     private lateinit var controller: AdminRequestController
     private val testTenantId = TenantId.generate()
@@ -54,6 +64,7 @@ class AdminRequestControllerTest {
     fun setup() {
         controller = AdminRequestController(
             getPendingRequestsHandler = getPendingRequestsHandler,
+            getAdminRequestDetailHandler = getAdminRequestDetailHandler,
             readRepository = readRepository
         )
     }
@@ -538,6 +549,279 @@ class AdminRequestControllerTest {
             coVerify(exactly = 1) {
                 readRepository.findDistinctProjects(testTenantId)
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/admin/requests/{id}")
+    inner class GetRequestDetailTests {
+
+        private fun createTestDetail(
+            id: VmRequestId = VmRequestId.generate(),
+            requesterId: UserId = UserId.generate()
+        ): AdminRequestDetail {
+            val now = Instant.now()
+            return AdminRequestDetail(
+                id = id,
+                vmName = "web-server-01",
+                size = VmSizeInfo(
+                    code = "M",
+                    cpuCores = 4,
+                    memoryGb = 8,
+                    diskGb = 100
+                ),
+                justification = "Production web server",
+                status = "PENDING",
+                projectName = "Alpha Project",
+                requester = RequesterInfo(
+                    id = requesterId,
+                    name = "John Doe",
+                    email = "john.doe@example.com",
+                    role = "developer"
+                ),
+                timeline = listOf(
+                    TimelineEventItem(
+                        eventType = TimelineEventType.CREATED,
+                        actorName = "John Doe",
+                        details = null,
+                        occurredAt = now.minusSeconds(3600)
+                    )
+                ),
+                requesterHistory = emptyList(),
+                createdAt = now.minusSeconds(3600)
+            )
+        }
+
+        @Test
+        @DisplayName("should return 200 OK with request details")
+        fun `should return 200 OK with request details`() = runTest {
+            // Given: AC 1 - Page loads with correct request details
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val detail = createTestDetail(id = requestId)
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as AdminRequestDetailResponse
+            assertEquals(requestId.value.toString(), body.id)
+            assertEquals("web-server-01", body.vmName)
+            assertEquals("PENDING", body.status)
+            assertEquals("Alpha Project", body.projectName)
+        }
+
+        @Test
+        @DisplayName("should include requester info in response")
+        fun `should include requester info in response`() = runTest {
+            // Given: AC 2 - Requester Information displayed
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val requesterId = UserId.generate()
+            val detail = createTestDetail(id = requestId, requesterId = requesterId)
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then: Requester info included
+            val body = response.body as AdminRequestDetailResponse
+            assertEquals(requesterId.value.toString(), body.requester.id)
+            assertEquals("John Doe", body.requester.name)
+            assertEquals("john.doe@example.com", body.requester.email)
+            assertEquals("developer", body.requester.role)
+        }
+
+        @Test
+        @DisplayName("should include VM size details in response")
+        fun `should include VM size details in response`() = runTest {
+            // Given: AC 3 - Request Details displayed
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val detail = createTestDetail(id = requestId)
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then: VM size details included
+            val body = response.body as AdminRequestDetailResponse
+            assertEquals("M", body.size.code)
+            assertEquals(4, body.size.cpuCores)
+            assertEquals(8, body.size.memoryGb)
+            assertEquals(100, body.size.diskGb)
+        }
+
+        @Test
+        @DisplayName("should include timeline in response")
+        fun `should include timeline in response`() = runTest {
+            // Given: AC 5 - Timeline events displayed
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val detail = createTestDetail(id = requestId)
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns detail.success()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then: Timeline included
+            val body = response.body as AdminRequestDetailResponse
+            assertEquals(1, body.timeline.size)
+            assertEquals("CREATED", body.timeline[0].eventType)
+            assertEquals("John Doe", body.timeline[0].actorName)
+        }
+
+        @Test
+        @DisplayName("should return 404 for invalid UUID format")
+        fun `should return 404 for invalid UUID format`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = "not-a-valid-uuid",
+                    jwt = jwt
+                )
+            }
+
+            // Then: Returns 404 (not 400) per security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for non-existent request")
+        fun `should return 404 for non-existent request`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns GetAdminRequestDetailError.NotFound.failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for forbidden access (security pattern)")
+        fun `should return 404 for forbidden access`() = runTest {
+            // Given: Security pattern - return 404 instead of 403 to prevent enumeration
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns GetAdminRequestDetailError.Forbidden().failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then: Returns 404 (not 403) per CLAUDE.md security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 500 for query failure")
+        fun `should return 500 for query failure`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(any())
+            } returns GetAdminRequestDetailError.QueryFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            @Suppress("UNCHECKED_CAST")
+            val body = response.body as Map<String, String>
+            assertEquals("QUERY_FAILURE", body["error"])
+        }
+
+        @Test
+        @DisplayName("should pass correct query to handler")
+        fun `should pass correct query to handler`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val querySlot = slot<GetAdminRequestDetailQuery>()
+            val detail = createTestDetail(id = requestId)
+
+            coEvery {
+                getAdminRequestDetailHandler.handle(capture(querySlot))
+            } returns detail.success()
+
+            // When
+            withTenant {
+                controller.getRequestDetail(
+                    id = requestId.value.toString(),
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            val query = querySlot.captured
+            assertEquals(requestId, query.requestId)
+            assertEquals(testTenantId, query.tenantId)
         }
     }
 }

@@ -78,6 +78,10 @@ class VmRequestIntegrationTest {
             TestContainers.postgres.createConnection("").use { conn ->
                 conn.autoCommit = true
                 conn.createStatement().use { stmt ->
+                    // Drop and recreate tables to ensure schema is up to date
+                    // CASCADE needed because REQUEST_TIMELINE_EVENTS references VM_REQUESTS_PROJECTION
+                    stmt.execute("""DROP TABLE IF EXISTS public."REQUEST_TIMELINE_EVENTS" CASCADE""")
+                    stmt.execute("""DROP TABLE IF EXISTS public."VM_REQUESTS_PROJECTION" CASCADE""")
                     // Create projection table with quoted uppercase identifiers to match jOOQ-generated code
                     // jOOQ uses H2's DDLDatabase which stores names in UPPERCASE
                     stmt.execute(
@@ -87,6 +91,8 @@ class VmRequestIntegrationTest {
                             "TENANT_ID"         UUID NOT NULL,
                             "REQUESTER_ID"      UUID NOT NULL,
                             "REQUESTER_NAME"    VARCHAR(255) NOT NULL,
+                            "REQUESTER_EMAIL"   VARCHAR(255),
+                            "REQUESTER_ROLE"    VARCHAR(100),
                             "PROJECT_ID"        UUID NOT NULL,
                             "PROJECT_NAME"      VARCHAR(255) NOT NULL,
                             "VM_NAME"           VARCHAR(255) NOT NULL,

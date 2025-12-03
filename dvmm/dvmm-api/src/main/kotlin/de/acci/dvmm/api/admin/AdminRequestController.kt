@@ -1,10 +1,14 @@
 package de.acci.dvmm.api.admin
 
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailError
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailQuery
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsError
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsQuery
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.domain.vmrequest.ProjectId
+import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.tenant.TenantContext
@@ -15,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -24,6 +29,7 @@ import java.util.UUID
  * REST controller for admin VM request operations.
  *
  * Story 2.9: Admin Approval Queue
+ * Story 2.10: Request Detail View (Admin)
  *
  * All endpoints require ADMIN role via @PreAuthorize.
  * Tenant isolation is handled by PostgreSQL RLS.
@@ -31,12 +37,14 @@ import java.util.UUID
  * ## Endpoints
  *
  * - `GET /api/admin/requests/pending` - Get pending requests for approval
+ * - `GET /api/admin/requests/{id}` - Get detailed view of a specific request
  * - `GET /api/admin/projects` - Get distinct projects for filter dropdown
  *
  * ## Error Handling
  *
  * - **401 Unauthorized**: Missing or invalid JWT
  * - **403 Forbidden**: User does not have admin role
+ * - **404 Not Found**: Request not found (also returned for permission errors to prevent enumeration)
  * - **500 Internal Server Error**: Database query failure
  */
 private val logger = KotlinLogging.logger {}
@@ -46,6 +54,7 @@ private val logger = KotlinLogging.logger {}
 @PreAuthorize("hasRole('admin')")
 public class AdminRequestController(
     private val getPendingRequestsHandler: GetPendingRequestsHandler,
+    private val getAdminRequestDetailHandler: GetAdminRequestDetailHandler,
     private val readRepository: VmRequestReadRepository
 ) {
 
@@ -174,6 +183,88 @@ public class AdminRequestController(
                     "message" to "Failed to retrieve projects"
                 )
             )
+        }
+    }
+
+    /**
+     * Get detailed view of a specific VM request.
+     *
+     * Story 2.10: Request Detail View (Admin)
+     *
+     * Returns full request details including:
+     * - Requester info (name, email, role) [AC 2]
+     * - Request details (VM specs, justification) [AC 3]
+     * - Timeline events [AC 5]
+     * - Requester history (up to 5 recent requests) [AC 6]
+     *
+     * Security: Both NotFound and Forbidden errors return 404 to prevent
+     * tenant enumeration attacks (per CLAUDE.md security pattern).
+     *
+     * @param id The UUID of the request to retrieve
+     * @param jwt The authenticated admin's JWT
+     * @return 200 OK with request details, or 404 if not found/forbidden
+     */
+    @GetMapping("/requests/{id}")
+    public suspend fun getRequestDetail(
+        @PathVariable id: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<Any> {
+        val tenantId = TenantContext.current()
+        val adminId = jwt.subject
+
+        // Parse and validate request ID
+        val requestId = try {
+            VmRequestId(UUID.fromString(id))
+        } catch (e: IllegalArgumentException) {
+            logger.warn { "Invalid request ID format: $id" }
+            return ResponseEntity.notFound().build()
+        }
+
+        logger.info {
+            "Admin fetching request detail: " +
+                "adminId=$adminId, " +
+                "tenantId=${tenantId.value}, " +
+                "requestId=${requestId.value}"
+        }
+
+        val query = GetAdminRequestDetailQuery(
+            tenantId = tenantId,
+            requestId = requestId
+        )
+
+        return when (val result = getAdminRequestDetailHandler.handle(query)) {
+            is Result.Success -> {
+                ResponseEntity.ok(AdminRequestDetailResponse.fromDomain(result.value))
+            }
+            is Result.Failure -> handleGetAdminRequestDetailError(result.error, requestId)
+        }
+    }
+
+    private fun handleGetAdminRequestDetailError(
+        error: GetAdminRequestDetailError,
+        requestId: VmRequestId
+    ): ResponseEntity<Any> {
+        return when (error) {
+            is GetAdminRequestDetailError.NotFound -> {
+                logger.debug { "Request not found: ${requestId.value}" }
+                // Return 404 for not found
+                ResponseEntity.notFound().build()
+            }
+            is GetAdminRequestDetailError.Forbidden -> {
+                // SECURITY: Return 404 instead of 403 to prevent tenant enumeration
+                // Log the actual error for audit trail
+                logger.warn { "Forbidden access to request ${requestId.value}" }
+                ResponseEntity.notFound().build()
+            }
+            is GetAdminRequestDetailError.QueryFailure -> {
+                logger.error { "Failed to retrieve request details: ${error.message}" }
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    mapOf(
+                        "error" to "QUERY_FAILURE",
+                        "message" to "Failed to retrieve request details"
+                    )
+                )
+            }
         }
     }
 }

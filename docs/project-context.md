@@ -87,6 +87,23 @@ throw RuntimeException("VM creation failed")
 catch (e: Exception) { logger.error("Failed") }
 ```
 
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration:**
+
+```kotlin
+// ✅ CORRECT - Opaque error response prevents information leakage
+when (result.error) {
+    is NotFound, is Forbidden -> ResponseEntity.notFound().build()
+}
+// Log actual error for audit
+logger.warn { "Access error: ${result.error}" }
+
+// ❌ FORBIDDEN - Returning 403 reveals resource exists in another tenant
+```
+
+**Rationale:** If `/api/requests/123` returns 403, attacker knows request 123 exists (in another tenant). Returning 404 prevents enumeration.
+
 ---
 
 ## Testing Rules (CI-Blocking)
@@ -201,5 +218,5 @@ CREATE POLICY tenant_isolation ON my_table
 
 ---
 
-_Last Updated: 2025-11-29_
+_Last Updated: 2025-12-03_
 _Distilled from CLAUDE.md for LLM context efficiency_
