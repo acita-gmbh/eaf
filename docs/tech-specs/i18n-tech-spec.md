@@ -128,7 +128,7 @@ t('status.approved')
 
 **Decision:** English as default with key-as-fallback
 
-```
+```text
 User locale → English (en) → Key itself (English text)
 ```
 
@@ -375,7 +375,7 @@ export default defineConfig({
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected",
-    "cancelled": "Cancelled",
+    "canceled": "Canceled",
     "provisioning": "Provisioning",
     "ready": "Ready",
     "failed": "Failed"
@@ -442,7 +442,7 @@ export default defineConfig({
         "CREATED": "VM request was created",
         "APPROVED": "VM request was approved",
         "REJECTED": "VM request was rejected",
-        "CANCELLED": "VM request was cancelled",
+        "CANCELED": "VM request was canceled",
         "PROVISIONING_STARTED": "VM provisioning has begun",
         "VM_READY": "VM is ready for use"
       }
@@ -457,7 +457,7 @@ export default defineConfig({
     "buttons": {
       "goBack": "Go Back",
       "cancel": "Cancel Request",
-      "cancelling": "Cancelling..."
+      "canceling": "Canceling..."
     }
   },
   "toast": {
@@ -465,7 +465,7 @@ export default defineConfig({
       "title": "Request submitted!",
       "description": "VM \"{{vmName}}\" has been submitted for approval."
     },
-    "cancelSuccess": "Request cancelled successfully"
+    "cancelSuccess": "Request canceled successfully"
   }
 }
 ```
@@ -668,7 +668,7 @@ const statusKeys: Record<RequestStatus, string> = {
   PENDING: 'common:status.pending',
   APPROVED: 'common:status.approved',
   REJECTED: 'common:status.rejected',
-  CANCELLED: 'common:status.cancelled',
+  CANCELED: 'common:status.canceled',
   PROVISIONING: 'common:status.provisioning',
   READY: 'common:status.ready',
 }
@@ -872,46 +872,57 @@ Update error DTOs to include error codes:
 ```kotlin
 // dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/ErrorResponses.kt
 
+/**
+ * Base interface for all API error responses.
+ * Using sealed interface allows data classes to implement without inheritance issues.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public data class ApiError(
-    val code: String,           // e.g., "QUOTA_EXCEEDED"
-    val message: String,        // English fallback: "Project quota exceeded"
-    val details: Map<String, Any>? = null  // Interpolation params
-)
+public sealed interface ApiError {
+    val code: String           // e.g., "QUOTA_EXCEEDED"
+    val message: String        // English fallback: "Project quota exceeded"
+    val details: Map<String, Any>?  // Interpolation params
+}
 
 public data class QuotaExceededResponse(
     override val code: String = "QUOTA_EXCEEDED",
     override val message: String,
     val available: Int,
     val requested: Int,
-    override val details: Map<String, Any>? = null
-) : ApiError(code, message, mapOf("available" to available))
+    override val details: Map<String, Any>? = mapOf("available" to available)
+) : ApiError
 
 public data class NotFoundResponse(
     override val code: String = "NOT_FOUND",
     override val message: String,
     val resourceType: String,
-    val resourceId: String
-) : ApiError(code, message, mapOf("resourceType" to resourceType, "resourceId" to resourceId))
+    val resourceId: String,
+    override val details: Map<String, Any>? = mapOf(
+        "resourceType" to resourceType,
+        "resourceId" to resourceId
+    )
+) : ApiError
 
 public data class ForbiddenResponse(
     override val code: String = "FORBIDDEN",
     override val message: String,
-    val reason: String? = null
-) : ApiError(code, message)
+    val reason: String? = null,
+    override val details: Map<String, Any>? = null
+) : ApiError
 
 public data class InvalidStateResponse(
     override val code: String = "INVALID_STATE",
     override val message: String,
     val currentState: String,
-    val allowedStates: List<String>? = null
-) : ApiError(code, message, mapOf("state" to currentState))
+    val allowedStates: List<String>? = null,
+    override val details: Map<String, Any>? = mapOf("state" to currentState)
+) : ApiError
 
 public data class ValidationErrorResponse(
     override val code: String = "VALIDATION_ERROR",
     override val message: String = "Validation failed",
-    val errors: List<FieldError>
-) : ApiError(code, message) {
+    val errors: List<FieldError>,
+    override val details: Map<String, Any>? = null
+) : ApiError {
     public data class FieldError(
         val field: String,
         val code: String,      // e.g., "TOO_SHORT", "INVALID_FORMAT"
@@ -959,7 +970,11 @@ Update domain value objects to return structured errors:
 ```kotlin
 // dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmName.kt
 
-public data class ValidationError(
+/**
+ * Domain-layer validation error, distinct from API-layer ValidationErrorResponse.
+ * Contains error code and params for i18n message resolution.
+ */
+public data class DomainValidationError(
     val code: String,
     val message: String,
     val params: Map<String, Any> = emptyMap()
@@ -972,27 +987,27 @@ public value class VmName private constructor(public val value: String) {
         private const val MIN_LENGTH = 3
         private const val MAX_LENGTH = 63
 
-        public fun create(value: String): Either<ValidationError, VmName> {
+        public fun create(value: String): Either<DomainValidationError, VmName> {
             return when {
-                value.length < MIN_LENGTH -> ValidationError(
+                value.length < MIN_LENGTH -> DomainValidationError(
                     code = "TOO_SHORT",
                     message = "VM name must be at least $MIN_LENGTH characters long",
                     params = mapOf("min" to MIN_LENGTH)
                 ).left()
 
-                value.length > MAX_LENGTH -> ValidationError(
+                value.length > MAX_LENGTH -> DomainValidationError(
                     code = "TOO_LONG",
                     message = "VM name must not exceed $MAX_LENGTH characters",
                     params = mapOf("max" to MAX_LENGTH)
                 ).left()
 
-                value.contains("--") -> ValidationError(
+                value.contains("--") -> DomainValidationError(
                     code = "INVALID_FORMAT",
                     message = "VM name cannot contain consecutive hyphens",
                     params = mapOf("rule" to "NO_CONSECUTIVE_HYPHENS")
                 ).left()
 
-                !VALID_PATTERN.matches(value) -> ValidationError(
+                !VALID_PATTERN.matches(value) -> DomainValidationError(
                     code = "INVALID_FORMAT",
                     message = "VM name must contain only lowercase letters, numbers, and hyphens",
                     params = mapOf("rule" to "ALPHANUMERIC_HYPHEN")
@@ -1007,7 +1022,7 @@ public value class VmName private constructor(public val value: String) {
 
 ### 3.5 Optional: Backend MessageSource for Logging/Email
 
-If backend needs localized messages (e.g., email notifications), configure MessageSource:
+If the backend needs to send localized messages (e.g., email notifications), configure MessageSource:
 
 ```kotlin
 // dvmm-app/src/main/kotlin/de/acci/dvmm/config/I18nConfig.kt
@@ -1031,7 +1046,7 @@ public class I18nConfig {
 ```
 
 Resource bundle structure:
-```
+```text
 dvmm-app/src/main/resources/
 ├── messages/
 │   ├── errors.properties          # English (default)
@@ -1199,8 +1214,8 @@ export function useApiMutation<TData, TVariables>(
 
 **Tasks:**
 1. Create `errors.json` namespace
-2. Update all `toast.success/error` calls
-3. Create error handling utilities
+2. Update all `toast.success()` and `toast.error()` calls
+3. Create error-handling utilities
 4. Map API error codes to localized messages
 
 ### Phase 6: Language Switcher (Story 6)
@@ -1219,7 +1234,7 @@ export function useApiMutation<TData, TVariables>(
 
 ### Frontend
 
-```
+```text
 dvmm/dvmm-web/
 ├── public/
 │   └── locales/
@@ -1245,7 +1260,7 @@ dvmm/dvmm-web/
 
 ### Backend
 
-```
+```text
 eaf/eaf-core/
 └── src/main/kotlin/de/acci/eaf/core/
     └── error/
@@ -1278,7 +1293,7 @@ import { I18nextProvider } from 'react-i18next'
 import i18n from '@/lib/i18n/config'
 import { VmRequestForm } from '../VmRequestForm'
 
-const wrapper = ({ children }) => (
+const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <I18nextProvider i18n={i18n}>
     {children}
   </I18nextProvider>
@@ -1382,7 +1397,7 @@ export function MyComponent() {
 ```
 
 **What happens:**
-1. English users see exactly the same text (key = displayed value)
+1. English users see the same text (key = displayed value)
 2. Missing keys auto-collected to JSON during dev
 3. German translator adds entries to `de/common.json`
 4. No manual key creation required!
@@ -1397,7 +1412,7 @@ export function MyComponent() {
 
 ### Developer Workflow
 
-```bash
+```shell
 # 1. Migrate a component
 #    - Add useTranslation hook
 #    - Wrap strings in t()
