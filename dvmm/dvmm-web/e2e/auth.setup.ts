@@ -63,7 +63,8 @@ async function authenticateUser(page: Page, username: string, outputFile: string
     await page.waitForURL(baseUrlRegex, {timeout: 10000})
 
     await log.step('Verify authentication succeeded')
-    await expect(page.getByRole('heading', {name: /My Virtual Machines/i})).toBeVisible({
+    // Use data-testid for stable selector (not affected by UI text changes)
+    await expect(page.getByTestId('dashboard-authenticated')).toBeVisible({
         timeout: 10000,
     })
 

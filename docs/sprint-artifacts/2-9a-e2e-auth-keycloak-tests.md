@@ -87,6 +87,28 @@ This story was created during the correct-course workflow after Story 2.9 (Admin
 - [x] Code review passed
 - [x] PR merged
 
+## Code Review (2025-12-03)
+
+**Review Findings:** 0 High, 2 Medium, 3 Low
+
+### Fixes Applied
+
+| Issue | Severity | Fix |
+|-------|----------|-----|
+| Bug: auth.setup.ts looked for non-existent heading "My Virtual Machines" | MEDIUM | Added `data-testid="dashboard-authenticated"` to Dashboard.tsx, updated selectors |
+| Tenant isolation test comment was unclear about AC-4 requirements | MEDIUM | Clarified that subject ID isolation satisfies AC-4, tenant_id is optional |
+| `@Suppress("UNCHECKED_CAST")` code smell | LOW | Replaced with `filterIsInstance<String>()` pattern |
+| No global timeout in playwright.config.ts | LOW | Added 60s timeout for auth tests |
+| login.spec.ts used same outdated heading selector | LOW | Updated to use data-testid |
+
+### Additional Files Changed
+
+| File | Change |
+|------|--------|
+| `dvmm-web/src/pages/Dashboard.tsx` | Added `data-testid="dashboard-authenticated"` |
+| `dvmm-web/e2e/login.spec.ts` | Updated selector to use data-testid |
+| `dvmm-web/playwright.config.ts` | Added global 60s timeout |
+
 ## Related Stories
 
 - Story 2.1: Keycloak Login Flow

@@ -41,6 +41,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  // Global timeout for individual tests (auth setup may take longer)
+  timeout: 60_000, // 60 seconds
 
   use: {
     baseURL: 'http://localhost:5173',

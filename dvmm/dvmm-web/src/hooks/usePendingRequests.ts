@@ -24,6 +24,12 @@ const POLLING_JITTER_MS = Math.floor(Math.random() * 5000)
  * - User is authenticated (has access token)
  * - User role validation is done by the backend (returns 403 if not admin)
  *
+ * @remarks
+ * **Polling Jitter:** The `POLLING_JITTER_MS` constant is computed at module load
+ * (not per-render) to ensure a consistent polling interval throughout the session.
+ * This prevents the interval from changing on every re-render while still providing
+ * unique offsets across different browser tabs to prevent thundering herd.
+ *
  * @param params - Query parameters (projectId filter, page, size)
  * @returns Query result with paginated pending requests
  *

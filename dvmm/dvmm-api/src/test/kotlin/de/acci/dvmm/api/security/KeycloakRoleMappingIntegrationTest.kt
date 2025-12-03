@@ -106,10 +106,10 @@ class KeycloakRoleMappingIntegrationTest {
                 return Mono.just(mapOf("message" to "Admin access granted"))
             }
 
-            @Suppress("UNCHECKED_CAST")
             private fun extractRealmRoles(jwt: org.springframework.security.oauth2.jwt.Jwt): List<String> {
                 val realmAccess = jwt.getClaim<Map<String, Any>>("realm_access") ?: return emptyList()
-                return (realmAccess["roles"] as? List<String>) ?: emptyList()
+                val roles = realmAccess["roles"] as? List<*> ?: return emptyList()
+                return roles.filterIsInstance<String>()
             }
 
             data class AuthInfo(
@@ -244,16 +244,18 @@ class KeycloakRoleMappingIntegrationTest {
     }
 
     /**
-     * Verifies tenant isolation by checking tenant_id claim mapping.
-     * Ensures different tenants have different tenant IDs in their tokens.
+     * Verifies tenant isolation between users from different tenants.
      *
-     * Note: This test validates the tenant_id claim is present and different for users
-     * from different tenants. If tenant_id is not configured in Keycloak, this test
-     * documents the current behavior (null tenant_id) and verifies user isolation
-     * via subject IDs instead.
+     * AC-4 requires: "different subject IDs in their JWTs" for tenant isolation.
+     * This test validates:
+     * 1. Different users have different subject IDs (REQUIRED - satisfies AC-4)
+     * 2. Different tenants have different tenant_id claims (OPTIONAL - enhanced isolation)
+     *
+     * Subject ID isolation is the primary mechanism. The tenant_id claim provides
+     * additional isolation when configured in Keycloak realm mappers.
      */
     @Test
-    fun `different tenant users have different tenant IDs in JWT`() {
+    fun `different tenant users have different subject IDs for isolation`() {
         val tenant1Token = fixture.getAccessToken(KeycloakTestUsers.TENANT1_USER)
         val tenant2Token = fixture.getAccessToken(KeycloakTestUsers.TENANT2_USER)
 
@@ -281,18 +283,17 @@ class KeycloakRoleMappingIntegrationTest {
             "Different users should have different subject IDs"
         )
 
-        // Verify tenant_id claims if present
+        // Optional: Verify tenant_id claims if configured in Keycloak
+        // This provides additional isolation beyond subject IDs
         if (tenant1Info.tenantId != null && tenant2Info.tenantId != null) {
             assertTrue(
                 tenant1Info.tenantId != tenant2Info.tenantId,
                 "Users from different tenants should have different tenant_id claims. " +
                     "Got: tenant1=${tenant1Info.tenantId}, tenant2=${tenant2Info.tenantId}"
             )
-        } else {
-            // Document that tenant_id claim is not configured in Keycloak test realm
-            // This is acceptable as long as we have user isolation via subject IDs
-            // TODO: Configure tenant_id claim in test-realm.json when multi-tenancy is implemented
         }
+        // Note: tenant_id claim requires Keycloak realm mapper configuration.
+        // Subject ID isolation (verified above) satisfies AC-4 requirements.
     }
 }
 
