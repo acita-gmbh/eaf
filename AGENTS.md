@@ -71,6 +71,26 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+### MockK Unit Testing Patterns
+
+**Use `any()` for ALL parameters when stubbing functions with default arguments.**
+
+When stubbing Kotlin functions that have default parameters, MockK evaluates default values at stub setup time, not at call time:
+
+```kotlin
+// Given a handler with a default parameter:
+public suspend fun handle(
+    command: RejectVmRequestCommand,
+    correlationId: CorrelationId = CorrelationId.generate()  // Default generates UUID
+)
+
+// ❌ WRONG - MockK evaluates the default at setup time
+coEvery { handler.handle(any()) } returns result.success()
+
+// ✅ CORRECT - Explicitly match ALL parameters
+coEvery { handler.handle(any(), any()) } returns result.success()
+```
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application at `dvmm/dvmm-web/`.
