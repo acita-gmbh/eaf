@@ -23,9 +23,9 @@ So that I understand how to get started.
    - Given I am a new user with zero VM requests
    - When I view the dashboard
    - Then I see an empty state illustration with:
-     - Friendly message: "Noch keine VMs angefordert"
-     - Clear CTA: "Erste VM anfordern" button in Tech Teal
-     - Brief explanation: "Fordern Sie Ihre erste virtuelle Maschine an"
+     - Friendly message: "No VMs requested yet"
+     - Clear CTA: "Request First VM" button in Tech Teal
+     - Brief explanation: "Request your first virtual machine"
    - And the empty state uses consistent styling (Card component, centered content)
 
 2. **Empty state for stats cards** *(Note: StatsCard already handles 0 gracefully from Story 2.2)*
@@ -144,9 +144,9 @@ So that I understand how to get started.
 
 - [x] **Task 2: Enhance RequestsPlaceholder with Empty State** (AC: 1)
   - [x] Refactor `components/dashboard/RequestsPlaceholder.tsx` to use EmptyState
-  - [x] Add German copy: "Noch keine VMs angefordert"
-  - [x] Add description: "Fordern Sie Ihre erste virtuelle Maschine an"
-  - [x] Add CTA button: "Erste VM anfordern"
+  - [x] Add copy: "No VMs requested yet"
+  - [x] Add description: "Request your first virtual machine"
+  - [x] Add CTA button: "Request First VM"
   - [x] Wire CTA to log action (no navigation yet - Story 2.4)
 
 - [x] **Task 3: Create Onboarding Hook** (AC: 3, 4, 5)
@@ -164,7 +164,7 @@ So that I understand how to get started.
   - [x] Props: `targetRef`, `content`, `onDismiss`, `position`
   - [x] Add PopoverArrow for visual connection to target element
   - [x] Add fade-in animation (Tailwind `animate-fade-in` or CSS)
-  - [x] Add "Verstanden" dismiss button with focus on open
+  - [x] Add "Got it" dismiss button with focus on open
   - [x] Handle click-outside to dismiss (Popover handles this automatically)
   - [x] Handle Escape key to dismiss
 
@@ -280,9 +280,9 @@ interface EmptyStateProps {
 // Usage
 <EmptyState
   icon={FileQuestion}
-  title="Noch keine VMs angefordert"
-  description="Fordern Sie Ihre erste virtuelle Maschine an"
-  ctaLabel="Erste VM anfordern"
+  title="No VMs requested yet"
+  description="Request your first virtual machine"
+  ctaLabel="Request First VM"
   onCtaClick={() => console.log('Navigate to VM request form')}
 />
 ```
