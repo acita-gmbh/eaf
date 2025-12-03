@@ -383,7 +383,7 @@ const mutation = useMutation({
 | `dvmm-domain/.../VmRequestAggregate.kt` | Add cancel() method, handleEvent for VmRequestCancelled |
 | `dvmm-api/.../VmRequestController.kt` | Add GET /my and POST /{id}/cancel endpoints |
 | `dvmm-web/src/App.tsx` | Add route for /requests/my |
-| `dvmm-web/src/components/layout/Sidebar.tsx` | Add "Meine Anfragen" navigation item |
+| `dvmm-web/src/components/layout/Sidebar.tsx` | Add "My Requests" navigation item |
 
 ### New Files to Create (Backend)
 

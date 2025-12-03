@@ -13,9 +13,9 @@ _Generated using BMad Method - Create UX Design Workflow v1.0_
 **Target Users:**
 | Role | Primary Activity | Emotional Goal |
 |------|------------------|----------------|
-| **End User** | Request VMs, monitor status | "Ich kann das selbst und bin immer informiert" |
-| **IT Admin** | Approve/reject requests, oversight | "Keine Email-Flut mehr!" |
-| **IT Manager** | Compliance, reporting, configuration | "Ich habe alles im Griff und bin audit-ready" |
+| **End User** | Request VMs, monitor status | "I can do this myself and I'm always informed" |
+| **IT Admin** | Approve/reject requests, oversight | "No more email flood!" |
+| **IT Manager** | Compliance, reporting, configuration | "I have everything under control and I'm audit-ready" |
 
 **Core Experience:** Request → Approve → Provision → Notify
 **Platform:** Web Application (Desktop-first, Mobile-responsive)
@@ -116,7 +116,7 @@ No novel patterns required - DVMM uses established patterns:
 - Signals innovation while maintaining enterprise trust
 - Excellent accessibility (WCAG AAA compliant)
 - Strong semantic color separation for status indicators
-- Calming tone aligns with "keine Email-Flut mehr!" emotional goal
+- Calming tone aligns with "no more email flood!" emotional goal
 
 #### Primary Colors
 
@@ -357,7 +357,7 @@ End User Request → Admin Approval → VM Provisioned → Notification
 ### 5.2 End User Journey: Request a VM
 
 **Persona:** Developer needing a VM for a project
-**Emotional Goal:** "Ich kann das selbst und bin immer informiert"
+**Emotional Goal:** "I can do this myself and I'm always informed"
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -437,7 +437,7 @@ End User Request → Admin Approval → VM Provisioned → Notification
 ### 5.3 IT Admin Journey: Approve Requests
 
 **Persona:** IT Administrator responsible for VM approvals
-**Emotional Goal:** "Keine Email-Flut mehr!"
+**Emotional Goal:** "No more email flood!"
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

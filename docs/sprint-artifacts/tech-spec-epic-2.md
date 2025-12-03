@@ -22,7 +22,7 @@
 
 ### 1.2 User Value Statement
 
-> "Ich kann einen VM-Request erstellen und sehe genau, was damit passiert" - Complete transparency from request to decision.
+> "I can create a VM request and see exactly what happens with it" - Complete transparency from request to decision.
 
 ### 1.3 Tracer Bullet Strategy
 

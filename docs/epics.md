@@ -658,7 +658,7 @@ So that code quality standards are maintained automatically.
 
 **Goal:** Implement the complete "Request → Approve → Notify" workflow that demonstrates DVMM's core value proposition. This is the **Tracer Bullet** - users can request VMs, admins can approve/reject, and everyone gets notified.
 
-**User Value:** "Ich kann einen VM-Request erstellen und sehe genau, was damit passiert" - Complete transparency from request to decision.
+**User Value:** "I can create a VM request and see exactly what happens with it" - Complete transparency from request to decision.
 
 **FRs Covered:** FR1, FR2, FR7a, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86
 
@@ -1092,20 +1092,20 @@ So that I can process requests efficiently.
 **Acceptance Criteria:**
 
 **Given** I am viewing a pending request
-**When** I click "Genehmigen"
-**Then** confirmation dialog appears: "Request genehmigen?"
+**When** I click "Approve"
+**Then** confirmation dialog appears: "Approve request?"
 **And** on confirm, `ApproveVmRequestCommand` is dispatched
 **And** `VmRequestApproved` event is persisted with my userId and timestamp
-**And** success toast: "Request genehmigt!"
+**And** success toast: "Request approved!"
 **And** I return to queue (request removed from pending)
 
 **Given** I am viewing a pending request
-**When** I click "Ablehnen"
+**When** I click "Reject"
 **Then** rejection dialog appears with mandatory reason field
 **And** reason must be at least 10 characters
 **And** on submit, `RejectVmRequestCommand` is dispatched
 **And** `VmRequestRejected` event is persisted with reason, userId, timestamp
-**And** success toast: "Request abgelehnt"
+**And** success toast: "Request rejected"
 **And** I return to queue
 
 **Given** the request is already approved/rejected (concurrent admin)
@@ -1136,19 +1136,19 @@ So that I stay informed without checking the portal.
 **Given** a user submits a VM request
 **When** `VmRequestCreated` event is persisted
 **Then** email is sent to tenant admins:
-  - Subject: "[DVMM] Neuer VM-Request: {vmName}"
+  - Subject: "[DVMM] New VM Request: {vmName}"
   - Body: Requester, VM details, link to approve
 
 **Given** an admin approves a request
 **When** `VmRequestApproved` event is persisted
 **Then** email is sent to requester:
-  - Subject: "[DVMM] Request genehmigt: {vmName}"
+  - Subject: "[DVMM] Request Approved: {vmName}"
   - Body: Approval confirmation, next steps
 
 **Given** an admin rejects a request
 **When** `VmRequestRejected` event is persisted
 **Then** email is sent to requester:
-  - Subject: "[DVMM] Request abgelehnt: {vmName}"
+  - Subject: "[DVMM] Request Rejected: {vmName}"
   - Body: Rejection reason, contact info
 
 **And** SMTP settings are configurable per tenant
@@ -1707,7 +1707,7 @@ So that I can organize VMs by team or purpose.
 **Acceptance Criteria:**
 
 **Given** I am a tenant admin
-**When** I click "Neues Projekt erstellen"
+**When** I click "Create New Project"
 **Then** I see a form with:
   - Name (required, unique within tenant)
   - Description (optional)
