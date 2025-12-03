@@ -360,7 +360,9 @@ fun `VM request approval triggers provisioning`() {
 // 3. Implementation
 ```
 
-### Security Patterns (Multi-Tenant)
+---
+
+## Security Patterns (Multi-Tenant)
 
 **Resource access errors MUST return 404 to prevent tenant enumeration attacks.**
 
