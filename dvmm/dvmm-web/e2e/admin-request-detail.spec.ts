@@ -322,7 +322,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
 
     // Modal actions
     await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()
-    await expect(page.getByTestId('confirm-approve-button')).toBeVisible()
+    await expect(page.getByTestId('approve-confirm-button')).toBeVisible()
   })
 
   test.skip('cancel button closes approve modal without action', async ({ page }) => {
@@ -347,7 +347,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
 
     await page.getByTestId('approve-button').click()
-    await page.getByTestId('confirm-approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
 
     // Modal should close
     await expect(page.getByRole('dialog')).not.toBeVisible()
@@ -370,7 +370,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
 
     await page.getByTestId('approve-button').click()
-    await page.getByTestId('confirm-approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
 
     // Wait for success
     await expect(page.locator('[data-testid="status-badge-approved"]')).toBeVisible()
@@ -521,7 +521,7 @@ test.describe('Admin Request Detail - Concurrency Handling @requires-auth @requi
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
 
     await page.getByTestId('approve-button').click()
-    await page.getByTestId('confirm-approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
 
     // Should show error toast with refresh prompt
     await expect(page.locator('[data-testid="toast"]')).toContainText(/modified/i)

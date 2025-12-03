@@ -138,7 +138,19 @@ public class ApproveVmRequestHandler(
         }
 
         // Deserialize events and reconstitute aggregate
-        val domainEvents = storedEvents.map { eventDeserializer.deserialize(it) }
+        val domainEvents = try {
+            storedEvents.map { eventDeserializer.deserialize(it) }
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Failed to deserialize events for request: " +
+                    "requestId=${command.requestId.value}, " +
+                    "tenantId=${command.tenantId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return ApproveVmRequestError.PersistenceFailure(
+                message = "Failed to deserialize request events: ${e.message}"
+            ).failure()
+        }
         val aggregate = VmRequestAggregate.reconstitute(command.requestId, domainEvents)
 
         // Verify expected version matches (optimistic locking)

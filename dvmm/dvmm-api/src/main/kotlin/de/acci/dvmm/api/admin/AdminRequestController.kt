@@ -386,7 +386,14 @@ public class AdminRequestController(
             }
             is ApproveVmRequestError.PersistenceFailure -> {
                 logger.error { "Persistence failure during approval: ${error.message}" }
-                ResponseEntity.internalServerError().build()
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ProblemDetail.forStatusAndDetail(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to process approval request"
+                    ).apply {
+                        type = URI("/errors/internal-error")
+                    }
+                )
             }
         }
     }
@@ -503,7 +510,14 @@ public class AdminRequestController(
             }
             is RejectVmRequestError.PersistenceFailure -> {
                 logger.error { "Persistence failure during rejection: ${error.message}" }
-                ResponseEntity.internalServerError().build()
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ProblemDetail.forStatusAndDetail(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to process rejection request"
+                    ).apply {
+                        type = URI("/errors/internal-error")
+                    }
+                )
             }
         }
     }
