@@ -364,8 +364,6 @@ describe('PendingRequests', () => {
     })
 
     it('calls hook with page-1 when clicking previous', async () => {
-      // Start on page 2
-      let currentPage = 1
       mockUsePendingRequests.mockImplementation(() => ({
         data: {
           items: mockRequests,
