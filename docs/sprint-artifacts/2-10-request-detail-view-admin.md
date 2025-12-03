@@ -81,7 +81,7 @@ Before starting implementation, verify these are complete:
 9. **Loading states**
    - Given the request is loading
    - When I navigate to the detail page
-   - Then I see skeleton loaders for all sections
+   - Then I see a centered loading spinner
 
 10. **Error handling**
     - Given the request ID is invalid or from another tenant
@@ -117,19 +117,19 @@ Before starting implementation, verify these are complete:
 
 ### Frontend Unit Tests
 
-**useVmRequestDetail hook:**
+**useAdminRequestDetail hook:**
 - Fetches from GET /api/admin/requests/{id}
 - Returns loading state
 - Returns error state for 404
 - Includes requesterHistory and timeline in response
 
-**RequestDetailPage component:**
+**AdminRequestDetail component:**
 - Renders requester section with name, email, role
 - Renders request section with VM details
 - Renders project context placeholder
 - Renders timeline (reuses Story 2.8 components)
 - Renders requester history card
-- Shows loading skeletons
+- Shows loading spinner
 - Shows error for 404 with back link
 - Back button navigates to queue
 - **NO `useMemo`/`useCallback` allowed** (React Compiler rule)
@@ -268,18 +268,18 @@ GET /api/admin/requests/{id} - Get request detail for admin
   - Extend `src/api/admin.ts` with `getVmRequestDetail(id: string)`
   - Define `VmRequestDetail` TypeScript type matching backend DTO
 
-- [x] **Task 3.2: Create useVmRequestDetail Hook** (AC: 1, 9)
-  - Create `src/hooks/useVmRequestDetail.ts`
+- [x] **Task 3.2: Create useAdminRequestDetail Hook** (AC: 1, 9)
+  - Create `src/hooks/useAdminRequestDetail.ts`
   - Use `useQuery` with `queryKey: ['admin', 'request', id]`
   - Handle loading and error states
 
 ### Phase 4: Frontend - Components
 
-- [x] **Task 4.1: Create RequestDetailPage** (AC: 1-10)
-  - Create `src/pages/admin/RequestDetailPage.tsx`
+- [x] **Task 4.1: Create AdminRequestDetail Page** (AC: 1-10)
+  - Create `src/pages/admin/RequestDetail.tsx`
   - Sections: Requester, Request, Project Context, Timeline, History, Actions
   - **Reuse from Story 2.8:** `Timeline`, `TimelineEvent` components
-  - Handle loading with skeletons
+  - Handle loading with centered spinner
   - Handle error with back link
   - **NO `useMemo`/`useCallback` allowed**
 
@@ -373,13 +373,13 @@ LIMIT :limit
 | Key | Text |
 |-----|------|
 | Page title | Request Details |
-| Back button | Back to Queue |
-| Requester section | Requester |
+| Back button | Back to Pending Requests |
+| Requester section | Requester Information |
 | Request section | Request Details |
 | Project section | Project Context |
-| Timeline section | Timeline |
-| History section | Recent Requests by {Name} |
-| Empty history | No other requests |
+| Timeline section | Request Timeline |
+| History section | Recent Requests |
+| Empty history | No previous requests from this user. |
 | Quota placeholder | Quota information available in Epic 4 |
 | Approve button | Approve |
 | Reject button | Reject |
@@ -420,18 +420,12 @@ dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/
 ```text
 dvmm/dvmm-web/src/
 ├── hooks/
-│   ├── useVmRequestDetail.ts
-│   └── useVmRequestDetail.test.ts
+│   ├── useAdminRequestDetail.ts
+│   └── useAdminRequestDetail.test.tsx
 ├── pages/
 │   └── admin/
-│       └── RequestDetailPage.tsx
-├── components/
-│   └── admin/
-│       ├── RequestDetailHeader.tsx
-│       ├── RequesterHistoryCard.tsx
-│       └── __tests__/
-│           ├── RequestDetailHeader.test.tsx
-│           └── RequesterHistoryCard.test.tsx
+│       ├── RequestDetail.tsx
+│       └── RequestDetail.test.tsx
 └── e2e/
     └── admin-request-detail.spec.ts
 ```
@@ -499,3 +493,7 @@ Claude Opus 4.5 (validation), Story draft by previous session
 | 2025-12-03 | Fix: Corrected polling comment from AC-4 to FR44/NFR-PERF-8 |
 | 2025-12-03 | Fix: Added TypeScript type guard comment for data null check |
 | 2025-12-03 | Doc: Added breadcrumb navigation as Epic 5 backlog suggestion |
+| 2025-12-03 | Doc: Updated hook name to useAdminRequestDetail (matching implementation) |
+| 2025-12-03 | Doc: Updated component name to AdminRequestDetail (matching implementation) |
+| 2025-12-03 | Doc: Updated loading state from skeleton to spinner (matching implementation) |
+| 2025-12-03 | Doc: Updated file list to match actual created files |

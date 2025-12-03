@@ -87,6 +87,8 @@ public class VmRequestProjectionRepository(
             .set(VM_REQUESTS_PROJECTION.TENANT_ID, projection.tenantId)
             .set(VM_REQUESTS_PROJECTION.REQUESTER_ID, projection.requesterId)
             .set(VM_REQUESTS_PROJECTION.REQUESTER_NAME, projection.requesterName)
+            .set(VM_REQUESTS_PROJECTION.REQUESTER_EMAIL, projection.requesterEmail)
+            .set(VM_REQUESTS_PROJECTION.REQUESTER_ROLE, projection.requesterRole)
             .set(VM_REQUESTS_PROJECTION.PROJECT_ID, projection.projectId)
             .set(VM_REQUESTS_PROJECTION.PROJECT_NAME, projection.projectName)
             .set(VM_REQUESTS_PROJECTION.VM_NAME, projection.vmName)
