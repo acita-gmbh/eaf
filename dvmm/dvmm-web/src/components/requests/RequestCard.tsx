@@ -43,7 +43,7 @@ export function RequestCard({ request }: Readonly<RequestCardProps>) {
   const cancelMutation = useCancelRequest()
 
   const handleCardClick = () => {
-    navigate(`/requests/${request.id}`)
+    void navigate(`/requests/${request.id}`)
   }
 
   const handleCancelConfirm = (reason?: string) => {

@@ -193,6 +193,50 @@ export function Button({ label, onClick, disabled }: ButtonProps) {
 - Enables React Compiler optimizations by guaranteeing immutability
 - Enforced by ESLint rule `@eslint-react/prefer-read-only-props`
 
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as intentional fire-and-forget with `void`.**
+
+```tsx
+// ❌ FORBIDDEN - Floating promise (ESLint error: @typescript-eslint/no-floating-promises)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns a promise in React Router v6!
+}
+
+// ✅ CORRECT - Use `void` for intentional fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')  // Explicitly marks as fire-and-forget
+}
+
+// ✅ CORRECT - Or use async/await if you need to wait
+const handleClick = async () => {
+  await navigate('/dashboard')
+  console.log('Navigation complete')
+}
+```
+
+**Common fire-and-forget patterns requiring `void`:**
+
+```tsx
+// React Router navigation (returns Promise in v6)
+void navigate('/path')
+
+// TanStack Query cache invalidation (background refetch)
+void queryClient.invalidateQueries({ queryKey: ['my-requests'] })
+
+// TanStack Query refetch (when you don't need the result)
+void refetch()
+
+// OIDC auth redirects (page will navigate away)
+void auth.signinRedirect({ state: { returnTo: location.pathname } })
+```
+
+**Rationale:**
+- Unhandled promises hide errors silently - `void` makes intent explicit
+- React Router v6's `navigate()` returns a Promise (unlike v5)
+- ESLint rule `@typescript-eslint/no-floating-promises` catches these bugs at compile time
+- The `void` operator evaluates the expression and returns `undefined`, satisfying the linter while documenting intent
+
 ### E2E Testing with Playwright
 
 The project uses **Playwright** with **@seontechnologies/playwright-utils** for enhanced E2E testing.

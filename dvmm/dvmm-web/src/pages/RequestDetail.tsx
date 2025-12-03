@@ -62,8 +62,8 @@ export function RequestDetail() {
         onSuccess: () => {
           setCancelDialogOpen(false)
           toast.success('Request cancelled successfully')
-          // Refetch to update timeline immediately
-          refetch()
+          // Refetch to update timeline immediately (fire-and-forget)
+          void refetch()
         },
         onError: (err) => {
           if (err instanceof ApiError) {
@@ -95,7 +95,7 @@ export function RequestDetail() {
   }
 
   const handleBack = () => {
-    navigate('/requests')
+    void navigate('/requests')
   }
 
   // Loading state (AC-5)

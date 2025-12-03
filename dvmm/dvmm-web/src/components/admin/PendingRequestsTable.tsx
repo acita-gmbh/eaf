@@ -53,7 +53,7 @@ export function PendingRequestsTable({
   }
 
   const handleRowClick = (requestId: string) => {
-    navigate(`/admin/requests/${requestId}`)
+    void navigate(`/admin/requests/${requestId}`)
   }
 
   return (

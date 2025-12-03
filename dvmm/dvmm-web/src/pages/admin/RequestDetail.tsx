@@ -50,7 +50,7 @@ export function AdminRequestDetail() {
   })
 
   const handleBack = () => {
-    navigate('/admin/requests')
+    void navigate('/admin/requests')
   }
 
   // Loading state

@@ -24,8 +24,8 @@ export function ProtectedRoute({ children }: Readonly<ProtectedRouteProps>) {
     console.info('[ProtectedRoute] User not authenticated, redirecting to login', {
       returnTo: location.pathname,
     })
-    // Trigger Keycloak login
-    auth.signinRedirect({ state: { returnTo: location.pathname } })
+    // Trigger Keycloak login (fire-and-forget, page will redirect)
+    void auth.signinRedirect({ state: { returnTo: location.pathname } })
     return null
   }
 
