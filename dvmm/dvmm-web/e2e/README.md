@@ -165,6 +165,28 @@ e2e/
 └── login.spec.ts              # Unauthenticated login tests
 ```
 
+## Playwright Utils Library
+
+This project uses `@seontechnologies/playwright-utils` for enhanced E2E testing capabilities:
+
+```typescript
+// Structured logging with Playwright report integration
+import { log } from '@seontechnologies/playwright-utils/log'
+
+await log.step('Performing action')  // Creates collapsible step in report
+await log.success('Action completed') // Success message with green indicator
+await log.debug({ data: someData })   // Object logging for debugging
+```
+
+Available utilities (see `.bmad/bmm/testarch/knowledge/` for documentation):
+- `log` - Structured logging with Playwright report integration
+- `api-request` - Typed HTTP client for backend API testing
+- `auth-session` - Token persistence and multi-user support
+- `recurse` - Polling utility for async conditions
+- `intercept-network-call` - Network mocking and interception
+
+The `tsconfig.e2e.json` is configured with `moduleResolution: "NodeNext"` to support these subpath imports.
+
 ## Best Practices
 
 1. **Use appropriate project for test scope:**

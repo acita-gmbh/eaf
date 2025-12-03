@@ -1,8 +1,5 @@
-// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
-// when moduleResolution is updated to support ESM exports from the package.
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
-// Tracking: Story TBD - E2E test infrastructure improvements
 import { test as setup, expect } from '@playwright/test'
+import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
  * Authentication setup for E2E tests.
@@ -17,7 +14,7 @@ import { test as setup, expect } from '@playwright/test'
  * Environment variables:
  * - BASE_URL: Frontend application URL (default: http://localhost:5173)
  * - KEYCLOAK_URL: Keycloak server URL (default: http://localhost:8080)
- * - API_URL: Backend API URL (default: http://localhost:8081)
+ * - TEST_PASSWORD: Password for test users (default: test)
  *
  * Test users (from test-realm.json):
  * - test-admin / test (tenant1, admin role)
@@ -41,74 +38,64 @@ const userFile = 'playwright/.auth/user.json'
  * Authenticates as admin user and saves session state.
  */
 setup('authenticate as admin', async ({ page }) => {
-  // Navigate to the app
+  await log.step('Navigate to app and find login button')
   await page.goto('/')
-
-  // Wait for the login button to appear
   const loginButton = page.getByRole('button', { name: /Sign in with Keycloak/i })
   await expect(loginButton).toBeVisible({ timeout: 10000 })
 
-  // Click the login button - this should redirect to Keycloak
+  await log.step('Click login and redirect to Keycloak')
   await loginButton.click()
-
-  // Wait for Keycloak login page
   await page.waitForURL(`${KEYCLOAK_URL}/**`, { timeout: 10000 })
 
-  // Fill in credentials
+  await log.step('Enter admin credentials')
   await page.getByLabel(/username/i).fill('test-admin')
   await page.getByLabel(/password/i).fill(TEST_PASSWORD)
-
-  // Submit the form
   await page.getByRole('button', { name: /sign in/i }).click()
 
-  // Wait for redirect back to app
+  await log.step('Verify redirect back to app')
   await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
     timeout: 10000,
   })
 
-  // Verify authentication succeeded
+  await log.step('Verify authentication succeeded')
   await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
     timeout: 10000,
   })
 
-  // Save the authenticated state
+  await log.step('Save authenticated state')
   await page.context().storageState({ path: adminFile })
+  await log.success(`Admin session saved to ${adminFile}`)
 })
 
 /**
  * Authenticates as regular user and saves session state.
  */
 setup('authenticate as user', async ({ page }) => {
-  // Navigate to the app
+  await log.step('Navigate to app and find login button')
   await page.goto('/')
-
-  // Wait for the login button to appear
   const loginButton = page.getByRole('button', { name: /Sign in with Keycloak/i })
   await expect(loginButton).toBeVisible({ timeout: 10000 })
 
-  // Click the login button - this should redirect to Keycloak
+  await log.step('Click login and redirect to Keycloak')
   await loginButton.click()
-
-  // Wait for Keycloak login page
   await page.waitForURL(`${KEYCLOAK_URL}/**`, { timeout: 10000 })
 
-  // Fill in credentials
+  await log.step('Enter user credentials')
   await page.getByLabel(/username/i).fill('test-user')
   await page.getByLabel(/password/i).fill(TEST_PASSWORD)
-
-  // Submit the form
   await page.getByRole('button', { name: /sign in/i }).click()
 
-  // Wait for redirect back to app
+  await log.step('Verify redirect back to app')
   await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), {
     timeout: 10000,
   })
 
-  // Verify authentication succeeded
+  await log.step('Verify authentication succeeded')
   await expect(page.getByRole('heading', { name: /My Virtual Machines/i })).toBeVisible({
     timeout: 10000,
   })
 
-  // Save the authenticated state
+  await log.step('Save authenticated state')
   await page.context().storageState({ path: userFile })
+  await log.success(`User session saved to ${userFile}`)
 })

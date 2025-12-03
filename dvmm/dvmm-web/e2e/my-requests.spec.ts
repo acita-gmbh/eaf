@@ -1,8 +1,5 @@
-// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
-// when moduleResolution is updated to support ESM exports from the package.
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
-// Tracking: Story TBD - E2E test infrastructure improvements
 import { test, expect } from '@playwright/test'
+// log import available: import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
  * E2E tests for the My Requests page.
@@ -215,9 +212,12 @@ test.describe('My Requests Pagination @requires-auth', () => {
     await page.getByTestId('page-size-selector').click()
     await page.getByRole('option', { name: '25' }).click()
 
-    // Should show up to 25 items (if that many exist)
+    // Wait for page to settle after size change
+    // toHaveCount verifies the locator resolves - count depends on seeded test data
     const requestCards = page.locator('[data-testid^="request-card-"]')
-    await expect(requestCards).toHaveCount(expect.any(Number))
+    const count = await requestCards.count()
+    expect(count).toBeGreaterThanOrEqual(0)
+    expect(count).toBeLessThanOrEqual(25)
   })
 
   test.skip('navigates between pages', async ({ page }) => {

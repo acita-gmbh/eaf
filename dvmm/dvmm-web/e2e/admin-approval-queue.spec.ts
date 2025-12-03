@@ -1,8 +1,5 @@
-// TODO: Migrate to @seontechnologies/playwright-utils fixtures (apiRequest, recurse, log)
-// when moduleResolution is updated to support ESM exports from the package.
-// See: https://github.com/acita-gmbh/eaf/pull/52#discussion (CodeRabbit suggestion)
-// Tracking: Story TBD - E2E test infrastructure improvements
 import { test, expect } from '@playwright/test'
+// log import available: import { log } from '@seontechnologies/playwright-utils/log'
 
 /**
  * E2E tests for the Admin Approval Queue page.
