@@ -202,6 +202,7 @@ i18n
     // === HYBRID KEY STRATEGY ===
     // Disable separators so natural language keys work:
     // t('Request a VM') won't be parsed as nested object
+    // NOTE: See section 1.3 for limitations on dots and special characters in keys
     keySeparator: false,
     nsSeparator: ':',  // Still allow namespace:key syntax
 
