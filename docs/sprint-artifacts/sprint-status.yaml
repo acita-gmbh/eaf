@@ -127,8 +127,8 @@ development_status:
   2-8-request-status-timeline: done              # Code review PASSED 2025-12-02
   2-9-admin-approval-queue: done                 # Code review PASSED 2025-12-02
   2-9a-e2e-auth-keycloak-tests: done             # Added via correct-course workflow 2025-12-03
-  2-10-request-detail-view-admin: review                # Code review fixes applied 2025-12-03
-  2-11-approve-reject-actions: in-progress             # Started 2025-12-03
+  2-10-request-detail-view-admin: done                  # Code review PASSED 2025-12-03
+  2-11-approve-reject-actions: done                    # Code review PASSED 2025-12-03
   2-12-email-notifications: backlog
   epic-2-retrospective: optional
 

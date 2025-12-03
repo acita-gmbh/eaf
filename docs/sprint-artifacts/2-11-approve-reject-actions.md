@@ -1,6 +1,6 @@
 # Story 2.11: Approve/Reject Actions
 
-Status: implemented
+Status: done
 
 ## Story
 
@@ -43,15 +43,15 @@ so that I can process requests efficiently.
 
 ## Tasks / Subtasks
 
-- [ ] **Domain Layer (dvmm-domain)**
-  - [ ] **Define Events:** Create `VmRequestApproved` and `VmRequestRejected` events in `events/` folder with denormalized fields for notifications (see Event Structure below).
-  - [ ] **Update Aggregate:** In `VmRequestAggregate.kt`:
+- [x] **Domain Layer (dvmm-domain)**
+  - [x] **Define Events:** Create `VmRequestApproved` and `VmRequestRejected` events in `events/` folder with denormalized fields for notifications (see Event Structure below).
+  - [x] **Update Aggregate:** In `VmRequestAggregate.kt`:
     - Add `approve(adminId: UserId, metadata: EventMetadata)` and `reject(adminId: UserId, reason: String, metadata: EventMetadata)` methods
     - Add `is VmRequestApproved` and `is VmRequestRejected` branches to `handleEvent()`
     - Add private `apply(event: VmRequestApproved)` and `apply(event: VmRequestRejected)` methods
-  - [ ] **Validation:** Use existing `status.canBeActedOnByAdmin()` to ensure only `PENDING` requests can transition.
-  - [ ] **Self-Approval Check:** Verify `aggregate.requesterId != adminId` before allowing approve/reject.
-  - [ ] **Unit Tests:** Create `VmRequestAggregateApproveRejectTest.kt` (pattern: `CancelVmRequestHandlerTest.kt`) covering:
+  - [x] **Validation:** Use existing `status.canBeActedOnByAdmin()` to ensure only `PENDING` requests can transition.
+  - [x] **Self-Approval Check:** Verify `aggregate.requesterId != adminId` before allowing approve/reject.
+  - [x] **Unit Tests:** Create `VmRequestAggregateApproveRejectTest.kt` (pattern: `CancelVmRequestHandlerTest.kt`) covering:
     - Approve from PENDING → APPROVED
     - Reject from PENDING → REJECTED with reason
     - Reject with reason < 10 chars throws `IllegalArgumentException`
@@ -59,15 +59,15 @@ so that I can process requests efficiently.
     - Approve/Reject from non-PENDING state throws `InvalidStateException`
     - Self-approval throws error
 
-- [ ] **Application Layer (dvmm-application)**
-  - [ ] **Create Commands:** `ApproveVmRequestCommand(tenantId, requestId, adminId, version)` and `RejectVmRequestCommand(tenantId, requestId, adminId, reason, version)`.
-  - [ ] **Define Error Types:** Create `ApproveVmRequestError` and `RejectVmRequestError` sealed classes following `CancelVmRequestError` pattern (NotFound, Forbidden, InvalidState, ConcurrencyConflict, PersistenceFailure).
-  - [ ] **Implement Handlers:** `ApproveVmRequestHandler` and `RejectVmRequestHandler` following `CancelVmRequestHandler` pattern:
+- [x] **Application Layer (dvmm-application)**
+  - [x] **Create Commands:** `ApproveVmRequestCommand(tenantId, requestId, adminId, version)` and `RejectVmRequestCommand(tenantId, requestId, adminId, reason, version)`.
+  - [x] **Define Error Types:** Create `ApproveVmRequestError` and `RejectVmRequestError` sealed classes following `CancelVmRequestError` pattern (NotFound, Forbidden, InvalidState, ConcurrencyConflict, PersistenceFailure).
+  - [x] **Implement Handlers:** `ApproveVmRequestHandler` and `RejectVmRequestHandler` following `CancelVmRequestHandler` pattern:
     - Load events → reconstitute aggregate → validate → apply command → persist → update projections
     - **CRITICAL:** Call `timelineUpdater.addTimelineEvent()` after successful persist (see Cross-References)
     - **CRITICAL:** Call `projectionUpdater.updateStatus()` to update VM_REQUESTS projection
   - **Note:** `TimelineEventType.APPROVED` and `TimelineEventType.REJECTED` already exist in enum (no changes needed)
-  - [ ] **Unit Tests:** Create `ApproveVmRequestHandlerTest.kt` and `RejectVmRequestHandlerTest.kt` covering:
+  - [x] **Unit Tests:** Create `ApproveVmRequestHandlerTest.kt` and `RejectVmRequestHandlerTest.kt` covering:
     - Happy path approval/rejection
     - NotFound when request doesn't exist
     - Forbidden when admin tries to approve own request
@@ -75,36 +75,36 @@ so that I can process requests efficiently.
     - ConcurrencyConflict when version mismatch
     - Timeline event created on success
 
-- [ ] **API Layer (dvmm-api)**
-  - [ ] **Add Endpoints:** `POST /api/admin/requests/{id}/approve` and `POST /api/admin/requests/{id}/reject` in `AdminRequestController`.
-  - [ ] **DTOs:** Create request body classes with validation (see DTO Structure below).
-  - [ ] **Error Handling:** Map handler errors to HTTP responses (see Controller Error Mapping below).
-  - [ ] **Security:** Endpoints already in admin controller with `@PreAuthorize("hasRole('ADMIN')")`.
+- [x] **API Layer (dvmm-api)**
+  - [x] **Add Endpoints:** `POST /api/admin/requests/{id}/approve` and `POST /api/admin/requests/{id}/reject` in `AdminRequestController`.
+  - [x] **DTOs:** Create request body classes with validation (see DTO Structure below).
+  - [x] **Error Handling:** Map handler errors to HTTP responses (see Controller Error Mapping below).
+  - [x] **Security:** Endpoints already in admin controller with `@PreAuthorize("hasRole('ADMIN')")`.
 
-- [ ] **Frontend (dvmm-web)**
-  - [ ] **API Client:** Add `approveRequest(id, version)` and `rejectRequest(id, version, reason)` to `api/admin.ts`.
-  - [ ] **Enable Buttons:** Remove `disabled` state and tooltip from Approve/Reject buttons (currently showing "Available in Story 2.11").
-  - [ ] **UI Components:** Update `AdminRequestDetail.tsx`:
+- [x] **Frontend (dvmm-web)**
+  - [x] **API Client:** Add `approveRequest(id, version)` and `rejectRequest(id, version, reason)` to `api/admin.ts`.
+  - [x] **Enable Buttons:** Remove `disabled` state and tooltip from Approve/Reject buttons (currently showing "Available in Story 2.11").
+  - [x] **UI Components:** Update `AdminRequestDetail.tsx`:
     - Place "Approve" (Green) and "Reject" (Red) buttons in **Page Header Actions** or **Sticky Footer**.
     - Implement `ApproveConfirmDialog.tsx` (AlertDialog pattern).
     - Implement `RejectFormDialog.tsx` (reason field with 10-500 char validation).
     - Pass `data.version` (from `useAdminRequestDetail` - added in Story 2.10) to API calls.
-  - [ ] **Mutations:** Create `useApproveRequest` and `useRejectRequest` hooks (see Mutation Pattern below).
+  - [x] **Mutations:** Create `useApproveRequest` and `useRejectRequest` hooks (see Mutation Pattern below).
 
-- [ ] **Testing (Backend)**
-  - [ ] **Integration Test:** Add approve/reject tests to `AdminRequestControllerIntegrationTest`:
+- [x] **Testing (Backend)**
+  - [x] **Integration Test:** Add approve/reject tests to `AdminRequestControllerIntegrationTest`:
     - POST /approve returns 200 and updates status to APPROVED
     - POST /reject returns 200 with valid reason
     - POST /reject returns 422 if reason < 10 chars
     - Returns 404 for non-existent request
     - Returns 404 when admin tries to approve own request (Forbidden mapped to 404)
-  - [ ] **Concurrency Test:** Simulate two concurrent coroutines trying to approve the same request; verify one succeeds and the other gets 409 Conflict.
+  - [x] **Concurrency Test:** Simulate two concurrent coroutines trying to approve the same request; verify one succeeds and the other gets 409 Conflict.
 
-- [ ] **Testing (E2E - Playwright)**
-  - [ ] **Approve Flow:** Admin navigates to pending request → clicks Approve → confirms dialog → sees success toast → redirected to queue → request no longer in pending list
-  - [ ] **Reject Flow:** Admin clicks Reject → enters reason (≥10 chars) → submits → sees success toast → redirected to queue
-  - [ ] **Validation:** Reject dialog prevents submission with < 10 char reason
-  - [ ] **Conflict Handling:** (Optional) Simulate stale version scenario
+- [x] **Testing (E2E - Playwright)**
+  - [x] **Approve Flow:** Admin navigates to pending request → clicks Approve → confirms dialog → sees success toast → redirected to queue → request no longer in pending list
+  - [x] **Reject Flow:** Admin clicks Reject → enters reason (≥10 chars) → submits → sees success toast → redirected to queue
+  - [x] **Validation:** Reject dialog prevents submission with < 10 char reason
+  - [x] **Conflict Handling:** (Optional) Simulate stale version scenario
 
 ## Dev Notes
 
@@ -285,7 +285,10 @@ timelineUpdater.addTimelineEvent(
 - **Domain Events:** `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/`
 - **Application:** `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/`
 - **API:** `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/`
-- **Frontend:** `dvmm/dvmm-web/src/features/admin/`
+- **Frontend Pages:** `dvmm/dvmm-web/src/pages/admin/`
+- **Frontend Components:** `dvmm/dvmm-web/src/components/admin/`
+- **Frontend Hooks:** `dvmm/dvmm-web/src/hooks/`
+- **Frontend API:** `dvmm/dvmm-web/src/api/`
 - **Backend Tests:** `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/`
 - **Domain Tests:** `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/`
 - **Application Tests:** `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/`
@@ -320,10 +323,10 @@ Gemini 2.0 Flash
 
 ### Completion Notes List
 
-- [ ] Backend implementation complete with concurrency protection
-- [ ] Frontend implementation complete with cache invalidation
-- [ ] Integration tests passing including 409 Conflict scenario
-- [ ] E2E tests passing
+- [x] Backend implementation complete with concurrency protection
+- [x] Frontend implementation complete with cache invalidation
+- [x] Integration tests passing including 409 Conflict scenario
+- [x] E2E tests passing
 
 ### File List
 
@@ -341,16 +344,17 @@ Gemini 2.0 Flash
 **Infrastructure (deserializer implementation):**
 - `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmrequest/JacksonVmRequestEventDeserializer.kt` (update - add VmRequestApproved/Rejected cases)
 
-**API (modify existing controller):**
+**API (modify existing controller + new DTOs):**
 - `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/AdminRequestController.kt` (update - add approve/reject endpoints)
+- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/AdminRequestBodies.kt` (new - ApproveRequestBody, RejectRequestBody)
 
-**Frontend:**
-- `dvmm/dvmm-web/src/features/admin/components/AdminRequestDetail.tsx` (update - enable buttons)
-- `dvmm/dvmm-web/src/features/admin/api/admin.ts` (update - add approve/reject functions)
-- `dvmm/dvmm-web/src/features/admin/hooks/useApproveRequest.ts` (new)
-- `dvmm/dvmm-web/src/features/admin/hooks/useRejectRequest.ts` (new)
-- `dvmm/dvmm-web/src/features/admin/components/ApproveConfirmDialog.tsx` (new)
-- `dvmm/dvmm-web/src/features/admin/components/RejectFormDialog.tsx` (new)
+**Frontend (actual paths - not features/):**
+- `dvmm/dvmm-web/src/pages/admin/RequestDetail.tsx` (update - enable buttons, add dialogs)
+- `dvmm/dvmm-web/src/api/admin.ts` (update - add approveRequest/rejectRequest functions)
+- `dvmm/dvmm-web/src/hooks/useApproveRequest.ts` (new)
+- `dvmm/dvmm-web/src/hooks/useRejectRequest.ts` (new)
+- `dvmm/dvmm-web/src/components/admin/ApproveConfirmDialog.tsx` (new)
+- `dvmm/dvmm-web/src/components/admin/RejectFormDialog.tsx` (new)
 
 **Tests (Backend):**
 - `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateApproveRejectTest.kt` (new)
@@ -359,8 +363,6 @@ Gemini 2.0 Flash
 - `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerIntegrationTest.kt` (update)
 
 **Tests (Frontend):**
-- `dvmm/dvmm-web/src/features/admin/hooks/__tests__/useApproveRequest.test.ts` (new)
-- `dvmm/dvmm-web/src/features/admin/hooks/__tests__/useRejectRequest.test.ts` (new)
-- `dvmm/dvmm-web/src/features/admin/components/__tests__/ApproveConfirmDialog.test.tsx` (new)
-- `dvmm/dvmm-web/src/features/admin/components/__tests__/RejectFormDialog.test.tsx` (new)
-- `dvmm/dvmm-web/e2e/admin-approve-reject.spec.ts` (new)
+- `dvmm/dvmm-web/src/pages/admin/RequestDetail.test.tsx` (update - approve/reject flow tests)
+- `dvmm/dvmm-web/src/api/admin.test.ts` (update - approve/reject API function tests)
+- `dvmm/dvmm-web/e2e/admin-request-detail.spec.ts` (update - approve/reject E2E scenarios)
