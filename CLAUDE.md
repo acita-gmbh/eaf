@@ -208,6 +208,22 @@ const result = await recurse(
 - Network interception and mocking utilities
 - Auth session persistence between test runs
 
+**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
+
+```tsx
+// ❌ FORBIDDEN - Dynamic RegExp can cause ReDoS with malicious input
+const requestId = await getRequestId() // User-controlled value
+await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+
+// ✅ CORRECT - String literal with interpolation
+await expect(page).toHaveURL(`/admin/requests/${requestId}`)
+
+// ✅ CORRECT - If regex truly needed, use static pattern
+await expect(page).toHaveURL(/\/admin\/requests\/[\w-]+/)
+```
+
+**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
+
 ### Vitest Unit Testing Patterns
 
 **Use `vi.hoisted()` for module mocks that need to be available before imports.**
@@ -393,6 +409,46 @@ DDLDatabase uses H2 internally, so PostgreSQL-specific statements must be wrappe
 - Comments: `COMMENT ON TABLE/COLUMN`
 
 These are runtime concerns that don't affect generated jOOQ code.
+
+### Projection Column Symmetry (CRITICAL)
+
+**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
+
+When adding a new column to a projection table:
+1. Add the column to the Flyway migration
+2. Add the column to jooq-init.sql
+3. Add the column to `mapRecord()` (read path)
+4. Add the column to `insert()` (write path)
+5. **Compile fails if any step is missed** - use sealed class pattern
+
+```kotlin
+// ✅ CORRECT - Sealed class pattern ensures read/write symmetry
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object TenantId : ProjectionColumns
+    data object NewColumn : ProjectionColumns  // Adding new column? Add here!
+
+    companion object {
+        val all = listOf(Id, TenantId, NewColumn)  // Must include all columns
+    }
+}
+
+private fun mapColumn(record: Record, column: ProjectionColumns): Any? = when (column) {
+    ProjectionColumns.Id -> record.get(TABLE.ID)
+    ProjectionColumns.TenantId -> record.get(TABLE.TENANT_ID)
+    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
+}
+
+private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, data: Projection): InsertSetMoreStep<*> = when (column) {
+    ProjectionColumns.Id -> step.set(TABLE.ID, data.id)
+    ProjectionColumns.TenantId -> step.set(TABLE.TENANT_ID, data.tenantId)
+    ProjectionColumns.NewColumn -> step.set(TABLE.NEW_COLUMN, data.newColumn)  // Compiler forces this
+}
+```
+
+**Why this matters:** Without this pattern, jOOQ silently allows reading columns that aren't written during insert, causing data loss. The sealed class makes this a compile-time error instead of a runtime data corruption.
+
+**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
 
 ## Git Conventions
 

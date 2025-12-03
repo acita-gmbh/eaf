@@ -135,6 +135,18 @@ const result = await recurse(
 
 **Key features:** `apiRequest` fixture, `recurse` polling, `log` integration, network interception, auth session persistence.
 
+**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
+
+```tsx
+// FORBIDDEN - Dynamic RegExp can cause ReDoS
+await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+
+// CORRECT - String literal with interpolation
+await expect(page).toHaveURL(`/admin/requests/${requestId}`)
+```
+
+**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
+
 ### Vitest Unit Testing Patterns
 
 **Module mocking:** Use `vi.hoisted()` to ensure mocks exist before ES module imports:
@@ -196,6 +208,32 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
 **Checklist:** Flyway migration + jooq-init.sql + ignore tokens + RLS WITH CHECK + regenerate + integration tests for FK + tests pass.
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+### Projection Column Symmetry (CRITICAL)
+
+**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
+
+When adding a new column to a projection table:
+1. Add the column to the Flyway migration + jooq-init.sql
+2. Add the column to `mapRecord()` (read path)
+3. Add the column to `insert()` (write path)
+4. **Compile fails if any step is missed** - use sealed class pattern
+
+```kotlin
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object NewColumn : ProjectionColumns  // Add new columns here
+    companion object { val all = listOf(Id, NewColumn) }
+}
+
+// Exhaustive when expressions force handling all columns
+private fun mapColumn(record: Record, column: ProjectionColumns) = when (column) {
+    ProjectionColumns.Id -> record.get(TABLE.ID)
+    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
+}
+```
+
+**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
 
 ## Code Style Requirements
 

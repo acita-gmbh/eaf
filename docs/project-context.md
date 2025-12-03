@@ -176,6 +176,26 @@ CREATE POLICY tenant_isolation ON my_table
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first (use `ON CONFLICT DO NOTHING` for idempotency), and cleanup must use `TRUNCATE ... CASCADE`.
 
+**Projection Column Symmetry (CRITICAL):**
+
+CQRS projection repositories must handle all columns symmetrically in read/write operations. Use sealed class pattern:
+
+```kotlin
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object NewColumn : ProjectionColumns
+    companion object { val all = listOf(Id, NewColumn) }
+}
+
+// Exhaustive when expressions force handling all columns in both mapRecord() and insert()
+private fun mapColumn(record: Record, column: ProjectionColumns) = when (column) { ... }
+private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, data: Projection) = when (column) { ... }
+```
+
+**Why:** jOOQ silently allows reading columns that aren't written during insert, causing data loss. Sealed class makes this a compile-time error.
+
+**See:** `VmRequestProjectionRepository.kt` for reference implementation.
+
 ---
 
 ## Anti-Patterns (Prohibited)
@@ -189,6 +209,7 @@ CREATE POLICY tenant_isolation ON my_table
 | Copy-paste from other modules | Context mismatch | Understand + adapt |
 | `useMemo`/`useCallback`/`memo` | Manual memoization | React Compiler handles this automatically |
 | Class components in React | Legacy pattern | Function components with hooks |
+| `new RegExp(userInput)` | CWE-1333 ReDoS vulnerability | Use string literals or static patterns |
 
 ---
 
