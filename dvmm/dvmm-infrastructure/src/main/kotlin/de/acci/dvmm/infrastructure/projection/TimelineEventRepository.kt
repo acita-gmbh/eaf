@@ -146,14 +146,15 @@ public class TimelineEventRepository(
      * @param event The timeline event to insert
      */
     public suspend fun insert(event: RequestTimelineEvents): Unit = withContext(Dispatchers.IO) {
-        // Explicitly type as InsertSetMoreStep<*> to allow sealed class iteration
-        var step: InsertSetMoreStep<*> = dsl.insertInto(REQUEST_TIMELINE_EVENTS)
-            .set(REQUEST_TIMELINE_EVENTS.ID, event.id) // Start with first column
+        // Start with ID column to get InsertSetMoreStep type
+        val initialStep: InsertSetMoreStep<*> = dsl.insertInto(REQUEST_TIMELINE_EVENTS)
+            .set(REQUEST_TIMELINE_EVENTS.ID, event.id)
 
-        // Set remaining columns using the sealed class pattern
-        ProjectionColumns.all.drop(1).forEach { column ->
-            step = setColumn(step, column, event)
-        }
+        // Set remaining columns, explicitly filtering out Id to avoid order dependency on all list
+        var step = initialStep
+        ProjectionColumns.all
+            .filterNot { it is ProjectionColumns.Id }
+            .forEach { column -> step = setColumn(step, column, event) }
 
         step.onConflictDoNothing()
             .execute()

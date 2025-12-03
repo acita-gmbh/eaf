@@ -194,7 +194,7 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 **Why:** jOOQ silently allows reading columns that aren't written during insert, causing data loss. Sealed class makes this a compile-time error.
 
-**See:** `VmRequestProjectionRepository.kt` for reference implementation.
+**See:** `VmRequestProjectionRepository.kt` and `TimelineEventRepository.kt` for reference implementations.
 
 ---
 

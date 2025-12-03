@@ -212,14 +212,15 @@ public class VmRequestProjectionRepository(
      * @param projection The projection data to insert
      */
     public suspend fun insert(projection: VmRequestsProjection): Unit = withContext(Dispatchers.IO) {
-        // Explicitly type as InsertSetMoreStep<*> to allow sealed class iteration
-        var step: InsertSetMoreStep<*> = dsl.insertInto(VM_REQUESTS_PROJECTION)
-            .set(VM_REQUESTS_PROJECTION.ID, projection.id) // Start with first column
+        // Start with ID column to get InsertSetMoreStep type
+        val initialStep: InsertSetMoreStep<*> = dsl.insertInto(VM_REQUESTS_PROJECTION)
+            .set(VM_REQUESTS_PROJECTION.ID, projection.id)
 
-        // Set remaining columns using the sealed class pattern
-        ProjectionColumns.all.drop(1).forEach { column ->
-            step = setColumn(step, column, projection)
-        }
+        // Set remaining columns, explicitly filtering out Id to avoid order dependency on all list
+        var step = initialStep
+        ProjectionColumns.all
+            .filterNot { it is ProjectionColumns.Id }
+            .forEach { column -> step = setColumn(step, column, projection) }
 
         step.execute()
     }

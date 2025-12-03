@@ -418,14 +418,15 @@ dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/src/
-├── hooks/
-│   ├── useAdminRequestDetail.ts
-│   └── useAdminRequestDetail.test.tsx
-├── pages/
-│   └── admin/
-│       ├── RequestDetail.tsx
-│       └── RequestDetail.test.tsx
+dvmm/dvmm-web/
+├── src/
+│   ├── hooks/
+│   │   ├── useAdminRequestDetail.ts
+│   │   └── useAdminRequestDetail.test.tsx
+│   └── pages/
+│       └── admin/
+│           ├── RequestDetail.tsx
+│           └── RequestDetail.test.tsx
 └── e2e/
     └── admin-request-detail.spec.ts
 ```
