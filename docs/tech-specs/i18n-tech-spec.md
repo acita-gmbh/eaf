@@ -96,6 +96,8 @@ t('Are you sure you want to cancel this request?')
 - **No HTML tags** - Keys like `t('Click <strong>here</strong>')` cause matching issues. Use the `Trans` component instead for HTML content
 - **Watch for special chars** - Avoid `{{`, `}}` in static parts (reserved for interpolation)
 
+**Recommended:** Add a dev-time ESLint rule or custom validator to warn about problematic natural language keys (consecutive dots, trailing dots, or keys that could be confused with nested paths). This can be implemented as a simple regex check in a pre-commit hook or ESLint plugin.
+
 #### Semantic Keys (High-Reuse Elements)
 Use structured keys only for frequently reused elements:
 
@@ -253,6 +255,8 @@ export default i18n
 ### 2.3 Dev Server for Missing Key Collection
 
 Create a Vite plugin to handle missing key collection during development.
+
+> **Security Note:** This endpoint only exists in Vite's dev server (`configureServer`) and is never included in production builds. The `saveMissing` option in i18next config should also be disabled in production via environment variables. The whitelist validation provides defense-in-depth but the primary security control is that this code path doesn't exist in production.
 
 Create `vite-plugin-i18n-missing-keys.ts`:
 
