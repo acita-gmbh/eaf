@@ -140,6 +140,8 @@ CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
     tenant_id           UUID NOT NULL,
     requester_id        UUID NOT NULL,
     requester_name      VARCHAR(255) NOT NULL,
+    requester_email     VARCHAR(255),
+    requester_role      VARCHAR(100),
     project_id          UUID NOT NULL,
     project_name        VARCHAR(255) NOT NULL,
     vm_name             VARCHAR(255) NOT NULL,

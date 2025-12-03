@@ -12,6 +12,7 @@ import { MyRequests } from '@/pages/MyRequests'
 import { NewRequest } from '@/pages/NewRequest'
 import { RequestDetail } from '@/pages/RequestDetail'
 import { PendingRequests } from '@/pages/admin/PendingRequests'
+import { AdminRequestDetail } from '@/pages/admin/RequestDetail'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { queryClient } from '@/lib/query-client'
 import { User } from 'lucide-react'
@@ -114,6 +115,14 @@ function AppRoutes() {
           element={
             <AdminProtectedRoute>
               <PendingRequests />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/requests/:id"
+          element={
+            <AdminProtectedRoute>
+              <AdminRequestDetail />
             </AdminProtectedRoute>
           }
         />

@@ -145,7 +145,7 @@ describe('PendingRequestsTable', () => {
       const row = screen.getByTestId('pending-request-row-req-123')
       await user.click(row)
 
-      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-123')
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/requests/req-123')
     })
 
     it('navigates on Enter key press', async () => {
@@ -157,7 +157,7 @@ describe('PendingRequestsTable', () => {
       row.focus()
       await user.keyboard('{Enter}')
 
-      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-456')
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/requests/req-456')
     })
 
     it('navigates on Space key press', async () => {
@@ -169,7 +169,7 @@ describe('PendingRequestsTable', () => {
       row.focus()
       await user.keyboard(' ')
 
-      expect(mockNavigate).toHaveBeenCalledWith('/requests/req-789')
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/requests/req-789')
     })
 
     it('has correct aria attributes for keyboard navigation', () => {

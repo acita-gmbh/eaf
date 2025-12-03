@@ -42,6 +42,8 @@ public class VmRequestProjectionRepository(
             tenantId = record.get(VM_REQUESTS_PROJECTION.TENANT_ID)!!,
             requesterId = record.get(VM_REQUESTS_PROJECTION.REQUESTER_ID)!!,
             requesterName = record.get(VM_REQUESTS_PROJECTION.REQUESTER_NAME)!!,
+            requesterEmail = record.get(VM_REQUESTS_PROJECTION.REQUESTER_EMAIL),
+            requesterRole = record.get(VM_REQUESTS_PROJECTION.REQUESTER_ROLE),
             projectId = record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!,
             projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!,
             vmName = record.get(VM_REQUESTS_PROJECTION.VM_NAME)!!,
