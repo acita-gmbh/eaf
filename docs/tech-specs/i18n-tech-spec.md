@@ -71,31 +71,68 @@ This specification defines the internationalization (i18n) strategy for the DVMM
 **Alternative Considered:** Backend resolves messages via Accept-Language header
 - Rejected: Duplicates translation effort, complicates caching
 
-### 1.3 Translation Key Strategy: Namespaced Keys
+### 1.3 Translation Key Strategy: Hybrid Approach
 
-**Decision:** Use hierarchical namespaces for translation keys
+**Decision:** Use a **hybrid approach** combining natural language keys and semantic keys
 
-```
-namespace:section.key
-```
+#### Natural Language Keys (Default)
+Use the English text itself as the translation key for page-specific content:
 
-**Examples:**
-```
-common:actions.save
-common:actions.cancel
-requests:form.vmName.label
-requests:form.vmName.placeholder
-requests:errors.quotaExceeded
-admin:queue.title
+```tsx
+// Page-specific text → use English as key
+t('Request a VM')
+t('Fill out the form to request a new virtual machine.')
+t('Are you sure you want to cancel this request?')
 ```
 
-### 1.4 Primary Language Handling
+**Benefits:**
+- Zero upfront work - no translation files needed initially
+- Code remains readable without switching to JSON files
+- Gradual migration - add translations as needed
+- Missing key = displays English (perfect fallback)
 
-**Decision:** English as default with fallback chain
+#### Semantic Keys (High-Reuse Elements)
+Use structured keys only for frequently reused elements:
+
+```tsx
+// High-reuse elements → semantic keys
+t('common:submit')           // Button used everywhere
+t('common:cancel')           // Button used everywhere
+t('status.pending')          // Status badge used in multiple components
+t('status.approved')
+```
+
+**When to use semantic keys:**
+- Buttons: Submit, Cancel, Save, Delete, etc.
+- Status labels: Pending, Approved, Rejected, etc.
+- Common actions: Sign In, Sign Out, Loading...
+- Shared labels: VM Name, Project, Size, etc.
+
+### 1.4 Missing Key Extraction (Developer Experience)
+
+**Decision:** Use `i18next-http-backend` with `saveMissing` to auto-collect translation keys during development
+
+**Workflow:**
+1. Developer writes `t('Some new text')` in component
+2. App displays the English text immediately (key = value fallback)
+3. i18next POSTs missing key to dev server endpoint
+4. Dev server writes key to `public/locales/en/[namespace].json`
+5. When adding German: translator fills in `de/[namespace].json`
+
+**Benefits:**
+- No manual key creation required
+- Translation files build up organically
+- Developers focus on features, not i18n bookkeeping
+
+### 1.5 Primary Language Handling
+
+**Decision:** English as default with key-as-fallback
 
 ```
-User locale → English (en) → Key itself
+User locale → English (en) → Key itself (English text)
 ```
+
+This means untranslated keys display perfectly in English - no "[MISSING: key]" issues.
 
 ---
 
@@ -144,6 +181,8 @@ export const namespaces = [
 
 export type Namespace = (typeof namespaces)[number]
 
+const isDev = import.meta.env.DEV
+
 i18n
   .use(HttpBackend)
   .use(LanguageDetector)
@@ -155,9 +194,33 @@ i18n
     ns: namespaces,
     defaultNS: 'common',
 
+    // === HYBRID KEY STRATEGY ===
+    // Disable separators so natural language keys work:
+    // t('Request a VM') won't be parsed as nested object
+    keySeparator: false,
+    nsSeparator: ':',  // Still allow namespace:key syntax
+
+    // Return the key itself if no translation found (perfect for English)
+    returnEmptyString: false,
+
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json',
+
+      // === DEV-TIME MISSING KEY EXTRACTION ===
+      // POST missing keys to dev server for auto-collection
+      addPath: isDev ? '/api/i18n/add/{{lng}}/{{ns}}' : undefined,
     },
+
+    // === MISSING KEY HANDLING ===
+    saveMissing: isDev,  // Only in development
+    saveMissingTo: 'current',
+
+    // Log missing keys in dev for visibility
+    missingKeyHandler: isDev
+      ? (lngs, ns, key, fallbackValue) => {
+          console.debug(`[i18n] Missing key: "${key}" in ${ns} (${lngs.join(', ')})`)
+        }
+      : undefined,
 
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
@@ -181,9 +244,117 @@ i18n
 export default i18n
 ```
 
-### 2.3 Namespace Structure
+### 2.3 Dev Server for Missing Key Collection
 
-#### `common.json` - Shared UI Elements
+Create a Vite plugin to handle missing key collection during development.
+
+Create `vite-plugin-i18n-missing-keys.ts`:
+
+```typescript
+import fs from 'fs'
+import path from 'path'
+import type { Plugin } from 'vite'
+
+/**
+ * Vite plugin that collects missing i18n keys during development.
+ * When i18next POSTs a missing key, this plugin writes it to the locale JSON file.
+ */
+export function i18nMissingKeysPlugin(): Plugin {
+  return {
+    name: 'i18n-missing-keys',
+    configureServer(server) {
+      server.middlewares.use('/api/i18n/add', (req, res, next) => {
+        if (req.method !== 'POST') {
+          return next()
+        }
+
+        let body = ''
+        req.on('data', (chunk) => (body += chunk))
+        req.on('end', () => {
+          try {
+            // URL: /api/i18n/add/en/common → lng=en, ns=common
+            const urlParts = req.url?.split('/').filter(Boolean) || []
+            const lng = urlParts[0] || 'en'
+            const ns = urlParts[1] || 'common'
+
+            const data = JSON.parse(body)
+            const localeFile = path.resolve(
+              __dirname,
+              `public/locales/${lng}/${ns}.json`
+            )
+
+            // Ensure directory exists
+            const dir = path.dirname(localeFile)
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true })
+            }
+
+            // Load existing translations or start fresh
+            let translations: Record<string, string> = {}
+            if (fs.existsSync(localeFile)) {
+              translations = JSON.parse(fs.readFileSync(localeFile, 'utf-8'))
+            }
+
+            // Add missing keys (key = value for natural language keys)
+            let added = 0
+            for (const [key, value] of Object.entries(data)) {
+              if (!(key in translations)) {
+                // For natural language keys, the value is the key itself
+                translations[key] = (value as string) || key
+                added++
+              }
+            }
+
+            if (added > 0) {
+              // Sort keys alphabetically for consistency
+              const sorted = Object.keys(translations)
+                .sort()
+                .reduce((acc, key) => {
+                  acc[key] = translations[key]
+                  return acc
+                }, {} as Record<string, string>)
+
+              fs.writeFileSync(localeFile, JSON.stringify(sorted, null, 2) + '\n')
+              console.log(`[i18n] Added ${added} key(s) to ${lng}/${ns}.json`)
+            }
+
+            res.statusCode = 200
+            res.end('OK')
+          } catch (err) {
+            console.error('[i18n] Error saving missing keys:', err)
+            res.statusCode = 500
+            res.end('Error')
+          }
+        })
+      })
+    },
+  }
+}
+```
+
+Update `vite.config.ts`:
+
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { i18nMissingKeysPlugin } from './vite-plugin-i18n-missing-keys'
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [['babel-plugin-react-compiler']],
+      },
+    }),
+    i18nMissingKeysPlugin(),  // Add the plugin
+  ],
+  // ... rest of config
+})
+```
+
+### 2.4 Namespace Structure
+
+#### `common.json` - Shared UI Elements (Semantic Keys)
 
 ```json
 {
@@ -450,74 +621,105 @@ export default i18n
 }
 ```
 
-### 2.4 Component Integration Patterns
+### 2.5 Component Integration Patterns
 
-#### Hook Usage
+#### Basic Usage - Hybrid Approach
 
 ```tsx
 // src/components/requests/VmRequestForm.tsx
 import { useTranslation } from 'react-i18next'
 
 export function VmRequestForm() {
-  const { t } = useTranslation('requests')
+  const { t } = useTranslation()
 
   return (
     <form>
+      {/* Natural language key - page-specific text */}
+      <h1>{t('Request a VM')}</h1>
+      <p>{t('Fill out the form to request a new virtual machine.')}</p>
+
+      {/* Semantic key - reusable label */}
       <FormLabel>
-        {t('form.vmName.label')} <span className="text-destructive">*</span>
+        {t('common:vmName')} <span className="text-destructive">*</span>
       </FormLabel>
-      <Input placeholder={t('form.vmName.placeholder')} />
-      <FormDescription>{t('form.vmName.description')}</FormDescription>
+
+      {/* Natural language key - specific placeholder */}
+      <Input placeholder={t('e.g. web-server-01')} />
+
+      {/* Natural language key - help text */}
+      <FormDescription>
+        {t('3-63 characters, lowercase letters, numbers, and hyphens')}
+      </FormDescription>
+
+      {/* Semantic key - common button */}
+      <Button>{t('common:submit')}</Button>
     </form>
   )
 }
 ```
 
-#### Multiple Namespaces
+#### Status Badges - Semantic Keys
 
 ```tsx
-// src/pages/RequestDetail.tsx
+// src/components/requests/StatusBadge.tsx
 import { useTranslation } from 'react-i18next'
 
-export function RequestDetail() {
-  const { t } = useTranslation(['requests', 'common'])
+const statusKeys: Record<RequestStatus, string> = {
+  PENDING: 'common:status.pending',
+  APPROVED: 'common:status.approved',
+  REJECTED: 'common:status.rejected',
+  CANCELLED: 'common:status.cancelled',
+  PROVISIONING: 'common:status.provisioning',
+  READY: 'common:status.ready',
+}
 
-  return (
-    <div>
-      <h1>{t('requests:detail.title')}</h1>
-      <Badge>{t('common:status.pending')}</Badge>
-    </div>
-  )
+export function StatusBadge({ status }: { status: RequestStatus }) {
+  const { t } = useTranslation()
+  return <Badge>{t(statusKeys[status])}</Badge>
 }
 ```
 
 #### Interpolation with Variables
 
 ```tsx
-// src/components/requests/ProjectSelect.tsx
-const { t } = useTranslation('requests')
+// Natural language keys work great with interpolation
+const { t } = useTranslation()
 
-// Template: "{{available}} of {{total}} VMs available"
-<span>{t('form.project.quotaInfo', { available: 5, total: 10 })}</span>
+// Simple - just use {{variable}} in the English text
+<span>{t('{{available}} of {{total}} VMs available', { available: 5, total: 10 })}</span>
+
+// The translation file will contain:
+// "{{available}} of {{total}} VMs available": "{{available}} von {{total}} VMs verfügbar"
 ```
 
 #### HTML in Translations (Trans component)
 
 ```tsx
-// src/components/requests/CancelConfirmDialog.tsx
-import { Trans, useTranslation } from 'react-i18next'
+import { Trans } from 'react-i18next'
 
-const { t } = useTranslation('requests')
-
-// Template: "Are you sure you want to cancel the request for <strong>{{vmName}}</strong>?"
+// Natural language key with embedded HTML
 <Trans
-  i18nKey="requests:cancel.confirm"
+  i18nKey="Are you sure you want to cancel <strong>{{vmName}}</strong>?"
   values={{ vmName }}
   components={{ strong: <strong /> }}
 />
 ```
 
-### 2.5 Zod Integration
+#### When to Use Which Pattern
+
+| Content Type | Pattern | Example |
+|--------------|---------|---------|
+| Page titles | Natural | `t('Request a VM')` |
+| Paragraphs | Natural | `t('Fill out the form...')` |
+| Help text | Natural | `t('3-63 characters...')` |
+| Error messages | Natural | `t('Please select a project')` |
+| Toast messages | Natural | `t('Request submitted successfully')` |
+| **Buttons** | Semantic | `t('common:submit')` |
+| **Status labels** | Semantic | `t('common:status.pending')` |
+| **Form labels** | Semantic | `t('common:vmName')` |
+| **Navigation** | Semantic | `t('common:nav.dashboard')` |
+
+### 2.6 Zod Integration
 
 Update `src/lib/validations/vm-request.ts`:
 
@@ -570,7 +772,7 @@ export const vmSizeSchema = z.enum(VM_SIZE_IDS, {
 })
 ```
 
-### 2.6 Language Switcher Component
+### 2.7 Language Switcher Component
 
 Create `src/components/layout/LanguageSwitcher.tsx`:
 
@@ -613,7 +815,7 @@ export function LanguageSwitcher() {
 }
 ```
 
-### 2.7 Date/Number Formatting
+### 2.8 Date/Number Formatting
 
 Create `src/lib/i18n/formatters.ts`:
 
@@ -1146,6 +1348,8 @@ test.describe('i18n', () => {
 
 ### Step-by-Step Component Migration
 
+The hybrid approach makes migration trivially simple:
+
 #### Before:
 ```tsx
 export function MyComponent() {
@@ -1159,33 +1363,95 @@ export function MyComponent() {
 }
 ```
 
-#### After:
+#### After (Minimal Change):
 ```tsx
 import { useTranslation } from 'react-i18next'
 
 export function MyComponent() {
-  const { t } = useTranslation(['requests', 'common'])
+  const { t } = useTranslation()
 
   return (
     <div>
-      <h1>{t('requests:form.title')}</h1>
-      <p>{t('requests:form.subtitle')}</p>
-      <Button>{t('common:actions.submit')}</Button>
+      {/* Just wrap strings in t() - that's it! */}
+      <h1>{t('Request New VM')}</h1>
+      <p>{t('Fill out the form to request a new virtual machine.')}</p>
+      <Button>{t('common:submit')}</Button>  {/* Semantic for buttons */}
     </div>
   )
 }
 ```
 
+**What happens:**
+1. English users see exactly the same text (key = displayed value)
+2. Missing keys auto-collected to JSON during dev
+3. German translator adds entries to `de/common.json`
+4. No manual key creation required!
+
 ### Migration Checklist per Component
 
-- [ ] Import `useTranslation` hook
-- [ ] Identify all hardcoded strings
-- [ ] Add translations to appropriate namespace
-- [ ] Replace hardcoded strings with `t()` calls
-- [ ] Handle interpolation for dynamic values
-- [ ] Update tests to include i18n provider
-- [ ] Verify component renders correctly
-- [ ] Verify translations load without flash
+- [ ] Add `const { t } = useTranslation()`
+- [ ] Wrap strings in `t('...')`
+- [ ] Use `common:` prefix for buttons, status, labels
+- [ ] Run app → missing keys auto-collected
+- [ ] (Later) Add German translations to `de/*.json`
+
+### Developer Workflow
+
+```bash
+# 1. Migrate a component
+#    - Add useTranslation hook
+#    - Wrap strings in t()
+
+# 2. Run the app
+npm run dev
+
+# 3. Check console for collected keys
+[i18n] Missing key: "Request New VM" in common (en)
+[i18n] Added 3 key(s) to en/common.json
+
+# 4. Check auto-generated file
+cat public/locales/en/common.json
+{
+  "Request New VM": "Request New VM",
+  "Fill out the form...": "Fill out the form..."
+}
+
+# 5. (Later) Add German translation
+# Edit public/locales/de/common.json
+{
+  "Request New VM": "Neue VM anfordern",
+  "Fill out the form...": "Füllen Sie das Formular aus..."
+}
+```
+
+### Handling Special Cases
+
+#### Dynamic Content with Variables
+```tsx
+// Before
+<span>{available} of {total} VMs available</span>
+
+// After - use {{var}} syntax in the key
+<span>{t('{{available}} of {{total}} VMs available', { available, total })}</span>
+```
+
+#### Pluralization
+```tsx
+// Use count parameter
+{t('{{count}} request', { count: requests.length })}
+{t('{{count}} requests', { count: requests.length })}
+
+// i18next handles plural forms automatically
+// en: "1 request" / "5 requests"
+// de: "1 Anfrage" / "5 Anfragen"
+```
+
+#### HTML in Text
+```tsx
+import { Trans } from 'react-i18next'
+
+<Trans i18nKey="Click <bold>here</bold> to continue" components={{ bold: <strong /> }} />
+```
 
 ---
 
