@@ -40,6 +40,7 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 | `eaf-eventsourcing` | Event Store interfaces, projection base classes |
 | `eaf-tenant` | Multi-tenancy with PostgreSQL RLS |
 | `eaf-auth` | IdP-agnostic authentication interfaces |
+| `eaf-auth-keycloak` | Keycloak implementation (reusable across products) |
 | `eaf-testing` | Test utilities (InMemoryEventStore, TestClock) |
 
 ### DVMM Product (`dvmm/`)
@@ -234,6 +235,21 @@ throw VmProvisioningException(
 
 // FORBIDDEN - Generic exceptions
 throw RuntimeException("VM creation failed")
+```
+
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration:**
+
+```kotlin
+// CORRECT - Return 404 for both NotFound and Forbidden
+when (result.error) {
+    is NotFound, is Forbidden -> ResponseEntity.notFound().build()
+}
+// Log actual error for audit
+logger.warn { "Access error: ${result.error}" }
+
+// FORBIDDEN - Returning 403 reveals resource exists in another tenant
 ```
 
 ### Dependency Injection

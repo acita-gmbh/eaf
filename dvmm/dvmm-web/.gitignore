@@ -30,3 +30,4 @@ blob-report/
 
 # Playwright auth state files (contains session tokens)
 playwright/.auth/
+tsconfig.e2e.tsbuildinfo

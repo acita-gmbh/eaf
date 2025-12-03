@@ -41,7 +41,10 @@ Reusable framework modules with **zero product dependencies**:
 - `eaf-eventsourcing` - Event Store interfaces and projection base classes
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS support
 - `eaf-auth` - IdP-agnostic authentication (interfaces only)
+- `eaf-auth-keycloak` - Keycloak implementation (future: add more IdP modules as needed)
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock, TenantTestContext)
+
+**Auth Abstraction Pattern:** `eaf-auth` defines interfaces (e.g., `AuthContext`, `TenantResolver`), and dedicated EAF modules provide IdP-specific implementations (e.g., `eaf-auth-keycloak`). Product modules only configure which implementation to use. This enables switching IdPs without rewriting auth logic in each product.
 
 ### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
 Product modules following Hexagonal Architecture:
@@ -578,6 +581,32 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 - **YOU MUST** achieve ≥80% line coverage per module
 - **YOU MUST** achieve ≥70% mutation score (Pitest)
 - **YOU MUST** run `./gradlew clean build` before committing
+
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration attacks.**
+
+```kotlin
+// ✅ CORRECT - Opaque error response prevents information leakage
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.notFound().build()  // Return 404, not 403!
+}
+// Log actual error type for audit trail
+logger.warn { "Access denied: ${result.error}" }
+
+// ❌ FORBIDDEN - Reveals resource exists in another tenant
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.status(403).build()  // Exposes tenant boundary!
+}
+```
+
+**Rationale:**
+- If `/api/admin/requests/123` returns 403, attacker knows request 123 exists (in another tenant)
+- If it returns 404, attacker cannot distinguish "doesn't exist" from "exists but no access"
+- Internal logging preserves audit trail for security investigations
+- Applies to all resource access endpoints (GET by ID, detail views, etc.)
 
 ---
 

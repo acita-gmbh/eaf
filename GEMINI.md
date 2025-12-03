@@ -40,7 +40,10 @@ Reusable framework modules with **zero product dependencies**:
 - `eaf-eventsourcing` - Event Store interfaces and projection base classes
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS support
 - `eaf-auth` - IdP-agnostic authentication (interfaces only)
+- `eaf-auth-keycloak` - Keycloak implementation (reusable across products)
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock, TenantTestContext)
+
+**Auth Abstraction Pattern:** `eaf-auth` defines interfaces, dedicated EAF modules provide IdP implementations (e.g., `eaf-auth-keycloak`). Products only configure which implementation to use—no auth rewrite needed.
 
 ### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
 Product modules following Hexagonal Architecture:
@@ -356,6 +359,31 @@ fun `VM request approval triggers provisioning`() {
 // 2. Unit tests (prove individual components)
 // 3. Implementation
 ```
+
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration attacks.**
+
+```kotlin
+// CORRECT - Opaque error response prevents information leakage
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.notFound().build()  // Return 404, not 403!
+}
+// Log actual error type for audit trail
+logger.warn { "Access denied: ${result.error}" }
+
+// FORBIDDEN - Reveals resource exists in another tenant
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.status(403).build()  // Exposes tenant boundary!
+}
+```
+
+**Rationale:**
+- If `/api/admin/requests/123` returns 403, attacker knows request 123 exists (in another tenant)
+- Returning 404 prevents enumeration; attacker cannot distinguish "doesn't exist" from "no access"
+- Internal logging preserves audit trail for security investigations
 
 ---
 
