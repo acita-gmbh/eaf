@@ -92,12 +92,14 @@ public data class VmRequestHistorySummary(
  * Full admin request detail response.
  *
  * Story 2.10: Request Detail View (Admin)
+ * Story 2.11: Approve/Reject Actions (version field for optimistic locking)
  *
  * Includes all information needed for admin decision-making:
  * - Request details (AC 3)
  * - Requester info (AC 2)
  * - Timeline events (AC 5)
  * - Requester history (AC 6)
+ * - Version for optimistic locking (Story 2.11)
  */
 public data class AdminRequestDetail(
     val id: VmRequestId,
@@ -109,13 +111,16 @@ public data class AdminRequestDetail(
     val requester: RequesterInfo,
     val timeline: List<TimelineEventItem>,
     val requesterHistory: List<VmRequestHistorySummary>,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val version: Long
 )
 
 /**
  * Projection data for admin request detail view.
  *
  * Includes requester information not present in end-user view.
+ *
+ * @property version Aggregate version for optimistic locking (Story 2.11)
  */
 public data class AdminRequestDetailProjection(
     val id: VmRequestId,
@@ -131,7 +136,8 @@ public data class AdminRequestDetailProjection(
     val requesterName: String,
     val requesterEmail: String,
     val requesterRole: String,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val version: Long
 )
 
 /**
@@ -247,7 +253,8 @@ public class GetAdminRequestDetailHandler(
                 ),
                 timeline = timelineEvents,
                 requesterHistory = requesterHistory,
-                createdAt = requestDetails.createdAt
+                createdAt = requestDetails.createdAt,
+                version = requestDetails.version
             ).success()
         } catch (e: CancellationException) {
             // Propagate coroutine cancellation for proper structured concurrency

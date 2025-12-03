@@ -18,6 +18,24 @@ vi.mock('@/hooks/useAdminRequestDetail', () => ({
   useAdminRequestDetail: mockUseAdminRequestDetail,
 }))
 
+// Mock mutation hooks with default implementations
+const mockApproveMutate = vi.hoisted(() => vi.fn())
+const mockRejectMutate = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks/useApproveRequest', () => ({
+  useApproveRequest: () => ({
+    mutate: mockApproveMutate,
+    isPending: false,
+  }),
+}))
+
+vi.mock('@/hooks/useRejectRequest', () => ({
+  useRejectRequest: () => ({
+    mutate: mockRejectMutate,
+    isPending: false,
+  }),
+}))
+
 // Mock react-router-dom
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -39,6 +57,7 @@ const mockAdminRequestData = {
   diskGb: 100,
   justification: 'Development server for the team',
   createdAt: '2024-01-01T10:00:00Z',
+  version: 1, // Added for Story 2.11 optimistic locking
   requester: {
     name: 'John Doe',
     email: 'john@example.com',
@@ -222,11 +241,11 @@ describe('AdminRequestDetail', () => {
       expect(screen.getByText('No previous requests from this user.')).toBeInTheDocument()
     })
 
-    it('shows disabled approve/reject buttons for PENDING status', () => {
+    it('shows enabled approve/reject buttons for PENDING status', () => {
       render(<AdminRequestDetail />)
 
-      expect(screen.getByTestId('approve-button')).toBeDisabled()
-      expect(screen.getByTestId('reject-button')).toBeDisabled()
+      expect(screen.getByTestId('approve-button')).toBeEnabled()
+      expect(screen.getByTestId('reject-button')).toBeEnabled()
     })
 
     it('hides approve/reject buttons for non-PENDING status', () => {

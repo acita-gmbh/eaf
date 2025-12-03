@@ -1,8 +1,11 @@
 package de.acci.dvmm.domain.vmrequest
 
 import de.acci.dvmm.domain.exceptions.InvalidStateException
+import de.acci.dvmm.domain.exceptions.SelfApprovalException
+import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
@@ -72,7 +75,8 @@ public class VmRequestAggregate private constructor(
         when (event) {
             is VmRequestCreated -> apply(event)
             is VmRequestCancelled -> apply(event)
-            // Future: VmRequestApproved, VmRequestRejected, etc.
+            is VmRequestApproved -> apply(event)
+            is VmRequestRejected -> apply(event)
         }
     }
 
@@ -88,6 +92,14 @@ public class VmRequestAggregate private constructor(
 
     private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestCancelled) {
         status = VmRequestStatus.CANCELLED
+    }
+
+    private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestApproved) {
+        status = VmRequestStatus.APPROVED
+    }
+
+    private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestRejected) {
+        status = VmRequestStatus.REJECTED
     }
 
     /**
@@ -120,6 +132,84 @@ public class VmRequestAggregate private constructor(
         val event = VmRequestCancelled.create(
             aggregateId = id,
             reason = reason,
+            metadata = metadata
+        )
+
+        applyEvent(event)
+    }
+
+    /**
+     * Approves this VM request (admin action).
+     *
+     * Only PENDING requests can be approved. Admins cannot approve their own requests
+     * (separation of duties).
+     *
+     * @param adminId The admin performing the approval
+     * @param metadata Event metadata with tenant context
+     * @throws InvalidStateException if request is not in PENDING state
+     * @throws SelfApprovalException if admin is trying to approve their own request
+     */
+    public fun approve(adminId: UserId, metadata: EventMetadata) {
+        // Separation of duties: cannot approve own request
+        if (requesterId == adminId) {
+            throw SelfApprovalException(adminId = adminId, operation = "approve")
+        }
+
+        // Only PENDING requests can be approved
+        if (!status.canBeActedOnByAdmin()) {
+            throw InvalidStateException(
+                currentState = status,
+                expectedState = VmRequestStatus.PENDING,
+                operation = "approve"
+            )
+        }
+
+        val event = VmRequestApproved(
+            aggregateId = id,
+            vmName = vmName,
+            projectId = projectId,
+            requesterId = requesterId,
+            metadata = metadata
+        )
+
+        applyEvent(event)
+    }
+
+    /**
+     * Rejects this VM request with a mandatory reason (admin action).
+     *
+     * Only PENDING requests can be rejected. Admins cannot reject their own requests
+     * (separation of duties).
+     *
+     * @param adminId The admin performing the rejection
+     * @param reason Mandatory rejection reason ([VmRequestRejected.MIN_REASON_LENGTH] to [VmRequestRejected.MAX_REASON_LENGTH] chars)
+     * @param metadata Event metadata with tenant context
+     * @throws InvalidStateException if request is not in PENDING state
+     * @throws SelfApprovalException if admin is trying to reject their own request
+     * @throws IllegalArgumentException if reason is too short or too long
+     */
+    public fun reject(adminId: UserId, reason: String, metadata: EventMetadata) {
+        // Separation of duties: cannot reject own request
+        if (requesterId == adminId) {
+            throw SelfApprovalException(adminId = adminId, operation = "reject")
+        }
+
+        // Only PENDING requests can be rejected
+        if (!status.canBeActedOnByAdmin()) {
+            throw InvalidStateException(
+                currentState = status,
+                expectedState = VmRequestStatus.PENDING,
+                operation = "reject"
+            )
+        }
+
+        // Validation happens in VmRequestRejected.create()
+        val event = VmRequestRejected.create(
+            aggregateId = id,
+            reason = reason,
+            vmName = vmName,
+            projectId = projectId,
+            requesterId = requesterId,
             metadata = metadata
         )
 

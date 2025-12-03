@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   AlertCircle,
@@ -16,13 +18,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { StatusBadge } from '@/components/requests/StatusBadge'
 import { Timeline } from '@/components/requests/Timeline'
+import { ApproveConfirmDialog } from '@/components/admin/ApproveConfirmDialog'
+import { RejectFormDialog } from '@/components/admin/RejectFormDialog'
 import { useAdminRequestDetail } from '@/hooks/useAdminRequestDetail'
+import { useApproveRequest } from '@/hooks/useApproveRequest'
+import { useRejectRequest } from '@/hooks/useRejectRequest'
 import { formatDateTime, formatRelativeTime } from '@/lib/date-utils'
 
 /**
  * Admin page displaying detailed VM request information.
  *
  * Story 2.10: Request Detail View (Admin)
+ * Story 2.11: Approve/Reject Actions
  *
  * Features:
  * - AC 1: Page loads with correct request details
@@ -31,17 +38,19 @@ import { formatDateTime, formatRelativeTime } from '@/lib/date-utils'
  * - AC 4: Project context placeholder (quota in Epic 4)
  * - AC 5: Timeline events
  * - AC 6: Requester History (up to 5 recent requests)
- * - AC 7: Approve/Reject buttons disabled (Story 2.11)
+ * - AC 7: Approve/Reject buttons with confirmation dialogs
  * - AC 8: Back button navigation
  * - AC 9: Loading states
  * - AC 10: Error handling
  * - Auto-polling for real-time updates (30s interval)
- *
- * Note: Approve/Reject actions will be activated in Story 2.11.
  */
 export function AdminRequestDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+
+  // Dialog visibility state
+  const [showApproveDialog, setShowApproveDialog] = useState(false)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
 
   // Fetch request detail with polling enabled
   const { data, isLoading, isError, error, refetch } = useAdminRequestDetail(id, {
@@ -49,8 +58,73 @@ export function AdminRequestDetail() {
     pollInterval: 30000, // 30 seconds per FR44/NFR-PERF-8
   })
 
+  // Mutation hooks for approve/reject actions
+  const approveMutation = useApproveRequest(id ?? '')
+  const rejectMutation = useRejectRequest(id ?? '')
+
   const handleBack = () => {
     void navigate('/admin/requests')
+  }
+
+  // Handle approve confirmation
+  const handleApprove = () => {
+    if (!data) return
+    approveMutation.mutate(data.version, {
+      onError: (err) => {
+        setShowApproveDialog(false)
+        if (err.status === 409) {
+          toast.error('Conflict detected', {
+            description: 'This request was modified. Please refresh and try again.',
+          })
+          void refetch()
+        } else if (err.status === 422) {
+          toast.error('Cannot approve request', {
+            description: 'This request is no longer pending.',
+          })
+          void refetch()
+        } else if (err.status === 404) {
+          toast.error('Request not found', {
+            description: 'The request may have been deleted or you cannot approve your own request.',
+          })
+        } else {
+          toast.error('Approval failed', {
+            description: err.message || 'An unexpected error occurred.',
+          })
+        }
+      },
+    })
+  }
+
+  // Handle reject confirmation with reason
+  const handleReject = (reason: string) => {
+    if (!data) return
+    rejectMutation.mutate(
+      { version: data.version, reason },
+      {
+        onError: (err) => {
+          setShowRejectDialog(false)
+          if (err.status === 409) {
+            toast.error('Conflict detected', {
+              description: 'This request was modified. Please refresh and try again.',
+            })
+            void refetch()
+          } else if (err.status === 422) {
+            toast.error('Cannot reject request', {
+              description: 'This request is no longer pending or the reason is invalid.',
+            })
+            void refetch()
+          } else if (err.status === 404) {
+            toast.error('Request not found', {
+              description: 'The request may have been deleted or you cannot reject your own request.',
+            })
+          } else {
+            toast.error('Rejection failed', {
+              description: err.message || 'An unexpected error occurred.',
+            })
+          }
+        },
+      }
+    )
   }
 
   // Loading state
@@ -153,18 +227,22 @@ export function AdminRequestDetail() {
           </div>
         </div>
 
-        {/* Approve/Reject buttons placeholder for Story 2.11 */}
+        {/* Approve/Reject buttons - Story 2.11 */}
         {data.status === 'PENDING' && (
           <div className="flex gap-2">
             <Button
               variant="outline"
-              disabled
+              onClick={() => setShowRejectDialog(true)}
+              disabled={rejectMutation.isPending || approveMutation.isPending}
               data-testid="reject-button"
-              title="Available in Story 2.11"
             >
               Reject
             </Button>
-            <Button disabled data-testid="approve-button" title="Available in Story 2.11">
+            <Button
+              onClick={() => setShowApproveDialog(true)}
+              disabled={approveMutation.isPending || rejectMutation.isPending}
+              data-testid="approve-button"
+            >
               Approve
             </Button>
           </div>
@@ -360,6 +438,24 @@ export function AdminRequestDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Approve/Reject Dialogs */}
+      <ApproveConfirmDialog
+        open={showApproveDialog}
+        onOpenChange={setShowApproveDialog}
+        onConfirm={handleApprove}
+        isPending={approveMutation.isPending}
+        vmName={data.vmName}
+        requesterName={data.requester.name}
+      />
+      <RejectFormDialog
+        open={showRejectDialog}
+        onOpenChange={setShowRejectDialog}
+        onConfirm={handleReject}
+        isPending={rejectMutation.isPending}
+        vmName={data.vmName}
+        requesterName={data.requester.name}
+      />
     </div>
   )
 }

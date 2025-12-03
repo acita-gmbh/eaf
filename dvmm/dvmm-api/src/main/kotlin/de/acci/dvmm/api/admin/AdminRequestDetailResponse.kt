@@ -59,12 +59,14 @@ public data class RequestHistorySummaryResponse(
  * Response DTO for admin request detail view.
  *
  * Story 2.10: Request Detail View (Admin)
+ * Story 2.11: Approve/Reject Actions (version field for optimistic locking)
  *
  * Contains all information needed for admin decision-making:
  * - Request details (AC 3)
  * - Requester info (AC 2)
  * - Timeline events (AC 5)
  * - Requester history (AC 6)
+ * - Version for optimistic locking (Story 2.11)
  *
  * @property id Unique identifier for this request
  * @property vmName Requested VM name
@@ -76,6 +78,7 @@ public data class RequestHistorySummaryResponse(
  * @property timeline Status change history
  * @property requesterHistory Recent requests from same requester
  * @property createdAt When the request was created
+ * @property version Aggregate version for optimistic locking
  */
 public data class AdminRequestDetailResponse(
     val id: String,
@@ -87,7 +90,8 @@ public data class AdminRequestDetailResponse(
     val requester: RequesterInfoResponse,
     val timeline: List<TimelineEventResponse>,
     val requesterHistory: List<RequestHistorySummaryResponse>,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val version: Long
 ) {
     public companion object {
         /**
@@ -116,7 +120,8 @@ public data class AdminRequestDetailResponse(
                 requesterHistory = detail.requesterHistory.map {
                     RequestHistorySummaryResponse.fromSummary(it)
                 },
-                createdAt = detail.createdAt
+                createdAt = detail.createdAt,
+                version = detail.version
             )
     }
 }

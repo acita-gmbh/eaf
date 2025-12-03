@@ -57,7 +57,8 @@ public class AdminRequestDetailRepositoryAdapter(
                             ?: "Not available",
                         requesterRole = record.get(VM_REQUESTS_PROJECTION.REQUESTER_ROLE)
                             ?: "User",
-                        createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!.toInstant()
+                        createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!.toInstant(),
+                        version = record.get(VM_REQUESTS_PROJECTION.VERSION)!!.toLong()
                     )
                 }
         }
