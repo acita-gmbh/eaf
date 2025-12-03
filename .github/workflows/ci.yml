@@ -1,6 +1,11 @@
 # CI Pipeline - DVMM/EAF Monorepo
 # Quality Gates: Coverage ≥80%, Mutation ≥70%, Architecture tests pass
 # See: docs/devops-strategy.md, CLAUDE.md
+#
+# NOTE: Mutation testing (Pitest + Arcmutate) requires a commercial license.
+# For security reasons, GitHub does not expose secrets to fork PRs.
+# Fork PRs will skip mutation testing but maintainers will run the full
+# quality gates before merging. This is documented behavior.
 
 name: CI Pipeline
 
@@ -24,6 +29,11 @@ jobs:
   build-and-quality-gates:
     name: Build & Quality Gates
     runs-on: ubuntu-latest
+
+    # Define at job level so env context is available for step conditionals
+    # (secrets context cannot be used in if: conditions)
+    env:
+      ARCMUTATE_LICENSE: ${{ secrets.ARCMUTATE_LICENSE }}
 
     services:
       postgres:
@@ -66,8 +76,8 @@ jobs:
       - name: Build (compile main + test sources)
         run: ./gradlew assemble compileTestKotlin --no-daemon
 
-      - name: Unit & Integration Tests
-        run: ./gradlew test --no-daemon
+      - name: Unit & Integration Tests + Coverage (≥80%)
+        run: ./gradlew test :koverHtmlReport koverVerify --no-daemon
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
           SPRING_DATASOURCE_USERNAME: eaf
@@ -82,11 +92,25 @@ jobs:
           detailed_summary: true
           fail_on_failure: false
 
-      - name: Code Coverage - Kover (≥80%)
-        run: ./gradlew :koverHtmlReport koverVerify --no-daemon
-
-      - name: Mutation Testing - Pitest (≥70%)
+      # Mutation testing requires Arcmutate commercial license.
+      # For security, GitHub does not expose secrets to fork PRs.
+      # Fork PRs skip this gate but maintainers run full quality gates before merge.
+      - name: Mutation Testing - Pitest with Arcmutate (≥70%)
+        if: ${{ env.ARCMUTATE_LICENSE != '' }}
         run: ./gradlew pitest --no-daemon
+
+      # Explicit step to inform contributors when mutation testing is skipped
+      - name: Mutation Testing Skipped (Fork PR - No License Access)
+        if: ${{ env.ARCMUTATE_LICENSE == '' }}
+        run: |
+          echo "::warning::Mutation testing skipped - fork PRs don't have access to ARCMUTATE_LICENSE secret"
+          echo ""
+          echo "This is expected behavior for security reasons:"
+          echo "  - GitHub does not expose repository secrets to fork PRs"
+          echo "  - Arcmutate requires a commercial license stored as a secret"
+          echo ""
+          echo "Maintainers will run the full quality gates (including ≥70% mutation score)"
+          echo "before merging this PR. Your PR can still be reviewed and approved."
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
@@ -110,4 +134,46 @@ jobs:
         with:
           name: test-results
           path: '**/build/test-results/'
+          retention-days: 14
+
+  frontend-quality-gates:
+    name: Frontend Quality Gates
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: dvmm/dvmm-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: dvmm/dvmm-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type Check (TypeScript)
+        run: npx tsc --noEmit
+
+      - name: Unit Tests + Coverage (≥80%)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Frontend Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage-report
+          path: dvmm/dvmm-web/coverage/
           retention-days: 14

@@ -10,10 +10,9 @@ import { Sidebar } from './Sidebar'
 interface MobileNavProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentPath?: string
 }
 
-export function MobileNav({ open, onOpenChange, currentPath }: MobileNavProps) {
+export function MobileNav({ open, onOpenChange }: Readonly<MobileNavProps>) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-64 p-0">
@@ -25,7 +24,7 @@ export function MobileNav({ open, onOpenChange, currentPath }: MobileNavProps) {
             Navigation menu
           </SheetDescription>
         </SheetHeader>
-        <Sidebar className="w-full border-r-0" currentPath={currentPath} />
+        <Sidebar className="w-full border-r-0" />
       </SheetContent>
     </Sheet>
   )

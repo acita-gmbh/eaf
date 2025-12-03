@@ -26,7 +26,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew :koverHtmlReport         # Merged report (root)
 ./gradlew koverVerify              # Verify 80% threshold
 
-# Run mutation testing (Pitest) - 70% threshold
+# Run mutation testing (Pitest + Arcmutate) - 70% threshold
+# Requires arcmutate-licence.txt at project root OR ARCMUTATE_LICENSE env var
 ./gradlew pitest
 ```
 
@@ -40,7 +41,10 @@ Reusable framework modules with **zero product dependencies**:
 - `eaf-eventsourcing` - Event Store interfaces and projection base classes
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS support
 - `eaf-auth` - IdP-agnostic authentication (interfaces only)
+- `eaf-auth-keycloak` - Keycloak implementation (future: add more IdP modules as needed)
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock, TenantTestContext)
+
+**Auth Abstraction Pattern:** `eaf-auth` defines interfaces (e.g., `AuthContext`, `TenantResolver`), and dedicated EAF modules provide IdP-specific implementations (e.g., `eaf-auth-keycloak`). Product modules only configure which implementation to use. This enables switching IdPs without rewriting auth logic in each product.
 
 ### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
 Product modules following Hexagonal Architecture:
@@ -55,7 +59,7 @@ Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
 - `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
-- `eaf.pitest-conventions` - Mutation testing (70% threshold)
+- `eaf.pitest-conventions` - Mutation testing (70% threshold) with Arcmutate Kotlin/Spring
 
 ## Critical Architecture Rules (ADR-001)
 
@@ -63,6 +67,7 @@ Convention plugins for consistent configuration:
 - EAF modules MUST NOT import from `de.acci.dvmm.*`
 - DVMM modules CAN import from `de.acci.eaf.*`
 - `dvmm-domain` MUST NOT import from `org.springframework.*`
+- Detail query handlers (`Get*DetailHandler`, `Get*ByIdHandler`) MUST have `Forbidden` error type
 
 ## Tech Stack
 
@@ -73,7 +78,7 @@ Convention plugins for consistent configuration:
 - **jOOQ 3.20** with DDLDatabase for type-safe SQL
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
-- **Pitest** for mutation testing
+- **Pitest + Arcmutate** for mutation testing (Kotlin/Spring support)
 
 ## Frontend (dvmm-web)
 
@@ -122,6 +127,27 @@ function MyComponent() { ... }
 - Compiler optimization is more consistent and maintainable
 - See: https://react.dev/learn/react-compiler
 
+### React Hook Form: useWatch over watch
+
+**Use `useWatch` instead of `watch()` for React Compiler compatibility.**
+
+```tsx
+// ❌ FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')  // ESLint: react-hooks/incompatible-library
+
+// ✅ CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+**Rationale:**
+- `watch()` returns a subscription that React Compiler cannot safely memoize
+- `useWatch` is a separate hook designed to work with React's rules of hooks
+- Both provide the same functionality, but `useWatch` integrates properly with the compiler
+
 ### Component Patterns
 
 ```tsx
@@ -138,6 +164,235 @@ export function MyComponent({ title, onAction }: Props) {
 // ❌ FORBIDDEN - Class components
 class MyComponent extends React.Component { ... }
 ```
+
+### Read-only Props (SonarQube S6759)
+
+**React props must be marked as read-only using TypeScript's `Readonly<T>` utility type.**
+
+```tsx
+// ✅ REQUIRED - Wrap props with Readonly<>
+interface ButtonProps {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+export function Button({ label, onClick, disabled }: Readonly<ButtonProps>) {
+  return <button onClick={onClick} disabled={disabled}>{label}</button>
+}
+
+// ❌ FORBIDDEN - Mutable props (ESLint will error)
+export function Button({ label, onClick, disabled }: ButtonProps) {
+  return <button onClick={onClick} disabled={disabled}>{label}</button>
+}
+```
+
+**Rationale:**
+- Props are read-only snapshots in time - every render receives a new version
+- Prevents accidental prop mutation which causes unpredictable behavior
+- Enables React Compiler optimizations by guaranteeing immutability
+- Enforced by ESLint rule `@eslint-react/prefer-read-only-props`
+
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as intentional fire-and-forget with `void`.**
+
+```tsx
+// ❌ FORBIDDEN - Floating promise (ESLint error: @typescript-eslint/no-floating-promises)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns a promise in React Router v6!
+}
+
+// ✅ CORRECT - Use `void` for intentional fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')  // Explicitly marks as fire-and-forget
+}
+
+// ✅ CORRECT - Or use async/await if you need to wait
+const handleClick = async () => {
+  await navigate('/dashboard')
+  console.log('Navigation complete')
+}
+```
+
+**Common fire-and-forget patterns requiring `void`:**
+
+```tsx
+// React Router navigation (returns Promise in v6)
+void navigate('/path')
+
+// TanStack Query cache invalidation (background refetch)
+void queryClient.invalidateQueries({ queryKey: ['my-requests'] })
+
+// TanStack Query refetch (when you don't need the result)
+void refetch()
+
+// OIDC auth redirects (page will navigate away)
+void auth.signinRedirect({ state: { returnTo: location.pathname } })
+```
+
+**Rationale:**
+- Unhandled promises hide errors silently - `void` makes intent explicit
+- React Router v6's `navigate()` returns a Promise (unlike v5)
+- ESLint rule `@typescript-eslint/no-floating-promises` catches these bugs at compile time
+- The `void` operator evaluates the expression and returns `undefined`, satisfying the linter while documenting intent
+
+### E2E Testing with Playwright
+
+The project uses **Playwright** with **@seontechnologies/playwright-utils** for enhanced E2E testing.
+
+```bash
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Run with Playwright UI mode
+```
+
+**Use playwright-utils fixtures** for consistent testing patterns:
+
+```tsx
+// ✅ CORRECT - Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status, body } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// ✅ CORRECT - Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key playwright-utils features:**
+- `apiRequest` fixture - Typed HTTP client for backend API testing
+- `recurse` - Polling utility for async conditions
+- `log` - Integrated logging with Playwright reports
+- Network interception and mocking utilities
+- Auth session persistence between test runs
+
+**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
+
+```tsx
+// ❌ FORBIDDEN - Dynamic RegExp can cause ReDoS with malicious input
+const requestId = await getRequestId() // User-controlled value
+await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+
+// ✅ CORRECT - String literal with interpolation
+await expect(page).toHaveURL(`/admin/requests/${requestId}`)
+
+// ✅ CORRECT - If regex truly needed, use static pattern
+await expect(page).toHaveURL(/\/admin\/requests\/[\w-]+/)
+```
+
+**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
+
+### Vitest Unit Testing Patterns
+
+**Use `vi.hoisted()` for module mocks that need to be available before imports.**
+
+When mocking modules like `react-oidc-context` or other external dependencies, the mock must be created before ES modules are imported. Use `vi.hoisted()` to ensure proper hoisting:
+
+```tsx
+// ✅ CORRECT - vi.hoisted() ensures mock exists before import
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
+    user: { access_token: 'test-token' },
+    isAuthenticated: true,
+  }))
+)
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
+}))
+
+// In tests, you can now override the mock:
+beforeEach(() => {
+  mockUseAuth.mockReturnValue({
+    user: { access_token: 'test-token' },
+    isAuthenticated: true,
+  })
+})
+
+it('handles unauthenticated state', () => {
+  mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
+  // ... test code
+})
+```
+
+```tsx
+// ❌ WRONG - Dynamic import and re-mock doesn't work reliably
+it('test', async () => {
+  const { useAuth } = await import('react-oidc-context')
+  vi.mocked(useAuth).mockReturnValue({ ... })  // May not apply!
+})
+```
+
+**Use `mockResolvedValueOnce()` for sequential responses in async tests.**
+
+When testing refetch behavior or sequential API calls, use `mockResolvedValueOnce()` to return different values for each call:
+
+```tsx
+// ✅ CORRECT - Deterministic sequential responses
+mockGetData
+  .mockResolvedValueOnce({ status: 'PENDING' })   // First call
+  .mockResolvedValueOnce({ status: 'APPROVED' })  // After refetch
+
+const { result } = renderHook(() => useMyHook())
+await waitFor(() => expect(result.current.data?.status).toBe('PENDING'))
+
+await result.current.refetch()
+await waitFor(() => expect(mockGetData).toHaveBeenCalledTimes(2))
+expect(result.current.data?.status).toBe('APPROVED')
+```
+
+```tsx
+// ❌ WRONG - Changing mock between calls is unreliable
+mockGetData.mockResolvedValue({ status: 'PENDING' })
+// ... initial fetch
+mockGetData.mockResolvedValue({ status: 'APPROVED' })  // May still return PENDING!
+await result.current.refetch()
+```
+
+### TanStack Query Polling Patterns
+
+**Understand when to use `staleTime` vs `refetchInterval` for real-time data.**
+
+- `staleTime`: Controls when cached data is considered stale. Stale data triggers a refetch on the *next access* (component mount, window focus, etc.)
+- `refetchInterval`: Actively polls in the background, regardless of user interaction
+
+For admin queues and dashboards where new data should appear automatically:
+
+```tsx
+// ✅ CORRECT - Real-time data needs both staleTime AND refetchInterval
+useQuery({
+  queryKey: ['admin', 'pending-requests'],
+  queryFn: fetchPendingRequests,
+  staleTime: 10000,  // Data stale after 10s (triggers refetch on access)
+  // Jitter prevents "thundering herd" when many clients poll simultaneously
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000),
+  refetchIntervalInBackground: false,  // Don't poll when tab inactive
+  refetchOnWindowFocus: true,  // Immediate refresh when user returns
+})
+
+// ❌ WRONG - Only staleTime means no automatic background polling
+useQuery({
+  staleTime: 30000,  // Admin won't see new requests until they interact!
+})
+```
+
+**Jitter Pattern Rationale:**
+- Without jitter: 100 admins polling at exactly 30s intervals → 100 simultaneous requests
+- With jitter (`+ Math.random() * 5000`): Requests spread over 5s window, reducing server load spikes
 
 ## jOOQ Code Generation
 
@@ -169,10 +424,15 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
-   GRANT SELECT ON my_table TO eaf_app;
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+   ALTER TABLE my_table FORCE ROW LEVEL SECURITY;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON my_table TO eaf_app;
    -- [jooq ignore stop]
    ```
+   **CRITICAL: Always include `WITH CHECK` in RLS policies.** Without it, RLS only filters reads but allows writes to any tenant, enabling cross-tenant data injection.
 5. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 6. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
@@ -180,8 +440,37 @@ jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (n
 - [ ] Flyway migration created (V00X__*.sql)
 - [ ] jooq-init.sql updated with H2-compatible DDL
 - [ ] PostgreSQL-specific statements wrapped with ignore tokens
+- [ ] RLS policies include both `USING` AND `WITH CHECK` clauses
+- [ ] FK constraints added for related tables (e.g., `REFERENCES parent_table(id) ON DELETE CASCADE`)
 - [ ] jOOQ code regenerated
+- [ ] Integration tests updated for FK constraints (see below)
 - [ ] Tests pass with new schema
+
+### FK Constraints and Integration Tests
+
+When adding FK constraints, integration tests that directly insert child records will fail. Update test helpers:
+
+```kotlin
+// ✅ CORRECT - Test helper creates parent record first
+private fun insertTestTimelineEvent(requestId: UUID, tenantId: TenantId, ...) {
+    // Ensure parent exists (FK constraint)
+    insertParentRequest(id = requestId, tenantId = tenantId)
+    // Then insert child record
+    // ...
+}
+
+// ✅ CORRECT - Parent insert is idempotent
+private fun insertParentRequest(id: UUID, tenantId: TenantId) {
+    // Use ON CONFLICT to avoid duplicates when same parent used multiple times
+    """INSERT INTO ... VALUES (...) ON CONFLICT ("ID") DO NOTHING"""
+}
+
+// ✅ CORRECT - Cleanup uses CASCADE for FK constraints
+@AfterEach
+fun cleanup() {
+    superuserDsl.execute("""TRUNCATE TABLE "PARENT_TABLE" CASCADE""")
+}
+```
 
 ### What Gets Ignored
 
@@ -192,6 +481,46 @@ DDLDatabase uses H2 internally, so PostgreSQL-specific statements must be wrappe
 - Comments: `COMMENT ON TABLE/COLUMN`
 
 These are runtime concerns that don't affect generated jOOQ code.
+
+### Projection Column Symmetry (CRITICAL)
+
+**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
+
+When adding a new column to a projection table:
+1. Add the column to the Flyway migration
+2. Add the column to jooq-init.sql
+3. Add the column to `mapRecord()` (read path)
+4. Add the column to `insert()` (write path)
+5. **Compile fails if any step is missed** - use sealed class pattern
+
+```kotlin
+// ✅ CORRECT - Sealed class pattern ensures read/write symmetry
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object TenantId : ProjectionColumns
+    data object NewColumn : ProjectionColumns  // Adding new column? Add here!
+
+    companion object {
+        val all = listOf(Id, TenantId, NewColumn)  // Must include all columns
+    }
+}
+
+private fun mapColumn(record: Record, column: ProjectionColumns): Any? = when (column) {
+    ProjectionColumns.Id -> record.get(TABLE.ID)
+    ProjectionColumns.TenantId -> record.get(TABLE.TENANT_ID)
+    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
+}
+
+private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, data: Projection): InsertSetMoreStep<*> = when (column) {
+    ProjectionColumns.Id -> step.set(TABLE.ID, data.id)
+    ProjectionColumns.TenantId -> step.set(TABLE.TENANT_ID, data.tenantId)
+    ProjectionColumns.NewColumn -> step.set(TABLE.NEW_COLUMN, data.newColumn)  // Compiler forces this
+}
+```
+
+**Why this matters:** Without this pattern, jOOQ silently allows reading columns that aren't written during insert, causing data loss. The sealed class makes this a compile-time error instead of a runtime data corruption.
+
+**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
 
 ## Git Conventions
 
@@ -380,6 +709,32 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 - **YOU MUST** achieve ≥80% line coverage per module
 - **YOU MUST** achieve ≥70% mutation score (Pitest)
 - **YOU MUST** run `./gradlew clean build` before committing
+
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration attacks.**
+
+```kotlin
+// ✅ CORRECT - Opaque error response prevents information leakage
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.notFound().build()  // Return 404, not 403!
+}
+// Log actual error type for audit trail
+logger.warn { "Access denied: ${result.error}" }
+
+// ❌ FORBIDDEN - Reveals resource exists in another tenant
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.status(403).build()  // Exposes tenant boundary!
+}
+```
+
+**Rationale:**
+- If `/api/admin/requests/123` returns 403, attacker knows request 123 exists (in another tenant)
+- If it returns 404, attacker cannot distinguish "doesn't exist" from "exists but no access"
+- Internal logging preserves audit trail for security investigations
+- Applies to all resource access endpoints (GET by ID, detail views, etc.)
 
 ---
 

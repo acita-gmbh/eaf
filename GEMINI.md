@@ -40,7 +40,10 @@ Reusable framework modules with **zero product dependencies**:
 - `eaf-eventsourcing` - Event Store interfaces and projection base classes
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS support
 - `eaf-auth` - IdP-agnostic authentication (interfaces only)
+- `eaf-auth-keycloak` - Keycloak implementation (reusable across products)
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock, TenantTestContext)
+
+**Auth Abstraction Pattern:** `eaf-auth` defines interfaces, dedicated EAF modules provide IdP implementations (e.g., `eaf-auth-keycloak`). Products only configure which implementation to use—no auth rewrite needed.
 
 ### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
 Product modules following Hexagonal Architecture:
@@ -76,6 +79,197 @@ Convention plugins for consistent configuration:
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Frontend (dvmm-web)
+
+The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.
+
+### Frontend Tech Stack
+
+- **React 19.2** with React Compiler (automatic optimization)
+- **Vite 7.2** with @vitejs/plugin-react (Babel-based)
+- **TypeScript 5.9**
+- **Tailwind CSS 4** with shadcn/ui components
+- **Vitest** for unit tests, **Playwright** for E2E tests
+- **@seontechnologies/playwright-utils** for E2E test fixtures
+
+### Frontend Commands
+
+```bash
+cd dvmm/dvmm-web
+
+npm run dev          # Start dev server (port 5173)
+npm run build        # Type-check and build for production
+npm run test         # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests
+npm run test:e2e:ui  # Run with Playwright UI mode
+npm run lint         # Run ESLint
+```
+
+### React Coding Standards
+
+**React Compiler handles memoization automatically. Manual optimization is PROHIBITED.**
+
+```tsx
+// FORBIDDEN - Manual memoization (ESLint will error)
+import { useMemo, useCallback, memo } from 'react'
+const memoizedValue = useMemo(() => computeExpensive(a, b), [a, b])
+
+// CORRECT - Let React Compiler optimize automatically
+const value = computeExpensive(a, b)
+function MyComponent() { ... }
+```
+
+### React Hook Form: useWatch over watch
+
+**Use `useWatch` instead of `watch()` for React Compiler compatibility.**
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')  // ESLint: react-hooks/incompatible-library
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+**Rationale:**
+- `watch()` returns a subscription that React Compiler cannot safely memoize
+- `useWatch` is a separate hook designed to work with React's rules of hooks
+
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as intentional fire-and-forget with `void`.**
+
+```tsx
+// FORBIDDEN - Floating promise (ESLint error: @typescript-eslint/no-floating-promises)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns a promise in React Router v6!
+}
+
+// CORRECT - Use `void` for intentional fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')
+}
+
+// CORRECT - Or use async/await if you need to wait
+const handleClick = async () => {
+  await navigate('/dashboard')
+}
+```
+
+**Common fire-and-forget patterns requiring `void`:**
+
+```tsx
+void navigate('/path')                                      // React Router v6
+void queryClient.invalidateQueries({ queryKey: ['data'] })  // TanStack Query
+void refetch()                                              // TanStack Query
+void auth.signinRedirect({ state: { returnTo: '/' } })      // OIDC
+```
+
+**Rationale:**
+- Unhandled promises hide errors silently - `void` makes intent explicit
+- React Router v6's `navigate()` returns a Promise (unlike v5)
+- ESLint rule `@typescript-eslint/no-floating-promises` catches these bugs at compile time
+
+### E2E Testing with Playwright
+
+**Use playwright-utils fixtures** for consistent testing patterns:
+
+```tsx
+// Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status, body } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key playwright-utils features:**
+- `apiRequest` fixture - Typed HTTP client for backend API testing
+- `recurse` - Polling utility for async conditions
+- `log` - Integrated logging with Playwright reports
+- Network interception and mocking utilities
+- Auth session persistence between test runs
+
+**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
+
+```tsx
+// FORBIDDEN - Dynamic RegExp can cause ReDoS with malicious input
+const requestId = await getRequestId() // User-controlled value
+await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+
+// CORRECT - String literal with interpolation
+await expect(page).toHaveURL(`/admin/requests/${requestId}`)
+
+// CORRECT - If regex truly needed, use static pattern
+await expect(page).toHaveURL(/\/admin\/requests\/[\w-]+/)
+```
+
+**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
+
+### Vitest Unit Testing Patterns
+
+**Use `vi.hoisted()` for module mocks** - ensures mock is created before ES modules are imported:
+
+```tsx
+// CORRECT - vi.hoisted() ensures mock exists before import
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({ user: { access_token: 'test-token' }, isAuthenticated: true }))
+)
+
+vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
+
+// Override in tests:
+mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
+```
+
+**Use `mockResolvedValueOnce()` for sequential responses** - deterministic ordering for refetch/retry tests:
+
+```tsx
+// CORRECT - Different response per call
+mockGetData
+  .mockResolvedValueOnce({ status: 'PENDING' })   // First call
+  .mockResolvedValueOnce({ status: 'APPROVED' })  // After refetch
+```
+
+### TanStack Query Polling Patterns
+
+**Real-time data needs both `staleTime` AND `refetchInterval`:**
+- `staleTime` controls when cached data is stale (triggers refetch on next access)
+- `refetchInterval` actively polls in background (for admin queues, dashboards)
+
+```tsx
+// CORRECT - Active polling with jitter to prevent thundering herd
+useQuery({
+  queryKey: ['admin', 'pending-requests'],
+  staleTime: 10000,  // Stale after 10s
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000), // 30-35s with jitter
+  refetchIntervalInBackground: false,  // Don't poll when tab inactive
+})
+
+// WRONG - Only staleTime = no automatic polling (users must interact)
+useQuery({ staleTime: 30000 })  // Admin won't see new requests!
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
@@ -97,13 +291,54 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
+   -- CRITICAL: RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
    -- [jooq ignore stop]
    ```
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 5. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, jOOQ regenerated, tests pass.
+**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, RLS policies include both USING AND WITH CHECK, jOOQ regenerated, integration tests updated for FK constraints, tests pass.
+
+**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+### Projection Column Symmetry (CRITICAL)
+
+**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
+
+When adding a new column to a projection table:
+1. Add the column to the Flyway migration
+2. Add the column to jooq-init.sql
+3. Add the column to `mapRecord()` (read path)
+4. Add the column to `insert()` (write path)
+5. **Compile fails if any step is missed** - use sealed class pattern
+
+```kotlin
+// CORRECT - Sealed class pattern ensures read/write symmetry
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object NewColumn : ProjectionColumns  // Adding new column? Add here!
+
+    companion object { val all = listOf(Id, NewColumn) }
+}
+
+private fun mapColumn(record: Record, column: ProjectionColumns): Any? = when (column) {
+    ProjectionColumns.Id -> record.get(TABLE.ID)
+    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
+}
+
+private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, data: Projection): InsertSetMoreStep<*> = when (column) {
+    ProjectionColumns.Id -> step.set(TABLE.ID, data.id)
+    ProjectionColumns.NewColumn -> step.set(TABLE.NEW_COLUMN, data.newColumn)  // Compiler forces this
+}
+```
+
+**Why this matters:** Without this pattern, jOOQ silently allows reading columns that aren't written during insert, causing data loss. The sealed class makes this a compile-time error.
+
+**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
 
 ## Git Conventions
 
@@ -210,6 +445,33 @@ fun `VM request approval triggers provisioning`() {
 // 2. Unit tests (prove individual components)
 // 3. Implementation
 ```
+
+---
+
+## Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration attacks.**
+
+```kotlin
+// CORRECT - Opaque error response prevents information leakage
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.notFound().build()  // Return 404, not 403!
+}
+// Log actual error type for audit trail
+logger.warn { "Access denied: ${result.error}" }
+
+// FORBIDDEN - Reveals resource exists in another tenant
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.status(403).build()  // Exposes tenant boundary!
+}
+```
+
+**Rationale:**
+- If `/api/admin/requests/123` returns 403, attacker knows request 123 exists (in another tenant)
+- Returning 404 prevents enumeration; attacker cannot distinguish "doesn't exist" from "no access"
+- Internal logging preserves audit trail for security investigations
 
 ---
 

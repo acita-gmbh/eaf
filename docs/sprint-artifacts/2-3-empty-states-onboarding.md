@@ -23,9 +23,9 @@ So that I understand how to get started.
    - Given I am a new user with zero VM requests
    - When I view the dashboard
    - Then I see an empty state illustration with:
-     - Friendly message: "Noch keine VMs angefordert"
-     - Clear CTA: "Erste VM anfordern" button in Tech Teal
-     - Brief explanation: "Fordern Sie Ihre erste virtuelle Maschine an"
+     - Friendly message: "No VMs requested yet"
+     - Clear CTA: "Request First VM" button in Tech Teal
+     - Brief explanation: "Request your first virtual machine"
    - And the empty state uses consistent styling (Card component, centered content)
 
 2. **Empty state for stats cards** *(Note: StatsCard already handles 0 gracefully from Story 2.2)*
@@ -39,15 +39,15 @@ So that I understand how to get started.
    - Given I am a first-time user (no onboarding flag in localStorage)
    - When I view the dashboard
    - Then I see tooltip hints on:
-     - "Request New VM" button: "Hier starten Sie eine neue VM-Anfrage"
-     - Sidebar navigation: "Navigieren Sie zu Ihren Anfragen" *(desktop only)*
+     - "Request New VM" button: "Start a new VM request here"
+     - Sidebar navigation: "Navigate to your requests" *(desktop only)*
    - And tooltips appear with a subtle animation (fade-in)
    - And only one tooltip is visible at a time (sequential flow)
    - **Mobile behavior (< 768px):** Skip sidebar tooltip step (sidebar is hidden in Sheet)
 
 4. **Tooltip dismissal and persistence**
    - Given I see onboarding tooltips
-   - When I click "Verstanden" on a tooltip OR click elsewhere
+   - When I click "Got it" on a tooltip OR click elsewhere
    - Then the tooltip dismisses
    - And my progress is saved to localStorage (`dvmm_onboarding_step`)
    - And dismissed tooltips do not reappear on page refresh
@@ -64,8 +64,8 @@ So that I understand how to get started.
    - Given I am an admin with no pending approvals
    - When I would view the approval queue (future story)
    - Then an `AdminQueueEmptyState` component exists for future use
-   - And it displays: "Keine ausstehenden Genehmigungen"
-   - And it shows a positive message: "Alle Anfragen wurden bearbeitet"
+   - And it displays: "No pending approvals"
+   - And it shows a positive message: "All requests have been processed"
 
 7. **Responsive empty states**
    - Given I view empty states on mobile
@@ -144,9 +144,9 @@ So that I understand how to get started.
 
 - [x] **Task 2: Enhance RequestsPlaceholder with Empty State** (AC: 1)
   - [x] Refactor `components/dashboard/RequestsPlaceholder.tsx` to use EmptyState
-  - [x] Add German copy: "Noch keine VMs angefordert"
-  - [x] Add description: "Fordern Sie Ihre erste virtuelle Maschine an"
-  - [x] Add CTA button: "Erste VM anfordern"
+  - [x] Add copy: "No VMs requested yet"
+  - [x] Add description: "Request your first virtual machine"
+  - [x] Add CTA button: "Request First VM"
   - [x] Wire CTA to log action (no navigation yet - Story 2.4)
 
 - [x] **Task 3: Create Onboarding Hook** (AC: 3, 4, 5)
@@ -164,7 +164,7 @@ So that I understand how to get started.
   - [x] Props: `targetRef`, `content`, `onDismiss`, `position`
   - [x] Add PopoverArrow for visual connection to target element
   - [x] Add fade-in animation (Tailwind `animate-fade-in` or CSS)
-  - [x] Add "Verstanden" dismiss button with focus on open
+  - [x] Add "Got it" dismiss button with focus on open
   - [x] Handle click-outside to dismiss (Popover handles this automatically)
   - [x] Handle Escape key to dismiss
 
@@ -179,8 +179,8 @@ So that I understand how to get started.
 
 - [x] **Task 6: Create AdminQueueEmptyState** (AC: 6)
   - [x] Create `components/empty-states/AdminQueueEmptyState.tsx`
-  - [x] Display: "Keine ausstehenden Genehmigungen"
-  - [x] Positive message: "Alle Anfragen wurden bearbeitet"
+  - [x] Display: "No pending approvals"
+  - [x] Positive message: "All requests have been processed"
   - [x] Use CheckCircle2 icon in Emerald color
   - [x] Export for future Admin Queue story
 
@@ -253,13 +253,13 @@ const ONBOARDING_STEPS = [
   {
     id: 'cta-button',
     targetSelector: '[data-onboarding="cta-button"]',
-    content: 'Hier starten Sie eine neue VM-Anfrage',
+    content: 'Start a new VM request here',
     position: 'bottom' as const,
   },
   {
     id: 'sidebar-nav',
     targetSelector: '[data-onboarding="sidebar-nav"]',
-    content: 'Navigieren Sie zu Ihren Anfragen',
+    content: 'Navigate to your requests',
     position: 'right' as const,
   },
 ] as const;
@@ -280,9 +280,9 @@ interface EmptyStateProps {
 // Usage
 <EmptyState
   icon={FileQuestion}
-  title="Noch keine VMs angefordert"
-  description="Fordern Sie Ihre erste virtuelle Maschine an"
-  ctaLabel="Erste VM anfordern"
+  title="No VMs requested yet"
+  description="Request your first virtual machine"
+  ctaLabel="Request First VM"
   onCtaClick={() => console.log('Navigate to VM request form')}
 />
 ```

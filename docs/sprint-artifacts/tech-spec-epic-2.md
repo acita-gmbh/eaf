@@ -22,7 +22,7 @@
 
 ### 1.2 User Value Statement
 
-> "Ich kann einen VM-Request erstellen und sehe genau, was damit passiert" - Complete transparency from request to decision.
+> "I can create a VM request and see exactly what happens with it" - Complete transparency from request to decision.
 
 ### 1.3 Tracer Bullet Strategy
 
@@ -379,7 +379,7 @@ enum class VmRequestStatus {
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | POST | `/api/requests` | Create VM request | User |
-| GET | `/api/requests/mine` | List my requests | User |
+| GET | `/api/requests/my` | List my requests | User |
 | GET | `/api/requests/{id}` | Get request details | User (owner) |
 | GET | `/api/requests/{id}/timeline` | Get request timeline | User (owner) |
 | DELETE | `/api/requests/{id}` | Cancel pending request | User (owner) |

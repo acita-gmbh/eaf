@@ -1,10 +1,10 @@
 package de.acci.dvmm.domain.vmrequest
 
+import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
-import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
-import de.acci.eaf.eventsourcing.EventMetadata
+import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -14,15 +14,6 @@ import org.junit.jupiter.api.assertThrows
 
 @DisplayName("VmRequestAggregate")
 class VmRequestAggregateTest {
-
-    private fun createMetadata(
-        tenantId: TenantId = TenantId.generate(),
-        userId: UserId = UserId.generate()
-    ) = EventMetadata.create(
-        tenantId = tenantId,
-        userId = userId,
-        correlationId = CorrelationId.generate()
-    )
 
     @Nested
     @DisplayName("create()")
@@ -36,7 +27,7 @@ class VmRequestAggregateTest {
             val vmName = VmName.of("web-server-01")
             val size = VmSize.M
             val justification = "Test VM for development"
-            val metadata = createMetadata()
+            val metadata = TestMetadataFactory.create()
 
             // When
             val aggregate = VmRequestAggregate.create(
@@ -88,7 +79,7 @@ class VmRequestAggregateTest {
         fun `should capture tenant from metadata`() {
             // Given
             val tenantId = TenantId.generate()
-            val metadata = createMetadata(tenantId = tenantId)
+            val metadata = TestMetadataFactory.create(tenantId = tenantId)
 
             // When
             val aggregate = VmRequestAggregate.create(
@@ -109,7 +100,7 @@ class VmRequestAggregateTest {
         fun `should capture requester from metadata`() {
             // Given
             val userId = UserId.generate()
-            val metadata = createMetadata(userId = userId)
+            val metadata = TestMetadataFactory.create(userId = userId)
 
             // When
             val aggregate = VmRequestAggregate.create(
@@ -136,7 +127,7 @@ class VmRequestAggregateTest {
                     vmName = VmName.of("test-vm-01"),
                     size = VmSize.S,
                     justification = "Short",
-                    metadata = createMetadata()
+                    metadata = TestMetadataFactory.create()
                 )
             }
 
@@ -156,7 +147,7 @@ class VmRequestAggregateTest {
                 vmName = VmName.of("test-vm-01"),
                 size = VmSize.S,
                 justification = justification,
-                metadata = createMetadata()
+                metadata = TestMetadataFactory.create()
             )
 
             // Then
@@ -171,7 +162,7 @@ class VmRequestAggregateTest {
             val vmName = VmName.of("database-prod")
             val size = VmSize.XL
             val justification = "Production database server"
-            val metadata = createMetadata()
+            val metadata = TestMetadataFactory.create()
 
             // When
             val aggregate = VmRequestAggregate.create(
@@ -204,7 +195,7 @@ class VmRequestAggregateTest {
             val vmName = VmName.of("reconstituted-vm")
             val size = VmSize.L
             val justification = "Reconstitution test justification"
-            val metadata = createMetadata()
+            val metadata = TestMetadataFactory.create()
 
             val events = listOf(
                 VmRequestCreated(
@@ -305,7 +296,7 @@ class VmRequestAggregateTest {
             // Given
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
-            val metadata = createMetadata(tenantId = tenantId, userId = userId)
+            val metadata = TestMetadataFactory.create(tenantId = tenantId, userId = userId)
 
             val aggregate = VmRequestAggregate.create(
                 requesterId = userId,
@@ -324,6 +315,69 @@ class VmRequestAggregateTest {
         }
     }
 
+    @Nested
+    @DisplayName("cancel()")
+    inner class CancelTests {
+
+        @Test
+        @DisplayName("should reject reason exceeding max length")
+        fun `should reject reason exceeding max length`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+            val tooLongReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH + 1)
+
+            // When/Then
+            val exception = assertThrows<IllegalArgumentException> {
+                aggregate.cancel(
+                    reason = tooLongReason,
+                    metadata = TestMetadataFactory.create()
+                )
+            }
+
+            assertTrue(exception.message!!.contains("${VmRequestCancelled.MAX_REASON_LENGTH}"))
+        }
+
+        @Test
+        @DisplayName("should accept reason at max length")
+        fun `should accept reason at max length`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+            val maxLengthReason = "a".repeat(VmRequestCancelled.MAX_REASON_LENGTH)
+
+            // When
+            aggregate.cancel(
+                reason = maxLengthReason,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(VmRequestStatus.CANCELLED, aggregate.status)
+            val event = aggregate.uncommittedEvents[0] as VmRequestCancelled
+            assertEquals(maxLengthReason, event.reason)
+        }
+
+        @Test
+        @DisplayName("should accept null reason")
+        fun `should accept null reason`() {
+            // Given
+            val aggregate = createValidAggregate()
+            aggregate.clearUncommittedEvents()
+
+            // When
+            aggregate.cancel(
+                reason = null,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(VmRequestStatus.CANCELLED, aggregate.status)
+            val event = aggregate.uncommittedEvents[0] as VmRequestCancelled
+            assertEquals(null, event.reason)
+        }
+    }
+
     private fun createValidAggregate(): VmRequestAggregate {
         return VmRequestAggregate.create(
             requesterId = UserId.generate(),
@@ -331,7 +385,7 @@ class VmRequestAggregateTest {
             vmName = VmName.of("test-vm-01"),
             size = VmSize.M,
             justification = "Valid justification for testing",
-            metadata = createMetadata()
+            metadata = TestMetadataFactory.create()
         )
     }
 }

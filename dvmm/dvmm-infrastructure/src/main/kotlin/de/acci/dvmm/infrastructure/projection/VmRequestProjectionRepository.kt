@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.InsertSetMoreStep
 import org.jooq.Record
 import org.jooq.SortField
 import org.jooq.Table
@@ -15,40 +16,180 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 /**
+ * Simple data class representing a project for filter dropdowns.
+ *
+ * Story 2.9: Admin Approval Queue (AC 5)
+ */
+public data class ProjectInfo(
+    val projectId: UUID,
+    val projectName: String
+)
+
+/**
  * Repository for querying VM request projections.
  *
  * RLS NOTE: Tenant filtering is handled automatically by PostgreSQL Row-Level Security.
  * All queries through this repository are automatically filtered to the current tenant
  * based on the `app.tenant_id` session variable set by the connection customizer.
+ *
+ * ## Column Symmetry Pattern
+ *
+ * This repository uses a sealed column mapping pattern to ensure read/write symmetry.
+ * Both [mapRecord] (read) and [insert] (write) use the same [ProjectionColumns] sealed
+ * interface to guarantee that all columns are handled consistently.
+ *
+ * **Adding new columns:**
+ * 1. Add new sealed class to [ProjectionColumns]
+ * 2. Add case to [mapColumn] in [mapRecord]
+ * 3. Add case to [setColumn] in insert
+ * 4. Compile will fail if any step is missed
+ *
+ * @see ProjectionColumns
  */
 public class VmRequestProjectionRepository(
     dsl: DSLContext
 ) : BaseProjectionRepository<VmRequestsProjection>(dsl) {
 
+    /**
+     * Sealed interface defining all columns in VM_REQUESTS_PROJECTION.
+     *
+     * This pattern ensures compile-time safety: if a new column is added to this
+     * sealed hierarchy, both [mapRecord] and [insert] must handle it or the
+     * exhaustive `when` expressions will fail to compile.
+     *
+     * @see mapRecord
+     * @see insert
+     */
+    public sealed interface ProjectionColumns {
+        public data object Id : ProjectionColumns
+        public data object TenantId : ProjectionColumns
+        public data object RequesterId : ProjectionColumns
+        public data object RequesterName : ProjectionColumns
+        public data object RequesterEmail : ProjectionColumns
+        public data object RequesterRole : ProjectionColumns
+        public data object ProjectId : ProjectionColumns
+        public data object ProjectName : ProjectionColumns
+        public data object VmName : ProjectionColumns
+        public data object Size : ProjectionColumns
+        public data object CpuCores : ProjectionColumns
+        public data object MemoryGb : ProjectionColumns
+        public data object DiskGb : ProjectionColumns
+        public data object Justification : ProjectionColumns
+        public data object Status : ProjectionColumns
+        public data object ApprovedBy : ProjectionColumns
+        public data object ApprovedByName : ProjectionColumns
+        public data object RejectedBy : ProjectionColumns
+        public data object RejectedByName : ProjectionColumns
+        public data object RejectionReason : ProjectionColumns
+        public data object CreatedAt : ProjectionColumns
+        public data object UpdatedAt : ProjectionColumns
+        public data object Version : ProjectionColumns
+
+        public companion object {
+            /**
+             * All columns that must be handled by read and write operations.
+             * Iterating over this list ensures exhaustive handling.
+             */
+            public val all: List<ProjectionColumns> = listOf(
+                Id, TenantId, RequesterId, RequesterName, RequesterEmail, RequesterRole,
+                ProjectId, ProjectName, VmName, Size, CpuCores, MemoryGb, DiskGb,
+                Justification, Status, ApprovedBy, ApprovedByName, RejectedBy,
+                RejectedByName, RejectionReason, CreatedAt, UpdatedAt, Version
+            )
+        }
+    }
+
+    /**
+     * Maps a column to its value from a jOOQ Record.
+     * Exhaustive when expression ensures all columns are handled.
+     */
+    private fun mapColumn(record: Record, column: ProjectionColumns): Any? = when (column) {
+        ProjectionColumns.Id -> record.get(VM_REQUESTS_PROJECTION.ID)!!
+        ProjectionColumns.TenantId -> record.get(VM_REQUESTS_PROJECTION.TENANT_ID)!!
+        ProjectionColumns.RequesterId -> record.get(VM_REQUESTS_PROJECTION.REQUESTER_ID)!!
+        ProjectionColumns.RequesterName -> record.get(VM_REQUESTS_PROJECTION.REQUESTER_NAME)!!
+        ProjectionColumns.RequesterEmail -> record.get(VM_REQUESTS_PROJECTION.REQUESTER_EMAIL)
+        ProjectionColumns.RequesterRole -> record.get(VM_REQUESTS_PROJECTION.REQUESTER_ROLE)
+        ProjectionColumns.ProjectId -> record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!
+        ProjectionColumns.ProjectName -> record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!
+        ProjectionColumns.VmName -> record.get(VM_REQUESTS_PROJECTION.VM_NAME)!!
+        ProjectionColumns.Size -> record.get(VM_REQUESTS_PROJECTION.SIZE)!!
+        ProjectionColumns.CpuCores -> record.get(VM_REQUESTS_PROJECTION.CPU_CORES)!!
+        ProjectionColumns.MemoryGb -> record.get(VM_REQUESTS_PROJECTION.MEMORY_GB)!!
+        ProjectionColumns.DiskGb -> record.get(VM_REQUESTS_PROJECTION.DISK_GB)!!
+        ProjectionColumns.Justification -> record.get(VM_REQUESTS_PROJECTION.JUSTIFICATION)!!
+        ProjectionColumns.Status -> record.get(VM_REQUESTS_PROJECTION.STATUS)!!
+        ProjectionColumns.ApprovedBy -> record.get(VM_REQUESTS_PROJECTION.APPROVED_BY)
+        ProjectionColumns.ApprovedByName -> record.get(VM_REQUESTS_PROJECTION.APPROVED_BY_NAME)
+        ProjectionColumns.RejectedBy -> record.get(VM_REQUESTS_PROJECTION.REJECTED_BY)
+        ProjectionColumns.RejectedByName -> record.get(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME)
+        ProjectionColumns.RejectionReason -> record.get(VM_REQUESTS_PROJECTION.REJECTION_REASON)
+        ProjectionColumns.CreatedAt -> record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!
+        ProjectionColumns.UpdatedAt -> record.get(VM_REQUESTS_PROJECTION.UPDATED_AT)!!
+        ProjectionColumns.Version -> record.get(VM_REQUESTS_PROJECTION.VERSION)
+    }
+
+    /**
+     * Sets a column value in an INSERT statement.
+     * Exhaustive when expression ensures all columns are handled symmetrically with [mapColumn].
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun setColumn(
+        step: InsertSetMoreStep<*>,
+        column: ProjectionColumns,
+        projection: VmRequestsProjection
+    ): InsertSetMoreStep<*> = when (column) {
+        ProjectionColumns.Id -> step.set(VM_REQUESTS_PROJECTION.ID, projection.id)
+        ProjectionColumns.TenantId -> step.set(VM_REQUESTS_PROJECTION.TENANT_ID, projection.tenantId)
+        ProjectionColumns.RequesterId -> step.set(VM_REQUESTS_PROJECTION.REQUESTER_ID, projection.requesterId)
+        ProjectionColumns.RequesterName -> step.set(VM_REQUESTS_PROJECTION.REQUESTER_NAME, projection.requesterName)
+        ProjectionColumns.RequesterEmail -> step.set(VM_REQUESTS_PROJECTION.REQUESTER_EMAIL, projection.requesterEmail)
+        ProjectionColumns.RequesterRole -> step.set(VM_REQUESTS_PROJECTION.REQUESTER_ROLE, projection.requesterRole)
+        ProjectionColumns.ProjectId -> step.set(VM_REQUESTS_PROJECTION.PROJECT_ID, projection.projectId)
+        ProjectionColumns.ProjectName -> step.set(VM_REQUESTS_PROJECTION.PROJECT_NAME, projection.projectName)
+        ProjectionColumns.VmName -> step.set(VM_REQUESTS_PROJECTION.VM_NAME, projection.vmName)
+        ProjectionColumns.Size -> step.set(VM_REQUESTS_PROJECTION.SIZE, projection.size)
+        ProjectionColumns.CpuCores -> step.set(VM_REQUESTS_PROJECTION.CPU_CORES, projection.cpuCores)
+        ProjectionColumns.MemoryGb -> step.set(VM_REQUESTS_PROJECTION.MEMORY_GB, projection.memoryGb)
+        ProjectionColumns.DiskGb -> step.set(VM_REQUESTS_PROJECTION.DISK_GB, projection.diskGb)
+        ProjectionColumns.Justification -> step.set(VM_REQUESTS_PROJECTION.JUSTIFICATION, projection.justification)
+        ProjectionColumns.Status -> step.set(VM_REQUESTS_PROJECTION.STATUS, projection.status)
+        ProjectionColumns.ApprovedBy -> step.set(VM_REQUESTS_PROJECTION.APPROVED_BY, projection.approvedBy)
+        ProjectionColumns.ApprovedByName -> step.set(VM_REQUESTS_PROJECTION.APPROVED_BY_NAME, projection.approvedByName)
+        ProjectionColumns.RejectedBy -> step.set(VM_REQUESTS_PROJECTION.REJECTED_BY, projection.rejectedBy)
+        ProjectionColumns.RejectedByName -> step.set(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME, projection.rejectedByName)
+        ProjectionColumns.RejectionReason -> step.set(VM_REQUESTS_PROJECTION.REJECTION_REASON, projection.rejectionReason)
+        ProjectionColumns.CreatedAt -> step.set(VM_REQUESTS_PROJECTION.CREATED_AT, projection.createdAt)
+        ProjectionColumns.UpdatedAt -> step.set(VM_REQUESTS_PROJECTION.UPDATED_AT, projection.updatedAt)
+        ProjectionColumns.Version -> step.set(VM_REQUESTS_PROJECTION.VERSION, projection.version)
+    }
+
     override fun mapRecord(record: Record): VmRequestsProjection {
-        // All NOT NULL fields use !! assertion, nullable fields use null-safe access
+        // Uses mapColumn for each field to ensure symmetry with insert()
         return VmRequestsProjection(
-            id = record.get(VM_REQUESTS_PROJECTION.ID)!!,
-            tenantId = record.get(VM_REQUESTS_PROJECTION.TENANT_ID)!!,
-            requesterId = record.get(VM_REQUESTS_PROJECTION.REQUESTER_ID)!!,
-            requesterName = record.get(VM_REQUESTS_PROJECTION.REQUESTER_NAME)!!,
-            projectId = record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!,
-            projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!,
-            vmName = record.get(VM_REQUESTS_PROJECTION.VM_NAME)!!,
-            size = record.get(VM_REQUESTS_PROJECTION.SIZE)!!,
-            cpuCores = record.get(VM_REQUESTS_PROJECTION.CPU_CORES)!!,
-            memoryGb = record.get(VM_REQUESTS_PROJECTION.MEMORY_GB)!!,
-            diskGb = record.get(VM_REQUESTS_PROJECTION.DISK_GB)!!,
-            justification = record.get(VM_REQUESTS_PROJECTION.JUSTIFICATION)!!,
-            status = record.get(VM_REQUESTS_PROJECTION.STATUS)!!,
-            approvedBy = record.get(VM_REQUESTS_PROJECTION.APPROVED_BY),
-            approvedByName = record.get(VM_REQUESTS_PROJECTION.APPROVED_BY_NAME),
-            rejectedBy = record.get(VM_REQUESTS_PROJECTION.REJECTED_BY),
-            rejectedByName = record.get(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME),
-            rejectionReason = record.get(VM_REQUESTS_PROJECTION.REJECTION_REASON),
-            createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!,
-            updatedAt = record.get(VM_REQUESTS_PROJECTION.UPDATED_AT)!!,
-            version = record.get(VM_REQUESTS_PROJECTION.VERSION)
+            id = mapColumn(record, ProjectionColumns.Id) as UUID,
+            tenantId = mapColumn(record, ProjectionColumns.TenantId) as UUID,
+            requesterId = mapColumn(record, ProjectionColumns.RequesterId) as UUID,
+            requesterName = mapColumn(record, ProjectionColumns.RequesterName) as String,
+            requesterEmail = mapColumn(record, ProjectionColumns.RequesterEmail) as String?,
+            requesterRole = mapColumn(record, ProjectionColumns.RequesterRole) as String?,
+            projectId = mapColumn(record, ProjectionColumns.ProjectId) as UUID,
+            projectName = mapColumn(record, ProjectionColumns.ProjectName) as String,
+            vmName = mapColumn(record, ProjectionColumns.VmName) as String,
+            size = mapColumn(record, ProjectionColumns.Size) as String,
+            cpuCores = mapColumn(record, ProjectionColumns.CpuCores) as Int,
+            memoryGb = mapColumn(record, ProjectionColumns.MemoryGb) as Int,
+            diskGb = mapColumn(record, ProjectionColumns.DiskGb) as Int,
+            justification = mapColumn(record, ProjectionColumns.Justification) as String,
+            status = mapColumn(record, ProjectionColumns.Status) as String,
+            approvedBy = mapColumn(record, ProjectionColumns.ApprovedBy) as UUID?,
+            approvedByName = mapColumn(record, ProjectionColumns.ApprovedByName) as String?,
+            rejectedBy = mapColumn(record, ProjectionColumns.RejectedBy) as UUID?,
+            rejectedByName = mapColumn(record, ProjectionColumns.RejectedByName) as String?,
+            rejectionReason = mapColumn(record, ProjectionColumns.RejectionReason) as String?,
+            createdAt = mapColumn(record, ProjectionColumns.CreatedAt) as OffsetDateTime,
+            updatedAt = mapColumn(record, ProjectionColumns.UpdatedAt) as OffsetDateTime,
+            version = mapColumn(record, ProjectionColumns.Version) as Int?
         )
     }
 
@@ -65,29 +206,23 @@ public class VmRequestProjectionRepository(
     /**
      * Inserts a new VM request projection.
      *
-     * Used when handling VmRequestCreated events from the event store.
+     * Uses [setColumn] for each field to ensure symmetry with [mapRecord].
+     * The [ProjectionColumns.all] list guarantees all columns are set.
      *
      * @param projection The projection data to insert
      */
     public suspend fun insert(projection: VmRequestsProjection): Unit = withContext(Dispatchers.IO) {
-        dsl.insertInto(VM_REQUESTS_PROJECTION)
+        // Start with ID column to get InsertSetMoreStep type
+        val initialStep: InsertSetMoreStep<*> = dsl.insertInto(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.ID, projection.id)
-            .set(VM_REQUESTS_PROJECTION.TENANT_ID, projection.tenantId)
-            .set(VM_REQUESTS_PROJECTION.REQUESTER_ID, projection.requesterId)
-            .set(VM_REQUESTS_PROJECTION.REQUESTER_NAME, projection.requesterName)
-            .set(VM_REQUESTS_PROJECTION.PROJECT_ID, projection.projectId)
-            .set(VM_REQUESTS_PROJECTION.PROJECT_NAME, projection.projectName)
-            .set(VM_REQUESTS_PROJECTION.VM_NAME, projection.vmName)
-            .set(VM_REQUESTS_PROJECTION.SIZE, projection.size)
-            .set(VM_REQUESTS_PROJECTION.CPU_CORES, projection.cpuCores)
-            .set(VM_REQUESTS_PROJECTION.MEMORY_GB, projection.memoryGb)
-            .set(VM_REQUESTS_PROJECTION.DISK_GB, projection.diskGb)
-            .set(VM_REQUESTS_PROJECTION.JUSTIFICATION, projection.justification)
-            .set(VM_REQUESTS_PROJECTION.STATUS, projection.status)
-            .set(VM_REQUESTS_PROJECTION.CREATED_AT, projection.createdAt)
-            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, projection.updatedAt)
-            .set(VM_REQUESTS_PROJECTION.VERSION, projection.version)
-            .execute()
+
+        // Set remaining columns, explicitly filtering out Id to avoid order dependency on all list
+        var step = initialStep
+        ProjectionColumns.all
+            .filterNot { it is ProjectionColumns.Id }
+            .forEach { column -> step = setColumn(step, column, projection) }
+
+        step.execute()
     }
 
     /**
@@ -171,6 +306,82 @@ public class VmRequestProjectionRepository(
             condition = VM_REQUESTS_PROJECTION.REQUESTER_ID.eq(requesterId),
             pageRequest = pageRequest
         )
+
+    /**
+     * Finds all pending VM request projections for admin queue.
+     *
+     * Story 2.9: Admin Approval Queue (AC 1, 2, 3, 5, 6)
+     *
+     * Returns PENDING status requests, sorted by creation date ascending
+     * (oldest first) per AC 3: "sorted oldest→newest by submission time"
+     *
+     * RLS NOTE: Tenant filtering is automatic via PostgreSQL RLS.
+     *
+     * @param projectId Optional project filter (AC 5)
+     * @param pageRequest Pagination parameters
+     * @return A paginated response of pending projections
+     */
+    public suspend fun findPendingByTenantId(
+        projectId: UUID? = null,
+        pageRequest: PageRequest = PageRequest()
+    ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
+        // Build condition: always filter by PENDING status
+        var condition: Condition = VM_REQUESTS_PROJECTION.STATUS.eq("PENDING")
+
+        // Add optional project filter (AC 5)
+        if (projectId != null) {
+            condition = condition.and(VM_REQUESTS_PROJECTION.PROJECT_ID.eq(projectId))
+        }
+
+        // Count total elements matching the condition
+        val totalElements = dsl.selectCount()
+            .from(VM_REQUESTS_PROJECTION)
+            .where(condition)
+            .fetchOne(0, Long::class.java) ?: 0L
+
+        // Query with oldest first ordering (AC 3)
+        val items = dsl.selectFrom(VM_REQUESTS_PROJECTION)
+            .where(condition)
+            .orderBy(VM_REQUESTS_PROJECTION.CREATED_AT.asc())
+            .limit(pageRequest.size)
+            .offset(pageRequest.offset)
+            .fetch()
+            .map { mapRecord(it) }
+
+        PagedResponse(
+            items = items,
+            page = pageRequest.page,
+            size = pageRequest.size,
+            totalElements = totalElements
+        )
+    }
+
+    /**
+     * Finds distinct projects that have VM requests.
+     *
+     * Story 2.9: Admin Approval Queue (AC 5)
+     *
+     * Used to populate the project filter dropdown. Returns projects
+     * from all VM request statuses (pending, approved, rejected).
+     *
+     * RLS NOTE: Tenant filtering is automatic via PostgreSQL RLS.
+     *
+     * @return List of distinct projects, sorted alphabetically by name
+     */
+    public suspend fun findDistinctProjects(): List<ProjectInfo> = withContext(Dispatchers.IO) {
+        dsl.selectDistinct(
+            VM_REQUESTS_PROJECTION.PROJECT_ID,
+            VM_REQUESTS_PROJECTION.PROJECT_NAME
+        )
+            .from(VM_REQUESTS_PROJECTION)
+            .orderBy(VM_REQUESTS_PROJECTION.PROJECT_NAME.asc())
+            .fetch { record ->
+                ProjectInfo(
+                    projectId = record.get(VM_REQUESTS_PROJECTION.PROJECT_ID)!!,
+                    projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!
+                )
+            }
+    }
 
     /**
      * Shared pagination logic for filtered queries.

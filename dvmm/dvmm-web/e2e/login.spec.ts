@@ -46,40 +46,34 @@ test.describe('Loading State', () => {
     // The page should eventually show either login or dashboard
     await expect(
       page.getByRole('button', { name: /Sign in with Keycloak/i })
-        .or(page.getByRole('heading', { name: 'My Virtual Machines' }))
+        .or(page.getByTestId('dashboard-authenticated'))
     ).toBeVisible({ timeout: 10000 })
   })
 })
 
 /**
  * Tests that require a running Keycloak instance.
- * These are marked as skip by default and should be enabled
- * when running against a full E2E environment with Keycloak Testcontainer.
+ *
+ * ## Running Authenticated Tests
+ *
+ * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
+ * 2. Run auth setup: `npm run test:e2e -- --project=setup`
+ * 3. Run tests: `npm run test:e2e -- --project=chromium-user login.spec.ts`
+ *
+ * See `e2e/README.md` for full instructions.
  */
 test.describe('Full Authentication Flow @requires-keycloak', () => {
+  // Skip: Requires Keycloak. The full login flow is now tested in auth.setup.ts
+
   test.skip('completes full login flow with Keycloak', async () => {
-    // This test requires:
-    // 1. Keycloak Testcontainer running
-    // 2. Backend API running
-    // 3. Frontend dev server running
-    //
-    // Implementation would:
-    // 1. Navigate to /
-    // 2. Click "Sign in with Keycloak"
-    // 3. Fill in Keycloak login form
-    // 4. Verify redirect back to app
-    // 5. Verify user is authenticated
-    // 6. Verify tenant ID is displayed
+    // Note: This scenario is now implemented in auth.setup.ts
+    // which authenticates and saves sessions for other tests.
+    // Keep this test as documentation of the expected flow.
   })
 
   test.skip('completes full logout flow', async () => {
-    // This test requires:
-    // 1. Already authenticated session
-    //
-    // Implementation would:
-    // 1. Navigate to / (authenticated)
-    // 2. Click "Sign out" button
-    // 3. Verify redirect to Keycloak logout
+    // Note: Logout flow test placeholder.
+    // Requires authenticated session from auth.setup.ts.
     // 4. Verify return to login page
   })
 })

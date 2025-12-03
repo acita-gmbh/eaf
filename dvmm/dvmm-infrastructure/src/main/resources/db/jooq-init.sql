@@ -117,11 +117,13 @@ ALTER TABLE eaf_events.snapshots ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies
 CREATE POLICY tenant_isolation_events ON eaf_events.events
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 -- Force RLS for ALL users
 ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
@@ -140,6 +142,8 @@ CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
     tenant_id           UUID NOT NULL,
     requester_id        UUID NOT NULL,
     requester_name      VARCHAR(255) NOT NULL,
+    requester_email     VARCHAR(255),
+    requester_role      VARCHAR(100),
     project_id          UUID NOT NULL,
     project_name        VARCHAR(255) NOT NULL,
     vm_name             VARCHAR(255) NOT NULL,
@@ -174,7 +178,8 @@ ALTER TABLE vm_requests_projection ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE vm_requests_projection FORCE ROW LEVEL SECURITY;
 
@@ -190,4 +195,43 @@ COMMENT ON COLUMN vm_requests_projection.created_at IS 'Timestamp when the reque
 COMMENT ON COLUMN vm_requests_projection.updated_at IS 'Timestamp when the request was last updated';
 COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version for concurrent updates';
 
+-- [jooq ignore stop]
+
+-- ============================================================================
+-- V005__create_request_timeline_events.sql content
+-- ============================================================================
+
+-- Projection table for VM request timeline events
+-- Story 2.8: Request Status Timeline
+-- Note: Quoted uppercase identifiers required for H2 DDL compatibility (jOOQ DDLDatabase)
+CREATE TABLE IF NOT EXISTS PUBLIC."REQUEST_TIMELINE_EVENTS" (
+    "ID"              UUID PRIMARY KEY,
+    "REQUEST_ID"      UUID NOT NULL REFERENCES "VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
+    "TENANT_ID"       UUID NOT NULL,
+    "EVENT_TYPE"      VARCHAR(50) NOT NULL,
+    "ACTOR_ID"        UUID,
+    "ACTOR_NAME"      VARCHAR(255),
+    "DETAILS"         VARCHAR(4000),
+    "OCCURRED_AT"     TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_REQUEST" ON PUBLIC."REQUEST_TIMELINE_EVENTS" ("REQUEST_ID", "OCCURRED_AT");
+CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_TENANT" ON PUBLIC."REQUEST_TIMELINE_EVENTS" ("TENANT_ID");
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
+
+ALTER TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_timeline_events ON PUBLIC."REQUEST_TIMELINE_EVENTS"
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+ALTER TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON PUBLIC."REQUEST_TIMELINE_EVENTS" TO eaf_app;
+
+COMMENT ON TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" IS 'Projection table for VM request timeline events';
+COMMENT ON COLUMN PUBLIC."REQUEST_TIMELINE_EVENTS"."EVENT_TYPE" IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
 -- [jooq ignore stop]

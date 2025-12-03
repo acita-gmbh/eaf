@@ -23,7 +23,7 @@
 [✓ PASS] Overview ties to PRD goals
 - **Evidence:** Lines 14-22 - Epic Summary with clear goal: "Implement 'Request → Approve → Notify' workflow (Tracer Bullet)"
 - **Evidence:** Line 21 - FRs explicitly listed: "FRs Covered | FR1, FR2, FR7a, FR16-FR23, FR25-FR29, FR44-FR46, FR48, FR72, FR85, FR86 (21 FRs)"
-- **Evidence:** Lines 24-25 - User Value Statement: "Ich kann einen VM-Request erstellen und sehe genau, was damit passiert"
+- **Evidence:** Lines 24-25 - User Value Statement: "I can create a VM request and see exactly what happens with it"
 
 ---
 

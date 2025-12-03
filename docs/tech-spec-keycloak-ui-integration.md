@@ -2360,7 +2360,7 @@ export function InviteUserDialog({ open, onOpenChange, onInvite }: InviteUserDia
               id="email"
               type="email"
               {...form.register('email')}
-              placeholder="benutzer@beispiel.de"
+              placeholder="user@example.com"
             />
             {form.formState.errors.email && (
               <p className="text-sm text-destructive">

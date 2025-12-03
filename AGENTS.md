@@ -40,6 +40,7 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 | `eaf-eventsourcing` | Event Store interfaces, projection base classes |
 | `eaf-tenant` | Multi-tenancy with PostgreSQL RLS |
 | `eaf-auth` | IdP-agnostic authentication interfaces |
+| `eaf-auth-keycloak` | Keycloak implementation (reusable across products) |
 | `eaf-testing` | Test utilities (InMemoryEventStore, TestClock) |
 
 ### DVMM Product (`dvmm/`)
@@ -70,6 +71,135 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
 
+## Frontend (dvmm-web)
+
+The frontend is a **React 19 + TypeScript + Vite** application at `dvmm/dvmm-web/`.
+
+### Frontend Commands
+
+```bash
+cd dvmm/dvmm-web
+
+npm run dev          # Start dev server (port 5173)
+npm run build        # Type-check and build for production
+npm run test         # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests
+npm run lint         # Run ESLint
+```
+
+### Key Constraints
+
+- **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
+- Use function components with TypeScript - class components are FORBIDDEN
+- **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
+
+```tsx
+// FORBIDDEN - watch() causes React Compiler lint warnings
+const { watch } = useForm()
+const value = watch('fieldName')
+
+// CORRECT - useWatch is React Compiler compatible
+import { useForm, useWatch } from 'react-hook-form'
+const { control } = useForm()
+const value = useWatch({ control, name: 'fieldName' })
+```
+
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as fire-and-forget with `void`.**
+
+```tsx
+// FORBIDDEN - Floating promise (ESLint error)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns Promise in React Router v6!
+}
+
+// CORRECT - Use `void` for fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')
+}
+```
+
+**Common patterns requiring `void`:**
+```tsx
+void navigate('/path')                                      // React Router v6
+void queryClient.invalidateQueries({ queryKey: ['data'] })  // TanStack Query
+void refetch()                                              // TanStack Query
+void auth.signinRedirect({ state: { returnTo: '/' } })      // OIDC
+```
+
+**Rationale:** React Router v6's `navigate()` returns a Promise (unlike v5). ESLint rule `@typescript-eslint/no-floating-promises` catches these at compile time.
+
+### E2E Testing with Playwright
+
+Use **@seontechnologies/playwright-utils** fixtures for consistent patterns:
+
+```tsx
+// Use playwright-utils fixtures for API requests
+import { test } from '@seontechnologies/playwright-utils/fixtures'
+
+test('creates VM request', async ({ apiRequest }) => {
+  const { status } = await apiRequest({
+    method: 'POST',
+    path: '/api/vm-requests',
+    data: { vmName: 'web-01', cpuCores: 4 }
+  })
+  expect(status).toBe(201)
+})
+```
+
+```tsx
+// Use recurse for polling async conditions
+import { recurse } from '@seontechnologies/playwright-utils/recurse'
+
+const result = await recurse(
+  () => page.locator('[data-testid="status"]').textContent(),
+  (text) => text === 'Provisioned',
+  { timeout: 30000 }
+)
+```
+
+**Key features:** `apiRequest` fixture, `recurse` polling, `log` integration, network interception, auth session persistence.
+
+**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
+
+```tsx
+// FORBIDDEN - Dynamic RegExp can cause ReDoS
+await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+
+// CORRECT - String literal with interpolation
+await expect(page).toHaveURL(`/admin/requests/${requestId}`)
+```
+
+**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
+
+### Vitest Unit Testing Patterns
+
+**Module mocking:** Use `vi.hoisted()` to ensure mocks exist before ES module imports:
+
+```tsx
+const mockUseAuth = vi.hoisted(() => vi.fn(() => ({ user: { access_token: 'token' } })))
+vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
+```
+
+**Sequential responses:** Use `mockResolvedValueOnce()` for deterministic refetch/retry tests:
+
+```tsx
+mockGetData.mockResolvedValueOnce({ status: 'PENDING' }).mockResolvedValueOnce({ status: 'APPROVED' })
+```
+
+### TanStack Query Polling
+
+For real-time data (admin queues, dashboards), use both `staleTime` AND `refetchInterval`:
+
+```tsx
+useQuery({
+  staleTime: 10000,  // Stale after 10s (triggers refetch on access)
+  refetchInterval: 30000 + Math.floor(Math.random() * 5000), // Jitter prevents thundering herd
+  refetchIntervalInBackground: false,
+})
+```
+
 ## jOOQ Code Generation
 
 jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
@@ -91,13 +221,45 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
    ```sql
    -- [jooq ignore start]
    ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table ...;
+   -- RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
+   CREATE POLICY tenant_isolation ON my_table
+       FOR ALL
+       USING (tenant_id = ...)
+       WITH CHECK (tenant_id = ...);
    -- [jooq ignore stop]
    ```
 4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
 5. Verify: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + regenerate + tests pass.
+**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + RLS WITH CHECK + regenerate + integration tests for FK + tests pass.
+
+**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+### Projection Column Symmetry (CRITICAL)
+
+**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
+
+When adding a new column to a projection table:
+1. Add the column to the Flyway migration + jooq-init.sql
+2. Add the column to `mapRecord()` (read path)
+3. Add the column to `insert()` (write path)
+4. **Compile fails if any step is missed** - use sealed class pattern
+
+```kotlin
+sealed interface ProjectionColumns {
+    data object Id : ProjectionColumns
+    data object NewColumn : ProjectionColumns  // Add new columns here
+    companion object { val all = listOf(Id, NewColumn) }
+}
+
+// Exhaustive when expressions force handling all columns
+private fun mapColumn(record: Record, column: ProjectionColumns) = when (column) {
+    ProjectionColumns.Id -> record.get(TABLE.ID)
+    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
+}
+```
+
+**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
 
 ## Code Style Requirements
 
@@ -137,6 +299,21 @@ throw VmProvisioningException(
 
 // FORBIDDEN - Generic exceptions
 throw RuntimeException("VM creation failed")
+```
+
+### Security Patterns (Multi-Tenant)
+
+**Resource access errors MUST return 404 to prevent tenant enumeration:**
+
+```kotlin
+// CORRECT - Return 404 for both NotFound and Forbidden
+when (result.error) {
+    is NotFound, is Forbidden -> ResponseEntity.notFound().build()
+}
+// Log actual error for audit
+logger.warn { "Access error: ${result.error}" }
+
+// FORBIDDEN - Returning 403 reveals resource exists in another tenant
 ```
 
 ### Dependency Injection

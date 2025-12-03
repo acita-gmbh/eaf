@@ -7,7 +7,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: Readonly<DashboardLayoutProps>) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
@@ -23,7 +23,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <MobileNav
           open={mobileNavOpen}
           onOpenChange={setMobileNavOpen}
-          currentPath="/"
         />
 
         {/* Main content */}

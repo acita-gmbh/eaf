@@ -24,7 +24,7 @@ interface ProjectSelectProps {
  *
  * @see AC #3, #4
  */
-export function ProjectSelect({ value, onValueChange }: ProjectSelectProps) {
+export function ProjectSelect({ value, onValueChange }: Readonly<ProjectSelectProps>) {
   const selectedProject = MOCK_PROJECTS.find(p => p.id === value)
 
   return (
@@ -59,7 +59,7 @@ interface ProjectSelectItemProps {
   project: MockProject
 }
 
-function ProjectSelectItem({ project }: ProjectSelectItemProps) {
+function ProjectSelectItem({ project }: Readonly<ProjectSelectItemProps>) {
   const remaining = project.quota.total - project.quota.used
 
   return (
@@ -78,7 +78,7 @@ interface ProjectQuotaDisplayProps {
   project: MockProject
 }
 
-function ProjectQuotaDisplay({ project }: ProjectQuotaDisplayProps) {
+function ProjectQuotaDisplay({ project }: Readonly<ProjectQuotaDisplayProps>) {
   // Guard against division by zero when quota.total is 0
   const quotaPercentage = project.quota.total > 0
     ? (project.quota.used / project.quota.total) * 100

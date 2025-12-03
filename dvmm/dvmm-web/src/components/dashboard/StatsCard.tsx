@@ -23,7 +23,7 @@ const variantStyles = {
   },
 }
 
-export function StatsCard({ title, value, icon, variant }: StatsCardProps) {
+export function StatsCard({ title, value, icon, variant }: Readonly<StatsCardProps>) {
   const styles = variantStyles[variant]
 
   return (

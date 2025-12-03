@@ -1,12 +1,15 @@
-import { LayoutDashboard, FileText, Plus } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { LayoutDashboard, FileText, Plus, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 interface NavItem {
   label: string
   icon: React.ReactNode
   href: string
   badge?: number
+  adminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -19,21 +22,32 @@ const navItems: NavItem[] = [
     label: 'My Requests',
     icon: <FileText className="h-5 w-5" />,
     href: '/requests',
-    badge: 0, // Pending count - will be dynamic in future stories
   },
   {
     label: 'Request New VM',
     icon: <Plus className="h-5 w-5" />,
     href: '/requests/new',
   },
+  {
+    label: 'Admin Queue',
+    icon: <Shield className="h-5 w-5" />,
+    href: '/admin/requests',
+    adminOnly: true,
+  },
 ]
 
 interface SidebarProps {
   className?: string
-  currentPath?: string
 }
 
-export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
+export function Sidebar({ className }: Readonly<SidebarProps>) {
+  const location = useLocation()
+  const currentPath = location.pathname
+  const isAdmin = useIsAdmin()
+
+  // Filter out admin-only items for non-admin users
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin)
+
   return (
     <aside className={cn('w-56 border-r bg-card', className)}>
       <nav
@@ -42,12 +56,13 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
         aria-label="Main navigation"
         data-onboarding="sidebar-nav"
       >
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = currentPath === item.href
 
           return (
-            <button
+            <Link
               key={item.href}
+              to={item.href}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 'hover:bg-accent hover:text-accent-foreground',
@@ -55,10 +70,6 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
                 isActive && 'border-l-2 border-primary bg-primary/10 text-primary rounded-l-none'
               )}
               aria-current={isActive ? 'page' : undefined}
-              // Note: Navigation will be functional when React Router is added in Story 2.4
-              onClick={() => {
-                // Placeholder - routing not implemented yet per ADR
-              }}
             >
               {item.icon}
               <span className="flex-1 text-left">{item.label}</span>
@@ -67,7 +78,7 @@ export function Sidebar({ className, currentPath = '/' }: SidebarProps) {
                   {item.badge}
                 </Badge>
               )}
-            </button>
+            </Link>
           )
         })}
       </nav>

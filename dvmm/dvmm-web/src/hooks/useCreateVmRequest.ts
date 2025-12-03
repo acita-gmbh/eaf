@@ -40,9 +40,9 @@ export function useCreateVmRequest() {
       return createVmRequest(payload, accessToken)
     },
     onSuccess: () => {
-      // Invalidate related queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['my-requests'] })
-      queryClient.invalidateQueries({ queryKey: ['vm-requests'] })
+      // Invalidate related queries to refetch data (fire-and-forget)
+      void queryClient.invalidateQueries({ queryKey: ['my-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['vm-requests'] })
     },
   })
 }
