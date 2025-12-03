@@ -248,6 +248,20 @@ public class RejectVmRequestHandler(
                 }
 
                 // Update timeline projection with reason in details
+                // Serialize reason to JSON, with fallback if serialization fails
+                val details = try {
+                    objectMapper.writeValueAsString(mapOf("reason" to command.reason))
+                } catch (e: Exception) {
+                    logger.warn(e) {
+                        "Failed to serialize rejection reason for timeline: " +
+                            "requestId=${command.requestId.value}, " +
+                            "correlationId=${correlationId.value}. " +
+                            "Using fallback details."
+                    }
+                    // Fallback: simple JSON that doesn't require serialization
+                    """{"reason":"<see-event-store>"}"""
+                }
+
                 timelineUpdater.addTimelineEvent(
                     NewTimelineEvent(
                         id = UUID.nameUUIDFromBytes(
@@ -258,7 +272,7 @@ public class RejectVmRequestHandler(
                         eventType = TimelineEventType.REJECTED,
                         actorId = command.adminId,
                         actorName = null, // Resolved at query time
-                        details = objectMapper.writeValueAsString(mapOf("reason" to command.reason)),
+                        details = details,
                         occurredAt = metadata.timestamp
                     )
                 ).onFailure { projectionError ->
