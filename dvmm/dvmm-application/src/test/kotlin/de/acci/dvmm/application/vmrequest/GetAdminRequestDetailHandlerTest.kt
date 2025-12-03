@@ -275,7 +275,7 @@ class GetAdminRequestDetailHandlerTest {
     inner class WhenRequestIsFromDifferentTenant {
 
         @Test
-        fun `returns Forbidden error for request from different tenant`() = runBlocking {
+        fun `returns NotFound to prevent tenant enumeration`() = runBlocking {
             // Given - AC 10: RLS will typically prevent this, but handler has defense-in-depth
             // RLS filter means findById returns null for other tenant's requests
             coEvery { requestRepository.findById(testRequestId) } returns null

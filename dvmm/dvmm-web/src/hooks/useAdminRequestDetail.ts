@@ -89,7 +89,7 @@ export function useAdminRequestDetail(
   const pollIntervalWithJitter = pollInterval + jitter
 
   return useQuery<AdminRequestDetail, ApiError>({
-    queryKey: ['admin-request-detail', requestId],
+    queryKey: adminRequestDetailQueryKey.detail(requestId!),
     queryFn: async () => {
       if (!accessToken) {
         throw new ApiError(401, 'Unauthorized', { message: 'Not authenticated' })
