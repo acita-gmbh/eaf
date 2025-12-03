@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from 'react-oidc-context'
 import {
@@ -10,6 +11,12 @@ import { ApiError } from '@/api/vm-requests'
  * Default polling interval for admin request detail updates (30 seconds).
  */
 const DEFAULT_POLL_INTERVAL = 30000
+/**
+ * Jitter range in milliseconds (0-5 seconds).
+ * Prevents "thundering herd" when multiple admins poll simultaneously.
+ * Per CLAUDE.md TanStack Query Polling Patterns.
+ */
+const POLL_JITTER = 5000
 
 /**
  * Options for the useAdminRequestDetail hook.
@@ -75,6 +82,12 @@ export function useAdminRequestDetail(
 
   const { polling = false, pollInterval = DEFAULT_POLL_INTERVAL } = options
 
+  // Calculate jitter once on mount to prevent "thundering herd"
+  // when multiple admins view the same or different requests.
+  // Using useState with lazy initializer ensures stable value across renders.
+  const [jitter] = useState(() => Math.floor(Math.random() * POLL_JITTER))
+  const pollIntervalWithJitter = pollInterval + jitter
+
   return useQuery<AdminRequestDetail, ApiError>({
     queryKey: ['admin-request-detail', requestId],
     queryFn: async () => {
@@ -89,8 +102,8 @@ export function useAdminRequestDetail(
     enabled: !!accessToken && !!requestId,
     staleTime: 10000, // 10 seconds - shorter stale time for detail view
     refetchOnWindowFocus: true,
-    // Enable polling when specified
-    refetchInterval: polling ? pollInterval : false,
+    // Enable polling when specified, with jitter (30-35s interval)
+    refetchInterval: polling ? pollIntervalWithJitter : false,
     // Only poll when the page is visible
     refetchIntervalInBackground: false,
   })
