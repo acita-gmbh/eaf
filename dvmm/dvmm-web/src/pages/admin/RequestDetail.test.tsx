@@ -1,0 +1,290 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@/test/test-utils'
+import userEvent from '@testing-library/user-event'
+import { AdminRequestDetail } from './RequestDetail'
+
+// Mock hooks
+const mockUseAdminRequestDetail = vi.hoisted(() =>
+  vi.fn(() => ({
+    data: null,
+    isLoading: true,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }))
+)
+
+vi.mock('@/hooks/useAdminRequestDetail', () => ({
+  useAdminRequestDetail: mockUseAdminRequestDetail,
+}))
+
+// Mock react-router-dom
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useParams: () => ({ id: 'test-request-id' }),
+    useNavigate: () => mockNavigate,
+  }
+})
+
+const mockAdminRequestData = {
+  id: 'test-request-id',
+  vmName: 'web-server-01',
+  projectName: 'Project Alpha',
+  status: 'PENDING' as const,
+  cpuCores: 4,
+  memoryGb: 16,
+  diskGb: 100,
+  justification: 'Development server for the team',
+  createdAt: '2024-01-01T10:00:00Z',
+  requester: {
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'Developer',
+  },
+  timeline: [
+    {
+      eventType: 'CREATED' as const,
+      actorName: 'John Doe',
+      details: null,
+      occurredAt: '2024-01-01T10:00:00Z',
+    },
+  ],
+  requesterHistory: [
+    {
+      id: '2',
+      vmName: 'old-server-01',
+      status: 'APPROVED' as const,
+      createdAt: '2023-12-01T10:00:00Z',
+    },
+  ],
+}
+
+describe('AdminRequestDetail', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('Loading State', () => {
+    it('shows loading spinner', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: true,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-loading')).toBeInTheDocument()
+      expect(document.querySelector('.animate-spin')).toBeInTheDocument()
+    })
+  })
+
+  describe('Error States', () => {
+    it('shows not found error for 404', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 404, message: 'Not found' },
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-not-found')).toBeInTheDocument()
+      expect(screen.getByText('Request Not Found')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /view pending requests/i })).toBeInTheDocument()
+    })
+
+    it('shows general error for other errors', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 500, message: 'Server error' },
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-error')).toBeInTheDocument()
+      expect(screen.getByText('Error Loading Request')).toBeInTheDocument()
+      expect(screen.getByText('Server error')).toBeInTheDocument()
+    })
+
+    it('shows default error message when error has no message', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 500 },
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByText('Could not load request details.')).toBeInTheDocument()
+    })
+
+    it('calls refetch on Try Again click', async () => {
+      const refetchMock = vi.fn()
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 500 },
+        refetch: refetchMock,
+      })
+
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      await user.click(screen.getByRole('button', { name: /try again/i }))
+
+      expect(refetchMock).toHaveBeenCalled()
+    })
+  })
+
+  describe('Success State', () => {
+    beforeEach(() => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: mockAdminRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+    })
+
+    it('displays request details', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-page')).toBeInTheDocument()
+      expect(screen.getByTestId('admin-request-detail-vm-name')).toHaveTextContent('web-server-01')
+      expect(screen.getByTestId('admin-request-detail-project')).toHaveTextContent('Project Alpha')
+    })
+
+    it('displays VM specifications', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-cpu')).toHaveTextContent('4 cores')
+      expect(screen.getByTestId('admin-request-detail-memory')).toHaveTextContent('16 GB')
+      expect(screen.getByTestId('admin-request-detail-disk')).toHaveTextContent('100 GB')
+    })
+
+    it('displays justification', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-justification')).toHaveTextContent(
+        'Development server for the team'
+      )
+    })
+
+    it('displays requester information', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-requester-name')).toHaveTextContent('John Doe')
+      expect(screen.getByTestId('admin-request-detail-requester-email')).toHaveTextContent('john@example.com')
+      expect(screen.getByTestId('admin-request-detail-requester-role')).toHaveTextContent('Developer')
+    })
+
+    it('displays project context placeholder', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-quota-placeholder')).toHaveTextContent(
+        'Quota information available in Epic 4'
+      )
+    })
+
+    it('displays requester history', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-history')).toBeInTheDocument()
+      expect(screen.getByTestId('history-item-2')).toHaveTextContent('old-server-01')
+    })
+
+    it('shows empty history message when no previous requests', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: { ...mockAdminRequestData, requesterHistory: [] },
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByText('No previous requests from this user.')).toBeInTheDocument()
+    })
+
+    it('shows disabled approve/reject buttons for PENDING status', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('approve-button')).toBeDisabled()
+      expect(screen.getByTestId('reject-button')).toBeDisabled()
+    })
+
+    it('hides approve/reject buttons for non-PENDING status', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: { ...mockAdminRequestData, status: 'APPROVED' },
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.queryByTestId('approve-button')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('reject-button')).not.toBeInTheDocument()
+    })
+
+    it('displays timeline section', () => {
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByText('Timeline')).toBeInTheDocument()
+    })
+  })
+
+  describe('Navigation', () => {
+    it('navigates back when back button is clicked', async () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: mockAdminRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      const backButton = screen.getByRole('button', { name: /back to pending requests/i })
+      await user.click(backButton)
+
+      expect(mockNavigate).toHaveBeenCalledWith('/admin/requests')
+    })
+  })
+
+  describe('Null data handling', () => {
+    it('returns null when data is null after loading', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      const { container } = render(<AdminRequestDetail />)
+
+      // Should return null (empty container)
+      expect(container.firstChild).toBeNull()
+    })
+  })
+})

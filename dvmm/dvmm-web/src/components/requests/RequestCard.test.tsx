@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { RequestCard } from './RequestCard'
-import { type VmRequestSummary } from '@/api/vm-requests'
+import { ApiError, type VmRequestSummary } from '@/api/vm-requests'
 
 // Mock useNavigate
 const mockNavigate = vi.fn()
@@ -302,6 +302,162 @@ describe('RequestCard', () => {
       await waitFor(() => {
         expect(screen.queryByTestId('cancel-confirm-dialog')).not.toBeInTheDocument()
       })
+    })
+
+    describe('error handling', () => {
+      it('shows error toast for 404 not found', async () => {
+        const notFoundError = new ApiError(404, 'Not Found', {
+          type: 'not_found',
+          message: 'Request not found',
+        })
+        mockMutate.mockImplementation((_params, options) => {
+          options?.onError?.(notFoundError)
+        })
+
+        render(<RequestCard request={createMockRequest()} />)
+
+        fireEvent.click(screen.getByTestId('cancel-request-button'))
+        await waitFor(() => {
+          expect(screen.getByTestId('cancel-dialog-confirm')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('cancel-dialog-confirm'))
+
+        expect(mockToast.error).toHaveBeenCalledWith('Request not found', {
+          description: 'The request may have been deleted.',
+        })
+      })
+
+      it('shows error toast for 403 forbidden', async () => {
+        const forbiddenError = new ApiError(403, 'Forbidden', {
+          type: 'forbidden',
+          message: 'Access denied',
+        })
+        mockMutate.mockImplementation((_params, options) => {
+          options?.onError?.(forbiddenError)
+        })
+
+        render(<RequestCard request={createMockRequest()} />)
+
+        fireEvent.click(screen.getByTestId('cancel-request-button'))
+        await waitFor(() => {
+          expect(screen.getByTestId('cancel-dialog-confirm')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('cancel-dialog-confirm'))
+
+        expect(mockToast.error).toHaveBeenCalledWith('Not authorized', {
+          description: 'You can only cancel your own requests.',
+        })
+      })
+
+      it('shows error toast for 409 invalid state', async () => {
+        const invalidStateError = new ApiError(409, 'Conflict', {
+          type: 'invalid_state',
+          message: 'Cannot cancel',
+          currentState: 'APPROVED',
+        })
+        mockMutate.mockImplementation((_params, options) => {
+          options?.onError?.(invalidStateError)
+        })
+
+        render(<RequestCard request={createMockRequest()} />)
+
+        fireEvent.click(screen.getByTestId('cancel-request-button'))
+        await waitFor(() => {
+          expect(screen.getByTestId('cancel-dialog-confirm')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('cancel-dialog-confirm'))
+
+        // currentState.toLowerCase() = 'approved'
+        expect(mockToast.error).toHaveBeenCalledWith('Cannot cancel request', {
+          description: 'Request is approved and cannot be cancelled.',
+        })
+      })
+
+      it('shows error toast for generic API error', async () => {
+        const serverError = new ApiError(500, 'Server Error', {})
+        mockMutate.mockImplementation((_params, options) => {
+          options?.onError?.(serverError)
+        })
+
+        render(<RequestCard request={createMockRequest()} />)
+
+        fireEvent.click(screen.getByTestId('cancel-request-button'))
+        await waitFor(() => {
+          expect(screen.getByTestId('cancel-dialog-confirm')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('cancel-dialog-confirm'))
+
+        // ApiError.message is 'API Error: 500 Server Error'
+        expect(mockToast.error).toHaveBeenCalledWith('Failed to cancel request', {
+          description: 'API Error: 500 Server Error',
+        })
+      })
+
+      it('shows error toast for non-API error', async () => {
+        const networkError = new Error('Network failure')
+        mockMutate.mockImplementation((_params, options) => {
+          options?.onError?.(networkError)
+        })
+
+        render(<RequestCard request={createMockRequest()} />)
+
+        fireEvent.click(screen.getByTestId('cancel-request-button'))
+        await waitFor(() => {
+          expect(screen.getByTestId('cancel-dialog-confirm')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByTestId('cancel-dialog-confirm'))
+
+        expect(mockToast.error).toHaveBeenCalledWith('Failed to cancel request', {
+          description: 'An unexpected error occurred.',
+        })
+      })
+    })
+  })
+
+  describe('cancel button keyboard interaction', () => {
+    it('opens dialog when Enter key is pressed on cancel button', async () => {
+      render(<RequestCard request={createMockRequest()} />)
+
+      const cancelButton = screen.getByTestId('cancel-request-button')
+      fireEvent.keyDown(cancelButton, { key: 'Enter' })
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cancel-confirm-dialog')).toBeInTheDocument()
+      })
+
+      // Should not navigate when opening dialog via keyboard
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('opens dialog when Space key is pressed on cancel button', async () => {
+      render(<RequestCard request={createMockRequest()} />)
+
+      const cancelButton = screen.getByTestId('cancel-request-button')
+      fireEvent.keyDown(cancelButton, { key: ' ' })
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cancel-confirm-dialog')).toBeInTheDocument()
+      })
+
+      // Should not navigate when opening dialog via keyboard
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('stops propagation for other keys on cancel button', () => {
+      render(<RequestCard request={createMockRequest()} />)
+
+      const cancelButton = screen.getByTestId('cancel-request-button')
+      fireEvent.keyDown(cancelButton, { key: 'Tab' })
+
+      // Dialog should not open for other keys
+      expect(screen.queryByTestId('cancel-confirm-dialog')).not.toBeInTheDocument()
+      // Card navigation should also not trigger
+      expect(mockNavigate).not.toHaveBeenCalled()
     })
   })
 })
