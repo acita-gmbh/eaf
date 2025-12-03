@@ -117,11 +117,13 @@ ALTER TABLE eaf_events.snapshots ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies
 CREATE POLICY tenant_isolation_events ON eaf_events.events
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 -- Force RLS for ALL users
 ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
@@ -176,7 +178,8 @@ ALTER TABLE vm_requests_projection ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 ALTER TABLE vm_requests_projection FORCE ROW LEVEL SECURITY;
 

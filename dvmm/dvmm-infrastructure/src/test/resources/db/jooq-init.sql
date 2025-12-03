@@ -111,18 +111,21 @@ ALTER TABLE eaf_events."EVENTS" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eaf_events."SNAPSHOTS" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."VM_REQUESTS_PROJECTION" ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies
+-- Create RLS policies (with WITH CHECK to prevent cross-tenant writes)
 CREATE POLICY tenant_isolation_events ON eaf_events."EVENTS"
     FOR ALL
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 CREATE POLICY tenant_isolation_snapshots ON eaf_events."SNAPSHOTS"
     FOR ALL
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 CREATE POLICY tenant_isolation_vm_requests_projection ON public."VM_REQUESTS_PROJECTION"
     FOR ALL
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 -- Force RLS for ALL users
 ALTER TABLE eaf_events."EVENTS" FORCE ROW LEVEL SECURITY;

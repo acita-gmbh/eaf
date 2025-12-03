@@ -976,5 +976,60 @@ class VmRequestProjectionRepositoryIntegrationTest {
                 assertNull(result, "Tenant B should NOT see Tenant A's projection")
             }
         }
+
+        @Test
+        fun `RLS WITH CHECK prevents cross-tenant insert`() = runBlocking {
+            // Given: Tenant A is authenticated
+            val id = UUID.randomUUID()
+            val now = OffsetDateTime.now()
+
+            // When: Tenant A tries to insert a projection with Tenant B's tenant_id
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+
+                // Create projection with WRONG tenant_id (tenant B's id)
+                val maliciousProjection = de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection(
+                    id = id,
+                    tenantId = tenantB.value, // ❌ Attempting cross-tenant injection
+                    requesterId = UUID.randomUUID(),
+                    requesterName = "Malicious User",
+                    projectId = UUID.randomUUID(),
+                    projectName = "Injected Project",
+                    vmName = "malicious-vm",
+                    size = "XL",
+                    cpuCores = 64,
+                    memoryGb = 256,
+                    diskGb = 2000,
+                    justification = "Trying to inject data into another tenant",
+                    status = "PENDING",
+                    approvedBy = null,
+                    approvedByName = null,
+                    rejectedBy = null,
+                    rejectedByName = null,
+                    rejectionReason = null,
+                    createdAt = now,
+                    updatedAt = now,
+                    version = 1
+                )
+
+                // Then: RLS WITH CHECK clause should reject the insert
+                val exception = org.junit.jupiter.api.assertThrows<org.jooq.exception.DataAccessException> {
+                    repoA.insert(maliciousProjection)
+                }
+                // PostgreSQL RLS violation error: "new row violates row-level security policy"
+                assertTrue(
+                    exception.message?.contains("row-level security") == true ||
+                    exception.message?.contains("policy") == true,
+                    "Expected RLS violation error, got: ${exception.message}"
+                )
+            }
+
+            // And: No data should exist for this id in tenant B's context
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findById(id)
+                assertNull(result, "Cross-tenant injection should have failed - no data should exist")
+            }
+        }
     }
 }
