@@ -189,6 +189,20 @@ export type VmRequestStatus =
   | 'FAILED'
 
 /**
+ * Array of valid VM request status values for runtime validation.
+ * Kept in sync with VmRequestStatus type.
+ */
+export const VM_REQUEST_STATUSES: readonly VmRequestStatus[] = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+  'PROVISIONING',
+  'READY',
+  'FAILED',
+] as const
+
+/**
  * Size object as returned by the backend API.
  */
 interface BackendVmSizeResponse {

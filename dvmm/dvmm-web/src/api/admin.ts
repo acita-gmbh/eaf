@@ -11,8 +11,21 @@
  */
 
 import { createApiHeaders } from './api-client'
-import { ApiError } from './vm-requests'
+import { ApiError, VM_REQUEST_STATUSES } from './vm-requests'
 import type { VmSizeSpec, TimelineEventType, VmRequestStatus } from './vm-requests'
+
+/**
+ * Validates that a string is a valid VmRequestStatus.
+ * Throws if the status is invalid to fail fast with clear error context.
+ */
+function validateStatus(status: string, context: string): VmRequestStatus {
+  if (!VM_REQUEST_STATUSES.includes(status as VmRequestStatus)) {
+    throw new Error(
+      `Invalid status "${status}" in ${context}. Expected one of: ${VM_REQUEST_STATUSES.join(', ')}`
+    )
+  }
+  return status as VmRequestStatus
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -125,7 +138,14 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 
   try {
     return JSON.parse(text)
-  } catch {
+  } catch (error) {
+    // Log invalid JSON for debugging - helps identify backend issues
+    console.warn('[Admin API] Invalid JSON response, falling back to text message', {
+      url: response.url,
+      status: response.status,
+      textPreview: text.substring(0, 100),
+      error,
+    })
     return { message: text }
   }
 }
@@ -347,11 +367,28 @@ export interface AdminRequestDetail {
 
 /**
  * Transforms backend admin request detail to frontend format.
- * Flattens nested size object.
+ * Flattens nested size object and validates status values.
+ *
+ * @throws Error if status values are invalid (fail-fast approach)
  */
 function transformAdminRequestDetail(
   backend: BackendAdminRequestDetailResponse
 ): AdminRequestDetail {
+  // Validate main request status
+  const validatedStatus = validateStatus(
+    backend.status,
+    `request ${backend.id}`
+  )
+
+  // Validate requester history statuses
+  const validatedHistory = backend.requesterHistory.map((item, index) => ({
+    ...item,
+    status: validateStatus(
+      item.status,
+      `requesterHistory[${index}] for request ${backend.id}`
+    ),
+  }))
+
   return {
     id: backend.id,
     vmName: backend.vmName,
@@ -360,14 +397,11 @@ function transformAdminRequestDetail(
     memoryGb: backend.size.memoryGb,
     diskGb: backend.size.diskGb,
     justification: backend.justification,
-    status: backend.status as VmRequestStatus,
+    status: validatedStatus,
     projectName: backend.projectName,
     requester: backend.requester,
     timeline: backend.timeline,
-    requesterHistory: backend.requesterHistory.map((item) => ({
-      ...item,
-      status: item.status as VmRequestStatus,
-    })),
+    requesterHistory: validatedHistory,
     createdAt: backend.createdAt,
   }
 }

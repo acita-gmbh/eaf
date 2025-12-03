@@ -67,6 +67,8 @@ export function AdminRequestDetail() {
 
   // Error state - Not Found (also handles Forbidden per security pattern)
   if (isError && error?.status === 404) {
+    // Log for debugging - helps track down 404s that might be permission issues
+    console.debug('[AdminRequestDetail] 404 for request', { id, error })
     return (
       <div className="space-y-6" data-testid="admin-request-detail-not-found">
         <BackButton onClick={handleBack} />
@@ -104,10 +106,25 @@ export function AdminRequestDetail() {
   }
 
   // TypeScript type guard: After isLoading and isError checks, TanStack Query
-  // guarantees data is defined. This check satisfies TypeScript's type narrowing
-  // and provides defense-in-depth for unexpected edge cases.
+  // guarantees data is defined. This provides defense-in-depth for unexpected
+  // edge cases and gives users actionable feedback instead of a blank screen.
   if (!data) {
-    return null
+    console.error('[AdminRequestDetail] Unexpected state: data is undefined after loading completed')
+    return (
+      <div className="space-y-6" data-testid="admin-request-detail-unexpected-error">
+        <BackButton onClick={handleBack} />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Unexpected Error</h2>
+          <p className="text-muted-foreground mb-4">
+            Something went wrong while loading the request. Please try again.
+          </p>
+          <Button variant="outline" onClick={() => refetch()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

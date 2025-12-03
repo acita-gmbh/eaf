@@ -271,8 +271,8 @@ describe('AdminRequestDetail', () => {
     })
   })
 
-  describe('Null data handling', () => {
-    it('returns null when data is null after loading', () => {
+  describe('Unexpected State Handling', () => {
+    it('shows unexpected error UI when data is null after loading', () => {
       mockUseAdminRequestDetail.mockReturnValue({
         data: null,
         isLoading: false,
@@ -281,10 +281,63 @@ describe('AdminRequestDetail', () => {
         refetch: vi.fn(),
       })
 
-      const { container } = render(<AdminRequestDetail />)
+      render(<AdminRequestDetail />)
 
-      // Should return null (empty container)
-      expect(container.firstChild).toBeNull()
+      // Should show error UI instead of blank screen
+      expect(screen.getByTestId('admin-request-detail-unexpected-error')).toBeInTheDocument()
+      expect(screen.getByText('Unexpected Error')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+    })
+
+    it('calls refetch when Try Again is clicked in unexpected error state', async () => {
+      const refetchMock = vi.fn()
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: refetchMock,
+      })
+
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      await user.click(screen.getByRole('button', { name: /try again/i }))
+
+      expect(refetchMock).toHaveBeenCalled()
+    })
+  })
+
+  describe('Network Error Handling', () => {
+    it('shows general error for network failures (status 0)', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 0, message: 'Network error' },
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-error')).toBeInTheDocument()
+      expect(screen.getByText('Error Loading Request')).toBeInTheDocument()
+      expect(screen.getByText('Network error')).toBeInTheDocument()
+    })
+
+    it('shows default message for network failure without message', () => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: true,
+        error: { status: 0 },
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      expect(screen.getByTestId('admin-request-detail-error')).toBeInTheDocument()
+      expect(screen.getByText('Could not load request details.')).toBeInTheDocument()
     })
   })
 })
