@@ -76,8 +76,8 @@ jobs:
       - name: Build (compile main + test sources)
         run: ./gradlew assemble compileTestKotlin --no-daemon
 
-      - name: Unit & Integration Tests
-        run: ./gradlew test --no-daemon
+      - name: Unit & Integration Tests + Coverage (≥80%)
+        run: ./gradlew test :koverHtmlReport koverVerify --no-daemon
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
           SPRING_DATASOURCE_USERNAME: eaf
@@ -91,9 +91,6 @@ jobs:
           include_passed: false
           detailed_summary: true
           fail_on_failure: false
-
-      - name: Code Coverage - Kover (≥80%)
-        run: ./gradlew :koverHtmlReport koverVerify --no-daemon
 
       # Mutation testing requires Arcmutate commercial license.
       # For security, GitHub does not expose secrets to fork PRs.
