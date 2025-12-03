@@ -29,7 +29,7 @@ export function OnboardingTooltip({
   side = 'bottom',
   dismissLabel = 'Got it',
   className,
-}: OnboardingTooltipProps) {
+}: Readonly<OnboardingTooltipProps>) {
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   // Focus the dismiss button when tooltip appears

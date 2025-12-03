@@ -194,8 +194,8 @@ test.describe('Request Detail Loading & Error States', () => {
 
   test.skip('AC-6: shows error state on API failure', async ({ page }) => {
     // Intercept and fail the API call
-    await page.route('**/api/requests/*', (route) => {
-      route.fulfill({
+    await page.route('**/api/requests/*', async (route) => {
+      await route.fulfill({
         status: 500,
         contentType: 'application/json',
         body: JSON.stringify({ message: 'Internal Server Error' }),

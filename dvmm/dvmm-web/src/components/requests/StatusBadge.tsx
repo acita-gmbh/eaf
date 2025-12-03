@@ -48,7 +48,7 @@ interface StatusBadgeProps {
  * - READY: Emerald (complete)
  * - FAILED: Red (error)
  */
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, className }: Readonly<StatusBadgeProps>) {
   return (
     <Badge
       variant="outline"

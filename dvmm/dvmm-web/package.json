@@ -43,6 +43,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@eslint-react/eslint-plugin": "^2.3.12",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
     "@seontechnologies/playwright-utils": "^3.10.0",
@@ -58,9 +59,11 @@
     "@vitest/coverage-v8": "^4.0.15",
     "babel-plugin-react-compiler": "^19.1.0-rc.3",
     "eslint": "^9.39.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "globals": "^16.5.0",
     "jsdom": "^27.2.0",
     "tailwindcss": "^4.1.17",

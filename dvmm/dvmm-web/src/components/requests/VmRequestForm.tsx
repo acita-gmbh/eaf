@@ -70,7 +70,7 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           description: `VM "${data.vmName}" has been submitted for approval.`,
         })
         onSubmit?.(data)
-        navigate(`/requests/${result.id}`)
+        void navigate(`/requests/${result.id}`)
       },
       onError: (error) => {
         if (error instanceof ApiError) {

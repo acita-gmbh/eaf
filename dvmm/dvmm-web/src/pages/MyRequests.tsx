@@ -52,7 +52,7 @@ export function MyRequests() {
   }
 
   const handleCreateRequest = () => {
-    navigate('/requests/new')
+    void navigate('/requests/new')
   }
 
   // Loading state

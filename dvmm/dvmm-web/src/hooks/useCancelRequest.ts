@@ -55,8 +55,8 @@ export function useCancelRequest() {
       return cancelRequest(requestId, payload, accessToken)
     },
     onSuccess: () => {
-      // Invalidate my-requests query to refetch updated list
-      queryClient.invalidateQueries({ queryKey: ['my-requests'] })
+      // Invalidate my-requests query to refetch updated list (fire-and-forget)
+      void queryClient.invalidateQueries({ queryKey: ['my-requests'] })
     },
   })
 }

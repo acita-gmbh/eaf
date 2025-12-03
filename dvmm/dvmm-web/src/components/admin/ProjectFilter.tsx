@@ -26,7 +26,7 @@ interface ProjectFilterProps {
  * - Loading skeleton state
  * - Inline error with retry button
  */
-export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
+export function ProjectFilter({ value, onChange }: Readonly<ProjectFilterProps>) {
   const { data: projects, isLoading, isError, refetch } = useProjects()
 
   // Loading state

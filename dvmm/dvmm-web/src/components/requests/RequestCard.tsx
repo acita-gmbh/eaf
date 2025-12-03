@@ -37,13 +37,13 @@ interface RequestCardProps {
  * - Creation date
  * - Cancel button (only for PENDING requests)
  */
-export function RequestCard({ request }: RequestCardProps) {
+export function RequestCard({ request }: Readonly<RequestCardProps>) {
   const navigate = useNavigate()
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const cancelMutation = useCancelRequest()
 
   const handleCardClick = () => {
-    navigate(`/requests/${request.id}`)
+    void navigate(`/requests/${request.id}`)
   }
 
   const handleCancelConfirm = (reason?: string) => {

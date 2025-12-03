@@ -210,7 +210,7 @@ interface CountBadgeProps {
  * Badge showing count of pending requests.
  * Story 2.9 AC 1: Count badge in section header.
  */
-function CountBadge({ count, isLoading }: CountBadgeProps) {
+function CountBadge({ count, isLoading }: Readonly<CountBadgeProps>) {
   if (isLoading) {
     return <Skeleton className="h-5 w-8 rounded-full" data-testid="count-badge-loading" />
   }
@@ -230,7 +230,7 @@ interface ErrorStateProps {
 /**
  * Error state display with retry option.
  */
-function ErrorState({ error, onRetry }: ErrorStateProps) {
+function ErrorState({ error, onRetry }: Readonly<ErrorStateProps>) {
   return (
     <div
       className="flex flex-col items-center justify-center py-12 text-center"

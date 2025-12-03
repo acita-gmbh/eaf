@@ -104,6 +104,32 @@ const { control } = useForm()
 const value = useWatch({ control, name: 'fieldName' })
 ```
 
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as fire-and-forget with `void`.**
+
+```tsx
+// FORBIDDEN - Floating promise (ESLint error)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns Promise in React Router v6!
+}
+
+// CORRECT - Use `void` for fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')
+}
+```
+
+**Common patterns requiring `void`:**
+```tsx
+void navigate('/path')                                      // React Router v6
+void queryClient.invalidateQueries({ queryKey: ['data'] })  // TanStack Query
+void refetch()                                              // TanStack Query
+void auth.signinRedirect({ state: { returnTo: '/' } })      // OIDC
+```
+
+**Rationale:** React Router v6's `navigate()` returns a Promise (unlike v5). ESLint rule `@typescript-eslint/no-floating-promises` catches these at compile time.
+
 ### E2E Testing with Playwright
 
 Use **@seontechnologies/playwright-utils** fixtures for consistent patterns:

@@ -45,7 +45,7 @@ interface PendingRequestsTableProps {
 export function PendingRequestsTable({
   requests,
   isLoading = false,
-}: PendingRequestsTableProps) {
+}: Readonly<PendingRequestsTableProps>) {
   const navigate = useNavigate()
 
   if (isLoading) {
@@ -53,7 +53,7 @@ export function PendingRequestsTable({
   }
 
   const handleRowClick = (requestId: string) => {
-    navigate(`/admin/requests/${requestId}`)
+    void navigate(`/admin/requests/${requestId}`)
   }
 
   return (
@@ -92,7 +92,7 @@ interface PendingRequestRowProps {
  * Highlights requests older than 48 hours with amber background
  * and shows "Waiting long" badge.
  */
-function PendingRequestRow({ request, onClick }: PendingRequestRowProps) {
+function PendingRequestRow({ request, onClick }: Readonly<PendingRequestRowProps>) {
   const createdDate = new Date(request.createdAt)
   const age = formatDistanceToNow(createdDate, { addSuffix: true })
   const hoursOld = differenceInHours(new Date(), createdDate)
@@ -156,7 +156,7 @@ function PendingRequestRow({ request, onClick }: PendingRequestRowProps) {
 /**
  * Displays VM size with tooltip showing full specs.
  */
-function SizeDisplay({ request }: { request: PendingRequest }) {
+function SizeDisplay({ request }: Readonly<{ request: PendingRequest }>) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>

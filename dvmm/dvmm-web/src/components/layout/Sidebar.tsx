@@ -40,7 +40,7 @@ interface SidebarProps {
   className?: string
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className }: Readonly<SidebarProps>) {
   const location = useLocation()
   const currentPath = location.pathname
   const isAdmin = useIsAdmin()

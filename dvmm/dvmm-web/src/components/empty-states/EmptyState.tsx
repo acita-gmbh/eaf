@@ -32,7 +32,7 @@ interface EmptyStateWithoutCta extends EmptyStateBaseProps {
 // Union type ensures CTA props are either both provided or both omitted
 export type EmptyStateProps = EmptyStateWithCta | EmptyStateWithoutCta
 
-export function EmptyState(props: EmptyStateProps) {
+export function EmptyState(props: Readonly<EmptyStateProps>) {
   const { icon: Icon, title, description, className } = props
 
   // Type guard - if ctaLabel exists, onCtaClick is guaranteed by the union type
