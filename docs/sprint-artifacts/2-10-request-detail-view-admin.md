@@ -1,6 +1,6 @@
 # Story 2.10: Request Detail View (Admin)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -183,7 +183,7 @@ GET /api/admin/requests/{id} - Get request detail for admin
 
 ### Phase 1: Backend - Query Handler
 
-- [ ] **Task 1.1: Create GetVmRequestDetailQuery & Handler** (AC: 1, 2, 3, 5, 6, 10)
+- [x] **Task 1.1: Create GetVmRequestDetailQuery & Handler** (AC: 1, 2, 3, 5, 6, 10)
   - Create `GetVmRequestDetailQuery.kt` with `requestId` and `tenantId`
   - Create `GetVmRequestDetailHandler.kt` in `dvmm-application`
   - Return `Result<VmRequestDetailResponse, GetVmRequestDetailError>`
@@ -195,17 +195,17 @@ GET /api/admin/requests/{id} - Get request detail for admin
     }
     ```
 
-- [ ] **Task 1.2: Extend Repository with findByIdWithDetails** (AC: 2, 3, 5)
+- [x] **Task 1.2: Extend Repository with findByIdWithDetails** (AC: 2, 3, 5)
   - Add `findByIdWithDetails(requestId, tenantId)` to `VmRequestReadRepository`
   - jOOQ query joining VM_REQUESTS with timeline events
   - Ensure RLS is applied (tenant_id filter)
 
-- [ ] **Task 1.3: Add findRecentRequestsByRequesterId** (AC: 6)
+- [x] **Task 1.3: Add findRecentRequestsByRequesterId** (AC: 6)
   - Add `findRecentRequestsByRequesterId(tenantId, requesterId, excludeId, limit=5)` to repository
   - Return recent requests excluding current request
   - Order by `createdAt` descending
 
-- [ ] **Task 1.4: Define DTOs** (AC: 2, 3, 5, 6)
+- [x] **Task 1.4: Define DTOs** (AC: 2, 3, 5, 6)
   - Create `VmRequestDetailResponse.kt`:
     ```kotlin
     data class VmRequestDetailResponse(
@@ -241,7 +241,7 @@ GET /api/admin/requests/{id} - Get request detail for admin
     )
     ```
 
-- [ ] **Task 1.5: Write Backend Tests** (AC: All)
+- [x] **Task 1.5: Write Backend Tests** (AC: All)
   - **Unit tests for GetVmRequestDetailHandler:**
     - Returns full details for valid ID in tenant
     - Returns `NotFound` for non-existent ID
@@ -257,25 +257,25 @@ GET /api/admin/requests/{id} - Get request detail for admin
 
 ### Phase 2: Backend - API Endpoint
 
-- [ ] **Task 2.1: Add Controller Endpoint** (AC: 1, 10)
+- [x] **Task 2.1: Add Controller Endpoint** (AC: 1, 10)
   - Add `GET /api/admin/requests/{id}` to `AdminRequestController`
   - `@PreAuthorize("hasRole('ADMIN')")`
   - Map handler errors to HTTP: **Both NotFound and Forbidden -> 404** (see Dev Notes: Security)
 
 ### Phase 3: Frontend - API & Hooks
 
-- [ ] **Task 3.1: Add API Function** (AC: 1, 2)
+- [x] **Task 3.1: Add API Function** (AC: 1, 2)
   - Extend `src/api/admin.ts` with `getVmRequestDetail(id: string)`
   - Define `VmRequestDetail` TypeScript type matching backend DTO
 
-- [ ] **Task 3.2: Create useVmRequestDetail Hook** (AC: 1, 9)
+- [x] **Task 3.2: Create useVmRequestDetail Hook** (AC: 1, 9)
   - Create `src/hooks/useVmRequestDetail.ts`
   - Use `useQuery` with `queryKey: ['admin', 'request', id]`
   - Handle loading and error states
 
 ### Phase 4: Frontend - Components
 
-- [ ] **Task 4.1: Create RequestDetailPage** (AC: 1-10)
+- [x] **Task 4.1: Create RequestDetailPage** (AC: 1-10)
   - Create `src/pages/admin/RequestDetailPage.tsx`
   - Sections: Requester, Request, Project Context, Timeline, History, Actions
   - **Reuse from Story 2.8:** `Timeline`, `TimelineEvent` components
@@ -283,24 +283,24 @@ GET /api/admin/requests/{id} - Get request detail for admin
   - Handle error with back link
   - **NO `useMemo`/`useCallback` allowed**
 
-- [ ] **Task 4.2: Create RequestDetailHeader** (AC: 2, 3)
+- [x] **Task 4.2: Create RequestDetailHeader** (AC: 2, 3)
   - Create `src/components/admin/RequestDetailHeader.tsx`
   - Display requester info and request details
   - Justification fully visible (no truncation)
 
-- [ ] **Task 4.3: Create RequesterHistoryCard** (AC: 6)
+- [x] **Task 4.3: Create RequesterHistoryCard** (AC: 6)
   - Create `src/components/admin/RequesterHistoryCard.tsx`
   - Display up to 5 recent requests
   - Each shows: VM Name, Status badge, Date
 
-- [ ] **Task 4.4: Add Route & Back Navigation** (AC: 1, 8)
+- [x] **Task 4.4: Add Route & Back Navigation** (AC: 1, 8)
   - Add route `/admin/requests/:id` to `App.tsx`
   - Protected by `AdminProtectedRoute`
   - Back button navigates to `/admin/requests`
 
 ### Phase 5: E2E Tests
 
-- [ ] **Task 5.1: Playwright Tests** (AC: 1-10)
+- [x] **Task 5.1: Playwright Tests** (AC: 1-10)
   - Test admin navigates from queue to detail
   - Test back button returns to queue
   - Test timeline displays with events

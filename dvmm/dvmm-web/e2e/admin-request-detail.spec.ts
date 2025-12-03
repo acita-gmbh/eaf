@@ -126,6 +126,19 @@ test.describe('Admin Request Detail - Requester Information (AC 2) @requires-aut
   })
 })
 
+test.describe('Admin Request Detail - Project Context (AC 4) @requires-auth @requires-backend', () => {
+  test.skip('displays quota placeholder for Epic 4', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    // Quota placeholder should be visible with Epic 4 reference
+    const quotaPlaceholder = page.getByTestId('admin-request-detail-quota-placeholder')
+    await expect(quotaPlaceholder).toBeVisible()
+    await expect(quotaPlaceholder).toContainText('Quota information available in Epic 4')
+  })
+})
+
 test.describe('Admin Request Detail - Request Details (AC 3) @requires-auth @requires-backend', () => {
   test.skip('displays VM size specifications', async ({ page }) => {
     await page.goto('/admin/requests')

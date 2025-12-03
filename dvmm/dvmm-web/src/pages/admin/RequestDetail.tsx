@@ -10,6 +10,7 @@ import {
   Mail,
   Briefcase,
   History,
+  FolderKanban,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -27,11 +28,16 @@ import { formatDateTime, formatRelativeTime } from '@/lib/date-utils'
  * - AC 1: Page loads with correct request details
  * - AC 2: Requester Information (name, email, role)
  * - AC 3: Request Details (VM specs, justification)
+ * - AC 4: Project context placeholder (quota in Epic 4)
  * - AC 5: Timeline events
  * - AC 6: Requester History (up to 5 recent requests)
- * - AC 4: Auto-polling for real-time updates (30s interval)
+ * - AC 7: Approve/Reject buttons disabled (Story 2.11)
+ * - AC 8: Back button navigation
+ * - AC 9: Loading states
+ * - AC 10: Error handling
+ * - Auto-polling for real-time updates (30s interval)
  *
- * Note: Approve/Reject actions will be added in Story 2.11.
+ * Note: Approve/Reject actions will be activated in Story 2.11.
  */
 export function AdminRequestDetail() {
   const { id } = useParams<{ id: string }>()
@@ -135,11 +141,11 @@ export function AdminRequestDetail() {
               variant="outline"
               disabled
               data-testid="reject-button"
-              title="Coming in Story 2.11"
+              title="Available in Story 2.11"
             >
               Reject
             </Button>
-            <Button disabled data-testid="approve-button" title="Coming in Story 2.11">
+            <Button disabled data-testid="approve-button" title="Available in Story 2.11">
               Approve
             </Button>
           </div>
@@ -273,6 +279,24 @@ export function AdminRequestDetail() {
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Project Context Card (AC 4) - Placeholder for Epic 4 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderKanban className="h-5 w-5" />
+                Project Context
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p
+                className="text-sm text-muted-foreground text-center py-4"
+                data-testid="admin-request-detail-quota-placeholder"
+              >
+                Quota information available in Epic 4
+              </p>
             </CardContent>
           </Card>
 
