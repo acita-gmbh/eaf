@@ -5,6 +5,7 @@ import de.acci.dvmm.infrastructure.jooq.`public`.tables.pojos.RequestTimelineEve
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
+import org.jooq.InsertSetMoreStep
 import org.jooq.Record
 import org.jooq.SortField
 import org.jooq.Table
@@ -17,21 +18,96 @@ import java.util.UUID
  * RLS NOTE: Tenant filtering is handled automatically by PostgreSQL Row-Level Security.
  * All queries through this repository are automatically filtered to the current tenant
  * based on the `app.tenant_id` session variable set by the connection customizer.
+ *
+ * ## Column Symmetry Pattern
+ *
+ * This repository uses a sealed column mapping pattern to ensure read/write symmetry.
+ * Both [mapRecord] (read) and [insert] (write) use the same [ProjectionColumns] sealed
+ * interface to guarantee that all columns are handled consistently.
+ *
+ * **Adding new columns:**
+ * 1. Add new sealed class to [ProjectionColumns]
+ * 2. Add case to [mapColumn] in [mapRecord]
+ * 3. Add case to [setColumn] in insert
+ * 4. Compile will fail if any step is missed
+ *
+ * @see ProjectionColumns
  */
 public class TimelineEventRepository(
     dsl: DSLContext
 ) : BaseProjectionRepository<RequestTimelineEvents>(dsl) {
 
+    /**
+     * Sealed interface defining all columns in REQUEST_TIMELINE_EVENTS.
+     *
+     * This pattern ensures compile-time safety: if a new column is added to this
+     * sealed hierarchy, both [mapRecord] and [insert] must handle it or the
+     * exhaustive `when` expressions will fail to compile.
+     */
+    public sealed interface ProjectionColumns {
+        public data object Id : ProjectionColumns
+        public data object RequestId : ProjectionColumns
+        public data object TenantId : ProjectionColumns
+        public data object EventType : ProjectionColumns
+        public data object ActorId : ProjectionColumns
+        public data object ActorName : ProjectionColumns
+        public data object Details : ProjectionColumns
+        public data object OccurredAt : ProjectionColumns
+
+        public companion object {
+            /**
+             * All columns that must be handled by read and write operations.
+             */
+            public val all: List<ProjectionColumns> = listOf(
+                Id, RequestId, TenantId, EventType, ActorId, ActorName, Details, OccurredAt
+            )
+        }
+    }
+
+    /**
+     * Maps a column to its value from a jOOQ Record.
+     * Exhaustive when expression ensures all columns are handled.
+     */
+    private fun mapColumn(record: Record, column: ProjectionColumns): Any? = when (column) {
+        ProjectionColumns.Id -> record.get(REQUEST_TIMELINE_EVENTS.ID)!!
+        ProjectionColumns.RequestId -> record.get(REQUEST_TIMELINE_EVENTS.REQUEST_ID)!!
+        ProjectionColumns.TenantId -> record.get(REQUEST_TIMELINE_EVENTS.TENANT_ID)!!
+        ProjectionColumns.EventType -> record.get(REQUEST_TIMELINE_EVENTS.EVENT_TYPE)!!
+        ProjectionColumns.ActorId -> record.get(REQUEST_TIMELINE_EVENTS.ACTOR_ID)
+        ProjectionColumns.ActorName -> record.get(REQUEST_TIMELINE_EVENTS.ACTOR_NAME)
+        ProjectionColumns.Details -> record.get(REQUEST_TIMELINE_EVENTS.DETAILS)
+        ProjectionColumns.OccurredAt -> record.get(REQUEST_TIMELINE_EVENTS.OCCURRED_AT)!!
+    }
+
+    /**
+     * Sets a column value in an INSERT statement.
+     * Exhaustive when expression ensures all columns are handled symmetrically with [mapColumn].
+     */
+    private fun setColumn(
+        step: InsertSetMoreStep<*>,
+        column: ProjectionColumns,
+        event: RequestTimelineEvents
+    ): InsertSetMoreStep<*> = when (column) {
+        ProjectionColumns.Id -> step.set(REQUEST_TIMELINE_EVENTS.ID, event.id)
+        ProjectionColumns.RequestId -> step.set(REQUEST_TIMELINE_EVENTS.REQUEST_ID, event.requestId)
+        ProjectionColumns.TenantId -> step.set(REQUEST_TIMELINE_EVENTS.TENANT_ID, event.tenantId)
+        ProjectionColumns.EventType -> step.set(REQUEST_TIMELINE_EVENTS.EVENT_TYPE, event.eventType)
+        ProjectionColumns.ActorId -> step.set(REQUEST_TIMELINE_EVENTS.ACTOR_ID, event.actorId)
+        ProjectionColumns.ActorName -> step.set(REQUEST_TIMELINE_EVENTS.ACTOR_NAME, event.actorName)
+        ProjectionColumns.Details -> step.set(REQUEST_TIMELINE_EVENTS.DETAILS, event.details)
+        ProjectionColumns.OccurredAt -> step.set(REQUEST_TIMELINE_EVENTS.OCCURRED_AT, event.occurredAt)
+    }
+
     override fun mapRecord(record: Record): RequestTimelineEvents {
         return RequestTimelineEvents(
-            id = record.get(REQUEST_TIMELINE_EVENTS.ID)!!,
-            requestId = record.get(REQUEST_TIMELINE_EVENTS.REQUEST_ID)!!,
-            tenantId = record.get(REQUEST_TIMELINE_EVENTS.TENANT_ID)!!,
-            eventType = record.get(REQUEST_TIMELINE_EVENTS.EVENT_TYPE)!!,
-            actorId = record.get(REQUEST_TIMELINE_EVENTS.ACTOR_ID),
-            actorName = record.get(REQUEST_TIMELINE_EVENTS.ACTOR_NAME),
-            details = record.get(REQUEST_TIMELINE_EVENTS.DETAILS),
-            occurredAt = record.get(REQUEST_TIMELINE_EVENTS.OCCURRED_AT)!!
+            id = mapColumn(record, ProjectionColumns.Id) as UUID,
+            requestId = mapColumn(record, ProjectionColumns.RequestId) as UUID,
+            tenantId = mapColumn(record, ProjectionColumns.TenantId) as UUID,
+            eventType = mapColumn(record, ProjectionColumns.EventType) as String,
+            actorId = mapColumn(record, ProjectionColumns.ActorId) as UUID?,
+            actorName = mapColumn(record, ProjectionColumns.ActorName) as String?,
+            details = mapColumn(record, ProjectionColumns.Details) as String?,
+            occurredAt = mapColumn(record, ProjectionColumns.OccurredAt) as OffsetDateTime
         )
     }
 
@@ -64,25 +140,31 @@ public class TimelineEventRepository(
      * Inserts a new timeline event.
      *
      * Uses INSERT ... ON CONFLICT DO NOTHING for idempotency during event replay.
+     * Uses the sealed [ProjectionColumns] pattern to ensure all columns are set symmetrically
+     * with [mapRecord].
      *
      * @param event The timeline event to insert
      */
     public suspend fun insert(event: RequestTimelineEvents): Unit = withContext(Dispatchers.IO) {
-        dsl.insertInto(REQUEST_TIMELINE_EVENTS)
+        // Start with ID column to get InsertSetMoreStep type
+        val initialStep: InsertSetMoreStep<*> = dsl.insertInto(REQUEST_TIMELINE_EVENTS)
             .set(REQUEST_TIMELINE_EVENTS.ID, event.id)
-            .set(REQUEST_TIMELINE_EVENTS.REQUEST_ID, event.requestId)
-            .set(REQUEST_TIMELINE_EVENTS.TENANT_ID, event.tenantId)
-            .set(REQUEST_TIMELINE_EVENTS.EVENT_TYPE, event.eventType)
-            .set(REQUEST_TIMELINE_EVENTS.ACTOR_ID, event.actorId)
-            .set(REQUEST_TIMELINE_EVENTS.ACTOR_NAME, event.actorName)
-            .set(REQUEST_TIMELINE_EVENTS.DETAILS, event.details)
-            .set(REQUEST_TIMELINE_EVENTS.OCCURRED_AT, event.occurredAt)
-            .onConflictDoNothing()
+
+        // Set remaining columns, explicitly filtering out Id to avoid order dependency on all list
+        var step = initialStep
+        ProjectionColumns.all
+            .filterNot { it is ProjectionColumns.Id }
+            .forEach { column -> step = setColumn(step, column, event) }
+
+        step.onConflictDoNothing()
             .execute()
     }
 
     /**
      * Inserts a new timeline event with all fields specified explicitly.
+     *
+     * Delegates to [insert] with a [RequestTimelineEvents] object to reuse the sealed
+     * column pattern.
      *
      * @param id Unique identifier for the timeline event
      * @param requestId The VM request this event belongs to
@@ -102,19 +184,18 @@ public class TimelineEventRepository(
         actorName: String?,
         details: String?,
         occurredAt: OffsetDateTime
-    ): Unit = withContext(Dispatchers.IO) {
-        dsl.insertInto(REQUEST_TIMELINE_EVENTS)
-            .set(REQUEST_TIMELINE_EVENTS.ID, id)
-            .set(REQUEST_TIMELINE_EVENTS.REQUEST_ID, requestId)
-            .set(REQUEST_TIMELINE_EVENTS.TENANT_ID, tenantId)
-            .set(REQUEST_TIMELINE_EVENTS.EVENT_TYPE, eventType)
-            .set(REQUEST_TIMELINE_EVENTS.ACTOR_ID, actorId)
-            .set(REQUEST_TIMELINE_EVENTS.ACTOR_NAME, actorName)
-            .set(REQUEST_TIMELINE_EVENTS.DETAILS, details)
-            .set(REQUEST_TIMELINE_EVENTS.OCCURRED_AT, occurredAt)
-            .onConflictDoNothing()
-            .execute()
-    }
+    ): Unit = insert(
+        RequestTimelineEvents(
+            id = id,
+            requestId = requestId,
+            tenantId = tenantId,
+            eventType = eventType,
+            actorId = actorId,
+            actorName = actorName,
+            details = details,
+            occurredAt = occurredAt
+        )
+    )
 
     /**
      * Checks if a timeline event already exists.

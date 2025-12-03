@@ -348,7 +348,7 @@ test.describe('Admin Request Detail - Queue Navigation @requires-auth @requires-
     await firstRow.click()
 
     // URL should include the request ID
-    await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
+    await expect(page).toHaveURL(`/admin/requests/${requestId}`)
 
     // Detail page should be visible
     await expect(page.getByTestId('admin-request-detail-page')).toBeVisible()

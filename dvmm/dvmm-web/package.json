@@ -60,6 +60,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "eslint-plugin-security": "^3.0.1",
     "globals": "^16.5.0",
     "jsdom": "^27.2.0",
     "tailwindcss": "^4.1.17",

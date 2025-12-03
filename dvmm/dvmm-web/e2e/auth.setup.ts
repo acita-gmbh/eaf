@@ -34,9 +34,6 @@ const TEST_PASSWORD = process.env.TEST_PASSWORD || 'test'
 const adminFile = 'playwright/.auth/admin.json'
 const userFile = 'playwright/.auth/user.json'
 
-/** Regex to match BASE_URL for redirect verification */
-const baseUrlRegex = new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
-
 /**
  * Authenticates a user via Keycloak and saves the session state.
  *
@@ -60,7 +57,8 @@ async function authenticateUser(page: Page, username: string, outputFile: string
     await page.getByRole('button', {name: /sign in/i}).click()
 
     await log.step('Verify redirect back to app')
-    await page.waitForURL(baseUrlRegex, {timeout: 10000})
+    // Use predicate function to avoid dynamic RegExp (ESLint security/detect-non-literal-regexp)
+    await page.waitForURL((url) => url.href.startsWith(BASE_URL), {timeout: 10000})
 
     await log.step('Verify authentication succeeded')
     // Use data-testid for stable selector (not affected by UI text changes)
