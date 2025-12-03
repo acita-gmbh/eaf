@@ -43,6 +43,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@eslint-react/eslint-plugin": "^2.3.12",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
     "@seontechnologies/playwright-utils": "^3.10.0",

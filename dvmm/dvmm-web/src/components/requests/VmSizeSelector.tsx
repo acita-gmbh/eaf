@@ -28,7 +28,7 @@ export function VmSizeSelector({
   value,
   onValueChange,
   disabled = false,
-}: VmSizeSelectorProps) {
+}: Readonly<VmSizeSelectorProps>) {
   return (
     <RadioGroup
       value={value}
@@ -65,7 +65,7 @@ interface VmSizeCardProps {
  * Shows: Size label, vCPU, RAM, Disk, Monthly estimate
  * Highlights when selected with primary ring border.
  */
-function VmSizeCard({ size, isSelected, disabled }: VmSizeCardProps) {
+function VmSizeCard({ size, isSelected, disabled }: Readonly<VmSizeCardProps>) {
   return (
     <Label
       htmlFor={`size-${size.id}`}

@@ -32,7 +32,7 @@ export function CancelConfirmDialog({
   vmName,
   onConfirm,
   isPending,
-}: CancelConfirmDialogProps) {
+}: Readonly<CancelConfirmDialogProps>) {
   const [reason, setReason] = useState('')
 
   const handleConfirm = () => {

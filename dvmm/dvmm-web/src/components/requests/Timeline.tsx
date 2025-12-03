@@ -91,7 +91,7 @@ function parseEventReason(details: string | null): string | null {
  *
  * Per AC-3: Timeline shows chronological history with dates and actors.
  */
-export function Timeline({ events }: TimelineProps) {
+export function Timeline({ events }: Readonly<TimelineProps>) {
   if (events.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">

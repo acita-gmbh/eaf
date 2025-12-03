@@ -20,7 +20,7 @@ interface AdminProtectedRouteProps {
  * Note: Backend also enforces admin role via @PreAuthorize("hasRole('admin')"),
  * this is a UX improvement to show appropriate error before API call.
  */
-export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
+export function AdminProtectedRoute({ children }: Readonly<AdminProtectedRouteProps>) {
   const navigate = useNavigate()
   const isAdmin = useIsAdmin()
 
@@ -42,7 +42,7 @@ interface ForbiddenPageProps {
 /**
  * 403 Forbidden page for non-admin users.
  */
-function ForbiddenPage({ onGoBack }: ForbiddenPageProps) {
+function ForbiddenPage({ onGoBack }: Readonly<ForbiddenPageProps>) {
   return (
     <div
       className="flex flex-col items-center justify-center py-16 text-center"

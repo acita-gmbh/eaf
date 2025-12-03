@@ -15,7 +15,7 @@ interface VmSizeQuotaInfoProps {
  *
  * @see Story 2.5 AC #4 - Quota check display (display-only)
  */
-export function VmSizeQuotaInfo({ projectQuota }: VmSizeQuotaInfoProps) {
+export function VmSizeQuotaInfo({ projectQuota }: Readonly<VmSizeQuotaInfoProps>) {
   if (!projectQuota) return null
 
   // Defensive: ensure remaining is never negative (handles used > total edge case)

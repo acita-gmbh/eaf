@@ -10,7 +10,7 @@ interface AdminQueueEmptyStateProps {
  * Empty state for the admin approval queue when all requests have been processed.
  * Displays a positive message to indicate all work is complete.
  */
-export function AdminQueueEmptyState({ className }: AdminQueueEmptyStateProps) {
+export function AdminQueueEmptyState({ className }: Readonly<AdminQueueEmptyStateProps>) {
   return (
     <EmptyState
       icon={CheckCircle2}

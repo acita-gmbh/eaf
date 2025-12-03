@@ -165,6 +165,34 @@ export function MyComponent({ title, onAction }: Props) {
 class MyComponent extends React.Component { ... }
 ```
 
+### Read-only Props (SonarQube S6759)
+
+**React props must be marked as read-only using TypeScript's `Readonly<T>` utility type.**
+
+```tsx
+// ✅ REQUIRED - Wrap props with Readonly<>
+interface ButtonProps {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+export function Button({ label, onClick, disabled }: Readonly<ButtonProps>) {
+  return <button onClick={onClick} disabled={disabled}>{label}</button>
+}
+
+// ❌ FORBIDDEN - Mutable props (ESLint will error)
+export function Button({ label, onClick, disabled }: ButtonProps) {
+  return <button onClick={onClick} disabled={disabled}>{label}</button>
+}
+```
+
+**Rationale:**
+- Props are read-only snapshots in time - every render receives a new version
+- Prevents accidental prop mutation which causes unpredictable behavior
+- Enables React Compiler optimizations by guaranteeing immutability
+- Enforced by ESLint rule `@eslint-react/prefer-read-only-props`
+
 ### E2E Testing with Playwright
 
 The project uses **Playwright** with **@seontechnologies/playwright-utils** for enhanced E2E testing.

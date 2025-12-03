@@ -12,7 +12,7 @@ interface MobileNavProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function MobileNav({ open, onOpenChange }: MobileNavProps) {
+export function MobileNav({ open, onOpenChange }: Readonly<MobileNavProps>) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-64 p-0">
