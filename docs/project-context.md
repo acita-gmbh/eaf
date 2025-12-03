@@ -143,6 +143,23 @@ class VmService {
 - Add jitter to `refetchInterval` to prevent thundering herd: `30000 + Math.floor(Math.random() * 5000)`
 - Set `refetchIntervalInBackground: false` to stop polling when tab inactive
 
+**Floating Promises (ESLint-enforced):**
+
+All promises must be handled - either awaited or marked as fire-and-forget with `void`:
+
+```tsx
+// ❌ FORBIDDEN - Floating promise
+navigate('/dashboard')  // Returns Promise in React Router v6!
+
+// ✅ CORRECT - Use `void` for fire-and-forget
+void navigate('/dashboard')
+void queryClient.invalidateQueries({ queryKey: ['data'] })
+void refetch()
+void auth.signinRedirect({ state: { returnTo: '/' } })
+```
+
+**Why:** React Router v6's `navigate()` returns a Promise (unlike v5). ESLint rule `@typescript-eslint/no-floating-promises` catches these at compile time.
+
 ---
 
 ## jOOQ Code Generation (Critical Gotchas)
@@ -210,6 +227,7 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 | `useMemo`/`useCallback`/`memo` | Manual memoization | React Compiler handles this automatically |
 | Class components in React | Legacy pattern | Function components with hooks |
 | `new RegExp(userInput)` | CWE-1333 ReDoS vulnerability | Use string literals or static patterns |
+| Floating promises | Silent error swallowing | Use `void` for fire-and-forget or `await` |
 
 ---
 
@@ -241,3 +259,4 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 _Last Updated: 2025-12-03_
 _Distilled from CLAUDE.md for LLM context efficiency_
+_Added: Floating promises pattern with `void` operator_

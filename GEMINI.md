@@ -139,6 +139,41 @@ const value = useWatch({ control, name: 'fieldName' })
 - `watch()` returns a subscription that React Compiler cannot safely memoize
 - `useWatch` is a separate hook designed to work with React's rules of hooks
 
+### Floating Promises and the `void` Operator
+
+**All promises must be explicitly handled - either awaited or marked as intentional fire-and-forget with `void`.**
+
+```tsx
+// FORBIDDEN - Floating promise (ESLint error: @typescript-eslint/no-floating-promises)
+const handleClick = () => {
+  navigate('/dashboard')  // Returns a promise in React Router v6!
+}
+
+// CORRECT - Use `void` for intentional fire-and-forget
+const handleClick = () => {
+  void navigate('/dashboard')
+}
+
+// CORRECT - Or use async/await if you need to wait
+const handleClick = async () => {
+  await navigate('/dashboard')
+}
+```
+
+**Common fire-and-forget patterns requiring `void`:**
+
+```tsx
+void navigate('/path')                                      // React Router v6
+void queryClient.invalidateQueries({ queryKey: ['data'] })  // TanStack Query
+void refetch()                                              // TanStack Query
+void auth.signinRedirect({ state: { returnTo: '/' } })      // OIDC
+```
+
+**Rationale:**
+- Unhandled promises hide errors silently - `void` makes intent explicit
+- React Router v6's `navigate()` returns a Promise (unlike v5)
+- ESLint rule `@typescript-eslint/no-floating-promises` catches these bugs at compile time
+
 ### E2E Testing with Playwright
 
 **Use playwright-utils fixtures** for consistent testing patterns:
