@@ -12,7 +12,7 @@
 
 import { createApiHeaders } from './api-client'
 import { ApiError } from './vm-requests'
-import type { VmSizeSpec, TimelineEventType } from './vm-requests'
+import type { VmSizeSpec, TimelineEventType, VmRequestStatus } from './vm-requests'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -274,8 +274,18 @@ export interface RequestHistorySummary {
   /** Name of the VM requested */
   vmName: string
   /** Current status of the request */
-  status: string
+  status: VmRequestStatus
   /** ISO 8601 timestamp when the request was created */
+  createdAt: string
+}
+
+/**
+ * Backend request history summary format (status as string).
+ */
+interface BackendRequestHistorySummary {
+  id: string
+  vmName: string
+  status: string
   createdAt: string
 }
 
@@ -291,7 +301,7 @@ interface BackendAdminRequestDetailResponse {
   projectName: string
   requester: RequesterInfo
   timeline: TimelineEvent[]
-  requesterHistory: RequestHistorySummary[]
+  requesterHistory: BackendRequestHistorySummary[]
   createdAt: string
 }
 
@@ -322,7 +332,7 @@ export interface AdminRequestDetail {
   /** Business justification provided */
   justification: string
   /** Current request status */
-  status: string
+  status: VmRequestStatus
   /** Project display name */
   projectName: string
   /** Requester information */
@@ -350,11 +360,14 @@ function transformAdminRequestDetail(
     memoryGb: backend.size.memoryGb,
     diskGb: backend.size.diskGb,
     justification: backend.justification,
-    status: backend.status,
+    status: backend.status as VmRequestStatus,
     projectName: backend.projectName,
     requester: backend.requester,
     timeline: backend.timeline,
-    requesterHistory: backend.requesterHistory,
+    requesterHistory: backend.requesterHistory.map((item) => ({
+      ...item,
+      status: item.status as VmRequestStatus,
+    })),
     createdAt: backend.createdAt,
   }
 }
