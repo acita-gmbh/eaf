@@ -66,7 +66,8 @@ class GetAdminRequestDetailHandlerTest {
                 requesterName = "John Doe",
                 requesterEmail = "john.doe@example.com",
                 requesterRole = "developer",
-                createdAt = testTimestamp
+                createdAt = testTimestamp,
+                version = 1L
             )
             val timelineEvents = listOf(
                 TimelineEventItem(
@@ -379,6 +380,7 @@ class GetAdminRequestDetailHandlerTest {
         requesterName = "John Doe",
         requesterEmail = "john.doe@example.com",
         requesterRole = "developer",
-        createdAt = testTimestamp
+        createdAt = testTimestamp,
+        version = 1L
     )
 }

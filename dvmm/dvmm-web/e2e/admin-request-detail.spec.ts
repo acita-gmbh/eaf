@@ -262,20 +262,269 @@ test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @r
 })
 
 test.describe('Admin Request Detail - Action Buttons @requires-auth @requires-backend', () => {
-  test.skip('shows disabled approve/reject buttons for pending requests', async ({ page }) => {
+  test.skip('shows enabled approve/reject buttons for PENDING requests', async ({ page }) => {
+    // Story 2.11: Approve/Reject Actions
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
 
-    // Approve button should be visible but disabled
+    // Approve button should be visible and enabled for PENDING status
     const approveButton = page.getByTestId('approve-button')
     await expect(approveButton).toBeVisible()
-    await expect(approveButton).toBeDisabled()
+    await expect(approveButton).toBeEnabled()
 
-    // Reject button should be visible but disabled
+    // Reject button should be visible and enabled for PENDING status
     const rejectButton = page.getByTestId('reject-button')
     await expect(rejectButton).toBeVisible()
-    await expect(rejectButton).toBeDisabled()
+    await expect(rejectButton).toBeEnabled()
+  })
+
+  test.skip('hides action buttons for non-PENDING requests', async () => {
+    // Story 2.11: AC - Buttons only shown for PENDING status
+    // This test requires an APPROVED request in the database
+    // Navigate to a known approved request or filter by status
+
+    // For now, this serves as documentation of expected behavior
+    // When viewing an APPROVED/REJECTED request:
+    // - No approve/reject buttons should be visible
+  })
+})
+
+/**
+ * Story 2.11: Approve Action Tests
+ *
+ * Tests for the approve workflow:
+ * - AC 1: One-click approval via button
+ * - AC 4: Success updates timeline to "APPROVED"
+ * - AC 6: Optimistic locking prevents stale updates
+ * - AC 7: Toast notification on success
+ */
+test.describe('Admin Request Detail - Approve Action @requires-auth @requires-backend', () => {
+  test.skip('clicking approve button opens confirmation modal', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    // Click approve button
+    await page.getByTestId('approve-button').click()
+
+    // Confirmation modal should appear
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /approve request/i })).toBeVisible()
+    await expect(page.getByText(/are you sure you want to approve/i)).toBeVisible()
+  })
+
+  test.skip('approve modal has confirm and cancel buttons', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+    await page.getByTestId('approve-button').click()
+
+    // Modal actions
+    await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()
+    await expect(page.getByTestId('approve-confirm-button')).toBeVisible()
+  })
+
+  test.skip('cancel button closes approve modal without action', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+    await page.getByTestId('approve-button').click()
+
+    // Click cancel
+    await page.getByRole('button', { name: /cancel/i }).click()
+
+    // Modal should close
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+
+    // Request should still be PENDING
+    await expect(page.locator('[data-testid="status-badge-pending"]')).toBeVisible()
+  })
+
+  test.skip('confirming approve updates status and shows success toast', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    await page.getByTestId('approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
+
+    // Modal should close
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+
+    // Success toast should appear (AC 7)
+    await expect(page.locator('[data-testid="toast"]')).toContainText(/approved/i)
+
+    // Status should update to APPROVED (AC 4)
+    await expect(page.locator('[data-testid="status-badge-approved"]')).toBeVisible()
+
+    // Action buttons should be hidden for approved request
+    await expect(page.getByTestId('approve-button')).not.toBeVisible()
+    await expect(page.getByTestId('reject-button')).not.toBeVisible()
+  })
+
+  test.skip('approve adds APPROVED event to timeline', async ({ page }) => {
+    // This test assumes the approve action was just completed
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    await page.getByTestId('approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
+
+    // Wait for success
+    await expect(page.locator('[data-testid="status-badge-approved"]')).toBeVisible()
+
+    // Timeline should now include APPROVED event (AC 4)
+    await expect(page.getByTestId('timeline-event-approved')).toBeVisible()
+  })
+})
+
+/**
+ * Story 2.11: Reject Action Tests
+ *
+ * Tests for the reject workflow:
+ * - AC 2: Reject with mandatory reason (10-500 chars)
+ * - AC 3: Reason displayed in timeline
+ * - AC 4: Success updates timeline to "REJECTED"
+ * - AC 7: Toast notification on success
+ */
+test.describe('Admin Request Detail - Reject Action @requires-auth @requires-backend', () => {
+  test.skip('clicking reject button opens rejection modal', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    // Click reject button
+    await page.getByTestId('reject-button').click()
+
+    // Rejection modal should appear with reason input
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /reject request/i })).toBeVisible()
+    await expect(page.getByTestId('reject-reason-input')).toBeVisible()
+  })
+
+  test.skip('reject modal requires reason with character count', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+    await page.getByTestId('reject-button').click()
+
+    // Character count should be visible
+    await expect(page.getByTestId('character-count')).toBeVisible()
+
+    // Confirm button should be disabled without reason
+    await expect(page.getByTestId('confirm-reject-button')).toBeDisabled()
+  })
+
+  test.skip('reject modal validates minimum reason length (10 chars)', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+    await page.getByTestId('reject-button').click()
+
+    // Enter too short reason
+    await page.getByTestId('reject-reason-input').fill('Too short')
+
+    // Confirm should still be disabled (less than 10 chars)
+    await expect(page.getByTestId('confirm-reject-button')).toBeDisabled()
+
+    // Enter valid reason (10+ chars)
+    await page.getByTestId('reject-reason-input').fill('This is a valid rejection reason')
+
+    // Now confirm should be enabled
+    await expect(page.getByTestId('confirm-reject-button')).toBeEnabled()
+  })
+
+  test.skip('cancel button closes reject modal without action', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+    await page.getByTestId('reject-button').click()
+
+    await page.getByTestId('reject-reason-input').fill('This is a valid rejection reason')
+    await page.getByRole('button', { name: /cancel/i }).click()
+
+    // Modal should close
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+
+    // Request should still be PENDING
+    await expect(page.locator('[data-testid="status-badge-pending"]')).toBeVisible()
+  })
+
+  test.skip('confirming reject updates status and shows success toast', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    await page.getByTestId('reject-button').click()
+    await page.getByTestId('reject-reason-input').fill('Resources not available for this request at this time')
+    await page.getByTestId('confirm-reject-button').click()
+
+    // Modal should close
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+
+    // Success toast should appear (AC 7)
+    await expect(page.locator('[data-testid="toast"]')).toContainText(/rejected/i)
+
+    // Status should update to REJECTED (AC 4)
+    await expect(page.locator('[data-testid="status-badge-rejected"]')).toBeVisible()
+
+    // Action buttons should be hidden for rejected request
+    await expect(page.getByTestId('approve-button')).not.toBeVisible()
+    await expect(page.getByTestId('reject-button')).not.toBeVisible()
+  })
+
+  test.skip('reject adds REJECTED event to timeline with reason', async ({ page }) => {
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    const rejectionReason = 'Budget constraints prevent approval at this time'
+    await page.getByTestId('reject-button').click()
+    await page.getByTestId('reject-reason-input').fill(rejectionReason)
+    await page.getByTestId('confirm-reject-button').click()
+
+    // Wait for success
+    await expect(page.locator('[data-testid="status-badge-rejected"]')).toBeVisible()
+
+    // Timeline should include REJECTED event with reason (AC 3)
+    await expect(page.getByTestId('timeline-event-rejected')).toBeVisible()
+    await expect(page.getByTestId('timeline-event-rejected')).toContainText(rejectionReason)
+  })
+})
+
+/**
+ * Story 2.11: Optimistic Locking Tests
+ *
+ * Tests for concurrent modification handling:
+ * - AC 6: Stale version error shows conflict message
+ */
+test.describe('Admin Request Detail - Concurrency Handling @requires-auth @requires-backend', () => {
+  test.skip('shows conflict error when request was modified by another admin', async ({ page }) => {
+    // This test requires simulating a concurrent modification
+    // Intercept the approve/reject API call and return 409 Conflict
+
+    await page.route('**/api/admin/requests/*/approve', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          type: 'concurrency_conflict',
+          message: 'Request has been modified by another user',
+        }),
+      })
+    })
+
+    await page.goto('/admin/requests')
+    await expect(page.getByTestId('pending-requests-table')).toBeVisible()
+    await page.locator('[data-testid^="pending-request-row-"]').first().click()
+
+    await page.getByTestId('approve-button').click()
+    await page.getByTestId('approve-confirm-button').click()
+
+    // Should show error toast with refresh prompt
+    await expect(page.locator('[data-testid="toast"]')).toContainText(/modified/i)
   })
 })
 

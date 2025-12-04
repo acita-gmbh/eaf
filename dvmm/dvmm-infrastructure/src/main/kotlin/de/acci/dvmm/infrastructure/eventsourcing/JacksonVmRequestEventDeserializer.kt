@@ -3,8 +3,10 @@ package de.acci.dvmm.infrastructure.eventsourcing
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.StoredEvent
 
@@ -37,9 +39,8 @@ public class JacksonVmRequestEventDeserializer(
         return when (eventType) {
             "VmRequestCreated" -> VmRequestCreated::class.java
             "VmRequestCancelled" -> VmRequestCancelled::class.java
-            // Future event types will be added here:
-            // "VmRequestApproved" -> VmRequestApproved::class.java
-            // "VmRequestRejected" -> VmRequestRejected::class.java
+            "VmRequestApproved" -> VmRequestApproved::class.java
+            "VmRequestRejected" -> VmRequestRejected::class.java
             else -> throw IllegalArgumentException(
                 "Unknown event type: $eventType. " +
                     "Add mapping to JacksonVmRequestEventDeserializer."
