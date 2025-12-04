@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component
  * - **Random IV**: Each encryption generates a unique initialization vector
  * - **Key Derivation**: Password-based key derivation with random salt
  * - **No Plaintext Logging**: Passwords are never logged
+ * - **Thread Safety**: All encrypt/decrypt operations are synchronized
  *
  * ## Configuration
  *
@@ -29,11 +30,12 @@ import org.springframework.stereotype.Component
  * dvmm:
  *   encryption:
  *     password: ${DVMM_ENCRYPTION_PASSWORD}
+ *     salt: ${DVMM_ENCRYPTION_SALT}  # Required in production
  * ```
  *
- * The salt is generated once at startup. For production, consider storing the salt
- * persistently or using a fixed salt via configuration to ensure decryption works
- * across restarts.
+ * The salt is generated once at startup. For production, you MUST configure a persistent
+ * salt via `dvmm.encryption.salt` to ensure decryption works across restarts.
+ * The application will fail fast at startup if no salt is configured in production.
  *
  * ## Usage
  *
@@ -93,12 +95,18 @@ public class SpringSecurityCredentialEncryptor(
         }
 
         AesBytesEncryptor(
-            encryptionPassword,
-            salt,
-            KeyGenerators.secureRandom(16), // 128-bit IV
-            AesBytesEncryptor.CipherAlgorithm.GCM // AES-GCM for authenticated encryption
+            /* password = */ encryptionPassword,
+            /* salt = */ salt,
+            /* ivGenerator = */ KeyGenerators.secureRandom(16), // 128-bit IV
+            /* alg = */ AesBytesEncryptor.CipherAlgorithm.GCM // AES-GCM for authenticated encryption
         )
     }
+
+    /**
+     * Lock object for thread-safe access to [encryptor].
+     * AesBytesEncryptor is not thread-safe as it reuses Cipher instances internally.
+     */
+    private val encryptorLock = Any()
 
     /**
      * Encrypt a plaintext password.
@@ -108,6 +116,8 @@ public class SpringSecurityCredentialEncryptor(
      * - Ciphertext
      * - GCM authentication tag (16 bytes)
      *
+     * This method is thread-safe via synchronized access to the underlying encryptor.
+     *
      * @param plaintext The password to encrypt
      * @return Encrypted bytes
      * @throws EncryptionException if encryption fails
@@ -116,7 +126,9 @@ public class SpringSecurityCredentialEncryptor(
         require(plaintext.isNotEmpty()) { "Cannot encrypt empty password" }
 
         return try {
-            val encrypted = encryptor.encrypt(plaintext.toByteArray(Charsets.UTF_8))
+            val encrypted = synchronized(encryptorLock) {
+                encryptor.encrypt(plaintext.toByteArray(Charsets.UTF_8))
+            }
             logger.debug { "Encrypted credential: ${encrypted.size} bytes" }
             encrypted
         } catch (e: Exception) {
@@ -129,6 +141,8 @@ public class SpringSecurityCredentialEncryptor(
     /**
      * Decrypt an encrypted password.
      *
+     * This method is thread-safe via synchronized access to the underlying encryptor.
+     *
      * @param encrypted The encrypted bytes
      * @return Decrypted plaintext password
      * @throws DecryptionException if decryption fails (wrong key, corrupted data, tampered)
@@ -137,7 +151,9 @@ public class SpringSecurityCredentialEncryptor(
         require(encrypted.isNotEmpty()) { "Cannot decrypt empty data" }
 
         return try {
-            val decrypted = encryptor.decrypt(encrypted)
+            val decrypted = synchronized(encryptorLock) {
+                encryptor.decrypt(encrypted)
+            }
             String(decrypted, Charsets.UTF_8)
         } catch (e: Exception) {
             // Log error without revealing any data
