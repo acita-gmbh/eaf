@@ -484,9 +484,10 @@ class ProvisionVmSaga(
     private val vmwareConfigRepository: VmwareConfigRepository,
     private val clock: Clock
 ) {
+    // Note: withMaxRetries(4) = 4 retries after initial = 5 total attempts
     private val retryPolicy = RetryPolicy.builder<VmwareVmId>()
         .handle(TransientVsphereException::class.java)
-        .withMaxRetries(5)
+        .withMaxRetries(4)  // 5 total attempts (initial + 4 retries)
         .withBackoff(Duration.ofSeconds(10), Duration.ofSeconds(120), 2.0)
         .build()
 
@@ -819,9 +820,9 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 }
 ```
 
-**IMPORTANT: VCSIM Feasibility Verification (Story 3.2 Pre-requisite)**
+#### VCSIM Feasibility Verification (Story 3.2 Pre-requisite)
 
-Before committing to VCSIM SOAP API approach, Story 3.2 must verify:
+> **IMPORTANT:** Before committing to VCSIM SOAP API approach, Story 3.2 must verify:
 
 1. **VCSIM v0.47.0 SOAP support**: Confirm CloneVM_Task, RetrieveProperties, Destroy_Task work
 2. **vijava compatibility**: Test actual vijava client calls against VCSIM container
