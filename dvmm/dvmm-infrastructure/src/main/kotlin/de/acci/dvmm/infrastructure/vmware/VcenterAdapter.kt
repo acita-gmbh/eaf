@@ -140,8 +140,8 @@ public class VcenterAdapter(
             val datastoreFreeGb = (datastore.summary?.freeSpace ?: 0L) / (1024L * 1024L * 1024L)
             logger.debug { "Found datastore: ${config.datastoreName} with ${datastoreFreeGb}GB free" }
 
-            // Find network
-            val network = InventoryNavigator(datacenter)
+            // Verify network exists
+            InventoryNavigator(datacenter)
                 .searchManagedEntity("Network", config.networkName) as? Network
                 ?: return@withContext ConnectionError.NetworkNotFound(
                     networkName = config.networkName

@@ -254,7 +254,7 @@ This story is the **VMware Tracer Bullet**, validating the complete VMware integ
 | React Hook Form | 7.x | Form management |
 | Zod | 3.x | Schema validation |
 
-**Note:** Use `yavijava` (https://github.com/yavijava/yavijava), not the original `vijava` which is unmaintained.
+**Note:** Use `yavijava` ([GitHub](https://github.com/yavijava/yavijava)), not the original `vijava` which is unmaintained.
 
 ### File Structure Targets
 
