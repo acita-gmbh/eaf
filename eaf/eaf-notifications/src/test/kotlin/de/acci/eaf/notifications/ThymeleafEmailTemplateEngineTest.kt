@@ -84,4 +84,20 @@ class ThymeleafEmailTemplateEngineTest {
             thymeleafEngine.process(eq("email/vm-request-created"), any<Context>())
         }
     }
+
+    @Test
+    fun `render returns failure when unexpected exception occurs`() {
+        val templateName = "test-template"
+
+        every {
+            thymeleafEngine.process(eq("email/$templateName"), any<Context>())
+        } throws RuntimeException("Unexpected database connection issue")
+
+        val result = templateEngine.render(templateName, emptyMap())
+
+        assertTrue(result is Result.Failure)
+        val error = (result as Result.Failure).error
+        assertEquals(templateName, error.templateName)
+        assertTrue(error.message.contains("Unexpected template error"))
+    }
 }
