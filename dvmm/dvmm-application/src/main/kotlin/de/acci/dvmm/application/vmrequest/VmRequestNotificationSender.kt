@@ -6,6 +6,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
  * Errors that can occur when sending VM request notifications.
@@ -126,7 +127,7 @@ public interface VmRequestNotificationSender {
  * can verify the configuration is intentional.
  */
 public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
-    private val logger = io.github.oshai.kotlinlogging.KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun sendCreatedNotification(
         notification: RequestCreatedNotification
@@ -159,28 +160,28 @@ public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
 /**
  * Logs notification errors with consistent formatting across all handlers.
  *
- * @param error The notification error that occurred
+ * @param notificationError The notification error that occurred
  * @param requestId The VM request ID for context
  * @param correlationId The correlation ID for distributed tracing
  * @param action The action type (e.g., "Creation", "Approval", "Rejection")
  */
 internal fun KLogger.logNotificationError(
-    error: VmRequestNotificationError,
+    notificationError: VmRequestNotificationError,
     requestId: VmRequestId,
     correlationId: CorrelationId,
     action: String
 ) {
-    when (error) {
+    when (notificationError) {
         is VmRequestNotificationError.SendFailure -> {
             error {
-                "$action notification send failure for request ${requestId.value}: ${error.message}. " +
+                "$action notification send failure for request ${requestId.value}: ${notificationError.message}. " +
                     "correlationId=${correlationId.value}"
             }
         }
         is VmRequestNotificationError.TemplateError -> {
             error {
                 "$action notification template error for request ${requestId.value}: " +
-                    "template=${error.templateName}, message=${error.message}. " +
+                    "template=${notificationError.templateName}, message=${notificationError.message}. " +
                     "correlationId=${correlationId.value}"
             }
         }
