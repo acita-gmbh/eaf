@@ -270,8 +270,14 @@ public class TestVmwareConnectionHandler(
             val existing = configurationPort.findByTenantId(tenantId)
             if (existing != null) {
                 val updated = existing.markVerified(Instant.now(clock))
-                configurationPort.update(updated)
-                logger.debug { "Updated verifiedAt timestamp for tenant ${tenantId.value}" }
+                when (val result = configurationPort.update(updated)) {
+                    is Result.Success -> {
+                        logger.debug { "Updated verifiedAt timestamp for tenant ${tenantId.value}" }
+                    }
+                    is Result.Failure -> {
+                        logger.warn { "Failed to update verifiedAt for tenant ${tenantId.value}: ${result.error}" }
+                    }
+                }
             }
         } catch (e: Exception) {
             // Non-critical - log and continue
