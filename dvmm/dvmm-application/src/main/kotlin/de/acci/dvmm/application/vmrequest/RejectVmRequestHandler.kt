@@ -15,6 +15,7 @@ import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.projection.ProjectionError
+import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
 
@@ -293,17 +294,29 @@ public class RejectVmRequestHandler(
                 }
 
                 // Send notification (fire-and-forget, don't fail the command)
-                notificationSender.sendRejectedNotification(
-                    RequestRejectedNotification(
-                        requestId = command.requestId,
-                        tenantId = command.tenantId,
-                        requesterEmail = aggregate.requesterEmail,
-                        vmName = aggregate.vmName.value,
-                        projectName = aggregate.projectId.value.toString(),
-                        reason = command.reason
-                    )
-                ).onFailure { notificationError ->
-                    logNotificationError(notificationError, command.requestId, correlationId)
+                val requesterEmail = try {
+                    EmailAddress.of(aggregate.requesterEmail)
+                } catch (e: IllegalArgumentException) {
+                    logger.error {
+                        "Invalid requester email in aggregate, skipping notification: " +
+                            "requestId=${command.requestId.value}, " +
+                            "correlationId=${correlationId.value}"
+                    }
+                    null
+                }
+                if (requesterEmail != null) {
+                    notificationSender.sendRejectedNotification(
+                        RequestRejectedNotification(
+                            requestId = command.requestId,
+                            tenantId = command.tenantId,
+                            requesterEmail = requesterEmail,
+                            vmName = aggregate.vmName.value,
+                            projectName = aggregate.projectId.value.toString(),
+                            reason = command.reason
+                        )
+                    ).onFailure { notificationError ->
+                        logger.logNotificationError(notificationError, command.requestId, correlationId, "Rejection")
+                    }
                 }
 
                 RejectVmRequestResult(requestId = command.requestId).success()
@@ -341,25 +354,4 @@ public class RejectVmRequestHandler(
         }
     }
 
-    private fun logNotificationError(
-        error: VmRequestNotificationError,
-        requestId: VmRequestId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is VmRequestNotificationError.SendFailure -> {
-                logger.warn {
-                    "Rejection notification failed for request ${requestId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-            is VmRequestNotificationError.TemplateError -> {
-                logger.error {
-                    "Rejection notification template error for request ${requestId.value}: " +
-                        "template=${error.templateName}, message=${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-        }
-    }
 }

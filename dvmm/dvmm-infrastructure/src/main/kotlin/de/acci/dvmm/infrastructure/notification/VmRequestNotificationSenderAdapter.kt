@@ -8,7 +8,6 @@ import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
-import de.acci.eaf.notifications.EmailAddress
 import de.acci.eaf.notifications.NotificationError
 import de.acci.eaf.notifications.NotificationService
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -50,11 +49,6 @@ public class VmRequestNotificationSenderAdapter(
     override suspend fun sendCreatedNotification(
         notification: RequestCreatedNotification
     ): Result<Unit, VmRequestNotificationError> {
-        val recipient = EmailAddress.ofOrNull(notification.requesterEmail)
-            ?: return VmRequestNotificationError.SendFailure(
-                message = "Invalid email address: ${notification.requesterEmail}"
-            ).failure()
-
         val context = mapOf(
             "requestId" to notification.requestId.value.toString(),
             "vmName" to notification.vmName,
@@ -64,12 +58,12 @@ public class VmRequestNotificationSenderAdapter(
         logger.debug {
             "Sending request created notification: " +
                 "requestId=${notification.requestId.value}, " +
-                "to=${recipient.value}"
+                "to=${notification.requesterEmail.value}"
         }
 
         return notificationService.sendEmail(
             tenantId = notification.tenantId,
-            recipient = recipient,
+            recipient = notification.requesterEmail,
             subject = "VM Request Created: ${notification.vmName}",
             templateName = TEMPLATE_CREATED,
             context = context
@@ -79,11 +73,6 @@ public class VmRequestNotificationSenderAdapter(
     override suspend fun sendApprovedNotification(
         notification: RequestApprovedNotification
     ): Result<Unit, VmRequestNotificationError> {
-        val recipient = EmailAddress.ofOrNull(notification.requesterEmail)
-            ?: return VmRequestNotificationError.SendFailure(
-                message = "Invalid email address: ${notification.requesterEmail}"
-            ).failure()
-
         val context = mapOf(
             "requestId" to notification.requestId.value.toString(),
             "vmName" to notification.vmName,
@@ -93,12 +82,12 @@ public class VmRequestNotificationSenderAdapter(
         logger.debug {
             "Sending request approved notification: " +
                 "requestId=${notification.requestId.value}, " +
-                "to=${recipient.value}"
+                "to=${notification.requesterEmail.value}"
         }
 
         return notificationService.sendEmail(
             tenantId = notification.tenantId,
-            recipient = recipient,
+            recipient = notification.requesterEmail,
             subject = "VM Request Approved: ${notification.vmName}",
             templateName = TEMPLATE_APPROVED,
             context = context
@@ -108,11 +97,6 @@ public class VmRequestNotificationSenderAdapter(
     override suspend fun sendRejectedNotification(
         notification: RequestRejectedNotification
     ): Result<Unit, VmRequestNotificationError> {
-        val recipient = EmailAddress.ofOrNull(notification.requesterEmail)
-            ?: return VmRequestNotificationError.SendFailure(
-                message = "Invalid email address: ${notification.requesterEmail}"
-            ).failure()
-
         val context = mapOf(
             "requestId" to notification.requestId.value.toString(),
             "vmName" to notification.vmName,
@@ -123,12 +107,12 @@ public class VmRequestNotificationSenderAdapter(
         logger.debug {
             "Sending request rejected notification: " +
                 "requestId=${notification.requestId.value}, " +
-                "to=${recipient.value}"
+                "to=${notification.requesterEmail.value}"
         }
 
         return notificationService.sendEmail(
             tenantId = notification.tenantId,
-            recipient = recipient,
+            recipient = notification.requesterEmail,
             subject = "VM Request Rejected: ${notification.vmName}",
             templateName = TEMPLATE_REJECTED,
             context = context

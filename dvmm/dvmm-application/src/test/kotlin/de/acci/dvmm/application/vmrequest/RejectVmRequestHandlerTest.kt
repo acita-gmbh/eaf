@@ -75,14 +75,15 @@ class RejectVmRequestHandlerTest {
     private fun createCreatedEvent(
         aggregateId: VmRequestId,
         metadata: EventMetadata,
-        projectId: ProjectId = ProjectId.generate()
+        projectId: ProjectId = ProjectId.generate(),
+        requesterEmail: String = "test@example.com"
     ) = VmRequestCreated(
         aggregateId = aggregateId,
         projectId = projectId,
         vmName = VmName.of("test-vm-01"),
         size = VmSize.M,
         justification = "Test justification for testing",
-        requesterEmail = "test@example.com",
+        requesterEmail = requesterEmail,
         metadata = metadata
     )
 
@@ -856,6 +857,155 @@ class RejectVmRequestHandlerTest {
             // Then
             coVerify(exactly = 0) { projectionUpdater.updateStatus(any()) }
             coVerify(exactly = 0) { timelineUpdater.addTimelineEvent(any()) }
+        }
+    }
+
+    @Nested
+    @DisplayName("notification integration")
+    inner class NotificationTests {
+
+        @Test
+        @DisplayName("should succeed but skip notification when requester email is invalid")
+        fun `should succeed but skip notification when requester email is invalid`() = runTest {
+            // Given - aggregate with invalid email stored in events
+            val requestId = VmRequestId.generate()
+            val requesterId = UserId.generate()
+            val adminId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = requesterId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata,
+                requesterEmail = "not-a-valid-email"  // Invalid email
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                adminId = adminId,
+                version = 1L
+            )
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+            coEvery { eventStore.append(any(), any(), any()) } returns 2L.success()
+
+            val handler = RejectVmRequestHandler(
+                eventStore = eventStore,
+                eventDeserializer = eventDeserializer,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command succeeds but notification is NOT sent
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 0) { notificationSender.sendRejectedNotification(any()) }
+        }
+
+        @Test
+        @DisplayName("should send notification when requester email is valid")
+        fun `should send notification when requester email is valid`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val requesterId = UserId.generate()
+            val adminId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = requesterId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata,
+                requesterEmail = "valid@example.com"
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                adminId = adminId,
+                version = 1L
+            )
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+            coEvery { eventStore.append(any(), any(), any()) } returns 2L.success()
+            coEvery { notificationSender.sendRejectedNotification(any()) } returns Unit.success()
+
+            val handler = RejectVmRequestHandler(
+                eventStore = eventStore,
+                eventDeserializer = eventDeserializer,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command succeeds and notification IS sent
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 1) { notificationSender.sendRejectedNotification(any()) }
+        }
+
+        @Test
+        @DisplayName("should succeed even when notification fails")
+        fun `should succeed even when notification fails`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val requesterId = UserId.generate()
+            val adminId = UserId.generate()
+            val tenantId = TenantId.generate()
+            val originalMetadata = TestMetadataFactory.create(tenantId = tenantId, userId = requesterId)
+            val createdEvent = createCreatedEvent(
+                aggregateId = requestId,
+                metadata = originalMetadata,
+                requesterEmail = "valid@example.com"
+            )
+            val storedEvent = createStoredEvent(
+                aggregateId = requestId,
+                eventType = "VmRequestCreated",
+                payload = "{}",
+                metadata = originalMetadata,
+                version = 1
+            )
+            val command = createCommand(
+                tenantId = tenantId,
+                requestId = requestId,
+                adminId = adminId,
+                version = 1L
+            )
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery { eventStore.load(requestId.value) } returns listOf(storedEvent)
+            coEvery { eventDeserializer.deserialize(storedEvent) } returns createdEvent
+            coEvery { eventStore.append(any(), any(), any()) } returns 2L.success()
+            coEvery {
+                notificationSender.sendRejectedNotification(any())
+            } returns VmRequestNotificationError.SendFailure("SMTP server unreachable").failure()
+
+            val handler = RejectVmRequestHandler(
+                eventStore = eventStore,
+                eventDeserializer = eventDeserializer,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command still succeeds (fire-and-forget pattern)
+            assertTrue(result is Result.Success)
         }
     }
 }

@@ -11,6 +11,7 @@ import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.projection.ProjectionError
+import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
 
@@ -155,16 +156,28 @@ public class CreateVmRequestHandler(
                 }
 
                 // Send notification (fire-and-forget, don't fail the command)
-                notificationSender.sendCreatedNotification(
-                    RequestCreatedNotification(
-                        requestId = aggregate.id,
-                        tenantId = command.tenantId,
-                        requesterEmail = command.requesterEmail,
-                        vmName = command.vmName.value,
-                        projectName = command.projectId.value.toString() // MVP: Project name resolved at query time
-                    )
-                ).onFailure { notificationError ->
-                    logNotificationError(notificationError, aggregate.id, correlationId)
+                val requesterEmail = try {
+                    EmailAddress.of(command.requesterEmail)
+                } catch (e: IllegalArgumentException) {
+                    logger.error {
+                        "Invalid requester email in command, skipping notification: " +
+                            "requestId=${aggregate.id.value}, " +
+                            "correlationId=${correlationId.value}"
+                    }
+                    null
+                }
+                if (requesterEmail != null) {
+                    notificationSender.sendCreatedNotification(
+                        RequestCreatedNotification(
+                            requestId = aggregate.id,
+                            tenantId = command.tenantId,
+                            requesterEmail = requesterEmail,
+                            vmName = command.vmName.value,
+                            projectName = command.projectId.value.toString() // MVP: Project name resolved at query time
+                        )
+                    ).onFailure { notificationError ->
+                        logger.logNotificationError(notificationError, aggregate.id, correlationId, "Creation")
+                    }
                 }
 
                 CreateVmRequestResult(requestId = aggregate.id).success()
@@ -202,27 +215,6 @@ public class CreateVmRequestHandler(
         }
     }
 
-    private fun logNotificationError(
-        error: VmRequestNotificationError,
-        requestId: VmRequestId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is VmRequestNotificationError.SendFailure -> {
-                logger.warn {
-                    "Notification failed for request ${requestId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-            is VmRequestNotificationError.TemplateError -> {
-                logger.error {
-                    "Notification template error for request ${requestId.value}: " +
-                        "template=${error.templateName}, message=${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-        }
-    }
 }
 
 /**

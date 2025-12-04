@@ -357,4 +357,88 @@ class CreateVmRequestHandlerTest {
             assertTrue(result is Result.Success)
         }
     }
+
+    @Nested
+    @DisplayName("notification integration")
+    inner class NotificationTests {
+
+        @Test
+        @DisplayName("should succeed but skip notification when requester email is invalid")
+        fun `should succeed but skip notification when requester email is invalid`() = runTest {
+            // Given - command with invalid email that fails EmailAddress.of()
+            val command = createCommand(requesterEmail = "not-a-valid-email")
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery {
+                eventStore.append(any(), any(), any())
+            } returns 1L.success()
+
+            val handler = CreateVmRequestHandler(
+                eventStore = eventStore,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command succeeds but notification is NOT sent
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 0) { notificationSender.sendCreatedNotification(any()) }
+        }
+
+        @Test
+        @DisplayName("should send notification when requester email is valid")
+        fun `should send notification when requester email is valid`() = runTest {
+            // Given
+            val command = createCommand(requesterEmail = "valid@example.com")
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery {
+                eventStore.append(any(), any(), any())
+            } returns 1L.success()
+
+            coEvery {
+                notificationSender.sendCreatedNotification(any())
+            } returns Unit.success()
+
+            val handler = CreateVmRequestHandler(
+                eventStore = eventStore,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command succeeds and notification IS sent
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 1) { notificationSender.sendCreatedNotification(any()) }
+        }
+
+        @Test
+        @DisplayName("should succeed even when notification fails")
+        fun `should succeed even when notification fails`() = runTest {
+            // Given - notification will fail but command should still succeed
+            val command = createCommand(requesterEmail = "valid@example.com")
+            val notificationSender = mockk<VmRequestNotificationSender>()
+
+            coEvery {
+                eventStore.append(any(), any(), any())
+            } returns 1L.success()
+
+            coEvery {
+                notificationSender.sendCreatedNotification(any())
+            } returns VmRequestNotificationError.SendFailure("SMTP server unreachable").failure()
+
+            val handler = CreateVmRequestHandler(
+                eventStore = eventStore,
+                notificationSender = notificationSender
+            )
+
+            // When
+            val result = handler.handle(command)
+
+            // Then - command still succeeds (fire-and-forget pattern)
+            assertTrue(result is Result.Success)
+        }
+    }
 }

@@ -37,6 +37,13 @@ public class ThymeleafEmailTemplateEngine(
                 templateName = templateName,
                 message = "Template rendering failed: ${e.message}"
             ).failure()
+        } catch (e: Exception) {
+            // Catch-all for unexpected exceptions to prevent silent failures
+            logger.error(e) { "Unexpected error rendering template: $templatePath" }
+            NotificationError.TemplateError(
+                templateName = templateName,
+                message = "Unexpected template error: ${e.message}"
+            ).failure()
         }
     }
 }

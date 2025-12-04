@@ -89,12 +89,12 @@ public class SmtpNotificationService(
                     ).failure()
             }
         } catch (e: MessagingException) {
-            logger.error(e) { "Messaging error sending email" }
+            logger.error(e) { "Messaging error sending email: to=$recipient, subject=$subject" }
             NotificationError.SendFailure(
                 message = "Messaging error: ${e.message}"
             ).failure()
         } catch (e: Exception) {
-            logger.error(e) { "Unexpected error sending email" }
+            logger.error(e) { "Unexpected error sending email: to=$recipient, subject=$subject" }
             NotificationError.SendFailure(
                 message = "Unexpected error: ${e.message}"
             ).failure()

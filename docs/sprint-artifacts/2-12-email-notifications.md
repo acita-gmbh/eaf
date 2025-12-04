@@ -171,6 +171,10 @@ class VmRequestNotificationListener(
 - [Spring Boot Email Guide](https://spring.io/guides/gs/sending-email/)
 - [Thymeleaf Email Templates](https://www.thymeleaf.org/doc/articles/springmail.html)
 
+## Backlog / Follow-up Items
+
+- [ ] **Project Name Resolution**: Email notifications currently display project UUID instead of human-readable project name (e.g., `projectName = aggregate.projectId.value.toString()`). This is an intentional MVP tradeoff. Future enhancement should resolve project names via a `ProjectDirectory` interface similar to `UserDirectory`. See code comments: "MVP: Project name resolved at query time".
+
 ## Dev Agent Record
 
 ### Context Reference
