@@ -129,7 +129,7 @@ development_status:
   2-9a-e2e-auth-keycloak-tests: done             # Added via correct-course workflow 2025-12-03
   2-10-request-detail-view-admin: done                  # Code review PASSED 2025-12-03
   2-11-approve-reject-actions: done                    # Code review PASSED 2025-12-03
-  2-12-email-notifications: in-progress
+  2-12-email-notifications: review                # PR #67 created 2025-12-04
   epic-2-retrospective: optional
 
   # ═══════════════════════════════════════════════════════════════════════════
