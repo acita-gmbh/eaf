@@ -130,7 +130,7 @@ development_status:
   2-10-request-detail-view-admin: done                  # Code review PASSED 2025-12-03
   2-11-approve-reject-actions: done                    # Code review PASSED 2025-12-03
   2-12-email-notifications: done                  # PR #67 merged, review fixes in PR #68
-  epic-2-retrospective: optional
+  epic-2-retrospective: completed                  # Retrospective completed 2025-12-04
 
   # ═══════════════════════════════════════════════════════════════════════════
   # EPIC 3: VM PROVISIONING (9 Stories)
