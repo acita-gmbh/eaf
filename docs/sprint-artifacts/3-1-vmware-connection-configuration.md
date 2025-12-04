@@ -1,6 +1,6 @@
 # Story 3.1: VMware Connection Configuration
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -340,7 +340,7 @@ Claude Opus 4.5 (SM Agent Bob)
 
 ## Story Completion Status
 
-**Status:** ready-for-dev
+**Status:** in-progress
 
 **Validation Score:** 12/12 passed (100%)
 

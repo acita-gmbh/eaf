@@ -447,6 +447,7 @@ public class VmwareConfigController(
                 val config = getVmwareConfigHandler.handle(GetVmwareConfigQuery(tenantId))
                 (config as? Result.Success)?.value?.verifiedAt
             } catch (e: Exception) {
+                logger.error(e) { "Failed to fetch VMware config verifiedAt for tenant=${tenantId.value}" }
                 null
             }
         } else {
