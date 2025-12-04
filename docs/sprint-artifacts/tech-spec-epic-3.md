@@ -483,9 +483,8 @@ class ProvisionVmSaga(
 ) {
     private val retryPolicy = RetryPolicy.builder<VmwareVmId>()
         .handle(TransientVsphereException::class.java)
-        .withDelay(Duration.ofSeconds(10), Duration.ofSeconds(120))
         .withMaxRetries(5)
-        .withBackoff(Duration.ofSeconds(10), Duration.ofSeconds(120))
+        .withBackoff(Duration.ofSeconds(10), Duration.ofSeconds(120), 2.0)
         .build()
 
     suspend fun execute(command: ProvisionVmCommand): Result<VmwareVmId, ProvisioningError> {
@@ -501,9 +500,9 @@ class ProvisionVmSaga(
         aggregate.startProvisioning(command.spec, clock)
         eventStore.save(aggregate)
 
-        // 4. Execute with retry
+        // 4. Execute with retry (using coroutine-compatible retry)
         return try {
-            val vmId = Failsafe.with(retryPolicy).getAsync {
+            val vmId = withRetry(retryPolicy) {
                 executeProvisioningSteps(aggregate, command.spec)
             }
             Result.success(vmId)
@@ -530,7 +529,7 @@ class ProvisionVmSaga(
         // Step 1: Clone VM from template
         updateProgress(aggregate, ProvisioningStage.CLONING)
         val vmId = vspherePort.createVm(aggregate.tenantId, spec)
-            .getOrThrow { ProvisioningException(it.errorCode, it.message, 0) }
+            .getOrElse { throw ProvisioningException(it.errorCode, it.message, 0) }
 
         try {
             // Step 2: Apply configuration
@@ -544,7 +543,7 @@ class ProvisionVmSaga(
             // Step 4: Wait for VMware Tools
             updateProgress(aggregate, ProvisioningStage.WAITING_FOR_NETWORK)
             val vmInfo = vspherePort.waitForReady(aggregate.tenantId, vmId)
-                .getOrThrow { ProvisioningException(ProvisioningErrorCode.VMWARE_TOOLS_TIMEOUT, it.message, 0, vmId) }
+                .getOrElse { throw ProvisioningException(ProvisioningErrorCode.VMWARE_TOOLS_TIMEOUT, it.message, 0, vmId) }
 
             // Step 5: Mark complete
             aggregate.markProvisioned(
