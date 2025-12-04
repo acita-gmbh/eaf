@@ -221,21 +221,7 @@ public class VmwareConfigurationRepository(
     override suspend fun save(configuration: VmwareConfiguration): Result<Unit, VmwareConfigurationError> =
         withContext(Dispatchers.IO) {
             try {
-                // Check for existing configuration (unique constraint on tenant_id)
-                val exists = dsl.fetchExists(
-                    dsl.selectFrom(VMWARE_CONFIGURATIONS)
-                        .where(VMWARE_CONFIGURATIONS.TENANT_ID.eq(configuration.tenantId.value))
-                )
-
-                if (exists) {
-                    logger.warn {
-                        "Configuration already exists for tenant ${configuration.tenantId.value}"
-                    }
-                    return@withContext VmwareConfigurationError.AlreadyExists(
-                        tenantId = configuration.tenantId
-                    ).failure()
-                }
-
+                // Use atomic INSERT ON CONFLICT to avoid TOCTOU race condition
                 // Start with ID column to get InsertSetMoreStep type
                 val initialStep: InsertSetMoreStep<*> = dsl.insertInto(VMWARE_CONFIGURATIONS)
                     .set(VMWARE_CONFIGURATIONS.ID, configuration.id.value)
@@ -246,7 +232,20 @@ public class VmwareConfigurationRepository(
                     .filterNot { it is ConfigurationColumns.Id }
                     .forEach { column -> step = setColumnInsert(step, column, configuration) }
 
-                step.execute()
+                // ON CONFLICT (TENANT_ID) DO NOTHING - returns 0 rows if conflict
+                val rowsInserted = step
+                    .onConflict(VMWARE_CONFIGURATIONS.TENANT_ID)
+                    .doNothing()
+                    .execute()
+
+                if (rowsInserted == 0) {
+                    logger.warn {
+                        "Configuration already exists for tenant ${configuration.tenantId.value}"
+                    }
+                    return@withContext VmwareConfigurationError.AlreadyExists(
+                        tenantId = configuration.tenantId
+                    ).failure()
+                }
 
                 logger.debug {
                     "Saved VMware configuration: id=${configuration.id.value}, tenantId=${configuration.tenantId.value}"

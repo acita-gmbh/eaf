@@ -75,7 +75,9 @@ public class SpringSecurityCredentialEncryptor(
             encryptionSalt
         } else {
             // FAIL FAST in production - random salt causes data loss after restart
-            val isProduction = activeProfiles.contains("prod")
+            // Use exact profile matching to avoid false positives (e.g., "nonprod", "preprod")
+            val profileList = activeProfiles.split(",").map { it.trim().lowercase() }
+            val isProduction = profileList.any { it == "prod" || it == "production" }
             if (isProduction) {
                 throw IllegalStateException(
                     "dvmm.encryption.salt is required in production. " +

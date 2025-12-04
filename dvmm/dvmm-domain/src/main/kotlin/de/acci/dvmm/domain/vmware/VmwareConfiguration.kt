@@ -154,7 +154,8 @@ public data class VmwareConfiguration(
         folderPath = folderPath ?: this.folderPath,
         updatedAt = timestamp,
         updatedBy = userId,
-        verifiedAt = null // Reset verification when config changes
+        verifiedAt = null, // Reset verification when config changes
+        version = version + 1 // Increment version for optimistic locking
     )
 
     /**

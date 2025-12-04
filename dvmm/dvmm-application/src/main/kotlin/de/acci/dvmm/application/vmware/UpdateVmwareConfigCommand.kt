@@ -195,7 +195,7 @@ public class UpdateVmwareConfigHandler(
             folderPath = command.folderPath,
             userId = command.userId,
             timestamp = now
-        ).copy(version = existing.version + 1) // Increment version
+        ) // Domain's update() increments version for optimistic locking
 
         // Persist to database
         val updateResult = configurationPort.update(updated)
