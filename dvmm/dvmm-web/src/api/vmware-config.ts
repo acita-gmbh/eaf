@@ -93,16 +93,23 @@ export interface SaveVmwareConfigRequest {
   networkName: string
   templateName?: string
   folderPath?: string
+  clearFolderPath?: boolean // Set true to explicitly clear folderPath to null
   version: number | null // null = create, number = update
 }
 
 /**
  * Request body for testing connection.
+ *
+ * Password can be null to use stored credentials from existing configuration.
+ * When null, the backend will:
+ * 1. Fetch the existing configuration for the tenant
+ * 2. Decrypt the stored password
+ * 3. Use it for the connection test
  */
 export interface TestConnectionRequest {
   vcenterUrl: string
   username: string
-  password: string
+  password: string | null // null = use stored password from existing config
   datacenterName: string
   clusterName: string
   datastoreName: string

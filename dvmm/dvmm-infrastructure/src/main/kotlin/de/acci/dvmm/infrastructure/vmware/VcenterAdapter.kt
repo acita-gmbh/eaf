@@ -6,6 +6,7 @@ import com.vmware.vim25.mo.Datastore
 import com.vmware.vim25.mo.InventoryNavigator
 import com.vmware.vim25.mo.Network
 import com.vmware.vim25.mo.ServiceInstance
+import com.vmware.vim25.mo.VirtualMachine
 import de.acci.dvmm.application.vmware.ConnectionError
 import de.acci.dvmm.application.vmware.ConnectionInfo
 import de.acci.dvmm.application.vmware.VspherePort
@@ -82,6 +83,7 @@ public class VcenterAdapter(
      * 5. Existence of specified cluster
      * 6. Existence of specified datastore
      * 7. Existence of specified network
+     * 8. Existence of specified VM template
      */
     override suspend fun testConnection(
         config: VmwareConfiguration,
@@ -148,6 +150,21 @@ public class VcenterAdapter(
                 ).failure()
 
             logger.debug { "Found network: ${config.networkName}" }
+
+            // Verify template exists (VirtualMachine with template flag)
+            val template = InventoryNavigator(datacenter)
+                .searchManagedEntity("VirtualMachine", config.templateName) as? VirtualMachine
+            if (template == null || template.config?.template != true) {
+                logger.warn {
+                    "Template not found or not marked as template: ${config.templateName} " +
+                        "(found=${template != null}, isTemplate=${template?.config?.template})"
+                }
+                return@withContext ConnectionError.TemplateNotFound(
+                    templateName = config.templateName
+                ).failure()
+            }
+
+            logger.debug { "Found template: ${config.templateName}" }
 
             logger.info {
                 "vCenter connection test successful: " +

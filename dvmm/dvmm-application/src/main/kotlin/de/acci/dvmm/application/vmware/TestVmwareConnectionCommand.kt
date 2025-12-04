@@ -52,7 +52,7 @@ public data class TestVmwareConnectionCommand(
     val userId: UserId,
     val vcenterUrl: String,
     val username: String,
-    val password: String,
+    val password: String?, // Null = use stored password (requires existing config)
     val datacenterName: String,
     val clusterName: String,
     val datastoreName: String,
@@ -144,6 +144,20 @@ public sealed class TestVmwareConnectionError {
     public data class ApiError(
         val message: String
     ) : TestVmwareConnectionError()
+
+    /**
+     * No password provided and no stored configuration exists.
+     */
+    public data class PasswordRequired(
+        val message: String = "Password is required - no stored configuration exists"
+    ) : TestVmwareConnectionError()
+
+    /**
+     * Failed to decrypt stored password.
+     */
+    public data class DecryptionFailed(
+        val message: String
+    ) : TestVmwareConnectionError()
 }
 
 /**
@@ -171,10 +185,20 @@ public data class TestVmwareConnectionResult(
  *
  * Tests vCenter connectivity and validates infrastructure components.
  * On success, can optionally update the verifiedAt timestamp if config exists.
+ *
+ * ## Password Resolution
+ *
+ * If [TestVmwareConnectionCommand.password] is null or blank:
+ * 1. Fetches the stored configuration for the tenant
+ * 2. Decrypts the stored password
+ * 3. Uses it for the connection test
+ *
+ * This allows testing with stored credentials without re-entering the password.
  */
 public class TestVmwareConnectionHandler(
     private val vspherePort: VspherePort,
     private val configurationPort: VmwareConfigurationPort,
+    private val credentialEncryptor: CredentialEncryptor,
     private val clock: Clock = Clock.systemUTC()
 ) {
     private val logger = KotlinLogging.logger {}
@@ -192,8 +216,13 @@ public class TestVmwareConnectionHandler(
             "Testing VMware connection: " +
                 "vcenterUrl=${command.vcenterUrl}, " +
                 "datacenter=${command.datacenterName}, " +
-                "cluster=${command.clusterName}"
+                "cluster=${command.clusterName}, " +
+                "useStoredPassword=${command.password.isNullOrBlank()}"
         }
+
+        // Resolve password: use provided password or fetch from stored config
+        val resolvedPassword = resolvePassword(command)
+            ?: return TestVmwareConnectionError.PasswordRequired().failure()
 
         // Create a temporary config object for the test
         val testConfig = VmwareConfiguration.create(
@@ -214,7 +243,7 @@ public class TestVmwareConnectionHandler(
         // Test the connection
         val connectionResult = vspherePort.testConnection(
             config = testConfig,
-            decryptedPassword = command.password
+            decryptedPassword = resolvedPassword
         )
 
         return when (connectionResult) {
@@ -311,6 +340,38 @@ public class TestVmwareConnectionHandler(
         } catch (e: Exception) {
             logger.warn(e) { "Failed to update verifiedAt timestamp for tenant ${tenantId.value}" }
             false
+        }
+    }
+
+    /**
+     * Resolves the password to use for connection testing.
+     *
+     * If a password is provided in the command, use it.
+     * Otherwise, fetch the stored configuration and decrypt the password.
+     *
+     * @return The resolved password, or null if password is required but not available
+     */
+    private suspend fun resolvePassword(command: TestVmwareConnectionCommand): String? {
+        // If password provided, use it directly
+        if (!command.password.isNullOrBlank()) {
+            return command.password
+        }
+
+        // No password provided - try to fetch from stored config
+        logger.debug { "No password provided, attempting to use stored credentials for tenant ${command.tenantId.value}" }
+
+        val existingConfig = configurationPort.findByTenantId(command.tenantId)
+        if (existingConfig == null) {
+            logger.warn { "No stored configuration found for tenant ${command.tenantId.value}" }
+            return null
+        }
+
+        // Decrypt the stored password
+        return try {
+            credentialEncryptor.decrypt(existingConfig.passwordEncrypted)
+        } catch (e: DecryptionException) {
+            logger.error(e) { "Failed to decrypt stored password for tenant ${command.tenantId.value}" }
+            null
         }
     }
 }

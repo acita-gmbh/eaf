@@ -212,7 +212,8 @@ public class VmwareConfigController(
                 datastoreName = body.datastoreName,
                 networkName = body.networkName,
                 templateName = body.templateName,
-                folderPath = body.folderPath
+                folderPath = body.folderPath,
+                clearFolderPath = body.clearFolderPath
             )
 
             when (val result = updateVmwareConfigHandler.handle(command)) {
@@ -405,6 +406,12 @@ public class VmwareConfigController(
             }
             is TestVmwareConnectionError.ApiError -> {
                 "API_ERROR" to "vCenter API error: ${error.message}"
+            }
+            is TestVmwareConnectionError.PasswordRequired -> {
+                "PASSWORD_REQUIRED" to error.message
+            }
+            is TestVmwareConnectionError.DecryptionFailed -> {
+                "DECRYPTION_FAILED" to "Failed to decrypt stored password: ${error.message}"
             }
         }
 

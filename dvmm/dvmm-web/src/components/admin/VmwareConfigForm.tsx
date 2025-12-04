@@ -99,6 +99,10 @@ export function VmwareConfigForm() {
     setTestResult(null)
     setTestError(null)
 
+    // Detect if folderPath was cleared (had value before, now empty)
+    const hadFolderPath = Boolean(existingConfig?.folderPath)
+    const folderPathCleared = hadFolderPath && !data.folderPath
+
     const payload = {
       vcenterUrl: data.vcenterUrl,
       username: data.username,
@@ -109,6 +113,7 @@ export function VmwareConfigForm() {
       networkName: data.networkName,
       templateName: data.templateName || undefined,
       folderPath: data.folderPath || undefined,
+      clearFolderPath: folderPathCleared, // Explicitly clear folderPath to null
       version: existingConfig?.version ?? null, // null = create, number = update
     }
 
@@ -177,9 +182,8 @@ export function VmwareConfigForm() {
     setTestResult(null)
     setTestError(null)
 
-    // If no password provided and we have existing config, use placeholder
-    // Backend will use stored password when updateVerifiedAt is true
-    const testPassword = values.password || 'USE_STORED_PASSWORD'
+    // Send null if no password - backend will fetch and decrypt stored password
+    const testPassword = values.password || null
 
     testMutation.mutate(
       {
@@ -191,6 +195,7 @@ export function VmwareConfigForm() {
         datastoreName: values.datastoreName,
         networkName: values.networkName,
         templateName: values.templateName || undefined,
+        // Update verifiedAt when using stored password
         updateVerifiedAt: Boolean(existingConfig) && !values.password,
       },
       {

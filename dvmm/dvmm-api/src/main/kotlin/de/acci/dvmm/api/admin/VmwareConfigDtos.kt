@@ -69,6 +69,9 @@ public data class SaveVmwareConfigRequest(
     @field:Size(max = 500, message = "Folder path must not exceed 500 characters")
     val folderPath: String? = null,
 
+    // Set to true to explicitly clear folderPath to null (for updates only)
+    val clearFolderPath: Boolean = false,
+
     // Null = create, non-null = update with optimistic locking
     val version: Long? = null
 )
@@ -77,18 +80,23 @@ public data class SaveVmwareConfigRequest(
  * Request body for testing VMware connection.
  *
  * Can test with:
- * 1. Explicit credentials (all fields provided)
- * 2. Saved configuration (password from database) with updateVerifiedAt=true
+ * 1. Explicit credentials: Provide [password] for new/changed credentials
+ * 2. Stored credentials: Set [password] to null to use saved encrypted password
+ *
+ * When using stored credentials, the backend will:
+ * 1. Fetch the existing configuration for the tenant
+ * 2. Decrypt the stored password
+ * 3. Use it for the connection test
  *
  * @property vcenterUrl vCenter SDK URL
  * @property username Service account username
- * @property password Password for testing (required if not using saved config)
+ * @property password Password for testing (null = use stored credentials)
  * @property datacenterName Datacenter to validate
  * @property clusterName Cluster to validate
  * @property datastoreName Datastore to validate
  * @property networkName Network to validate
  * @property templateName Optional template to validate
- * @property updateVerifiedAt If true and test succeeds with saved config, update verifiedAt
+ * @property updateVerifiedAt If true and test succeeds, update verifiedAt timestamp
  */
 public data class TestVmwareConnectionRequest(
     @field:NotBlank(message = "vCenter URL is required")
@@ -101,8 +109,9 @@ public data class TestVmwareConnectionRequest(
     @field:NotBlank(message = "Username is required")
     val username: String,
 
-    @field:NotBlank(message = "Password is required for connection test")
-    val password: String,
+    // Null = use stored password from existing configuration
+    @field:Size(max = 500, message = "Password must not exceed 500 characters")
+    val password: String?,
 
     @field:NotBlank(message = "Datacenter name is required")
     val datacenterName: String,

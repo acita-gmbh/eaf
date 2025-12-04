@@ -139,6 +139,7 @@ public data class VmwareConfiguration(
      * @param networkName New network name (or existing if null)
      * @param templateName New template name (or existing if null)
      * @param folderPath New folder path (or existing if null)
+     * @param clearFolderPath If true, explicitly clears folderPath to null (overrides folderPath value)
      * @param userId User performing the update
      * @param timestamp Current timestamp
      */
@@ -152,6 +153,7 @@ public data class VmwareConfiguration(
         networkName: String? = null,
         templateName: String? = null,
         folderPath: String? = null,
+        clearFolderPath: Boolean = false,
         userId: UserId,
         timestamp: Instant
     ): VmwareConfiguration = copy(
@@ -163,7 +165,7 @@ public data class VmwareConfiguration(
         datastoreName = datastoreName ?: this.datastoreName,
         networkName = networkName ?: this.networkName,
         templateName = templateName ?: this.templateName,
-        folderPath = folderPath ?: this.folderPath,
+        folderPath = if (clearFolderPath) null else (folderPath ?: this.folderPath),
         updatedAt = timestamp,
         updatedBy = userId,
         verifiedAt = null, // Reset verification when config changes

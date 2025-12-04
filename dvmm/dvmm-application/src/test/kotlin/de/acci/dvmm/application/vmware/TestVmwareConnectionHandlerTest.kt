@@ -24,12 +24,14 @@ class TestVmwareConnectionHandlerTest {
 
     private val vspherePort = mockk<VspherePort>()
     private val configurationPort = mockk<VmwareConfigurationPort>()
+    private val credentialEncryptor = mockk<CredentialEncryptor>()
     private val fixedInstant = Instant.parse("2025-01-15T10:00:00Z")
     private val clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
 
     private val handler = TestVmwareConnectionHandler(
         vspherePort = vspherePort,
         configurationPort = configurationPort,
+        credentialEncryptor = credentialEncryptor,
         clock = clock
     )
 
@@ -41,7 +43,7 @@ class TestVmwareConnectionHandlerTest {
         userId: UserId = testUserId,
         vcenterUrl: String = "https://vcenter.example.com/sdk",
         username: String = "admin@vsphere.local",
-        password: String = "secret123",
+        password: String? = "secret123", // Nullable for stored password tests
         datacenterName: String = "DC1",
         clusterName: String = "Cluster1",
         datastoreName: String = "Datastore1",
@@ -79,10 +81,10 @@ class TestVmwareConnectionHandlerTest {
     inner class HandleTests {
 
         @Test
-        @DisplayName("should test connection successfully")
-        fun `should test connection successfully`() = runTest {
+        @DisplayName("should test connection successfully with provided password")
+        fun `should test connection successfully with provided password`() = runTest {
             // Given
-            val command = createCommand()
+            val command = createCommand(password = "secret123")
             val connectionInfo = createConnectionInfo()
 
             coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
@@ -99,7 +101,97 @@ class TestVmwareConnectionHandlerTest {
             assertEquals(500L, success.value.datastoreFreeGb)
             assertTrue(success.value.message.contains("Connected to vCenter"))
 
-            coVerify(exactly = 1) { vspherePort.testConnection(any(), eq(command.password)) }
+            coVerify(exactly = 1) { vspherePort.testConnection(any(), eq("secret123")) }
+            coVerify(exactly = 0) { configurationPort.findByTenantId(any()) } // Not needed when password provided
+        }
+
+        @Test
+        @DisplayName("should use stored password when password is null")
+        fun `should use stored password when password is null`() = runTest {
+            // Given
+            val encryptedPassword = "encrypted-data".toByteArray()
+            val decryptedPassword = "stored-secret"
+            val existingConfig = VmwareConfiguration.create(
+                tenantId = testTenantId,
+                vcenterUrl = "https://vcenter.example.com/sdk",
+                username = "admin@vsphere.local",
+                passwordEncrypted = encryptedPassword,
+                datacenterName = "DC1",
+                clusterName = "Cluster1",
+                datastoreName = "Datastore1",
+                networkName = "VM-Network",
+                templateName = VmwareConfiguration.DEFAULT_TEMPLATE_NAME,
+                folderPath = null,
+                userId = testUserId,
+                timestamp = Instant.parse("2025-01-01T00:00:00Z")
+            )
+            val command = createCommand(password = null) // No password provided
+            val connectionInfo = createConnectionInfo()
+
+            coEvery { configurationPort.findByTenantId(testTenantId) } returns existingConfig
+            coEvery { credentialEncryptor.decrypt(encryptedPassword) } returns decryptedPassword
+            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+
+            // When
+            val result = handler.handle(command)
+
+            // Then
+            assertTrue(result is Result.Success)
+            coVerify(exactly = 1) { configurationPort.findByTenantId(testTenantId) }
+            coVerify(exactly = 1) { credentialEncryptor.decrypt(encryptedPassword) }
+            coVerify(exactly = 1) { vspherePort.testConnection(any(), eq(decryptedPassword)) }
+        }
+
+        @Test
+        @DisplayName("should return PasswordRequired error when no password and no stored config")
+        fun `should return PasswordRequired error when no password and no stored config`() = runTest {
+            // Given
+            val command = createCommand(password = null)
+
+            coEvery { configurationPort.findByTenantId(testTenantId) } returns null
+
+            // When
+            val result = handler.handle(command)
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val failure = result as Result.Failure
+            assertTrue(failure.error is TestVmwareConnectionError.PasswordRequired)
+            coVerify(exactly = 0) { vspherePort.testConnection(any(), any()) }
+        }
+
+        @Test
+        @DisplayName("should return PasswordRequired error when decryption fails")
+        fun `should return PasswordRequired error when decryption fails`() = runTest {
+            // Given - DecryptionException results in null password
+            val encryptedPassword = "corrupted-data".toByteArray()
+            val existingConfig = VmwareConfiguration.create(
+                tenantId = testTenantId,
+                vcenterUrl = "https://vcenter.example.com/sdk",
+                username = "admin@vsphere.local",
+                passwordEncrypted = encryptedPassword,
+                datacenterName = "DC1",
+                clusterName = "Cluster1",
+                datastoreName = "Datastore1",
+                networkName = "VM-Network",
+                templateName = VmwareConfiguration.DEFAULT_TEMPLATE_NAME,
+                folderPath = null,
+                userId = testUserId,
+                timestamp = Instant.parse("2025-01-01T00:00:00Z")
+            )
+            val command = createCommand(password = null)
+
+            coEvery { configurationPort.findByTenantId(testTenantId) } returns existingConfig
+            coEvery { credentialEncryptor.decrypt(encryptedPassword) } throws DecryptionException("Key mismatch")
+
+            // When
+            val result = handler.handle(command)
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val failure = result as Result.Failure
+            assertTrue(failure.error is TestVmwareConnectionError.PasswordRequired)
+            coVerify(exactly = 0) { vspherePort.testConnection(any(), any()) }
         }
 
         @Test

@@ -367,14 +367,17 @@ public class ApplicationConfig {
      *
      * @param vspherePort Port for vSphere API operations
      * @param configurationPort Port for configuration persistence
+     * @param credentialEncryptor Encryptor for decrypting stored credentials
      */
     @Bean
     public fun testVmwareConnectionHandler(
         vspherePort: VspherePort,
         configurationPort: VmwareConfigurationPort,
+        credentialEncryptor: CredentialEncryptor,
     ): TestVmwareConnectionHandler = TestVmwareConnectionHandler(
         vspherePort = vspherePort,
-        configurationPort = configurationPort
+        configurationPort = configurationPort,
+        credentialEncryptor = credentialEncryptor
     )
 
     /**

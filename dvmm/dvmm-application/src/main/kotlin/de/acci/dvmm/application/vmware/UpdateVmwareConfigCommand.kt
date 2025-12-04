@@ -48,6 +48,7 @@ import java.time.Instant
  * @property networkName New network name (or null to keep existing)
  * @property templateName New template name (or null to keep existing)
  * @property folderPath New folder path (or null to keep existing)
+ * @property clearFolderPath If true, explicitly clears folderPath to null (overrides folderPath value)
  */
 public data class UpdateVmwareConfigCommand(
     val tenantId: TenantId,
@@ -61,7 +62,8 @@ public data class UpdateVmwareConfigCommand(
     val datastoreName: String? = null,
     val networkName: String? = null,
     val templateName: String? = null,
-    val folderPath: String? = null
+    val folderPath: String? = null,
+    val clearFolderPath: Boolean = false
 ) {
     /**
      * Custom toString() that redacts password to prevent accidental logging.
@@ -210,6 +212,7 @@ public class UpdateVmwareConfigHandler(
             networkName = command.networkName,
             templateName = command.templateName,
             folderPath = command.folderPath,
+            clearFolderPath = command.clearFolderPath,
             userId = command.userId,
             timestamp = now
         ) // Domain's update() increments version for optimistic locking
