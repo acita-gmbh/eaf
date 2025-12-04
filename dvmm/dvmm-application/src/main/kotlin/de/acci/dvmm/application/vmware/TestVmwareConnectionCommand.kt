@@ -270,7 +270,7 @@ public class TestVmwareConnectionHandler(
             val existing = configurationPort.findByTenantId(tenantId)
             if (existing != null) {
                 val updated = existing.markVerified(Instant.now(clock))
-                configurationPort.update(updated.copy(version = existing.version + 1))
+                configurationPort.update(updated)
                 logger.debug { "Updated verifiedAt timestamp for tenant ${tenantId.value}" }
             }
         } catch (e: Exception) {

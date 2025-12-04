@@ -160,10 +160,15 @@ public data class VmwareConfiguration(
     /**
      * Mark the configuration as verified after a successful connection test.
      *
+     * Increments the version and updates timestamp for proper optimistic locking.
+     *
      * @param timestamp When the verification occurred
+     * @return Updated configuration with incremented version
      */
     public fun markVerified(timestamp: Instant): VmwareConfiguration = copy(
-        verifiedAt = timestamp
+        verifiedAt = timestamp,
+        updatedAt = timestamp,
+        version = version + 1
     )
 
     // Override equals/hashCode to handle ByteArray properly

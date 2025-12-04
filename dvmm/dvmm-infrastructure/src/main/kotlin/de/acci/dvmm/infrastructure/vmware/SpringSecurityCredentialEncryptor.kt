@@ -56,7 +56,9 @@ public class SpringSecurityCredentialEncryptor(
     @Value("\${dvmm.encryption.password}")
     private val encryptionPassword: String,
     @Value("\${dvmm.encryption.salt:}")
-    private val encryptionSalt: String = ""
+    private val encryptionSalt: String = "",
+    @Value("\${spring.profiles.active:}")
+    private val activeProfiles: String = ""
 ) : CredentialEncryptor {
 
     private val logger = KotlinLogging.logger {}
@@ -72,6 +74,14 @@ public class SpringSecurityCredentialEncryptor(
         val salt = if (encryptionSalt.isNotBlank()) {
             encryptionSalt
         } else {
+            // FAIL FAST in production - random salt causes data loss after restart
+            val isProduction = activeProfiles.contains("prod")
+            if (isProduction) {
+                throw IllegalStateException(
+                    "dvmm.encryption.salt is required in production. " +
+                        "Generate a hex-encoded salt: openssl rand -hex 16"
+                )
+            }
             logger.warn {
                 "Using randomly generated encryption salt. " +
                     "Data will be unrecoverable after restart. " +
