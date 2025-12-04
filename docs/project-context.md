@@ -130,7 +130,12 @@ class VmService {
 }
 ```
 
-**Vitest Mocking Patterns:**
+**MockK Mocking Patterns (Kotlin):**
+- Use `any()` for ALL parameters when stubbing functions with default arguments
+- MockK evaluates defaults at setup time, not call time - `coEvery { handler.handle(any()) }` with a defaulted second param creates `eq(specific-uuid)` matcher
+- Always: `coEvery { handler.handle(any(), any()) }` to match all parameters explicitly
+
+**Vitest Mocking Patterns (TypeScript):**
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests
 
@@ -259,4 +264,4 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 _Last Updated: 2025-12-03_
 _Distilled from CLAUDE.md for LLM context efficiency_
-_Added: Floating promises pattern with `void` operator_
+_Added: MockK default parameter gotcha, Floating promises pattern with `void` operator_

@@ -80,6 +80,34 @@ Convention plugins for consistent configuration:
 - **Konsist** for architecture testing
 - **Pitest + Arcmutate** for mutation testing (Kotlin/Spring support)
 
+### MockK Unit Testing Patterns
+
+**Use `any()` for ALL parameters when stubbing functions with default arguments.**
+
+When stubbing Kotlin functions that have default parameters, MockK evaluates default values at stub setup time, not at call time. This creates unexpected matchers:
+
+```kotlin
+// Given a handler with a default parameter:
+public suspend fun handle(
+    command: RejectVmRequestCommand,
+    correlationId: CorrelationId = CorrelationId.generate()  // Default generates UUID
+)
+
+// ❌ WRONG - MockK evaluates the default at setup time, creating eq(specific-uuid)
+coEvery { handler.handle(any()) } returns result.success()
+// This creates: handler.handle(any(), eq("550e8400-e29b-41d4-a716-446655440000"))
+// Calls with different correlationIds won't match!
+
+// ✅ CORRECT - Explicitly match ALL parameters including defaulted ones
+coEvery { handler.handle(any(), any()) } returns result.success()
+```
+
+**Rationale:**
+- MockK stub setup evaluates all parameters immediately
+- Default parameter expressions (like `UUID.randomUUID()`) execute during setup
+- The generated value becomes an `eq()` matcher, not `any()`
+- Result: test passes if same UUID by chance, fails randomly otherwise
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.

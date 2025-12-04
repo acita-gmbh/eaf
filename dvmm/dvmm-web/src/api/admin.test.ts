@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getPendingRequests, getProjects, getAdminRequestDetail } from './admin'
+import {
+  getPendingRequests,
+  getProjects,
+  getAdminRequestDetail,
+  approveRequest,
+  rejectRequest,
+} from './admin'
 import { ApiError } from './vm-requests'
 
 // Mock fetch globally
@@ -298,6 +304,173 @@ describe('Admin API', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(ApiError)
         expect((err as ApiError).status).toBe(500)
+      }
+    })
+  })
+
+  describe('approveRequest', () => {
+    const mockApproveResponse = {
+      requestId: 'req-1',
+      status: 'APPROVED',
+    }
+
+    it('approves a request successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-length': '100' }),
+        text: () => Promise.resolve(JSON.stringify(mockApproveResponse)),
+      })
+
+      const result = await approveRequest('req-1', 1, 'test-token')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/admin/requests/req-1/approve'),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ version: 1 }),
+        })
+      )
+      expect(result).toEqual(mockApproveResponse)
+    })
+
+    it('throws ApiError on 404 Not Found', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        headers: new Headers({ 'content-length': '50' }),
+        text: () => Promise.resolve(JSON.stringify({ error: 'not_found' })),
+      })
+
+      await expect(approveRequest('req-1', 1, 'test-token')).rejects.toThrow(ApiError)
+    })
+
+    it('throws ApiError on 409 Conflict (concurrent modification)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        headers: new Headers({ 'content-length': '100' }),
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error: 'conflict', message: 'Request was modified by another admin' })
+          ),
+      })
+
+      try {
+        await approveRequest('req-1', 1, 'test-token')
+        expect.fail('Should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError)
+        expect((err as ApiError).status).toBe(409)
+      }
+    })
+
+    it('throws ApiError on 422 Unprocessable Entity (not PENDING)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: new Headers({ 'content-length': '100' }),
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error: 'invalid_state', message: 'Request is not PENDING' })
+          ),
+      })
+
+      try {
+        await approveRequest('req-1', 1, 'test-token')
+        expect.fail('Should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError)
+        expect((err as ApiError).status).toBe(422)
+      }
+    })
+  })
+
+  describe('rejectRequest', () => {
+    const mockRejectResponse = {
+      requestId: 'req-1',
+      status: 'REJECTED',
+    }
+
+    it('rejects a request successfully with reason', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-length': '100' }),
+        text: () => Promise.resolve(JSON.stringify(mockRejectResponse)),
+      })
+
+      const reason = 'Budget constraints prevent approval at this time'
+      const result = await rejectRequest('req-1', 1, reason, 'test-token')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/admin/requests/req-1/reject'),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          body: JSON.stringify({ version: 1, reason }),
+        })
+      )
+      expect(result).toEqual(mockRejectResponse)
+    })
+
+    it('throws ApiError on 404 Not Found', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        headers: new Headers({ 'content-length': '50' }),
+        text: () => Promise.resolve(JSON.stringify({ error: 'not_found' })),
+      })
+
+      await expect(
+        rejectRequest('req-1', 1, 'Valid rejection reason', 'test-token')
+      ).rejects.toThrow(ApiError)
+    })
+
+    it('throws ApiError on 409 Conflict (concurrent modification)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        headers: new Headers({ 'content-length': '100' }),
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error: 'conflict', message: 'Request was modified by another admin' })
+          ),
+      })
+
+      try {
+        await rejectRequest('req-1', 1, 'Valid rejection reason', 'test-token')
+        expect.fail('Should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError)
+        expect((err as ApiError).status).toBe(409)
+      }
+    })
+
+    it('throws ApiError on 422 Unprocessable Entity (invalid reason or state)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: new Headers({ 'content-length': '100' }),
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error: 'validation_error', message: 'Reason must be 10-500 chars' })
+          ),
+      })
+
+      try {
+        await rejectRequest('req-1', 1, 'Short', 'test-token')
+        expect.fail('Should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError)
+        expect((err as ApiError).status).toBe(422)
       }
     })
   })

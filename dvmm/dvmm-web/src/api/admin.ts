@@ -3,11 +3,14 @@
  *
  * Story 2.9: Admin Approval Queue
  * Story 2.10: Request Detail View (Admin)
+ * Story 2.11: Approve/Reject Actions
  *
  * Handles admin-specific operations:
  * - GET /api/admin/requests/pending - Fetch pending VM requests for approval
  * - GET /api/admin/requests/{id} - Fetch detailed request view for admin
  * - GET /api/admin/projects - Fetch distinct projects for filter dropdown
+ * - POST /api/admin/requests/{id}/approve - Approve a pending request
+ * - POST /api/admin/requests/{id}/reject - Reject a pending request
  */
 
 import { createApiHeaders } from './api-client'
@@ -323,18 +326,21 @@ interface BackendAdminRequestDetailResponse {
   timeline: TimelineEvent[]
   requesterHistory: BackendRequestHistorySummary[]
   createdAt: string
+  version: number
 }
 
 /**
  * Detailed admin view of a VM request.
  *
  * Story 2.10: Request Detail View (Admin)
+ * Story 2.11: Approve/Reject Actions (version field for optimistic locking)
  *
  * Includes all information needed for admin decision-making:
  * - Request details (AC 3)
  * - Requester info (AC 2)
  * - Timeline events (AC 5)
  * - Requester history (AC 6)
+ * - Version for optimistic locking (Story 2.11)
  */
 export interface AdminRequestDetail {
   /** Unique request identifier */
@@ -363,6 +369,8 @@ export interface AdminRequestDetail {
   requesterHistory: RequestHistorySummary[]
   /** ISO 8601 timestamp when request was created */
   createdAt: string
+  /** Aggregate version for optimistic locking */
+  version: number
 }
 
 /**
@@ -403,6 +411,7 @@ function transformAdminRequestDetail(
     timeline: backend.timeline,
     requesterHistory: validatedHistory,
     createdAt: backend.createdAt,
+    version: backend.version,
   }
 }
 
@@ -445,4 +454,104 @@ export async function getAdminRequestDetail(
 
   const backendResponse = responseBody as BackendAdminRequestDetailResponse
   return transformAdminRequestDetail(backendResponse)
+}
+
+// ==================== Approve/Reject Actions API (Story 2.11) ====================
+
+/**
+ * Response from approve/reject endpoints.
+ */
+export interface AdminActionResponse {
+  /** The ID of the request that was acted on */
+  requestId: string
+  /** The new status after the action */
+  status: 'APPROVED' | 'REJECTED'
+}
+
+/**
+ * Approves a pending VM request.
+ *
+ * Story 2.11: Approve/Reject Actions
+ *
+ * Dispatches an approval command with optimistic locking to prevent
+ * lost updates when multiple admins act on the same request.
+ *
+ * Separation of duties: Admin cannot approve their own request.
+ *
+ * @param requestId - UUID of the request to approve
+ * @param version - Expected aggregate version for optimistic locking
+ * @param accessToken - OAuth2 access token (must have admin role)
+ * @returns Action response with new status
+ * @throws ApiError on:
+ *   - 404 Not Found (request doesn't exist or admin trying to approve own request)
+ *   - 409 Conflict (concurrent modification)
+ *   - 422 Unprocessable Entity (request not in PENDING state)
+ */
+export async function approveRequest(
+  requestId: string,
+  version: number,
+  accessToken: string
+): Promise<AdminActionResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/requests/${requestId}/approve`,
+    {
+      method: 'POST',
+      headers: createApiHeaders(accessToken, true),
+      credentials: 'include',
+      body: JSON.stringify({ version }),
+    }
+  )
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as AdminActionResponse
+}
+
+/**
+ * Rejects a pending VM request with a mandatory reason.
+ *
+ * Story 2.11: Approve/Reject Actions
+ *
+ * Dispatches a rejection command with optimistic locking and a
+ * mandatory reason (10-500 characters) for audit trail.
+ *
+ * Separation of duties: Admin cannot reject their own request.
+ *
+ * @param requestId - UUID of the request to reject
+ * @param version - Expected aggregate version for optimistic locking
+ * @param reason - Rejection reason (10-500 characters)
+ * @param accessToken - OAuth2 access token (must have admin role)
+ * @returns Action response with new status
+ * @throws ApiError on:
+ *   - 404 Not Found (request doesn't exist or admin trying to reject own request)
+ *   - 409 Conflict (concurrent modification)
+ *   - 422 Unprocessable Entity (request not in PENDING state or invalid reason)
+ */
+export async function rejectRequest(
+  requestId: string,
+  version: number,
+  reason: string,
+  accessToken: string
+): Promise<AdminActionResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/admin/requests/${requestId}/reject`,
+    {
+      method: 'POST',
+      headers: createApiHeaders(accessToken, true),
+      credentials: 'include',
+      body: JSON.stringify({ version, reason }),
+    }
+  )
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as AdminActionResponse
 }

@@ -56,6 +56,8 @@ class AdminRequestControllerTest {
 
     private val getPendingRequestsHandler = mockk<GetPendingRequestsHandler>()
     private val getAdminRequestDetailHandler = mockk<GetAdminRequestDetailHandler>()
+    private val approveVmRequestHandler = mockk<de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler>()
+    private val rejectVmRequestHandler = mockk<de.acci.dvmm.application.vmrequest.RejectVmRequestHandler>()
     private val readRepository = mockk<VmRequestReadRepository>()
     private lateinit var controller: AdminRequestController
     private val testTenantId = TenantId.generate()
@@ -65,6 +67,8 @@ class AdminRequestControllerTest {
         controller = AdminRequestController(
             getPendingRequestsHandler = getPendingRequestsHandler,
             getAdminRequestDetailHandler = getAdminRequestDetailHandler,
+            approveVmRequestHandler = approveVmRequestHandler,
+            rejectVmRequestHandler = rejectVmRequestHandler,
             readRepository = readRepository
         )
     }
@@ -588,7 +592,8 @@ class AdminRequestControllerTest {
                     )
                 ),
                 requesterHistory = emptyList(),
-                createdAt = now.minusSeconds(3600)
+                createdAt = now.minusSeconds(3600),
+                version = 1L
             )
         }
 
@@ -822,6 +827,443 @@ class AdminRequestControllerTest {
             val query = querySlot.captured
             assertEquals(requestId, query.requestId)
             assertEquals(testTenantId, query.tenantId)
+        }
+    }
+
+    /**
+     * Story 2.11: Approve endpoint unit tests.
+     */
+    @Nested
+    @DisplayName("POST /api/admin/requests/{id}/approve")
+    inner class ApproveRequestTests {
+
+        @Test
+        @DisplayName("should return 200 OK on successful approval")
+        fun `should return 200 OK on successful approval`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+            val approvalResult = de.acci.dvmm.application.vmrequest.ApproveVmRequestResult(requestId = requestId)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns approvalResult.success()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            @Suppress("UNCHECKED_CAST")
+            val responseBody = response.body as Map<String, Any>
+            assertEquals(requestId.value.toString(), responseBody["requestId"])
+            assertEquals("APPROVED", responseBody["status"])
+        }
+
+        @Test
+        @DisplayName("should return 404 for non-existent request")
+        fun `should return 404 for non-existent request`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.ApproveVmRequestError.NotFound(
+                requestId = requestId
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then - Returns 404 Not Found
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for self-approval (Forbidden mapped to 404)")
+        fun `should return 404 for self-approval`() = runTest {
+            // Given - Security pattern: return 404 to prevent enumeration
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.ApproveVmRequestError.Forbidden().failure()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then - Returns 404 (not 403) per security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 422 for invalid state")
+        fun `should return 422 for invalid state`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.ApproveVmRequestError.InvalidState(
+                currentState = "APPROVED",
+                message = "Request is already approved"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 409 for concurrency conflict")
+        fun `should return 409 for concurrency conflict`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.ApproveVmRequestError.ConcurrencyConflict(
+                message = "Concurrent modification"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 500 for persistence failure")
+        fun `should return 500 for persistence failure`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = ApproveRequestBody(version = 1L)
+
+            coEvery {
+                approveVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.ApproveVmRequestError.PersistenceFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for invalid UUID format")
+        fun `should return 404 for invalid UUID format`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val body = ApproveRequestBody(version = 1L)
+
+            // When
+            val response = withTenant {
+                controller.approveRequest(
+                    id = "not-a-valid-uuid",
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            coVerify(exactly = 0) { approveVmRequestHandler.handle(any(), any()) }
+        }
+    }
+
+    /**
+     * Story 2.11: Reject endpoint unit tests.
+     */
+    @Nested
+    @DisplayName("POST /api/admin/requests/{id}/reject")
+    inner class RejectRequestTests {
+
+        @Test
+        @DisplayName("should return 200 OK on successful rejection")
+        fun `should return 200 OK on successful rejection`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Insufficient justification provided"
+            )
+            val rejectResult = de.acci.dvmm.application.vmrequest.RejectVmRequestResult(requestId = requestId)
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns rejectResult.success()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            @Suppress("UNCHECKED_CAST")
+            val responseBody = response.body as Map<String, Any>
+            assertEquals(requestId.value.toString(), responseBody["requestId"])
+            assertEquals("REJECTED", responseBody["status"])
+        }
+
+        @Test
+        @DisplayName("should return 404 for non-existent request")
+        fun `should return 404 for non-existent request on reject`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Not enough resources available"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.NotFound(
+                requestId = requestId
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for self-rejection (Forbidden mapped to 404)")
+        fun `should return 404 for self-rejection`() = runTest {
+            // Given - Security pattern: return 404 to prevent enumeration
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Budget constraints prevent approval"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.Forbidden().failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then - Returns 404 (not 403) per security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 422 for invalid state")
+        fun `should return 422 for invalid state on reject`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Resource pool exhausted"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.InvalidState(
+                currentState = "REJECTED",
+                message = "Request is already rejected"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 422 for invalid reason")
+        fun `should return 422 for invalid reason`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Invalid reason that triggers validation"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.InvalidReason(
+                message = "Reason must be between 10 and 500 characters"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 409 for concurrency conflict")
+        fun `should return 409 for concurrency conflict on reject`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Resource constraints prevent approval"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.ConcurrencyConflict(
+                message = "Concurrent modification"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 500 for persistence failure")
+        fun `should return 500 for persistence failure on reject`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val requestId = VmRequestId.generate()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "Technical limitations prevent approval"
+            )
+
+            coEvery {
+                rejectVmRequestHandler.handle(any(), any())
+            } returns de.acci.dvmm.application.vmrequest.RejectVmRequestError.PersistenceFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = requestId.value.toString(),
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("should return 404 for invalid UUID format")
+        fun `should return 404 for invalid UUID format on reject`() = runTest {
+            // Given
+            val jwt = createJwt()
+            val body = RejectRequestBody(
+                version = 1L,
+                reason = "This reason should not matter"
+            )
+
+            // When
+            val response = withTenant {
+                controller.rejectRequest(
+                    id = "invalid-uuid-format",
+                    body = body,
+                    jwt = jwt
+                )
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            coVerify(exactly = 0) { rejectVmRequestHandler.handle(any(), any()) }
         }
     }
 }

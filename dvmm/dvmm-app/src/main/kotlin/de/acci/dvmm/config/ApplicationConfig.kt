@@ -1,6 +1,7 @@
 package de.acci.dvmm.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
 import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
@@ -8,6 +9,7 @@ import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.RejectVmRequestHandler
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
@@ -159,6 +161,52 @@ public class ApplicationConfig {
         projectionUpdater: VmRequestProjectionUpdater,
         timelineUpdater: TimelineEventProjectionUpdater,
     ): CancelVmRequestHandler = CancelVmRequestHandler(
+        eventStore = eventStore,
+        eventDeserializer = eventDeserializer,
+        projectionUpdater = projectionUpdater,
+        timelineUpdater = timelineUpdater
+    )
+
+    /**
+     * Handler for approving VM requests.
+     *
+     * Story 2.11: Approve/Reject Actions
+     *
+     * @param eventStore Event store for loading and persisting events
+     * @param eventDeserializer Deserializer for converting stored events to domain events
+     * @param projectionUpdater Updater for keeping projections in sync
+     * @param timelineUpdater Updater for persisting timeline events
+     */
+    @Bean
+    public fun approveVmRequestHandler(
+        eventStore: EventStore,
+        eventDeserializer: VmRequestEventDeserializer,
+        projectionUpdater: VmRequestProjectionUpdater,
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): ApproveVmRequestHandler = ApproveVmRequestHandler(
+        eventStore = eventStore,
+        eventDeserializer = eventDeserializer,
+        projectionUpdater = projectionUpdater,
+        timelineUpdater = timelineUpdater
+    )
+
+    /**
+     * Handler for rejecting VM requests.
+     *
+     * Story 2.11: Approve/Reject Actions
+     *
+     * @param eventStore Event store for loading and persisting events
+     * @param eventDeserializer Deserializer for converting stored events to domain events
+     * @param projectionUpdater Updater for keeping projections in sync
+     * @param timelineUpdater Updater for persisting timeline events
+     */
+    @Bean
+    public fun rejectVmRequestHandler(
+        eventStore: EventStore,
+        eventDeserializer: VmRequestEventDeserializer,
+        projectionUpdater: VmRequestProjectionUpdater,
+        timelineUpdater: TimelineEventProjectionUpdater,
+    ): RejectVmRequestHandler = RejectVmRequestHandler(
         eventStore = eventStore,
         eventDeserializer = eventDeserializer,
         projectionUpdater = projectionUpdater,

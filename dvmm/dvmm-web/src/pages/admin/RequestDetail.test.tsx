@@ -18,6 +18,24 @@ vi.mock('@/hooks/useAdminRequestDetail', () => ({
   useAdminRequestDetail: mockUseAdminRequestDetail,
 }))
 
+// Mock mutation hooks with default implementations
+const mockApproveMutate = vi.hoisted(() => vi.fn())
+const mockRejectMutate = vi.hoisted(() => vi.fn())
+
+vi.mock('@/hooks/useApproveRequest', () => ({
+  useApproveRequest: () => ({
+    mutate: mockApproveMutate,
+    isPending: false,
+  }),
+}))
+
+vi.mock('@/hooks/useRejectRequest', () => ({
+  useRejectRequest: () => ({
+    mutate: mockRejectMutate,
+    isPending: false,
+  }),
+}))
+
 // Mock react-router-dom
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -39,6 +57,7 @@ const mockAdminRequestData = {
   diskGb: 100,
   justification: 'Development server for the team',
   createdAt: '2024-01-01T10:00:00Z',
+  version: 1, // Added for Story 2.11 optimistic locking
   requester: {
     name: 'John Doe',
     email: 'john@example.com',
@@ -222,11 +241,11 @@ describe('AdminRequestDetail', () => {
       expect(screen.getByText('No previous requests from this user.')).toBeInTheDocument()
     })
 
-    it('shows disabled approve/reject buttons for PENDING status', () => {
+    it('shows enabled approve/reject buttons for PENDING status', () => {
       render(<AdminRequestDetail />)
 
-      expect(screen.getByTestId('approve-button')).toBeDisabled()
-      expect(screen.getByTestId('reject-button')).toBeDisabled()
+      expect(screen.getByTestId('approve-button')).toBeEnabled()
+      expect(screen.getByTestId('reject-button')).toBeEnabled()
     })
 
     it('hides approve/reject buttons for non-PENDING status', () => {
@@ -338,6 +357,254 @@ describe('AdminRequestDetail', () => {
 
       expect(screen.getByTestId('admin-request-detail-error')).toBeInTheDocument()
       expect(screen.getByText('Could not load request details.')).toBeInTheDocument()
+    })
+  })
+
+  describe('Approve/Reject Actions - Story 2.11', () => {
+    beforeEach(() => {
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: mockAdminRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+    })
+
+    it('opens approve dialog when Approve button is clicked', async () => {
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      await user.click(screen.getByTestId('approve-button'))
+
+      // Dialog should be open with confirmation text
+      expect(screen.getByTestId('approve-confirm-dialog')).toBeInTheDocument()
+      expect(screen.getByText(/are you sure you want to approve/i)).toBeInTheDocument()
+    })
+
+    it('opens reject dialog when Reject button is clicked', async () => {
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      await user.click(screen.getByTestId('reject-button'))
+
+      // Dialog should be open with rejection form
+      expect(screen.getByTestId('reject-form-dialog')).toBeInTheDocument()
+      expect(screen.getByText('Rejection Reason')).toBeInTheDocument()
+    })
+
+    it('calls approve mutation when dialog is confirmed', async () => {
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      // Open dialog
+      await user.click(screen.getByTestId('approve-button'))
+
+      // Confirm approval using the confirm button testid
+      const confirmButton = screen.getByTestId('approve-confirm-button')
+      await user.click(confirmButton)
+
+      expect(mockApproveMutate).toHaveBeenCalledWith(
+        mockAdminRequestData.version,
+        expect.objectContaining({ onError: expect.any(Function) })
+      )
+    })
+
+    it('calls reject mutation with reason when dialog is confirmed', async () => {
+      const user = userEvent.setup()
+      render(<AdminRequestDetail />)
+
+      // Open dialog
+      await user.click(screen.getByTestId('reject-button'))
+
+      // Enter reason using the testid
+      const reasonInput = screen.getByTestId('rejection-reason-input')
+      const testReason = 'Budget constraints prevent approval at this time.'
+      await user.type(reasonInput, testReason)
+
+      // Confirm rejection using the confirm button testid
+      const confirmButton = screen.getByTestId('reject-confirm-button')
+      await user.click(confirmButton)
+
+      expect(mockRejectMutate).toHaveBeenCalledWith(
+        { version: mockAdminRequestData.version, reason: testReason },
+        expect.objectContaining({ onError: expect.any(Function) })
+      )
+    })
+
+    it('does not call approve mutation when data is null', async () => {
+      // This tests the early return in handleApprove when !data
+      mockUseAdminRequestDetail.mockReturnValue({
+        data: null,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<AdminRequestDetail />)
+
+      // With null data, approve button shouldn't be visible (unexpected state UI shown)
+      expect(screen.queryByTestId('approve-button')).not.toBeInTheDocument()
+    })
+
+    describe('Approval Error Handling', () => {
+      it('handles 409 Conflict error and triggers refetch', async () => {
+        const refetchMock = vi.fn()
+        mockUseAdminRequestDetail.mockReturnValue({
+          data: mockAdminRequestData,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: refetchMock,
+        })
+
+        // Mock to capture onError callback
+        mockApproveMutate.mockImplementation((_version, options) => {
+          // Simulate 409 error
+          options.onError({ status: 409, message: 'Conflict' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('approve-button'))
+        await user.click(screen.getByTestId('approve-confirm-button'))
+
+        expect(refetchMock).toHaveBeenCalled()
+      })
+
+      it('handles 422 Unprocessable Entity error and triggers refetch', async () => {
+        const refetchMock = vi.fn()
+        mockUseAdminRequestDetail.mockReturnValue({
+          data: mockAdminRequestData,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: refetchMock,
+        })
+
+        mockApproveMutate.mockImplementation((_version, options) => {
+          options.onError({ status: 422, message: 'Invalid state' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('approve-button'))
+        await user.click(screen.getByTestId('approve-confirm-button'))
+
+        expect(refetchMock).toHaveBeenCalled()
+      })
+
+      it('handles 404 Not Found error', async () => {
+        mockApproveMutate.mockImplementation((_version, options) => {
+          options.onError({ status: 404, message: 'Not found' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('approve-button'))
+        await user.click(screen.getByTestId('approve-confirm-button'))
+
+        // Just verifies onError path completes without crashing
+        expect(mockApproveMutate).toHaveBeenCalled()
+      })
+
+      it('handles generic error', async () => {
+        mockApproveMutate.mockImplementation((_version, options) => {
+          options.onError({ status: 500, message: 'Server error' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('approve-button'))
+        await user.click(screen.getByTestId('approve-confirm-button'))
+
+        expect(mockApproveMutate).toHaveBeenCalled()
+      })
+    })
+
+    describe('Rejection Error Handling', () => {
+      it('handles 409 Conflict error and triggers refetch', async () => {
+        const refetchMock = vi.fn()
+        mockUseAdminRequestDetail.mockReturnValue({
+          data: mockAdminRequestData,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: refetchMock,
+        })
+
+        mockRejectMutate.mockImplementation((_params, options) => {
+          options.onError({ status: 409, message: 'Conflict' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('reject-button'))
+        await user.type(screen.getByTestId('rejection-reason-input'), 'Valid reason text')
+        await user.click(screen.getByTestId('reject-confirm-button'))
+
+        expect(refetchMock).toHaveBeenCalled()
+      })
+
+      it('handles 422 Unprocessable Entity error and triggers refetch', async () => {
+        const refetchMock = vi.fn()
+        mockUseAdminRequestDetail.mockReturnValue({
+          data: mockAdminRequestData,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: refetchMock,
+        })
+
+        mockRejectMutate.mockImplementation((_params, options) => {
+          options.onError({ status: 422, message: 'Invalid state' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('reject-button'))
+        await user.type(screen.getByTestId('rejection-reason-input'), 'Valid reason text')
+        await user.click(screen.getByTestId('reject-confirm-button'))
+
+        expect(refetchMock).toHaveBeenCalled()
+      })
+
+      it('handles 404 Not Found error', async () => {
+        mockRejectMutate.mockImplementation((_params, options) => {
+          options.onError({ status: 404, message: 'Not found' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('reject-button'))
+        await user.type(screen.getByTestId('rejection-reason-input'), 'Valid reason text')
+        await user.click(screen.getByTestId('reject-confirm-button'))
+
+        expect(mockRejectMutate).toHaveBeenCalled()
+      })
+
+      it('handles generic error', async () => {
+        mockRejectMutate.mockImplementation((_params, options) => {
+          options.onError({ status: 500, message: 'Server error' })
+        })
+
+        const user = userEvent.setup()
+        render(<AdminRequestDetail />)
+
+        await user.click(screen.getByTestId('reject-button'))
+        await user.type(screen.getByTestId('rejection-reason-input'), 'Valid reason text')
+        await user.click(screen.getByTestId('reject-confirm-button'))
+
+        expect(mockRejectMutate).toHaveBeenCalled()
+      })
     })
   })
 })
