@@ -111,7 +111,7 @@ Epic 3 transforms DVMM from a workflow tool into real infrastructure automation.
 
 ### 3.1 Ports & Adapters Pattern
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                            dvmm-application                                  │
 │  ┌─────────────────────┐   ┌─────────────────────────────────────────────┐  │
@@ -155,7 +155,7 @@ class VmProvisioningService {
 
 ### 3.2 Module Dependencies
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          dvmm-app (Spring Boot)                              │
 │   ┌─────────────┐   ┌──────────────────┐   ┌────────────────┐              │
@@ -252,12 +252,15 @@ data class VmProvisioningFailed(
 #### 4.1.2 New Value Objects
 
 ```kotlin
-// VMware MoRef identifier
+// VMware Managed Object Reference (MoRef) identifier
+// Note: VMware API returns "vm-<number>" format (e.g., "vm-123")
+// vijava library may prefix with "VirtualMachine:" in some contexts
+// Both formats accepted for compatibility; verify actual format in Story 3.2 VCSIM tests
 @JvmInline
 value class VmwareVmId(val value: String) {
     init {
         require(value.startsWith("vm-") || value.startsWith("VirtualMachine:")) {
-            "Invalid VMware VM MoRef format"
+            "Invalid VMware VM MoRef format: expected 'vm-*' or 'VirtualMachine:*'"
         }
     }
 }
@@ -510,6 +513,13 @@ class ProvisionVmSaga(
             // Compensation: cleanup partial VM if created
             e.partialVmId?.let { vmId ->
                 runCatching { vspherePort.deleteVm(command.tenantId, vmId) }
+                    .onFailure { cleanupError ->
+                        logger.warn(cleanupError) {
+                            "Failed to cleanup partial VM $vmId for request ${command.requestId}. " +
+                            "Manual cleanup may be required. Correlation: ${command.spec.correlationId}"
+                        }
+                        // Consider: emit DeadLetter event for manual reconciliation
+                    }
             }
             aggregate.markProvisioningFailed(
                 errorCode = e.errorCode,
@@ -672,6 +682,11 @@ ALTER TABLE "VM_REQUESTS"
 
 ```kotlin
 // VMware Configuration
+// Note: Add @Valid JSR-380 validation constraints during implementation
+// - vcenterUrl: @NotBlank @URL (valid https URL)
+// - username: @NotBlank @Length(min = 3)
+// - password: @NotBlank @Size(min = 8) to discourage weak credentials
+// - Other fields: @NotBlank
 data class VmwareConfigRequest(
     val vcenterUrl: String,
     val username: String,
@@ -804,13 +819,24 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 }
 ```
 
+**IMPORTANT: VCSIM Feasibility Verification (Story 3.2 Pre-requisite)**
+
+Before committing to VCSIM SOAP API approach, Story 3.2 must verify:
+
+1. **VCSIM v0.47.0 SOAP support**: Confirm CloneVM_Task, RetrieveProperties, Destroy_Task work
+2. **vijava compatibility**: Test actual vijava client calls against VCSIM container
+3. **Fallback plan**: If VCSIM SOAP is incomplete, pivot to mock-based adapters
+
+This is critical for Phase 1 timeline. If VCSIM SOAP limitations are discovered,
+document gaps and adjust approach before Story 3.3.
+
 ---
 
 ## 5. Story Breakdown
 
 ### 5.1 Story Dependency Graph
 
-```
+```text
                                     ┌──────────────────────────┐
                                     │ Story 3.1: VMware Config │
                                     │ (VMware Tracer Bullet)   │
@@ -890,7 +916,7 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 
 | AC | Given | When | Then |
 |----|-------|------|------|
-| AC-3.6.1 | Transient error (timeout) | Error occurs | Retry with exponential backoff: 10s, 30s, 60s, 120s |
+| AC-3.6.1 | Transient error (timeout) | Error occurs | Retry with exponential backoff: 10s→20s→40s→80s→120s (5 attempts, 2x multiplier, capped at 120s) |
 | AC-3.6.2 | All retries fail | Max retries exceeded | `VmProvisioningFailed` event, status → FAILED |
 | AC-3.6.3 | Permanent error | Non-retryable error | Fail immediately, user-friendly message |
 | AC-3.6.4 | Partial completion | VM created, network failed | Cleanup partial VM, log with correlation ID |
@@ -915,7 +941,7 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 | Aspect | Implementation |
 |--------|----------------|
 | Idempotency | Correlation ID in VM annotation prevents duplicates |
-| Retry Logic | Exponential backoff: 10s, 30s, 60s, 120s (5 attempts) |
+| Retry Logic | Exponential backoff: 10s→20s→40s→80s→120s (5 attempts, 2x multiplier, capped at 120s) |
 | Circuit Breaker | resilience4j, trips after 5 consecutive failures |
 | Saga Compensation | Cleanup partial VMs on failure |
 | Dead Letter | Failed provisions logged for manual review |
@@ -1014,22 +1040,30 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 - [ ] Integration tests with VCSIM
 - [ ] Code review approved
 - [ ] CI pipeline passes
+- [ ] ProjectDirectory interface created (if story involves project name resolution)
+- [ ] Email templates added if applicable (vm-ready.html, vm-failed.html)
 
 ### 9.2 Epic Level
 
 - [ ] All 8 stories completed (3.9 may remain BLOCKED)
-- [ ] VCSIM integration tests comprehensive
+- [ ] VCSIM integration tests comprehensive (≥90% coverage of ProvisionVmSaga)
 - [ ] Error handling tested (all error codes)
-- [ ] Saga compensation tested
+- [ ] Saga compensation tested:
+  - [ ] VM cleanup verified when network config fails (AC-3.6.4)
+  - [ ] Correlation ID honored in retry scenarios (no duplicate VMs)
+  - [ ] Dead-letter logging populated for unrecoverable errors
 - [ ] Email notifications (vm-ready, vm-failed)
 - [ ] Performance targets met (k6)
 - [ ] Security review passed
 
 ### 9.3 Go-Live Gate (Story 3.9)
 
+- [ ] vCenter test instance provisioned (org responsibility, not dev)
 - [ ] Phase 1 Smoke Tests pass on real vCenter
+- [ ] Contract tests pass against real vCenter (all error scenarios)
 - [ ] At least 1 successful VM provisioning
 - [ ] Pilot tenant identified for staged rollout
+- [ ] Runbook documented for rollback (delete partial VMs, reverse saga steps)
 
 ---
 
