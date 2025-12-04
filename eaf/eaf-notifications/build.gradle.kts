@@ -5,6 +5,15 @@ plugins {
     id("eaf.pitest-conventions")
 }
 
+// This is a library module, not a Spring Boot application
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    enabled = false
+}
+
+tasks.named<Jar>("jar") {
+    enabled = true
+}
+
 // eaf-notifications: Notification service abstraction with SMTP implementation
 // Provides interfaces for sending notifications and Thymeleaf-based email templating
 dependencies {
