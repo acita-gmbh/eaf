@@ -806,7 +806,7 @@ object DpcmMigrator {
 | License file tampering | Ed25519/RSA signature verification |
 | Clock manipulation | Server-signed timestamps, NTP validation |
 | VM cloning | UUID-based fingerprinting, clone detection |
-| Reverse engineering | Obfuscation, remote validation when possible |
+| Reverse engineering | Continuous remote validation, runtime integrity checks, code signing (obfuscation as defense-in-depth only) |
 | Man-in-the-middle | TLS 1.3, certificate pinning |
 
 ### 13.2 Key Security Practices
