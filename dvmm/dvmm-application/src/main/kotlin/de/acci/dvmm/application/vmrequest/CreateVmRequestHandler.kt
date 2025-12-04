@@ -162,7 +162,6 @@ public class CreateVmRequestHandler(
                     logger.error {
                         "Invalid requester email in command, skipping notification: " +
                             "requestId=${aggregate.id.value}, " +
-                            "email='${command.requesterEmail}', " +
                             "correlationId=${correlationId.value}"
                     }
                     null

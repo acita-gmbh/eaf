@@ -258,7 +258,6 @@ public class ApproveVmRequestHandler(
                     logger.error {
                         "Invalid requester email in aggregate, skipping notification: " +
                             "requestId=${command.requestId.value}, " +
-                            "email='${aggregate.requesterEmail}', " +
                             "correlationId=${correlationId.value}"
                     }
                     null
