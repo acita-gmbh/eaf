@@ -10,37 +10,31 @@ import {
 } from './useVmwareConfig'
 import { ApiError } from '@/api/vm-requests'
 
-// Mock react-oidc-context
-vi.mock('react-oidc-context', () => ({
-  useAuth: vi.fn(() => ({
+// Use vi.hoisted() for module mocks to ensure they're registered before imports
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn(() => ({
     user: { access_token: 'test-token' },
-  })),
+  }))
+)
+
+const mockGetVmwareConfig = vi.hoisted(() => vi.fn())
+const mockSaveVmwareConfig = vi.hoisted(() => vi.fn())
+const mockTestVmwareConnection = vi.hoisted(() => vi.fn())
+const mockCheckVmwareConfigExists = vi.hoisted(() => vi.fn())
+
+vi.mock('react-oidc-context', () => ({
+  useAuth: mockUseAuth,
 }))
 
-// Mock vmware-config API
-vi.mock('@/api/vmware-config', async () => {
-  return {
-    getVmwareConfig: vi.fn(),
-    saveVmwareConfig: vi.fn(),
-    testVmwareConnection: vi.fn(),
-    checkVmwareConfigExists: vi.fn(),
-    isConnectionTestError: vi.fn((result) => !result.success),
-  }
-})
+vi.mock('@/api/vmware-config', () => ({
+  getVmwareConfig: mockGetVmwareConfig,
+  saveVmwareConfig: mockSaveVmwareConfig,
+  testVmwareConnection: mockTestVmwareConnection,
+  checkVmwareConfigExists: mockCheckVmwareConfigExists,
+  isConnectionTestError: (result: { success: boolean }) => !result.success,
+}))
 
 import { useAuth } from 'react-oidc-context'
-import {
-  getVmwareConfig,
-  saveVmwareConfig,
-  testVmwareConnection,
-  checkVmwareConfigExists,
-} from '@/api/vmware-config'
-
-const mockUseAuth = vi.mocked(useAuth)
-const mockGetVmwareConfig = vi.mocked(getVmwareConfig)
-const mockSaveVmwareConfig = vi.mocked(saveVmwareConfig)
-const mockTestVmwareConnection = vi.mocked(testVmwareConnection)
-const mockCheckVmwareConfigExists = vi.mocked(checkVmwareConfigExists)
 
 function createWrapper() {
   const queryClient = new QueryClient({
