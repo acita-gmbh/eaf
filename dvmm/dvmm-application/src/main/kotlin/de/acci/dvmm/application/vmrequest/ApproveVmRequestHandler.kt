@@ -273,7 +273,7 @@ public class ApproveVmRequestHandler(
                             projectName = aggregate.projectId.value.toString()
                         )
                     ).onFailure { notificationError ->
-                        logNotificationError(notificationError, command.requestId, correlationId)
+                        logger.logNotificationError(notificationError, command.requestId, correlationId, "Approval")
                     }
                 }
 
@@ -312,25 +312,4 @@ public class ApproveVmRequestHandler(
         }
     }
 
-    private fun logNotificationError(
-        error: VmRequestNotificationError,
-        requestId: VmRequestId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is VmRequestNotificationError.SendFailure -> {
-                logger.error {
-                    "Approval notification send failure for request ${requestId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-            is VmRequestNotificationError.TemplateError -> {
-                logger.error {
-                    "Approval notification template error for request ${requestId.value}: " +
-                        "template=${error.templateName}, message=${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-        }
-    }
 }

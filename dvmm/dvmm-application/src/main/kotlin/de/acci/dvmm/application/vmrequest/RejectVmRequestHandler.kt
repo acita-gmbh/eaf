@@ -316,7 +316,7 @@ public class RejectVmRequestHandler(
                             reason = command.reason
                         )
                     ).onFailure { notificationError ->
-                        logNotificationError(notificationError, command.requestId, correlationId)
+                        logger.logNotificationError(notificationError, command.requestId, correlationId, "Rejection")
                     }
                 }
 
@@ -355,25 +355,4 @@ public class RejectVmRequestHandler(
         }
     }
 
-    private fun logNotificationError(
-        error: VmRequestNotificationError,
-        requestId: VmRequestId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is VmRequestNotificationError.SendFailure -> {
-                logger.error {
-                    "Rejection notification send failure for request ${requestId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-            is VmRequestNotificationError.TemplateError -> {
-                logger.error {
-                    "Rejection notification template error for request ${requestId.value}: " +
-                        "template=${error.templateName}, message=${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-        }
-    }
 }

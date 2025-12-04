@@ -177,7 +177,7 @@ public class CreateVmRequestHandler(
                             projectName = command.projectId.value.toString() // MVP: Project name resolved at query time
                         )
                     ).onFailure { notificationError ->
-                        logNotificationError(notificationError, aggregate.id, correlationId)
+                        logger.logNotificationError(notificationError, aggregate.id, correlationId, "Creation")
                     }
                 }
 
@@ -216,27 +216,6 @@ public class CreateVmRequestHandler(
         }
     }
 
-    private fun logNotificationError(
-        error: VmRequestNotificationError,
-        requestId: VmRequestId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is VmRequestNotificationError.SendFailure -> {
-                logger.error {
-                    "Notification send failure for request ${requestId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-            is VmRequestNotificationError.TemplateError -> {
-                logger.error {
-                    "Notification template error for request ${requestId.value}: " +
-                        "template=${error.templateName}, message=${error.message}. " +
-                        "correlationId=${correlationId.value}"
-                }
-            }
-        }
-    }
 }
 
 /**

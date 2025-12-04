@@ -2,8 +2,10 @@ package de.acci.dvmm.application.vmrequest
 
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
+import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.notifications.EmailAddress
+import io.github.oshai.kotlinlogging.KLogger
 
 /**
  * Errors that can occur when sending VM request notifications.
@@ -151,5 +153,36 @@ public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
             "Notifications disabled - skipping 'rejected' notification for request ${notification.requestId.value}"
         }
         return Result.Success(Unit)
+    }
+}
+
+/**
+ * Logs notification errors with consistent formatting across all handlers.
+ *
+ * @param error The notification error that occurred
+ * @param requestId The VM request ID for context
+ * @param correlationId The correlation ID for distributed tracing
+ * @param action The action type (e.g., "Creation", "Approval", "Rejection")
+ */
+internal fun KLogger.logNotificationError(
+    error: VmRequestNotificationError,
+    requestId: VmRequestId,
+    correlationId: CorrelationId,
+    action: String
+) {
+    when (error) {
+        is VmRequestNotificationError.SendFailure -> {
+            error {
+                "$action notification send failure for request ${requestId.value}: ${error.message}. " +
+                    "correlationId=${correlationId.value}"
+            }
+        }
+        is VmRequestNotificationError.TemplateError -> {
+            error {
+                "$action notification template error for request ${requestId.value}: " +
+                    "template=${error.templateName}, message=${error.message}. " +
+                    "correlationId=${correlationId.value}"
+            }
+        }
     }
 }
