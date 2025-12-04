@@ -57,6 +57,8 @@ class AdminRequestControllerIntegrationTest {
             registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri") { fixture.getJwksUri() }
             registry.add("eaf.auth.keycloak.client-id") { KeycloakTestFixture.WEB_CLIENT_ID }
             registry.add("eaf.cors.allowed-origins") { "http://localhost:3000" }
+            // Extended timeout for CI environments where Keycloak container startup can be slow
+            registry.add("spring.test.webtestclient.timeout") { "30s" }
         }
     }
 
