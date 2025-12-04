@@ -79,6 +79,7 @@ class CancelVmRequestHandlerTest {
         vmName = VmName.of("test-vm-01"),
         size = VmSize.M,
         justification = "Test justification for testing",
+        requesterEmail = "test@example.com",
         metadata = metadata
     )
 

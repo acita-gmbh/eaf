@@ -16,6 +16,10 @@ import de.acci.eaf.eventsourcing.EventMetadata
  * Fields are denormalized for notification purposes in Story 2.12:
  * - [vmName] and [projectId] for email content
  * - [requesterId] to identify who should receive the notification
+ * - [requesterEmail] for sending the approval notification
+ *
+ * [requesterEmail] is denormalized for notifications (Story 2.12).
+ * Note: [GDPR-DEBT] PII in events requires crypto-shredding in Epic 5.
  *
  * ## State Transition
  * PENDING → APPROVED
@@ -33,6 +37,8 @@ public data class VmRequestApproved(
     val projectId: ProjectId,
     /** Original requester who will receive the approval notification */
     val requesterId: UserId,
+    /** Requester's email for notifications (denormalized from aggregate state) */
+    val requesterEmail: String,
     /** Event metadata (tenant, userId=admin who approved, correlation, timestamp) */
     override val metadata: EventMetadata
 ) : DomainEvent {

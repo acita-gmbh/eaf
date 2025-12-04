@@ -69,7 +69,8 @@ public data class CreateVmRequestResult(
 public class CreateVmRequestHandler(
     private val eventStore: EventStore,
     private val quotaChecker: QuotaChecker = AlwaysAvailableQuotaChecker,
-    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater
+    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater,
+    private val notificationSender: VmRequestNotificationSender = NoOpVmRequestNotificationSender
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -107,6 +108,7 @@ public class CreateVmRequestHandler(
             vmName = command.vmName,
             size = command.size,
             justification = command.justification,
+            requesterEmail = command.requesterEmail,
             metadata = metadata
         )
 
@@ -152,6 +154,19 @@ public class CreateVmRequestHandler(
                     logProjectionError(projectionError, aggregate.id, correlationId)
                 }
 
+                // Send notification (fire-and-forget, don't fail the command)
+                notificationSender.sendCreatedNotification(
+                    RequestCreatedNotification(
+                        requestId = aggregate.id,
+                        tenantId = command.tenantId,
+                        requesterEmail = command.requesterEmail,
+                        vmName = command.vmName.value,
+                        projectName = command.projectId.value.toString() // MVP: Project name resolved at query time
+                    )
+                ).onFailure { notificationError ->
+                    logNotificationError(notificationError, aggregate.id, correlationId)
+                }
+
                 CreateVmRequestResult(requestId = aggregate.id).success()
             }
             is Result.Failure -> when (val error = appendResult.error) {
@@ -182,6 +197,28 @@ public class CreateVmRequestHandler(
                     "Timeline projection not found for request ${requestId.value}. " +
                         "correlationId=${correlationId.value}. " +
                         "Projection may need to be reconstructed from event store."
+                }
+            }
+        }
+    }
+
+    private fun logNotificationError(
+        error: VmRequestNotificationError,
+        requestId: VmRequestId,
+        correlationId: CorrelationId
+    ) {
+        when (error) {
+            is VmRequestNotificationError.SendFailure -> {
+                logger.warn {
+                    "Notification failed for request ${requestId.value}: ${error.message}. " +
+                        "correlationId=${correlationId.value}"
+                }
+            }
+            is VmRequestNotificationError.TemplateError -> {
+                logger.error {
+                    "Notification template error for request ${requestId.value}: " +
+                        "template=${error.templateName}, message=${error.message}. " +
+                        "correlationId=${correlationId.value}"
                 }
             }
         }

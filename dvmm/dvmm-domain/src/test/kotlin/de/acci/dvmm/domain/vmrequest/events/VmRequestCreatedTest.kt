@@ -41,6 +41,7 @@ class VmRequestCreatedTest {
             vmName = vmName,
             size = size,
             justification = justification,
+            requesterEmail = "test@example.com",
             metadata = metadata
         )
 
@@ -49,6 +50,7 @@ class VmRequestCreatedTest {
         assertEquals(vmName, event.vmName)
         assertEquals(size, event.size)
         assertEquals(justification, event.justification)
+        assertEquals("test@example.com", event.requesterEmail)
         assertEquals(metadata, event.metadata)
     }
 
@@ -81,6 +83,7 @@ class VmRequestCreatedTest {
             vmName = VmName.of("test-vm-01"),
             size = VmSize.M,
             justification = "Test justification for VM request",
+            requesterEmail = "test@example.com",
             metadata = TestMetadataFactory.create()
         )
     }

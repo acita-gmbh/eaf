@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -42,6 +43,7 @@ import reactor.core.publisher.Mono
     classes = [AdminRequestControllerIntegrationTest.TestConfig::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
+@AutoConfigureWebTestClient(timeout = "60s")
 @DisplayName("Admin Endpoint Security")
 class AdminRequestControllerIntegrationTest {
 

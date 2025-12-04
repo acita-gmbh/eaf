@@ -12,6 +12,9 @@ import de.acci.eaf.eventsourcing.EventMetadata
  *
  * Emitted when a user submits a VM request form.
  * The request enters PENDING status awaiting admin approval.
+ *
+ * [requesterEmail] is denormalized for notifications (Story 2.12).
+ * Note: [GDPR-DEBT] PII in events requires crypto-shredding in Epic 5.
  */
 public data class VmRequestCreated(
     /** Unique identifier for this VM request */
@@ -24,6 +27,8 @@ public data class VmRequestCreated(
     val size: VmSize,
     /** Business justification for the request */
     val justification: String,
+    /** Requester's email for notifications (denormalized from JWT) */
+    val requesterEmail: String,
     /** Event metadata (tenant, user, correlation, timestamp) */
     override val metadata: EventMetadata
 ) : DomainEvent {

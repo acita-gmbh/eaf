@@ -16,7 +16,11 @@ import de.acci.eaf.eventsourcing.EventMetadata
  * Fields are denormalized for notification purposes in Story 2.12:
  * - [vmName] and [projectId] for email content
  * - [requesterId] to identify who should receive the rejection notification
+ * - [requesterEmail] for sending the rejection notification
  * - [reason] explains why the request was rejected
+ *
+ * [requesterEmail] is denormalized for notifications (Story 2.12).
+ * Note: [GDPR-DEBT] PII in events requires crypto-shredding in Epic 5.
  *
  * ## State Transition
  * PENDING → REJECTED
@@ -38,6 +42,8 @@ public data class VmRequestRejected(
     val projectId: ProjectId,
     /** Original requester who will receive the rejection notification */
     val requesterId: UserId,
+    /** Requester's email for notifications (denormalized from aggregate state) */
+    val requesterEmail: String,
     /** Event metadata (tenant, userId=admin who rejected, correlation, timestamp) */
     override val metadata: EventMetadata
 ) : DomainEvent {
@@ -60,6 +66,7 @@ public data class VmRequestRejected(
          * @param vmName VM name for notifications
          * @param projectId Project for notifications
          * @param requesterId Original requester for notifications
+         * @param requesterEmail Email for sending rejection notification
          * @param metadata Event metadata
          * @throws IllegalArgumentException if reason is shorter than [MIN_REASON_LENGTH] or exceeds [MAX_REASON_LENGTH]
          */
@@ -69,6 +76,7 @@ public data class VmRequestRejected(
             vmName: VmName,
             projectId: ProjectId,
             requesterId: UserId,
+            requesterEmail: String,
             metadata: EventMetadata
         ): VmRequestRejected {
             require(reason.length >= MIN_REASON_LENGTH) {
@@ -83,6 +91,7 @@ public data class VmRequestRejected(
                 vmName = vmName,
                 projectId = projectId,
                 requesterId = requesterId,
+                requesterEmail = requesterEmail,
                 metadata = metadata
             )
         }

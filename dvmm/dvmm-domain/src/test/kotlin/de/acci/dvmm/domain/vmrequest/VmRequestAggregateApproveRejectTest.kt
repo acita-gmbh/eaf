@@ -409,6 +409,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     size = VmSize.M,
                     justification = "Test justification",
+                    requesterEmail = "test@example.com",
                     metadata = requesterMetadata
                 ),
                 VmRequestApproved(
@@ -416,6 +417,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     projectId = projectId,
                     requesterId = requesterId,
+                    requesterEmail = "test@example.com",
                     metadata = adminMetadata
                 )
             )
@@ -448,6 +450,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     size = VmSize.M,
                     justification = "Test justification",
+                    requesterEmail = "test@example.com",
                     metadata = requesterMetadata
                 ),
                 VmRequestRejected(
@@ -456,6 +459,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     projectId = projectId,
                     requesterId = requesterId,
+                    requesterEmail = "test@example.com",
                     metadata = adminMetadata
                 )
             )
@@ -483,6 +487,7 @@ class VmRequestAggregateApproveRejectTest {
             vmName = vmName,
             size = VmSize.M,
             justification = "Valid justification for testing",
+            requesterEmail = "test@example.com",
             metadata = metadata
         )
     }
@@ -503,6 +508,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     size = VmSize.M,
                     justification = "Test justification",
+                    requesterEmail = "test@example.com",
                     metadata = requesterMetadata
                 ),
                 VmRequestApproved(
@@ -510,6 +516,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     projectId = projectId,
                     requesterId = requesterId,
+                    requesterEmail = "test@example.com",
                     metadata = adminMetadata
                 )
             )
@@ -532,6 +539,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     size = VmSize.M,
                     justification = "Test justification",
+                    requesterEmail = "test@example.com",
                     metadata = requesterMetadata
                 ),
                 VmRequestRejected(
@@ -540,6 +548,7 @@ class VmRequestAggregateApproveRejectTest {
                     vmName = vmName,
                     projectId = projectId,
                     requesterId = requesterId,
+                    requesterEmail = "test@example.com",
                     metadata = adminMetadata
                 )
             )

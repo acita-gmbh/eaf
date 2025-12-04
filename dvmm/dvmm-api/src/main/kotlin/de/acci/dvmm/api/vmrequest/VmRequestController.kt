@@ -84,6 +84,7 @@ public class VmRequestController(
         // Extract user context from JWT
         val tenantId = TenantContext.current()
         val userId = UserId.fromString(jwt.subject)
+        val requesterEmail = jwt.getClaimAsString("email") ?: ""
 
         // Convert request to domain types
         val vmName = VmName.create(request.vmName).getOrElse {
@@ -118,6 +119,7 @@ public class VmRequestController(
         val command = CreateVmRequestCommand(
             tenantId = tenantId,
             requesterId = userId,
+            requesterEmail = requesterEmail,
             projectId = projectId,
             vmName = vmName,
             size = size,

@@ -54,6 +54,7 @@ class JacksonVmRequestEventDeserializerTest {
                 vmName = vmName,
                 size = VmSize.M,
                 justification = "Test justification",
+                requesterEmail = "test@example.com",
                 metadata = createTestMetadata()
             )
             val payload = objectMapper.writeValueAsString(event)
@@ -79,6 +80,7 @@ class JacksonVmRequestEventDeserializerTest {
             assertEquals(event.vmName.value, created.vmName.value)
             assertEquals(event.size, created.size)
             assertEquals(event.justification, created.justification)
+            assertEquals(event.requesterEmail, created.requesterEmail)
         }
     }
 
