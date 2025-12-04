@@ -67,6 +67,10 @@ public class VmRequestAggregate private constructor(
     public var justification: String = ""
         private set
 
+    /** Requester's email for notifications (denormalized from JWT at creation) */
+    public var requesterEmail: String = ""
+        private set
+
     /** Current request status */
     public var status: VmRequestStatus = VmRequestStatus.PENDING
         private set
@@ -87,6 +91,7 @@ public class VmRequestAggregate private constructor(
         vmName = event.vmName
         size = event.size
         justification = event.justification
+        requesterEmail = event.requesterEmail
         status = VmRequestStatus.PENDING
     }
 
@@ -169,6 +174,7 @@ public class VmRequestAggregate private constructor(
             vmName = vmName,
             projectId = projectId,
             requesterId = requesterId,
+            requesterEmail = requesterEmail,
             metadata = metadata
         )
 
@@ -210,6 +216,7 @@ public class VmRequestAggregate private constructor(
             vmName = vmName,
             projectId = projectId,
             requesterId = requesterId,
+            requesterEmail = requesterEmail,
             metadata = metadata
         )
 
@@ -225,6 +232,7 @@ public class VmRequestAggregate private constructor(
          * @param vmName Validated VM name
          * @param size Selected VM size
          * @param justification Business justification (minimum 10 characters)
+         * @param requesterEmail Email address for notifications (extracted from JWT)
          * @param metadata Event metadata with tenant context
          * @return New VmRequestAggregate with VmRequestCreated event
          * @throws IllegalArgumentException if justification is too short
@@ -235,6 +243,7 @@ public class VmRequestAggregate private constructor(
             vmName: VmName,
             size: VmSize,
             justification: String,
+            requesterEmail: String,
             metadata: EventMetadata
         ): VmRequestAggregate {
             require(justification.length >= 10) {
@@ -250,6 +259,7 @@ public class VmRequestAggregate private constructor(
                 vmName = vmName,
                 size = size,
                 justification = justification,
+                requesterEmail = requesterEmail,
                 metadata = metadata
             )
 

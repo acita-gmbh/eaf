@@ -27,6 +27,7 @@ class VmRequestAggregateCancelTest {
             vmName = VmName.of("test-vm-01"),
             size = VmSize.M,
             justification = "Valid justification for testing",
+            requesterEmail = "test@example.com",
             metadata = metadata
         )
     }
@@ -308,6 +309,7 @@ class VmRequestAggregateCancelTest {
                     vmName = VmName.of("test-vm-01"),
                     size = VmSize.M,
                     justification = "Test justification",
+                    requesterEmail = "test@example.com",
                     metadata = metadata
                 ),
                 VmRequestCancelled(

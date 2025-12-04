@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":dvmm:dvmm-application"))
     implementation(project(":eaf:eaf-tenant"))
     implementation(project(":eaf:eaf-eventsourcing"))
+    implementation(project(":eaf:eaf-notifications"))
 
     // jOOQ for type-safe SQL
     implementation(libs.jooq)

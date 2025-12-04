@@ -82,6 +82,7 @@ class RejectVmRequestHandlerTest {
         vmName = VmName.of("test-vm-01"),
         size = VmSize.M,
         justification = "Test justification for testing",
+        requesterEmail = "test@example.com",
         metadata = metadata
     )
 
@@ -377,6 +378,7 @@ class RejectVmRequestHandlerTest {
                 vmName = VmName.of("test-vm-01"),
                 projectId = ProjectId.generate(),
                 requesterId = requesterId,
+                requesterEmail = "test@example.com",
                 metadata = TestMetadataFactory.create(tenantId = tenantId, userId = adminId)
             )
             val storedCreated = createStoredEvent(
@@ -435,6 +437,7 @@ class RejectVmRequestHandlerTest {
                 vmName = VmName.of("test-vm-01"),
                 projectId = ProjectId.generate(),
                 requesterId = requesterId,
+                requesterEmail = "test@example.com",
                 metadata = TestMetadataFactory.create(tenantId = tenantId, userId = adminId)
             )
             val storedCreated = createStoredEvent(
