@@ -23,6 +23,7 @@ import { AdminQueueEmptyState } from '@/components/empty-states/AdminQueueEmptyS
 import { EmptyState } from '@/components/empty-states/EmptyState'
 import { PendingRequestsTable } from '@/components/admin/PendingRequestsTable'
 import { ProjectFilter } from '@/components/admin/ProjectFilter'
+import { VmwareConfigWarning } from '@/components/admin/VmwareConfigWarning'
 import { usePendingRequests } from '@/hooks/usePendingRequests'
 import { useProjects } from '@/hooks/useProjects'
 
@@ -88,6 +89,9 @@ export function PendingRequests() {
           Manage pending VM requests across your tenant
         </p>
       </div>
+
+      {/* VMware Configuration Warning (Story 3.1 AC-3.1.5) */}
+      <VmwareConfigWarning />
 
       {/* Open Requests Section */}
       <Card>

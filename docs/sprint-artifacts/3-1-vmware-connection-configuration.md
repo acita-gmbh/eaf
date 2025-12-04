@@ -55,7 +55,7 @@ So that DVMM can provision VMs in my infrastructure.
 ## Tasks / Subtasks
 
 ### Task 1: Database Schema (AC: 3.1.4)
-- [ ] 1.1 Create Flyway migration `V008__vmware_configurations.sql`
+- [x] 1.1 Create Flyway migration `V008__vmware_configurations.sql`
   ```sql
   CREATE TABLE "VMWARE_CONFIGURATIONS" (
     "ID" UUID PRIMARY KEY,
@@ -86,17 +86,17 @@ So that DVMM can provision VMs in my infrastructure.
   ALTER TABLE "VMWARE_CONFIGURATIONS" FORCE ROW LEVEL SECURITY;
   GRANT SELECT, INSERT, UPDATE, DELETE ON "VMWARE_CONFIGURATIONS" TO eaf_app;
   ```
-- [ ] 1.2 Update `dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
-- [ ] 1.3 Regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
-- [ ] 1.4 Verify RLS policy has both USING and WITH CHECK clauses
+- [x] 1.2 Update `dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
+- [x] 1.3 Regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+- [x] 1.4 Verify RLS policy has both USING and WITH CHECK clauses
 
 ### Task 2: Backend Domain & Application (AC: 3.1.1, 3.1.4)
-- [ ] 2.1 Create `VmwareConfiguration` data class in `dvmm-domain` (configuration entity, not value object - has ID and lifecycle)
-- [ ] 2.2 Create `VmwareConfigurationPort` interface in `dvmm-application/ports`
-- [ ] 2.3 Create `CreateVmwareConfigCommand` and handler (use `Result<T,E>` pattern)
-- [ ] 2.4 Create `UpdateVmwareConfigCommand` and handler (include VERSION for optimistic locking)
-- [ ] 2.5 Create `GetVmwareConfigQuery` and handler
-- [ ] 2.6 Implement `CredentialEncryptor` using Spring Security Crypto (AES-256)
+- [x] 2.1 Create `VmwareConfiguration` data class in `dvmm-domain` (configuration entity, not value object - has ID and lifecycle)
+- [x] 2.2 Create `VmwareConfigurationPort` interface in `dvmm-application/ports`
+- [x] 2.3 Create `CreateVmwareConfigCommand` and handler (use `Result<T,E>` pattern)
+- [x] 2.4 Create `UpdateVmwareConfigCommand` and handler (include VERSION for optimistic locking)
+- [x] 2.5 Create `GetVmwareConfigQuery` and handler
+- [x] 2.6 Implement `CredentialEncryptor` using Spring Security Crypto (AES-256)
 
 ### Task 3: Backend Infrastructure (AC: 3.1.1, 3.1.4)
 - [ ] 3.1 Create `VmwareConfigurationRepository` using jOOQ

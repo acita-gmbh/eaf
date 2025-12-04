@@ -1,6 +1,7 @@
 [versions]
 kotlin = "2.2.21"
 spring-boot = "3.5.8"
+yavijava = "6.0.05"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.9"
 jooq-gradle-plugin = "9.0"
@@ -97,8 +98,14 @@ kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = 
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 # Security / Cryptography
+spring-security-crypto = { module = "org.springframework.security:spring-security-crypto", version.ref = "spring-security" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+
+# VMware vSphere SDK (yavijava - maintained fork of vijava)
+yavijava = { module = "com.toastcoders:yavijava", version.ref = "yavijava" }
+
+
 
 # Pitest mutation testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }

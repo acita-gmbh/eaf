@@ -25,6 +25,12 @@ dependencies {
     implementation(libs.jooq)
     implementation(libs.jooq.kotlin)
 
+    // Spring Security Crypto for AES-256 encryption (AC-3.1.4)
+    implementation(libs.spring.security.crypto)
+
+    // VMware vSphere SDK (yavijava - maintained fork of vijava)
+    implementation(libs.yavijava)
+
     // jOOQ code generation dependencies
     // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)
     jooqGenerator(libs.jooq)

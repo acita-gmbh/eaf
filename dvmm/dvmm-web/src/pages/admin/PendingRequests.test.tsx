@@ -3,6 +3,11 @@ import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { PendingRequests } from './PendingRequests'
 
+// Mock VmwareConfigWarning - tested separately in VmwareConfigWarning.test.tsx
+vi.mock('@/components/admin/VmwareConfigWarning', () => ({
+  VmwareConfigWarning: () => null,
+}))
+
 // Mock hooks
 const mockUsePendingRequests = vi.hoisted(() =>
   vi.fn(() => ({
