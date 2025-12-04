@@ -9,6 +9,7 @@ plugins {
 dependencies {
     api(project(":dvmm:dvmm-domain"))
     api(project(":eaf:eaf-eventsourcing"))
+    api(project(":eaf:eaf-notifications"))
 
     // Jackson for JSON serialization (timeline event details)
     implementation(libs.jackson.kotlin)

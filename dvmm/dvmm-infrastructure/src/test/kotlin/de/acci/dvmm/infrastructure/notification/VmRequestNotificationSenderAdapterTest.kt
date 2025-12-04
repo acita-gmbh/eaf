@@ -33,7 +33,7 @@ class VmRequestNotificationSenderAdapterTest {
 
     private val testTenantId = TenantId(UUID.randomUUID())
     private val testRequestId = VmRequestId.generate()
-    private val testEmail = "user@example.com"
+    private val testEmail = EmailAddress.of("user@example.com")
     private val testVmName = "web-server-01"
     private val testProjectName = "acme-project"
 
@@ -132,27 +132,6 @@ class VmRequestNotificationSenderAdapterTest {
             assertEquals(testRequestId.value.toString(), contextSlot.captured["requestId"])
             assertEquals(testVmName, contextSlot.captured["vmName"])
             assertEquals(testProjectName, contextSlot.captured["projectName"])
-        }
-
-        @Test
-        fun `returns SendFailure for invalid email address`() = runTest {
-            // Given
-            val notification = RequestCreatedNotification(
-                requestId = testRequestId,
-                tenantId = testTenantId,
-                requesterEmail = "invalid-email",
-                vmName = testVmName,
-                projectName = testProjectName
-            )
-
-            // When
-            val result = adapter.sendCreatedNotification(notification)
-
-            // Then
-            assertTrue(result is Result.Failure)
-            val error = (result as Result.Failure).error
-            assertTrue(error is VmRequestNotificationError.SendFailure)
-            assertTrue((error as VmRequestNotificationError.SendFailure).message.contains("Invalid email"))
         }
 
         @Test
@@ -280,25 +259,6 @@ class VmRequestNotificationSenderAdapterTest {
             assertEquals("VM Request Approved: $testVmName", subjectSlot.captured)
         }
 
-        @Test
-        fun `returns SendFailure for invalid email address`() = runTest {
-            // Given
-            val notification = RequestApprovedNotification(
-                requestId = testRequestId,
-                tenantId = testTenantId,
-                requesterEmail = "not-an-email",
-                vmName = testVmName,
-                projectName = testProjectName
-            )
-
-            // When
-            val result = adapter.sendApprovedNotification(notification)
-
-            // Then
-            assertTrue(result is Result.Failure)
-            val error = (result as Result.Failure).error
-            assertTrue(error is VmRequestNotificationError.SendFailure)
-        }
     }
 
     @Nested
@@ -394,26 +354,6 @@ class VmRequestNotificationSenderAdapterTest {
             assertEquals(rejectionReason, contextSlot.captured["reason"])
         }
 
-        @Test
-        fun `returns SendFailure for invalid email address`() = runTest {
-            // Given
-            val notification = RequestRejectedNotification(
-                requestId = testRequestId,
-                tenantId = testTenantId,
-                requesterEmail = "bad@",
-                vmName = testVmName,
-                projectName = testProjectName,
-                reason = "Test"
-            )
-
-            // When
-            val result = adapter.sendRejectedNotification(notification)
-
-            // Then
-            assertTrue(result is Result.Failure)
-            val error = (result as Result.Failure).error
-            assertTrue(error is VmRequestNotificationError.SendFailure)
-        }
     }
 
     @Nested
@@ -469,7 +409,7 @@ class VmRequestNotificationSenderAdapterTest {
                     context = any()
                 )
             } returns NotificationError.InvalidRecipient(
-                recipient = EmailAddress.of(testEmail),
+                recipient = testEmail,
                 message = "Recipient mailbox does not exist"
             ).failure()
 

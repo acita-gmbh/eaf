@@ -14,6 +14,7 @@ import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.projection.ProjectionError
+import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
 
@@ -251,16 +252,29 @@ public class ApproveVmRequestHandler(
                 }
 
                 // Send notification (fire-and-forget, don't fail the command)
-                notificationSender.sendApprovedNotification(
-                    RequestApprovedNotification(
-                        requestId = command.requestId,
-                        tenantId = command.tenantId,
-                        requesterEmail = aggregate.requesterEmail,
-                        vmName = aggregate.vmName.value,
-                        projectName = aggregate.projectId.value.toString()
-                    )
-                ).onFailure { notificationError ->
-                    logNotificationError(notificationError, command.requestId, correlationId)
+                val requesterEmail = try {
+                    EmailAddress.of(aggregate.requesterEmail)
+                } catch (e: IllegalArgumentException) {
+                    logger.error {
+                        "Invalid requester email in aggregate, skipping notification: " +
+                            "requestId=${command.requestId.value}, " +
+                            "email='${aggregate.requesterEmail}', " +
+                            "correlationId=${correlationId.value}"
+                    }
+                    null
+                }
+                if (requesterEmail != null) {
+                    notificationSender.sendApprovedNotification(
+                        RequestApprovedNotification(
+                            requestId = command.requestId,
+                            tenantId = command.tenantId,
+                            requesterEmail = requesterEmail,
+                            vmName = aggregate.vmName.value,
+                            projectName = aggregate.projectId.value.toString()
+                        )
+                    ).onFailure { notificationError ->
+                        logNotificationError(notificationError, command.requestId, correlationId)
+                    }
                 }
 
                 ApproveVmRequestResult(requestId = command.requestId).success()
@@ -305,8 +319,8 @@ public class ApproveVmRequestHandler(
     ) {
         when (error) {
             is VmRequestNotificationError.SendFailure -> {
-                logger.warn {
-                    "Approval notification failed for request ${requestId.value}: ${error.message}. " +
+                logger.error {
+                    "Approval notification send failure for request ${requestId.value}: ${error.message}. " +
                         "correlationId=${correlationId.value}"
                 }
             }

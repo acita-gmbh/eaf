@@ -3,6 +3,7 @@ package de.acci.dvmm.application.vmrequest
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.TenantId
+import de.acci.eaf.notifications.EmailAddress
 
 /**
  * Errors that can occur when sending VM request notifications.
@@ -36,7 +37,7 @@ public sealed interface VmRequestNotificationError {
 public data class RequestCreatedNotification(
     val requestId: VmRequestId,
     val tenantId: TenantId,
-    val requesterEmail: String,
+    val requesterEmail: EmailAddress,
     val vmName: String,
     val projectName: String
 )
@@ -47,7 +48,7 @@ public data class RequestCreatedNotification(
 public data class RequestApprovedNotification(
     val requestId: VmRequestId,
     val tenantId: TenantId,
-    val requesterEmail: String,
+    val requesterEmail: EmailAddress,
     val vmName: String,
     val projectName: String
 )
@@ -58,7 +59,7 @@ public data class RequestApprovedNotification(
 public data class RequestRejectedNotification(
     val requestId: VmRequestId,
     val tenantId: TenantId,
-    val requesterEmail: String,
+    val requesterEmail: EmailAddress,
     val vmName: String,
     val projectName: String,
     val reason: String
@@ -83,12 +84,12 @@ public data class RequestRejectedNotification(
  *     RequestCreatedNotification(
  *         requestId = aggregate.id,
  *         tenantId = tenantId,
- *         requesterEmail = "user@example.com",
+ *         requesterEmail = EmailAddress.of("user@example.com"),
  *         vmName = "web-server-01",
  *         projectName = "Production"
  *     )
  * ).onFailure { error ->
- *     logger.warn { "Notification failed: ${error.message}" }
+ *     logger.error { "Notification failed: ${error.message}" }
  * }
  * ```
  */
@@ -118,17 +119,37 @@ public interface VmRequestNotificationSender {
 
 /**
  * No-op implementation for use when notifications are disabled.
+ *
+ * Logs at DEBUG level when notifications are skipped so administrators
+ * can verify the configuration is intentional.
  */
 public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
+    private val logger = io.github.oshai.kotlinlogging.KotlinLogging.logger {}
+
     override suspend fun sendCreatedNotification(
         notification: RequestCreatedNotification
-    ): Result<Unit, VmRequestNotificationError> = Result.Success(Unit)
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'created' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
 
     override suspend fun sendApprovedNotification(
         notification: RequestApprovedNotification
-    ): Result<Unit, VmRequestNotificationError> = Result.Success(Unit)
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'approved' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
 
     override suspend fun sendRejectedNotification(
         notification: RequestRejectedNotification
-    ): Result<Unit, VmRequestNotificationError> = Result.Success(Unit)
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'rejected' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
 }
