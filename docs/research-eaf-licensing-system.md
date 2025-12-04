@@ -49,7 +49,7 @@ The current DPCM licensing consists of two components:
 
 The V2 registration uses **client-side key generation** with challenge-response authentication:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    V2 Registration Flow                              │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -95,7 +95,7 @@ The V2 registration uses **client-side key generation** with challenge-response 
 
 After registration, clients periodically report environment data for license validation:
 
-```
+```http
 POST /api/v2/environment/submit
   Request: {
     customerId, instanceId, challengeId, signedChallenge,
@@ -144,7 +144,7 @@ isLinuxOnlySystem = configurableSysProcUnitsLinuxVios === configurableSysProcUni
 
 V2 includes built-in key rotation (90-day recommended cycle):
 
-```
+```http
 POST /api/v2/register/rotate
   Request: {
     customerId,
@@ -170,7 +170,7 @@ await secureKeyStorage.cleanupArchivedKeys()                   // Remove old key
 
 ### 2.7 License Enforcement States
 
-```
+```text
 ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
 │   VALID    │────▶│  EXCEEDED  │────▶│   GRACE    │────▶│  EXPIRED   │
 │            │     │  (warning) │     │  (backup   │     │  (blocked) │
@@ -327,7 +327,7 @@ Given DVMM's position as a VM provisioning/management tool for vSphere in the DA
 
 ### 5.1 Core-Based Licensing (Primary for DVMM)
 
-```
+```text
 License Metric: CPU Cores under management
 Example: DVMM managing vSphere with 150 cores = 150-core license
 ```
@@ -362,7 +362,7 @@ data class CoreBasedLicense(
 
 ### 5.3 Multi-Tenant License Allocation
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    License Pool                         │
 │                   (1000 total cores)                    │
@@ -384,7 +384,7 @@ data class CoreBasedLicense(
 
 ### 6.1 High-Level Architecture
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────┐
 │                        Customer Premise                          │
 ├──────────────────────────────────────────────────────────────────┤
@@ -414,7 +414,7 @@ data class CoreBasedLicense(
 
 ### 6.2 EAF Module Structure
 
-```
+```text
 eaf/
 ├── eaf-licensing/                    # 🔐 LICENSING FRAMEWORK
 │   └── src/main/kotlin/
@@ -553,7 +553,7 @@ Based on industry standards (Keygen, SoftwareKey):
 | CPU Info (CPUID) | High | Stable across reboots |
 | VM UUID | High | Unique per VM instance |
 | Hostname | Low | Easily changed |
-| Disk Serial | Medium | Not accessible in VMs |
+| Disk Serial | Medium | Inaccessible in VMs |
 
 ### 8.2 Virtualization Handling
 
@@ -575,12 +575,24 @@ object MachineFingerprint {
 
         return components
             .joinToString("|")
-            .sha256()
+            .sha256()  // Extension function: String.sha256() -> SHA-256 hash as hex string
     }
 
     private fun isVirtualMachine(): Boolean {
         // Detect VMware, Hyper-V, KVM, etc.
+        val manufacturer = System.getProperty("os.name")?.lowercase() ?: ""
+        val vmIndicators = listOf("vmware", "virtual", "hyper-v", "kvm", "qemu", "xen")
+
+        // Check BIOS/SMBIOS data for VM signatures
+        return try {
+            val smbiosManufacturer = getSmbiosManufacturer()
+            vmIndicators.any { smbiosManufacturer.lowercase().contains(it) }
+        } catch (e: Exception) {
+            false  // Assume physical if detection fails
+        }
     }
+
+    private fun getSmbiosManufacturer(): String = TODO("Platform-specific SMBIOS read")
 }
 ```
 
@@ -597,7 +609,7 @@ object MachineFingerprint {
 
 ### 9.1 Activation Workflow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    ONLINE ACTIVATION                             │
 ├─────────────────────────────────────────────────────────────────┤
@@ -634,7 +646,7 @@ object MachineFingerprint {
 
 ### 10.1 License Hierarchy
 
-```
+```text
 Organization License (1000 cores)
 ├── Tenant A License (300 cores - dedicated)
 │   ├── Project 1 (100 cores allocated)
@@ -649,6 +661,9 @@ Organization License (1000 cores)
 ### 10.2 Tenant License Service
 
 ```kotlin
+// Note: Result<T, E> is a custom sealed type (not kotlin.Result) providing typed error handling:
+// sealed interface Result<out T, out E> { data class Success<T>(val value: T) : Result<T, Nothing>; data class Failure<E>(val error: E) : Result<Nothing, E> }
+
 interface TenantLicenseService {
 
     /** Get license allocation for a tenant */
@@ -716,7 +731,7 @@ class CreateVmRequestHandler(
 
 ### 11.1 License States
 
-```
+```text
 ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
 │   ACTIVE   │────▶│  WARNING   │────▶│   GRACE    │────▶│  EXPIRED   │
 │            │     │ (7d before │     │  (15-30d)  │     │            │
@@ -881,7 +896,7 @@ The DPCM V2 registration flow introduced critical security improvements over V1:
 - [Keygen Air-Gapped Activation Example](https://github.com/keygen-sh/air-gapped-activation-example)
 - [Cryptlex - Software Licensing](https://cryptlex.com/)
 - [LicenseSpring - Licensing Solutions](https://licensespring.com/)
-- [Cryptolens - Open Source Option](https://cryptolens.io/)
+- [Cryptolens - open-source option](https://cryptolens.io/)
 
 ### Technical Standards
 - [RFC 8725 - JWT Best Current Practices](https://tools.ietf.org/html/rfc8725)
