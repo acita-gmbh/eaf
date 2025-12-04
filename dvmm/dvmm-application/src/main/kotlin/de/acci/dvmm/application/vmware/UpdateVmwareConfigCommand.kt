@@ -62,7 +62,24 @@ public data class UpdateVmwareConfigCommand(
     val networkName: String? = null,
     val templateName: String? = null,
     val folderPath: String? = null
-)
+) {
+    /**
+     * Custom toString() that redacts password to prevent accidental logging.
+     */
+    override fun toString(): String = "UpdateVmwareConfigCommand(" +
+        "tenantId=$tenantId, " +
+        "userId=$userId, " +
+        "expectedVersion=$expectedVersion, " +
+        "vcenterUrl=$vcenterUrl, " +
+        "username=$username, " +
+        "password=${if (password != null) "[REDACTED]" else "null"}, " +
+        "datacenterName=$datacenterName, " +
+        "clusterName=$clusterName, " +
+        "datastoreName=$datastoreName, " +
+        "networkName=$networkName, " +
+        "templateName=$templateName, " +
+        "folderPath=$folderPath)"
+}
 
 /**
  * Errors that can occur when updating VMware configuration.

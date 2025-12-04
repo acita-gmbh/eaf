@@ -368,7 +368,8 @@ public class VmwareConfigController(
                         clusterName = info.clusterName,
                         clusterHosts = info.clusterHosts,
                         datastoreFreeGb = info.datastoreFreeGb,
-                        message = info.message
+                        message = info.message,
+                        verifiedAtUpdated = info.verifiedAtUpdated
                     )
                 )
             }

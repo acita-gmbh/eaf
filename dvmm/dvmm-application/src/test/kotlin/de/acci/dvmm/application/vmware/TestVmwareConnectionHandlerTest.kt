@@ -103,8 +103,8 @@ class TestVmwareConnectionHandlerTest {
         }
 
         @Test
-        @DisplayName("should update verifiedAt timestamp when flag is set")
-        fun `should update verifiedAt timestamp when flag is set`() = runTest {
+        @DisplayName("should update verifiedAt timestamp when flag is set and return true")
+        fun `should update verifiedAt timestamp when flag is set and return true`() = runTest {
             // Given
             val command = createCommand(updateVerifiedAt = true)
             val connectionInfo = createConnectionInfo()
@@ -132,13 +132,15 @@ class TestVmwareConnectionHandlerTest {
 
             // Then
             assertTrue(result is Result.Success)
+            val success = result as Result.Success
+            assertEquals(true, success.value.verifiedAtUpdated)
             coVerify(exactly = 1) { configurationPort.findByTenantId(testTenantId) }
             coVerify(exactly = 1) { configurationPort.update(match { it.verifiedAt == fixedInstant }) }
         }
 
         @Test
-        @DisplayName("should not update verifiedAt when flag is false")
-        fun `should not update verifiedAt when flag is false`() = runTest {
+        @DisplayName("should not update verifiedAt when flag is false and return null")
+        fun `should not update verifiedAt when flag is false and return null`() = runTest {
             // Given
             val command = createCommand(updateVerifiedAt = false)
             val connectionInfo = createConnectionInfo()
@@ -150,6 +152,8 @@ class TestVmwareConnectionHandlerTest {
 
             // Then
             assertTrue(result is Result.Success)
+            val success = result as Result.Success
+            assertEquals(null, success.value.verifiedAtUpdated)
             coVerify(exactly = 0) { configurationPort.findByTenantId(any()) }
             coVerify(exactly = 0) { configurationPort.update(any()) }
         }
@@ -321,8 +325,8 @@ class TestVmwareConnectionHandlerTest {
         }
 
         @Test
-        @DisplayName("should continue even if verifiedAt update fails")
-        fun `should continue even if verifiedAt update fails`() = runTest {
+        @DisplayName("should return false for verifiedAtUpdated when update fails")
+        fun `should return false for verifiedAtUpdated when update fails`() = runTest {
             // Given
             val command = createCommand(updateVerifiedAt = true)
             val connectionInfo = createConnectionInfo()
@@ -350,13 +354,15 @@ class TestVmwareConnectionHandlerTest {
             // When
             val result = handler.handle(command)
 
-            // Then - connection test still succeeds
+            // Then - connection test still succeeds but verifiedAtUpdated is false
             assertTrue(result is Result.Success)
+            val success = result as Result.Success
+            assertEquals(false, success.value.verifiedAtUpdated)
         }
 
         @Test
-        @DisplayName("should continue even if findByTenantId throws exception")
-        fun `should continue even if findByTenantId throws exception`() = runTest {
+        @DisplayName("should return false for verifiedAtUpdated when findByTenantId throws exception")
+        fun `should return false for verifiedAtUpdated when findByTenantId throws exception`() = runTest {
             // Given
             val command = createCommand(updateVerifiedAt = true)
             val connectionInfo = createConnectionInfo()
@@ -367,8 +373,10 @@ class TestVmwareConnectionHandlerTest {
             // When
             val result = handler.handle(command)
 
-            // Then - connection test still succeeds
+            // Then - connection test still succeeds but verifiedAtUpdated is false
             assertTrue(result is Result.Success)
+            val success = result as Result.Success
+            assertEquals(false, success.value.verifiedAtUpdated)
         }
     }
 }

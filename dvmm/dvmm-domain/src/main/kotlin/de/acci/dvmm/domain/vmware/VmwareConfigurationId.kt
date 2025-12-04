@@ -1,5 +1,6 @@
 package de.acci.dvmm.domain.vmware
 
+import de.acci.eaf.core.error.InvalidIdentifierFormatException
 import java.util.UUID
 
 /**
@@ -22,9 +23,13 @@ public value class VmwareConfigurationId(public val value: UUID) {
         /**
          * Create a VMware configuration ID from a string representation.
          *
-         * @throws IllegalArgumentException if the string is not a valid UUID
+         * @throws InvalidIdentifierFormatException if the string is not a valid UUID
          */
         public fun fromString(value: String): VmwareConfigurationId =
-            VmwareConfigurationId(UUID.fromString(value))
+            try {
+                VmwareConfigurationId(UUID.fromString(value))
+            } catch (e: IllegalArgumentException) {
+                throw InvalidIdentifierFormatException("VmwareConfigurationId", value, e)
+            }
     }
 }

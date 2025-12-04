@@ -59,6 +59,18 @@ public data class VmwareConfiguration(
     val updatedBy: UserId,
     val version: Long
 ) {
+    init {
+        require(vcenterUrl.isNotBlank()) { "vCenter URL cannot be blank" }
+        require(vcenterUrl.startsWith("https://")) { "vCenter URL must start with https://" }
+        require(username.isNotBlank()) { "Username cannot be blank" }
+        require(datacenterName.isNotBlank()) { "Datacenter name cannot be blank" }
+        require(clusterName.isNotBlank()) { "Cluster name cannot be blank" }
+        require(datastoreName.isNotBlank()) { "Datastore name cannot be blank" }
+        require(networkName.isNotBlank()) { "Network name cannot be blank" }
+        require(templateName.isNotBlank()) { "Template name cannot be blank" }
+        require(version >= 0) { "Version must be non-negative" }
+    }
+
     public companion object {
         /**
          * Default template name for new configurations.

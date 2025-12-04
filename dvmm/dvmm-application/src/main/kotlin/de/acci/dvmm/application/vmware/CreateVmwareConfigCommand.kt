@@ -58,7 +58,23 @@ public data class CreateVmwareConfigCommand(
     val networkName: String,
     val templateName: String = VmwareConfiguration.DEFAULT_TEMPLATE_NAME,
     val folderPath: String? = null
-)
+) {
+    /**
+     * Custom toString() that redacts password to prevent accidental logging.
+     */
+    override fun toString(): String = "CreateVmwareConfigCommand(" +
+        "tenantId=$tenantId, " +
+        "userId=$userId, " +
+        "vcenterUrl=$vcenterUrl, " +
+        "username=$username, " +
+        "password=[REDACTED], " +
+        "datacenterName=$datacenterName, " +
+        "clusterName=$clusterName, " +
+        "datastoreName=$datastoreName, " +
+        "networkName=$networkName, " +
+        "templateName=$templateName, " +
+        "folderPath=$folderPath)"
+}
 
 /**
  * Errors that can occur when creating VMware configuration.

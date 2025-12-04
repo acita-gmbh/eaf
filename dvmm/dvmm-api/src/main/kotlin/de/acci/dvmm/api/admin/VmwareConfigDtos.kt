@@ -170,6 +170,9 @@ public data class VmwareConfigApiResponse(
 
 /**
  * Response for successful connection test.
+ *
+ * @property verifiedAtUpdated True if verifiedAt timestamp was updated (only when requested),
+ *                             null if update was not requested, false if update failed
  */
 public data class TestVmwareConnectionApiResponse(
     val success: Boolean,
@@ -177,7 +180,8 @@ public data class TestVmwareConnectionApiResponse(
     val clusterName: String,
     val clusterHosts: Int,
     val datastoreFreeGb: Long,
-    val message: String
+    val message: String,
+    val verifiedAtUpdated: Boolean? = null
 )
 
 /**

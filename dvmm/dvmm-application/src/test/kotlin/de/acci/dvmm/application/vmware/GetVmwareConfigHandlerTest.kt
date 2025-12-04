@@ -195,5 +195,20 @@ class CheckVmwareConfigExistsHandlerTest {
             // Then
             assertTrue(!result)
         }
+
+        @Test
+        @DisplayName("should propagate exception from port")
+        fun `should propagate exception from port`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val query = CheckVmwareConfigExistsQuery(tenantId = tenantId)
+
+            coEvery { configurationPort.existsByTenantId(tenantId) } throws RuntimeException("Database error")
+
+            // When/Then - exception should propagate (caller handles error scenarios)
+            org.junit.jupiter.api.assertThrows<RuntimeException> {
+                handler.handle(query)
+            }
+        }
     }
 }

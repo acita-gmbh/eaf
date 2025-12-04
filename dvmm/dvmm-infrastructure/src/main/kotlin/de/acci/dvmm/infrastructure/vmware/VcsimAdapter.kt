@@ -84,8 +84,8 @@ public class VcsimAdapter : VspherePort {
                 ).failure()
             }
 
-            // In VCSIM mode, we simulate a successful connection
-            // Real VCSIM integration would use yavijava or govmomi client
+            // This is an intentional stub for unit/integration tests without real vCenter.
+            // For tests against actual VCSIM containers, use VcenterAdapter with vcsim URL.
             logger.info { "VCSIM connection test successful (simulated)" }
 
             ConnectionInfo(

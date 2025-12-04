@@ -59,7 +59,23 @@ public data class TestVmwareConnectionCommand(
     val networkName: String,
     val templateName: String = VmwareConfiguration.DEFAULT_TEMPLATE_NAME,
     val updateVerifiedAt: Boolean = false
-)
+) {
+    /**
+     * Custom toString() that redacts password to prevent accidental logging.
+     */
+    override fun toString(): String = "TestVmwareConnectionCommand(" +
+        "tenantId=$tenantId, " +
+        "userId=$userId, " +
+        "vcenterUrl=$vcenterUrl, " +
+        "username=$username, " +
+        "password=[REDACTED], " +
+        "datacenterName=$datacenterName, " +
+        "clusterName=$clusterName, " +
+        "datastoreName=$datastoreName, " +
+        "networkName=$networkName, " +
+        "templateName=$templateName, " +
+        "updateVerifiedAt=$updateVerifiedAt)"
+}
 
 /**
  * Errors that can occur when testing VMware connection.
@@ -138,13 +154,16 @@ public sealed class TestVmwareConnectionError {
  * @property clusterHosts Number of ESXi hosts
  * @property datastoreFreeGb Free space in GB
  * @property message Human-readable success message
+ * @property verifiedAtUpdated True if verifiedAt timestamp was updated (only when requested),
+ *                             null if update was not requested, false if update failed
  */
 public data class TestVmwareConnectionResult(
     val vcenterVersion: String,
     val clusterName: String,
     val clusterHosts: Int,
     val datastoreFreeGb: Long,
-    val message: String
+    val message: String,
+    val verifiedAtUpdated: Boolean? = null
 )
 
 /**
@@ -209,8 +228,10 @@ public class TestVmwareConnectionHandler(
                 }
 
                 // Optionally update verifiedAt if config exists and flag is set
-                if (command.updateVerifiedAt) {
+                val verifiedAtUpdated = if (command.updateVerifiedAt) {
                     updateVerifiedTimestamp(command.tenantId)
+                } else {
+                    null
                 }
 
                 TestVmwareConnectionResult(
@@ -218,7 +239,8 @@ public class TestVmwareConnectionHandler(
                     clusterName = info.clusterName,
                     clusterHosts = info.clusterHosts,
                     datastoreFreeGb = info.datastoreFreeGb,
-                    message = "Connected to vCenter ${info.vcenterVersion}, Cluster: ${info.clusterName}"
+                    message = "Connected to vCenter ${info.vcenterVersion}, Cluster: ${info.clusterName}",
+                    verifiedAtUpdated = verifiedAtUpdated
                 ).success()
             }
             is Result.Failure -> {
@@ -264,24 +286,31 @@ public class TestVmwareConnectionHandler(
 
     /**
      * Updates the verifiedAt timestamp for existing configuration.
+     *
+     * @return true if update succeeded, false if update failed or config not found
      */
-    private suspend fun updateVerifiedTimestamp(tenantId: TenantId) {
-        try {
+    private suspend fun updateVerifiedTimestamp(tenantId: TenantId): Boolean {
+        return try {
             val existing = configurationPort.findByTenantId(tenantId)
             if (existing != null) {
                 val updated = existing.markVerified(Instant.now(clock))
                 when (val result = configurationPort.update(updated)) {
                     is Result.Success -> {
                         logger.debug { "Updated verifiedAt timestamp for tenant ${tenantId.value}" }
+                        true
                     }
                     is Result.Failure -> {
                         logger.warn { "Failed to update verifiedAt for tenant ${tenantId.value}: ${result.error}" }
+                        false
                     }
                 }
+            } else {
+                logger.debug { "No existing config to update verifiedAt for tenant ${tenantId.value}" }
+                false
             }
         } catch (e: Exception) {
-            // Non-critical - log and continue
             logger.warn(e) { "Failed to update verifiedAt timestamp for tenant ${tenantId.value}" }
+            false
         }
     }
 }
