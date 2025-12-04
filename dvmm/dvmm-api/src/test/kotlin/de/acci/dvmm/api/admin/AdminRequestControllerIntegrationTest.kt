@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -42,6 +43,7 @@ import reactor.core.publisher.Mono
     classes = [AdminRequestControllerIntegrationTest.TestConfig::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
+@AutoConfigureWebTestClient(timeout = "60s")
 @DisplayName("Admin Endpoint Security")
 class AdminRequestControllerIntegrationTest {
 
@@ -57,8 +59,6 @@ class AdminRequestControllerIntegrationTest {
             registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri") { fixture.getJwksUri() }
             registry.add("eaf.auth.keycloak.client-id") { KeycloakTestFixture.WEB_CLIENT_ID }
             registry.add("eaf.cors.allowed-origins") { "http://localhost:3000" }
-            // Extended timeout for CI environments where Keycloak container startup can be slow
-            registry.add("spring.test.webtestclient.timeout") { "30s" }
         }
     }
 
