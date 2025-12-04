@@ -54,9 +54,20 @@ public class EafNotificationAutoConfiguration {
         mailSender: JavaMailSender,
         templateEngine: TemplateEngine,
         properties: EafNotificationProperties
-    ): NotificationService = SmtpNotificationService(
-        mailSender = mailSender,
-        templateEngine = templateEngine,
-        fromAddress = EmailAddress.of(properties.fromAddress)
-    )
+    ): NotificationService {
+        val fromAddress = try {
+            EmailAddress.of(properties.fromAddress)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalStateException(
+                "Invalid email address configured for 'eaf.notifications.from-address': " +
+                    "'${properties.fromAddress}'. Please provide a valid email address.",
+                e
+            )
+        }
+        return SmtpNotificationService(
+            mailSender = mailSender,
+            templateEngine = templateEngine,
+            fromAddress = fromAddress
+        )
+    }
 }
