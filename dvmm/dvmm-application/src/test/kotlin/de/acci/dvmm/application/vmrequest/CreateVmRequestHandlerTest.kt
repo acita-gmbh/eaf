@@ -34,6 +34,7 @@ class CreateVmRequestHandlerTest {
     private fun createCommand(
         tenantId: TenantId = TenantId.generate(),
         requesterId: UserId = UserId.generate(),
+        requesterEmail: String = "test@example.com",
         projectId: ProjectId = ProjectId.generate(),
         vmName: VmName = VmName.of("test-vm-01"),
         size: VmSize = VmSize.M,
@@ -41,6 +42,7 @@ class CreateVmRequestHandlerTest {
     ) = CreateVmRequestCommand(
         tenantId = tenantId,
         requesterId = requesterId,
+        requesterEmail = requesterEmail,
         projectId = projectId,
         vmName = vmName,
         size = size,

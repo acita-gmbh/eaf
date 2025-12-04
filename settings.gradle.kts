@@ -20,6 +20,7 @@ include(":eaf:eaf-tenant")
 include(":eaf:eaf-auth")
 include(":eaf:eaf-auth-keycloak")
 include(":eaf:eaf-testing")
+include(":eaf:eaf-notifications")
 
 // DVMM Product modules
 include(":dvmm:dvmm-domain")

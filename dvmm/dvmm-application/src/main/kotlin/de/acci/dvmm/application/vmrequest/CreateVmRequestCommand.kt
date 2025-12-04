@@ -18,6 +18,7 @@ import de.acci.eaf.core.types.UserId
  * val command = CreateVmRequestCommand(
  *     tenantId = TenantId.fromString("..."),
  *     requesterId = UserId.fromString("..."),
+ *     requesterEmail = "user@example.com",
  *     projectId = ProjectId.fromString("..."),
  *     vmName = VmName.of("web-server-01"),
  *     size = VmSize.M,
@@ -28,6 +29,7 @@ import de.acci.eaf.core.types.UserId
  *
  * @property tenantId Tenant context for multi-tenancy isolation
  * @property requesterId User submitting the request
+ * @property requesterEmail Requester's email for notifications (extracted from JWT)
  * @property projectId Project this VM belongs to
  * @property vmName Validated VM name (lowercase, alphanumeric + hyphens)
  * @property size Selected VM size (S, M, L, XL)
@@ -36,6 +38,7 @@ import de.acci.eaf.core.types.UserId
 public data class CreateVmRequestCommand(
     val tenantId: TenantId,
     val requesterId: UserId,
+    val requesterEmail: String,
     val projectId: ProjectId,
     val vmName: VmName,
     val size: VmSize,

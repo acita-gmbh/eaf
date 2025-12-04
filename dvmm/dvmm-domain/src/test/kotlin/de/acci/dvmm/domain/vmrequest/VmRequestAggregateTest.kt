@@ -36,6 +36,7 @@ class VmRequestAggregateTest {
                 vmName = vmName,
                 size = size,
                 justification = justification,
+                requesterEmail = "test@example.com",
                 metadata = metadata
             )
 
@@ -88,6 +89,7 @@ class VmRequestAggregateTest {
                 vmName = VmName.of("test-vm-01"),
                 size = VmSize.S,
                 justification = "Capturing tenant test",
+                requesterEmail = "test@example.com",
                 metadata = metadata
             )
 
@@ -109,6 +111,7 @@ class VmRequestAggregateTest {
                 vmName = VmName.of("test-vm-01"),
                 size = VmSize.S,
                 justification = "Capturing requester test",
+                requesterEmail = "test@example.com",
                 metadata = metadata
             )
 
@@ -127,6 +130,7 @@ class VmRequestAggregateTest {
                     vmName = VmName.of("test-vm-01"),
                     size = VmSize.S,
                     justification = "Short",
+                    requesterEmail = "test@example.com",
                     metadata = TestMetadataFactory.create()
                 )
             }
@@ -147,6 +151,7 @@ class VmRequestAggregateTest {
                 vmName = VmName.of("test-vm-01"),
                 size = VmSize.S,
                 justification = justification,
+                requesterEmail = "test@example.com",
                 metadata = TestMetadataFactory.create()
             )
 
@@ -171,6 +176,7 @@ class VmRequestAggregateTest {
                 vmName = vmName,
                 size = size,
                 justification = justification,
+                requesterEmail = "test@example.com",
                 metadata = metadata
             )
 
@@ -204,6 +210,7 @@ class VmRequestAggregateTest {
                     vmName = vmName,
                     size = size,
                     justification = justification,
+                    requesterEmail = "test@example.com",
                     metadata = metadata
                 )
             )
@@ -304,6 +311,7 @@ class VmRequestAggregateTest {
                 vmName = VmName.of("test-vm-01"),
                 size = VmSize.S,
                 justification = "Event metadata test",
+                requesterEmail = "test@example.com",
                 metadata = metadata
             )
 
@@ -385,6 +393,7 @@ class VmRequestAggregateTest {
             vmName = VmName.of("test-vm-01"),
             size = VmSize.M,
             justification = "Valid justification for testing",
+            requesterEmail = "test@example.com",
             metadata = TestMetadataFactory.create()
         )
     }

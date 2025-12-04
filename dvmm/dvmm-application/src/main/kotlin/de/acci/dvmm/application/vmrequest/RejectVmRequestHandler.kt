@@ -112,7 +112,8 @@ public class RejectVmRequestHandler(
     private val eventStore: EventStore,
     private val eventDeserializer: VmRequestEventDeserializer,
     private val projectionUpdater: VmRequestProjectionUpdater = NoOpVmRequestProjectionUpdater,
-    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater
+    private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater,
+    private val notificationSender: VmRequestNotificationSender = NoOpVmRequestNotificationSender
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -291,6 +292,20 @@ public class RejectVmRequestHandler(
                     logProjectionError(projectionError, command.requestId, correlationId)
                 }
 
+                // Send notification (fire-and-forget, don't fail the command)
+                notificationSender.sendRejectedNotification(
+                    RequestRejectedNotification(
+                        requestId = command.requestId,
+                        tenantId = command.tenantId,
+                        requesterEmail = aggregate.requesterEmail,
+                        vmName = aggregate.vmName.value,
+                        projectName = aggregate.projectId.value.toString(),
+                        reason = command.reason
+                    )
+                ).onFailure { notificationError ->
+                    logNotificationError(notificationError, command.requestId, correlationId)
+                }
+
                 RejectVmRequestResult(requestId = command.requestId).success()
             }
             is Result.Failure -> when (val error = appendResult.error) {
@@ -321,6 +336,28 @@ public class RejectVmRequestHandler(
                     "Projection not found for request ${requestId.value}. " +
                         "correlationId=${correlationId.value}. " +
                         "Projection may need to be reconstructed from event store."
+                }
+            }
+        }
+    }
+
+    private fun logNotificationError(
+        error: VmRequestNotificationError,
+        requestId: VmRequestId,
+        correlationId: CorrelationId
+    ) {
+        when (error) {
+            is VmRequestNotificationError.SendFailure -> {
+                logger.warn {
+                    "Rejection notification failed for request ${requestId.value}: ${error.message}. " +
+                        "correlationId=${correlationId.value}"
+                }
+            }
+            is VmRequestNotificationError.TemplateError -> {
+                logger.error {
+                    "Rejection notification template error for request ${requestId.value}: " +
+                        "template=${error.templateName}, message=${error.message}. " +
+                        "correlationId=${correlationId.value}"
                 }
             }
         }
