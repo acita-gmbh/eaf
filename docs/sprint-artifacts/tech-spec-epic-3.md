@@ -45,7 +45,7 @@ Epic 3 transforms DVMM from a workflow tool into real infrastructure automation.
 
 **Phase 2 (Real vCenter):** Story 3.9 - Validation with real infrastructure
 - Contract tests validate VCSIM assumptions
-- Requires dedicated vCenter test instance (currently BLOCKED)
+- Requires a dedicated vCenter test instance (currently BLOCKED)
 - Go-live gate: Phase 1 smoke tests must pass
 
 ---
@@ -917,7 +917,7 @@ document gaps and adjust approach before Story 3.3.
 
 | AC | Given | When | Then |
 |----|-------|------|------|
-| AC-3.6.1 | Transient error (timeout) | Error occurs | Retry with exponential backoff: 10s→20s→40s→80s→120s (5 attempts, 2x multiplier, capped at 120s) |
+| AC-3.6.1 | Transient error (timeout) | Error occurs | Retry with exponential backoff: 10s→20s→40s→80s (5 attempts = 4 delays, 2x multiplier, cap 120s) |
 | AC-3.6.2 | All retries fail | Max retries exceeded | `VmProvisioningFailed` event, status → FAILED |
 | AC-3.6.3 | Permanent error | Non-retryable error | Fail immediately, user-friendly message |
 | AC-3.6.4 | Partial completion | VM created, network failed | Cleanup partial VM, log with correlation ID |
@@ -942,7 +942,7 @@ document gaps and adjust approach before Story 3.3.
 | Aspect | Implementation |
 |--------|----------------|
 | Idempotency | Correlation ID in VM annotation prevents duplicates |
-| Retry Logic | Exponential backoff: 10s→20s→40s→80s→120s (5 attempts, 2x multiplier, capped at 120s) |
+| Retry Logic | Exponential backoff: 10s→20s→40s→80s (5 attempts = 4 delays, 2x multiplier, cap 120s) |
 | Circuit Breaker | resilience4j, trips after 5 consecutive failures |
 | Saga Compensation | Cleanup partial VMs on failure |
 | Dead Letter | Failed provisions logged for manual review |
