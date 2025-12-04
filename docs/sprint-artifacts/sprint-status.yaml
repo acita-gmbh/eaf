@@ -1,5 +1,5 @@
 # Sprint Status - DVMM Project
-# generated: 2025-12-03
+# generated: 2025-12-04
 # project: EAF
 # project_key: DVMM
 # tracking_system: file-system
@@ -112,11 +112,11 @@ development_status:
   epic-1-retrospective: completed                # Retrospective completed 2025-11-28
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # EPIC 2: CORE WORKFLOW (12 Stories) - IN PROGRESS
+  # EPIC 2: CORE WORKFLOW (13 Stories) - COMPLETE
   # "Request -> Approve -> Notify" - High Risk (First UI)
   # TRACER BULLET: Users can request VMs, admins approve, everyone notified
   # ═══════════════════════════════════════════════════════════════════════════
-  epic-2: in-progress                            # Active development
+  epic-2: done                                   # All stories completed
   2-1-keycloak-login-flow: done                  # Code review APPROVED 2025-11-28
   2-2-end-user-dashboard-layout: done            # Merged 2025-11-29
   2-3-empty-states-onboarding: done              # Code review PASSED 2025-11-30
@@ -129,7 +129,7 @@ development_status:
   2-9a-e2e-auth-keycloak-tests: done             # Added via correct-course workflow 2025-12-03
   2-10-request-detail-view-admin: done                  # Code review PASSED 2025-12-03
   2-11-approve-reject-actions: done                    # Code review PASSED 2025-12-03
-  2-12-email-notifications: review                # PR #67 created 2025-12-04
+  2-12-email-notifications: done                  # PR #67 merged, review fixes in PR #68
   epic-2-retrospective: optional
 
   # ═══════════════════════════════════════════════════════════════════════════
