@@ -467,7 +467,9 @@ CREATE TABLE "VM_REQUESTS" (
 ALTER TABLE "VM_REQUESTS" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "VM_REQUESTS" FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON "VM_REQUESTS"
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 -- [jooq ignore stop]
 
 CREATE INDEX idx_vm_requests_tenant_requester ON "VM_REQUESTS"("TENANT_ID", "REQUESTER_ID");
@@ -491,7 +493,9 @@ CREATE TABLE "REQUEST_TIMELINE_EVENTS" (
 ALTER TABLE "REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON "REQUEST_TIMELINE_EVENTS"
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 -- [jooq ignore stop]
 
 CREATE INDEX idx_timeline_request ON "REQUEST_TIMELINE_EVENTS"("REQUEST_ID", "OCCURRED_AT");
@@ -858,7 +862,9 @@ CREATE TABLE "EMAIL_DEAD_LETTER" (
 ALTER TABLE "EMAIL_DEAD_LETTER" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "EMAIL_DEAD_LETTER" FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON "EMAIL_DEAD_LETTER"
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 -- [jooq ignore stop]
 
 CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "CREATED_AT");

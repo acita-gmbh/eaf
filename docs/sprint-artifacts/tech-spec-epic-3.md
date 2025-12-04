@@ -1045,7 +1045,7 @@ document gaps and adjust approach before Story 3.3.
 
 ### 9.2 Epic Level
 
-- [ ] All 8 stories completed (3.9 may remain BLOCKED)
+- [ ] All 9 stories completed (Story 3.9 may remain BLOCKED pending vCenter access)
 - [ ] VCSIM integration tests comprehensive (≥90% coverage of ProvisionVmSaga)
 - [ ] Error handling tested (all error codes)
 - [ ] Saga compensation tested:
