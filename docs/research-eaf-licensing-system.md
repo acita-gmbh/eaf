@@ -32,9 +32,183 @@ This document provides comprehensive research and recommendations for implementi
 
 ---
 
-## 2. Industry-Standard Solutions Analysis
+## 2. Current DPCM Licensing Architecture
 
-### 2.1 Commercial Solutions
+This section documents the existing DPCM licensing implementation to inform EAF design decisions.
+
+### 2.1 System Overview
+
+The current DPCM licensing consists of two components:
+
+| Component | Stack | Role |
+|-----------|-------|------|
+| **DPCMService** | Node.js, Fastify, GraphQL, PostgreSQL | License server (cloud-hosted) |
+| **DCA (DPCM X)** | Node.js, React, PostgreSQL | Product client (on-premise) |
+
+### 2.2 Registration Flow (V2 - Current)
+
+The V2 registration uses **client-side key generation** with challenge-response authentication:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    V2 Registration Flow                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  DCA Client (On-Premise)                                             │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ 1. Generate RSA 2048-bit keypair locally                      │  │
+│  │ 2. Store privateKey in secureKeyStorage (encrypted)           │  │
+│  │ 3. privateKey NEVER leaves the device                         │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              │                                       │
+│                              ▼                                       │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ POST /api/v2/register/challenge                               │  │
+│  │   Request:  { customerId, token }                             │  │
+│  │   Response: { challengeId, challenge, dcaPublicKey }          │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              │                                       │
+│                              ▼                                       │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ Client signs challenge with privateKey                        │  │
+│  │ signedChallenge = sign(challenge, privateKey)                 │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              │                                       │
+│                              ▼                                       │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ POST /api/v2/register                                         │  │
+│  │   Request:  { customerId, challengeId, signedChallenge,       │  │
+│  │              publicKeyPem, instanceId, appId, hostname }      │  │
+│  │   Response: { certId, validation, message, signature }        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              │                                       │
+│                              ▼                                       │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ Client verifies server signature using dcaPublicKey           │  │
+│  │ Stores certId + keyId reference for future communications     │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.3 Environment Data Reporting (License Validation)
+
+After registration, clients periodically report environment data for license validation:
+
+```
+POST /api/v2/environment/submit
+  Request: {
+    customerId, instanceId, challengeId, signedChallenge,
+    environmentData: {
+      systems: [
+        {
+          typeModel: "9009-42G",
+          serialNum: "ABC123",
+          licensing: {
+            configurableSysProcUnits: 48,
+            isLinuxOnlySystem: false
+          }
+        }
+      ]
+    },
+    timestamp, signature
+  }
+  Response: {
+    received: true,
+    licenseValidation: {
+      isValid: true,
+      isExceeded: false,
+      gracePeriod: false,
+      gracePeriodEnds: null
+    }
+  }
+```
+
+### 2.4 Core-Based License Model
+
+Licenses are based on IBM Power system core types:
+
+| Core Type | Description | Example Systems |
+|-----------|-------------|-----------------|
+| **S-Cores** | Small systems | Power5-185, Power6-520 |
+| **M-Cores** | Medium systems | Power7-720, Power8-S812 |
+| **L-Cores** | Large systems | Power7-770, Power9-E980 |
+| **IFL-Cores** | Linux-only (Integrated Facility Link) | Power8+, Linux/VIOS only |
+
+**Linux-Only Detection**:
+```javascript
+isLinuxOnlySystem = configurableSysProcUnitsLinuxVios === configurableSysProcUnits
+```
+
+### 2.5 Key Rotation Support
+
+V2 includes built-in key rotation (90-day recommended cycle):
+
+```
+POST /api/v2/register/rotate
+  Request: {
+    customerId,
+    oldPublicKey,      // Current key
+    newPublicKey,      // New key to register
+    signature,         // Signed with OLD key (proves ownership)
+    rotationData
+  }
+  Response: { certId }  // New certificate ID
+```
+
+### 2.6 Secure Key Storage
+
+Private keys are stored in encrypted local storage, never in application settings:
+
+```javascript
+// secureKeyStorage.js pattern
+await secureKeyStorage.storePrivateKey(keyId, privateKeyPem)   // Encrypted storage
+await secureKeyStorage.retrievePrivateKey(keyId)               // Decrypted retrieval
+await secureKeyStorage.rotateKey(oldKeyId, newPrivateKeyPem)   // Atomic rotation
+await secureKeyStorage.cleanupArchivedKeys()                   // Remove old keys
+```
+
+### 2.7 License Enforcement States
+
+```
+┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
+│   VALID    │────▶│  EXCEEDED  │────▶│   GRACE    │────▶│  EXPIRED   │
+│            │     │  (warning) │     │  (backup   │     │  (blocked) │
+│            │     │            │     │   only)    │     │            │
+└────────────┘     └────────────┘     └────────────┘     └────────────┘
+      │                                     │                   │
+      │ All commands   │ All commands      │ CMD_VM_BACKUP    │ No commands
+      │ allowed        │ + warning         │ CMD_VM_BULK_     │ allowed
+      │                │                   │ BACKUP only      │
+```
+
+### 2.8 Deprecated V1 Flow (Legacy)
+
+The V1 flow is deprecated due to security concerns (server sent private keys):
+
+```javascript
+/**
+ * @deprecated SECURITY VULNERABILITY - Receives private keys from server
+ * Use backendInstanceRegistrationV2 instead
+ */
+export const backendInstanceRegistration = async (token) => { ... }
+```
+
+**Key Differences V1 vs V2**:
+
+| Aspect | V1 (Deprecated) | V2 (Current) |
+|--------|-----------------|--------------|
+| Key Generation | Server-side | Client-side |
+| Private Key | Sent over network | Never leaves device |
+| Authentication | Token-based | Challenge-response |
+| Key Rotation | Manual | Built-in (90-day) |
+| Storage | Settings (plaintext) | Encrypted secure storage |
+
+---
+
+## 3. Industry-Standard Solutions Analysis
+
+### 3.1 Commercial Solutions
 
 | Solution | Deployment | Pricing Model | Key Features |
 |----------|------------|---------------|--------------|
@@ -50,7 +224,7 @@ This document provides comprehensive research and recommendations for implementi
 - **Comprehensive offline/air-gapped support**
 - **REST API** compatible with Spring Boot
 
-### 2.2 Build vs. Buy Analysis
+### 3.2 Build vs. Buy Analysis
 
 | Approach | Pros | Cons |
 |----------|------|------|
@@ -65,9 +239,93 @@ This document provides comprehensive research and recommendations for implementi
 
 ---
 
-## 3. License Models for EAF Products
+## 4. VMware Ecosystem Licensing Analysis
 
-### 3.1 Core-Based Licensing (Primary for DVMM)
+Since DVMM targets VMware vSphere environments, understanding how other VMware management software vendors handle licensing is critical for competitive positioning.
+
+### 4.1 VMware's Own Licensing Changes (2024-2025)
+
+Following Broadcom's acquisition (December 2023), VMware underwent significant licensing changes:
+
+| Change | Impact |
+|--------|--------|
+| **Perpetual → Subscription** | All new deployments require subscription licenses |
+| **Socket → Core-based** | Minimum 16 cores per CPU, 72-core minimum orders |
+| **Product Consolidation** | 168 products reduced to 4 bundles (VCF, VVF, VVS, VSEP) |
+| **Pricing** | ~$350/core/year (VCF), ~$135/core/year (VVF) |
+| **Free Tier Eliminated** | vSphere Hypervisor (free) discontinued |
+
+### 4.2 Third-Party VMware Management Software Licensing
+
+| Vendor | Product Type | Primary Model | Alternative | Typical Pricing |
+|--------|-------------|---------------|-------------|-----------------|
+| **Veeam** | Backup/DR | Per-Socket (perpetual) | Per-Workload VUL (subscription) | VUL: flexible per instance |
+| **Runecast** | Compliance/Analysis | Per-Socket | Subscription only | ~$500/year per socket |
+| **SolarWinds VMAN** | Monitoring | Per-Socket (tiers) | Perpetual or subscription | Tiers: 8/64/192 sockets |
+| **NAKIVO** | Backup/DR | Per-Socket (perpetual) | Per-Workload (subscription) | $229/socket or $2.45/workload/mo |
+| **IBM Turbonomic** | Resource Optimization | Per-Socket/Per-VM | Transitioning to Per-Core | $11K-$49K+ enterprise |
+| **ManageEngine OpManager** | Monitoring | Per-Device | - | From $245/10 devices |
+
+### 4.3 Common Licensing Patterns
+
+**Pattern 1: Per-Socket (Traditional)**
+- Most common for VMware ecosystem tools
+- Follows the "old" VMware licensing model customers are familiar with
+- Simple to calculate: count physical CPU sockets on hosts
+- Used by: Runecast, SolarWinds, Veeam (perpetual), NAKIVO (perpetual)
+
+**Pattern 2: Per-Workload/VM (Modern)**
+- Gaining popularity for flexibility and pay-for-what-you-use
+- Better for environments with variable VM counts
+- Typically subscription-based
+- Used by: Veeam VUL, NAKIVO subscription, ManageEngine
+
+**Pattern 3: Per-Core (Following VMware)**
+- Aligns with VMware's new model but more complex
+- Enables granular tenant allocation
+- Turbonomic transitioning to this model
+- Risk: customers already fatigued by core counting from VMware itself
+
+### 4.4 Licensing Model Trade-offs for DVMM
+
+| Model | Pros | Cons |
+|-------|------|------|
+| **Per-Core** | Aligns with VMware; granular tenant allocation | Complex; customers fatigued by core counting |
+| **Per-Socket** | Simple; familiar to VMware admins | Less granular; doesn't scale with VM density |
+| **Per-Managed VM** | Pay-for-what-you-use; tenant-friendly | Harder to predict revenue; requires VM tracking |
+| **Per-Tenant** | Simple for multi-tenant SaaS | May not scale for large tenants |
+| **Hybrid** | Customer choice; competitive flexibility | Implementation complexity |
+
+### 4.5 Industry Trends (2024-2025)
+
+1. **Subscription over Perpetual**: VMware discontinued perpetual entirely; Veeam phasing out socket licensing
+2. **Core-based gaining traction**: Following VMware's lead, but with customer resistance
+3. **Workload-based for flexibility**: Allows customers to pay for actual usage
+4. **Tiered editions**: Most vendors offer Standard/Pro/Enterprise capability tiers
+5. **Bundling**: VMware bundles everything (Aria, vSAN, etc.) into VCF/VVF
+
+### 4.6 Recommendation for DVMM
+
+Given DVMM's position as a VM provisioning/management tool for vSphere in the DACH market:
+
+**Recommended Approach: Hybrid Model (like NAKIVO)**
+
+| Option | Target Customer | Pricing Model |
+|--------|-----------------|---------------|
+| **Perpetual** | Traditional enterprises | Per-Socket (simple, familiar) |
+| **Subscription** | Modern/cloud-native | Per-Managed VM or Per-Core |
+
+**Rationale:**
+- German enterprises often prefer perpetual licenses for budget predictability
+- Per-socket is simpler than VMware's own licensing (competitive advantage)
+- Per-VM subscription enables tenant-level billing for MSP scenarios
+- Aligns with existing DPCM core-based model for migration continuity
+
+---
+
+## 5. License Models for EAF Products
+
+### 5.1 Core-Based Licensing (Primary for DVMM)
 
 ```
 License Metric: CPU Cores under management
@@ -93,7 +351,7 @@ data class CoreBasedLicense(
 - Handle vMotion (fingerprint remains stable)
 - Report usage periodically to license server
 
-### 3.2 Subscription Model
+### 5.2 Subscription Model
 
 | Term | Description |
 |------|-------------|
@@ -102,7 +360,7 @@ data class CoreBasedLicense(
 | **True-Up** | Periodic adjustment for increased usage |
 | **Enforcement** | Soft limits → warnings → hard limits |
 
-### 3.3 Multi-Tenant License Allocation
+### 5.3 Multi-Tenant License Allocation
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -122,9 +380,9 @@ data class CoreBasedLicense(
 
 ---
 
-## 4. Proposed Architecture
+## 6. Proposed Architecture
 
-### 4.1 High-Level Architecture
+### 6.1 High-Level Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -154,7 +412,7 @@ data class CoreBasedLicense(
     └───────────────────────┘              └───────────────────┘
 ```
 
-### 4.2 EAF Module Structure
+### 6.2 EAF Module Structure
 
 ```
 eaf/
@@ -197,7 +455,7 @@ eaf/
             └── HeartbeatService.kt
 ```
 
-### 4.3 Integration with EAF Multi-Tenancy
+### 6.3 Integration with EAF Multi-Tenancy
 
 ```kotlin
 // LicenseContext integrates with existing TenantContext
@@ -224,9 +482,9 @@ public object LicenseContext {
 
 ---
 
-## 5. License File Format
+## 7. License File Format
 
-### 5.1 Signed License File (for Offline/Air-Gapped)
+### 7.1 Signed License File (for Offline/Air-Gapped)
 
 Based on industry standards (Keygen, SoftwareKey):
 
@@ -269,7 +527,7 @@ Based on industry standards (Keygen, SoftwareKey):
 </license>
 ```
 
-### 5.2 Cryptographic Approach
+### 7.2 Cryptographic Approach
 
 | Algorithm | Purpose |
 |-----------|---------|
@@ -285,9 +543,9 @@ Based on industry standards (Keygen, SoftwareKey):
 
 ---
 
-## 6. Machine Fingerprinting
+## 8. Machine Fingerprinting
 
-### 6.1 Fingerprint Components
+### 8.1 Fingerprint Components
 
 | Component | Weight | Notes |
 |-----------|--------|-------|
@@ -297,7 +555,7 @@ Based on industry standards (Keygen, SoftwareKey):
 | Hostname | Low | Easily changed |
 | Disk Serial | Medium | Not accessible in VMs |
 
-### 6.2 Virtualization Handling
+### 8.2 Virtualization Handling
 
 ```kotlin
 object MachineFingerprint {
@@ -326,7 +584,7 @@ object MachineFingerprint {
 }
 ```
 
-### 6.3 Soft vs. Strict Binding
+### 8.3 Soft vs. Strict Binding
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
@@ -335,9 +593,9 @@ object MachineFingerprint {
 
 ---
 
-## 7. Offline & Air-Gapped Support
+## 9. Offline & Air-Gapped Support
 
-### 7.1 Activation Workflow
+### 9.1 Activation Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -362,7 +620,7 @@ object MachineFingerprint {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Periodic Validation
+### 9.2 Periodic Validation
 
 | Mode | Validation Interval | Grace After Failure |
 |------|---------------------|---------------------|
@@ -372,9 +630,9 @@ object MachineFingerprint {
 
 ---
 
-## 8. Multi-Tenant License Management
+## 10. Multi-Tenant License Management
 
-### 8.1 License Hierarchy
+### 10.1 License Hierarchy
 
 ```
 Organization License (1000 cores)
@@ -388,7 +646,7 @@ Organization License (1000 cores)
     └── Tenant D (using 100 cores)
 ```
 
-### 8.2 Tenant License Service
+### 10.2 Tenant License Service
 
 ```kotlin
 interface TenantLicenseService {
@@ -418,7 +676,7 @@ data class TenantLicenseAllocation(
 )
 ```
 
-### 8.3 Integration with DVMM Quota System
+### 10.3 Integration with DVMM Quota System
 
 The license system integrates with DVMM's existing quota enforcement:
 
@@ -454,9 +712,9 @@ class CreateVmRequestHandler(
 
 ---
 
-## 9. Grace Period & Enforcement
+## 11. Grace Period & Enforcement
 
-### 9.1 License States
+### 11.1 License States
 
 ```
 ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
@@ -470,7 +728,7 @@ class CreateVmRequestHandler(
       │           Provisions: Yes           │ Provisions: Yes   │ Existing VMs: Running
 ```
 
-### 9.2 Enforcement Levels
+### 11.2 Enforcement Levels
 
 | Level | Trigger | Behavior |
 |-------|---------|----------|
@@ -481,9 +739,9 @@ class CreateVmRequestHandler(
 
 ---
 
-## 10. Migration from DPCM Service
+## 12. Migration from DPCM Service
 
-### 10.1 Migration Strategy
+### 12.1 Migration Strategy
 
 1. **Phase 1: Parallel Operation**
    - Deploy EAF License Server alongside DPCM
@@ -500,7 +758,23 @@ class CreateVmRequestHandler(
    - DPCM Service deprecated
    - Historical data archived
 
-### 10.2 License Format Migration
+### 12.2 DPCM V1→V2 Transition (Already Completed)
+
+The DPCM product already successfully migrated from V1 to V2 registration:
+
+| Aspect | Migration Impact |
+|--------|-----------------|
+| **Existing V1 Instances** | Continue working until re-registration |
+| **New Registrations** | Always use V2 flow |
+| **Key Storage** | V2 uses local encryption, no dependency on server master key |
+| **Backward Compatibility** | Server supports both V1 and V2 endpoints during transition |
+
+**Lessons for EAF Migration:**
+- Maintain backward compatibility during transition period
+- Don't force immediate re-registration - let natural upgrade cycle handle it
+- V2 endpoints can coexist with V1 indefinitely (DPCM still has both)
+
+### 12.3 License Format Migration
 
 ```kotlin
 object DpcmMigrator {
@@ -523,9 +797,9 @@ object DpcmMigrator {
 
 ---
 
-## 11. Security Considerations
+## 13. Security Considerations
 
-### 11.1 Threat Model
+### 13.1 Threat Model
 
 | Threat | Mitigation |
 |--------|------------|
@@ -535,7 +809,7 @@ object DpcmMigrator {
 | Reverse engineering | Obfuscation, remote validation when possible |
 | Man-in-the-middle | TLS 1.3, certificate pinning |
 
-### 11.2 Key Security Practices
+### 13.2 Key Security Practices
 
 1. **Private Key Protection**: Store in HSM or secure vault
 2. **Key Rotation**: Support multiple valid keys, rotate annually
@@ -543,9 +817,29 @@ object DpcmMigrator {
 4. **Rate Limiting**: Prevent brute-force activation attempts
 5. **Secure Storage**: Encrypt license data at rest
 
+### 13.3 V2 Security Architecture (Learned from DPCM)
+
+The DPCM V2 registration flow introduced critical security improvements over V1:
+
+| Aspect | V1 (Deprecated) | V2 (Current) |
+|--------|-----------------|--------------|
+| **Key Generation** | Server-side | Client-side (RSA 2048-bit) |
+| **Private Key Transmission** | Sent over network | Never leaves device |
+| **Authentication** | Token-based | Challenge-response |
+| **Key Storage** | Encrypted with master key from server | Encrypted locally with device master key |
+| **Key Rotation** | Manual | Automatic 90-day cycle |
+
+**V2 Security Benefits:**
+1. **Zero Private Key Exposure**: Private key generated locally, only public key transmitted
+2. **Challenge-Response Proof**: Server verifies client owns private key without seeing it
+3. **Forward Secrecy**: Compromised network traffic cannot decrypt historical sessions
+4. **Local Key Encryption**: Private keys encrypted at rest using device-specific master key
+
+**EAF Recommendation:** Adopt the V2 model as baseline security for new licensing system
+
 ---
 
-## 12. Implementation Roadmap
+## 14. Implementation Roadmap
 
 ### Phase 1: Core Framework (MVP)
 - [ ] `eaf-licensing` module with interfaces
@@ -579,7 +873,7 @@ object DpcmMigrator {
 
 ---
 
-## 13. References & Sources
+## 15. References & Sources
 
 ### Commercial Solutions
 - [Keygen - Software Licensing API](https://keygen.sh/) - Fair Source, self-hosted option
@@ -618,7 +912,7 @@ object DpcmMigrator {
 
 ---
 
-## 14. Decision Summary
+## 16. Decision Summary
 
 | Decision | Recommendation | Rationale |
 |----------|----------------|-----------|
