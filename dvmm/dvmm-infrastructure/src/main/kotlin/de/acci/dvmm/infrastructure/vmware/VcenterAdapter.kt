@@ -266,7 +266,7 @@ public class VcenterAdapter(
                 message.contains("cannot complete login") ||
                 message.contains("authentication")
             ) {
-                logger.warn { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
+                logger.warn(e) { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
                 ConnectionError.AuthenticationFailed(
                     message = "Authentication failed - check username and password"
                 ).failure()

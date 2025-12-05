@@ -147,7 +147,7 @@ vcf-sdk-vsphere-utils = { module = "com.vmware.sdk:vsphere-utils", version.ref =
 ### 1. Exception Mapping Verification Needed
 
 **Current (Line 97-101):**
-```
+```text
 com.vmware.vapi.std.errors.Unauthenticated → AuthenticationFailed
 ```
 
