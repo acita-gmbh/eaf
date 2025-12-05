@@ -28,8 +28,10 @@ dependencies {
     // Spring Security Crypto for AES-256 encryption (AC-3.1.4)
     implementation(libs.spring.security.crypto)
 
-    // VMware vSphere SDK (yavijava - maintained fork of vijava)
-    implementation(libs.yavijava)
+    // VCF SDK 9.0 (Official VMware SDK from Maven Central - Apache 2.0 license)
+    // Uses BOM for version management, provides vim25 (SOAP) + vsphere-utils (convenience wrappers)
+    implementation(platform(libs.vcf.sdk.bom))
+    implementation(libs.vcf.sdk.vsphere.utils)  // Includes vim25 transitively
 
     // jOOQ code generation dependencies
     // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)

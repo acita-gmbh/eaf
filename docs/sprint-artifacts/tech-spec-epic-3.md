@@ -16,7 +16,7 @@
 | **Epic ID** | Epic 3 |
 | **Title** | VM Provisioning |
 | **Goal** | Implement actual VM provisioning on VMware ESXi via vSphere API |
-| **Stories** | 9 |
+| **Stories** | 10 |
 | **Risk Level** | **CRITICAL** (VMware API complexity, infrastructure dependency) |
 | **FRs Covered** | FR30, FR34-FR40, FR47, FR71, FR77-FR79 (11 FRs) |
 
@@ -61,7 +61,7 @@ Epic 3 transforms DVMM from a workflow tool into real infrastructure automation.
    - Missing config warning for users
 
 2. **vSphere API Client** (Story 3.2)
-   - Robust client with vijava library
+   - Robust client with official vSphere Automation SDK (post Story 3.1.1)
    - Circuit breaker pattern (resilience4j)
    - Connection pooling and session management
    - Full CRUD operations for VMs
@@ -130,7 +130,7 @@ Epic 3 transforms DVMM from a workflow tool into real infrastructure automation.
 │   VcsimAdapter              │  │ VcenterAdapter│  │    (Future)          │
 │   (Spring Profile: vcsim)   │  │ (Profile:real)│  │  CloudAdapter        │
 │                             │  │               │  │  (Azure/AWS)         │
-│   Uses VCSIM /sdk endpoint  │  │ Uses vijava   │  │                      │
+│   Uses VCSIM /sdk endpoint  │  │ Official SDK  │  │                      │
 └─────────────────────────────┘  └──────────────┘  └──────────────────────┘
 ```
 
@@ -168,7 +168,7 @@ class VmProvisioningService {
 │   │                    dvmm-infrastructure                               │  │
 │   │   ┌───────────────────┐   ┌────────────────────────────────────┐    │  │
 │   │   │ VcenterAdapter    │   │ VcsimAdapter                       │    │  │
-│   │   │ (vijava + Spring) │   │ (VCSIM Testcontainer)              │    │  │
+│   │   │ (Official SDK)    │   │ (VCSIM Testcontainer)              │    │  │
 │   │   └───────────────────┘   └────────────────────────────────────┘    │  │
 │   │   ┌───────────────────┐   ┌────────────────────────────────────┐    │  │
 │   │   │ ProvisioningRepo  │   │ VmwareConfigRepository             │    │  │
@@ -254,8 +254,8 @@ data class VmProvisioningFailed(
 ```kotlin
 // VMware Managed Object Reference (MoRef) identifier
 // Note: VMware API returns "vm-<number>" format (e.g., "vm-123")
-// vijava library may prefix with "VirtualMachine:" in some contexts
-// Both formats accepted for compatibility; verify actual format in Story 3.2 VCSIM tests
+// Official SDK returns standard format; "VirtualMachine:" prefix accepted for legacy compatibility
+// Verify actual format in Story 3.2 VCSIM tests
 @JvmInline
 value class VmwareVmId(val value: String) {
     init {
@@ -825,7 +825,7 @@ class VcsimTestFixture(private val container: VcsimContainer) {
 > **IMPORTANT:** Before committing to VCSIM SOAP API approach, Story 3.2 must verify:
 
 1. **VCSIM v0.47.0 SOAP support**: Confirm CloneVM_Task, RetrieveProperties, Destroy_Task work
-2. **vijava compatibility**: Test actual vijava client calls against VCSIM container
+2. **Official SDK compatibility**: Test vSphere Automation SDK calls against VCSIM container
 3. **Fallback plan**: If VCSIM SOAP is incomplete, pivot to mock-based adapters
 
 This is critical for Phase 1 timeline. If VCSIM SOAP limitations are discovered,
@@ -844,8 +844,13 @@ document gaps and adjust approach before Story 3.3.
                                     └───────────┬──────────────┘
                                                 │
                                     ┌───────────▼──────────────┐
+                                    │ Story 3.1.1: SDK Migrate │
+                                    │ (yavijava → Official SDK)│
+                                    └───────────┬──────────────┘
+                                                │
+                                    ┌───────────▼──────────────┐
                                     │ Story 3.2: vSphere Client│
-                                    │ (vijava + resilience4j)  │
+                                    │ (Official SDK + resil4j) │
                                     └───────────┬──────────────┘
                                                 │
                                     ┌───────────▼──────────────┐
@@ -881,7 +886,8 @@ document gaps and adjust approach before Story 3.3.
 | ID | Title | Prerequisites | FRs | Risk |
 |----|-------|---------------|-----|------|
 | 3.1 | VMware Connection Configuration | 1.6, 2.1 | FR71 | HIGH |
-| 3.2 | vSphere API Client | 3.1, 1.2 | FR34 (partial) | HIGH |
+| 3.1.1 | Migrate to Official vSphere SDK | 3.1 | Tech debt | MEDIUM |
+| 3.2 | vSphere API Client | 3.1.1, 1.2 | FR34 (partial) | HIGH |
 | 3.3 | Provisioning Trigger on Approval | 2.11, 3.2 | FR30 | MEDIUM |
 | 3.4 | VM Provisioning Execution | 3.3, 3.2 | FR34-37 | **CRITICAL** |
 | 3.5 | Provisioning Progress Tracking | 3.4, 2.8 | FR37 | MEDIUM |
@@ -987,9 +993,11 @@ document gaps and adjust approach before Story 3.3.
 
 | Library | Version | Module | Purpose |
 |---------|---------|--------|---------|
-| vijava | 5.5.x | dvmm-infrastructure | vSphere SDK |
+| VCF SDK Java | 9.0.0.0 | dvmm-infrastructure | Official VCF SDK (Maven Central) - Includes vSphere Automation & VIM APIs |
 | resilience4j | 2.2.x | dvmm-application | Circuit breaker, retry |
 | spring-security-crypto | 6.x | dvmm-infrastructure | Credential encryption |
+
+> **Note:** Story 3.1 was initially implemented with yavijava. Story 3.1.1 migrates to the official **VCF SDK** due to yavijava deprecation.
 
 ### 7.3 External Dependencies
 
@@ -1078,7 +1086,7 @@ document gaps and adjust approach before Story 3.3.
 - [Epic 2 Retrospective](epic-2-retro-2025-12-04.md)
 - [Story 1.10: VCSIM Integration](1-10-vcsim-integration.md)
 - [VMware vSphere API Reference](https://developer.vmware.com/apis/1720/)
-- [vijava Library](https://github.com/yavijava/yavijava)
+- [VCF SDK Java](https://mvnrepository.com/artifact/com.vmware.vcf/vcf-sdk-java)
 - [resilience4j Documentation](https://resilience4j.readme.io/)
 
 ---

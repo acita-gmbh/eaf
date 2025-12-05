@@ -250,14 +250,14 @@ This story is the **VMware Tracer Bullet**, validating the complete VMware integ
 |---------|---------|---------|
 | Kotlin | 2.2+ | Language with context parameters |
 | Spring Boot | 3.5+ | WebFlux, Security Crypto |
-| yavijava | 6.0.x | vSphere SOAP SDK (maintained fork of vijava) |
+| yavijava | 6.0.x | vSphere SOAP SDK (**DEPRECATED** - see Story 3.1.1 for migration to official SDK) |
 | resilience4j | 2.2.x | Circuit breaker for vSphere calls |
 | PostgreSQL | 16+ | RLS support |
 | React | 19.2+ | Frontend with React Compiler |
 | React Hook Form | 7.x | Form management |
 | Zod | 3.x | Schema validation |
 
-**Note:** Use `yavijava` ([GitHub](https://github.com/yavijava/yavijava)), not the original `vijava` which is unmaintained.
+**Note:** Story 3.1 was implemented with `yavijava`. **Story 3.1.1 migrates to the official vSphere Automation SDK** due to yavijava deprecation (last release May 2017).
 
 ### File Structure Targets
 

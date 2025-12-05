@@ -56,32 +56,32 @@ sprint_plan:
       duration: "1-2 days"
       duration_traditional: "1 week"
       focus: "Setup & Test Infrastructure"
-      stories: ["1-1", "1-2", "1-9"]
+      stories: [ "1-1", "1-2", "1-9" ]
 
     sprint-1:
       duration: "2-3 days"
       duration_traditional: "2 weeks"
       focus: "Event Sourcing Foundation"
-      stories: ["1-3", "1-4"]
+      stories: [ "1-3", "1-4" ]
 
     sprint-2:
       duration: "2-3 days"
       duration_traditional: "2 weeks"
       focus: "Multi-Tenancy (TC-001/TC-002)"
-      stories: ["1-5", "1-6"]
+      stories: [ "1-5", "1-6" ]
 
     sprint-3:
       duration: "2-3 days"
       duration_traditional: "2 weeks"
       focus: "Auth + Projections (TC-004)"
-      stories: ["1-7", "1-8"]
+      stories: [ "1-7", "1-8" ]
 
     sprint-4:
       duration: "2-3 days"
       duration_traditional: "2 weeks"
       focus: "Epic 2 Start + Foundation Completion (parallel)"
-      stories: ["2-1"]
-      parallel: ["1-10", "1-11"]
+      stories: [ "2-1" ]
+      parallel: [ "1-10", "1-11" ]
       note: "VCSIM and CI/CD run parallel to Epic 2 start (Tracer Bullet)"
 
   timeline_summary:
@@ -138,6 +138,8 @@ development_status:
   # ═══════════════════════════════════════════════════════════════════════════
   epic-3: in-progress                                # Tech context created 2025-12-04
   3-1-vmware-connection-configuration: done            # Code review PASSED 2025-12-05
+  3-1-1-migrate-vsphere-sdk: in-progress        # SDK 8.0.3 migration - started 2025-12-05
+  3-1-2-vcf-sdk-adapter: backlog                      # Future: VCF SDK 9.0 when vSphere 9.x >15%
   3-2-vsphere-api-client: backlog
   3-3-provisioning-trigger-on-approval: backlog
   3-4-vm-provisioning-execution: backlog
