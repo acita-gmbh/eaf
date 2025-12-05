@@ -108,6 +108,68 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
 
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
+
+**PropertyCollector Pattern:**
+
+The SDK requires explicit property fetching via `PropertySpec` + `ObjectSpec` + `FilterSpec`:
+
+```kotlin
+// Fetch specific properties from a managed object
+val propSpec = PropertySpec().apply {
+    type = "ClusterComputeResource"
+    pathSet.add("host")  // Property to fetch
+}
+
+val objSpec = ObjectSpec().apply {
+    obj = clusterRef  // ManagedObjectReference
+    isSkip = false
+}
+
+val filterSpec = PropertyFilterSpec().apply {
+    propSet.add(propSpec)
+    objectSet.add(objSpec)
+}
+
+val result = vimPort.retrievePropertiesEx(propertyCollector, listOf(filterSpec), RetrieveOptions())
+```
+
+**SearchIndex Navigation:**
+
+Use inventory paths to find vSphere objects (datacenter/folder/object pattern):
+
+```kotlin
+val searchIndex = serviceContent.searchIndex
+
+// Find datacenter
+val datacenterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter")
+
+// Find cluster (path: datacenter/host/clusterName)
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+
+// Find datastore (path: datacenter/datastore/datastoreName)
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+
+// Find VM/template (path: datacenter/vm/vmName)
+val vmRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/vm/MyTemplate")
+```
+
+**Port 443 Constraint:**
+
+VCF SDK's `VcenterClientFactory` only supports HTTPS on port 443:
+
+```kotlin
+// ✅ CORRECT - Hostname only (SDK assumes port 443)
+val factory = VcenterClientFactory("vcenter.example.com", trustStore)
+
+// ❌ WRONG - Custom port not supported
+val factory = VcenterClientFactory("vcenter.example.com:8443", trustStore)  // URISyntaxException
+```
+
+This is correct for production vCenter servers (always use port 443). For testing with VCSIM (which uses dynamic ports), use the `VcsimAdapter` mock instead.
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.

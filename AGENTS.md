@@ -91,6 +91,21 @@ coEvery { handler.handle(any()) } returns result.success()
 coEvery { handler.handle(any(), any()) } returns result.success()
 ```
 
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** for VMware vCenter integration.
+
+**Key Patterns:**
+- **PropertyCollector:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`
+- **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
+- **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
+
+```kotlin
+// SearchIndex navigation
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+```
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application at `dvmm/dvmm-web/`.

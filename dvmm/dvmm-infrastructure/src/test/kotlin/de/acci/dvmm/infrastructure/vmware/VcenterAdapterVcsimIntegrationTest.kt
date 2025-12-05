@@ -2,9 +2,12 @@ package de.acci.dvmm.infrastructure.vmware
 
 import de.acci.eaf.testing.TestContainers
 import de.acci.eaf.testing.vcsim.VcsimTest
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Integration tests documenting VCF SDK 9.0 behavior with VCSIM.
@@ -59,8 +62,8 @@ class VcenterAdapterVcsimIntegrationTest {
 
         // Note: VCF SDK 9.0 cannot connect to this URL due to custom port
         // Port is dynamic (e.g., 55123) but SDK only supports 443
-        println("VCSIM SDK URL: $sdkUrl")
-        println("Note: VCF SDK 9.0 cannot connect - only supports port 443")
+        logger.info { "VCSIM SDK URL: $sdkUrl" }
+        logger.info { "Note: VCF SDK 9.0 cannot connect - only supports port 443" }
     }
 
     /**

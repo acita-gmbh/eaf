@@ -167,6 +167,31 @@ void auth.signinRedirect({ state: { returnTo: '/' } })
 
 ---
 
+## VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for vCenter integration.
+
+**PropertyCollector Pattern:**
+```kotlin
+// Fetch properties via PropertySpec + ObjectSpec + FilterSpec
+val propSpec = PropertySpec().apply { type = "ClusterComputeResource"; pathSet.add("host") }
+val objSpec = ObjectSpec().apply { obj = clusterRef; isSkip = false }
+val filterSpec = PropertyFilterSpec().apply { propSet.add(propSpec); objectSet.add(objSpec) }
+val result = vimPort.retrievePropertiesEx(propertyCollector, listOf(filterSpec), RetrieveOptions())
+```
+
+**SearchIndex Navigation:**
+```kotlin
+// Inventory paths: datacenter/folder/objectName
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+val vmRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/vm/MyTemplate")
+```
+
+**Port 443 Constraint:** `VcenterClientFactory` only supports HTTPS/443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock instead.
+
+---
+
 ## jOOQ Code Generation (Critical Gotchas)
 
 **Two SQL files must stay in sync:**

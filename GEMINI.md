@@ -107,6 +107,40 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
 
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
+
+**PropertyCollector Pattern:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`:
+
+```kotlin
+val propSpec = PropertySpec().apply {
+    type = "ClusterComputeResource"
+    pathSet.add("host")
+}
+val objSpec = ObjectSpec().apply {
+    obj = clusterRef
+    isSkip = false
+}
+val filterSpec = PropertyFilterSpec().apply {
+    propSet.add(propSpec)
+    objectSet.add(objSpec)
+}
+val result = vimPort.retrievePropertiesEx(propertyCollector, listOf(filterSpec), RetrieveOptions())
+```
+
+**SearchIndex Navigation:** Use inventory paths (datacenter/folder/object):
+
+```kotlin
+// Find cluster: datacenter/host/clusterName
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+
+// Find datastore: datacenter/datastore/datastoreName
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+```
+
+**Port 443 Constraint:** `VcenterClientFactory` only supports port 443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock.
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.

@@ -212,6 +212,8 @@ public class VcenterAdapter(
 
         } catch (e: InvalidLoginFaultMsg) {
             logger.warn(e) { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
+            // Note: AuthenticationFailed intentionally has no 'cause' field - don't leak
+            // exception details for auth failures (security best practice)
             ConnectionError.AuthenticationFailed(
                 message = "Authentication failed - check username and password"
             ).failure()
@@ -296,13 +298,19 @@ public class VcenterAdapter(
             RetrieveOptions()
         )
 
-        return result?.objects?.firstOrNull()
+        val hostCount = result?.objects?.firstOrNull()
             ?.propSet
             ?.firstOrNull { it.name == "host" }
             ?.let { prop ->
                 @Suppress("UNCHECKED_CAST")
-                (prop.`val` as? List<ManagedObjectReference>)?.size ?: 0
-            } ?: 0
+                (prop.`val` as? List<ManagedObjectReference>)?.size
+            }
+
+        if (hostCount == null) {
+            logger.debug { "PropertyCollector returned null for cluster host count, defaulting to 0" }
+            return 0
+        }
+        return hostCount
     }
 
     /**
@@ -337,8 +345,12 @@ public class VcenterAdapter(
         val freeSpaceBytes = result?.objects?.firstOrNull()
             ?.propSet
             ?.firstOrNull { it.name == "summary.freeSpace" }
-            ?.`val` as? Long ?: 0L
+            ?.`val` as? Long
 
+        if (freeSpaceBytes == null) {
+            logger.debug { "PropertyCollector returned null for datastore free space, defaulting to 0" }
+            return 0L
+        }
         return freeSpaceBytes / (1024L * 1024L * 1024L)
     }
 
@@ -371,9 +383,15 @@ public class VcenterAdapter(
             RetrieveOptions()
         )
 
-        return result?.objects?.firstOrNull()
+        val isTemplate = result?.objects?.firstOrNull()
             ?.propSet
             ?.firstOrNull { it.name == "config.template" }
-            ?.`val` as? Boolean ?: false
+            ?.`val` as? Boolean
+
+        if (isTemplate == null) {
+            logger.debug { "PropertyCollector returned null for config.template, defaulting to false" }
+            return false
+        }
+        return isTemplate
     }
 }
