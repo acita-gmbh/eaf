@@ -44,7 +44,7 @@ The initial implementation of VMware integration (Story 3.1) used `yavijava`, wh
 
 **Change 2: Section 10 References**
 *   **OLD:** `[vSphere Automation SDK](...)`
-*   **NEW:** `[VCF SDK Java](https://mvnrepository.com/artifact/com.vmware.vcf/vcf-sdk-java)`
+*   **NEW:** `[VCF SDK Java](https://mvnrepository.com/artifact/com.vmware.sdk/vcf-sdk-bom)`
 
 ### 4.2 Epics.md Updates
 

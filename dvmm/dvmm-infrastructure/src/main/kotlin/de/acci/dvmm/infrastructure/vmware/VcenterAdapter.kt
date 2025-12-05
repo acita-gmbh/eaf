@@ -125,7 +125,11 @@ public class VcenterAdapter(
             } else null
 
             val factory = VcenterClientFactory(vcenterHost, trustStore)
-            client = factory.createClient(params.username, password, null)
+            client = factory.createClient(
+                /* username = */ params.username,
+                /* password = */ password,
+                /* domain = */ null  // SSO domain, null for local auth
+            )
 
             val vimPort = client.vimPort
             val serviceContent = vimPort.retrieveServiceContent(getVimServiceInstanceRef())
@@ -308,9 +312,9 @@ public class VcenterAdapter(
         }
 
         val result = vimPort.retrievePropertiesEx(
-            propertyCollector,
-            listOf(filterSpec),
-            RetrieveOptions()
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
         )
 
         val hostCount = result?.objects?.firstOrNull()
@@ -352,9 +356,9 @@ public class VcenterAdapter(
         }
 
         val result = vimPort.retrievePropertiesEx(
-            propertyCollector,
-            listOf(filterSpec),
-            RetrieveOptions()
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
         )
 
         val freeSpaceBytes = result?.objects?.firstOrNull()
@@ -393,9 +397,9 @@ public class VcenterAdapter(
         }
 
         val result = vimPort.retrievePropertiesEx(
-            propertyCollector,
-            listOf(filterSpec),
-            RetrieveOptions()
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
         )
 
         val isTemplate = result?.objects?.firstOrNull()
