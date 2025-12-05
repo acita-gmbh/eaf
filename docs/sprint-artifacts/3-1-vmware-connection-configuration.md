@@ -112,10 +112,13 @@ So that DVMM can provision VMs in my infrastructure.
 - [x] 4.4 Configure Spring Profile switching (`@Profile("vcsim")` / `@Profile("!vcsim")`)
 - [x] 4.5 Wrap yavijava blocking calls in `withContext(Dispatchers.IO)`:
   ```kotlin
-  suspend fun testConnection(config: VmwareConfiguration): Result<VcenterInfo, ConnectionError> =
+  suspend fun testConnection(
+      params: VcenterConnectionParams,
+      password: String
+  ): Result<ConnectionInfo, ConnectionError> =
       withContext(Dispatchers.IO) {
           // yavijava SOAP calls are blocking - must run on IO dispatcher
-          val serviceInstance = ServiceInstance(URL(config.vcenterUrl), config.username, decryptedPassword, true)
+          val serviceInstance = ServiceInstance(URL(params.vcenterUrl), params.username, password, true)
           // ... connection logic
       }
   ```
