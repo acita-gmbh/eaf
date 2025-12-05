@@ -235,3 +235,50 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON PUBLIC."REQUEST_TIMELINE_EVENTS" TO eaf_
 COMMENT ON TABLE PUBLIC."REQUEST_TIMELINE_EVENTS" IS 'Projection table for VM request timeline events';
 COMMENT ON COLUMN PUBLIC."REQUEST_TIMELINE_EVENTS"."EVENT_TYPE" IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
 -- [jooq ignore stop]
+
+-- ============================================================================
+-- V008__vmware_configurations.sql content
+-- Story 3.1: VMware Connection Configuration
+-- ============================================================================
+
+-- VMware vCenter configuration per tenant (one config per tenant)
+CREATE TABLE IF NOT EXISTS PUBLIC."VMWARE_CONFIGURATIONS" (
+    "ID"                 UUID PRIMARY KEY,
+    "TENANT_ID"          UUID NOT NULL UNIQUE,
+    "VCENTER_URL"        VARCHAR(500) NOT NULL,
+    "USERNAME"           VARCHAR(255) NOT NULL,
+    "PASSWORD_ENCRYPTED" VARBINARY(4096) NOT NULL,  -- H2 compatible (PostgreSQL uses BYTEA)
+    "DATACENTER_NAME"    VARCHAR(255) NOT NULL,
+    "CLUSTER_NAME"       VARCHAR(255) NOT NULL,
+    "DATASTORE_NAME"     VARCHAR(255) NOT NULL,
+    "NETWORK_NAME"       VARCHAR(255) NOT NULL,
+    "TEMPLATE_NAME"      VARCHAR(255) NOT NULL DEFAULT 'ubuntu-22.04-template',
+    "FOLDER_PATH"        VARCHAR(500),
+    "VERIFIED_AT"        TIMESTAMP WITH TIME ZONE,
+    "CREATED_AT"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "UPDATED_AT"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "CREATED_BY"         UUID NOT NULL,
+    "UPDATED_BY"         UUID NOT NULL,
+    "VERSION"            BIGINT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_VMWARE_CONFIGS_TENANT" ON PUBLIC."VMWARE_CONFIGURATIONS"("TENANT_ID");
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: RLS, Grants, Comments (not needed for jOOQ code generation)
+
+ALTER TABLE "VMWARE_CONFIGURATIONS" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_vmware_configs ON "VMWARE_CONFIGURATIONS"
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+ALTER TABLE "VMWARE_CONFIGURATIONS" FORCE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON "VMWARE_CONFIGURATIONS" TO eaf_app;
+
+COMMENT ON TABLE "VMWARE_CONFIGURATIONS" IS 'VMware vCenter connection configuration per tenant';
+COMMENT ON COLUMN "VMWARE_CONFIGURATIONS"."PASSWORD_ENCRYPTED" IS 'AES-256 encrypted password';
+COMMENT ON COLUMN "VMWARE_CONFIGURATIONS"."VERSION" IS 'Optimistic locking version';
+-- [jooq ignore stop]

@@ -25,6 +25,12 @@ dependencies {
     implementation(libs.jooq)
     implementation(libs.jooq.kotlin)
 
+    // Spring Security Crypto for AES-256 encryption (AC-3.1.4)
+    implementation(libs.spring.security.crypto)
+
+    // VMware vSphere SDK (yavijava - maintained fork of vijava)
+    implementation(libs.yavijava)
+
     // jOOQ code generation dependencies
     // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)
     jooqGenerator(libs.jooq)
@@ -125,17 +131,31 @@ jooq {
 }
 
 // =============================================================================
-// KOVER CONFIGURATION - Exclude jOOQ Generated Code from Coverage
+// KOVER CONFIGURATION - Include Only Unit-Testable Classes
 // =============================================================================
-// jOOQ generates code in de.acci.dvmm.infrastructure.jooq package
-// This generated code should not count toward coverage metrics
+// Most infrastructure code requires external systems (PostgreSQL, vCenter, SMTP)
+// and is tested via integration tests in dvmm-app with Testcontainers.
+// Only include classes that can be unit tested in isolation.
 // =============================================================================
 kover {
+    currentProject {
+        instrumentation {
+            // Include ONLY classes that can be unit tested without external dependencies
+            // All adapters/repositories are tested via integration tests in dvmm-app
+            includedClasses.addAll(
+                "de.acci.dvmm.infrastructure.vmware.SpringSecurityCredentialEncryptor",
+                "de.acci.dvmm.infrastructure.vmware.SpringSecurityCredentialEncryptor\$*"
+            )
+        }
+    }
     reports {
         filters {
-            excludes {
-                // Exclude all jOOQ generated code from coverage analysis
-                packages("de.acci.dvmm.infrastructure.jooq.*")
+            includes {
+                // Mirror instrumentation includes for consistent reporting
+                classes(
+                    "de.acci.dvmm.infrastructure.vmware.SpringSecurityCredentialEncryptor",
+                    "de.acci.dvmm.infrastructure.vmware.SpringSecurityCredentialEncryptor\$*"
+                )
             }
         }
     }

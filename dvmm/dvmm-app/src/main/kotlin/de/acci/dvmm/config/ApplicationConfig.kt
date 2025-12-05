@@ -16,6 +16,14 @@ import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
+import de.acci.dvmm.application.vmware.CheckVmwareConfigExistsHandler
+import de.acci.dvmm.application.vmware.CreateVmwareConfigHandler
+import de.acci.dvmm.application.vmware.CredentialEncryptor
+import de.acci.dvmm.application.vmware.GetVmwareConfigHandler
+import de.acci.dvmm.application.vmware.TestVmwareConnectionHandler
+import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
+import de.acci.dvmm.application.vmware.VmwareConfigurationPort
+import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
 import de.acci.dvmm.infrastructure.projection.AdminRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventProjectionUpdaterAdapter
@@ -300,5 +308,91 @@ public class ApplicationConfig {
     ): GetAdminRequestDetailHandler = GetAdminRequestDetailHandler(
         requestRepository = adminRequestRepository,
         timelineRepository = timelineRepository
+    )
+
+    // ==================== VMware Configuration Handlers (Story 3.1) ====================
+
+    /**
+     * Handler for creating VMware vCenter configuration.
+     *
+     * Story 3.1: VMware Connection Configuration (AC-3.1.1, AC-3.1.4)
+     *
+     * @param configurationPort Port for configuration persistence
+     * @param credentialEncryptor Encryptor for securing credentials
+     */
+    @Bean
+    public fun createVmwareConfigHandler(
+        configurationPort: VmwareConfigurationPort,
+        credentialEncryptor: CredentialEncryptor,
+    ): CreateVmwareConfigHandler = CreateVmwareConfigHandler(
+        configurationPort = configurationPort,
+        credentialEncryptor = credentialEncryptor
+    )
+
+    /**
+     * Handler for updating VMware vCenter configuration.
+     *
+     * Story 3.1: VMware Connection Configuration (AC-3.1.1, AC-3.1.4)
+     *
+     * @param configurationPort Port for configuration persistence
+     * @param credentialEncryptor Encryptor for securing credentials
+     */
+    @Bean
+    public fun updateVmwareConfigHandler(
+        configurationPort: VmwareConfigurationPort,
+        credentialEncryptor: CredentialEncryptor,
+    ): UpdateVmwareConfigHandler = UpdateVmwareConfigHandler(
+        configurationPort = configurationPort,
+        credentialEncryptor = credentialEncryptor
+    )
+
+    /**
+     * Handler for retrieving VMware configuration.
+     *
+     * Story 3.1: VMware Connection Configuration (AC-3.1.1)
+     *
+     * @param configurationPort Port for configuration persistence
+     */
+    @Bean
+    public fun getVmwareConfigHandler(
+        configurationPort: VmwareConfigurationPort,
+    ): GetVmwareConfigHandler = GetVmwareConfigHandler(
+        configurationPort = configurationPort
+    )
+
+    /**
+     * Handler for testing VMware vCenter connection.
+     *
+     * Story 3.1: VMware Connection Configuration (AC-3.1.2, AC-3.1.3)
+     *
+     * @param vspherePort Port for vSphere API operations
+     * @param configurationPort Port for configuration persistence
+     * @param credentialEncryptor Encryptor for decrypting stored credentials
+     */
+    @Bean
+    public fun testVmwareConnectionHandler(
+        vspherePort: VspherePort,
+        configurationPort: VmwareConfigurationPort,
+        credentialEncryptor: CredentialEncryptor,
+    ): TestVmwareConnectionHandler = TestVmwareConnectionHandler(
+        vspherePort = vspherePort,
+        configurationPort = configurationPort,
+        credentialEncryptor = credentialEncryptor
+    )
+
+    /**
+     * Handler for checking if VMware configuration exists.
+     *
+     * Story 3.1: VMware Connection Configuration (AC-3.1.5)
+     *
+     * Lightweight query for "VMware not configured" warning.
+     *
+     * @param configurationPort Port for configuration persistence
+     */
+    @Bean
+    public fun checkVmwareConfigExistsHandler(
+        configurationPort: VmwareConfigurationPort,
+    ): CheckVmwareConfigExistsHandler = CheckVmwareConfigExistsHandler(
+        configurationPort = configurationPort
     )
 }

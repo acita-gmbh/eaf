@@ -26,6 +26,17 @@ eaf:
     # Comma-separated list of allowed origins
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
+# DVMM Application Configuration
+dvmm:
+  # Encryption settings for sensitive data (AC-3.1.4)
+  # CRITICAL: In production, use strong secrets via Vault/Secret Manager
+  encryption:
+    # Master password for AES-256 key derivation
+    password: ${DVMM_ENCRYPTION_PASSWORD:dev-encryption-key-change-in-production}
+    # Hex-encoded salt for key derivation (must be persistent for data recovery)
+    # If not set, a random salt is generated (data unrecoverable after restart)
+    salt: ${DVMM_ENCRYPTION_SALT:}
+
 # Actuator Configuration
 management:
   endpoints:

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FileText, Plus, Shield } from 'lucide-react'
+import { LayoutDashboard, FileText, Plus, Shield, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
@@ -32,6 +32,12 @@ const navItems: NavItem[] = [
     label: 'Admin Queue',
     icon: <Shield className="h-5 w-5" />,
     href: '/admin/requests',
+    adminOnly: true,
+  },
+  {
+    label: 'Settings',
+    icon: <Settings className="h-5 w-5" />,
+    href: '/admin/settings',
     adminOnly: true,
   },
 ]

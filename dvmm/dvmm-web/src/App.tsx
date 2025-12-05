@@ -13,6 +13,7 @@ import { NewRequest } from '@/pages/NewRequest'
 import { RequestDetail } from '@/pages/RequestDetail'
 import { PendingRequests } from '@/pages/admin/PendingRequests'
 import { AdminRequestDetail } from '@/pages/admin/RequestDetail'
+import { Settings } from '@/pages/admin/Settings'
 import { fetchCsrfToken, clearCsrfToken } from '@/api/api-client'
 import { queryClient } from '@/lib/query-client'
 import { User } from 'lucide-react'
@@ -123,6 +124,14 @@ function AppRoutes() {
           element={
             <AdminProtectedRoute>
               <AdminRequestDetail />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminProtectedRoute>
+              <Settings />
             </AdminProtectedRoute>
           }
         />

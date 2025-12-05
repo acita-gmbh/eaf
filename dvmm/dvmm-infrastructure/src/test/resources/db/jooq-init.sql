@@ -165,3 +165,44 @@ CREATE POLICY tenant_isolation_timeline_events ON public."REQUEST_TIMELINE_EVENT
 
 ALTER TABLE public."REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
 -- [jooq ignore stop]
+
+-- ============================================================================
+-- V008__vmware_configurations.sql content
+-- ============================================================================
+
+-- VMware vCenter configuration per tenant (one config per tenant)
+CREATE TABLE IF NOT EXISTS public."VMWARE_CONFIGURATIONS" (
+    "ID"                 UUID PRIMARY KEY,
+    "TENANT_ID"          UUID NOT NULL UNIQUE,  -- One config per tenant
+    "VCENTER_URL"        VARCHAR(500) NOT NULL,
+    "USERNAME"           VARCHAR(255) NOT NULL,
+    "PASSWORD_ENCRYPTED" BYTEA NOT NULL,         -- AES-256 encrypted
+    "DATACENTER_NAME"    VARCHAR(255) NOT NULL,
+    "CLUSTER_NAME"       VARCHAR(255) NOT NULL,
+    "DATASTORE_NAME"     VARCHAR(255) NOT NULL,
+    "NETWORK_NAME"       VARCHAR(255) NOT NULL,
+    "TEMPLATE_NAME"      VARCHAR(255) NOT NULL DEFAULT 'ubuntu-22.04-template',
+    "FOLDER_PATH"        VARCHAR(500),           -- Optional VM folder path
+    "VERIFIED_AT"        TIMESTAMPTZ,            -- Last successful connection test
+    "CREATED_AT"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "UPDATED_AT"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "CREATED_BY"         UUID NOT NULL,
+    "UPDATED_BY"         UUID NOT NULL,
+    "VERSION"            BIGINT NOT NULL DEFAULT 0  -- Optimistic locking
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_VMWARE_CONFIGS_TENANT" ON public."VMWARE_CONFIGURATIONS"("TENANT_ID");
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."VMWARE_CONFIGURATIONS" TO eaf_app;
+
+ALTER TABLE public."VMWARE_CONFIGURATIONS" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_vmware_configs ON public."VMWARE_CONFIGURATIONS"
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+ALTER TABLE public."VMWARE_CONFIGURATIONS" FORCE ROW LEVEL SECURITY;
+-- [jooq ignore stop]

@@ -136,8 +136,8 @@ development_status:
   # EPIC 3: VM PROVISIONING (9 Stories)
   # "VM is actually created" - CRITICAL Risk (VMware Integration)
   # ═══════════════════════════════════════════════════════════════════════════
-  epic-3: contexted                                # Tech context created 2025-12-04
-  3-1-vmware-connection-configuration: backlog
+  epic-3: in-progress                                # Tech context created 2025-12-04
+  3-1-vmware-connection-configuration: done            # Code review PASSED 2025-12-05
   3-2-vsphere-api-client: backlog
   3-3-provisioning-trigger-on-approval: backlog
   3-4-vm-provisioning-execution: backlog

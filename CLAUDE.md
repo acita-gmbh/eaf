@@ -831,6 +831,46 @@ try {
 }
 ```
 
+### 5. Parameter Bag Anti-Pattern (Entities with Invalid State)
+
+**Entities should NEVER exist in invalid states.** When you need a subset of entity data for an operation, create a dedicated value object instead of instantiating the entity with placeholder/invalid values.
+
+```kotlin
+// ❌ PROHIBITED - Creating entity with invalid data just to pass parameters
+// Entity invariant violated: VmwareConfiguration requires valid encrypted password
+val config = VmwareConfiguration(
+    id = VmwareConfigurationId.generate(),
+    tenantId = command.tenantId,
+    vcenterUrl = command.vcenterUrl,
+    username = command.username,
+    passwordEncrypted = ByteArray(0),  // INVALID! Violates domain invariant
+    // ... other fields
+)
+vspherePort.testConnection(config)
+
+// ✅ REQUIRED - Create a dedicated value object for the operation
+// VcenterConnectionParams only contains what's needed - no entity lifecycle concerns
+val connectionParams = VcenterConnectionParams(
+    vcenterUrl = command.vcenterUrl,
+    username = command.username,
+    datacenterName = command.datacenterName,
+    clusterName = command.clusterName,
+    datastoreName = command.datastoreName,
+    networkName = command.networkName,
+    templateName = command.templateName,
+    folderPath = null
+)
+vspherePort.testConnection(params = connectionParams, password = resolvedPassword)
+```
+
+**Benefits:**
+- Entity invariants remain intact (VmwareConfiguration always has valid encrypted password)
+- API is type-safe and self-documenting (method signature shows exactly what's needed)
+- Value object can have its own focused validation (e.g., URL format, non-blank fields)
+- Clear separation: entities have identity and lifecycle; value objects are just data
+
+**When to apply:** If you're tempted to pass `null`, empty string, or `ByteArray(0)` to satisfy an entity constructor, create a value object instead.
+
 ---
 
 ## Lessons Learned (from previous project)

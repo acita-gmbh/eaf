@@ -392,6 +392,17 @@ class VmService {
 3. **Silent failures** - Log with context and re-throw appropriately
 4. **Over-engineering** - Keep it simple until complexity is needed
 5. **Copy-paste without understanding** - Adapt code to specific context
+6. **Parameter bag (entities with invalid state)** - Never create entities with placeholder/invalid values just to pass parameters. Create a dedicated value object instead:
+
+```kotlin
+// FORBIDDEN - Entity with invalid state
+val config = VmwareConfiguration(passwordEncrypted = ByteArray(0), ...)
+
+// REQUIRED - Value object with only needed fields
+val params = VcenterConnectionParams(vcenterUrl = url, username = user, ...)
+```
+
+**Why:** Entities should NEVER exist in invalid states. Value objects preserve invariants and make APIs type-safe.
 
 ## Quality Gates
 
