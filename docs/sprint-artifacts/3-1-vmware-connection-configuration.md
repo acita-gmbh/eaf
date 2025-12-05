@@ -14,7 +14,7 @@ So that DVMM can provision VMs in my infrastructure.
 **Given** I am a tenant admin
 **When** I navigate to Settings > VMware Configuration
 **Then** I see a configuration form with fields for:
-- vCenter URL (https://vcenter.example.com/sdk)
+- vCenter URL (`https://vcenter.example.com/sdk`)
 - Username (service account)
 - Password (masked input, encrypted at rest)
 - Datacenter name
