@@ -42,7 +42,7 @@ class GetVmwareConfigHandlerTest {
         userId = testUserId,
         timestamp = Instant.parse("2025-01-01T00:00:00Z")
     ).let { config ->
-        if (verifiedAt != null) config.markVerified(verifiedAt) else config
+        if (verifiedAt != null) config.markVerified(verifiedAt, testUserId) else config
     }
 
     @Nested

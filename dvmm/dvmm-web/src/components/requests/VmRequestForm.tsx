@@ -28,9 +28,14 @@ import { MOCK_PROJECTS } from '@/lib/mock-data/projects'
 
 interface VmRequestFormProps {
   onSubmit?: (data: VmRequestFormData) => void
+  /**
+   * Disable the form submission.
+   * Used when VMware is not configured (AC-3.1.5).
+   */
+  disabled?: boolean
 }
 
-export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
+export function VmRequestForm({ onSubmit, disabled = false }: Readonly<VmRequestFormProps>) {
   const navigate = useNavigate()
   const mutation = useCreateVmRequest()
 
@@ -230,13 +235,20 @@ export function VmRequestForm({ onSubmit }: VmRequestFormProps) {
           </div>
         )}
 
-        {/* Submit Button - AC #1 */}
+        {/* Submit Button - AC #1, AC-3.1.5 (disabled when VMware not configured) */}
         <Button
           type="submit"
-          disabled={!isValid || mutation.isPending}
+          disabled={disabled || !isValid || mutation.isPending}
           className="w-full"
           data-testid="submit-button"
-          aria-label={mutation.isPending ? 'Submitting request...' : 'Submit request'}
+          aria-label={
+            disabled
+              ? 'VMware not configured - contact administrator'
+              : mutation.isPending
+                ? 'Submitting request...'
+                : 'Submit request'
+          }
+          title={disabled ? 'VMware not configured - contact administrator' : undefined}
         >
           {mutation.isPending ? (
             <>

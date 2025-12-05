@@ -227,7 +227,7 @@ class VmwareConfigurationTest {
         @DisplayName("should reset verifiedAt on any update")
         fun `should reset verifiedAt on any update`() {
             // Given
-            val original = createConfig().markVerified(Instant.parse("2025-01-14T10:00:00Z"))
+            val original = createConfig().markVerified(Instant.parse("2025-01-14T10:00:00Z"), testUserId)
             assertEquals(Instant.parse("2025-01-14T10:00:00Z"), original.verifiedAt)
 
             // When
@@ -246,19 +246,22 @@ class VmwareConfigurationTest {
     @DisplayName("markVerified()")
     inner class MarkVerifiedTests {
 
+        private val verifyingUserId = UserId.generate()
+
         @Test
-        @DisplayName("should set verifiedAt timestamp")
-        fun `should set verifiedAt timestamp`() {
+        @DisplayName("should set verifiedAt timestamp and updatedBy")
+        fun `should set verifiedAt timestamp and updatedBy`() {
             // Given
             val config = createConfig()
             val verificationTime = Instant.parse("2025-01-16T15:30:00Z")
 
             // When
-            val verified = config.markVerified(verificationTime)
+            val verified = config.markVerified(verificationTime, verifyingUserId)
 
             // Then
             assertEquals(verificationTime, verified.verifiedAt)
             assertEquals(verificationTime, verified.updatedAt)
+            assertEquals(verifyingUserId, verified.updatedBy)
             assertEquals(config.version + 1, verified.version)
         }
 
@@ -270,7 +273,7 @@ class VmwareConfigurationTest {
             val verificationTime = Instant.parse("2025-01-16T15:30:00Z")
 
             // When
-            val verified = config.markVerified(verificationTime)
+            val verified = config.markVerified(verificationTime, verifyingUserId)
 
             // Then
             assertEquals(config.id, verified.id)
@@ -285,7 +288,8 @@ class VmwareConfigurationTest {
             assertEquals(config.folderPath, verified.folderPath)
             assertEquals(config.createdAt, verified.createdAt)
             assertEquals(config.createdBy, verified.createdBy)
-            assertEquals(config.updatedBy, verified.updatedBy)
+            // Note: updatedBy is expected to change to verifyingUserId
+            assertEquals(verifyingUserId, verified.updatedBy)
         }
     }
 

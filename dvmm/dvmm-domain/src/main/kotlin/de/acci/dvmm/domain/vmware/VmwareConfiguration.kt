@@ -178,11 +178,13 @@ public data class VmwareConfiguration(
      * Increments the version and updates timestamp for proper optimistic locking.
      *
      * @param timestamp When the verification occurred
+     * @param userId User who performed the verification (for audit trail)
      * @return Updated configuration with incremented version
      */
-    public fun markVerified(timestamp: Instant): VmwareConfiguration = copy(
+    public fun markVerified(timestamp: Instant, userId: UserId): VmwareConfiguration = copy(
         verifiedAt = timestamp,
         updatedAt = timestamp,
+        updatedBy = userId,
         version = version + 1
     )
 

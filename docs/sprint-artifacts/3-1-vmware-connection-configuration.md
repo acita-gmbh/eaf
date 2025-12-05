@@ -99,18 +99,18 @@ So that DVMM can provision VMs in my infrastructure.
 - [x] 2.6 Implement `CredentialEncryptor` using Spring Security Crypto (AES-256)
 
 ### Task 3: Backend Infrastructure (AC: 3.1.1, 3.1.4)
-- [ ] 3.1 Create `VmwareConfigurationRepository` using jOOQ
+- [x] 3.1 Create `VmwareConfigurationRepository` using jOOQ
   - Use sealed `ProjectionColumns` pattern (see `VmRequestProjectionRepository.kt` for reference)
   - Include VERSION check for optimistic locking on UPDATE operations
-- [ ] 3.2 Implement `EncryptedCredentialConverter` for jOOQ type mapping (BYTEA ↔ String)
-- [ ] 3.3 Create `VmwareConfigurationProjection` for read queries
+- [x] 3.2 Implement `EncryptedCredentialConverter` for jOOQ type mapping (BYTEA ↔ String)
+- [x] 3.3 Create `VmwareConfigurationProjection` for read queries
 
 ### Task 4: vSphere Connection Testing (AC: 3.1.2, 3.1.3)
-- [ ] 4.1 Create `VspherePort` interface with `testConnection()` method
-- [ ] 4.2 Create `VcsimAdapter` implementation (for tests)
-- [ ] 4.3 Create `VcenterAdapter` implementation (for production, uses yavijava library)
-- [ ] 4.4 Configure Spring Profile switching (`@Profile("vcsim")` / `@Profile("!vcsim")`)
-- [ ] 4.5 Wrap yavijava blocking calls in `withContext(Dispatchers.IO)`:
+- [x] 4.1 Create `VspherePort` interface with `testConnection()` method
+- [x] 4.2 Create `VcsimAdapter` implementation (for tests)
+- [x] 4.3 Create `VcenterAdapter` implementation (for production, uses yavijava library)
+- [x] 4.4 Configure Spring Profile switching (`@Profile("vcsim")` / `@Profile("!vcsim")`)
+- [x] 4.5 Wrap yavijava blocking calls in `withContext(Dispatchers.IO)`:
   ```kotlin
   suspend fun testConnection(config: VmwareConfiguration): Result<VcenterInfo, ConnectionError> =
       withContext(Dispatchers.IO) {
@@ -121,37 +121,37 @@ So that DVMM can provision VMs in my infrastructure.
   ```
 
 ### Task 5: REST API (AC: 3.1.1, 3.1.2, 3.1.3)
-- [ ] 5.1 Create `VmwareConfigController` with endpoints:
+- [x] 5.1 Create `VmwareConfigController` with endpoints:
   - `GET /api/admin/vmware-config` - Get current config (masked password)
   - `PUT /api/admin/vmware-config` - Create/update config
   - `POST /api/admin/vmware-config/test` - Test connection
-- [ ] 5.2 Create `VmwareConfigRequest` DTO with Zod-like validation
-- [ ] 5.3 Create `VmwareConfigResponse` DTO (password masked)
-- [ ] 5.4 Create `ConnectionTestResponse` DTO
-- [ ] 5.5 Add `@PreAuthorize("hasRole('admin')")` security
+- [x] 5.2 Create `VmwareConfigRequest` DTO with Zod-like validation
+- [x] 5.3 Create `VmwareConfigResponse` DTO (password masked)
+- [x] 5.4 Create `ConnectionTestResponse` DTO
+- [x] 5.5 Add `@PreAuthorize("hasRole('admin')")` security
 
 ### Task 6: Frontend Settings Form (AC: 3.1.1, 3.1.2, 3.1.3)
-- [ ] 6.1 Create `VmwareConfigurationForm.tsx` component
-- [ ] 6.2 Add form validation with React Hook Form + Zod
-- [ ] 6.3 Implement masked password input with show/hide toggle
-- [ ] 6.4 Implement "Test Connection" button with loading state
-- [ ] 6.5 Display connection test results (success/error messages)
-- [ ] 6.6 Add Settings page route and navigation
+- [x] 6.1 Create `VmwareConfigurationForm.tsx` component
+- [x] 6.2 Add form validation with React Hook Form + Zod
+- [x] 6.3 Implement masked password input with show/hide toggle
+- [x] 6.4 Implement "Test Connection" button with loading state
+- [x] 6.5 Display connection test results (success/error messages)
+- [x] 6.6 Add Settings page route and navigation
 
 ### Task 7: Missing Config Warning (AC: 3.1.5)
-- [ ] 7.1 Create `useVmwareConfigExists` hook
-- [ ] 7.2 Update VM Request form to check config existence
-- [ ] 7.3 Display warning banner when config missing
-- [ ] 7.4 Disable submit button with tooltip explanation
+- [x] 7.1 Create `useVmwareConfigExists` hook
+- [x] 7.2 Update VM Request form to check config existence
+- [x] 7.3 Display warning banner when config missing
+- [x] 7.4 Disable submit button with tooltip explanation
 
 ### Task 8: Testing (All ACs)
-- [ ] 8.1 Unit tests for command handlers (MockK)
-- [ ] 8.2 Unit tests for credential encryption/decryption
-- [ ] 8.3 Integration tests for VmwareConfigController
-- [ ] 8.4 RLS isolation tests (TC-002 pattern) - verify cross-tenant access fails
-- [ ] 8.5 VCSIM integration tests for VcenterAdapter
-- [ ] 8.6 Frontend component tests for VmwareConfigurationForm
-- [ ] 8.7 Achieve 80% code coverage, 70% mutation score
+- [x] 8.1 Unit tests for command handlers (MockK)
+- [x] 8.2 Unit tests for credential encryption/decryption
+- [x] 8.3 Integration tests for VmwareConfigController
+- [x] 8.4 RLS isolation tests (TC-002 pattern) - verify cross-tenant access fails
+- [x] 8.5 VCSIM integration tests for VcenterAdapter (stub implementation - real VCSIM deferred to Story 3.2)
+- [x] 8.6 Frontend component tests for VmwareConfigurationForm
+- [ ] 8.7 Achieve 80% code coverage, 70% mutation score (pending final verification)
 
 ## Dev Notes
 

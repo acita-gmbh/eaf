@@ -258,7 +258,7 @@ public class TestVmwareConnectionHandler(
 
                 // Optionally update verifiedAt if config exists and flag is set
                 val verifiedAtUpdated = if (command.updateVerifiedAt) {
-                    updateVerifiedTimestamp(command.tenantId)
+                    updateVerifiedTimestamp(command.tenantId, command.userId)
                 } else {
                     null
                 }
@@ -316,13 +316,15 @@ public class TestVmwareConnectionHandler(
     /**
      * Updates the verifiedAt timestamp for existing configuration.
      *
+     * @param tenantId Tenant whose config to update
+     * @param userId User performing the verification (for audit trail)
      * @return true if update succeeded, false if update failed or config not found
      */
-    private suspend fun updateVerifiedTimestamp(tenantId: TenantId): Boolean {
+    private suspend fun updateVerifiedTimestamp(tenantId: TenantId, userId: UserId): Boolean {
         return try {
             val existing = configurationPort.findByTenantId(tenantId)
             if (existing != null) {
-                val updated = existing.markVerified(Instant.now(clock))
+                val updated = existing.markVerified(Instant.now(clock), userId)
                 when (val result = configurationPort.update(updated)) {
                     is Result.Success -> {
                         logger.debug { "Updated verifiedAt timestamp for tenant ${tenantId.value}" }
