@@ -227,27 +227,6 @@ remain **UNIMPLEMENTED** (deferred to Story 3.2):
 
 The existing `VspherePort` interface signature is preserved; only the `VcenterAdapter` implementation changes.
 
-### SDK Selection: vSphere Automation SDK 8.0.3 (Strategic Decision 2025-12-05)
-
-**Why NOT VCF SDK 9.0:**
-
-- VCF SDK 9.0 only supports vSphere **8.0+** (confirmed via market research)
-- ~45-50% of DACH customers still run **vSphere 7.x** (EOL: Oct 2027 Technical Guidance)
-- Excluding half the market is commercially untenable for market entry
-
-**Why vSphere Automation SDK 8.0.3:**
-
-- Supports **vSphere 7.x AND 8.x** (~85% market coverage)
-- Uses same `com.vmware.vim25.*` packages as yavijava (easier migration)
-- Private Maven repo (GitHub Packages) solves CI/CD blocker
-- VspherePort abstraction enables future VCF SDK 9.0 adapter (Story 3.1.2)
-
-**Lifecycle Plan:**
-
-- **2025-2027:** SDK 8.0.3 for vSphere 7.x/8.x support
-- **Q3 2027:** Evaluate VCF SDK 9.0 migration when vSphere 9.x market share >15%
-- **Post-2027:** Deprecate SDK 8.0.3 after vSphere 7.x Technical Guidance ends
-
 ### Unified Authentication Pattern (CRITICAL)
 
 **Flow:** SOAP login returns `vmware_soap_session` cookie → inject as `vmware-api-session-id` header for REST calls.

@@ -1268,7 +1268,8 @@ So that DVMM uses a supported, maintained SDK for VMware integration with vSpher
 **Then** `VcenterAdapter` uses the official **VCF SDK (Maven Central)**
 **And** yavijava dependencies are completely removed
 **And** Unified Authentication pattern is implemented with **session caching/pooling**
-**And** `VcenterAdapter` is verified against VCSIM via new integration tests
+**And** VMware integration tests use `VcsimAdapter` mock (VCF SDK port 443 limitation);
+    `VcenterAdapter` validation deferred to Story 3.9 (real vCenter contract tests)
 
 **Prerequisites:** Story 3.1 (VMware Connection Configuration)
 
