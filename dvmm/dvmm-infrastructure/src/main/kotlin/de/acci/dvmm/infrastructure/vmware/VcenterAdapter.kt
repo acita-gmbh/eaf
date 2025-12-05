@@ -299,7 +299,7 @@ public class VcenterAdapter(
 
         val objSpec = ObjectSpec().apply {
             obj = clusterRef
-            isSkip = false
+            isSkip = false  // Include the object's properties in results (don't skip)
         }
 
         val filterSpec = PropertyFilterSpec().apply {
@@ -343,7 +343,7 @@ public class VcenterAdapter(
 
         val objSpec = ObjectSpec().apply {
             obj = datastoreRef
-            isSkip = false
+            isSkip = false  // Include the object's properties in results (don't skip)
         }
 
         val filterSpec = PropertyFilterSpec().apply {
@@ -384,7 +384,7 @@ public class VcenterAdapter(
 
         val objSpec = ObjectSpec().apply {
             obj = vmRef
-            isSkip = false
+            isSkip = false  // Include the object's properties in results (don't skip)
         }
 
         val filterSpec = PropertyFilterSpec().apply {

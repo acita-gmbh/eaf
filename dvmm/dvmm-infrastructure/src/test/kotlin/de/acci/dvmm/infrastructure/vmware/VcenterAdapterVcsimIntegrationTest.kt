@@ -78,7 +78,7 @@ class VcenterAdapterVcsimIntegrationTest {
      */
     @Test
     @Disabled("VCF SDK 9.0 does not support custom ports - VCSIM uses dynamic ports")
-    fun `VCF SDK 9-0 port limitation - documented for future reference`() {
+    fun `VCF SDK 9 port limitation - documented for future reference`() {
         // This test is disabled to document the finding.
         // To test VCF SDK 9.0 with VCSIM, you would need to:
         // 1. Configure VCSIM to use a fixed port (443) in docker-compose
