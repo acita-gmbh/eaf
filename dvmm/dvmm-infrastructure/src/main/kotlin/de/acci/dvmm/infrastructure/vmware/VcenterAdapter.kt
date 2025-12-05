@@ -153,7 +153,11 @@ public class VcenterAdapter(
                 ).failure()
 
             // Get cluster host count using PropertyCollector
-            val clusterHosts = getClusterHostCount(vimPort, serviceContent.propertyCollector, clusterRef)
+            val clusterHosts = getClusterHostCount(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                clusterRef = clusterRef
+            )
             logger.debug { "Found cluster: ${params.clusterName} with $clusterHosts hosts" }
 
             // Find datastore using SearchIndex (path: datacenter/datastore/datastoreName)
@@ -164,7 +168,11 @@ public class VcenterAdapter(
                 ).failure()
 
             // Get datastore free space using PropertyCollector
-            val datastoreFreeGb = getDatastoreFreeSpaceGb(vimPort, serviceContent.propertyCollector, datastoreRef)
+            val datastoreFreeGb = getDatastoreFreeSpaceGb(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                datastoreRef = datastoreRef
+            )
             logger.debug { "Found datastore: ${params.datastoreName} with ${datastoreFreeGb}GB free" }
 
             // Find network using SearchIndex (path: datacenter/network/networkName)
@@ -187,7 +195,11 @@ public class VcenterAdapter(
             }
 
             // Verify it's actually a template (config.template == true)
-            val isTemplate = isVmTemplate(vimPort, serviceContent.propertyCollector, templateRef)
+            val isTemplate = isVmTemplate(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                vmRef = templateRef
+            )
             if (!isTemplate) {
                 logger.warn {
                     "VM found but not marked as template: ${params.templateName}"
