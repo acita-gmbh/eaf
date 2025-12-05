@@ -636,7 +636,7 @@ So that code quality standards are maintained automatically.
   1. Build (Gradle)
   2. Unit tests
   3. Integration tests (Testcontainers)
-  4. Code coverage check (Kover ≥70%)
+  4. Code coverage check (koverVerify ≥70%)
   5. Mutation testing (Pitest ≥70%)
   6. Architecture tests (Konsist)
 
