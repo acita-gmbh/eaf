@@ -21,8 +21,9 @@ private val logger = KotlinLogging.logger {}
  *    - SDK internally constructs URLs assuming port 443
  *
  * 2. **SSL/TLS**: Uses Apache CXF for JAX-WS SOAP
- *    - Empty KeyStore means "trust nothing" (unlike yavijava)
- *    - Must provide proper truststore with CA certificate
+ *    - In standard Java SSL, empty KeyStore means "trust nothing" (not "trust all")
+ *    - VCF SDK's actual behavior with empty KeyStore needs verification (Story 3-9)
+ *    - For production: use proper truststore with vCenter's CA certificate
  *
  * 3. **VCSIM Compatibility**: Limited due to port constraint
  *    - VCSIM Testcontainers uses dynamic ports

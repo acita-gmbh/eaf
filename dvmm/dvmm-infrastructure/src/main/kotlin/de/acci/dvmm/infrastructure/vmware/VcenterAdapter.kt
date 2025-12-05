@@ -115,8 +115,11 @@ public class VcenterAdapter(
                         "Expected format: 'https://<hostname>/sdk'"
                 ).failure()
 
-            // Create client factory with optional SSL bypass
-            // An empty trust store is passed to VcenterClientFactory to disable SSL verification (for self-signed certs)
+            // Create client factory with optional SSL configuration
+            // WARNING: VCF SDK 9.0 SSL behavior with empty KeyStore needs verification (Story 3-9).
+            // In standard Java SSL, empty KeyStore means "trust nothing" (not "trust all").
+            // Passing null uses default system truststore. The ignoreCert flag's actual effect
+            // depends on how VcenterClientFactory handles the KeyStore parameter internally.
             val trustStore: KeyStore? = if (ignoreCert) KeyStore.getInstance(KeyStore.getDefaultType()).apply {
                 load(null, null)
             } else null
