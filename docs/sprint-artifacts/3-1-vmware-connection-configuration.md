@@ -151,7 +151,7 @@ So that DVMM can provision VMs in my infrastructure.
 - [x] 8.4 RLS isolation tests (TC-002 pattern) - verify cross-tenant access fails
 - [x] 8.5 VCSIM integration tests for VcenterAdapter (stub implementation - real VCSIM deferred to Story 3.2)
 - [x] 8.6 Frontend component tests for VmwareConfigurationForm
-- [ ] 8.7 Achieve 80% code coverage, 70% mutation score (pending final verification)
+- [x] 8.7 Achieve 80% code coverage, 70% mutation score (verified 2025-12-05)
 
 ## Dev Notes
 

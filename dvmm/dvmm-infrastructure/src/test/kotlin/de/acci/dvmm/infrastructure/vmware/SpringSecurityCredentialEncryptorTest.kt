@@ -63,12 +63,12 @@ class SpringSecurityCredentialEncryptorTest {
         }
 
         @Test
-        @DisplayName("should throw EncryptionException for empty password")
+        @DisplayName("should throw IllegalArgumentException for empty password")
         fun `should throw exception for empty password`() {
             // Given
             val encryptor = createEncryptor()
 
-            // When/Then
+            // When/Then - require() throws IllegalArgumentException
             assertThrows<IllegalArgumentException> {
                 encryptor.encrypt("")
             }
@@ -95,12 +95,12 @@ class SpringSecurityCredentialEncryptorTest {
         }
 
         @Test
-        @DisplayName("should throw DecryptionException for empty data")
+        @DisplayName("should throw IllegalArgumentException for empty data")
         fun `should throw exception for empty encrypted data`() {
             // Given
             val encryptor = createEncryptor()
 
-            // When/Then
+            // When/Then - require() throws IllegalArgumentException
             assertThrows<IllegalArgumentException> {
                 encryptor.decrypt(ByteArray(0))
             }

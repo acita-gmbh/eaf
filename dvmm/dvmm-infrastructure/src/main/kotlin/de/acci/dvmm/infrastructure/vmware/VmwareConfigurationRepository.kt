@@ -262,6 +262,27 @@ public class VmwareConfigurationRepository(
             }
         }
 
+    /**
+     * Updates an existing VMware configuration with optimistic locking.
+     *
+     * ## Optimistic Locking Contract
+     *
+     * **IMPORTANT:** The caller MUST increment the version before calling this method.
+     * The repository expects `configuration.version` to be the NEW version (current + 1),
+     * and checks against `version - 1` in the WHERE clause.
+     *
+     * Example usage in command handler:
+     * ```kotlin
+     * val updated = existing.update(/* ... */).copy(version = existing.version + 1)
+     * repository.update(updated)
+     * ```
+     *
+     * This explicit contract ensures the caller is aware of version management and
+     * prevents accidental overwrites.
+     *
+     * @param configuration The configuration with the NEW version already set
+     * @return Success if update succeeded, or failure with ConcurrencyConflict/NotFound
+     */
     override suspend fun update(configuration: VmwareConfiguration): Result<Unit, VmwareConfigurationError> =
         withContext(Dispatchers.IO) {
             try {

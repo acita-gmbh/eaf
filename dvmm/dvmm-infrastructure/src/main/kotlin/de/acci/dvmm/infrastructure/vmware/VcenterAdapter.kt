@@ -4,7 +4,6 @@ import com.vmware.vim25.mo.ClusterComputeResource
 import com.vmware.vim25.mo.Datacenter
 import com.vmware.vim25.mo.Datastore
 import com.vmware.vim25.mo.InventoryNavigator
-import com.vmware.vim25.mo.Network
 import com.vmware.vim25.mo.ServiceInstance
 import com.vmware.vim25.mo.VirtualMachine
 import de.acci.dvmm.application.vmware.ConnectionError
@@ -45,6 +44,15 @@ import javax.net.ssl.SSLException
  * you can either:
  * 1. Import the certificate into the JVM truststore
  * 2. Set `ignoreCert=true` in ServiceInstance (not recommended for production)
+ *
+ * ## Connection Timeouts
+ *
+ * yavijava uses Java's URLConnection internally, which respects JVM socket settings.
+ * To configure connection timeouts, set JVM system properties:
+ * ```
+ * -Dsun.net.client.defaultConnectTimeout=30000  # 30 seconds connect timeout
+ * -Dsun.net.client.defaultReadTimeout=60000     # 60 seconds read timeout
+ * ```
  *
  * ## Threading
  *
@@ -100,6 +108,8 @@ public class VcenterAdapter(
 
         try {
             // Connect to vCenter
+            // Note: Connection timeouts are controlled by JVM socket settings.
+            // For custom timeouts, configure: -Dsun.net.client.defaultConnectTimeout=30000
             // ignoreCert=false by default (secure); set dvmm.vcenter.ignore-cert=true for self-signed certs
             serviceInstance = ServiceInstance(
                 URL(config.vcenterUrl),
@@ -142,12 +152,14 @@ public class VcenterAdapter(
             val datastoreFreeGb = (datastore.summary?.freeSpace ?: 0L) / (1024L * 1024L * 1024L)
             logger.debug { "Found datastore: ${config.datastoreName} with ${datastoreFreeGb}GB free" }
 
-            // Verify network exists
-            InventoryNavigator(datacenter)
-                .searchManagedEntity("Network", config.networkName) as? Network
-                ?: return@withContext ConnectionError.NetworkNotFound(
+            // Verify network exists (result not stored - only existence check needed)
+            if (InventoryNavigator(datacenter)
+                    .searchManagedEntity("Network", config.networkName) == null
+            ) {
+                return@withContext ConnectionError.NetworkNotFound(
                     networkName = config.networkName
                 ).failure()
+            }
 
             logger.debug { "Found network: ${config.networkName}" }
 

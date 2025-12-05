@@ -94,11 +94,13 @@ public class SpringSecurityCredentialEncryptor(
             KeyGenerators.string().generateKey()
         }
 
+        // AesBytesEncryptor is a Java class - using block comments for parameter documentation
+        // since Kotlin named arguments aren't supported for Java constructors
         AesBytesEncryptor(
-            /* password = */ encryptionPassword,
-            /* salt = */ salt,
-            /* ivGenerator = */ KeyGenerators.secureRandom(16), // 128-bit IV
-            /* alg = */ AesBytesEncryptor.CipherAlgorithm.GCM // AES-GCM for authenticated encryption
+            encryptionPassword,                          // password - master key for encryption
+            salt,                                        // salt - for key derivation
+            KeyGenerators.secureRandom(16),              // ivGenerator - 128-bit random IV per encryption
+            AesBytesEncryptor.CipherAlgorithm.GCM        // algorithm - AES-GCM for authenticated encryption
         )
     }
 

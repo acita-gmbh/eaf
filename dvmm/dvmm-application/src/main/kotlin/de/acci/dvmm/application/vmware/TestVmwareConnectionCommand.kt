@@ -224,12 +224,17 @@ public class TestVmwareConnectionHandler(
         val resolvedPassword = resolvePassword(command)
             ?: return TestVmwareConnectionError.PasswordRequired().failure()
 
-        // Create a temporary config object for the test
+        // Create a temporary config object for the test.
+        // NOTE: We use ByteArray(0) for passwordEncrypted because VspherePort.testConnection()
+        // receives the decrypted password as a separate parameter, not from the config.
+        // This is intentional: we never store plaintext passwords in domain objects.
+        // TODO: Consider refactoring to use a dedicated TestConnectionParams value object
+        //       instead of reusing VmwareConfiguration (tracked as tech debt).
         val testConfig = VmwareConfiguration.create(
             tenantId = command.tenantId,
             vcenterUrl = command.vcenterUrl,
             username = command.username,
-            passwordEncrypted = ByteArray(0), // Not used - we pass password directly
+            passwordEncrypted = ByteArray(0), // Intentionally empty - password passed separately
             datacenterName = command.datacenterName,
             clusterName = command.clusterName,
             datastoreName = command.datastoreName,
