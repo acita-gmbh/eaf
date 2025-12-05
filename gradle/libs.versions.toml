@@ -1,7 +1,12 @@
 [versions]
 kotlin = "2.2.21"
 spring-boot = "3.5.8"
-# yavijava removed in Story 3.1.1 - replaced by VCF SDK 9.0
+# VMware VCF SDK 9.0 - Official VMware SDK from Maven Central
+# Chosen over community fork (io.github.ray784:yavijava:6.1.0, Oct 2024) because:
+# 1. Official VMware support and maintenance guarantees
+# 2. Aligned with VCF (VMware Cloud Foundation) roadmap
+# 3. Enterprise licensing clarity for ACCI customers
+# Note: SDK requires port 443 - see ADR-011 for testing implications
 vcf-sdk = "9.0.0.0"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.9"
