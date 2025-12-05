@@ -3,7 +3,7 @@ package de.acci.dvmm.infrastructure.vmware
 import de.acci.dvmm.application.vmware.ConnectionError
 import de.acci.dvmm.application.vmware.ConnectionInfo
 import de.acci.dvmm.application.vmware.VspherePort
-import de.acci.dvmm.domain.vmware.VmwareConfiguration
+import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
@@ -59,26 +59,27 @@ public class VcsimAdapter : VspherePort {
      * basic connectivity and authentication.
      */
     override suspend fun testConnection(
-        config: VmwareConfiguration,
-        decryptedPassword: String
+        params: VcenterConnectionParams,
+        password: String
     ): Result<ConnectionInfo, ConnectionError> = withContext(Dispatchers.IO) {
         logger.info {
             "Testing VCSIM connection: " +
-                "url=${config.vcenterUrl}, " +
-                "user=${config.username}, " +
-                "datacenter=${config.datacenterName}"
+                "url=${params.vcenterUrl}, " +
+                "user=${params.username}, " +
+                "datacenter=${params.datacenterName}"
         }
 
         try {
-            // Validate URL format
-            if (!config.vcenterUrl.startsWith("https://")) {
+            // Validate URL format (already validated by VcenterConnectionParams init,
+            // but checking again for defense in depth)
+            if (!params.vcenterUrl.startsWith("https://")) {
                 return@withContext ConnectionError.NetworkError(
                     message = "vCenter URL must start with https://"
                 ).failure()
             }
 
             // Validate credentials are not empty
-            if (config.username.isBlank() || decryptedPassword.isBlank()) {
+            if (params.username.isBlank() || password.isBlank()) {
                 return@withContext ConnectionError.AuthenticationFailed(
                     message = "Username and password cannot be empty"
                 ).failure()
@@ -90,7 +91,7 @@ public class VcsimAdapter : VspherePort {
 
             ConnectionInfo(
                 vcenterVersion = "8.0.2 (VCSIM)",
-                clusterName = config.clusterName,
+                clusterName = params.clusterName,
                 clusterHosts = 3, // VCSIM default
                 datastoreFreeGb = 500L // Simulated value
             ).success()

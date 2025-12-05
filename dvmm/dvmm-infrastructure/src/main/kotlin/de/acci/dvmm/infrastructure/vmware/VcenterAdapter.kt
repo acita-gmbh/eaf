@@ -9,7 +9,7 @@ import com.vmware.vim25.mo.VirtualMachine
 import de.acci.dvmm.application.vmware.ConnectionError
 import de.acci.dvmm.application.vmware.ConnectionInfo
 import de.acci.dvmm.application.vmware.VspherePort
-import de.acci.dvmm.domain.vmware.VmwareConfiguration
+import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
@@ -94,14 +94,14 @@ public class VcenterAdapter(
      * 8. Existence of specified VM template
      */
     override suspend fun testConnection(
-        config: VmwareConfiguration,
-        decryptedPassword: String
+        params: VcenterConnectionParams,
+        password: String
     ): Result<ConnectionInfo, ConnectionError> = withContext(Dispatchers.IO) {
         logger.info {
             "Testing vCenter connection: " +
-                "url=${config.vcenterUrl}, " +
-                "user=${config.username}, " +
-                "datacenter=${config.datacenterName}"
+                "url=${params.vcenterUrl}, " +
+                "user=${params.username}, " +
+                "datacenter=${params.datacenterName}"
         }
 
         var serviceInstance: ServiceInstance? = null
@@ -112,9 +112,9 @@ public class VcenterAdapter(
             // For custom timeouts, configure: -Dsun.net.client.defaultConnectTimeout=30000
             // ignoreCert=false by default (secure); set dvmm.vcenter.ignore-cert=true for self-signed certs
             serviceInstance = ServiceInstance(
-                URL(config.vcenterUrl),
-                config.username,
-                decryptedPassword,
+                URL(params.vcenterUrl),
+                params.username,
+                password,
                 ignoreCert
             )
 
@@ -125,89 +125,89 @@ public class VcenterAdapter(
             // Find datacenter
             val rootFolder = serviceInstance.rootFolder
             val datacenter = InventoryNavigator(rootFolder)
-                .searchManagedEntity("Datacenter", config.datacenterName) as? Datacenter
+                .searchManagedEntity("Datacenter", params.datacenterName) as? Datacenter
                 ?: return@withContext ConnectionError.DatacenterNotFound(
-                    datacenterName = config.datacenterName
+                    datacenterName = params.datacenterName
                 ).failure()
 
-            logger.debug { "Found datacenter: ${config.datacenterName}" }
+            logger.debug { "Found datacenter: ${params.datacenterName}" }
 
             // Find cluster
             val cluster = InventoryNavigator(datacenter)
-                .searchManagedEntity("ClusterComputeResource", config.clusterName) as? ClusterComputeResource
+                .searchManagedEntity("ClusterComputeResource", params.clusterName) as? ClusterComputeResource
                 ?: return@withContext ConnectionError.ClusterNotFound(
-                    clusterName = config.clusterName
+                    clusterName = params.clusterName
                 ).failure()
 
             val clusterHosts = cluster.hosts?.size ?: 0
-            logger.debug { "Found cluster: ${config.clusterName} with $clusterHosts hosts" }
+            logger.debug { "Found cluster: ${params.clusterName} with $clusterHosts hosts" }
 
             // Find datastore
             val datastore = InventoryNavigator(datacenter)
-                .searchManagedEntity("Datastore", config.datastoreName) as? Datastore
+                .searchManagedEntity("Datastore", params.datastoreName) as? Datastore
                 ?: return@withContext ConnectionError.DatastoreNotFound(
-                    datastoreName = config.datastoreName
+                    datastoreName = params.datastoreName
                 ).failure()
 
             val datastoreFreeGb = (datastore.summary?.freeSpace ?: 0L) / (1024L * 1024L * 1024L)
-            logger.debug { "Found datastore: ${config.datastoreName} with ${datastoreFreeGb}GB free" }
+            logger.debug { "Found datastore: ${params.datastoreName} with ${datastoreFreeGb}GB free" }
 
             // Verify network exists (result not stored - only existence check needed)
             if (InventoryNavigator(datacenter)
-                    .searchManagedEntity("Network", config.networkName) == null
+                    .searchManagedEntity("Network", params.networkName) == null
             ) {
                 return@withContext ConnectionError.NetworkNotFound(
-                    networkName = config.networkName
+                    networkName = params.networkName
                 ).failure()
             }
 
-            logger.debug { "Found network: ${config.networkName}" }
+            logger.debug { "Found network: ${params.networkName}" }
 
             // Verify template exists (VirtualMachine with template flag)
             val template = InventoryNavigator(datacenter)
-                .searchManagedEntity("VirtualMachine", config.templateName) as? VirtualMachine
+                .searchManagedEntity("VirtualMachine", params.templateName) as? VirtualMachine
             if (template == null || template.config?.template != true) {
                 logger.warn {
-                    "Template not found or not marked as template: ${config.templateName} " +
+                    "Template not found or not marked as template: ${params.templateName} " +
                         "(found=${template != null}, isTemplate=${template?.config?.template})"
                 }
                 return@withContext ConnectionError.TemplateNotFound(
-                    templateName = config.templateName
+                    templateName = params.templateName
                 ).failure()
             }
 
-            logger.debug { "Found template: ${config.templateName}" }
+            logger.debug { "Found template: ${params.templateName}" }
 
             logger.info {
                 "vCenter connection test successful: " +
                     "version=$vcenterVersion, " +
-                    "cluster=${config.clusterName}, " +
+                    "cluster=${params.clusterName}, " +
                     "hosts=$clusterHosts"
             }
 
             ConnectionInfo(
                 vcenterVersion = vcenterVersion,
-                clusterName = config.clusterName,
+                clusterName = params.clusterName,
                 clusterHosts = clusterHosts,
                 datastoreFreeGb = datastoreFreeGb
             ).success()
 
         } catch (e: UnknownHostException) {
-            logger.warn(e) { "DNS resolution failed for ${config.vcenterUrl}" }
+            logger.warn(e) { "DNS resolution failed for ${params.vcenterUrl}" }
             ConnectionError.NetworkError(
                 message = "Cannot resolve hostname: ${e.message}",
                 cause = e
             ).failure()
 
         } catch (e: ConnectException) {
-            logger.warn(e) { "Connection refused to ${config.vcenterUrl}" }
+            logger.warn(e) { "Connection refused to ${params.vcenterUrl}" }
             ConnectionError.NetworkError(
                 message = "Connection refused: ${e.message}",
                 cause = e
             ).failure()
 
         } catch (e: SSLException) {
-            logger.warn(e) { "SSL error connecting to ${config.vcenterUrl}" }
+            logger.warn(e) { "SSL error connecting to ${params.vcenterUrl}" }
             ConnectionError.SslError(
                 message = "SSL certificate error: ${e.message}",
                 cause = e
@@ -221,7 +221,7 @@ public class VcenterAdapter(
                 message.contains("cannot complete login") ||
                 message.contains("authentication")
             ) {
-                logger.warn { "Authentication failed for ${config.username} at ${config.vcenterUrl}" }
+                logger.warn { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
                 ConnectionError.AuthenticationFailed(
                     message = "Authentication failed - check username and password"
                 ).failure()

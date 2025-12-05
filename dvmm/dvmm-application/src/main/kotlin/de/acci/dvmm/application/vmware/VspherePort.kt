@@ -1,6 +1,6 @@
 package de.acci.dvmm.application.vmware
 
-import de.acci.dvmm.domain.vmware.VmwareConfiguration
+import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 
 /**
@@ -22,11 +22,11 @@ import de.acci.eaf.core.result.Result
  * @Autowired
  * lateinit var vspherePort: VspherePort
  *
- * suspend fun testConfiguration(config: VmwareConfiguration) {
- *     val result = vspherePort.testConnection(config)
+ * suspend fun testConfiguration(params: VcenterConnectionParams, password: String) {
+ *     val result = vspherePort.testConnection(params, password)
  *     result.fold(
  *         onSuccess = { info ->
- *             println("Connected to vCenter ${info.version}")
+ *             println("Connected to vCenter ${info.vcenterVersion}")
  *         },
  *         onFailure = { error ->
  *             when (error) {
@@ -44,7 +44,7 @@ import de.acci.eaf.core.result.Result
 public interface VspherePort {
 
     /**
-     * Test connection to vCenter using the provided configuration.
+     * Test connection to vCenter using the provided parameters.
      *
      * Validates:
      * - Network connectivity to vCenter URL
@@ -53,14 +53,15 @@ public interface VspherePort {
      * - Existence of specified cluster
      * - Existence of specified datastore
      * - Existence of specified network
+     * - Existence of specified VM template
      *
-     * @param config The VMware configuration to test
-     * @param decryptedPassword The decrypted password (caller must decrypt before calling)
+     * @param params Connection parameters (URL, username, infrastructure names)
+     * @param password The plaintext password (caller must decrypt if using stored config)
      * @return Result containing connection info on success, or specific error on failure
      */
     public suspend fun testConnection(
-        config: VmwareConfiguration,
-        decryptedPassword: String
+        params: VcenterConnectionParams,
+        password: String
     ): Result<ConnectionInfo, ConnectionError>
 }
 

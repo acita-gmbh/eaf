@@ -1,5 +1,6 @@
 package de.acci.dvmm.application.vmware
 
+import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.dvmm.domain.vmware.VmwareConfiguration
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -224,31 +225,22 @@ public class TestVmwareConnectionHandler(
         val resolvedPassword = resolvePassword(command)
             ?: return TestVmwareConnectionError.PasswordRequired().failure()
 
-        // Create a temporary config object for the test.
-        // NOTE: We use ByteArray(0) for passwordEncrypted because VspherePort.testConnection()
-        // receives the decrypted password as a separate parameter, not from the config.
-        // This is intentional: we never store plaintext passwords in domain objects.
-        // TODO: Consider refactoring to use a dedicated TestConnectionParams value object
-        //       instead of reusing VmwareConfiguration (tracked as tech debt).
-        val testConfig = VmwareConfiguration.create(
-            tenantId = command.tenantId,
+        // Create connection parameters value object (no entity concerns - just connection params)
+        val connectionParams = VcenterConnectionParams(
             vcenterUrl = command.vcenterUrl,
             username = command.username,
-            passwordEncrypted = ByteArray(0), // Intentionally empty - password passed separately
             datacenterName = command.datacenterName,
             clusterName = command.clusterName,
             datastoreName = command.datastoreName,
             networkName = command.networkName,
             templateName = command.templateName,
-            folderPath = null,
-            userId = command.userId,
-            timestamp = Instant.now(clock)
+            folderPath = null
         )
 
         // Test the connection
         val connectionResult = vspherePort.testConnection(
-            config = testConfig,
-            decryptedPassword = resolvedPassword
+            params = connectionParams,
+            password = resolvedPassword
         )
 
         return when (connectionResult) {
