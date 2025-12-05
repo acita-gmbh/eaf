@@ -93,7 +93,7 @@ ASRs are requirements with **high architectural impact** that drive testing stra
 | **ASR-001** | Multi-tenant RLS isolation | Security | Cross-tenant access tests, RLS policy verification |
 | **ASR-002** | RBAC enforcement (global + project) | Security | Permission matrix tests, negative scenarios |
 | **ASR-003** | API response P95 < 500ms | Performance | k6 load tests with SLO thresholds |
-| **ASR-004** | 80% test coverage | Maintainability | CI coverage gates, mutation testing |
+| **ASR-004** | 70% test coverage | Maintainability | CI coverage gates, mutation testing |
 | **ASR-005** | Complete audit trail | Compliance | Event sourcing replay tests |
 | **ASR-006** | Crypto-shredding GDPR | Compliance | Key destruction verification, data inaccessibility |
 
@@ -308,7 +308,7 @@ test('app remains functional when VMware is offline', async ({ page, context }) 
 
 | NFR ID | Requirement | Test Tool | CI Integration |
 |--------|-------------|-----------|----------------|
-| NFR-MAINT-1 | Coverage ≥ 80% | Kover | `./gradlew koverHtmlReport` |
+| NFR-MAINT-1 | Coverage ≥ 70% | Kover | `./gradlew koverHtmlReport` |
 | NFR-MAINT-2 | Mutation score ≥ 70% | PITest | `./gradlew pitest` |
 | NFR-MAINT-11 | E2E < 15 min | Playwright | CI timing assertion |
 | NFR-MAINT-12 | Contract tests | Pact | `./gradlew pactVerify` |
@@ -712,7 +712,7 @@ test:
       steps:
         - run: ./gradlew test
         - run: ./gradlew koverHtmlReport
-        - run: ./gradlew koverVerify  # Enforces 80% coverage threshold
+        - run: ./gradlew koverVerify  # Enforces 70% coverage threshold
 
     architecture:
       runs-on: ubuntu-latest
@@ -758,7 +758,7 @@ test:
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
 | **Unit Tests** | 100% pass | Merge blocked |
-| **Coverage** | ≥ 80% | Merge blocked |
+| **Coverage** | ≥ 70% | Merge blocked |
 | **Mutation Score** | ≥ 70% | Merge blocked |
 | **Architecture Tests** | 100% pass | Merge blocked |
 | **Integration Tests** | 100% pass | Merge blocked |

@@ -636,7 +636,7 @@ So that code quality standards are maintained automatically.
   1. Build (Gradle)
   2. Unit tests
   3. Integration tests (Testcontainers)
-  4. Code coverage check (Kover ≥80%)
+  4. Code coverage check (Kover ≥70%)
   5. Mutation testing (Pitest ≥70%)
   6. Architecture tests (Konsist)
 
@@ -704,7 +704,7 @@ So that I can access DVMM securely with my company credentials.
 - Has temporarily disabled coverage verification (see `eaf/eaf-auth-keycloak/build.gradle.kts`)
 - **Action Required:**
   1. Add Keycloak Testcontainer integration tests for `KeycloakIdentityProvider`
-  2. Achieve ≥80% test coverage for `eaf-auth-keycloak` module
+  2. Achieve ≥70% test coverage for `eaf-auth-keycloak` module
   3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `eaf/eaf-auth-keycloak/build.gradle.kts`
 - Reason: Story 1.7 created the implementation, but testing requires Keycloak Testcontainer setup
 
@@ -715,7 +715,7 @@ So that I can access DVMM securely with my company credentials.
      - Unauthenticated /api/** requests return 401
      - Unauthenticated /actuator/health requests are allowed
      - Authenticated requests with valid JWT succeed
-  2. Achieve ≥80% test coverage for `dvmm-api` module
+  2. Achieve ≥70% test coverage for `dvmm-api` module
   3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `dvmm/dvmm-api/build.gradle.kts`
 - Reason: SecurityConfig.securityWebFilterChain() requires Spring Security WebFlux integration testing with Keycloak
 

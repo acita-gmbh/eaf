@@ -110,7 +110,7 @@ logger.warn { "Access error: ${result.error}" }
 
 | Metric | Threshold | Tool |
 |--------|-----------|------|
-| Line Coverage | ≥80% | Kover |
+| Line Coverage | ≥70% | Kover |
 | Mutation Score | ≥70% | Pitest |
 | Architecture | 100% pass | Konsist |
 
