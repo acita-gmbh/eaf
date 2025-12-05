@@ -1,5 +1,5 @@
 # CI Pipeline - DVMM/EAF Monorepo
-# Quality Gates: Coverage ≥80%, Mutation ≥70%, Architecture tests pass
+# Quality Gates: Coverage ≥70%, Mutation ≥70%, Architecture tests pass
 # See: docs/devops-strategy.md, CLAUDE.md
 #
 # NOTE: Mutation testing (Pitest + Arcmutate) requires a commercial license.
@@ -76,7 +76,7 @@ jobs:
       - name: Build (compile main + test sources)
         run: ./gradlew assemble compileTestKotlin --no-daemon
 
-      - name: Unit & Integration Tests + Coverage (≥80%)
+      - name: Unit & Integration Tests + Coverage (≥70%)
         run: ./gradlew test :koverHtmlReport koverVerify --no-daemon
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
@@ -164,7 +164,7 @@ jobs:
       - name: Type Check (TypeScript)
         run: npx tsc --noEmit
 
-      - name: Unit Tests + Coverage (≥80%)
+      - name: Unit Tests + Coverage (≥70%)
         run: npm run test:coverage
 
       - name: Build

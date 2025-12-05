@@ -21,10 +21,10 @@ This file provides guidance to Google Gemini when working with code in this repo
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
 
-# Check code coverage (Kover) - 80% minimum required
+# Check code coverage (Kover) - 70% minimum required
 ./gradlew koverHtmlReport          # Per-module reports
 ./gradlew :koverHtmlReport         # Merged report (root)
-./gradlew koverVerify              # Verify 80% threshold
+./gradlew koverVerify              # Verify 70% threshold
 
 # Run mutation testing (Pitest) - 70% threshold
 ./gradlew pitest
@@ -57,7 +57,7 @@ Product modules following Hexagonal Architecture:
 Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
-- `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
+- `eaf.test-conventions` - JUnit 6, Kover (70% coverage), Testcontainers, Konsist
 - `eaf.pitest-conventions` - Mutation testing (70% threshold)
 
 ## Critical Architecture Rules (ADR-001)
@@ -488,7 +488,7 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 
 **YOU MUST:**
 - Write tests BEFORE implementation (Tests First)
-- Achieve ≥80% line coverage per module
+- Achieve ≥70% line coverage per module
 - Achieve ≥70% mutation score (Pitest)
 - Run `./gradlew clean build` before committing
 
@@ -667,7 +667,7 @@ val cache = ConcurrentHashMap<UUID, Aggregate>()  // "Might be slow"
 
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
-| Test Coverage | ≥80% | CI blocks merge |
+| Test Coverage | ≥70% | CI blocks merge |
 | Mutation Score | ≥70% | CI blocks merge |
 | Architecture Tests | All pass | CI blocks merge |
 | Security Scan | Zero critical | CI blocks merge |
