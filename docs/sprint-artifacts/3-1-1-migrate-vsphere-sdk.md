@@ -1,6 +1,6 @@
 # Story 3.1.1: Migrate to Official vSphere SDK
 
-Status: review
+Status: done
 
 ## Story
 

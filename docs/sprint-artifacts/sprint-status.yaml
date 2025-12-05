@@ -138,7 +138,7 @@ development_status:
   # ═══════════════════════════════════════════════════════════════════════════
   epic-3: in-progress                                # Tech context created 2025-12-04
   3-1-vmware-connection-configuration: done            # Code review PASSED 2025-12-05
-  3-1-1-migrate-vsphere-sdk: review              # VCF SDK 9.0 migration - PR #73
+  3-1-1-migrate-vsphere-sdk: done                # VCF SDK 9.0 migration - PR #73 merged
   3-1-2-vcf-sdk-adapter: backlog                      # Obsolete: Story 3.1.1 already uses VCF SDK 9.0
   3-2-vsphere-api-client: backlog
   3-3-provisioning-trigger-on-approval: backlog
