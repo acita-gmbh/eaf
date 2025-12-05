@@ -1,6 +1,6 @@
 # Story 3.1: VMware Connection Configuration
 
-Status: in-progress
+Status: done
 
 ## Story
 

@@ -233,6 +233,23 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 | Class components in React | Legacy pattern | Function components with hooks |
 | `new RegExp(userInput)` | CWE-1333 ReDoS vulnerability | Use string literals or static patterns |
 | Floating promises | Silent error swallowing | Use `void` for fire-and-forget or `await` |
+| Entity with invalid state | Violates domain invariants | Create dedicated value object instead |
+
+### Domain Integrity: Value Objects for Operation Parameters
+
+**Entities should NEVER exist in invalid states.** When needing a subset of entity data for an operation, create a dedicated value object instead of instantiating the entity with placeholder values.
+
+```kotlin
+// ❌ FORBIDDEN - Entity with invalid data just to pass parameters
+val config = VmwareConfiguration(passwordEncrypted = ByteArray(0), ...)
+vspherePort.testConnection(config)
+
+// ✅ REQUIRED - Value object with only what's needed
+val params = VcenterConnectionParams(vcenterUrl, username, datacenterName, ...)
+vspherePort.testConnection(params = params, password = resolvedPassword)
+```
+
+**When to apply:** If you're tempted to pass `null`, empty string, or `ByteArray(0)` to satisfy an entity constructor, create a value object instead. This preserves entity invariants and makes APIs type-safe.
 
 ---
 
@@ -262,6 +279,6 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 ---
 
-_Last Updated: 2025-12-03_
+_Last Updated: 2025-12-05_
 _Distilled from CLAUDE.md for LLM context efficiency_
-_Added: MockK default parameter gotcha, Floating promises pattern with `void` operator_
+_Added: Domain integrity pattern (value objects for operation parameters)_
