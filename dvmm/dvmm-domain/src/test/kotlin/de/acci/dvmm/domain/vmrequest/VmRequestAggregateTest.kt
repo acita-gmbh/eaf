@@ -386,6 +386,33 @@ class VmRequestAggregateTest {
         }
     }
 
+    @Nested
+    @DisplayName("markProvisioning()")
+    inner class MarkProvisioningTests {
+
+        @Test
+        @DisplayName("should transition from APPROVED to PROVISIONING")
+        fun `should transition from APPROVED to PROVISIONING`() {
+            // Given
+            val aggregate = createApprovedAggregate()
+
+            // When
+            aggregate.markProvisioning(TestMetadataFactory.create())
+
+            // Then
+            assertEquals(VmRequestStatus.PROVISIONING, aggregate.status)
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateException when not APPROVED")
+        fun `should throw InvalidStateException when not APPROVED`() {
+            val aggregate = createValidAggregate() // PENDING
+            assertThrows<de.acci.dvmm.domain.exceptions.InvalidStateException> {
+                aggregate.markProvisioning(TestMetadataFactory.create())
+            }
+        }
+    }
+
     private fun createValidAggregate(): VmRequestAggregate {
         return VmRequestAggregate.create(
             requesterId = UserId.generate(),
@@ -396,5 +423,11 @@ class VmRequestAggregateTest {
             requesterEmail = "test@example.com",
             metadata = TestMetadataFactory.create()
         )
+    }
+
+    private fun createApprovedAggregate(): VmRequestAggregate {
+        val aggregate = createValidAggregate()
+        aggregate.approve(UserId.generate(), TestMetadataFactory.create())
+        return aggregate
     }
 }

@@ -70,6 +70,7 @@ public data class CreateVmRequestResult(
 public class CreateVmRequestHandler(
     private val eventStore: EventStore,
     private val quotaChecker: QuotaChecker = AlwaysAvailableQuotaChecker,
+    private val projectionUpdater: VmRequestProjectionUpdater = NoOpVmRequestProjectionUpdater,
     private val timelineUpdater: TimelineEventProjectionUpdater = NoOpTimelineEventProjectionUpdater,
     private val notificationSender: VmRequestNotificationSender = NoOpVmRequestNotificationSender
 ) {
@@ -137,7 +138,27 @@ public class CreateVmRequestHandler(
             is Result.Success -> {
                 aggregate.clearUncommittedEvents()
 
-                // Update timeline projection
+                // Update main projection first (timeline has FK dependency)
+                projectionUpdater.insert(
+                    NewVmRequestProjection(
+                        id = aggregate.id,
+                        tenantId = command.tenantId,
+                        requesterId = command.requesterId,
+                        requesterName = command.requesterEmail.substringBefore("@"), // MVP: Extract name from email
+                        projectId = command.projectId,
+                        projectName = command.projectId.value.toString(), // MVP: Project name resolved at query time
+                        vmName = command.vmName,
+                        size = command.size,
+                        justification = command.justification,
+                        status = aggregate.status,
+                        createdAt = metadata.timestamp,
+                        version = 1
+                    )
+                ).onFailure { projectionError ->
+                    logProjectionError(projectionError, aggregate.id, correlationId)
+                }
+
+                // Update timeline projection (after main projection due to FK)
                 timelineUpdater.addTimelineEvent(
                     NewTimelineEvent(
                         id = UUID.nameUUIDFromBytes(
@@ -200,14 +221,14 @@ public class CreateVmRequestHandler(
         when (error) {
             is ProjectionError.DatabaseError -> {
                 logger.warn {
-                    "Timeline projection update failed for request ${requestId.value}: ${error.message}. " +
+                    "Projection update failed for request ${requestId.value}: ${error.message}. " +
                         "correlationId=${correlationId.value}. " +
                         "Projection can be rebuilt from event store."
                 }
             }
             is ProjectionError.NotFound -> {
                 logger.warn {
-                    "Timeline projection not found for request ${requestId.value}. " +
+                    "Projection not found for request ${requestId.value}. " +
                         "correlationId=${correlationId.value}. " +
                         "Projection may need to be reconstructed from event store."
                 }

@@ -1,14 +1,19 @@
 package de.acci.dvmm.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import de.acci.dvmm.application.vm.ProvisionVmHandler
+import de.acci.dvmm.application.vm.TriggerProvisioningHandler
+import de.acci.dvmm.application.vm.VmProvisioningListener
+import de.acci.dvmm.application.vm.VmRequestStatusUpdater
+import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CreateVmRequestHandler
-import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
-import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.GetAdminRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.GetMyRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
+import de.acci.dvmm.application.vmrequest.MarkVmRequestProvisioningHandler
 import de.acci.dvmm.application.vmrequest.RejectVmRequestHandler
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
@@ -25,6 +30,7 @@ import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
+import de.acci.dvmm.infrastructure.eventsourcing.PublishingEventStore
 import de.acci.dvmm.infrastructure.projection.AdminRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventProjectionUpdaterAdapter
 import de.acci.dvmm.infrastructure.projection.TimelineEventReadRepositoryAdapter
@@ -39,6 +45,8 @@ import de.acci.eaf.eventsourcing.PostgresEventStore
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
@@ -69,20 +77,25 @@ public class ApplicationConfig {
      *
      * Handles Kotlin value classes and EAF core types (TenantId, UserId, etc.).
      */
-    @Bean
+    @Bean("eventStoreObjectMapper")
     public fun eventStoreObjectMapper(): ObjectMapper = EventStoreObjectMapper.create()
 
     /**
-     * PostgreSQL-based event store implementation.
+     * PostgreSQL-based event store implementation wrapped with event publisher.
      *
      * @param dsl jOOQ DSLContext for database operations
      * @param objectMapper Jackson ObjectMapper for JSON serialization
+     * @param publisher Spring ApplicationEventPublisher for side effects
      */
     @Bean
     public fun eventStore(
         dsl: DSLContext,
-        objectMapper: ObjectMapper,
-    ): EventStore = PostgresEventStore(dsl, objectMapper)
+        @Qualifier("eventStoreObjectMapper") objectMapper: ObjectMapper,
+        publisher: ApplicationEventPublisher
+    ): EventStore {
+        val postgresStore = PostgresEventStore(dsl, objectMapper)
+        return PublishingEventStore(postgresStore, publisher)
+    }
 
     // ==================== Projection Infrastructure ====================
 
@@ -134,8 +147,46 @@ public class ApplicationConfig {
      * Deserializes stored events from JSON to domain event types.
      */
     @Bean
-    public fun vmRequestEventDeserializer(objectMapper: ObjectMapper): VmRequestEventDeserializer =
+    public fun vmRequestEventDeserializer(@Qualifier("eventStoreObjectMapper") objectMapper: ObjectMapper): VmRequestEventDeserializer =
         JacksonVmRequestEventDeserializer(objectMapper)
+
+    // ==================== VM Provisioning Handlers (Story 3.3) ====================
+
+    @Bean
+    public fun provisionVmHandler(eventStore: EventStore): ProvisionVmHandler = ProvisionVmHandler(eventStore)
+
+    @Bean
+    public fun markVmRequestProvisioningHandler(
+        eventStore: EventStore,
+        eventDeserializer: VmRequestEventDeserializer
+    ): MarkVmRequestProvisioningHandler = MarkVmRequestProvisioningHandler(eventStore, eventDeserializer)
+
+    @Bean
+    public fun vmProvisioningListener(
+        eventStore: EventStore,
+        eventDeserializer: VmRequestEventDeserializer,
+        provisionVmHandler: ProvisionVmHandler
+    ): VmProvisioningListener = VmProvisioningListener(
+        eventStore = eventStore,
+        deserializer = eventDeserializer,
+        provisionVmHandler = provisionVmHandler
+    )
+
+    @Bean
+    public fun triggerProvisioningHandler(
+        vspherePort: VspherePort,
+        configPort: VmwareConfigurationPort,
+        eventStore: EventStore
+    ): TriggerProvisioningHandler = TriggerProvisioningHandler(
+        vspherePort = vspherePort,
+        configPort = configPort,
+        eventStore = eventStore
+    )
+
+    @Bean
+    public fun vmRequestStatusUpdater(
+        markHandler: MarkVmRequestProvisioningHandler
+    ): VmRequestStatusUpdater = VmRequestStatusUpdater(markHandler)
 
     // ==================== Command Handlers ====================
 
@@ -143,14 +194,17 @@ public class ApplicationConfig {
      * Handler for creating VM requests.
      *
      * @param eventStore Event store for persisting domain events
+     * @param projectionUpdater Updater for keeping projections in sync
      * @param timelineUpdater Updater for persisting timeline events
      */
     @Bean
     public fun createVmRequestHandler(
         eventStore: EventStore,
+        projectionUpdater: VmRequestProjectionUpdater,
         timelineUpdater: TimelineEventProjectionUpdater,
     ): CreateVmRequestHandler = CreateVmRequestHandler(
         eventStore = eventStore,
+        projectionUpdater = projectionUpdater,
         timelineUpdater = timelineUpdater
     )
 
