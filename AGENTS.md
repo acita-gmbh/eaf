@@ -161,6 +161,36 @@ Failing silently with `expectedVersion = 0` causes concurrency conflicts.
 
 Without deserializer registration, aggregate loads throw `IllegalArgumentException: Unknown event type`.
 
+### CQRS Command Handler Pattern
+
+**Command handlers must update BOTH write-side AND read-side together.**
+
+In CQRS/Event Sourcing, the write-side (event store) and read-side (projections) are separate. Command handlers must update both:
+
+```kotlin
+// ✅ CORRECT - Update BOTH write-side and read-side
+public suspend fun handle(command: MarkProvisioningCommand): Result<Unit, Error> {
+    // 1. Write-side: Persist domain event
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+
+    // 2. Read-side: Update projection (timeline, status views)
+    timelineUpdater.addTimelineEvent(NewTimelineEvent(
+        eventType = TimelineEventType.PROVISIONING_STARTED,
+        details = "VM provisioning has started"
+    ))
+    return Unit.success()
+}
+
+// ❌ WRONG - Only updates write-side, forgets read-side projection
+eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+// Missing: timelineUpdater.addTimelineEvent(...) ← Users won't see state change!
+```
+
+**Why this matters:** Write-side is easy to verify (event persisted), but read-side (timeline events, status views) is easy to forget. Acceptance criteria like "Timeline event added" won't be satisfied.
+
+**Reference implementations:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler`
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** for VMware vCenter integration.

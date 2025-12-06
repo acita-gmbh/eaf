@@ -1,6 +1,6 @@
 # Story 3.3: provisioning-trigger-on-approval
 
-Status: in-review
+Status: done
 
 ## Story
 

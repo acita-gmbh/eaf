@@ -279,6 +279,34 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 **See:** `VmRequestProjectionRepository.kt` and `TimelineEventRepository.kt` for reference implementations.
 
+**CQRS Command Handler Pattern (CRITICAL):**
+
+Command handlers must update BOTH write-side (event store) AND read-side (projections) together:
+
+```kotlin
+// ✅ CORRECT - Update BOTH write-side and read-side
+public suspend fun handle(command: MarkProvisioningCommand): Result<Unit, Error> {
+    // 1. Write-side: Persist domain event
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+
+    // 2. Read-side: Update projection (timeline, status views)
+    timelineUpdater.addTimelineEvent(NewTimelineEvent(
+        eventType = TimelineEventType.PROVISIONING_STARTED,
+        details = "VM provisioning has started"
+    ))
+    return Unit.success()
+}
+
+// ❌ WRONG - Only updates write-side, forgets read-side projection
+eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+// Missing: timelineUpdater.addTimelineEvent(...) ← AC "Timeline event added" NOT satisfied!
+```
+
+**Why:** Write-side is easy to verify (event persisted), but read-side (timeline events, status views) is easy to forget. Users won't see the state change in the UI.
+
+**See:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler` for reference implementations.
+
 ---
 
 ## Anti-Patterns (Prohibited)

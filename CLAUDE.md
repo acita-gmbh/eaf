@@ -191,6 +191,45 @@ private fun resolveEventClass(eventType: String): Class<out DomainEvent> {
 
 **Why this matters:** Without deserializer registration, any aggregate load that includes the new event will throw `IllegalArgumentException: Unknown event type`. This breaks idempotency checks, status updates, and all future operations on affected aggregates.
 
+**CQRS Command Handlers: Update Write-Side AND Read-Side Together**
+
+In CQRS/Event Sourcing, command handlers must update both:
+1. **Write-side:** Persist domain events to the event store
+2. **Read-side:** Update any associated projections (timelines, status views, etc.)
+
+```kotlin
+// ✅ CORRECT - Handler updates BOTH write-side and read-side
+public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Unit, Error> {
+    // 1. Write-side: Persist domain event
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+
+    // 2. Read-side: Update projection (timeline, status, etc.)
+    timelineUpdater.addTimelineEvent(NewTimelineEvent(
+        eventType = TimelineEventType.PROVISIONING_STARTED,
+        details = "VM provisioning has started",
+        // ...
+    ))
+    return Unit.success()
+}
+
+// ❌ WRONG - Forgets read-side projection update
+public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Unit, Error> {
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+    // Missing: timelineUpdater.addTimelineEvent(...)
+    return Unit.success()  // AC-6 "Timeline event added" NOT satisfied!
+}
+```
+
+**Why this matters:**
+- Write-side correctly persists the domain event, but read-side (what users see) is never updated
+- Timeline views, status dashboards, and detail pages won't reflect the state change
+- The Acceptance Criteria "Timeline event added" appears done (event exists) but isn't visible
+- This is a common CQRS pitfall: write-side is easy to verify, read-side is easy to forget
+
+**Pattern to follow:** Look at existing handlers (`CreateVmRequestHandler`, `ApproveVmRequestHandler`) that inject `TimelineEventProjectionUpdater` and call `addTimelineEvent()` after successful event persistence.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
