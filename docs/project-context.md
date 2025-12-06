@@ -149,6 +149,21 @@ fun onEvent(event: SomeEvent) {
 }
 ```
 
+**Event Sourcing Defensive Pattern:**
+- Always check for empty event lists when loading events to determine `expectedVersion`
+- Empty results indicate: (1) aggregate doesn't exist, (2) race condition deleted events, or (3) wrong ID passed
+- Failing silently with `expectedVersion = 0` causes concurrency conflicts on append
+
+```kotlin
+// ✅ CORRECT - Check for empty events before using size
+val currentEvents = eventStore.load(aggregateId)
+if (currentEvents.isEmpty()) {
+    logger.error { "Cannot append: aggregate $aggregateId not found" }
+    return
+}
+val expectedVersion = currentEvents.size.toLong()
+```
+
 **Vitest Mocking Patterns (TypeScript):**
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests

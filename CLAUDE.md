@@ -138,6 +138,35 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Event Sourcing Defensive Patterns
+
+**Always check for empty event lists when loading events to determine `expectedVersion`.**
+
+When loading events from the event store to calculate `expectedVersion` for optimistic concurrency, always validate that events were actually returned:
+
+```kotlin
+// ✅ CORRECT - Check for empty events before using size
+val currentEvents = eventStore.load(aggregateId)
+if (currentEvents.isEmpty()) {
+    logger.error { "Cannot append: aggregate $aggregateId not found in event store" }
+    return  // or throw appropriate exception
+}
+val expectedVersion = currentEvents.size.toLong()
+eventStore.append(aggregateId, newEvents, expectedVersion)
+
+// ❌ WRONG - Empty list silently becomes expectedVersion = 0
+val currentEvents = eventStore.load(aggregateId)
+val expectedVersion = currentEvents.size.toLong()  // 0 if empty!
+eventStore.append(aggregateId, newEvents, expectedVersion)  // Concurrency conflict
+```
+
+**Why empty results are dangerous:**
+1. **Data corruption**: Aggregate doesn't exist (was deleted or never created)
+2. **Race condition**: Events were deleted between operations
+3. **Wrong ID**: Incorrect aggregate ID was passed
+
+Failing silently with `expectedVersion = 0` causes concurrency conflicts on append because the event store expects version 0 for new aggregates only.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

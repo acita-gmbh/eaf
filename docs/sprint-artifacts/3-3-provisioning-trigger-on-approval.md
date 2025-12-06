@@ -90,6 +90,34 @@ So that no manual intervention is needed after approval.
 -   [Source: 3-2-vsphere-api-client.md#Dev Notes]
 -   [Source: project-context.md#jOOQ Code Generation (Critical Gotchas)]
 
+### Deferred Enhancements (Post-MVP)
+
+The following code review suggestions were deferred as non-critical for MVP but may be relevant for future iterations:
+
+1. **VmAggregate Placeholder Defaults → `lateinit var`**
+   - Current: Uses sentinel values (all-zero UUIDs, "placeholder" name) as initial state
+   - Suggested: Use `lateinit var` to enforce that properties are only set after `VmProvisioningStarted` is applied
+   - Rationale for deferral: Factory method `startProvisioning()` already enforces the invariant; `reconstitute()` requires stored events
+   - Future benefit: Stronger compile-time safety, prevents misuse of uninitialized aggregates
+
+2. **Domain-Specific Exception for State Transitions**
+   - Current: `check(status == VmStatus.PROVISIONING)` throws generic `IllegalStateException`
+   - Suggested: Create `VmProvisioningStateException` with `vmId` and `currentStatus` context
+   - Rationale for deferral: Current error message is descriptive; exception type distinction not yet needed by callers
+   - Future benefit: Enables fine-grained error handling in application layer
+
+3. **JWT Test Helper Consolidation**
+   - Current: `VmProvisioningIntegrationTest` and `VmRequestIntegrationTest` have similar JWT creation logic
+   - Suggested: Extract to shared test utility in testFixtures module
+   - Rationale for deferral: Tests work correctly; duplication is contained
+   - Future benefit: Single source of truth for test token configuration
+
+4. **WebTestClient `jsonPath()` for ID Extraction**
+   - Current: Uses `substringAfter`/`substringBefore` string parsing for extracting response IDs
+   - Suggested: Use `jsonPath("$.id")` for type-safe JSON extraction
+   - Rationale for deferral: Current approach works; minor robustness improvement
+   - Future benefit: More resilient to JSON structure changes
+
 ## Dev Agent Record
 
 ### Context Reference
