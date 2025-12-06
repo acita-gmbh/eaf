@@ -17,7 +17,9 @@ public class VsphereSessionManager {
     }
 
     public fun removeSession(tenantId: TenantId) {
-        sessions.remove(tenantId)
+        val session = sessions.remove(tenantId)
+        // Cancel keepalive job to prevent resource leak
+        session?.keepAliveJob?.cancel()
     }
 
     public fun touchSession(tenantId: TenantId) {

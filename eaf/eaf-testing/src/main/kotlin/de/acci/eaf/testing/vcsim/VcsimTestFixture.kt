@@ -356,7 +356,13 @@ public class VcsimTestFixture(
         return vimPort
     }
     
-    private fun waitForTask(vimPort: VimPortType, serviceContent: ServiceContent, task: ManagedObjectReference) {
+    private fun waitForTask(
+        vimPort: VimPortType,
+        serviceContent: ServiceContent,
+        task: ManagedObjectReference,
+        timeoutMs: Long = 60_000 // 60 seconds default timeout for tests
+    ) {
+        val startTime = System.currentTimeMillis()
         val infoSpec = PropertySpec().apply {
             this.type = "Task"
             this.pathSet.add("info.state")
@@ -368,7 +374,16 @@ public class VcsimTestFixture(
         }
 
         while (true) {
-            val result = vimPort.retrievePropertiesEx(serviceContent.propertyCollector, listOf(filterSpec), RetrieveOptions())
+            val elapsed = System.currentTimeMillis() - startTime
+            if (elapsed > timeoutMs) {
+                throw VcsimException("Task timed out after ${elapsed}ms (limit: ${timeoutMs}ms)")
+            }
+
+            val result = vimPort.retrievePropertiesEx(
+                serviceContent.propertyCollector,
+                listOf(filterSpec),
+                RetrieveOptions()
+            )
             val props = result?.objects?.firstOrNull()?.propSet?.associate { it.name to it.`val` }
 
             val state = props?.get("info.state") as? TaskInfoState
@@ -376,7 +391,7 @@ public class VcsimTestFixture(
 
             if (state == TaskInfoState.SUCCESS) return
             if (state == TaskInfoState.ERROR) {
-                throw RuntimeException("Task failed: $error")
+                throw VcsimException("Task failed: $error")
             }
 
             Thread.sleep(100)
@@ -393,9 +408,13 @@ public class VcsimTestFixture(
             this.objectSet.add(ObjectSpec().apply { this.obj = task })
         }
 
-        val result = vimPort.retrievePropertiesEx(serviceContent.propertyCollector, listOf(filterSpec), RetrieveOptions())
+        val result = vimPort.retrievePropertiesEx(
+            serviceContent.propertyCollector,
+            listOf(filterSpec),
+            RetrieveOptions()
+        )
         return result?.objects?.firstOrNull()?.propSet?.firstOrNull { it.name == "info" }?.`val` as? TaskInfo
-            ?: throw RuntimeException("Failed to get task info")
+            ?: throw VcsimException("Failed to get task info for task: ${task.value}")
     }
 }
 

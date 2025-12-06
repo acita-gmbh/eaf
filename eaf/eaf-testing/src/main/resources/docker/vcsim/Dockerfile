@@ -5,7 +5,7 @@
 # image (AMD64-only) fails under QEMU emulation.
 #
 # Build args:
-#   GO_VERSION    - Go toolchain version (default: 1.22)
+#   GO_VERSION    - Go toolchain version (default: 1.23)
 #   VCSIM_VERSION - govmomi tag to build (default: v0.47.0)
 #
 # Usage:

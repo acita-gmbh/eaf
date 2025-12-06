@@ -136,18 +136,6 @@ public class VsphereClient(
                 })
             } else null
 
-            // Configure TLS BEFORE creating VimService (CXF caches SSL settings)
-            if (ignoreCert && trustAllCerts != null) {
-                val sslContext = SSLContext.getInstance("TLSv1.2").apply {
-                    init(null, trustAllCerts, java.security.SecureRandom())
-                }
-
-                // Set global SSL defaults BEFORE creating VimService
-                SSLContext.setDefault(sslContext)
-                javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
-                javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
-            }
-
             // Create VimService and get port
             val vimService = VimService()
             val vimPort = vimService.vimPort
@@ -158,13 +146,21 @@ public class VsphereClient(
             // Enable session management - required for maintaining login session
             bindingProvider.requestContext[BindingProvider.SESSION_MAINTAIN_PROPERTY] = true
 
-            // Configure CXF HTTPConduit with trust-all TrustManager (required since CXF ignores JVM defaults)
+            // Configure CXF HTTPConduit with SSL settings (per-connection, not global JVM defaults)
+            val client = org.apache.cxf.frontend.ClientProxy.getClient(vimPort)
+            val httpConduit = client.conduit as org.apache.cxf.transport.http.HTTPConduit
             if (ignoreCert && trustAllCerts != null) {
-                val client = org.apache.cxf.frontend.ClientProxy.getClient(vimPort)
-                val httpConduit = client.conduit as org.apache.cxf.transport.http.HTTPConduit
+                // Trust-all for VCSIM/testing - only affects this CXF connection
                 httpConduit.tlsClientParameters = org.apache.cxf.configuration.jsse.TLSClientParameters().apply {
                     isDisableCNCheck = true
                     trustManagers = trustAllCerts
+                }
+            } else {
+                // Production: use system default truststore (JVM cacerts)
+                val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+                tmf.init(null as KeyStore?)
+                httpConduit.tlsClientParameters = org.apache.cxf.configuration.jsse.TLSClientParameters().apply {
+                    trustManagers = tmf.trustManagers
                 }
             }
 
@@ -314,10 +310,15 @@ public class VsphereClient(
         result?.objects?.firstOrNull()?.propSet?.firstOrNull { it.name == prop }?.`val`
     }
 
-    private suspend fun waitForTask(session: VsphereSession, task: ManagedObjectReference) = withContext(Dispatchers.IO) {
+    private suspend fun waitForTask(
+        session: VsphereSession,
+        task: ManagedObjectReference,
+        timeoutMs: Long = 300_000 // 5 minutes default timeout
+    ) = withContext(Dispatchers.IO) {
         val vimPort = session.vimPort
         val serviceContent = session.serviceContent
-        
+        val startTime = System.currentTimeMillis()
+
         val infoSpec = PropertySpec().apply {
             this.type = "Task"
             this.pathSet.add("info.state")
@@ -327,19 +328,24 @@ public class VsphereClient(
             this.propSet.add(infoSpec)
             this.objectSet.add(ObjectSpec().apply { this.obj = task })
         }
-        
+
         while (isActive) {
+            val elapsed = System.currentTimeMillis() - startTime
+            if (elapsed > timeoutMs) {
+                throw RuntimeException("Task timed out after ${elapsed}ms (limit: ${timeoutMs}ms)")
+            }
+
             val result = vimPort.retrievePropertiesEx(serviceContent.propertyCollector, listOf(filterSpec), RetrieveOptions())
             val props = result?.objects?.firstOrNull()?.propSet?.associate { it.name to it.`val` }
-            
+
             val state = props?.get("info.state") as? TaskInfoState
             val error = props?.get("info.error")
-            
+
             if (state == TaskInfoState.SUCCESS) return@withContext
             if (state == TaskInfoState.ERROR) {
                 throw RuntimeException("Task failed: $error")
             }
-            
+
             delay(500)
         }
     }
