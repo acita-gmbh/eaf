@@ -941,16 +941,7 @@ class VmRequestIntegrationTest {
             val responseJson = String(createResponse.responseBody!!)
             val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
 
-            // Insert projection record (since CreateHandler doesn't populate it)
-            insertProjection(
-                id = UUID.fromString(requestId),
-                tenantId = tenantAId,
-                requesterId = userAId,
-                vmName = "cancel-test-vm",
-                status = "PENDING"
-            )
-
-            // When: Cancel the request
+            // When: Cancel the request (projection already inserted by CreateVmRequestHandler)
             webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests/$requestId/cancel")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
@@ -991,15 +982,7 @@ class VmRequestIntegrationTest {
             val responseJson = String(createResponse.responseBody!!)
             val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
 
-            insertProjection(
-                id = UUID.fromString(requestId),
-                tenantId = tenantAId,
-                requesterId = userAId,
-                vmName = "no-reason-cancel-vm",
-                status = "PENDING"
-            )
-
-            // When: Cancel without body
+            // When: Cancel without body (projection already inserted by CreateVmRequestHandler)
             webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests/$requestId/cancel")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
@@ -1110,15 +1093,7 @@ class VmRequestIntegrationTest {
             val responseJson = String(createResponse.responseBody!!)
             val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
 
-            insertProjection(
-                id = UUID.fromString(requestId),
-                tenantId = tenantAId,
-                requesterId = userAId,
-                vmName = "event-check-vm",
-                status = "PENDING"
-            )
-
-            // When: Cancel
+            // When: Cancel (projection already inserted by CreateVmRequestHandler)
             webTestClient.mutateWith(csrf()).post()
                 .uri("/api/requests/$requestId/cancel")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")

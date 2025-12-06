@@ -5,6 +5,7 @@ import de.acci.dvmm.domain.exceptions.SelfApprovalException
 import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
 import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -81,6 +82,7 @@ public class VmRequestAggregate private constructor(
             is VmRequestCancelled -> apply(event)
             is VmRequestApproved -> apply(event)
             is VmRequestRejected -> apply(event)
+            is VmRequestProvisioningStarted -> apply(event)
         }
     }
 
@@ -105,6 +107,10 @@ public class VmRequestAggregate private constructor(
 
     private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestRejected) {
         status = VmRequestStatus.REJECTED
+    }
+
+    private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestProvisioningStarted) {
+        status = VmRequestStatus.PROVISIONING
     }
 
     /**
@@ -221,6 +227,26 @@ public class VmRequestAggregate private constructor(
         )
 
         applyEvent(event)
+    }
+
+    /**
+     * Marks the request as PROVISIONING.
+     *
+     * Triggered when the provisioning process starts.
+     *
+     * @param metadata Event metadata
+     * @throws InvalidStateException if request is not in APPROVED state
+     */
+    public fun markProvisioning(metadata: EventMetadata) {
+        if (status != VmRequestStatus.APPROVED) {
+            throw InvalidStateException(
+                currentState = status,
+                expectedState = VmRequestStatus.APPROVED,
+                operation = "markProvisioning"
+            )
+        }
+
+        applyEvent(VmRequestProvisioningStarted(id, metadata))
     }
 
     public companion object {
