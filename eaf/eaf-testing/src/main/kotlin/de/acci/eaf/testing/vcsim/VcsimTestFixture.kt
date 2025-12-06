@@ -58,7 +58,6 @@ public class VcsimTestFixture(
     private val container: VcsimContainer
 ) {
     private val httpClient: HttpClient = createSecureHttpClient()
-    private val vmCounter = AtomicInteger(0)
     private val networkCounter = AtomicInteger(0)
     private val datastoreCounter = AtomicInteger(0)
 
@@ -196,11 +195,11 @@ public class VcsimTestFixture(
      * naming conventions to avoid conflicts.
      */
     public fun resetState() {
-        vmCounter.set(0)
         networkCounter.set(0)
         datastoreCounter.set(0)
         // Note: VCSIM doesn't have a built-in reset API
         // Full state reset requires container restart
+        // VM moRefs are assigned by VCSIM via SOAP API, not managed by this fixture
     }
 
     /**
