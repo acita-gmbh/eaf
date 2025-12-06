@@ -17,5 +17,9 @@ public data class VmProvisioningFailed(
     public val reason: String,
     override val metadata: EventMetadata
 ) : DomainEvent {
-    override val aggregateType: String = "vm"
+    override val aggregateType: String = AGGREGATE_TYPE
+
+    public companion object {
+        public const val AGGREGATE_TYPE: String = "Vm"
+    }
 }

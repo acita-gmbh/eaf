@@ -21,5 +21,9 @@ public data class VmProvisioningStarted(
     public val requesterId: UserId,
     override val metadata: EventMetadata
 ) : DomainEvent {
-    override val aggregateType: String = "vm"
+    override val aggregateType: String = AGGREGATE_TYPE
+
+    public companion object {
+        public const val AGGREGATE_TYPE: String = "Vm"
+    }
 }

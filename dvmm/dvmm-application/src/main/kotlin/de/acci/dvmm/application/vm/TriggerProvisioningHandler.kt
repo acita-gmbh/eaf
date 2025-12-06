@@ -66,11 +66,14 @@ public class TriggerProvisioningHandler(
         )
 
         try {
-            // Version 1 = after VmProvisioningStarted event
+            // Load current version to handle potential concurrent modifications
+            val currentEvents = eventStore.load(event.aggregateId.value)
+            val currentVersion = currentEvents.size.toLong()
+
             val result = eventStore.append(
                 aggregateId = event.aggregateId.value,
                 events = listOf(failedEvent),
-                expectedVersion = 1
+                expectedVersion = currentVersion
             )
             when (result) {
                 is Result.Success -> logger.info { "Emitted VmProvisioningFailed for VM ${event.aggregateId.value}" }

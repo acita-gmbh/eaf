@@ -2,6 +2,7 @@ package de.acci.dvmm.application.vm
 
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
+import de.acci.dvmm.domain.vmrequest.VmRequestStatus
 import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.eaf.core.result.onFailure
 import de.acci.eaf.core.result.onSuccess
@@ -42,7 +43,17 @@ public class VmProvisioningListener(
         }
         
         val aggregate = VmRequestAggregate.reconstitute(event.aggregateId, events)
-        
+
+        // Idempotency check: Only provision if status is exactly APPROVED
+        // If status has progressed beyond APPROVED (e.g., PROVISIONING), another process already handled this
+        if (aggregate.status != VmRequestStatus.APPROVED) {
+            logger.info {
+                "Skipping provisioning for request ${event.aggregateId.value}: " +
+                    "status is ${aggregate.status}, expected APPROVED (idempotency check)"
+            }
+            return
+        }
+
         val command = ProvisionVmCommand(
             requestId = aggregate.id,
             tenantId = event.metadata.tenantId,

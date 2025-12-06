@@ -139,12 +139,26 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns null
 
+            // Mock event store load to return 1 event (VmProvisioningStarted)
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(
+                de.acci.eaf.eventsourcing.StoredEvent(
+                    id = java.util.UUID.randomUUID(),
+                    aggregateId = event.aggregateId.value,
+                    aggregateType = "Vm",
+                    eventType = "VmProvisioningStarted",
+                    payload = "{}",
+                    metadata = event.metadata,
+                    version = 1,
+                    createdAt = java.time.Instant.now()
+                )
+            )
+
             val eventsSlot = slot<List<DomainEvent>>()
             coEvery {
                 eventStore.append(
                     aggregateId = event.aggregateId.value,
                     events = capture(eventsSlot),
-                    expectedVersion = 1
+                    expectedVersion = 1L
                 )
             } returns 2L.success()
 
@@ -181,12 +195,26 @@ class TriggerProvisioningHandlerTest {
                 VsphereError.Timeout("Connection timeout")
             )
 
+            // Mock event store load to return 1 event (VmProvisioningStarted)
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(
+                de.acci.eaf.eventsourcing.StoredEvent(
+                    id = java.util.UUID.randomUUID(),
+                    aggregateId = event.aggregateId.value,
+                    aggregateType = "Vm",
+                    eventType = "VmProvisioningStarted",
+                    payload = "{}",
+                    metadata = event.metadata,
+                    version = 1,
+                    createdAt = java.time.Instant.now()
+                )
+            )
+
             val eventsSlot = slot<List<DomainEvent>>()
             coEvery {
                 eventStore.append(
                     aggregateId = event.aggregateId.value,
                     events = capture(eventsSlot),
-                    expectedVersion = 1
+                    expectedVersion = 1L
                 )
             } returns 2L.success()
 
