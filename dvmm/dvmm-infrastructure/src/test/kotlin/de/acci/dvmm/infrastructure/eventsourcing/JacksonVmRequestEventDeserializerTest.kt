@@ -6,6 +6,7 @@ import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.domain.vmrequest.VmSize
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
 import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -145,6 +146,39 @@ class JacksonVmRequestEventDeserializerTest {
             assertTrue(result is VmRequestCancelled)
             val cancelled = result as VmRequestCancelled
             assertEquals(null, cancelled.reason)
+        }
+    }
+
+    @Nested
+    @DisplayName("VmRequestProvisioningStarted Deserialization")
+    inner class VmRequestProvisioningStartedDeserialization {
+
+        @Test
+        fun `deserializes VmRequestProvisioningStarted event correctly`() {
+            // Given: A stored VmRequestProvisioningStarted event
+            val event = VmRequestProvisioningStarted(
+                aggregateId = testVmRequestId,
+                metadata = createTestMetadata()
+            )
+            val payload = objectMapper.writeValueAsString(event)
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmRequestId.value,
+                aggregateType = "VmRequest",
+                eventType = "VmRequestProvisioningStarted",
+                payload = payload,
+                metadata = createTestMetadata(),
+                version = 3,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Correct event type returned
+            assertTrue(result is VmRequestProvisioningStarted)
+            val provisioningStarted = result as VmRequestProvisioningStarted
+            assertEquals(event.aggregateId.value, provisioningStarted.aggregateId.value)
         }
     }
 

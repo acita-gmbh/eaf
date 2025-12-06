@@ -6,6 +6,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
 import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.StoredEvent
@@ -41,6 +42,7 @@ public class JacksonVmRequestEventDeserializer(
             "VmRequestCancelled" -> VmRequestCancelled::class.java
             "VmRequestApproved" -> VmRequestApproved::class.java
             "VmRequestRejected" -> VmRequestRejected::class.java
+            "VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java
             else -> throw IllegalArgumentException(
                 "Unknown event type: $eventType. " +
                     "Add mapping to JacksonVmRequestEventDeserializer."
