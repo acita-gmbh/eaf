@@ -139,4 +139,85 @@ class VcsimContainerTest {
         // Container should be configured without exceptions
         assertTrue(container.exposedPorts.contains(VcsimContainer.DEFAULT_PORT))
     }
+
+    // ==========================================
+    // Architecture Detection Tests
+    // ==========================================
+
+    @Test
+    fun `isArm64 returns true for aarch64 architecture`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "aarch64")
+            assertTrue(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    @Test
+    fun `isArm64 returns true for arm64 architecture`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "arm64")
+            assertTrue(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    @Test
+    fun `isArm64 returns false for amd64 architecture`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "amd64")
+            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    @Test
+    fun `isArm64 returns false for x86_64 architecture`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "x86_64")
+            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    @Test
+    fun `isArm64 handles mixed case architecture names`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "AARCH64")
+            assertTrue(VcsimContainer.isArm64())
+
+            System.setProperty("os.arch", "ARM64")
+            assertTrue(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    @Test
+    fun `isArm64 returns false for empty architecture`() {
+        val original = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", "")
+            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+        } finally {
+            restoreProperty("os.arch", original)
+        }
+    }
+
+    private fun restoreProperty(key: String, value: String?) {
+        if (value != null) {
+            System.setProperty(key, value)
+        } else {
+            System.clearProperty(key)
+        }
+    }
 }

@@ -44,7 +44,7 @@ public object TestContainers {
      */
     public val vcsim: VcsimContainer by lazy {
         val certificateBundle = VcsimCertificateGenerator.generate()
-        VcsimContainer()
+        VcsimContainer.create()
             .withCertificates(certificateBundle)
             .apply { start() }
     }

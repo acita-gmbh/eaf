@@ -54,6 +54,11 @@ dependencies {
     implementation(libs.bouncycastle.bcpkix)
     implementation(libs.bouncycastle.bcprov)
 
+    // VCF SDK for VCSIM interaction
+    implementation(platform(libs.vcf.sdk.bom))
+    implementation(libs.vcf.sdk.vsphere.utils)
+    implementation(libs.jaxws.api)
+
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
 
     // Coroutines test for testing suspend functions

@@ -290,6 +290,20 @@ public class VcsimCertificateBundle(
         }
     }
 
+    /**
+     * Creates TrustManagers that trust only this bundle's CA certificate.
+     *
+     * Useful for configuring CXF HTTPConduit's TLSClientParameters,
+     * which requires TrustManagers rather than an SSLContext.
+     *
+     * @return Array of TrustManagers trusting only our CA
+     */
+    public fun createTrustManagers(): Array<javax.net.ssl.TrustManager> {
+        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        tmf.init(createTrustStore())
+        return tmf.trustManagers
+    }
+
     private fun toPem(obj: Any): String {
         val writer = StringWriter()
         JcaPEMWriter(writer).use { pemWriter ->

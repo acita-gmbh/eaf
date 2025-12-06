@@ -32,6 +32,11 @@ dependencies {
     // Uses BOM for version management, provides vim25 (SOAP) + vsphere-utils (convenience wrappers)
     implementation(platform(libs.vcf.sdk.bom))
     implementation(libs.vcf.sdk.vsphere.utils)  // Includes vim25 transitively
+    implementation(libs.jaxws.api)
+
+    // Resilience
+    implementation(libs.resilience4j.circuitbreaker)
+    implementation(libs.resilience4j.kotlin)
 
     // jOOQ code generation dependencies
     // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)
