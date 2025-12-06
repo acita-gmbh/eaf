@@ -68,6 +68,10 @@ public class TriggerProvisioningHandler(
         try {
             // Load current version to handle potential concurrent modifications
             val currentEvents = eventStore.load(event.aggregateId.value)
+            if (currentEvents.isEmpty()) {
+                logger.error { "Cannot emit VmProvisioningFailed: aggregate ${event.aggregateId.value} not found in event store" }
+                return
+            }
             val currentVersion = currentEvents.size.toLong()
 
             val result = eventStore.append(
