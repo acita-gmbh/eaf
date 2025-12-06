@@ -1,16 +1,22 @@
 package de.acci.eaf.testing.vcsim
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.parallel.Isolated
 
 /**
  * Unit tests for [VcsimContainer] configuration and methods.
  *
  * These tests verify container configuration without actually starting
  * the container (except where noted for integration tests).
+ *
+ * Note: @Isolated is required because some tests modify System.getProperty("os.arch")
+ * which is global JVM state that cannot be safely modified in parallel tests.
  */
+@Isolated
 class VcsimContainerTest {
 
     @Test
@@ -171,7 +177,7 @@ class VcsimContainerTest {
         val original = System.getProperty("os.arch")
         try {
             System.setProperty("os.arch", "amd64")
-            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+            assertFalse(VcsimContainer.isArm64())
         } finally {
             restoreProperty("os.arch", original)
         }
@@ -182,7 +188,7 @@ class VcsimContainerTest {
         val original = System.getProperty("os.arch")
         try {
             System.setProperty("os.arch", "x86_64")
-            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+            assertFalse(VcsimContainer.isArm64())
         } finally {
             restoreProperty("os.arch", original)
         }
@@ -207,7 +213,7 @@ class VcsimContainerTest {
         val original = System.getProperty("os.arch")
         try {
             System.setProperty("os.arch", "")
-            org.junit.jupiter.api.Assertions.assertFalse(VcsimContainer.isArm64())
+            assertFalse(VcsimContainer.isArm64())
         } finally {
             restoreProperty("os.arch", original)
         }
