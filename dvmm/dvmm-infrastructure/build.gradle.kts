@@ -30,9 +30,9 @@ dependencies {
 
     // VCF SDK 9.0 (Official VMware SDK from Maven Central - Apache 2.0 license)
     // Uses BOM for version management, provides vim25 (SOAP) + vsphere-utils (convenience wrappers)
+    // JAX-WS (jakarta.xml.ws-api) is provided transitively via CXF
     implementation(platform(libs.vcf.sdk.bom))
     implementation(libs.vcf.sdk.vsphere.utils)  // Includes vim25 transitively
-    implementation(libs.jaxws.api)
 
     // Resilience
     implementation(libs.resilience4j.circuitbreaker)

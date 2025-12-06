@@ -54,10 +54,9 @@ dependencies {
     implementation(libs.bouncycastle.bcpkix)
     implementation(libs.bouncycastle.bcprov)
 
-    // VCF SDK for VCSIM interaction
+    // VCF SDK for VCSIM interaction (includes jakarta.xml.ws-api via CXF)
     implementation(platform(libs.vcf.sdk.bom))
     implementation(libs.vcf.sdk.vsphere.utils)
-    implementation(libs.jaxws.api)
 
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
 

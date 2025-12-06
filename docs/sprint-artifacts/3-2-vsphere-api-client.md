@@ -71,9 +71,9 @@ So that I can interact with VMware infrastructure reliably.
   - Do not rely on the default factory if it doesn't support custom ports.
 
 ### Source Tree Components to Touch
-- `dvmm/dvmm-infrastructure/src/main/kotlin/com/dvmm/infrastructure/vmware/` (Client, Adapters, SessionManager)
-- `dvmm/dvmm-application/src/main/kotlin/com/dvmm/application/ports/` (Port Interface)
-- `eaf/eaf-testing/src/main/kotlin/com/eaf/testing/fixtures/VcsimTestFixture.kt` (VCSIM Enhancements)
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/` (Client, Adapters, SessionManager)
+- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/` (Port Interface)
+- `eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimTestFixture.kt` (VCSIM Enhancements)
 - `dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/` (Tests)
 
 ### Testing Standards Summary

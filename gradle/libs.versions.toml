@@ -113,8 +113,8 @@ bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref 
 resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
 resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "resilience4j" }
 
-# JAX-WS API (Required for BindingProvider in Java 11+)
-jaxws-api = { module = "javax.xml.ws:jaxws-api", version = "2.3.1" }
+# JAX-WS API is provided by VCF SDK via CXF (jakarta.xml.ws-api:4.0.2)
+# No explicit dependency needed - remove if present in build.gradle.kts files
 
 # VCF SDK 9.0 (Official VMware SDK from Maven Central - Apache 2.0 license)
 # Provides: vim25 (SOAP bindings), vsphere-utils (convenience wrappers), ssoclient (SSO)
