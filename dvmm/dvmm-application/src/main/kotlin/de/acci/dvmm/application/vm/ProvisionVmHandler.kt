@@ -52,7 +52,6 @@ public class ProvisionVmHandler(
         )
 
         val appendResult = try {
-            logger.debug { "Persisting VmAggregate ${aggregate.id.value}" }
             eventStore.append(
                 aggregateId = aggregate.id.value,
                 events = aggregate.uncommittedEvents,
