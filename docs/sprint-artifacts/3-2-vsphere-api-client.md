@@ -1,6 +1,6 @@
 # Story 3.2: vSphere API Client
 
-Status: review
+Status: done
 
 ## Story
 
