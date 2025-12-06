@@ -1,6 +1,6 @@
 # Story 3.3: provisioning-trigger-on-approval
 
-Status: ready-for-dev
+Status: in-review
 
 ## Story
 
@@ -38,10 +38,10 @@ So that no manual intervention is needed after approval.
 - [x] **Infrastructure:** Implement the `VmProvisioningStarted` event handler in `dvmm-infrastructure` (or `dvmm-application` delegating to Port).
   - [x] Call `VspherePort.createVm()` (Basic call only - complex logic reserved for Story 3.4).
 - [x] **Application:** Update `VmRequest` status to "Provisioning" based on `VmProvisioningStarted` event (or Saga coordination).
-- [ ] **Tests:** Write integration tests in `dvmm-app` (Assembly Module).
-  - [ ] Verify `VmRequestApproved` -> `VmAggregate` created -> `VspherePort` called.
-  - [ ] Use `VcsimAdapter` configured in `dvmm-app` test context.
-- [ ] Ensure idempotency: Verify that duplicate `VmRequestApprovedEvent` do not create duplicate `VmAggregate`s.
+- [x] **Tests:** Write integration tests in `dvmm-app` (Assembly Module).
+  - [x] Verify `VmRequestApproved` -> `VmAggregate` created -> `VspherePort` called.
+  - [x] Use `VcsimAdapter` configured in `dvmm-app` test context.
+- [x] Ensure idempotency: Verify that duplicate `VmRequestApprovedEvent` do not create duplicate `VmAggregate`s.
 
 ## Dev Notes
 
@@ -148,7 +148,11 @@ gemini-1.5-flash
 ### Debug Log References
 
 ### Completion Notes List
-- Ultimate context engine analysis completed - comprehensive developer guide created
+- Implemented automatic VM provisioning trigger on approval via Process Manager/Saga pattern
+- Created VmAggregate with VmProvisioningStarted/VmProvisioningFailed events
+- Added idempotency check (status == APPROVED) to prevent duplicate provisioning
+- Wired Spring ApplicationEventPublisher with coroutine-based async handlers
+- Integration test verifies full flow: VmRequestApproved → VmAggregate → VspherePort
 
 ### File List
 dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmId.kt
@@ -168,3 +172,11 @@ dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisi
 dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/MarkVmRequestProvisioningHandlerTest.kt
 dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/VmRequestStatusUpdaterTest.kt
 dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt
+dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/VmProvisioningListenerTest.kt
+dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioningFailed.kt
+dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmEventDeserializer.kt
+dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt
+dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt
+dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/PublishingEventStore.kt
+dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/app/listeners/VmProvisioningListeners.kt
+dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt
