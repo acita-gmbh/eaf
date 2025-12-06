@@ -151,79 +151,60 @@ class VcsimContainerTest {
     // ==========================================
 
     @Test
-    fun `isArm64 returns true for aarch64 architecture`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "aarch64")
-            assertTrue(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
-        }
+    fun `isArm64 returns true for aarch64 architecture`() = withOsArch("aarch64") {
+        assertTrue(VcsimContainer.isArm64())
     }
 
     @Test
-    fun `isArm64 returns true for arm64 architecture`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "arm64")
-            assertTrue(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
-        }
+    fun `isArm64 returns true for arm64 architecture`() = withOsArch("arm64") {
+        assertTrue(VcsimContainer.isArm64())
     }
 
     @Test
-    fun `isArm64 returns false for amd64 architecture`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "amd64")
-            assertFalse(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
-        }
+    fun `isArm64 returns false for amd64 architecture`() = withOsArch("amd64") {
+        assertFalse(VcsimContainer.isArm64())
     }
 
     @Test
-    fun `isArm64 returns false for x86_64 architecture`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "x86_64")
-            assertFalse(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
-        }
+    fun `isArm64 returns false for x86_64 architecture`() = withOsArch("x86_64") {
+        assertFalse(VcsimContainer.isArm64())
     }
 
     @Test
     fun `isArm64 handles mixed case architecture names`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "AARCH64")
+        withOsArch("AARCH64") {
             assertTrue(VcsimContainer.isArm64())
-
-            System.setProperty("os.arch", "ARM64")
+        }
+        withOsArch("ARM64") {
             assertTrue(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
         }
     }
 
     @Test
-    fun `isArm64 returns false for empty architecture`() {
-        val original = System.getProperty("os.arch")
-        try {
-            System.setProperty("os.arch", "")
-            assertFalse(VcsimContainer.isArm64())
-        } finally {
-            restoreProperty("os.arch", original)
-        }
+    fun `isArm64 returns false for empty architecture`() = withOsArch("") {
+        assertFalse(VcsimContainer.isArm64())
     }
 
-    private fun restoreProperty(key: String, value: String?) {
-        if (value != null) {
-            System.setProperty(key, value)
-        } else {
-            System.clearProperty(key)
+    // ==========================================
+    // Test Helpers
+    // ==========================================
+
+    /**
+     * Temporarily sets the os.arch system property, runs the block, then restores the original value.
+     *
+     * This helper ensures proper cleanup even if the test block throws an exception.
+     */
+    private inline fun <T> withOsArch(arch: String, block: () -> T): T {
+        val original = System.getProperty("os.arch")
+        return try {
+            System.setProperty("os.arch", arch)
+            block()
+        } finally {
+            if (original != null) {
+                System.setProperty("os.arch", original)
+            } else {
+                System.clearProperty("os.arch")
+            }
         }
     }
 }
