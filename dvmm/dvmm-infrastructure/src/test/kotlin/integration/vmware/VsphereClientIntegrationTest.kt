@@ -51,26 +51,21 @@ class VsphereClientIntegrationTest {
             .withCertificates(de.acci.eaf.testing.vcsim.VcsimCertificateGenerator.generate())
 
         /**
-         * Configure trust-all SSL context for VCSIM tests.
+         * Configure SSL context for VCSIM tests using generated certificates.
          *
-         * Uses a trust-all manager since we're testing API functionality, not certificate validation.
+         * Uses the certificate bundle's trust managers for proper certificate validation.
          * The CXF property is set in init{} to ensure it's applied before CXF classes load.
          */
         @JvmStatic
         @BeforeAll
         fun setupSsl() {
-            // Create a trust-all SSL context for VCSIM testing
-            val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
-                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate>? = null
-                override fun checkClientTrusted(certs: Array<java.security.cert.X509Certificate>?, authType: String?) {}
-                override fun checkServerTrusted(certs: Array<java.security.cert.X509Certificate>?, authType: String?) {}
-            })
-            val sslContext = SSLContext.getInstance("TLSv1.2").apply {
-                init(null, trustAllCerts, java.security.SecureRandom())
-            }
+            val bundle = vcsim.getCertificateBundle()
+                ?: throw IllegalStateException("VcsimContainer must have certificates configured")
 
+            val sslContext = bundle.createSslContext()
             SSLContext.setDefault(sslContext)
             javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+            // Disable hostname verification - container IP may not match certificate SAN
             javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
         }
     }

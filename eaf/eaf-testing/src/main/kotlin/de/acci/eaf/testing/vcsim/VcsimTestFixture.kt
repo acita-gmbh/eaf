@@ -331,7 +331,9 @@ public class VcsimTestFixture(
         // Enable session management - required for maintaining login session
         bindingProvider.requestContext[BindingProvider.SESSION_MAINTAIN_PROPERTY] = true
 
-        // Configure CXF HTTPConduit with trust-all TrustManager (CXF ignores JVM default SSL context)
+        // Configure CXF HTTPConduit with trust-all TrustManager
+        // Note: Trust-all is acceptable in test code since we're testing API functionality, not certificate validation.
+        // The container's dynamic IP may not match the certificate SANs.
         val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
             override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate>? = null
             override fun checkClientTrusted(certs: Array<java.security.cert.X509Certificate>?, authType: String?) {}
