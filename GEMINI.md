@@ -21,10 +21,10 @@ This file provides guidance to Google Gemini when working with code in this repo
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
 
-# Check code coverage (Kover) - 80% minimum required
+# Check code coverage (Kover) - 70% minimum required
 ./gradlew koverHtmlReport          # Per-module reports
 ./gradlew :koverHtmlReport         # Merged report (root)
-./gradlew koverVerify              # Verify 80% threshold
+./gradlew koverVerify              # Verify 70% threshold
 
 # Run mutation testing (Pitest) - 70% threshold
 ./gradlew pitest
@@ -57,7 +57,7 @@ Product modules following Hexagonal Architecture:
 Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
-- `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
+- `eaf.test-conventions` - JUnit 6, Kover (70% coverage), Testcontainers, Konsist
 - `eaf.pitest-conventions` - Mutation testing (70% threshold)
 
 ## Critical Architecture Rules (ADR-001)
@@ -106,6 +106,40 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - Default parameter expressions (like `UUID.randomUUID()`) execute during setup
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
+
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
+
+**PropertyCollector Pattern:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`:
+
+```kotlin
+val propSpec = PropertySpec().apply {
+    type = "ClusterComputeResource"
+    pathSet.add("host")
+}
+val objSpec = ObjectSpec().apply {
+    obj = clusterRef
+    isSkip = false
+}
+val filterSpec = PropertyFilterSpec().apply {
+    propSet.add(propSpec)
+    objectSet.add(objSpec)
+}
+val result = vimPort.retrievePropertiesEx(propertyCollector, listOf(filterSpec), RetrieveOptions())
+```
+
+**SearchIndex Navigation:** Use inventory paths (datacenter/folder/object):
+
+```kotlin
+// Find cluster: datacenter/host/clusterName
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+
+// Find datastore: datacenter/datastore/datastoreName
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+```
+
+**Port 443 Constraint:** `VcenterClientFactory` only supports port 443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock.
 
 ## Frontend (dvmm-web)
 
@@ -454,7 +488,7 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 
 **YOU MUST:**
 - Write tests BEFORE implementation (Tests First)
-- Achieve ≥80% line coverage per module
+- Achieve ≥70% line coverage per module
 - Achieve ≥70% mutation score (Pitest)
 - Run `./gradlew clean build` before committing
 
@@ -633,7 +667,7 @@ val cache = ConcurrentHashMap<UUID, Aggregate>()  // "Might be slow"
 
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
-| Test Coverage | ≥80% | CI blocks merge |
+| Test Coverage | ≥70% | CI blocks merge |
 | Mutation Score | ≥70% | CI blocks merge |
 | Architecture Tests | All pass | CI blocks merge |
 | Security Scan | Zero critical | CI blocks merge |

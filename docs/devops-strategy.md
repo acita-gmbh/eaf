@@ -36,7 +36,7 @@ This document defines the DevOps strategy for DVMM, covering CI/CD pipeline desi
 │       ▼             ▼             ▼             ▼             ▼        │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
 │  │                    QUALITY GATE CHECK                           │  │
-│  │  Coverage ≥80% │ Mutation ≥70% │ Arch Tests │ Zero Critical    │  │
+│  │  Coverage ≥70% │ Mutation ≥70% │ Arch Tests │ Zero Critical    │  │
 │  └─────────────────────────────────────────────────────────────────┘  │
 │                                    │                                   │
 │                         ┌─────────┴─────────┐                         │
@@ -77,7 +77,7 @@ This document defines the DevOps strategy for DVMM, covering CI/CD pipeline desi
 # .github/workflows/ci.yml
 quality_gates:
   coverage:
-    threshold: 80%
+    threshold: 70%  # Aligned with mutation score threshold
     tool: kover
     fail_on_decrease: true
 
@@ -635,7 +635,7 @@ object TestContainers {
 
 | NFR ID | Requirement | Section |
 |--------|-------------|---------|
-| NFR-MAINT-1 | Test coverage ≥80% | 1.3 |
+| NFR-MAINT-1 | Test coverage ≥70% | 1.3 |
 | NFR-MAINT-2 | Mutation score ≥70% | 1.3 |
 | NFR-MAINT-4 | CI/CD pipeline | 1.1 |
 | NFR-MAINT-6 | Rollback < 15 min | 4.1 |

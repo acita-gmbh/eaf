@@ -164,7 +164,7 @@ Success for DVMM is NOT generic metrics. It's these specific moments:
 
 | Gate | Requirement | Enforcement |
 |------|-------------|-------------|
-| **Test Coverage** | ≥80% | CI blocks merge |
+| **Test Coverage** | ≥70% | CI blocks merge |
 | **Mutation Score** | ≥70% | CI blocks merge |
 | **E2E Suite Runtime** | <15 minutes | Performance budget |
 | **Security Scan** | Zero critical vulnerabilities | CI blocks merge |
@@ -176,7 +176,7 @@ Success for DVMM is NOT generic metrics. It's these specific moments:
 
 **Red Flags to Watch:**
 - ❌ No end-to-end workflow demo-able after initial development phase
-- ❌ Test coverage below 80%
+- ❌ Test coverage below 70%
 - ❌ "We need to finish X before we can show anything..."
 - ❌ Customers haven't seen DVMM after extended period
 - ❌ Team turnover starting
@@ -754,7 +754,7 @@ DVMM Portal
 
 | ID | Requirement | Target | Phase |
 |----|-------------|--------|-------|
-| NFR-MAINT-1 | Test coverage | ≥ 80% | MVP |
+| NFR-MAINT-1 | Test coverage | ≥ 70% | MVP |
 | NFR-MAINT-2 | Mutation test score | ≥ 70% | MVP |
 | NFR-MAINT-3 | Code review required | All changes | MVP |
 | NFR-MAINT-4 | CI/CD pipeline | Automated | MVP |

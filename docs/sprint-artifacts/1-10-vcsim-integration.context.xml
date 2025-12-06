@@ -18,7 +18,7 @@
         <title>Add VCSIM Testcontainer dependency</title>
         <subtasks>
           <subtask>Add vmware/vcsim container support to eaf-testing/build.gradle.kts</subtask>
-          <subtask>Add vSphere SDK dependency for API interaction (vijava or govmomi-style)</subtask>
+          <subtask>Add vSphere SDK dependency for API interaction (official vSphere Automation SDK)</subtask>
           <subtask>Verify container image pulls successfully</subtask>
         </subtasks>
       </task>

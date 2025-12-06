@@ -23,11 +23,11 @@ This document provides the complete epic and story breakdown for DVMM (Dynamic V
 |------|------|---------|-----------|------|
 | 1 | Foundation | 11 | Technical base for all features | Low |
 | 2 | Core Workflow | 13 | "Request → Approve → Notify" | High |
-| 3 | VM Provisioning | 9 | "VM is actually created" | **Critical** |
+| 3 | VM Provisioning | 10 | "VM is actually created" | **Critical** |
 | 4 | Projects & Quota | 9 | "Resources organized & controlled" | Medium |
 | 5 | Compliance & Oversight | 10 | "Audit-ready in 30 seconds" | Medium |
 
-**Total: 52 Stories for MVP**
+**Total: 53 Stories for MVP**
 
 ### Epic Sequence & Dependencies
 
@@ -636,7 +636,7 @@ So that code quality standards are maintained automatically.
   1. Build (Gradle)
   2. Unit tests
   3. Integration tests (Testcontainers)
-  4. Code coverage check (Kover ≥80%)
+  4. Code coverage check (koverVerify ≥70%)
   5. Mutation testing (Pitest ≥70%)
   6. Architecture tests (Konsist)
 
@@ -704,7 +704,7 @@ So that I can access DVMM securely with my company credentials.
 - Has temporarily disabled coverage verification (see `eaf/eaf-auth-keycloak/build.gradle.kts`)
 - **Action Required:**
   1. Add Keycloak Testcontainer integration tests for `KeycloakIdentityProvider`
-  2. Achieve ≥80% test coverage for `eaf-auth-keycloak` module
+  2. Achieve ≥70% test coverage for `eaf-auth-keycloak` module
   3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `eaf/eaf-auth-keycloak/build.gradle.kts`
 - Reason: Story 1.7 created the implementation, but testing requires Keycloak Testcontainer setup
 
@@ -715,7 +715,7 @@ So that I can access DVMM securely with my company credentials.
      - Unauthenticated /api/** requests return 401
      - Unauthenticated /actuator/health requests are allowed
      - Authenticated requests with valid JWT succeed
-  2. Achieve ≥80% test coverage for `dvmm-api` module
+  2. Achieve ≥70% test coverage for `dvmm-api` module
   3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `dvmm/dvmm-api/build.gradle.kts`
 - Reason: SecurityConfig.securityWebFilterChain() requires Spring Security WebFlux integration testing with Keycloak
 
@@ -1176,7 +1176,7 @@ So that I stay informed without checking the portal.
 
 **FRs Covered:** FR30, FR34-FR40, FR47, FR71, FR77-FR79
 
-**Stories:** 9 | **Risk:** **Critical** (VMware API complexity, infrastructure dependency)
+**Stories:** 10 | **Risk:** **Critical** (VMware API complexity, infrastructure dependency)
 
 **Risk Mitigation:**
 - VCSIM (vCenter Simulator) for all integration tests (Story 1.10)
@@ -1219,9 +1219,12 @@ So that DVMM can provision VMs in my infrastructure.
 
 **Technical Notes:**
 - Store credentials encrypted using Spring Security Crypto
-- Use vijava or govmomi-compatible library for vSphere SDK
+- Use official vSphere Automation SDK (yavijava deprecated - see Story 3.1.1)
 - Connection pooling for vSphere sessions
 - See Architecture: Infrastructure Adapter pattern
+
+**SDK Migration Note (Story 3.1.1):**
+Story 3.1 was originally implemented using yavijava. Story 3.1.1 migrates to the official VMware SDK. See Story 3.1.1 for details.
 
 **VMware Tracer Bullet Note:**
 Story 3.1 is the **VMware Tracer Bullet** - validates the complete VMware integration stack.
@@ -1249,6 +1252,34 @@ class VmProvisioningService {
 
 **Phase 1 (VCSIM):** Stories 3.1-3.6 - Development with VCSIM
 **Phase 2 (Real vCenter):** Stories 3.7-3.9 - Validation with real vCenter (when available)
+
+---
+
+### Story 3.1.1: Migrate to Official vSphere SDK
+
+As a **platform maintainer**,
+I want to replace yavijava with the official VMware vSphere SDK,
+So that DVMM uses a supported, maintained SDK for VMware integration with vSphere 7.x/8.x compatibility.
+
+**Acceptance Criteria:**
+
+**Given** the existing `VcenterAdapter` uses yavijava
+**When** I complete this story
+**Then** `VcenterAdapter` uses the official **VCF SDK (Maven Central)**
+**And** yavijava dependencies are completely removed
+**And** Unified Authentication pattern is implemented with **session caching/pooling**
+**And** VMware integration tests use `VcsimAdapter` mock (VCF SDK port 443 limitation);
+    `VcenterAdapter` validation deferred to Story 3.9 (real vCenter contract tests)
+
+**Prerequisites:** Story 3.1 (VMware Connection Configuration)
+
+**FRs Satisfied:** Technical debt remediation (no new FRs)
+
+**Technical Notes:**
+- **VCF SDK Java 9.0.0.0** (Maven Central) - SELECTED
+- vSphere Automation SDK 8.0.3.0 (Requires local install - AVOIDED)
+- All SDK calls wrapped with `withContext(Dispatchers.IO)`
+- New `VcenterAdapterIntegrationTest` required (using `VcsimTestFixture`)
 
 ---
 
@@ -1284,8 +1315,8 @@ So that I can interact with VMware infrastructure reliably.
 **FRs Satisfied:** FR34 (partial)
 
 **Technical Notes:**
-- Use vijava library (Java vSphere SDK)
-- Wrap in Kotlin coroutines for non-blocking
+- Use official vSphere Automation SDK (after Story 3.1.1 migration)
+- Wrap in Kotlin coroutines for non-blocking (`withContext(Dispatchers.IO)`)
 - See Architecture: Adapter Pattern for Infrastructure
 - Integration tests use VCSIM (Story 1.10)
 
@@ -2450,10 +2481,10 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 |------|---------|------------|
 | Epic 1: Foundation | 11 | Technical enabler |
 | Epic 2: Core Workflow | 13 | Request → Approve → Notify |
-| Epic 3: VM Provisioning | 9 | VM is created |
+| Epic 3: VM Provisioning | 10 | VM is created |
 | Epic 4: Projects & Quota | 9 | Organization & Control |
 | Epic 5: Compliance & Oversight | 10 | Audit-ready + GDPR |
-| **Total** | **52** | |
+| **Total** | **53** | |
 
 ### FR Coverage Summary
 

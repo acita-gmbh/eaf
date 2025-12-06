@@ -71,7 +71,7 @@ DVMM is a multi-tenant self-service portal for VMware VM provisioning, built as 
 | Security | TLS 1.3, OIDC, RLS, Rate Limiting (100 req/min/user) |
 | Compliance | ISO 27001-ready, 7-year audit retention, GDPR Crypto-Shredding |
 | Availability | 99.5% uptime, RTO < 4h, RPO < 1h |
-| Quality | ≥80% test coverage, ≥70% mutation score |
+| Quality | ≥70% test coverage, ≥70% mutation score |
 
 ### Key Architectural Challenges
 
@@ -402,13 +402,13 @@ class ArchitectureRulesTest {
 |--------|-----------|--------------|---------|
 | `eaf-core` | Unit only | Pure Kotlin | ≥90% coverage |
 | `eaf-cqrs-core` | Unit only | Pure Kotlin + eaf-core | ≥85% coverage |
-| `eaf-eventsourcing` | Unit + Integration | Testcontainers (PostgreSQL) | ≥80% coverage |
+| `eaf-eventsourcing` | Unit + Integration | Testcontainers (PostgreSQL) | ≥70% coverage |
 | `eaf-tenant` | Integration | Testcontainers (PostgreSQL) | RLS tests pass |
 | `eaf-auth` | Unit + Contract | WireMock (Keycloak) | Contract tests pass |
 | `eaf-audit` | Unit only | Pure Kotlin (interfaces) | ≥90% coverage |
-| `eaf-testing` | Unit only | Minimal deps | ≥80% coverage |
+| `eaf-testing` | Unit only | Minimal deps | ≥70% coverage |
 | `dvmm-domain` | Unit only | eaf-testing | ≥85% coverage |
-| `dvmm-application` | Unit + Contract | Mocks for ports | ≥80% coverage |
+| `dvmm-application` | Unit + Contract | Mocks for ports | ≥70% coverage |
 | `dvmm-infrastructure` | Integration + Contract | Pact, Testcontainers | Contract tests pass |
 | `dvmm-app` | E2E | Full stack | All scenarios pass |
 

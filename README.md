@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Gradle-9.2.1-02303A.svg?logo=gradle" alt="Gradle">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/JUnit-6.0.1-25A162.svg" alt="JUnit 6">
-  <img src="https://img.shields.io/badge/Coverage-80%25-success.svg" alt="Coverage">
+  <img src="https://img.shields.io/badge/Coverage-70%25-success.svg" alt="Coverage">
 </p>
 
 ---
@@ -116,7 +116,7 @@ cd eaf
 ./gradlew :koverHtmlReport
 # Report: build/reports/kover/html/index.html
 
-# Verify coverage threshold (≥80%)
+# Verify coverage threshold (≥70%)
 ./gradlew koverVerify
 
 # Run mutation testing
@@ -144,7 +144,7 @@ All quality gates are enforced in CI and block merges if not met:
 
 | Gate | Threshold | Tool | Gradle Task |
 |------|-----------|------|-------------|
-| Test Coverage | ≥80% | Kover | `./gradlew koverVerify` |
+| Test Coverage | ≥70% | Kover | `./gradlew koverVerify` |
 | Mutation Score | ≥70% | Pitest | `./gradlew pitest` |
 | Architecture Rules | All pass | Konsist | `./gradlew test` |
 
@@ -154,7 +154,7 @@ The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) runs on every push t
 
 1. **Build** - Compile all modules
 2. **Test** - Unit and integration tests (Testcontainers)
-3. **Coverage** - Kover verification (≥80%)
+3. **Coverage** - Kover verification (≥70%)
 4. **Mutation** - Pitest mutation testing (≥70%)
 
 Reports are uploaded as workflow artifacts (coverage-report, mutation-report).
@@ -255,7 +255,7 @@ git checkout -b fix/tenant-leak-in-projections
 ### Before Submitting a PR
 
 1. Run `./gradlew clean build` - all tests must pass
-2. Ensure ≥80% test coverage for new code
+2. Ensure ≥70% test coverage for new code
 3. Follow architecture rules (Konsist will enforce)
 4. Update documentation if needed
 

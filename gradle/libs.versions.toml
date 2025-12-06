@@ -1,7 +1,13 @@
 [versions]
 kotlin = "2.2.21"
 spring-boot = "3.5.8"
-yavijava = "6.0.05"
+# VMware VCF SDK 9.0 - Official VMware SDK from Maven Central
+# Chosen over community fork (io.github.ray784:yavijava:6.1.0, Oct 2024) because:
+# 1. Official VMware support and maintenance guarantees
+# 2. Aligned with VCF (VMware Cloud Foundation) roadmap
+# 3. Enterprise licensing clarity for ACCI customers
+# Note: SDK requires port 443 - see ADR-011 for testing implications
+vcf-sdk = "9.0.0.0"
 spring-dependency-management = "1.1.7"
 jooq = "3.20.9"
 jooq-gradle-plugin = "9.0"
@@ -102,8 +108,14 @@ spring-security-crypto = { module = "org.springframework.security:spring-securit
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 
-# VMware vSphere SDK (yavijava - maintained fork of vijava)
-yavijava = { module = "com.toastcoders:yavijava", version.ref = "yavijava" }
+# yavijava removed in Story 3.1.1 - was deprecated (last release 2017), replaced by VCF SDK 9.0
+
+# VCF SDK 9.0 (Official VMware SDK from Maven Central - Apache 2.0 license)
+# Provides: vim25 (SOAP bindings), vsphere-utils (convenience wrappers), ssoclient (SSO)
+vcf-sdk-bom = { module = "com.vmware.sdk:vcf-sdk-bom", version.ref = "vcf-sdk" }
+vcf-sdk-vim25 = { module = "com.vmware.sdk:vim25", version.ref = "vcf-sdk" }
+vcf-sdk-vsphere-utils = { module = "com.vmware.sdk:vsphere-utils", version.ref = "vcf-sdk" }
+vcf-sdk-ssoclient = { module = "com.vmware.sdk:ssoclient", version.ref = "vcf-sdk" }
 
 # Pitest mutation testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }

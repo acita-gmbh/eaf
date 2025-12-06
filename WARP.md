@@ -220,7 +220,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 
 | Check | Threshold | Command |
 |-------|-----------|---------|
-| Test Coverage | ≥80% | `./gradlew jacocoTestReport` |
+| Test Coverage | ≥70% | `./gradlew koverVerify` |
 | Mutation Score | ≥70% | `./gradlew pitest` |
 | Architecture | All pass | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
 

@@ -1,11 +1,15 @@
 package de.acci.dvmm.infrastructure.vmware
 
-import com.vmware.vim25.mo.ClusterComputeResource
-import com.vmware.vim25.mo.Datacenter
-import com.vmware.vim25.mo.Datastore
-import com.vmware.vim25.mo.InventoryNavigator
-import com.vmware.vim25.mo.ServiceInstance
-import com.vmware.vim25.mo.VirtualMachine
+import com.vmware.sdk.vsphere.utils.VcenterClient
+import com.vmware.sdk.vsphere.utils.VcenterClientFactory
+import com.vmware.sdk.vsphere.utils.VimClient.getVimServiceInstanceRef
+import com.vmware.vim25.InvalidLoginFaultMsg
+import com.vmware.vim25.ManagedObjectReference
+import com.vmware.vim25.ObjectSpec
+import com.vmware.vim25.PropertyFilterSpec
+import com.vmware.vim25.PropertySpec
+import com.vmware.vim25.RetrieveOptions
+import com.vmware.vim25.VimPortType
 import de.acci.dvmm.application.vmware.ConnectionError
 import de.acci.dvmm.application.vmware.ConnectionInfo
 import de.acci.dvmm.application.vmware.VspherePort
@@ -20,16 +24,24 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.net.ConnectException
-import java.net.URL
+import java.net.URI
 import java.net.UnknownHostException
+import java.security.KeyStore
 import javax.net.ssl.SSLException
 
 /**
- * Production vCenter adapter using yavijava SDK.
+ * Production vCenter adapter using VCF SDK 9.0 (Official VMware SDK).
  *
  * This adapter connects to real VMware vCenter servers for production use.
  * All blocking SOAP calls are wrapped in `withContext(Dispatchers.IO)` to
  * avoid blocking WebFlux's event loop.
+ *
+ * ## SDK Migration (Story 3.1.1)
+ *
+ * Migrated from yavijava (deprecated, last release 2017) to VCF SDK 9.0:
+ * - `com.vmware.sdk:vsphere-utils:9.0.0.0` from Maven Central
+ * - Apache 2.0 license
+ * - Official VMware SDK with vSphere 7.x/8.x SOAP API compatibility
  *
  * ## Profile Selection
  *
@@ -41,22 +53,11 @@ import javax.net.ssl.SSLException
  * ## SSL Certificate Handling
  *
  * By default, SSL certificate validation is enabled. For self-signed certificates,
- * you can either:
- * 1. Import the certificate into the JVM truststore
- * 2. Set `ignoreCert=true` in ServiceInstance (not recommended for production)
- *
- * ## Connection Timeouts
- *
- * yavijava uses Java's URLConnection internally, which respects JVM socket settings.
- * To configure connection timeouts, set JVM system properties:
- * ```
- * -Dsun.net.client.defaultConnectTimeout=30000  # 30 seconds connect timeout
- * -Dsun.net.client.defaultReadTimeout=60000     # 60 seconds read timeout
- * ```
+ * set `dvmm.vcenter.ignore-cert=true` (not recommended for production).
  *
  * ## Threading
  *
- * yavijava uses blocking SOAP calls. This adapter wraps all vSphere operations
+ * VCF SDK uses blocking SOAP calls. This adapter wraps all vSphere operations
  * in `withContext(Dispatchers.IO)` to ensure they don't block the event loop.
  *
  * @see VcsimAdapter for test environment implementation
@@ -81,7 +82,7 @@ public class VcenterAdapter(
     }
 
     /**
-     * Test connection to vCenter using yavijava SDK.
+     * Test connection to vCenter using VCF SDK 9.0.
      *
      * Validates:
      * 1. Network connectivity to vCenter URL
@@ -104,58 +105,83 @@ public class VcenterAdapter(
                 "datacenter=${params.datacenterName}"
         }
 
-        var serviceInstance: ServiceInstance? = null
+        var client: VcenterClient? = null
 
         try {
-            // Connect to vCenter
-            // Note: Connection timeouts are controlled by JVM socket settings.
-            // For custom timeouts, configure: -Dsun.net.client.defaultConnectTimeout=30000
-            // ignoreCert=false by default (secure); set dvmm.vcenter.ignore-cert=true for self-signed certs
-            serviceInstance = ServiceInstance(
-                URL(params.vcenterUrl),
-                params.username,
-                password,
-                ignoreCert
+            // Extract hostname from URL for VcenterClientFactory
+            val vcenterHost = URI(params.vcenterUrl).host
+                ?: return@withContext ConnectionError.NetworkError(
+                    message = "Invalid vCenter URL: '${params.vcenterUrl}' - failed to extract hostname. " +
+                        "Expected format: 'https://<hostname>/sdk'"
+                ).failure()
+
+            // Create client factory with optional SSL configuration
+            // WARNING: VCF SDK 9.0 SSL behavior with empty KeyStore needs verification (Story 3-9).
+            // In standard Java SSL, empty KeyStore means "trust nothing" (not "trust all").
+            // Passing null uses default system truststore. The ignoreCert flag's actual effect
+            // depends on how VcenterClientFactory handles the KeyStore parameter internally.
+            val trustStore: KeyStore? = if (ignoreCert) KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+                load(null, null)
+            } else null
+
+            val factory = VcenterClientFactory(vcenterHost, trustStore)
+            client = factory.createClient(
+                /* username = */ params.username,
+                /* password = */ password,
+                /* domain = */ null  // SSO domain, null for local auth
             )
 
-            val aboutInfo = serviceInstance.aboutInfo
+            val vimPort = client.vimPort
+            val serviceContent = vimPort.retrieveServiceContent(getVimServiceInstanceRef())
+
+            // Get vCenter version info
+            val aboutInfo = serviceContent.about
             val vcenterVersion = "${aboutInfo.version} (build ${aboutInfo.build})"
             logger.debug { "Connected to vCenter: $vcenterVersion" }
 
-            // Find datacenter
-            val rootFolder = serviceInstance.rootFolder
-            val datacenter = InventoryNavigator(rootFolder)
-                .searchManagedEntity("Datacenter", params.datacenterName) as? Datacenter
+            // Find datacenter using SearchIndex
+            val searchIndex = serviceContent.searchIndex
+            val datacenterPath = params.datacenterName
+            val datacenterRef = vimPort.findByInventoryPath(searchIndex, datacenterPath)
                 ?: return@withContext ConnectionError.DatacenterNotFound(
                     datacenterName = params.datacenterName
                 ).failure()
 
             logger.debug { "Found datacenter: ${params.datacenterName}" }
 
-            // Find cluster
-            val cluster = InventoryNavigator(datacenter)
-                .searchManagedEntity("ClusterComputeResource", params.clusterName) as? ClusterComputeResource
+            // Find cluster using SearchIndex (path: datacenter/host/clusterName)
+            val clusterPath = "${params.datacenterName}/host/${params.clusterName}"
+            val clusterRef = vimPort.findByInventoryPath(searchIndex, clusterPath)
                 ?: return@withContext ConnectionError.ClusterNotFound(
                     clusterName = params.clusterName
                 ).failure()
 
-            val clusterHosts = cluster.hosts?.size ?: 0
+            // Get cluster host count using PropertyCollector
+            val clusterHosts = getClusterHostCount(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                clusterRef = clusterRef
+            )
             logger.debug { "Found cluster: ${params.clusterName} with $clusterHosts hosts" }
 
-            // Find datastore
-            val datastore = InventoryNavigator(datacenter)
-                .searchManagedEntity("Datastore", params.datastoreName) as? Datastore
+            // Find datastore using SearchIndex (path: datacenter/datastore/datastoreName)
+            val datastorePath = "${params.datacenterName}/datastore/${params.datastoreName}"
+            val datastoreRef = vimPort.findByInventoryPath(searchIndex, datastorePath)
                 ?: return@withContext ConnectionError.DatastoreNotFound(
                     datastoreName = params.datastoreName
                 ).failure()
 
-            val datastoreFreeGb = (datastore.summary?.freeSpace ?: 0L) / (1024L * 1024L * 1024L)
+            // Get datastore free space using PropertyCollector
+            val datastoreFreeGb = getDatastoreFreeSpaceGb(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                datastoreRef = datastoreRef
+            )
             logger.debug { "Found datastore: ${params.datastoreName} with ${datastoreFreeGb}GB free" }
 
-            // Verify network exists (result not stored - only existence check needed)
-            if (InventoryNavigator(datacenter)
-                    .searchManagedEntity("Network", params.networkName) == null
-            ) {
+            // Find network using SearchIndex (path: datacenter/network/networkName)
+            val networkPath = "${params.datacenterName}/network/${params.networkName}"
+            if (vimPort.findByInventoryPath(searchIndex, networkPath) == null) {
                 return@withContext ConnectionError.NetworkNotFound(
                     networkName = params.networkName
                 ).failure()
@@ -163,13 +189,24 @@ public class VcenterAdapter(
 
             logger.debug { "Found network: ${params.networkName}" }
 
-            // Verify template exists (VirtualMachine with template flag)
-            val template = InventoryNavigator(datacenter)
-                .searchManagedEntity("VirtualMachine", params.templateName) as? VirtualMachine
-            if (template == null || template.config?.template != true) {
+            // Find template using SearchIndex (path: datacenter/vm/templateName)
+            val templatePath = "${params.datacenterName}/vm/${params.templateName}"
+            val templateRef = vimPort.findByInventoryPath(searchIndex, templatePath)
+            if (templateRef == null) {
+                return@withContext ConnectionError.TemplateNotFound(
+                    templateName = params.templateName
+                ).failure()
+            }
+
+            // Verify it's actually a template (config.template == true)
+            val isTemplate = isVmTemplate(
+                vimPort = vimPort,
+                propertyCollector = serviceContent.propertyCollector,
+                vmRef = templateRef
+            )
+            if (!isTemplate) {
                 logger.warn {
-                    "Template not found or not marked as template: ${params.templateName} " +
-                        "(found=${template != null}, isTemplate=${template?.config?.template})"
+                    "VM found but not marked as template: ${params.templateName}"
                 }
                 return@withContext ConnectionError.TemplateNotFound(
                     templateName = params.templateName
@@ -191,6 +228,14 @@ public class VcenterAdapter(
                 clusterHosts = clusterHosts,
                 datastoreFreeGb = datastoreFreeGb
             ).success()
+
+        } catch (e: InvalidLoginFaultMsg) {
+            logger.warn(e) { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
+            // Note: AuthenticationFailed intentionally has no 'cause' field - don't leak
+            // exception details for auth failures (security best practice)
+            ConnectionError.AuthenticationFailed(
+                message = "Authentication failed - check username and password"
+            ).failure()
 
         } catch (e: UnknownHostException) {
             logger.warn(e) { "DNS resolution failed for ${params.vcenterUrl}" }
@@ -214,14 +259,14 @@ public class VcenterAdapter(
             ).failure()
 
         } catch (e: Exception) {
-            // Check for authentication errors
+            // Check for authentication errors in exception message
             val message = e.message?.lowercase() ?: ""
             if (message.contains("incorrect user name") ||
                 message.contains("invalid login") ||
                 message.contains("cannot complete login") ||
                 message.contains("authentication")
             ) {
-                logger.warn { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
+                logger.warn(e) { "Authentication failed for ${params.username} at ${params.vcenterUrl}" }
                 ConnectionError.AuthenticationFailed(
                     message = "Authentication failed - check username and password"
                 ).failure()
@@ -236,10 +281,136 @@ public class VcenterAdapter(
         } finally {
             // Always close the connection
             try {
-                serviceInstance?.serverConnection?.logout()
+                client?.close()
             } catch (e: Exception) {
                 logger.debug(e) { "Error during logout (ignored)" }
             }
         }
+    }
+
+    /**
+     * Get the number of hosts in a cluster using PropertyCollector.
+     */
+    private fun getClusterHostCount(
+        vimPort: VimPortType,
+        propertyCollector: ManagedObjectReference,
+        clusterRef: ManagedObjectReference
+    ): Int {
+        val propSpec = PropertySpec().apply {
+            type = "ClusterComputeResource"
+            pathSet.add("host")
+        }
+
+        val objSpec = ObjectSpec().apply {
+            obj = clusterRef
+            isSkip = false  // Include the object's properties in results (don't skip)
+        }
+
+        val filterSpec = PropertyFilterSpec().apply {
+            propSet.add(propSpec)
+            objectSet.add(objSpec)
+        }
+
+        val result = vimPort.retrievePropertiesEx(
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
+        )
+
+        val hostCount = result?.objects?.firstOrNull()
+            ?.propSet
+            ?.firstOrNull { it.name == "host" }
+            ?.let { prop ->
+                @Suppress("UNCHECKED_CAST")
+                (prop.`val` as? List<ManagedObjectReference>)?.size
+            }
+
+        if (hostCount == null) {
+            logger.debug { "PropertyCollector returned null for cluster host count, defaulting to 0" }
+            return 0
+        }
+        return hostCount
+    }
+
+    /**
+     * Get datastore free space in GB using PropertyCollector.
+     */
+    private fun getDatastoreFreeSpaceGb(
+        vimPort: VimPortType,
+        propertyCollector: ManagedObjectReference,
+        datastoreRef: ManagedObjectReference
+    ): Long {
+        val propSpec = PropertySpec().apply {
+            type = "Datastore"
+            pathSet.add("summary.freeSpace")
+        }
+
+        val objSpec = ObjectSpec().apply {
+            obj = datastoreRef
+            isSkip = false  // Include the object's properties in results (don't skip)
+        }
+
+        val filterSpec = PropertyFilterSpec().apply {
+            propSet.add(propSpec)
+            objectSet.add(objSpec)
+        }
+
+        val result = vimPort.retrievePropertiesEx(
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
+        )
+
+        val freeSpaceBytes = result?.objects?.firstOrNull()
+            ?.propSet
+            ?.firstOrNull { it.name == "summary.freeSpace" }
+            ?.`val` as? Long
+
+        if (freeSpaceBytes == null) {
+            logger.debug { "PropertyCollector returned null for datastore free space, defaulting to 0" }
+            return 0L
+        }
+        return freeSpaceBytes / (1024L * 1024L * 1024L)
+    }
+
+    /**
+     * Check if a VirtualMachine is marked as a template using PropertyCollector.
+     */
+    private fun isVmTemplate(
+        vimPort: VimPortType,
+        propertyCollector: ManagedObjectReference,
+        vmRef: ManagedObjectReference
+    ): Boolean {
+        val propSpec = PropertySpec().apply {
+            type = "VirtualMachine"
+            pathSet.add("config.template")
+        }
+
+        val objSpec = ObjectSpec().apply {
+            obj = vmRef
+            isSkip = false  // Include the object's properties in results (don't skip)
+        }
+
+        val filterSpec = PropertyFilterSpec().apply {
+            propSet.add(propSpec)
+            objectSet.add(objSpec)
+        }
+
+        val result = vimPort.retrievePropertiesEx(
+            /* specCollector = */ propertyCollector,
+            /* specSet = */ listOf(filterSpec),
+            /* options = */ RetrieveOptions()
+        )
+
+        val isTemplate = result?.objects?.firstOrNull()
+            ?.propSet
+            ?.firstOrNull { it.name == "config.template" }
+            ?.`val` as? Boolean
+
+        if (isTemplate == null) {
+            logger.debug { "PropertyCollector returned null for config.template, defaulting to false" }
+            return false
+        }
+        return isTemplate
     }
 }

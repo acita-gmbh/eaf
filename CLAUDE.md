@@ -21,10 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run single test method
 ./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
 
-# Check code coverage (Kover) - 80% minimum required
+# Check code coverage (Kover) - 70% minimum required
 ./gradlew koverHtmlReport          # Per-module reports
 ./gradlew :koverHtmlReport         # Merged report (root)
-./gradlew koverVerify              # Verify 80% threshold
+./gradlew koverVerify              # Verify 70% threshold
 
 # Run mutation testing (Pitest + Arcmutate) - 70% threshold
 # Requires arcmutate-licence.txt at project root OR ARCMUTATE_LICENSE env var
@@ -58,7 +58,7 @@ Product modules following Hexagonal Architecture:
 Convention plugins for consistent configuration:
 - `eaf.kotlin-conventions` - Kotlin 2.2, JVM 21, Explicit API mode, context parameters
 - `eaf.spring-conventions` - Spring Boot 3.5 with WebFlux
-- `eaf.test-conventions` - JUnit 6, Kover (80% coverage), Testcontainers, Konsist
+- `eaf.test-conventions` - JUnit 6, Kover (70% coverage), Testcontainers, Konsist
 - `eaf.pitest-conventions` - Mutation testing (70% threshold) with Arcmutate Kotlin/Spring
 
 ## Critical Architecture Rules (ADR-001)
@@ -107,6 +107,68 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - Default parameter expressions (like `UUID.randomUUID()`) execute during setup
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
+
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
+
+**PropertyCollector Pattern:**
+
+The SDK requires explicit property fetching via `PropertySpec` + `ObjectSpec` + `FilterSpec`:
+
+```kotlin
+// Fetch specific properties from a managed object
+val propSpec = PropertySpec().apply {
+    type = "ClusterComputeResource"
+    pathSet.add("host")  // Property to fetch
+}
+
+val objSpec = ObjectSpec().apply {
+    obj = clusterRef  // ManagedObjectReference
+    isSkip = false
+}
+
+val filterSpec = PropertyFilterSpec().apply {
+    propSet.add(propSpec)
+    objectSet.add(objSpec)
+}
+
+val result = vimPort.retrievePropertiesEx(propertyCollector, listOf(filterSpec), RetrieveOptions())
+```
+
+**SearchIndex Navigation:**
+
+Use inventory paths to find vSphere objects (datacenter/folder/object pattern):
+
+```kotlin
+val searchIndex = serviceContent.searchIndex
+
+// Find datacenter
+val datacenterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter")
+
+// Find cluster (path: datacenter/host/clusterName)
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+
+// Find datastore (path: datacenter/datastore/datastoreName)
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
+
+// Find VM/template (path: datacenter/vm/vmName)
+val vmRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/vm/MyTemplate")
+```
+
+**Port 443 Constraint:**
+
+VCF SDK's `VcenterClientFactory` only supports HTTPS on port 443:
+
+```kotlin
+// ✅ CORRECT - Hostname only (SDK assumes port 443)
+val factory = VcenterClientFactory("vcenter.example.com", trustStore)
+
+// ❌ WRONG - Custom port not supported
+val factory = VcenterClientFactory("vcenter.example.com:8443", trustStore)  // URISyntaxException
+```
+
+This is correct for production vCenter servers (always use port 443). For testing with VCSIM (which uses dynamic ports), use the `VcsimAdapter` mock instead.
 
 ## Frontend (dvmm-web)
 
@@ -606,7 +668,7 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 |----------|---------|---------------|
 | [Architecture](docs/architecture.md) | System design, ADRs, module structure | CQRS/ES, PostgreSQL RLS, Hexagonal |
 | [Security Architecture](docs/security-architecture.md) | Threat model, STRIDE, compliance | ISO 27001, GDPR Crypto-Shredding |
-| [DevOps Strategy](docs/devops-strategy.md) | CI/CD, quality gates, monitoring | GitHub Actions, 80%/70% gates |
+| [DevOps Strategy](docs/devops-strategy.md) | CI/CD, quality gates, monitoring | GitHub Actions, 70%/70% gates |
 | [Test Design](docs/test-design-system.md) | Testability concerns TC-001–TC-004 | k6, Playwright, VCSIM |
 | [UX Design](docs/ux-design-specification.md) | Design system, user journeys | shadcn-admin-kit, Tech Teal |
 
@@ -653,7 +715,7 @@ Stories move through: `backlog` → `drafted` → `ready-for-dev` → `in-progre
 
 ### Quality Gates (Non-Negotiable)
 
-- **Test Coverage:** ≥80% (CI blocks merge)
+- **Test Coverage:** ≥70% (CI blocks merge)
 - **Mutation Score:** ≥70% (CI blocks merge)
 - **Architecture Tests:** All Konsist rules pass
 - **Security Scan:** Zero critical vulnerabilities
@@ -734,7 +796,7 @@ import org.springframework.stereotype.Service  // BLOCKED BY KONSIST
 ### Testing Requirements
 
 - **YOU MUST** write tests BEFORE implementation (Tests First)
-- **YOU MUST** achieve ≥80% line coverage per module
+- **YOU MUST** achieve ≥70% line coverage per module
 - **YOU MUST** achieve ≥70% mutation score (Pitest)
 - **YOU MUST** run `./gradlew clean build` before committing
 

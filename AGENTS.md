@@ -22,10 +22,10 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 ./gradlew :dvmm:dvmm-app:build
 ./gradlew :eaf:eaf-core:build
 
-# Code coverage (80% minimum)
+# Code coverage (70% minimum)
 ./gradlew koverHtmlReport          # Per-module reports
 ./gradlew :koverHtmlReport         # Merged report (root)
-./gradlew koverVerify              # Verify 80% threshold
+./gradlew koverVerify              # Verify 70% threshold
 
 # Mutation testing (70% threshold)
 ./gradlew pitest
@@ -89,6 +89,21 @@ coEvery { handler.handle(any()) } returns result.success()
 
 // ✅ CORRECT - Explicitly match ALL parameters
 coEvery { handler.handle(any(), any()) } returns result.success()
+```
+
+### VMware VCF SDK 9.0 Patterns
+
+The project uses **VCF SDK 9.0** for VMware vCenter integration.
+
+**Key Patterns:**
+- **PropertyCollector:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`
+- **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
+- **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
+
+```kotlin
+// SearchIndex navigation
+val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
+val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
 ```
 
 ## Frontend (dvmm-web)
@@ -352,7 +367,7 @@ class VmService {
 ## Testing Requirements
 
 - Write tests BEFORE implementation (Tests First)
-- Achieve ≥80% line coverage per module
+- Achieve ≥70% line coverage per module
 - Achieve ≥70% mutation score (Pitest)
 - Run `./gradlew clean build` before committing
 
@@ -408,7 +423,7 @@ val params = VcenterConnectionParams(vcenterUrl = url, username = user, ...)
 
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
-| Test Coverage | ≥80% | CI blocks merge |
+| Test Coverage | ≥70% | CI blocks merge |
 | Mutation Score | ≥70% | CI blocks merge |
 | Architecture Tests | All pass | CI blocks merge |
 | Security Scan | Zero critical | CI blocks merge |

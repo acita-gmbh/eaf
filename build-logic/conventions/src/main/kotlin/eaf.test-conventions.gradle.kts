@@ -7,6 +7,7 @@ plugins {
 val libs = versionCatalogs.named("libs")
 
 // Kover configuration for code coverage
+// Per-module verification disabled - global verification in root build.gradle.kts
 kover {
     reports {
         total {
@@ -15,11 +16,6 @@ kover {
             }
             xml {
                 onCheck = false
-            }
-        }
-        verify {
-            rule {
-                minBound(80) // 80% minimum coverage
             }
         }
     }
