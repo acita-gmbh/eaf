@@ -99,7 +99,8 @@ public class VcsimTestFixture(
             waitForTask(vimPort, serviceContent, task)
 
             val info = getTaskInfo(vimPort, serviceContent, task)
-            val vmRef = info.result as ManagedObjectReference
+            val vmRef = info.result as? ManagedObjectReference
+                ?: throw VcsimException("Task completed but result was not a VM reference: ${info.result}")
 
             return VmRef(
                 moRef = vmRef.value,

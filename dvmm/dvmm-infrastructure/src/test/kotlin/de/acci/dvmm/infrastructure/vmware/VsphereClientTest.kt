@@ -18,7 +18,11 @@ class VsphereClientTest {
     private val sessionManager = mockk<VsphereSessionManager>()
     private val configPort = mockk<VmwareConfigurationPort>()
     private val credentialEncryptor = mockk<CredentialEncryptor>()
-    private val client = VsphereClient(sessionManager, configPort, credentialEncryptor)
+    private val client = VsphereClient(
+        sessionManager = sessionManager,
+        configPort = configPort,
+        credentialEncryptor = credentialEncryptor
+    )
     private val tenantId = TenantId.generate()
 
     @Test
