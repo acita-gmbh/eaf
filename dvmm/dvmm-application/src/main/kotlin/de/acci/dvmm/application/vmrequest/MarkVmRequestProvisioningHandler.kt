@@ -37,6 +37,7 @@ public class MarkVmRequestProvisioningHandler(
         val events = try {
             storedEvents.map { deserializer.deserialize(it) }
         } catch (e: Exception) {
+            logger.error(e) { "Failed to deserialize events for request ${command.requestId.value}" }
             return MarkVmRequestProvisioningError.PersistenceFailure("Failed to deserialize events: ${e.message}").failure()
         }
 
@@ -55,7 +56,8 @@ public class MarkVmRequestProvisioningHandler(
         try {
             aggregate.markProvisioning(metadata)
         } catch (e: Exception) {
-             return MarkVmRequestProvisioningError.InvalidState(e.message ?: "Invalid state transition").failure()
+            logger.error(e) { "Invalid state transition for request ${command.requestId.value}: cannot mark as provisioning" }
+            return MarkVmRequestProvisioningError.InvalidState(e.message ?: "Invalid state transition").failure()
         }
 
         val expectedVersion = aggregate.version - aggregate.uncommittedEvents.size
@@ -66,6 +68,7 @@ public class MarkVmRequestProvisioningHandler(
                 expectedVersion = expectedVersion
             )
         } catch (e: Exception) {
+            logger.error(e) { "Failed to persist VmRequestProvisioningStarted for request ${command.requestId.value}" }
             return MarkVmRequestProvisioningError.PersistenceFailure("Failed to persist: ${e.message}").failure()
         }
 
