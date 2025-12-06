@@ -125,8 +125,8 @@ class VmAggregateTest {
             aggregate.markFailed("First failure", metadata)
             aggregate.clearUncommittedEvents()
 
-            // When/Then
-            assertThrows(IllegalArgumentException::class.java) {
+            // When/Then - check() throws IllegalStateException for state validation
+            assertThrows(IllegalStateException::class.java) {
                 aggregate.markFailed("Second failure", metadata)
             }
         }

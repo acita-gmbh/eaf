@@ -135,6 +135,20 @@ class VmService {
 - MockK evaluates defaults at setup time, not call time - `coEvery { handler.handle(any()) }` with a defaulted second param creates `eq(specific-uuid)` matcher
 - Always: `coEvery { handler.handle(any(), any()) }` to match all parameters explicitly
 
+**Coroutine Event Listener Pattern:**
+- Launch handlers independently when multiple handlers react to the same event
+- Each handler in separate `scope.launch{}` block with individual try-catch
+- Failure of one handler shouldn't prevent others from executing (eventual consistency)
+
+```kotlin
+// ✅ CORRECT - Handlers execute independently
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch { try { handlerA.handle(event) } catch (e: Exception) { logger.error(e) { "Handler A failed" } } }
+    scope.launch { try { handlerB.handle(event) } catch (e: Exception) { logger.error(e) { "Handler B failed" } } }
+}
+```
+
 **Vitest Mocking Patterns (TypeScript):**
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests
@@ -304,6 +318,6 @@ vspherePort.testConnection(params = params, password = resolvedPassword)
 
 ---
 
-_Last Updated: 2025-12-05_
+_Last Updated: 2025-12-06_
 _Distilled from CLAUDE.md for LLM context efficiency_
-_Added: Domain integrity pattern (value objects for operation parameters)_
+_Added: Coroutine event listener pattern (independent handler execution)_

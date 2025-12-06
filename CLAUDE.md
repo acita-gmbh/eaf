@@ -108,6 +108,36 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
 
+### Coroutine Event Listener Patterns
+
+**Launch handlers independently** when multiple handlers react to the same event:
+
+```kotlin
+// ✅ CORRECT - Handlers execute independently
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        try { handlerA.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler A failed" } }
+    }
+    scope.launch {
+        try { handlerB.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler B failed" } }
+    }
+}
+
+// ❌ WRONG - Handler B blocked if Handler A fails
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        handlerA.handle(event)
+        handlerB.handle(event)  // Never runs if A throws!
+    }
+}
+```
+
+**Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

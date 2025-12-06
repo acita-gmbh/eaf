@@ -73,7 +73,9 @@ public class VmAggregate private constructor(
      * @param metadata Event metadata including tenant and correlation info
      */
     public fun markFailed(reason: String, metadata: EventMetadata) {
-        require(status == VmStatus.PROVISIONING) { "Can only fail a VM that is provisioning" }
+        check(status == VmStatus.PROVISIONING) {
+            "Cannot mark VM ${id.value} as failed: expected status PROVISIONING, but was $status"
+        }
 
         val event = VmProvisioningFailed(
             aggregateId = id,

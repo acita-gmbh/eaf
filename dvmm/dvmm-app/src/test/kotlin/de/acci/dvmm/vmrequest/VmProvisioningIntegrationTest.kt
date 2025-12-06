@@ -167,7 +167,7 @@ class VmProvisioningIntegrationTest {
             val payloadJson = try {
                 String(java.util.Base64.getUrlDecoder().decode(parts[1]))
             } catch (e: Exception) {
-                return@ReactiveJwtDecoder Mono.error(BadJwtException("Cannot decode payload"))
+                return@ReactiveJwtDecoder Mono.error(BadJwtException("Cannot decode payload", e))
             }
 
             // Check which user ID is in the payload
