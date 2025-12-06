@@ -33,7 +33,7 @@ jjwt = "0.12.5"
 slf4j = "2.0.17"
 kotlinLogging = "7.0.13"
 bouncycastle = "1.83"
-resilience4j = "2.2.0"
+resilience4j = "2.3.0"
 
 [libraries]
 # Kotlin

@@ -34,6 +34,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.kotlin.circuitbreaker.executeSuspendFunction
+import jakarta.annotation.PreDestroy
 import jakarta.xml.ws.BindingProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +83,16 @@ public class VsphereClient(
         .permittedNumberOfCallsInHalfOpenState(2)
         .recordResult { result -> result is Result.Failure<*> }
         .build())
+
+    /**
+     * Cleans up resources when the Spring bean is destroyed.
+     * Cancels all keepalive coroutines to prevent resource leaks during shutdown.
+     */
+    @PreDestroy
+    public fun cleanup() {
+        logger.info { "Shutting down VsphereClient, cancelling keepalive jobs" }
+        scope.cancel()
+    }
 
     private suspend fun <T> executeResilient(name: String, block: suspend () -> Result<T, VsphereError>): Result<T, VsphereError> {
         return try {
@@ -546,11 +557,11 @@ public class VsphereClient(
     }
 
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> = executeResilient("getVm") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.NotFound("No tenant context").failure() }
+        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
-            is Result.Failure -> return@executeResilient VsphereError.NotFound("Connection failed").failure()
+            is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
 
         withContext(Dispatchers.IO) {
