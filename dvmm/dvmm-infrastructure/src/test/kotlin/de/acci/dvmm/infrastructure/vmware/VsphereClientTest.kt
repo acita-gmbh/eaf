@@ -29,9 +29,9 @@ class VsphereClientTest {
         val result = client.listDatacenters()
         
         assertTrue(result is Result.Failure)
-        assertTrue((result as Result.Failure).error is VsphereError.ConnectionError)
-        // Message checking
-        val error = (result as Result.Failure).error as VsphereError.ConnectionError
+        val failure = result as Result.Failure
+        assertTrue(failure.error is VsphereError.ConnectionError)
+        val error = failure.error as VsphereError.ConnectionError
         assertTrue(error.message?.contains("No VMware configuration") == true)
     }
 }

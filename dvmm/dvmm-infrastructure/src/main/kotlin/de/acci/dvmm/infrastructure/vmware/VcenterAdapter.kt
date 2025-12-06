@@ -118,12 +118,13 @@ public class VcenterAdapter(
         var client: VcenterClient? = null
 
         try {
-            // Extract hostname (or host:port) from URL for VcenterClientFactory
-            // Use authority to support custom ports (e.g. VCSIM)
-            val vcenterHost = URI(params.vcenterUrl).authority
+            // Extract hostname from URL for VcenterClientFactory
+            // Note: VcenterClientFactory only supports port 443, so we only need the host.
+            // Using uri.host instead of uri.authority to avoid including userinfo if present.
+            val vcenterHost = URI(params.vcenterUrl).host
                 ?: return@withContext ConnectionError.NetworkError(
-                    message = "Invalid vCenter URL: '${params.vcenterUrl}' - failed to extract hostname/port. " +
-                        "Expected format: 'https://<hostname>[:<port>]/sdk'"
+                    message = "Invalid vCenter URL: '${params.vcenterUrl}' - failed to extract hostname. " +
+                        "Expected format: 'https://<hostname>/sdk'"
                 ).failure()
 
             // Create client factory with optional SSL configuration
