@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vm.ProvisionVmHandler
 import de.acci.dvmm.application.vm.TriggerProvisioningHandler
 import de.acci.dvmm.application.vm.VmProvisioningListener
+import de.acci.dvmm.application.vm.VmEventDeserializer
 import de.acci.dvmm.application.vm.VmRequestStatusUpdater
 import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler
@@ -29,6 +30,7 @@ import de.acci.dvmm.application.vmware.TestVmwareConnectionHandler
 import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmEventDeserializer
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
 import de.acci.dvmm.infrastructure.eventsourcing.PublishingEventStore
 import de.acci.dvmm.infrastructure.projection.AdminRequestDetailRepositoryAdapter
@@ -149,6 +151,15 @@ public class ApplicationConfig {
     @Bean
     public fun vmRequestEventDeserializer(@Qualifier("eventStoreObjectMapper") objectMapper: ObjectMapper): VmRequestEventDeserializer =
         JacksonVmRequestEventDeserializer(objectMapper)
+
+    /**
+     * Jackson-based event deserializer for Vm aggregate events.
+     *
+     * Deserializes stored Vm events (VmProvisioningStarted, VmProvisioningFailed) from JSON.
+     */
+    @Bean
+    public fun vmEventDeserializer(@Qualifier("eventStoreObjectMapper") objectMapper: ObjectMapper): VmEventDeserializer =
+        JacksonVmEventDeserializer(objectMapper)
 
     // ==================== VM Provisioning Handlers (Story 3.3) ====================
 
