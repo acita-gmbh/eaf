@@ -15,6 +15,17 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    // CVE-2024-47554: Force safe commons-io version across all modules
+    // Vulnerable version 2.11.0 comes transitively from testcontainers-keycloak
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "commons-io" && requested.name == "commons-io") {
+                useVersion("2.18.0")
+                because("CVE-2024-47554: commons-io < 2.14.0 vulnerable to DoS via XmlStreamReader")
+            }
+        }
+    }
 }
 
 // Kover merged reports - aggregate all subprojects
