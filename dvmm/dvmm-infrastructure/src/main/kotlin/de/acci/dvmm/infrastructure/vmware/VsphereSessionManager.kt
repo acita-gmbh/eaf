@@ -13,7 +13,9 @@ public class VsphereSessionManager {
     }
 
     public fun registerSession(tenantId: TenantId, session: VsphereSession) {
-        sessions[tenantId] = session
+        // Cancel existing session's keepAliveJob to prevent resource leak
+        val existingSession = sessions.put(tenantId, session)
+        existingSession?.keepAliveJob?.cancel()
     }
 
     public fun removeSession(tenantId: TenantId) {
