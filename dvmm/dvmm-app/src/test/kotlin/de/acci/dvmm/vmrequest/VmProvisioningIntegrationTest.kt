@@ -348,4 +348,71 @@ class VmProvisioningIntegrationTest {
             }
         }
     }
+
+    @Test
+    fun `should emit VmProvisioningFailed when VMware config is missing (AC-7)`() {
+        // AC-7: If VMware config missing, error event added: "VMware not configured"
+        // Note: We intentionally do NOT create VMware config before approving
+
+        // 1. Create VM Request (without VMware config)
+        val requestBody = """
+            {
+                "vmName": "fail-test-vm",
+                "projectId": "${UUID.randomUUID()}",
+                "size": "M",
+                "justification": "Testing provisioning failure when VMware not configured"
+            }
+        """.trimIndent()
+
+        val createResponse = webTestClient.mutateWith(csrf()).post()
+            .uri("/api/requests")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.requesterToken()}")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .bodyValue(requestBody)
+            .exchange()
+            .expectStatus().isCreated
+            .expectBody()
+            .returnResult()
+
+        val responseJson = String(createResponse.responseBody!!)
+        val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
+
+        // 2. Approve VM Request (version 1 = after VmRequestCreated event)
+        val approveBody = """{"version": 1}"""
+        webTestClient.mutateWith(csrf()).post()
+            .uri("/api/admin/requests/$requestId/approve")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.adminToken()}")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .bodyValue(approveBody)
+            .exchange()
+            .expectStatus().isOk
+
+        // 3. Verify VmProvisioningFailed event is emitted (because VMware config is missing)
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted {
+            TestContainers.postgres.createConnection("").use { conn ->
+                conn.prepareStatement(
+                    "SELECT event_type, payload FROM eaf_events.events ORDER BY version"
+                ).use { stmt ->
+                    val rs = stmt.executeQuery()
+                    val events = mutableListOf<String>()
+                    var failedPayload: String? = null
+                    while (rs.next()) {
+                        val eventType = rs.getString("event_type")
+                        events.add(eventType)
+                        if (eventType == "VmProvisioningFailed") {
+                            failedPayload = rs.getString("payload")
+                        }
+                    }
+
+                    assertTrue(events.contains("VmRequestApproved"), "Should have VmRequestApproved. Found: $events")
+                    assertTrue(events.contains("VmProvisioningStarted"), "Should have VmProvisioningStarted. Found: $events")
+                    assertTrue(events.contains("VmProvisioningFailed"), "Should have VmProvisioningFailed (AC-7). Found: $events")
+                    assertTrue(
+                        failedPayload?.contains("VMware configuration missing") == true,
+                        "VmProvisioningFailed should mention VMware config missing. Payload: $failedPayload"
+                    )
+                }
+            }
+        }
+    }
 }

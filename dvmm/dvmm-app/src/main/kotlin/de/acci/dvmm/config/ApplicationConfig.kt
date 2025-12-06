@@ -169,8 +169,13 @@ public class ApplicationConfig {
     @Bean
     public fun markVmRequestProvisioningHandler(
         eventStore: EventStore,
-        eventDeserializer: VmRequestEventDeserializer
-    ): MarkVmRequestProvisioningHandler = MarkVmRequestProvisioningHandler(eventStore, eventDeserializer)
+        eventDeserializer: VmRequestEventDeserializer,
+        timelineUpdater: TimelineEventProjectionUpdater
+    ): MarkVmRequestProvisioningHandler = MarkVmRequestProvisioningHandler(
+        eventStore = eventStore,
+        deserializer = eventDeserializer,
+        timelineUpdater = timelineUpdater
+    )
 
     @Bean
     public fun vmProvisioningListener(

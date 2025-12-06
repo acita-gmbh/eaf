@@ -34,6 +34,7 @@ class MarkVmRequestProvisioningHandlerTest {
 
     private val eventStore = mockk<EventStore>()
     private val deserializer = mockk<VmRequestEventDeserializer>()
+    private val timelineUpdater = mockk<TimelineEventProjectionUpdater>(relaxed = true)
 
     private fun createStoredEvent(payload: DomainEvent): StoredEvent {
         return StoredEvent(
@@ -86,7 +87,7 @@ class MarkVmRequestProvisioningHandlerTest {
             eventStore.append(any(), capture(eventsSlot), any())
         } returns 3L.success()
 
-        val handler = MarkVmRequestProvisioningHandler(eventStore, deserializer)
+        val handler = MarkVmRequestProvisioningHandler(eventStore, deserializer, timelineUpdater)
         val command = MarkVmRequestProvisioningCommand(requestId, tenantId, userId)
 
         // When

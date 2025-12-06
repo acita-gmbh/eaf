@@ -10,6 +10,8 @@ import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.time.Instant
+import java.util.UUID
 
 public sealed class MarkVmRequestProvisioningError {
     public data class NotFound(val message: String) : MarkVmRequestProvisioningError()
@@ -20,7 +22,8 @@ public sealed class MarkVmRequestProvisioningError {
 
 public class MarkVmRequestProvisioningHandler(
     private val eventStore: EventStore,
-    private val deserializer: VmRequestEventDeserializer
+    private val deserializer: VmRequestEventDeserializer,
+    private val timelineUpdater: TimelineEventProjectionUpdater
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -73,7 +76,22 @@ public class MarkVmRequestProvisioningHandler(
         }
 
         return when (appendResult) {
-            is Result.Success -> Unit.success()
+            is Result.Success -> {
+                // AC-6: Add timeline event "Provisioning started"
+                timelineUpdater.addTimelineEvent(
+                    NewTimelineEvent(
+                        id = UUID.randomUUID(),
+                        requestId = command.requestId,
+                        tenantId = command.tenantId,
+                        eventType = TimelineEventType.PROVISIONING_STARTED,
+                        actorId = command.userId,
+                        actorName = "System",
+                        details = "VM provisioning has started",
+                        occurredAt = Instant.now()
+                    )
+                )
+                Unit.success()
+            }
             is Result.Failure -> {
                 if (appendResult.error is EventStoreError.ConcurrencyConflict) {
                     MarkVmRequestProvisioningError.ConcurrencyConflict("Concurrent modification").failure()
