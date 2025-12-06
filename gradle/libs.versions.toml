@@ -34,6 +34,9 @@ slf4j = "2.0.17"
 kotlinLogging = "7.0.13"
 bouncycastle = "1.83"
 resilience4j = "2.3.0"
+# CVE-2024-47554: commons-io < 2.14.0 is vulnerable to DoS via XmlStreamReader
+# Force 2.18.0 to override vulnerable transitive dependencies from testcontainers-keycloak
+commons-io = "2.18.0"
 
 [libraries]
 # Kotlin
@@ -112,6 +115,9 @@ bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref 
 # Resilience4j
 resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
 resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "resilience4j" }
+
+# Security: Force safe version to override vulnerable transitive dependencies
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 
 # JAX-WS API is provided by VCF SDK via CXF (jakarta.xml.ws-api:4.0.2)
 # No explicit dependency needed - remove if present in build.gradle.kts files
