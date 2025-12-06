@@ -64,6 +64,7 @@ public class SecurityConfig(
                 auth
                     .pathMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .pathMatchers("/api/csrf").authenticated()
+                    .pathMatchers("/api/admin/**").authenticated()
                     .pathMatchers("/api/**").authenticated()
                     .anyExchange().authenticated()
             }

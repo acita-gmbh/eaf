@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import reactor.core.publisher.Mono
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+
 /**
  * Custom JWT authentication converter for Keycloak.
  *
@@ -24,9 +26,11 @@ public class KeycloakJwtAuthenticationConverter(
     private val clientId: String,
     private val rolePrefix: String = "ROLE_",
 ) : Converter<Jwt, Mono<AbstractAuthenticationToken>> {
+    private val logger = KotlinLogging.logger {}
 
     override fun convert(jwt: Jwt): Mono<AbstractAuthenticationToken> {
         val authorities = extractAuthorities(jwt)
+        logger.debug { "Extracted authorities for ${jwt.subject}: $authorities" }
         return Mono.just(JwtAuthenticationToken(jwt, authorities))
     }
 

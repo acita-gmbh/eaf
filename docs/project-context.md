@@ -135,6 +135,42 @@ class VmService {
 - MockK evaluates defaults at setup time, not call time - `coEvery { handler.handle(any()) }` with a defaulted second param creates `eq(specific-uuid)` matcher
 - Always: `coEvery { handler.handle(any(), any()) }` to match all parameters explicitly
 
+**Coroutine Event Listener Pattern:**
+- Launch handlers independently when multiple handlers react to the same event
+- Each handler in separate `scope.launch{}` block with individual try-catch
+- Failure of one handler shouldn't prevent others from executing (eventual consistency)
+
+```kotlin
+// ✅ CORRECT - Handlers execute independently
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch { try { handlerA.handle(event) } catch (e: Exception) { logger.error(e) { "Handler A failed" } } }
+    scope.launch { try { handlerB.handle(event) } catch (e: Exception) { logger.error(e) { "Handler B failed" } } }
+}
+```
+
+**Event Sourcing Defensive Pattern:**
+- Always check for empty event lists when loading events to determine `expectedVersion`
+- Empty results indicate: (1) aggregate doesn't exist, (2) race condition deleted events, or (3) wrong ID passed
+- Failing silently with `expectedVersion = 0` causes concurrency conflicts on append
+
+```kotlin
+// ✅ CORRECT - Check for empty events before using size
+val currentEvents = eventStore.load(aggregateId)
+if (currentEvents.isEmpty()) {
+    logger.error { "Cannot append: aggregate $aggregateId not found" }
+    return
+}
+val expectedVersion = currentEvents.size.toLong()
+```
+
+**New Domain Event Checklist:**
+- Create event class in `dvmm-domain/.../events/`
+- Add case to `resolveEventClass()` in corresponding `*EventDeserializer`
+- Add deserialization test in `*EventDeserializerTest`
+- If aggregate handles event, add `apply()` method and test
+- Without deserializer registration → `IllegalArgumentException: Unknown event type` on aggregate load
+
 **Vitest Mocking Patterns (TypeScript):**
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests
@@ -243,6 +279,34 @@ private fun setColumn(step: InsertSetMoreStep<*>, column: ProjectionColumns, dat
 
 **See:** `VmRequestProjectionRepository.kt` and `TimelineEventRepository.kt` for reference implementations.
 
+**CQRS Command Handler Pattern (CRITICAL):**
+
+Command handlers must update BOTH write-side (event store) AND read-side (projections) together:
+
+```kotlin
+// ✅ CORRECT - Update BOTH write-side and read-side
+public suspend fun handle(command: MarkProvisioningCommand): Result<Unit, Error> {
+    // 1. Write-side: Persist domain event
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+
+    // 2. Read-side: Update projection (timeline, status views)
+    timelineUpdater.addTimelineEvent(NewTimelineEvent(
+        eventType = TimelineEventType.PROVISIONING_STARTED,
+        details = "VM provisioning has started"
+    ))
+    return Unit.success()
+}
+
+// ❌ WRONG - Only updates write-side, forgets read-side projection
+eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+// Missing: timelineUpdater.addTimelineEvent(...) ← AC "Timeline event added" NOT satisfied!
+```
+
+**Why:** Write-side is easy to verify (event persisted), but read-side (timeline events, status views) is easy to forget. Users won't see the state change in the UI.
+
+**See:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler` for reference implementations.
+
 ---
 
 ## Anti-Patterns (Prohibited)
@@ -304,6 +368,6 @@ vspherePort.testConnection(params = params, password = resolvedPassword)
 
 ---
 
-_Last Updated: 2025-12-05_
+_Last Updated: 2025-12-06_
 _Distilled from CLAUDE.md for LLM context efficiency_
-_Added: Domain integrity pattern (value objects for operation parameters)_
+_Added: Coroutine event listener pattern (independent handler execution)_

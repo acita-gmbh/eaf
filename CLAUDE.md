@@ -108,6 +108,128 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
 
+### Coroutine Event Listener Patterns
+
+**Launch handlers independently** when multiple handlers react to the same event:
+
+```kotlin
+// ✅ CORRECT - Handlers execute independently
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        try { handlerA.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler A failed" } }
+    }
+    scope.launch {
+        try { handlerB.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler B failed" } }
+    }
+}
+
+// ❌ WRONG - Handler B blocked if Handler A fails
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        handlerA.handle(event)
+        handlerB.handle(event)  // Never runs if A throws!
+    }
+}
+```
+
+**Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
+
+### Event Sourcing Defensive Patterns
+
+**Always check for empty event lists when loading events to determine `expectedVersion`.**
+
+When loading events from the event store to calculate `expectedVersion` for optimistic concurrency, always validate that events were actually returned:
+
+```kotlin
+// ✅ CORRECT - Check for empty events before using size
+val currentEvents = eventStore.load(aggregateId)
+if (currentEvents.isEmpty()) {
+    logger.error { "Cannot append: aggregate $aggregateId not found in event store" }
+    return  // or throw appropriate exception
+}
+val expectedVersion = currentEvents.size.toLong()
+eventStore.append(aggregateId, newEvents, expectedVersion)
+
+// ❌ WRONG - Empty list silently becomes expectedVersion = 0
+val currentEvents = eventStore.load(aggregateId)
+val expectedVersion = currentEvents.size.toLong()  // 0 if empty!
+eventStore.append(aggregateId, newEvents, expectedVersion)  // Concurrency conflict
+```
+
+**Why empty results are dangerous:**
+1. **Data corruption**: Aggregate doesn't exist (was deleted or never created)
+2. **Race condition**: Events were deleted between operations
+3. **Wrong ID**: Incorrect aggregate ID was passed
+
+Failing silently with `expectedVersion = 0` causes concurrency conflicts on append because the event store expects version 0 for new aggregates only.
+
+**When adding new domain events, ALWAYS update event deserializers.**
+
+New domain events must be registered in the corresponding `*EventDeserializer` class. Forgetting this causes silent failures when loading aggregates:
+
+```kotlin
+// In JacksonVmRequestEventDeserializer (or similar):
+private fun resolveEventClass(eventType: String): Class<out DomainEvent> {
+    return when (eventType) {
+        "VmRequestCreated" -> VmRequestCreated::class.java
+        "VmRequestApproved" -> VmRequestApproved::class.java
+        "VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java  // ← Don't forget new events!
+        else -> throw IllegalArgumentException("Unknown event type: $eventType")
+    }
+}
+```
+
+**Checklist when adding a new domain event:**
+1. Create the event class in `dvmm-domain/.../events/`
+2. Add case to `resolveEventClass()` in the corresponding deserializer
+3. Add deserialization test in `*EventDeserializerTest`
+4. If aggregate handles the event, add `apply()` method and test
+
+**Why this matters:** Without deserializer registration, any aggregate load that includes the new event will throw `IllegalArgumentException: Unknown event type`. This breaks idempotency checks, status updates, and all future operations on affected aggregates.
+
+**CQRS Command Handlers: Update Write-Side AND Read-Side Together**
+
+In CQRS/Event Sourcing, command handlers must update both:
+1. **Write-side:** Persist domain events to the event store
+2. **Read-side:** Update any associated projections (timelines, status views, etc.)
+
+```kotlin
+// ✅ CORRECT - Handler updates BOTH write-side and read-side
+public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Unit, Error> {
+    // 1. Write-side: Persist domain event
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+
+    // 2. Read-side: Update projection (timeline, status, etc.)
+    timelineUpdater.addTimelineEvent(NewTimelineEvent(
+        eventType = TimelineEventType.PROVISIONING_STARTED,
+        details = "VM provisioning has started",
+        // ...
+    ))
+    return Unit.success()
+}
+
+// ❌ WRONG - Forgets read-side projection update
+public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Unit, Error> {
+    aggregate.markProvisioning(metadata)
+    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+    // Missing: timelineUpdater.addTimelineEvent(...)
+    return Unit.success()  // AC-6 "Timeline event added" NOT satisfied!
+}
+```
+
+**Why this matters:**
+- Write-side correctly persists the domain event, but read-side (what users see) is never updated
+- Timeline views, status dashboards, and detail pages won't reflect the state change
+- The Acceptance Criteria "Timeline event added" appears done (event exists) but isn't visible
+- This is a common CQRS pitfall: write-side is easy to verify, read-side is easy to forget
+
+**Pattern to follow:** Look at existing handlers (`CreateVmRequestHandler`, `ApproveVmRequestHandler`) that inject `TimelineEventProjectionUpdater` and call `addTimelineEvent()` after successful event persistence.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

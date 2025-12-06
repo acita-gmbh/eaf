@@ -107,6 +107,92 @@ coEvery { handler.handle(any(), any()) } returns result.success()
 - The generated value becomes an `eq()` matcher, not `any()`
 - Result: test passes if same UUID by chance, fails randomly otherwise
 
+### Coroutine Event Listener Patterns
+
+**Launch handlers independently** when multiple handlers react to the same event:
+
+```kotlin
+// CORRECT - Handlers execute independently
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        try { handlerA.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler A failed" } }
+    }
+    scope.launch {
+        try { handlerB.handle(event) }
+        catch (e: Exception) { logger.error(e) { "Handler B failed" } }
+    }
+}
+
+// WRONG - Handler B blocked if Handler A fails
+@EventListener
+fun onEvent(event: SomeEvent) {
+    scope.launch {
+        handlerA.handle(event)
+        handlerB.handle(event)  // Never runs if A throws!
+    }
+}
+```
+
+**Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
+
+### Event Sourcing Defensive Patterns
+
+**Always check for empty event lists when loading events to determine `expectedVersion`.**
+
+```kotlin
+// CORRECT - Check for empty events before using size
+val currentEvents = eventStore.load(aggregateId)
+if (currentEvents.isEmpty()) {
+    logger.error { "Cannot append: aggregate $aggregateId not found" }
+    return
+}
+val expectedVersion = currentEvents.size.toLong()
+
+// WRONG - Empty list silently becomes expectedVersion = 0
+val currentEvents = eventStore.load(aggregateId)
+val expectedVersion = currentEvents.size.toLong()  // 0 if empty!
+```
+
+**Why empty results are dangerous:**
+1. Aggregate doesn't exist (data corruption)
+2. Race condition deleted events
+3. Wrong aggregate ID passed
+
+Failing silently with `expectedVersion = 0` causes concurrency conflicts.
+
+**When adding new domain events, ALWAYS update event deserializers.**
+
+```kotlin
+// In *EventDeserializer.resolveEventClass():
+"VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java  // Don't forget!
+```
+
+**Checklist for new domain events:**
+1. Create event class in `dvmm-domain/.../events/`
+2. Add case to `resolveEventClass()` in deserializer
+3. Add deserialization test
+4. If aggregate handles event, add `apply()` method
+
+Without deserializer registration, aggregate loads throw `IllegalArgumentException: Unknown event type`.
+
+**CQRS Command Handlers: Update Write-Side AND Read-Side Together**
+
+Command handlers must update both write-side (event store) AND read-side (projections):
+
+```kotlin
+// CORRECT - Update BOTH write-side and read-side
+eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+timelineUpdater.addTimelineEvent(NewTimelineEvent(eventType = PROVISIONING_STARTED, ...))
+
+// WRONG - Only updates write-side, forgets read-side projection
+eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
+// Missing: timelineUpdater.addTimelineEvent(...) ← AC "Timeline event added" NOT satisfied!
+```
+
+**Why this matters:** Write-side is easy to verify (event persisted), but read-side (timeline, status views) is easy to forget. Users won't see the state change. Follow patterns in `CreateVmRequestHandler`, `ApproveVmRequestHandler`.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

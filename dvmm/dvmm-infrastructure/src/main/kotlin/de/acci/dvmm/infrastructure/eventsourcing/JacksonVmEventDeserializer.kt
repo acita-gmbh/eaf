@@ -2,27 +2,24 @@ package de.acci.dvmm.infrastructure.eventsourcing
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
-import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
-import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
-import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
-import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
-import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
+import de.acci.dvmm.application.vm.VmEventDeserializer
+import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
+import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.StoredEvent
 
 /**
- * Jackson-based implementation of VmRequestEventDeserializer.
+ * Jackson-based implementation of VmEventDeserializer.
  *
- * Deserializes stored events to their appropriate domain event types
+ * Deserializes stored events to their appropriate Vm domain event types
  * based on the eventType field in StoredEvent.
  *
  * Uses the EventStoreObjectMapper-configured ObjectMapper for proper
  * handling of EAF value classes (TenantId, UserId, CorrelationId, etc.).
  */
-public class JacksonVmRequestEventDeserializer(
+public class JacksonVmEventDeserializer(
     private val objectMapper: ObjectMapper
-) : VmRequestEventDeserializer {
+) : VmEventDeserializer {
 
     override fun deserialize(storedEvent: StoredEvent): DomainEvent {
         val eventClass = resolveEventClass(storedEvent.eventType)
@@ -38,14 +35,11 @@ public class JacksonVmRequestEventDeserializer(
 
     private fun resolveEventClass(eventType: String): Class<out DomainEvent> {
         return when (eventType) {
-            "VmRequestCreated" -> VmRequestCreated::class.java
-            "VmRequestCancelled" -> VmRequestCancelled::class.java
-            "VmRequestApproved" -> VmRequestApproved::class.java
-            "VmRequestRejected" -> VmRequestRejected::class.java
-            "VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java
+            "VmProvisioningStarted" -> VmProvisioningStarted::class.java
+            "VmProvisioningFailed" -> VmProvisioningFailed::class.java
             else -> throw IllegalArgumentException(
                 "Unknown event type: $eventType. " +
-                    "Add mapping to JacksonVmRequestEventDeserializer."
+                    "Add mapping to JacksonVmEventDeserializer."
             )
         }
     }
