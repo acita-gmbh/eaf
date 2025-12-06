@@ -167,6 +167,30 @@ eventStore.append(aggregateId, newEvents, expectedVersion)  // Concurrency confl
 
 Failing silently with `expectedVersion = 0` causes concurrency conflicts on append because the event store expects version 0 for new aggregates only.
 
+**When adding new domain events, ALWAYS update event deserializers.**
+
+New domain events must be registered in the corresponding `*EventDeserializer` class. Forgetting this causes silent failures when loading aggregates:
+
+```kotlin
+// In JacksonVmRequestEventDeserializer (or similar):
+private fun resolveEventClass(eventType: String): Class<out DomainEvent> {
+    return when (eventType) {
+        "VmRequestCreated" -> VmRequestCreated::class.java
+        "VmRequestApproved" -> VmRequestApproved::class.java
+        "VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java  // ← Don't forget new events!
+        else -> throw IllegalArgumentException("Unknown event type: $eventType")
+    }
+}
+```
+
+**Checklist when adding a new domain event:**
+1. Create the event class in `dvmm-domain/.../events/`
+2. Add case to `resolveEventClass()` in the corresponding deserializer
+3. Add deserialization test in `*EventDeserializerTest`
+4. If aggregate handles the event, add `apply()` method and test
+
+**Why this matters:** Without deserializer registration, any aggregate load that includes the new event will throw `IllegalArgumentException: Unknown event type`. This breaks idempotency checks, status updates, and all future operations on affected aggregates.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

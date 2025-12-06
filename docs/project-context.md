@@ -164,6 +164,13 @@ if (currentEvents.isEmpty()) {
 val expectedVersion = currentEvents.size.toLong()
 ```
 
+**New Domain Event Checklist:**
+- Create event class in `dvmm-domain/.../events/`
+- Add case to `resolveEventClass()` in corresponding `*EventDeserializer`
+- Add deserialization test in `*EventDeserializerTest`
+- If aggregate handles event, add `apply()` method and test
+- Without deserializer registration → `IllegalArgumentException: Unknown event type` on aggregate load
+
 **Vitest Mocking Patterns (TypeScript):**
 - Use `vi.hoisted()` for module mocks (ensures mock exists before ES module imports)
 - Use `mockResolvedValueOnce()` for sequential responses in refetch/retry tests

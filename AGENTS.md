@@ -146,6 +146,21 @@ val expectedVersion = currentEvents.size.toLong()  // 0 if empty!
 
 Failing silently with `expectedVersion = 0` causes concurrency conflicts.
 
+**When adding new domain events, ALWAYS update event deserializers.**
+
+```kotlin
+// In *EventDeserializer.resolveEventClass():
+"VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java  // Don't forget!
+```
+
+**Checklist for new domain events:**
+1. Create event class in `dvmm-domain/.../events/`
+2. Add case to `resolveEventClass()` in deserializer
+3. Add deserialization test
+4. If aggregate handles event, add `apply()` method
+
+Without deserializer registration, aggregate loads throw `IllegalArgumentException: Unknown event type`.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** for VMware vCenter integration.
