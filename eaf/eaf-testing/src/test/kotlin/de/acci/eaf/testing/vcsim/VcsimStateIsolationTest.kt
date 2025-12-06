@@ -2,6 +2,8 @@ package de.acci.eaf.testing.vcsim
 
 import de.acci.eaf.testing.TestContainers
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -11,8 +13,10 @@ import org.junit.jupiter.api.Test
  * Verifies AC4: State resets between test classes.
  *
  * This test class runs independently from [VcsimIntegrationTest] to verify
- * that fixture state (counters) reset between classes while container
- * instance is reused.
+ * that fixture state resets between classes while container instance is reused.
+ *
+ * Note: VM moRefs are assigned by VCSIM via SOAP API, not by internal counters.
+ * Network and datastore references use internal counters for test isolation.
  */
 @VcsimTest
 class VcsimStateIsolationTest {
@@ -28,22 +32,30 @@ class VcsimStateIsolationTest {
     }
 
     @Test
-    fun `fixture starts with reset counters after resetState`() {
-        // First VM should get counter value 1 after reset
+    fun `VM creation works after resetState`() {
+        // VM creation via SOAP API should work after reset
+        // Note: VM moRefs are assigned by VCSIM, not by the fixture's internal counters
         val vm = fixture.createVm(VmSpec(name = "first-vm"))
-        assertEquals("vm-test-1", vm.moRef)
+        assertNotNull(vm.moRef)
+        assertTrue(vm.moRef.isNotBlank()) { "VM moRef should not be blank" }
+        assertEquals("first-vm", vm.name)
     }
 
     @Test
-    fun `resetState clears VM counter`() {
+    fun `multiple VMs can be created after resetState`() {
+        // Create several VMs before reset
         fixture.createVm(VmSpec(name = "vm-a"))
         fixture.createVm(VmSpec(name = "vm-b"))
         fixture.createVm(VmSpec(name = "vm-c"))
 
         fixture.resetState()
 
+        // VM creation should still work after reset
+        // Note: VM moRefs are assigned by VCSIM, not by the fixture's internal counters
         val vmAfterReset = fixture.createVm(VmSpec(name = "vm-after-reset"))
-        assertEquals("vm-test-1", vmAfterReset.moRef)
+        assertNotNull(vmAfterReset.moRef)
+        assertTrue(vmAfterReset.moRef.isNotBlank()) { "VM moRef should not be blank" }
+        assertEquals("vm-after-reset", vmAfterReset.name)
     }
 
     @Test
@@ -73,9 +85,13 @@ class VcsimStateIsolationTest {
         // This test verifies that even in a separate test class,
         // the same container instance is used (singleton pattern)
         val container = TestContainers.vcsim
-        val expectedContainerImage = VcsimContainer.DEFAULT_IMAGE
 
-        assertEquals(expectedContainerImage, container.dockerImageName)
-        assertEquals(true, container.isRunning)
+        // Container should be running - the specific image may vary:
+        // - AMD64: uses official vmware/vcsim:v0.47.0
+        // - ARM64: uses custom-built eaf-vcsim:v0.47.0
+        assertTrue(container.isRunning)
+        assertTrue(container.dockerImageName.contains("vcsim")) {
+            "Expected image name to contain 'vcsim', got: ${container.dockerImageName}"
+        }
     }
 }

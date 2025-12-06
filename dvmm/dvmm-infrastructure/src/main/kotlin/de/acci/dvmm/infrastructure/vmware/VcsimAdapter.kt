@@ -1,7 +1,14 @@
 package de.acci.dvmm.infrastructure.vmware
 
-import de.acci.dvmm.application.vmware.ConnectionError
-import de.acci.dvmm.application.vmware.ConnectionInfo
+import de.acci.dvmm.application.vmware.Cluster
+import de.acci.dvmm.application.vmware.Datacenter
+import de.acci.dvmm.application.vmware.Datastore
+import de.acci.dvmm.application.vmware.Network
+import de.acci.dvmm.application.vmware.ResourcePool
+import de.acci.dvmm.application.vmware.VmId
+import de.acci.dvmm.application.vmware.VmInfo
+import de.acci.dvmm.application.vmware.VmSpec
+import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
@@ -61,7 +68,7 @@ public class VcsimAdapter : VspherePort {
     override suspend fun testConnection(
         params: VcenterConnectionParams,
         password: String
-    ): Result<ConnectionInfo, ConnectionError> = withContext(Dispatchers.IO) {
+    ): Result<de.acci.dvmm.application.vmware.ConnectionInfo, de.acci.dvmm.application.vmware.ConnectionError> = withContext(Dispatchers.IO) {
         logger.info {
             "Testing VCSIM connection: " +
                 "url=${params.vcenterUrl}, " +
@@ -73,14 +80,14 @@ public class VcsimAdapter : VspherePort {
             // Validate URL format (already validated by VcenterConnectionParams init,
             // but checking again for defense in depth)
             if (!params.vcenterUrl.startsWith("https://")) {
-                return@withContext ConnectionError.NetworkError(
+                return@withContext de.acci.dvmm.application.vmware.ConnectionError.NetworkError(
                     message = "vCenter URL must start with https://"
                 ).failure()
             }
 
             // Validate credentials are not empty
             if (params.username.isBlank() || password.isBlank()) {
-                return@withContext ConnectionError.AuthenticationFailed(
+                return@withContext de.acci.dvmm.application.vmware.ConnectionError.AuthenticationFailed(
                     message = "Username and password cannot be empty"
                 ).failure()
             }
@@ -89,7 +96,7 @@ public class VcsimAdapter : VspherePort {
             // For tests against actual VCSIM containers, use VcenterAdapter with vcsim URL.
             logger.info { "VCSIM connection test successful (simulated)" }
 
-            ConnectionInfo(
+            de.acci.dvmm.application.vmware.ConnectionInfo(
                 vcenterVersion = "8.0.2 (VCSIM)",
                 clusterName = params.clusterName,
                 clusterHosts = 3, // VCSIM default
@@ -97,10 +104,42 @@ public class VcsimAdapter : VspherePort {
             ).success()
         } catch (e: Exception) {
             logger.error(e) { "VCSIM connection test failed" }
-            ConnectionError.ApiError(
+            de.acci.dvmm.application.vmware.ConnectionError.ApiError(
                 message = "VCSIM connection failed: ${e.message}",
                 cause = e
             ).failure()
         }
+    }
+
+    override suspend fun listDatacenters(): Result<List<Datacenter>, VsphereError> {
+        return listOf(Datacenter("datacenter-1", "DC0")).success()
+    }
+
+    override suspend fun listClusters(datacenter: Datacenter): Result<List<Cluster>, VsphereError> {
+        return listOf(Cluster("cluster-1", "DC0_C0")).success()
+    }
+
+    override suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError> {
+        return listOf(Datastore("datastore-1", "LocalDS_0")).success()
+    }
+
+    override suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError> {
+        return listOf(Network("network-1", "VM Network")).success()
+    }
+
+    override suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> {
+        return listOf(ResourcePool("rp-1", "Resources")).success()
+    }
+
+    override suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError> {
+        return VmId("vm-100").success()
+    }
+
+    override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> {
+        return VmInfo(vmId.value, "simulated-vm").success()
+    }
+
+    override suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> {
+        return Unit.success()
     }
 }

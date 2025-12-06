@@ -10,8 +10,17 @@ import com.vmware.vim25.PropertyFilterSpec
 import com.vmware.vim25.PropertySpec
 import com.vmware.vim25.RetrieveOptions
 import com.vmware.vim25.VimPortType
+import de.acci.dvmm.application.vmware.Cluster
 import de.acci.dvmm.application.vmware.ConnectionError
 import de.acci.dvmm.application.vmware.ConnectionInfo
+import de.acci.dvmm.application.vmware.Datacenter
+import de.acci.dvmm.application.vmware.Datastore
+import de.acci.dvmm.application.vmware.Network
+import de.acci.dvmm.application.vmware.ResourcePool
+import de.acci.dvmm.application.vmware.VmId
+import de.acci.dvmm.application.vmware.VmInfo
+import de.acci.dvmm.application.vmware.VmSpec
+import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
@@ -65,6 +74,7 @@ import javax.net.ssl.SSLException
 @Component
 @Profile("!vcsim")
 public class VcenterAdapter(
+    private val vsphereClient: VsphereClient,
     @Value("\${dvmm.vcenter.ignore-cert:false}")
     private val ignoreCert: Boolean = false
 ) : VspherePort {
@@ -109,6 +119,8 @@ public class VcenterAdapter(
 
         try {
             // Extract hostname from URL for VcenterClientFactory
+            // Note: VcenterClientFactory only supports port 443, so we only need the host.
+            // Using uri.host instead of uri.authority to avoid including userinfo if present.
             val vcenterHost = URI(params.vcenterUrl).host
                 ?: return@withContext ConnectionError.NetworkError(
                     message = "Invalid vCenter URL: '${params.vcenterUrl}' - failed to extract hostname. " +
@@ -287,6 +299,30 @@ public class VcenterAdapter(
             }
         }
     }
+
+    override suspend fun listDatacenters(): Result<List<Datacenter>, VsphereError> =
+        vsphereClient.listDatacenters()
+
+    override suspend fun listClusters(datacenter: Datacenter): Result<List<Cluster>, VsphereError> =
+        vsphereClient.listClusters(datacenter)
+
+    override suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError> =
+        vsphereClient.listDatastores(cluster)
+
+    override suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError> =
+        vsphereClient.listNetworks(datacenter)
+
+    override suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> =
+        vsphereClient.listResourcePools(cluster)
+
+    override suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError> =
+        vsphereClient.createVm(spec)
+
+    override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> =
+        vsphereClient.getVm(vmId)
+
+    override suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> =
+        vsphereClient.deleteVm(vmId)
 
     /**
      * Get the number of hosts in a cluster using PropertyCollector.

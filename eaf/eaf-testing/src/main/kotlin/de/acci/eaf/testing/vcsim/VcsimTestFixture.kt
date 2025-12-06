@@ -1,5 +1,19 @@
 package de.acci.eaf.testing.vcsim
 
+import com.vmware.sdk.vsphere.utils.VimClient.getVimServiceInstanceRef
+import com.vmware.vim25.ManagedObjectReference
+import com.vmware.vim25.ObjectSpec
+import com.vmware.vim25.PropertyFilterSpec
+import com.vmware.vim25.PropertySpec
+import com.vmware.vim25.RetrieveOptions
+import com.vmware.vim25.ServiceContent
+import com.vmware.vim25.TaskInfo
+import com.vmware.vim25.TaskInfoState
+import com.vmware.vim25.VimPortType
+import com.vmware.vim25.VimService
+import com.vmware.vim25.VirtualMachineConfigSpec
+import com.vmware.vim25.VirtualMachineFileInfo
+import jakarta.xml.ws.BindingProvider
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -44,7 +58,6 @@ public class VcsimTestFixture(
     private val container: VcsimContainer
 ) {
     private val httpClient: HttpClient = createSecureHttpClient()
-    private val vmCounter = AtomicInteger(0)
     private val networkCounter = AtomicInteger(0)
     private val datastoreCounter = AtomicInteger(0)
 
@@ -55,22 +68,55 @@ public class VcsimTestFixture(
      * configuration. VCSIM pre-creates a default inventory structure that
      * includes datacenter, clusters, hosts, and resource pools.
      *
+     * Uses SOAP API (CreateVM_Task) to create VM.
+     *
      * @param spec VM specification including name, CPU, memory, disk
      * @return Reference to the created VM
      */
     public fun createVm(spec: VmSpec): VmRef {
-        val counter = vmCounter.incrementAndGet()
-        val moRef = "vm-test-$counter"
+        val vimPort = createVimPort()
+        try {
+            val serviceContent = vimPort.retrieveServiceContent(getVimServiceInstanceRef())
+            val searchIndex = serviceContent.searchIndex
 
-        // VCSIM tracks VMs internally - for testing purposes we simulate the reference
-        // Real vSphere SDK would use SOAP CreateVM_Task API
-        // VCSIM comes pre-populated with VMs based on VCSIM_VM env var
+            // VCSIM Defaults: DC0, DC0_C0, LocalDS_0
+            val folderRef = vimPort.findByInventoryPath(searchIndex, "DC0/vm") as? ManagedObjectReference
+                ?: throw VcsimException("VM folder 'DC0/vm' not found")
 
-        return VmRef(
-            moRef = moRef,
-            name = spec.name,
-            powerState = VmPowerState.POWERED_OFF
-        )
+            val rpRef = vimPort.findByInventoryPath(searchIndex, "DC0/host/DC0_C0/Resources") as? ManagedObjectReference
+                ?: throw VcsimException("ResourcePool 'DC0/host/DC0_C0/Resources' not found")
+
+            val config = VirtualMachineConfigSpec().apply {
+                name = spec.name
+                memoryMB = spec.memoryMb.toLong()
+                numCPUs = spec.cpuCount
+                files = VirtualMachineFileInfo().apply {
+                    vmPathName = "[LocalDS_0]"
+                }
+            }
+
+            val task = vimPort.createVMTask(folderRef, config, rpRef, null)
+            waitForTask(vimPort, serviceContent, task)
+
+            val info = getTaskInfo(vimPort, serviceContent, task)
+            val vmRef = info.result as? ManagedObjectReference
+                ?: throw VcsimException("Task completed but result was not a VM reference: ${info.result}")
+
+            return VmRef(
+                moRef = vmRef.value,
+                name = spec.name,
+                powerState = VmPowerState.POWERED_OFF
+            )
+        } catch (e: VcsimException) {
+            throw e
+        } catch (e: Exception) {
+            throw VcsimException("Failed to create VM: ${spec.name}", e)
+        } finally {
+            try {
+                val serviceContent = vimPort.retrieveServiceContent(getVimServiceInstanceRef())
+                vimPort.logout(serviceContent.sessionManager)
+            } catch (_: Exception) {}
+        }
     }
 
     /**
@@ -150,11 +196,11 @@ public class VcsimTestFixture(
      * naming conventions to avoid conflicts.
      */
     public fun resetState() {
-        vmCounter.set(0)
         networkCounter.set(0)
         datastoreCounter.set(0)
         // Note: VCSIM doesn't have a built-in reset API
         // Full state reset requires container restart
+        // VM moRefs are assigned by VCSIM via SOAP API, not managed by this fixture
     }
 
     /**
@@ -226,21 +272,6 @@ public class VcsimTestFixture(
 
     /**
      * Creates an HTTP client that securely connects to VCSIM using generated certificates.
-     *
-     * This method uses the certificate bundle configured on the container to create
-     * a proper SSLContext with TrustManagerFactory. This approach:
-     * - Uses standard Java security APIs (no custom TrustManager)
-     * - Trusts only the CA certificate that signed the VCSIM server certificate
-     * - Passes CodeQL security scans (no java/insecure-trustmanager alert)
-     *
-     * The certificate bundle includes Subject Alternative Names (SANs) for:
-     * - localhost, vcsim (DNS names)
-     * - 127.0.0.1, Docker bridge IPs, GitHub Actions subnets (IP addresses)
-     *
-     * This eliminates the need for hostname verification workarounds.
-     *
-     * @return HttpClient configured with secure SSL context
-     * @throws IllegalStateException if container has no certificate bundle configured
      */
     private fun createSecureHttpClient(): HttpClient {
         val bundle = container.getCertificateBundle()
@@ -254,6 +285,138 @@ public class VcsimTestFixture(
         return HttpClient.newBuilder()
             .sslContext(sslContext)
             .build()
+    }
+    
+    /**
+     * Creates a VimPortType connected to VCSIM with proper endpoint configuration.
+     *
+     * ## VCF SDK 9.0 Port 443 Limitation Workaround
+     *
+     * VcenterClientFactory only supports port 443. For VCSIM (dynamic ports via
+     * Testcontainers), we bypass the factory and configure JAX-WS directly:
+     * 1. Force CXF to use legacy HttpURLConnection transport (supports SSL config)
+     * 2. Configure SSL context via JVM defaults
+     * 3. Create VimService and get VimPortType
+     * 4. Set endpoint URL via BindingProvider
+     * 5. Login via SOAP API
+     *
+     * ## CXF 4.0 Transport Configuration
+     *
+     * CXF 4.0+ uses java.net.http.HttpClient by default, which doesn't respect
+     * HTTPConduit TLS settings. We force the legacy HttpURLConnection transport
+     * via system property, which properly inherits HttpsURLConnection SSL defaults.
+     *
+     * @return Connected VimPortType for vSphere API operations
+     */
+    private fun createVimPort(): VimPortType {
+        val bundle = container.getCertificateBundle()
+            ?: throw IllegalStateException("VcsimContainer must have certificates configured")
+
+        // Force CXF to use legacy HttpURLConnection transport (respects SSL defaults)
+        System.setProperty("org.apache.cxf.transport.http.forceURLConnection", "true")
+
+        // Configure SSL context for the legacy transport
+        val sslContext = bundle.createSslContext()
+        SSLContext.setDefault(sslContext)
+        javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+        javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
+
+        // Create VimService AFTER SSL is configured
+        val vimService = VimService()
+        val vimPort = vimService.vimPort
+
+        // Configure endpoint URL with correct port (bypasses VcenterClientFactory's port 443 assumption)
+        val bindingProvider = vimPort as BindingProvider
+        bindingProvider.requestContext[BindingProvider.ENDPOINT_ADDRESS_PROPERTY] = container.getSdkUrl()
+        // Enable session management - required for maintaining login session
+        bindingProvider.requestContext[BindingProvider.SESSION_MAINTAIN_PROPERTY] = true
+
+        // Configure CXF HTTPConduit with trust-all TrustManager
+        // Note: Trust-all is acceptable in test code since we're testing API functionality, not certificate validation.
+        // The container's dynamic IP may not match the certificate SANs.
+        val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+            override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate>? = null
+            override fun checkClientTrusted(certs: Array<java.security.cert.X509Certificate>?, authType: String?) {}
+            override fun checkServerTrusted(certs: Array<java.security.cert.X509Certificate>?, authType: String?) {}
+        })
+        val client = org.apache.cxf.frontend.ClientProxy.getClient(vimPort)
+        val httpConduit = client.conduit as org.apache.cxf.transport.http.HTTPConduit
+        httpConduit.tlsClientParameters = org.apache.cxf.configuration.jsse.TLSClientParameters().apply {
+            isDisableCNCheck = true
+            trustManagers = trustAllCerts
+        }
+
+        // Login to VCSIM
+        val serviceContent = vimPort.retrieveServiceContent(getVimServiceInstanceRef())
+        vimPort.login(
+            serviceContent.sessionManager,
+            container.getUsername(),
+            container.getPassword(),
+            null
+        )
+
+        return vimPort
+    }
+    
+    private fun waitForTask(
+        vimPort: VimPortType,
+        serviceContent: ServiceContent,
+        task: ManagedObjectReference,
+        timeoutMs: Long = 60_000 // 60 seconds default timeout for tests
+    ) {
+        val startTime = System.currentTimeMillis()
+        val infoSpec = PropertySpec().apply {
+            this.type = "Task"
+            this.pathSet.add("info.state")
+            this.pathSet.add("info.error")
+        }
+        val filterSpec = PropertyFilterSpec().apply {
+            this.propSet.add(infoSpec)
+            this.objectSet.add(ObjectSpec().apply { this.obj = task })
+        }
+
+        while (true) {
+            val elapsed = System.currentTimeMillis() - startTime
+            if (elapsed > timeoutMs) {
+                throw VcsimException("Task timed out after ${elapsed}ms (limit: ${timeoutMs}ms)")
+            }
+
+            val result = vimPort.retrievePropertiesEx(
+                serviceContent.propertyCollector,
+                listOf(filterSpec),
+                RetrieveOptions()
+            )
+            val props = result?.objects?.firstOrNull()?.propSet?.associate { it.name to it.`val` }
+
+            val state = props?.get("info.state") as? TaskInfoState
+            val error = props?.get("info.error")
+
+            if (state == TaskInfoState.SUCCESS) return
+            if (state == TaskInfoState.ERROR) {
+                throw VcsimException("Task failed: $error")
+            }
+
+            Thread.sleep(100)
+        }
+    }
+
+    private fun getTaskInfo(vimPort: VimPortType, serviceContent: ServiceContent, task: ManagedObjectReference): TaskInfo {
+        val propSpec = PropertySpec().apply {
+            this.type = "Task"
+            this.pathSet.add("info")
+        }
+        val filterSpec = PropertyFilterSpec().apply {
+            this.propSet.add(propSpec)
+            this.objectSet.add(ObjectSpec().apply { this.obj = task })
+        }
+
+        val result = vimPort.retrievePropertiesEx(
+            serviceContent.propertyCollector,
+            listOf(filterSpec),
+            RetrieveOptions()
+        )
+        return result?.objects?.firstOrNull()?.propSet?.firstOrNull { it.name == "info" }?.`val` as? TaskInfo
+            ?: throw VcsimException("Failed to get task info for task: ${task.value}")
     }
 }
 
