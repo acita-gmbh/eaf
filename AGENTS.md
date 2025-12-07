@@ -199,6 +199,7 @@ The project uses **VCF SDK 9.0** for VMware vCenter integration.
 - **PropertyCollector:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`
 - **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
 - **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
+- **Timeout Layering:** When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Example: `createVm = clone (~60s) + IP detection (120s) = needs 5 min outer timeout`
 
 ```kotlin
 // SearchIndex navigation

@@ -226,6 +226,23 @@ val vmRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/vm/MyTemplate
 
 **Port 443 Constraint:** `VcenterClientFactory` only supports HTTPS/443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock instead.
 
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined:
+
+```kotlin
+// ✅ CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val createVmTimeoutMs: Long = 300_000  // 5 minutes total
+suspend fun createVm(spec: VmSpec) = executeResilient("createVm", createVmTimeoutMs) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(120_000)  // 120s
+}
+
+// ❌ WRONG - Outer timeout (60s) < inner timeout (120s) - killed before completion!
+```
+
+**Rule:** Calculate worst-case inner duration sum, then add buffer for outer timeout.
+
 ---
 
 ## jOOQ Code Generation (Critical Gotchas)

@@ -292,6 +292,32 @@ val factory = VcenterClientFactory("vcenter.example.com:8443", trustStore)  // U
 
 This is correct for production vCenter servers (always use port 443). For testing with VCSIM (which uses dynamic ports), use the `VcsimAdapter` mock instead.
 
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Failure to do this causes the outer timeout to kill the operation before inner operations complete.
+
+```kotlin
+// ✅ CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val vmwareToolsTimeoutMs: Long = 120_000  // Wait for IP detection
+private val createVmTimeoutMs: Long = 300_000    // 5 minutes total
+
+suspend fun createVm(spec: VmSpec) = executeResilient(
+    name = "createVm",
+    operationTimeoutMs = createVmTimeoutMs  // 5 min covers clone + IP wait
+) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s
+}
+
+// ❌ WRONG - Outer timeout (60s) < inner timeout (120s IP detection)
+suspend fun createVm(spec: VmSpec) = executeResilient("createVm") {  // Default 60s
+    cloneVm(spec)
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s - will be killed at 60s!
+}
+```
+
+**Rule:** Calculate total worst-case inner duration, then add buffer for outer timeout.
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.

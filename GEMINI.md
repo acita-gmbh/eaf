@@ -227,6 +227,29 @@ val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datast
 
 **Port 443 Constraint:** `VcenterClientFactory` only supports port 443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock.
 
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined:
+
+```kotlin
+// CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val vmwareToolsTimeoutMs: Long = 120_000  // Wait for IP detection
+private val createVmTimeoutMs: Long = 300_000    // 5 minutes total
+
+suspend fun createVm(spec: VmSpec) = executeResilient(
+    name = "createVm",
+    operationTimeoutMs = createVmTimeoutMs  // 5 min covers clone + IP wait
+) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s
+}
+
+// WRONG - Outer timeout (60s) < inner timeout (120s IP detection)
+// Operation will be killed at 60s before IP detection completes!
+```
+
+**Rule:** Calculate total worst-case inner duration, then add buffer for outer timeout.
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.
