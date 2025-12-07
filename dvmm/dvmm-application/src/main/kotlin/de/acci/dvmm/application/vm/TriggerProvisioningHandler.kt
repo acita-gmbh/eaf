@@ -124,6 +124,8 @@ public class TriggerProvisioningHandler(
                     return
                 }
             }
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: IllegalArgumentException) {
             logger.error(e) { "[Step 1/3] Invalid state transition for VM $vmId" }
             return
@@ -165,6 +167,8 @@ public class TriggerProvisioningHandler(
                     return
                 }
             }
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: de.acci.dvmm.domain.exceptions.InvalidStateException) {
             logger.error(e) { "[Step 2/3] Invalid state transition for request $requestId (VM $vmId was updated)" }
             return
@@ -191,6 +195,8 @@ public class TriggerProvisioningHandler(
                 is Result.Success -> logger.info { "[Step 3/3] Added VM_READY timeline event for request $requestId" }
                 is Result.Failure -> logger.error { "[Step 3/3] Failed to add VM_READY timeline: ${timelineResult.error}" }
             }
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: IllegalArgumentException) {
             logger.error(e) { "[Step 3/3] Invalid timeline event for request $requestId" }
         }

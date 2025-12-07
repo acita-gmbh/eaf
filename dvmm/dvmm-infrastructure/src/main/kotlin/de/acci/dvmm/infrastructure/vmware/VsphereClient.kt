@@ -505,9 +505,10 @@ public class VsphereClient(
 
     /**
      * Total timeout for VM creation including clone + IP detection.
-     * Accounts for: clone task (~60s typical) + IP detection (vmwareToolsTimeoutMs).
+     * Must be greater than inner timeouts: waitForTask (5 min max) + IP detection (2 min).
+     * Using 8 minutes to allow buffer for both operations plus safety margin.
      */
-    private val createVmTimeoutMs: Long = 300_000 // 5 minutes
+    private val createVmTimeoutMs: Long = 480_000 // 8 minutes
 
     public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> =
         executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
