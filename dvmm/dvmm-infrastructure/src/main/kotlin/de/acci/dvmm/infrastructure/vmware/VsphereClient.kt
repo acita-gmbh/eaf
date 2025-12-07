@@ -48,6 +48,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.security.KeyStore
@@ -583,6 +584,8 @@ public class VsphereClient(
                     warningMessage = ipDetectionResult.warningMessage
                 ).success()
 
+            } catch (e: CancellationException) {
+                throw e  // Allow proper coroutine cancellation
             } catch (e: Exception) {
                 logger.error(e) { "Clone failed: ${e.message}" }
                 VsphereError.ProvisioningError("Clone failed", e).failure()

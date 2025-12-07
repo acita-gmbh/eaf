@@ -163,7 +163,11 @@ public class TriggerProvisioningHandler(
             when (requestAppendResult) {
                 is Result.Success -> logger.info { "[Step 2/3] Emitted VmRequestReady for request $requestId" }
                 is Result.Failure -> {
-                    logger.error { "[Step 2/3] Failed to emit VmRequestReady: ${requestAppendResult.error} (VM $vmId was updated)" }
+                    logger.error {
+                        "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+                            "after VM $vmId was already marked provisioned. " +
+                            "System may be in inconsistent state. Error: ${requestAppendResult.error}"
+                    }
                     return
                 }
             }

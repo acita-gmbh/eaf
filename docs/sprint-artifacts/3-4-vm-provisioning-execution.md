@@ -245,7 +245,7 @@ suspend fun waitForVmwareTools(
 
 ### Domain Event Flow (Complete)
 
-```
+```text
 [Story 3.3 - COMPLETE]
 VmRequestApproved → ProvisionVmCommand → VmAggregate.startProvisioning()
                                         → VmProvisioningStarted event
