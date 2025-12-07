@@ -335,6 +335,21 @@ eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersi
 
 **See:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler` for reference implementations.
 
+**CQRS Partial Failure Observability:**
+
+When operations span multiple aggregates, partial failures require special logging for alerting and reconciliation:
+
+```kotlin
+// ✅ CORRECT - "CRITICAL" prefix + full context for partial failures
+logger.error {
+    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+        "after VM $vmId was already marked provisioned. " +
+        "System may be in inconsistent state. Error: ${error}"
+}
+```
+
+**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" prefix enables alerting; including both IDs helps operators reconcile.
+
 ---
 
 ## Anti-Patterns (Prohibited)

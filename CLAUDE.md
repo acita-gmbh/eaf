@@ -270,6 +270,33 @@ public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Uni
 
 **Pattern to follow:** Look at existing handlers (`CreateVmRequestHandler`, `ApproveVmRequestHandler`) that inject `TimelineEventProjectionUpdater` and call `addTimelineEvent()` after successful event persistence.
 
+**CQRS Partial Failure Observability**
+
+When CQRS operations span multiple aggregates without distributed transactions, partial failures can leave the system in an inconsistent state. Use "CRITICAL" log prefix with full context to enable alerting and manual reconciliation:
+
+```kotlin
+// ✅ CORRECT - Detailed logging for partial failures
+when (requestAppendResult) {
+    is Result.Failure -> {
+        logger.error {
+            "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+                "after VM $vmId was already marked provisioned. " +
+                "System may be in inconsistent state. Error: ${requestAppendResult.error}"
+        }
+        return
+    }
+}
+
+// ❌ WRONG - Generic error message loses context
+logger.error { "Failed to emit VmRequestReady: ${requestAppendResult.error}" }
+```
+
+**Why this matters:**
+- Partial success (aggregate A updated, aggregate B failed) requires manual reconciliation
+- "CRITICAL" prefix enables alerting rules to trigger immediately
+- Including both aggregate IDs helps operators identify what succeeded and what failed
+- This pattern applies whenever operations span multiple aggregates sequentially
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.

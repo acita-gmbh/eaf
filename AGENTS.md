@@ -225,6 +225,21 @@ eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersi
 
 **Reference implementations:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler`
 
+### CQRS Partial Failure Observability
+
+When operations span multiple aggregates, use "CRITICAL" prefix + full context for alerting and reconciliation:
+
+```kotlin
+// ✅ CORRECT - Detailed logging for partial failures
+logger.error {
+    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+        "after VM $vmId was already marked provisioned. " +
+        "System may be in inconsistent state. Error: ${error}"
+}
+```
+
+**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" enables alerting; both IDs help operators reconcile.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** for VMware vCenter integration.
