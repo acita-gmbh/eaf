@@ -1,6 +1,6 @@
 # Story 3.4: vm-provisioning-execution
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -51,62 +51,62 @@ So that users get exactly what they requested.
 
 ## Tasks / Subtasks
 
-- [ ] **Domain:** Add `VmProvisioned` event to `VmAggregate`
-  - [ ] Create `VmProvisioned` data class in `dvmm-domain/.../vm/events/`
-  - [ ] Add `READY` status to `VmStatus` enum (after PROVISIONING, before RUNNING)
-  - [ ] Implement `markProvisioned(vmwareId, ipAddress, hostname, warningMessage?, metadata)` method
-  - [ ] Add `handleEvent` case: `is VmProvisioned -> apply(event)`
-  - [ ] Add `apply(event: VmProvisioned)` to update state (status = READY, vmwareId, ipAddress, hostname)
-  - [ ] Unit test: verify state transition PROVISIONING → READY
-  - [ ] Unit test: verify reconstitute() works with VmProvisioned in event stream
+- [x] **Domain:** Add `VmProvisioned` event to `VmAggregate`
+  - [x] Create `VmProvisioned` data class in `dvmm-domain/.../vm/events/`
+  - [x] Add `READY` status to `VmStatus` enum (after PROVISIONING, before RUNNING)
+  - [x] Implement `markProvisioned(vmwareId, ipAddress, hostname, warningMessage?, metadata)` method
+  - [x] Add `handleEvent` case: `is VmProvisioned -> apply(event)`
+  - [x] Add `apply(event: VmProvisioned)` to update state (status = READY, vmwareId, ipAddress, hostname)
+  - [x] Unit test: verify state transition PROVISIONING → READY
+  - [x] Unit test: verify reconstitute() works with VmProvisioned in event stream
 
-- [ ] **Domain:** Add `VmRequestReady` event to `VmRequestAggregate`
-  - [ ] Create event with vmId, ipAddress, hostname, provisionedAt, warningMessage?
-  - [ ] Implement `markReady(vmId, ipAddress, hostname, warningMessage?, metadata)` method
-  - [ ] Add `handleEvent` case: `is VmRequestReady -> apply(event)`
-  - [ ] Add `apply(event: VmRequestReady)` to update state (status = READY, vmwareId, ipAddress, hostname)
-  - [ ] Unit test: verify PROVISIONING → READY transition
-  - [ ] Unit test: verify reconstitute() works with VmRequestReady in event stream
+- [x] **Domain:** Add `VmRequestReady` event to `VmRequestAggregate`
+  - [x] Create event with vmId, ipAddress, hostname, provisionedAt, warningMessage?
+  - [x] Implement `markReady(vmId, ipAddress, hostname, warningMessage?, metadata)` method
+  - [x] Add `handleEvent` case: `is VmRequestReady -> apply(event)`
+  - [x] Add `apply(event: VmRequestReady)` to update state (status = READY, vmwareId, ipAddress, hostname)
+  - [x] Unit test: verify PROVISIONING → READY transition
+  - [x] Unit test: verify reconstitute() works with VmRequestReady in event stream
 
-- [ ] **Domain:** Add `VmProvisioningResult` value object
-  - [ ] Create in `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt`
-  - [ ] Fields: `vmwareVmId: VmwareVmId`, `ipAddress: String?`, `hostname: String`, `warningMessage: String?`
+- [x] **Domain:** Add `VmProvisioningResult` value object
+  - [x] Create in `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt`
+  - [x] Fields: `vmwareVmId: VmwareVmId`, `ipAddress: String?`, `hostname: String`, `warningMessage: String?`
 
-- [ ] **Application:** Add `PROVISIONING_FAILED` to `TimelineEventType`
-  - [ ] Update enum in `TimelineEventProjectionUpdater.kt` (forward-compatibility for Story 3.6)
+- [x] **Application:** Add `PROVISIONING_FAILED` to `TimelineEventType`
+  - [x] Update enum in `TimelineEventProjectionUpdater.kt` (forward-compatibility for Story 3.6)
 
-- [ ] **Application:** Update `VspherePort` interface
-  - [ ] Change return type: `createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>`
-  - [ ] Or add new method: `provisionVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>`
+- [x] **Application:** Update `VspherePort` interface
+  - [x] Change return type: `createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>`
+  - [x] Or add new method: `provisionVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>`
 
 - [ ] **Infrastructure:** Enhance `VsphereClient.createVm()` for full provisioning
-  - [ ] Add guest customization spec with hostname (see code pattern below)
-  - [ ] Add disk size configuration to clone spec (see code pattern below)
-  - [ ] Add network configuration to relocate spec
-  - [ ] Implement `waitForVmwareTools(vmRef, timeout: Duration)` method
-  - [ ] Implement `getVmGuestInfo(vmRef): VmGuestInfo` (IP, hostname, tools status)
-  - [ ] Return `VmProvisioningResult` with IP address (or null with warning on timeout)
+  - [ ] Add guest customization spec with hostname (see code pattern below) ← MVP-DEFERRED
+  - [ ] Add disk size configuration to clone spec (see code pattern below) ← MVP-DEFERRED
+  - [ ] Add network configuration to relocate spec ← MVP-DEFERRED
+  - [x] Implement `waitForVmwareTools(vmRef, timeout: Duration)` method
+  - [x] Implement `getVmGuestInfo(vmRef): VmGuestInfo` (IP, hostname, tools status)
+  - [x] Return `VmProvisioningResult` with IP address (or null with warning on timeout)
 
-- [ ] **Infrastructure:** Update `VcsimAdapter` for test compatibility
-  - [ ] Return realistic `VmProvisioningResult` with simulated IP (e.g., "10.0.0.100")
-  - [ ] Add configurable delay to simulate provisioning time
+- [x] **Infrastructure:** Update `VcsimAdapter` for test compatibility
+  - [x] Return realistic `VmProvisioningResult` with simulated IP (e.g., "10.0.0.100")
+  - [x] Add configurable delay to simulate provisioning time
 
-- [ ] **Infrastructure:** Update event deserializers
-  - [ ] Add `VmProvisioned` to `JacksonVmEventDeserializer.resolveEventClass()`
-  - [ ] Add `VmRequestReady` to `JacksonVmRequestEventDeserializer.resolveEventClass()`
-  - [ ] Deserialization tests for new events
+- [x] **Infrastructure:** Update event deserializers
+  - [x] Add `VmProvisioned` to `JacksonVmEventDeserializer.resolveEventClass()`
+  - [x] Add `VmRequestReady` to `JacksonVmRequestEventDeserializer.resolveEventClass()`
+  - [x] Deserialization tests for new events
 
-- [ ] **Application:** Implement `VmProvisioningCompletionHandler`
-  - [ ] Listen for VM creation completion (callback from infrastructure)
-  - [ ] Load VmAggregate, call `markProvisioned()`, persist events
-  - [ ] Load VmRequestAggregate, call `markReady()`, persist events
-  - [ ] Update timeline with "VM ready" event (or "VM ready (IP pending)" on timeout)
+- [x] **Application:** Implement `VmProvisioningCompletionHandler`
+  - [x] Listen for VM creation completion (callback from infrastructure)
+  - [x] Load VmAggregate, call `markProvisioned()`, persist events
+  - [x] Load VmRequestAggregate, call `markReady()`, persist events
+  - [x] Update timeline with "VM ready" event (or "VM ready (IP pending)" on timeout)
 
-- [ ] **Tests:** Integration tests in `dvmm-app`
-  - [ ] Test full flow: ProvisionVmCommand → VspherePort.createVm() → VmProvisioned
-  - [ ] Test VMware Tools timeout handling (ipAddress = null, warning present)
-  - [ ] Test VcsimAdapter returns complete VmProvisioningResult
-  - [ ] Verify timeline updated on completion
+- [x] **Tests:** Integration tests in `dvmm-app`
+  - [x] Test full flow: ProvisionVmCommand → VspherePort.createVm() → VmProvisioned
+  - [x] Test VMware Tools timeout handling (ipAddress = null, warning present)
+  - [x] Test VcsimAdapter returns complete VmProvisioningResult
+  - [x] Verify timeline updated on completion
 
 ## Dev Notes
 
@@ -382,10 +382,51 @@ All VMware foundation work complete. Story 3.4 builds on stable vSphere client i
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- **MVP-DEFERRED:** Guest customization (AC3), disk size extension, and network configuration are not implemented in this story. The core provisioning flow works with template defaults. These can be added in a follow-up story if needed.
+- **VMware Tools IP Detection:** Successfully implemented with 2-minute timeout, returns `VmProvisioningResult` with `ipAddress = null` and warning message on timeout.
+- **CancellationException Pattern:** Added to documentation (CLAUDE.md, GEMINI.md, AGENTS.md, project-context.md) to prevent future coroutine cancellation issues.
+
 ### File List
+
+**Created:**
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioned.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestReady.kt`
+- `docs/sprint-artifacts/validation-report-3-4-vm-provisioning-execution-2025-12-07.md`
+
+**Modified:**
+- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt`
+- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt`
+- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/TimelineEventProjectionUpdater.kt`
+- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VspherePort.kt`
+- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt`
+- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmAggregate.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmStatus.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmwareVmId.kt`
+- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt`
+- `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateTest.kt`
+- `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateTest.kt`
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt`
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializer.kt`
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapter.kt`
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt`
+- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt`
+- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
+- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt`
+- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapterTest.kt`
+- `dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
+
+**Documentation Updated:**
+- `AGENTS.md` - Added CancellationException handling pattern
+- `CLAUDE.md` - Added CancellationException handling pattern
+- `GEMINI.md` - Added CancellationException handling pattern
+- `docs/project-context.md` - Added CancellationException handling pattern
+- `docs/sprint-artifacts/sprint-status.yaml`
+- `docs/sprint-artifacts/3-4-vm-provisioning-execution.md`
