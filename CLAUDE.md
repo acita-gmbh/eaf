@@ -138,6 +138,46 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Coroutine CancellationException Handling
+
+**NEVER catch `CancellationException` with a broad `catch (e: Exception)` block - always rethrow it.**
+
+Kotlin's structured concurrency uses `CancellationException` to propagate cancellation signals through the coroutine hierarchy. Catching it with a broad exception handler breaks cancellation:
+
+```kotlin
+// ❌ WRONG - Swallows coroutine cancellation, breaks structured concurrency
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to append events" }
+        return  // CancellationException is caught here and not rethrown!
+    }
+}
+
+// ✅ CORRECT - Explicitly rethrow CancellationException
+import kotlin.coroutines.cancellation.CancellationException
+
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: CancellationException) {
+        throw e  // Allow proper coroutine cancellation
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to append events" }
+        return
+    }
+}
+```
+
+**Why this matters:**
+- `CancellationException` is used by `withTimeout`, `Job.cancel()`, and scope cancellation
+- Catching it prevents parent coroutines from being notified of cancellation
+- Resources may not be properly cleaned up (finally blocks, use {} blocks)
+- Application shutdown can hang waiting for "cancelled" coroutines
+
+**When to apply:** Any `catch (e: Exception)` in a `suspend fun` should have a preceding `catch (e: CancellationException) { throw e }` block.
+
 ### Event Sourcing Defensive Patterns
 
 **Always check for empty event lists when loading events to determine `expectedVersion`.**

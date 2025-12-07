@@ -137,6 +137,40 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Coroutine CancellationException Handling
+
+**NEVER catch `CancellationException` with a broad `catch (e: Exception)` - always rethrow it.**
+
+Kotlin's structured concurrency uses `CancellationException` to propagate cancellation. Catching it breaks cancellation:
+
+```kotlin
+// WRONG - Swallows coroutine cancellation
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return  // CancellationException caught and not rethrown!
+    }
+}
+
+// CORRECT - Explicitly rethrow CancellationException
+import kotlin.coroutines.cancellation.CancellationException
+
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: CancellationException) {
+        throw e  // Allow proper coroutine cancellation
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return
+    }
+}
+```
+
+**Why:** CancellationException is used by `withTimeout`, `Job.cancel()`, and scope cancellation. Catching it prevents parent coroutines from being notified, and resources may not clean up properly.
+
 ### Event Sourcing Defensive Patterns
 
 **Always check for empty event lists when loading events to determine `expectedVersion`.**

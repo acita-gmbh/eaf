@@ -85,6 +85,17 @@ throw RuntimeException("VM creation failed")
 
 // ❌ FORBIDDEN - Swallowing exceptions
 catch (e: Exception) { logger.error("Failed") }
+
+// ✅ REQUIRED - Rethrow CancellationException in suspend functions
+import kotlin.coroutines.cancellation.CancellationException
+
+try {
+    eventStore.append(aggregateId, events, version)
+} catch (e: CancellationException) {
+    throw e  // Allow proper coroutine cancellation
+} catch (e: Exception) {
+    logger.error(e) { "Failed" }
+}
 ```
 
 ### Security Patterns (Multi-Tenant)
