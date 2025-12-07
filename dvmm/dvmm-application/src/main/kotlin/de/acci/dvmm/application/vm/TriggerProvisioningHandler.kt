@@ -78,12 +78,24 @@ public class TriggerProvisioningHandler(
         }
     }
 
+    /**
+     * Emits success events for VM and VmRequest aggregates, plus timeline update.
+     *
+     * **Note on partial failures:** This method performs 3 sequential updates without
+     * distributed transaction guarantees. If step 1 (VmProvisioned) succeeds but step 2
+     * (VmRequestReady) fails, the VM aggregate is updated but the VmRequest is not.
+     * This is acceptable for eventual consistency - a retry mechanism or manual
+     * reconciliation can fix the inconsistency. Detailed logging ensures traceability.
+     */
     private suspend fun emitSuccess(event: VmProvisioningStarted, provisioningResult: VmProvisioningResult) {
+        val vmId = event.aggregateId.value
+        val requestId = event.requestId.value
+
+        // Step 1: Update VM aggregate with VmProvisioned event
         try {
-            // 1. Update VM aggregate with VmProvisioned event
-            val vmEvents = eventStore.load(event.aggregateId.value)
+            val vmEvents = eventStore.load(vmId)
             if (vmEvents.isEmpty()) {
-                logger.error { "Cannot emit VmProvisioned: aggregate ${event.aggregateId.value} not found" }
+                logger.error { "[Step 1/3] Cannot emit VmProvisioned: VM aggregate $vmId not found" }
                 return
             }
 
@@ -100,22 +112,30 @@ public class TriggerProvisioningHandler(
             )
 
             val vmAppendResult = eventStore.append(
-                aggregateId = event.aggregateId.value,
+                aggregateId = vmId,
                 events = vmAggregate.uncommittedEvents,
                 expectedVersion = vmEvents.size.toLong()
             )
             when (vmAppendResult) {
-                is Result.Success -> logger.info { "Emitted VmProvisioned for VM ${event.aggregateId.value}" }
+                is Result.Success -> logger.info { "[Step 1/3] Emitted VmProvisioned for VM $vmId" }
                 is Result.Failure -> {
-                    logger.error { "Failed to emit VmProvisioned: ${vmAppendResult.error}" }
+                    logger.error { "[Step 1/3] Failed to emit VmProvisioned: ${vmAppendResult.error}" }
                     return
                 }
             }
+        } catch (e: IllegalArgumentException) {
+            logger.error(e) { "[Step 1/3] Invalid state transition for VM $vmId" }
+            return
+        } catch (e: IllegalStateException) {
+            logger.error(e) { "[Step 1/3] Invalid aggregate state for VM $vmId" }
+            return
+        }
 
-            // 2. Update VmRequest aggregate with VmRequestReady event
-            val requestEvents = eventStore.load(event.requestId.value)
+        // Step 2: Update VmRequest aggregate with VmRequestReady event
+        try {
+            val requestEvents = eventStore.load(requestId)
             if (requestEvents.isEmpty()) {
-                logger.error { "Cannot emit VmRequestReady: request ${event.requestId.value} not found" }
+                logger.error { "[Step 2/3] Cannot emit VmRequestReady: request $requestId not found (VM $vmId was updated)" }
                 return
             }
 
@@ -127,24 +147,33 @@ public class TriggerProvisioningHandler(
                 vmwareVmId = provisioningResult.vmwareVmId,
                 ipAddress = provisioningResult.ipAddress,
                 hostname = provisioningResult.hostname,
+                provisionedAt = Instant.now(),
                 warningMessage = provisioningResult.warningMessage,
                 metadata = event.metadata
             )
 
             val requestAppendResult = eventStore.append(
-                aggregateId = event.requestId.value,
+                aggregateId = requestId,
                 events = requestAggregate.uncommittedEvents,
                 expectedVersion = requestEvents.size.toLong()
             )
             when (requestAppendResult) {
-                is Result.Success -> logger.info { "Emitted VmRequestReady for request ${event.requestId.value}" }
+                is Result.Success -> logger.info { "[Step 2/3] Emitted VmRequestReady for request $requestId" }
                 is Result.Failure -> {
-                    logger.error { "Failed to emit VmRequestReady: ${requestAppendResult.error}" }
+                    logger.error { "[Step 2/3] Failed to emit VmRequestReady: ${requestAppendResult.error} (VM $vmId was updated)" }
                     return
                 }
             }
+        } catch (e: de.acci.dvmm.domain.exceptions.InvalidStateException) {
+            logger.error(e) { "[Step 2/3] Invalid state transition for request $requestId (VM $vmId was updated)" }
+            return
+        } catch (e: IllegalArgumentException) {
+            logger.error(e) { "[Step 2/3] Invalid argument for request $requestId (VM $vmId was updated)" }
+            return
+        }
 
-            // 3. Add timeline event for VM_READY
+        // Step 3: Add timeline event for VM_READY
+        try {
             val timelineResult = timelineUpdater.addTimelineEvent(
                 NewTimelineEvent(
                     id = UUID.randomUUID(),
@@ -158,11 +187,11 @@ public class TriggerProvisioningHandler(
                 )
             )
             when (timelineResult) {
-                is Result.Success -> logger.info { "Added VM_READY timeline event for request ${event.requestId.value}" }
-                is Result.Failure -> logger.error { "Failed to add VM_READY timeline: ${timelineResult.error}" }
+                is Result.Success -> logger.info { "[Step 3/3] Added VM_READY timeline event for request $requestId" }
+                is Result.Failure -> logger.error { "[Step 3/3] Failed to add VM_READY timeline: ${timelineResult.error}" }
             }
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to emit provisioning success events for VM ${event.aggregateId.value}" }
+        } catch (e: IllegalArgumentException) {
+            logger.error(e) { "[Step 3/3] Invalid timeline event for request $requestId" }
         }
     }
 

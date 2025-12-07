@@ -96,17 +96,21 @@ public class VsphereClient(
         scope.cancel()
     }
 
-    private suspend fun <T> executeResilient(name: String, block: suspend () -> Result<T, VsphereError>): Result<T, VsphereError> {
+    private suspend fun <T> executeResilient(
+        name: String,
+        operationTimeoutMs: Long = timeoutMs,
+        block: suspend () -> Result<T, VsphereError>
+    ): Result<T, VsphereError> {
         return try {
-            logger.debug { "Starting vSphere operation: $name" }
-            withTimeout(timeoutMs) {
+            logger.debug { "Starting vSphere operation: $name (timeout: ${operationTimeoutMs}ms)" }
+            withTimeout(operationTimeoutMs) {
                 circuitBreaker.executeSuspendFunction {
                     block()
                 }
             }
         } catch (e: TimeoutCancellationException) {
             logger.warn { "Operation $name timed out" }
-            VsphereError.Timeout("Operation $name timed out after ${timeoutMs}ms").failure()
+            VsphereError.Timeout("Operation $name timed out after ${operationTimeoutMs}ms").failure()
         } catch (e: io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
             logger.warn { "Operation $name blocked by circuit breaker" }
             VsphereError.ConnectionError("Circuit breaker open - vCenter is unstable").failure()
@@ -495,10 +499,18 @@ public class VsphereClient(
     /**
      * VMware Tools IP detection timeout in milliseconds.
      * After cloning and power-on, we wait for VMware Tools to report the IP address.
+     * Must be less than createVmTimeoutMs to avoid outer timeout interruption.
      */
     private val vmwareToolsTimeoutMs: Long = 120_000 // 2 minutes
 
-    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> = executeResilient("createVm") {
+    /**
+     * Total timeout for VM creation including clone + IP detection.
+     * Accounts for: clone task (~60s typical) + IP detection (vmwareToolsTimeoutMs).
+     */
+    private val createVmTimeoutMs: Long = 300_000 // 5 minutes
+
+    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> =
+        executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
         val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {

@@ -8,6 +8,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -434,6 +435,7 @@ class VmRequestAggregateTest {
                 vmwareVmId = vmwareVmId,
                 ipAddress = ipAddress,
                 hostname = hostname,
+                provisionedAt = Instant.now(),
                 warningMessage = null,
                 metadata = TestMetadataFactory.create()
             )
@@ -461,6 +463,7 @@ class VmRequestAggregateTest {
                 vmwareVmId = VmwareVmId.of("vm-12345"),
                 ipAddress = "10.0.0.100",
                 hostname = "test-vm-01.local",
+                provisionedAt = Instant.now(),
                 warningMessage = null,
                 metadata = TestMetadataFactory.create()
             )
@@ -482,6 +485,7 @@ class VmRequestAggregateTest {
                 vmwareVmId = VmwareVmId.of("vm-12345"),
                 ipAddress = null,
                 hostname = "test-vm-01",
+                provisionedAt = Instant.now(),
                 warningMessage = warningMessage,
                 metadata = TestMetadataFactory.create()
             )
@@ -506,6 +510,7 @@ class VmRequestAggregateTest {
                     vmwareVmId = VmwareVmId.of("vm-12345"),
                     ipAddress = "10.0.0.100",
                     hostname = "test-vm-01",
+                    provisionedAt = Instant.now(),
                     warningMessage = null,
                     metadata = TestMetadataFactory.create()
                 )

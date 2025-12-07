@@ -265,6 +265,7 @@ public class VmRequestAggregate private constructor(
      * @param vmwareVmId VMware MoRef for the created VM
      * @param ipAddress Detected IP address (null if VMware Tools timed out)
      * @param hostname The configured hostname
+     * @param provisionedAt Timestamp when VM became ready (injectable for testability)
      * @param warningMessage Optional warning (e.g., "IP detection timed out")
      * @param metadata Event metadata
      * @throws InvalidStateException if request is not in PROVISIONING state
@@ -273,6 +274,7 @@ public class VmRequestAggregate private constructor(
         vmwareVmId: VmwareVmId,
         ipAddress: String?,
         hostname: String,
+        provisionedAt: Instant,
         warningMessage: String?,
         metadata: EventMetadata
     ) {
@@ -290,7 +292,7 @@ public class VmRequestAggregate private constructor(
                 vmwareVmId = vmwareVmId,
                 ipAddress = ipAddress,
                 hostname = hostname,
-                provisionedAt = Instant.now(),
+                provisionedAt = provisionedAt,
                 warningMessage = warningMessage,
                 metadata = metadata
             )
