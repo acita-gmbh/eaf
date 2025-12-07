@@ -4,6 +4,8 @@ import de.acci.dvmm.application.vmrequest.NewTimelineEvent
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
+import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
@@ -17,6 +19,7 @@ import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
+import de.acci.dvmm.domain.vmrequest.VmRequestStatus
 import de.acci.dvmm.domain.vmrequest.VmSize
 import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.dvmm.domain.vmware.VmwareConfiguration
@@ -29,7 +32,6 @@ import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.StoredEvent
-import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -52,6 +54,7 @@ class TriggerProvisioningHandlerTest {
     private val vmEventDeserializer = mockk<VmEventDeserializer>()
     private val vmRequestEventDeserializer = mockk<VmRequestEventDeserializer>()
     private val timelineUpdater = mockk<TimelineEventProjectionUpdater>()
+    private val vmRequestReadRepository = mockk<VmRequestReadRepository>()
 
     private fun createHandler() = TriggerProvisioningHandler(
         vspherePort = vspherePort,
@@ -59,7 +62,8 @@ class TriggerProvisioningHandlerTest {
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
-        timelineUpdater = timelineUpdater
+        timelineUpdater = timelineUpdater,
+        vmRequestReadRepository = vmRequestReadRepository
     )
 
     private fun createProvisioningResult(
@@ -103,20 +107,40 @@ class TriggerProvisioningHandlerTest {
             timestamp = Instant.now()
         )
 
+    private fun createVmRequestSummary(
+        id: VmRequestId,
+        projectName: String = "My Project"
+    ): VmRequestSummary = VmRequestSummary(
+        id = id,
+        tenantId = TenantId.generate(),
+        requesterId = UserId.generate(),
+        requesterName = "User",
+        projectId = ProjectId.generate(),
+        projectName = projectName,
+        vmName = "web-server",
+        size = VmSize.M,
+        justification = "Test",
+        status = VmRequestStatus.APPROVED,
+        createdAt = Instant.now(),
+        updatedAt = Instant.now()
+    )
+
     @Nested
     @DisplayName("successful provisioning")
     inner class SuccessfulProvisioning {
 
         @Test
-        fun `should call VspherePort createVm with correct spec`() = runTest {
+        fun `should call VspherePort createVm with correct spec including project prefix`() = runTest {
             // Given
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
             val event = createEvent(tenantId, userId)
             val config = createConfig(tenantId, userId)
             val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
             val specSlot = slot<VmSpec>()
             coEvery { vspherePort.createVm(capture(specSlot)) } returns provisioningResult.success()
@@ -132,7 +156,8 @@ class TriggerProvisioningHandlerTest {
             // Then
             coVerify(exactly = 1) { vspherePort.createVm(any()) }
             val spec = specSlot.captured
-            assertEquals(event.vmName.value, spec.name)
+            // "My Project" -> "MYPR" -> "MYPR-web-server"
+            assertEquals("MYPR-${event.vmName.value}", spec.name)
             assertEquals(config.templateName, spec.template)
             assertEquals(event.size.cpuCores, spec.cpu)
             assertEquals(event.size.memoryGb, spec.memoryGb)
@@ -146,8 +171,10 @@ class TriggerProvisioningHandlerTest {
             val event = createEvent(tenantId, userId)
             val config = createConfig(tenantId, userId)
             val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             coEvery { vspherePort.createVm(any()) } returns provisioningResult.success()
 
             val vmEventsSlot = slot<List<DomainEvent>>()
@@ -193,13 +220,15 @@ class TriggerProvisioningHandlerTest {
             assertEquals(event.aggregateId, vmProvisionedEvent.aggregateId)
             assertEquals(provisioningResult.vmwareVmId, vmProvisionedEvent.vmwareVmId)
             assertEquals(provisioningResult.ipAddress, vmProvisionedEvent.ipAddress)
-            assertEquals(provisioningResult.hostname, vmProvisionedEvent.hostname)
+            // Expect prefixed hostname
+            assertEquals("MYPR-web-server", vmProvisionedEvent.hostname)
 
             // Verify VmRequest aggregate was updated
             coVerify(exactly = 1) { eventStore.append(event.requestId.value, any(), 1L) }
             val vmReadyEvent = requestEventsSlot.captured.single() as VmRequestReady
             assertEquals(event.requestId, vmReadyEvent.aggregateId)
             assertEquals(provisioningResult.vmwareVmId, vmReadyEvent.vmwareVmId)
+            assertEquals("MYPR-web-server", vmReadyEvent.hostname)
         }
 
         @Test
@@ -210,8 +239,10 @@ class TriggerProvisioningHandlerTest {
             val event = createEvent(tenantId, userId)
             val config = createConfig(tenantId, userId)
             val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             coEvery { vspherePort.createVm(any()) } returns provisioningResult.success()
             setupSuccessPathMocks(event)
 
@@ -230,6 +261,7 @@ class TriggerProvisioningHandlerTest {
             assertEquals(event.requestId, timelineEvent.requestId)
             assertEquals(tenantId, timelineEvent.tenantId)
             assertTrue(timelineEvent.details!!.contains(provisioningResult.vmwareVmId.value))
+            assertTrue(timelineEvent.details!!.contains("MYPR-web-server"))
         }
 
         private fun setupSuccessPathMocks(event: VmProvisioningStarted) {
@@ -333,6 +365,58 @@ class TriggerProvisioningHandlerTest {
     }
 
     @Nested
+    @DisplayName("missing project info")
+    inner class MissingProjectInfo {
+
+        @Test
+        fun `should emit VmProvisioningFailed when project info is missing`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns null
+
+            // Mock event store load to return 1 event (VmProvisioningStarted)
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(
+                de.acci.eaf.eventsourcing.StoredEvent(
+                    id = java.util.UUID.randomUUID(),
+                    aggregateId = event.aggregateId.value,
+                    aggregateType = "Vm",
+                    eventType = "VmProvisioningStarted",
+                    payload = "{}",
+                    metadata = event.metadata,
+                    version = 1,
+                    createdAt = java.time.Instant.now()
+                )
+            )
+
+            val eventsSlot = slot<List<DomainEvent>>()
+            coEvery {
+                eventStore.append(
+                    aggregateId = event.aggregateId.value,
+                    events = capture(eventsSlot),
+                    expectedVersion = 1L
+                )
+            } returns 2L.success()
+
+            val handler = createHandler()
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            coVerify(exactly = 0) { vspherePort.createVm(any()) }
+            coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
+
+            val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
+            assertTrue(failedEvent.reason.contains("Could not find project info"))
+        }
+    }
+
+    @Nested
     @DisplayName("vSphere failure")
     inner class VsphereFailure {
 
@@ -343,8 +427,10 @@ class TriggerProvisioningHandlerTest {
             val userId = UserId.generate()
             val event = createEvent(tenantId, userId)
             val config = createConfig(tenantId, userId)
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             coEvery { vspherePort.createVm(any()) } returns de.acci.eaf.core.result.Result.Failure(
                 VsphereError.Timeout("Connection timeout")
             )

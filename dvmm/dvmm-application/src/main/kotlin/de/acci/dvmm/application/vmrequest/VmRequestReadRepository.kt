@@ -1,6 +1,7 @@
 package de.acci.dvmm.application.vmrequest
 
 import de.acci.dvmm.domain.vmrequest.ProjectId
+import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.projection.PageRequest
@@ -27,6 +28,14 @@ public data class ProjectSummary(
  * With PostgreSQL RLS, this happens automatically via session variables.
  */
 public interface VmRequestReadRepository {
+    /**
+     * Finds a VM request summary by its ID.
+     *
+     * @param id The VM request ID
+     * @return The VM request summary if found, null otherwise
+     */
+    public suspend fun findById(id: VmRequestId): VmRequestSummary?
+
     /**
      * Finds all VM requests submitted by a specific user.
      *

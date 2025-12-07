@@ -4,14 +4,19 @@ import de.acci.dvmm.application.vmrequest.NewTimelineEvent
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
+import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vm.VmAggregate
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
+import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
+import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
@@ -35,7 +40,8 @@ public class TriggerProvisioningHandler(
     private val eventStore: EventStore,
     private val vmEventDeserializer: VmEventDeserializer,
     private val vmRequestEventDeserializer: VmRequestEventDeserializer,
-    private val timelineUpdater: TimelineEventProjectionUpdater
+    private val timelineUpdater: TimelineEventProjectionUpdater,
+    private val vmRequestReadRepository: VmRequestReadRepository
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -52,8 +58,34 @@ public class TriggerProvisioningHandler(
             return
         }
 
+        // Get project name for prefixing (AC1: {projectPrefix}-{requestedName})
+        val projectInfo = try {
+             vmRequestReadRepository.findById(event.requestId)
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to load project info for request ${event.requestId.value}" }
+            null
+        }
+
+        if (projectInfo == null) {
+            val reason = "Could not find project info for request ${event.requestId.value}"
+            logger.error { reason }
+            emitFailure(event, reason)
+            return
+        }
+
+        // Generate prefix from project name (uppercase, first 4 chars, safe for VM name)
+        // Example: "My Project" -> "MYPR"
+        val projectPrefix = projectInfo.projectName
+            .filter { it.isLetterOrDigit() }
+            .take(4)
+            .uppercase()
+            .ifBlank { "PROJ" }
+
+        val prefixedVmName = "$projectPrefix-${event.vmName.value}"
+        logger.info { "Provisioning VM with name: $prefixedVmName (Original: ${event.vmName.value}, Project: ${projectInfo.projectName})" }
+
         val spec = VmSpec(
-            name = event.vmName.value,
+            name = prefixedVmName,
             template = config.templateName,
             cpu = event.size.cpuCores,
             memoryGb = event.size.memoryGb
@@ -64,16 +96,16 @@ public class TriggerProvisioningHandler(
             is Result.Success -> {
                 val provisioningResult = result.value
                 logger.info {
-                    "VM provisioning completed for ${event.vmName.value}. " +
+                    "VM provisioning completed for $prefixedVmName. " +
                         "vCenter ID: ${provisioningResult.vmwareVmId.value}, " +
                         "IP: ${provisioningResult.ipAddress ?: "pending"}"
                 }
-                emitSuccess(event, provisioningResult)
+                emitSuccess(event, provisioningResult, prefixedVmName)
             }
             is Result.Failure -> {
                 val error = result.error
                 val reason = "vSphere provisioning failed: $error"
-                logger.error { "Failed to initiate provisioning for ${event.vmName.value}: $error" }
+                logger.error { "Failed to initiate provisioning for $prefixedVmName: $error" }
                 emitFailure(event, reason)
             }
         }
@@ -88,7 +120,11 @@ public class TriggerProvisioningHandler(
      * This is acceptable for eventual consistency - a retry mechanism or manual
      * reconciliation can fix the inconsistency. Detailed logging ensures traceability.
      */
-    private suspend fun emitSuccess(event: VmProvisioningStarted, provisioningResult: VmProvisioningResult) {
+    private suspend fun emitSuccess(
+        event: VmProvisioningStarted, 
+        provisioningResult: VmProvisioningResult,
+        provisionedHostname: String
+    ) {
         val vmId = event.aggregateId.value
         val requestId = event.requestId.value
 
@@ -107,7 +143,7 @@ public class TriggerProvisioningHandler(
             vmAggregate.markProvisioned(
                 vmwareVmId = provisioningResult.vmwareVmId,
                 ipAddress = provisioningResult.ipAddress,
-                hostname = provisioningResult.hostname,
+                hostname = provisionedHostname, // Use the actual prefixed hostname
                 warningMessage = provisioningResult.warningMessage,
                 metadata = event.metadata
             )
@@ -149,7 +185,7 @@ public class TriggerProvisioningHandler(
             requestAggregate.markReady(
                 vmwareVmId = provisioningResult.vmwareVmId,
                 ipAddress = provisioningResult.ipAddress,
-                hostname = provisioningResult.hostname,
+                hostname = provisionedHostname, // Use the actual prefixed hostname
                 provisionedAt = Instant.now(),
                 warningMessage = provisioningResult.warningMessage,
                 metadata = event.metadata
@@ -191,7 +227,7 @@ public class TriggerProvisioningHandler(
                     eventType = TimelineEventType.VM_READY,
                     actorId = null, // System event
                     actorName = "System",
-                    details = buildReadyDetails(provisioningResult),
+                    details = buildReadyDetails(provisioningResult, provisionedHostname),
                     occurredAt = Instant.now()
                 )
             )
@@ -206,10 +242,10 @@ public class TriggerProvisioningHandler(
         }
     }
 
-    private fun buildReadyDetails(result: VmProvisioningResult): String {
+    private fun buildReadyDetails(result: VmProvisioningResult, hostname: String): String {
         val parts = mutableListOf<String>()
         parts.add("VM ID: ${result.vmwareVmId.value}")
-        parts.add("Hostname: ${result.hostname}")
+        parts.add("Hostname: $hostname")
         result.ipAddress?.let { parts.add("IP: $it") }
         result.warningMessage?.let { parts.add("Warning: $it") }
         return parts.joinToString(", ")

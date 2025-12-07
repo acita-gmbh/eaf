@@ -195,14 +195,16 @@ public class ApplicationConfig {
         eventStore: EventStore,
         vmEventDeserializer: VmEventDeserializer,
         vmRequestEventDeserializer: VmRequestEventDeserializer,
-        timelineUpdater: TimelineEventProjectionUpdater
+        timelineUpdater: TimelineEventProjectionUpdater,
+        vmRequestReadRepository: VmRequestReadRepository
     ): TriggerProvisioningHandler = TriggerProvisioningHandler(
         vspherePort = vspherePort,
         configPort = configPort,
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
-        timelineUpdater = timelineUpdater
+        timelineUpdater = timelineUpdater,
+        vmRequestReadRepository = vmRequestReadRepository
     )
 
     @Bean

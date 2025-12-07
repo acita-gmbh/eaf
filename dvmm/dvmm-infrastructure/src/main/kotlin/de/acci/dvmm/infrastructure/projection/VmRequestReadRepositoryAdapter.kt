@@ -24,6 +24,25 @@ public class VmRequestReadRepositoryAdapter(
     private val projectionRepository: VmRequestProjectionRepository
 ) : VmRequestReadRepository {
 
+    override suspend fun findById(id: VmRequestId): VmRequestSummary? {
+        val projection = projectionRepository.findById(id.value) ?: return null
+        
+        return VmRequestSummary(
+            id = VmRequestId(projection.id),
+            tenantId = TenantId(projection.tenantId),
+            requesterId = UserId(projection.requesterId),
+            requesterName = projection.requesterName,
+            projectId = ProjectId(projection.projectId),
+            projectName = projection.projectName,
+            vmName = projection.vmName,
+            size = VmSize.valueOf(projection.size),
+            justification = projection.justification,
+            status = VmRequestStatus.valueOf(projection.status),
+            createdAt = projection.createdAt.toInstant(),
+            updatedAt = projection.updatedAt.toInstant()
+        )
+    }
+
     override suspend fun findByRequesterId(
         requesterId: UserId,
         pageRequest: PageRequest

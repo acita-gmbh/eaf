@@ -1,6 +1,6 @@
 # Story 3.4: vm-provisioning-execution
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -24,7 +24,7 @@ So that users get exactly what they requested.
    **And** template selection based on configuration (templateName in VmwareConfiguration)
    **And** Linux template default for MVP
 
-3. **And** Guest customization applies hostname
+3. **And** Guest customization applies hostname [MVP-DEFERRED]
    **And** hostname matches VM name pattern
 
 4. **And** VM is powered on after creation (cloneSpec.isPowerOn = true)
@@ -422,6 +422,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt`
 - `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapterTest.kt`
 - `dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
+- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt`
 
 **Documentation Updated:**
 - `AGENTS.md` - Added CancellationException handling pattern
