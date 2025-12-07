@@ -29,7 +29,7 @@ So that users get exactly what they requested.
 
 4. **And** VM is powered on after creation (cloneSpec.isPowerOn = true)
 
-5. **And** provisioning waits for VMware Tools ready (timeout: 5 min)
+5. **And** provisioning waits for VMware Tools ready (timeout: 2 min)
    **And** IP address is detected via VMware Tools guest info
 
 6. **Given** provisioning succeeds
@@ -42,7 +42,7 @@ So that users get exactly what they requested.
    **And** request status changes to "Ready"
    **And** timeline event added: "VM ready"
 
-7. **Given** VMware Tools timeout occurs (5 min)
+7. **Given** VMware Tools timeout occurs (2 min)
    **When** no IP is detected within timeout
    **Then** VM is still considered provisioned with `ipAddress = null`
    **And** `VmProvisioned` event includes `warningMessage = "IP detection timed out"`
@@ -211,7 +211,7 @@ cloneSpec.customization = customSpec
 suspend fun waitForVmwareTools(
     session: VsphereSession,
     vmRef: ManagedObjectReference,
-    timeout: Duration = 5.minutes
+    timeout: Duration = 2.minutes
 ): VmProvisioningResult {
     val startTime = Instant.now()
     val vmId = VmwareVmId(vmRef.value)
