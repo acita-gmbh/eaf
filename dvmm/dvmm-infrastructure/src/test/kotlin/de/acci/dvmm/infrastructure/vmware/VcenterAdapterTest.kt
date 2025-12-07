@@ -10,6 +10,8 @@ import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.success
 import io.mockk.coEvery
@@ -131,13 +133,18 @@ class VcenterAdapterTest {
             cpu = 4,
             memoryGb = 16
         )
-        val expectedId = VmId("vm-123")
-        coEvery { vsphereClient.createVm(spec) } returns expectedId.success()
+        val expectedResult = VmProvisioningResult(
+            vmwareVmId = VmwareVmId.of("vm-123"),
+            ipAddress = "192.168.1.100",
+            hostname = "test-vm",
+            warningMessage = null
+        )
+        coEvery { vsphereClient.createVm(spec) } returns expectedResult.success()
 
         val result = adapter.createVm(spec)
 
         assertTrue(result is Result.Success)
-        assertEquals(expectedId, (result as Result.Success).value)
+        assertEquals(expectedResult, (result as Result.Success).value)
         coVerify(exactly = 1) { vsphereClient.createVm(spec) }
     }
 

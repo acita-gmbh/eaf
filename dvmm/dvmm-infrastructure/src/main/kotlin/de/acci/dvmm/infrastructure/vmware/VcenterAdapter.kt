@@ -22,6 +22,7 @@ import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -315,7 +316,7 @@ public class VcenterAdapter(
     override suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> =
         vsphereClient.listResourcePools(cluster)
 
-    override suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError> =
+    override suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> =
         vsphereClient.createVm(spec)
 
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> =

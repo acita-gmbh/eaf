@@ -10,6 +10,8 @@ import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -131,8 +133,14 @@ public class VcsimAdapter : VspherePort {
         return listOf(ResourcePool("rp-1", "Resources")).success()
     }
 
-    override suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError> {
-        return VmId("vm-100").success()
+    override suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> {
+        logger.info { "VCSIM simulating VM creation: ${spec.name}" }
+        return VmProvisioningResult(
+            vmwareVmId = VmwareVmId.of("vm-100"),
+            ipAddress = "192.168.1.100", // Simulated VCSIM IP
+            hostname = spec.name,
+            warningMessage = null
+        ).success()
     }
 
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> {

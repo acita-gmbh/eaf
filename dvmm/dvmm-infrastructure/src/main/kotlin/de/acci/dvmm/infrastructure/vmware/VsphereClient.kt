@@ -25,6 +25,8 @@ import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
+import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
@@ -490,71 +492,133 @@ public class VsphereClient(
         )
     }
 
-    public suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError> = executeResilient("createVm") {
+    /**
+     * VMware Tools IP detection timeout in milliseconds.
+     * After cloning and power-on, we wait for VMware Tools to report the IP address.
+     */
+    private val vmwareToolsTimeoutMs: Long = 120_000 // 2 minutes
+
+    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> = executeResilient("createVm") {
         val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
             is Result.Failure -> return@executeResilient VsphereError.ProvisioningError("Connection failed", sessionResult.error).failure()
         }
-        
+
         val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ProvisioningError("Configuration not found").failure()
 
         withContext(Dispatchers.IO) {
             try {
                 val vimPort = session.vimPort
                 val searchIndex = session.serviceContent.searchIndex
-                
+
                 val dcPath = config.datacenterName
                 val templateName = spec.template.ifBlank { config.templateName }
                 val templatePath = "$dcPath/vm/$templateName"
-                
+
                 val templateRef = vimPort.findByInventoryPath(searchIndex, templatePath)
                     ?: return@withContext VsphereError.ProvisioningError("Template not found: $templatePath").failure()
-                
+
                 val dsPath = "$dcPath/datastore/${config.datastoreName}"
                 val dsRef = vimPort.findByInventoryPath(searchIndex, dsPath)
                     ?: return@withContext VsphereError.ProvisioningError("Datastore not found: ${config.datastoreName}").failure()
-                
+
                 val clusterPath = "$dcPath/host/${config.clusterName}"
                 val clusterRef = vimPort.findByInventoryPath(searchIndex, clusterPath)
                     ?: return@withContext VsphereError.ProvisioningError("Cluster not found: ${config.clusterName}").failure()
-                
+
                 val rpRef = getProperty(session, clusterRef, "resourcePool") as? ManagedObjectReference
                     ?: return@withContext VsphereError.ProvisioningError("Cluster has no resource pool").failure()
-                
+
                 val relocateSpec = VirtualMachineRelocateSpec().apply {
                     this.datastore = dsRef
                     this.pool = rpRef
                 }
-                
+
                 val configSpec = VirtualMachineConfigSpec().apply {
                     this.numCPUs = spec.cpu
                     this.memoryMB = (spec.memoryGb * 1024).toLong()
                 }
-                
+
                 val cloneSpec = VirtualMachineCloneSpec().apply {
                     this.location = relocateSpec
                     this.config = configSpec
                     this.isPowerOn = true
                     this.isTemplate = false
                 }
-                
-                val folderRef = vimPort.findByInventoryPath(searchIndex, "$dcPath/vm") 
+
+                val folderRef = vimPort.findByInventoryPath(searchIndex, "$dcPath/vm")
                     ?: return@withContext VsphereError.ProvisioningError("VM folder not found").failure()
-                
+
+                logger.info { "Cloning VM '${spec.name}' from template '$templateName'" }
                 val task = vimPort.cloneVMTask(templateRef, folderRef, spec.name, cloneSpec)
                 waitForTask(session, task)
-                
+
                 val info = getTaskInfo(session, task)
                 val vmRef = info.result as ManagedObjectReference
-                VmId(vmRef.value).success()
-                
+                val vmwareVmId = VmwareVmId.of(vmRef.value)
+                logger.info { "Clone task completed, VM created: ${vmRef.value}" }
+
+                // Wait for VMware Tools to report IP address
+                val ipDetectionResult = waitForVmwareToolsIp(session, vmRef)
+
+                VmProvisioningResult(
+                    vmwareVmId = vmwareVmId,
+                    ipAddress = ipDetectionResult.ipAddress,
+                    hostname = spec.name,
+                    warningMessage = ipDetectionResult.warningMessage
+                ).success()
+
             } catch (e: Exception) {
+                logger.error(e) { "Clone failed: ${e.message}" }
                 VsphereError.ProvisioningError("Clone failed", e).failure()
             }
         }
     }
+
+    /**
+     * Wait for VMware Tools to report the VM's IP address.
+     *
+     * Returns the IP address if detected within timeout, or null with a warning message.
+     */
+    private suspend fun waitForVmwareToolsIp(
+        session: VsphereSession,
+        vmRef: ManagedObjectReference
+    ): IpDetectionResult = withContext(Dispatchers.IO) {
+        val startTime = System.currentTimeMillis()
+
+        while (isActive) {
+            val elapsed = System.currentTimeMillis() - startTime
+            if (elapsed > vmwareToolsTimeoutMs) {
+                logger.warn { "VMware Tools timeout after ${elapsed}ms waiting for IP on ${vmRef.value}" }
+                return@withContext IpDetectionResult(
+                    ipAddress = null,
+                    warningMessage = "VMware Tools timeout - IP detection pending"
+                )
+            }
+
+            // Check guest.ipAddress via PropertyCollector
+            val ipAddress = getProperty(session, vmRef, "guest.ipAddress") as? String
+            if (!ipAddress.isNullOrBlank()) {
+                logger.info { "IP address detected for ${vmRef.value}: $ipAddress" }
+                return@withContext IpDetectionResult(ipAddress = ipAddress, warningMessage = null)
+            }
+
+            // Also check if VMware Tools is running
+            val toolsStatus = getProperty(session, vmRef, "guest.toolsRunningStatus") as? String
+            logger.debug { "Waiting for VMware Tools IP on ${vmRef.value}, toolsStatus=$toolsStatus, elapsed=${elapsed}ms" }
+
+            delay(2000) // Poll every 2 seconds
+        }
+
+        IpDetectionResult(ipAddress = null, warningMessage = "IP detection cancelled")
+    }
+
+    private data class IpDetectionResult(
+        val ipAddress: String?,
+        val warningMessage: String?
+    )
 
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> = executeResilient("getVm") {
         val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }

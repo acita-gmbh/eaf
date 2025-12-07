@@ -192,11 +192,17 @@ public class ApplicationConfig {
     public fun triggerProvisioningHandler(
         vspherePort: VspherePort,
         configPort: VmwareConfigurationPort,
-        eventStore: EventStore
+        eventStore: EventStore,
+        vmEventDeserializer: VmEventDeserializer,
+        vmRequestEventDeserializer: VmRequestEventDeserializer,
+        timelineUpdater: TimelineEventProjectionUpdater
     ): TriggerProvisioningHandler = TriggerProvisioningHandler(
         vspherePort = vspherePort,
         configPort = configPort,
-        eventStore = eventStore
+        eventStore = eventStore,
+        vmEventDeserializer = vmEventDeserializer,
+        vmRequestEventDeserializer = vmRequestEventDeserializer,
+        timelineUpdater = timelineUpdater
     )
 
     @Bean

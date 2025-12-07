@@ -2,6 +2,7 @@ package de.acci.dvmm.domain.vm
 
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
+import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -44,10 +45,23 @@ public class VmAggregate private constructor(
     public var failureReason: String? = null
         private set
 
+    /** VMware MoRef assigned to this VM after provisioning */
+    public var vmwareVmId: VmwareVmId? = null
+        private set
+
+    /** IP address detected via VMware Tools (null if detection timed out) */
+    public var ipAddress: String? = null
+        private set
+
+    /** Hostname configured during provisioning */
+    public var hostname: String? = null
+        private set
+
     override fun handleEvent(event: DomainEvent) {
         when (event) {
             is VmProvisioningStarted -> apply(event)
             is VmProvisioningFailed -> apply(event)
+            is VmProvisioned -> apply(event)
         }
     }
 
@@ -66,6 +80,13 @@ public class VmAggregate private constructor(
         failureReason = event.reason
     }
 
+    private fun apply(event: VmProvisioned) {
+        status = VmStatus.READY
+        vmwareVmId = event.vmwareVmId
+        ipAddress = event.ipAddress
+        hostname = event.hostname
+    }
+
     /**
      * Marks the VM provisioning as failed.
      *
@@ -81,6 +102,38 @@ public class VmAggregate private constructor(
             aggregateId = id,
             requestId = requestId,
             reason = reason,
+            metadata = metadata
+        )
+        applyEvent(event)
+    }
+
+    /**
+     * Marks the VM provisioning as successfully completed.
+     *
+     * @param vmwareVmId VMware MoRef for the created VM
+     * @param ipAddress Detected IP address (null if VMware Tools timed out)
+     * @param hostname The configured hostname
+     * @param warningMessage Optional warning (e.g., "IP detection timed out")
+     * @param metadata Event metadata including tenant and correlation info
+     */
+    public fun markProvisioned(
+        vmwareVmId: VmwareVmId,
+        ipAddress: String?,
+        hostname: String,
+        warningMessage: String?,
+        metadata: EventMetadata
+    ) {
+        check(status == VmStatus.PROVISIONING) {
+            "Cannot mark VM ${id.value} as provisioned: expected status PROVISIONING, but was $status"
+        }
+
+        val event = VmProvisioned(
+            aggregateId = id,
+            requestId = requestId,
+            vmwareVmId = vmwareVmId,
+            ipAddress = ipAddress,
+            hostname = hostname,
+            warningMessage = warningMessage,
             metadata = metadata
         )
         applyEvent(event)
