@@ -1,11 +1,16 @@
 package de.acci.dvmm.domain.vmrequest
 
+import de.acci.dvmm.domain.vm.VmwareVmId
+import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
+import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.testing.fixtures.TestMetadataFactory
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -269,6 +274,117 @@ class VmRequestAggregateTest {
             assertEquals(id, aggregate.id)
             assertEquals(0, aggregate.version)
         }
+
+        @Test
+        @DisplayName("should reconstitute to READY state from full event history")
+        fun `should reconstitute to READY state from full event history`() {
+            // Given: Complete event history from PENDING -> APPROVED -> PROVISIONING -> READY
+            val requestId = VmRequestId.generate()
+            val projectId = ProjectId.generate()
+            val vmName = VmName.of("ready-vm-test")
+            val metadata = TestMetadataFactory.create()
+            val adminId = UserId.generate()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val ipAddress = "10.0.0.100"
+            val hostname = "ready-vm-test.local"
+            val provisionedAt = Instant.now()
+
+            val events = listOf(
+                VmRequestCreated(
+                    aggregateId = requestId,
+                    projectId = projectId,
+                    vmName = vmName,
+                    size = VmSize.L,
+                    justification = "Reconstitution READY test",
+                    requesterEmail = "test@example.com",
+                    metadata = metadata
+                ),
+                VmRequestApproved(
+                    aggregateId = requestId,
+                    vmName = vmName,
+                    projectId = projectId,
+                    requesterId = metadata.userId,
+                    requesterEmail = "test@example.com",
+                    metadata = TestMetadataFactory.create(userId = adminId)
+                ),
+                VmRequestProvisioningStarted(
+                    aggregateId = requestId,
+                    metadata = TestMetadataFactory.create()
+                ),
+                VmRequestReady(
+                    aggregateId = requestId,
+                    vmwareVmId = vmwareVmId,
+                    ipAddress = ipAddress,
+                    hostname = hostname,
+                    provisionedAt = provisionedAt,
+                    warningMessage = null,
+                    metadata = TestMetadataFactory.create()
+                )
+            )
+
+            // When: Reconstitute from event history
+            val aggregate = VmRequestAggregate.reconstitute(requestId, events)
+
+            // Then: Aggregate is in READY state with all properties preserved
+            assertEquals(requestId, aggregate.id)
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+            assertEquals(projectId, aggregate.projectId)
+            assertEquals(vmName, aggregate.vmName)
+            assertEquals(VmSize.L, aggregate.size)
+            assertEquals(4, aggregate.version)
+            assertTrue(aggregate.uncommittedEvents.isEmpty())
+        }
+
+        @Test
+        @DisplayName("should reconstitute READY state with null IP and warning")
+        fun `should reconstitute READY state with null IP and warning`() {
+            // Given: Events with VMware Tools timeout scenario
+            val requestId = VmRequestId.generate()
+            val projectId = ProjectId.generate()
+            val vmName = VmName.of("ready-warning-vm")
+            val metadata = TestMetadataFactory.create()
+            val warningMessage = "VMware Tools timeout - IP detection pending"
+
+            val events = listOf(
+                VmRequestCreated(
+                    aggregateId = requestId,
+                    projectId = projectId,
+                    vmName = vmName,
+                    size = VmSize.M,
+                    justification = "Reconstitution warning test",
+                    requesterEmail = "test@example.com",
+                    metadata = metadata
+                ),
+                VmRequestApproved(
+                    aggregateId = requestId,
+                    vmName = vmName,
+                    projectId = projectId,
+                    requesterId = metadata.userId,
+                    requesterEmail = "test@example.com",
+                    metadata = TestMetadataFactory.create(userId = UserId.generate())
+                ),
+                VmRequestProvisioningStarted(
+                    aggregateId = requestId,
+                    metadata = TestMetadataFactory.create()
+                ),
+                VmRequestReady(
+                    aggregateId = requestId,
+                    vmwareVmId = VmwareVmId.of("vm-67890"),
+                    ipAddress = null,
+                    hostname = "ready-warning-vm",
+                    provisionedAt = Instant.now(),
+                    warningMessage = warningMessage,
+                    metadata = TestMetadataFactory.create()
+                )
+            )
+
+            // When: Reconstitute
+            val aggregate = VmRequestAggregate.reconstitute(requestId, events)
+
+            // Then: READY state achieved even without IP
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+            assertEquals(4, aggregate.version)
+        }
     }
 
     @Nested
@@ -413,6 +529,108 @@ class VmRequestAggregateTest {
         }
     }
 
+    @Nested
+    @DisplayName("markReady()")
+    inner class MarkReadyTests {
+
+        @Test
+        @DisplayName("should emit VmRequestReady event")
+        fun `should emit VmRequestReady event`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val ipAddress = "10.0.0.100"
+            val hostname = "test-vm-01.local"
+
+            // When
+            aggregate.markReady(
+                vmwareVmId = vmwareVmId,
+                ipAddress = ipAddress,
+                hostname = hostname,
+                provisionedAt = Instant.now(),
+                warningMessage = null,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(1, aggregate.uncommittedEvents.size)
+            val event = aggregate.uncommittedEvents.first() as VmRequestReady
+
+            assertEquals(aggregate.id, event.aggregateId)
+            assertEquals(vmwareVmId, event.vmwareVmId)
+            assertEquals(ipAddress, event.ipAddress)
+            assertEquals(hostname, event.hostname)
+            assertEquals(null, event.warningMessage)
+        }
+
+        @Test
+        @DisplayName("should transition from PROVISIONING to READY")
+        fun `should transition from PROVISIONING to READY`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+
+            // When
+            aggregate.markReady(
+                vmwareVmId = VmwareVmId.of("vm-12345"),
+                ipAddress = "10.0.0.100",
+                hostname = "test-vm-01.local",
+                provisionedAt = Instant.now(),
+                warningMessage = null,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+        }
+
+        @Test
+        @DisplayName("should handle null ipAddress with warning message")
+        fun `should handle null ipAddress with warning message`() {
+            // Given - IP detection timed out scenario
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val warningMessage = "VMware Tools timeout - IP detection pending"
+
+            // When
+            aggregate.markReady(
+                vmwareVmId = VmwareVmId.of("vm-12345"),
+                ipAddress = null,
+                hostname = "test-vm-01",
+                provisionedAt = Instant.now(),
+                warningMessage = warningMessage,
+                metadata = TestMetadataFactory.create()
+            )
+
+            // Then
+            val event = aggregate.uncommittedEvents.first() as VmRequestReady
+            assertEquals(null, event.ipAddress)
+            assertEquals(warningMessage, event.warningMessage)
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateException when not PROVISIONING")
+        fun `should throw InvalidStateException when not PROVISIONING`() {
+            // Given - APPROVED state (not yet PROVISIONING)
+            val aggregate = createApprovedAggregate()
+            aggregate.clearUncommittedEvents()
+
+            // When/Then
+            assertThrows<de.acci.dvmm.domain.exceptions.InvalidStateException> {
+                aggregate.markReady(
+                    vmwareVmId = VmwareVmId.of("vm-12345"),
+                    ipAddress = "10.0.0.100",
+                    hostname = "test-vm-01",
+                    provisionedAt = Instant.now(),
+                    warningMessage = null,
+                    metadata = TestMetadataFactory.create()
+                )
+            }
+        }
+    }
+
     private fun createValidAggregate(): VmRequestAggregate {
         return VmRequestAggregate.create(
             requesterId = UserId.generate(),
@@ -428,6 +646,12 @@ class VmRequestAggregateTest {
     private fun createApprovedAggregate(): VmRequestAggregate {
         val aggregate = createValidAggregate()
         aggregate.approve(UserId.generate(), TestMetadataFactory.create())
+        return aggregate
+    }
+
+    private fun createProvisioningAggregate(): VmRequestAggregate {
+        val aggregate = createApprovedAggregate()
+        aggregate.markProvisioning(TestMetadataFactory.create())
         return aggregate
     }
 }

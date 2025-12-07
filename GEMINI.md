@@ -137,6 +137,40 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Coroutine CancellationException Handling
+
+**NEVER catch `CancellationException` with a broad `catch (e: Exception)` - always rethrow it.**
+
+Kotlin's structured concurrency uses `CancellationException` to propagate cancellation. Catching it breaks cancellation:
+
+```kotlin
+// WRONG - Swallows coroutine cancellation
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return  // CancellationException caught and not rethrown!
+    }
+}
+
+// CORRECT - Explicitly rethrow CancellationException
+import kotlin.coroutines.cancellation.CancellationException
+
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: CancellationException) {
+        throw e  // Allow proper coroutine cancellation
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return
+    }
+}
+```
+
+**Why:** CancellationException is used by `withTimeout`, `Job.cancel()`, and scope cancellation. Catching it prevents parent coroutines from being notified, and resources may not clean up properly.
+
 ### Event Sourcing Defensive Patterns
 
 **Always check for empty event lists when loading events to determine `expectedVersion`.**
@@ -193,6 +227,21 @@ eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersi
 
 **Why this matters:** Write-side is easy to verify (event persisted), but read-side (timeline, status views) is easy to forget. Users won't see the state change. Follow patterns in `CreateVmRequestHandler`, `ApproveVmRequestHandler`.
 
+**CQRS Partial Failure Observability:**
+
+When operations span multiple aggregates, use "CRITICAL" prefix + full context for alerting:
+
+```kotlin
+// CORRECT - Detailed logging for partial failures
+logger.error {
+    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+        "after VM $vmId was already marked provisioned. " +
+        "System may be in inconsistent state. Error: ${error}"
+}
+```
+
+**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" enables alerting; both IDs help operators reconcile.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
@@ -226,6 +275,29 @@ val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datast
 ```
 
 **Port 443 Constraint:** `VcenterClientFactory` only supports port 443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock.
+
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined:
+
+```kotlin
+// CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val vmwareToolsTimeoutMs: Long = 120_000  // Wait for IP detection
+private val createVmTimeoutMs: Long = 300_000    // 5 minutes total
+
+suspend fun createVm(spec: VmSpec) = executeResilient(
+    name = "createVm",
+    operationTimeoutMs = createVmTimeoutMs  // 5 min covers clone + IP wait
+) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s
+}
+
+// WRONG - Outer timeout (60s) < inner timeout (120s IP detection)
+// Operation will be killed at 60s before IP detection completes!
+```
+
+**Rule:** Calculate total worst-case inner duration, then add buffer for outer timeout.
 
 ## Frontend (dvmm-web)
 

@@ -267,7 +267,7 @@ class VmProvisioningIntegrationTest {
     }
 
     @Test
-    fun `should start provisioning when request is approved`() {
+    fun `should start provisioning and complete successfully when request is approved`() {
         // 1. Create VMware Config
         val configBody = """
             {
@@ -320,7 +320,7 @@ class VmProvisioningIntegrationTest {
         val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
 
         // 3. Approve VM Request (version 1 = after VmRequestCreated event)
-        val approveBody = """{"version": 1}"""
+        val approveBody = "{ \"version\": 1 }"
         webTestClient.mutateWith(csrf()).post()
             .uri("/api/admin/requests/$requestId/approve")
             .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.adminToken()}")
@@ -329,7 +329,7 @@ class VmProvisioningIntegrationTest {
             .exchange()
             .expectStatus().isOk
 
-        // 4. Verify VmRequestApproved, VmProvisioningStarted, VmRequestProvisioningStarted events
+        // 4. Verify complete event flow including successful provisioning
         await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             TestContainers.postgres.createConnection("").use { conn ->
                 conn.prepareStatement(
@@ -344,6 +344,8 @@ class VmProvisioningIntegrationTest {
                     assertTrue(events.contains("VmRequestApproved"), "Should have VmRequestApproved. Found: $events")
                     assertTrue(events.contains("VmProvisioningStarted"), "Should have VmProvisioningStarted. Found: $events")
                     assertTrue(events.contains("VmRequestProvisioningStarted"), "Should have VmRequestProvisioningStarted. Found: $events")
+                    assertTrue(events.contains("VmProvisioned"), "Should have VmProvisioned (Success). Found: $events")
+                    assertTrue(events.contains("VmRequestReady"), "Should have VmRequestReady (Success). Found: $events")
                 }
             }
         }
@@ -378,7 +380,7 @@ class VmProvisioningIntegrationTest {
         val requestId = responseJson.substringAfter("\"id\":\"").substringBefore("\"")
 
         // 2. Approve VM Request (version 1 = after VmRequestCreated event)
-        val approveBody = """{"version": 1}"""
+        val approveBody = "{ \"version\": 1 }"
         webTestClient.mutateWith(csrf()).post()
             .uri("/api/admin/requests/$requestId/approve")
             .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.adminToken()}")

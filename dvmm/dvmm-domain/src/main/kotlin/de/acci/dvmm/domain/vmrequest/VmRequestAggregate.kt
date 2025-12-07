@@ -2,12 +2,15 @@ package de.acci.dvmm.domain.vmrequest
 
 import de.acci.dvmm.domain.exceptions.InvalidStateException
 import de.acci.dvmm.domain.exceptions.SelfApprovalException
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
 import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
+import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.dvmm.domain.vmrequest.events.VmRequestRejected
 import de.acci.eaf.core.types.TenantId
+import java.time.Instant
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.EventMetadata
@@ -83,6 +86,7 @@ public class VmRequestAggregate private constructor(
             is VmRequestApproved -> apply(event)
             is VmRequestRejected -> apply(event)
             is VmRequestProvisioningStarted -> apply(event)
+            is VmRequestReady -> apply(event)
         }
     }
 
@@ -111,6 +115,10 @@ public class VmRequestAggregate private constructor(
 
     private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestProvisioningStarted) {
         status = VmRequestStatus.PROVISIONING
+    }
+
+    private fun apply(@Suppress("UNUSED_PARAMETER") event: VmRequestReady) {
+        status = VmRequestStatus.READY
     }
 
     /**
@@ -247,6 +255,48 @@ public class VmRequestAggregate private constructor(
         }
 
         applyEvent(VmRequestProvisioningStarted(id, metadata))
+    }
+
+    /**
+     * Marks the request as READY with VM details.
+     *
+     * Triggered when VM provisioning completes successfully.
+     *
+     * @param vmwareVmId VMware MoRef for the created VM
+     * @param ipAddress Detected IP address (null if VMware Tools timed out)
+     * @param hostname The configured hostname
+     * @param provisionedAt Timestamp when VM became ready (injectable for testability)
+     * @param warningMessage Optional warning (e.g., "IP detection timed out")
+     * @param metadata Event metadata
+     * @throws InvalidStateException if request is not in PROVISIONING state
+     */
+    public fun markReady(
+        vmwareVmId: VmwareVmId,
+        ipAddress: String?,
+        hostname: String,
+        provisionedAt: Instant,
+        warningMessage: String?,
+        metadata: EventMetadata
+    ) {
+        if (status != VmRequestStatus.PROVISIONING) {
+            throw InvalidStateException(
+                currentState = status,
+                expectedState = VmRequestStatus.PROVISIONING,
+                operation = "markReady"
+            )
+        }
+
+        applyEvent(
+            VmRequestReady(
+                aggregateId = id,
+                vmwareVmId = vmwareVmId,
+                ipAddress = ipAddress,
+                hostname = hostname,
+                provisionedAt = provisionedAt,
+                warningMessage = warningMessage,
+                metadata = metadata
+            )
+        )
     }
 
     public companion object {

@@ -2,6 +2,7 @@ package de.acci.dvmm.domain.vm
 
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
+import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -133,6 +134,127 @@ class VmAggregateTest {
     }
 
     @Nested
+    @DisplayName("markProvisioned")
+    inner class MarkProvisioned {
+
+        @Test
+        fun `should emit VmProvisioned event`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val ipAddress = "10.0.0.100"
+            val hostname = "test-vm-01.local"
+
+            // When
+            aggregate.markProvisioned(
+                vmwareVmId = vmwareVmId,
+                ipAddress = ipAddress,
+                hostname = hostname,
+                warningMessage = null,
+                metadata = metadata
+            )
+
+            // Then
+            assertEquals(1, aggregate.uncommittedEvents.size)
+            val event = aggregate.uncommittedEvents.first() as VmProvisioned
+
+            assertEquals(aggregate.id, event.aggregateId)
+            assertEquals(requestId, event.requestId)
+            assertEquals(vmwareVmId, event.vmwareVmId)
+            assertEquals(ipAddress, event.ipAddress)
+            assertEquals(hostname, event.hostname)
+            assertEquals(null, event.warningMessage)
+        }
+
+        @Test
+        fun `should set status to READY`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+
+            // When
+            aggregate.markProvisioned(
+                vmwareVmId = VmwareVmId.of("vm-12345"),
+                ipAddress = "10.0.0.100",
+                hostname = "test-vm-01.local",
+                warningMessage = null,
+                metadata = metadata
+            )
+
+            // Then
+            assertEquals(VmStatus.READY, aggregate.status)
+        }
+
+        @Test
+        fun `should store vmwareVmId, ipAddress, and hostname`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val vmwareVmId = VmwareVmId.of("vm-99999")
+            val ipAddress = "192.168.1.50"
+            val hostname = "prod-vm-01.local"
+
+            // When
+            aggregate.markProvisioned(
+                vmwareVmId = vmwareVmId,
+                ipAddress = ipAddress,
+                hostname = hostname,
+                warningMessage = null,
+                metadata = metadata
+            )
+
+            // Then
+            assertEquals(vmwareVmId, aggregate.vmwareVmId)
+            assertEquals(ipAddress, aggregate.ipAddress)
+            assertEquals(hostname, aggregate.hostname)
+        }
+
+        @Test
+        fun `should handle null ipAddress with warning message`() {
+            // Given - IP detection timed out scenario
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val warningMessage = "VMware Tools timeout - IP detection pending"
+
+            // When
+            aggregate.markProvisioned(
+                vmwareVmId = VmwareVmId.of("vm-12345"),
+                ipAddress = null,
+                hostname = "test-vm-01",
+                warningMessage = warningMessage,
+                metadata = metadata
+            )
+
+            // Then
+            val event = aggregate.uncommittedEvents.first() as VmProvisioned
+            assertEquals(null, event.ipAddress)
+            assertEquals(warningMessage, event.warningMessage)
+            assertEquals(VmStatus.READY, aggregate.status)
+        }
+
+        @Test
+        fun `should throw when marking non-provisioning aggregate as provisioned`() {
+            // Given - VM already failed
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            aggregate.markFailed("Initial failure", metadata)
+            aggregate.clearUncommittedEvents()
+
+            // When/Then
+            assertThrows(IllegalStateException::class.java) {
+                aggregate.markProvisioned(
+                    vmwareVmId = VmwareVmId.of("vm-12345"),
+                    ipAddress = "10.0.0.100",
+                    hostname = "test-vm-01",
+                    warningMessage = null,
+                    metadata = metadata
+                )
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("reconstitute")
     inner class Reconstitute {
 
@@ -186,6 +308,82 @@ class VmAggregateTest {
             assertEquals(vmId, aggregate.id)
             assertEquals(VmStatus.FAILED, aggregate.status)
             assertEquals("Config missing", aggregate.failureReason)
+        }
+
+        @Test
+        fun `should reconstitute from VmProvisioningStarted and VmProvisioned`() {
+            // Given
+            val vmId = VmId.generate()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val ipAddress = "10.0.0.100"
+            val hostname = "test-vm-01.local"
+
+            val startedEvent = VmProvisioningStarted(
+                aggregateId = vmId,
+                requestId = requestId,
+                projectId = projectId,
+                vmName = vmName,
+                size = size,
+                requesterId = userId,
+                metadata = metadata
+            )
+            val provisionedEvent = VmProvisioned(
+                aggregateId = vmId,
+                requestId = requestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = ipAddress,
+                hostname = hostname,
+                warningMessage = null,
+                metadata = metadata
+            )
+
+            // When
+            val aggregate = VmAggregate.reconstitute(vmId, listOf(startedEvent, provisionedEvent))
+
+            // Then
+            assertEquals(vmId, aggregate.id)
+            assertEquals(VmStatus.READY, aggregate.status)
+            assertEquals(vmwareVmId, aggregate.vmwareVmId)
+            assertEquals(ipAddress, aggregate.ipAddress)
+            assertEquals(hostname, aggregate.hostname)
+        }
+
+        @Test
+        fun `should reconstitute with null ipAddress when VMware Tools timed out`() {
+            // Given
+            val vmId = VmId.generate()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val hostname = "test-vm-01"
+            val warningMessage = "VMware Tools timeout - IP detection pending"
+
+            val startedEvent = VmProvisioningStarted(
+                aggregateId = vmId,
+                requestId = requestId,
+                projectId = projectId,
+                vmName = vmName,
+                size = size,
+                requesterId = userId,
+                metadata = metadata
+            )
+            val provisionedEvent = VmProvisioned(
+                aggregateId = vmId,
+                requestId = requestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = null,
+                hostname = hostname,
+                warningMessage = warningMessage,
+                metadata = metadata
+            )
+
+            // When
+            val aggregate = VmAggregate.reconstitute(vmId, listOf(startedEvent, provisionedEvent))
+
+            // Then
+            assertEquals(vmId, aggregate.id)
+            assertEquals(VmStatus.READY, aggregate.status)
+            assertEquals(vmwareVmId, aggregate.vmwareVmId)
+            assertEquals(null, aggregate.ipAddress)
+            assertEquals(hostname, aggregate.hostname)
         }
     }
 }

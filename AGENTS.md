@@ -121,6 +121,40 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Coroutine CancellationException Handling
+
+**NEVER catch `CancellationException` with a broad `catch (e: Exception)` - always rethrow it.**
+
+Kotlin's structured concurrency uses `CancellationException` to propagate cancellation. Catching it breaks cancellation:
+
+```kotlin
+// ❌ WRONG - Swallows coroutine cancellation
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return  // CancellationException caught and not rethrown!
+    }
+}
+
+// ✅ CORRECT - Explicitly rethrow CancellationException
+import kotlin.coroutines.cancellation.CancellationException
+
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: CancellationException) {
+        throw e  // Allow proper coroutine cancellation
+    } catch (e: Exception) {
+        logger.error(e) { "Failed" }
+        return
+    }
+}
+```
+
+**Why:** CancellationException is used by `withTimeout`, `Job.cancel()`, and scope cancellation. Catching it prevents parent coroutines from being notified, and resources may not clean up properly.
+
 ### Event Sourcing Defensive Patterns
 
 **Always check for empty event lists when loading events to determine `expectedVersion`.**
@@ -191,6 +225,21 @@ eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersi
 
 **Reference implementations:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler`
 
+### CQRS Partial Failure Observability
+
+When operations span multiple aggregates, use "CRITICAL" prefix + full context for alerting and reconciliation:
+
+```kotlin
+// ✅ CORRECT - Detailed logging for partial failures
+logger.error {
+    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+        "after VM $vmId was already marked provisioned. " +
+        "System may be in inconsistent state. Error: ${error}"
+}
+```
+
+**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" enables alerting; both IDs help operators reconcile.
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** for VMware vCenter integration.
@@ -199,6 +248,7 @@ The project uses **VCF SDK 9.0** for VMware vCenter integration.
 - **PropertyCollector:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`
 - **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
 - **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
+- **Timeout Layering:** When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Example: `createVm = clone (~60s) + IP detection (120s) = needs 5 min outer timeout`
 
 ```kotlin
 // SearchIndex navigation

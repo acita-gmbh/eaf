@@ -138,6 +138,46 @@ fun onEvent(event: SomeEvent) {
 
 **Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
 
+### Coroutine CancellationException Handling
+
+**NEVER catch `CancellationException` with a broad `catch (e: Exception)` block - always rethrow it.**
+
+Kotlin's structured concurrency uses `CancellationException` to propagate cancellation signals through the coroutine hierarchy. Catching it with a broad exception handler breaks cancellation:
+
+```kotlin
+// ❌ WRONG - Swallows coroutine cancellation, breaks structured concurrency
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to append events" }
+        return  // CancellationException is caught here and not rethrown!
+    }
+}
+
+// ✅ CORRECT - Explicitly rethrow CancellationException
+import kotlin.coroutines.cancellation.CancellationException
+
+private suspend fun doWork() {
+    try {
+        eventStore.append(aggregateId, events, version)
+    } catch (e: CancellationException) {
+        throw e  // Allow proper coroutine cancellation
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to append events" }
+        return
+    }
+}
+```
+
+**Why this matters:**
+- `CancellationException` is used by `withTimeout`, `Job.cancel()`, and scope cancellation
+- Catching it prevents parent coroutines from being notified of cancellation
+- Resources may not be properly cleaned up (finally blocks, use {} blocks)
+- Application shutdown can hang waiting for "cancelled" coroutines
+
+**When to apply:** Any `catch (e: Exception)` in a `suspend fun` should have a preceding `catch (e: CancellationException) { throw e }` block.
+
 ### Event Sourcing Defensive Patterns
 
 **Always check for empty event lists when loading events to determine `expectedVersion`.**
@@ -230,6 +270,33 @@ public suspend fun handle(command: MarkVmRequestProvisioningCommand): Result<Uni
 
 **Pattern to follow:** Look at existing handlers (`CreateVmRequestHandler`, `ApproveVmRequestHandler`) that inject `TimelineEventProjectionUpdater` and call `addTimelineEvent()` after successful event persistence.
 
+**CQRS Partial Failure Observability**
+
+When CQRS operations span multiple aggregates without distributed transactions, partial failures can leave the system in an inconsistent state. Use "CRITICAL" log prefix with full context to enable alerting and manual reconciliation:
+
+```kotlin
+// ✅ CORRECT - Detailed logging for partial failures
+when (requestAppendResult) {
+    is Result.Failure -> {
+        logger.error {
+            "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+                "after VM $vmId was already marked provisioned. " +
+                "System may be in inconsistent state. Error: ${requestAppendResult.error}"
+        }
+        return
+    }
+}
+
+// ❌ WRONG - Generic error message loses context
+logger.error { "Failed to emit VmRequestReady: ${requestAppendResult.error}" }
+```
+
+**Why this matters:**
+- Partial success (aggregate A updated, aggregate B failed) requires manual reconciliation
+- "CRITICAL" prefix enables alerting rules to trigger immediately
+- Including both aggregate IDs helps operators identify what succeeded and what failed
+- This pattern applies whenever operations span multiple aggregates sequentially
+
 ### VMware VCF SDK 9.0 Patterns
 
 The project uses **VCF SDK 9.0** (`com.vmware.sdk:vsphere-utils:9.0.0.0`) for VMware vCenter integration.
@@ -291,6 +358,32 @@ val factory = VcenterClientFactory("vcenter.example.com:8443", trustStore)  // U
 ```
 
 This is correct for production vCenter servers (always use port 443). For testing with VCSIM (which uses dynamic ports), use the `VcsimAdapter` mock instead.
+
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Failure to do this causes the outer timeout to kill the operation before inner operations complete.
+
+```kotlin
+// ✅ CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val vmwareToolsTimeoutMs: Long = 120_000  // Wait for IP detection
+private val createVmTimeoutMs: Long = 300_000    // 5 minutes total
+
+suspend fun createVm(spec: VmSpec) = executeResilient(
+    name = "createVm",
+    operationTimeoutMs = createVmTimeoutMs  // 5 min covers clone + IP wait
+) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s
+}
+
+// ❌ WRONG - Outer timeout (60s) < inner timeout (120s IP detection)
+suspend fun createVm(spec: VmSpec) = executeResilient("createVm") {  // Default 60s
+    cloneVm(spec)
+    waitForIpAddress(vmwareToolsTimeoutMs)  // 120s - will be killed at 60s!
+}
+```
+
+**Rule:** Calculate total worst-case inner duration, then add buffer for outer timeout.
 
 ## Frontend (dvmm-web)
 

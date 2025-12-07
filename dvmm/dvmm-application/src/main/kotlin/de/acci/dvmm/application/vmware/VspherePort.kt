@@ -1,5 +1,6 @@
 package de.acci.dvmm.application.vmware
 
+import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 
@@ -69,7 +70,23 @@ public interface VspherePort {
     public suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError>
     public suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError>
     public suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError>
-    public suspend fun createVm(spec: VmSpec): Result<VmId, VsphereError>
+
+    /**
+     * Create a VM from a template with full provisioning.
+     *
+     * This method performs the complete VM creation workflow:
+     * 1. Clone the specified template
+     * 2. Apply guest customization (hostname)
+     * 3. Configure disk size if larger than template
+     * 4. Power on the VM
+     * 5. Wait for VMware Tools to become ready (with timeout)
+     * 6. Detect IP address via VMware Tools
+     *
+     * @param spec VM specification (name, template, CPU, memory, disk)
+     * @return Result containing VmProvisioningResult on success, or VsphereError on failure
+     */
+    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>
+
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError>
     public suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError>
 }

@@ -142,7 +142,7 @@ development_status:
   3-1-2-vcf-sdk-adapter: done                      # Obsolete: Story 3.1.1 already uses VCF SDK 9.0
   3-2-vsphere-api-client: done                      # PR #74 - Code review PASSED 2025-12-06
   3-3-provisioning-trigger-on-approval: done
-  3-4-vm-provisioning-execution: backlog
+  3-4-vm-provisioning-execution: done
   3-5-provisioning-progress-tracking: backlog
   3-6-provisioning-error-handling: backlog
   3-7-provisioned-vm-details: backlog

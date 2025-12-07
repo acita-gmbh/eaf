@@ -85,6 +85,17 @@ throw RuntimeException("VM creation failed")
 
 // ❌ FORBIDDEN - Swallowing exceptions
 catch (e: Exception) { logger.error("Failed") }
+
+// ✅ REQUIRED - Rethrow CancellationException in suspend functions
+import kotlin.coroutines.cancellation.CancellationException
+
+try {
+    eventStore.append(aggregateId, events, version)
+} catch (e: CancellationException) {
+    throw e  // Allow proper coroutine cancellation
+} catch (e: Exception) {
+    logger.error(e) { "Failed" }
+}
 ```
 
 ### Security Patterns (Multi-Tenant)
@@ -226,6 +237,23 @@ val vmRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/vm/MyTemplate
 
 **Port 443 Constraint:** `VcenterClientFactory` only supports HTTPS/443. For VCSIM testing (dynamic ports), use `VcsimAdapter` mock instead.
 
+**Timeout Layering (Critical for Nested Async Operations):**
+
+When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined:
+
+```kotlin
+// ✅ CORRECT - Outer timeout (5 min) > inner timeouts (clone ~60s + IP detection 120s)
+private val createVmTimeoutMs: Long = 300_000  // 5 minutes total
+suspend fun createVm(spec: VmSpec) = executeResilient("createVm", createVmTimeoutMs) {
+    cloneVm(spec)  // ~60s
+    waitForIpAddress(120_000)  // 120s
+}
+
+// ❌ WRONG - Outer timeout (60s) < inner timeout (120s) - killed before completion!
+```
+
+**Rule:** Calculate worst-case inner duration sum, then add buffer for outer timeout.
+
 ---
 
 ## jOOQ Code Generation (Critical Gotchas)
@@ -306,6 +334,21 @@ eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersi
 **Why:** Write-side is easy to verify (event persisted), but read-side (timeline events, status views) is easy to forget. Users won't see the state change in the UI.
 
 **See:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler` for reference implementations.
+
+**CQRS Partial Failure Observability:**
+
+When operations span multiple aggregates, partial failures require special logging for alerting and reconciliation:
+
+```kotlin
+// ✅ CORRECT - "CRITICAL" prefix + full context for partial failures
+logger.error {
+    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+        "after VM $vmId was already marked provisioned. " +
+        "System may be in inconsistent state. Error: ${error}"
+}
+```
+
+**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" prefix enables alerting; including both IDs helps operators reconcile.
 
 ---
 

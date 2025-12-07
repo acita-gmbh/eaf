@@ -1,6 +1,8 @@
 package de.acci.dvmm.infrastructure.eventsourcing
 
 import de.acci.dvmm.domain.vm.VmId
+import de.acci.dvmm.domain.vm.VmwareVmId
+import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
 import de.acci.dvmm.domain.vmrequest.ProjectId
@@ -120,6 +122,85 @@ class JacksonVmEventDeserializerTest {
             assertEquals(event.aggregateId.value, provisioningFailed.aggregateId.value)
             assertEquals(event.requestId.value, provisioningFailed.requestId.value)
             assertEquals(event.reason, provisioningFailed.reason)
+        }
+    }
+
+    @Nested
+    @DisplayName("VmProvisioned Deserialization")
+    inner class VmProvisionedDeserialization {
+
+        @Test
+        fun `deserializes VmProvisioned event correctly`() {
+            // Given: A stored VmProvisioned event with IP address
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val event = VmProvisioned(
+                aggregateId = testVmId,
+                requestId = testRequestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = "10.0.0.100",
+                hostname = "test-vm-01",
+                warningMessage = null,
+                metadata = createTestMetadata()
+            )
+            val payload = objectMapper.writeValueAsString(event)
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmId.value,
+                aggregateType = "Vm",
+                eventType = "VmProvisioned",
+                payload = payload,
+                metadata = createTestMetadata(),
+                version = 2,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Correct event type with all fields
+            assertTrue(result is VmProvisioned)
+            val provisioned = result as VmProvisioned
+            assertEquals(event.aggregateId.value, provisioned.aggregateId.value)
+            assertEquals(event.requestId.value, provisioned.requestId.value)
+            assertEquals(event.vmwareVmId.value, provisioned.vmwareVmId.value)
+            assertEquals(event.ipAddress, provisioned.ipAddress)
+            assertEquals(event.hostname, provisioned.hostname)
+            assertEquals(event.warningMessage, provisioned.warningMessage)
+        }
+
+        @Test
+        fun `deserializes VmProvisioned with null IP address and warning message`() {
+            // Given: A VmProvisioned event when VMware Tools timed out
+            val vmwareVmId = VmwareVmId.of("vm-67890")
+            val event = VmProvisioned(
+                aggregateId = testVmId,
+                requestId = testRequestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = null,
+                hostname = "test-vm-02",
+                warningMessage = "VMware Tools timeout - IP detection pending",
+                metadata = createTestMetadata()
+            )
+            val payload = objectMapper.writeValueAsString(event)
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmId.value,
+                aggregateType = "Vm",
+                eventType = "VmProvisioned",
+                payload = payload,
+                metadata = createTestMetadata(),
+                version = 2,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Null IP and warning preserved
+            assertTrue(result is VmProvisioned)
+            val provisioned = result as VmProvisioned
+            assertEquals(null, provisioned.ipAddress)
+            assertEquals("VMware Tools timeout - IP detection pending", provisioned.warningMessage)
         }
     }
 

@@ -1,5 +1,6 @@
 package de.acci.dvmm.infrastructure.eventsourcing
 
+import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -7,6 +8,7 @@ import de.acci.dvmm.domain.vmrequest.VmSize
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
 import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
+import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -179,6 +181,85 @@ class JacksonVmRequestEventDeserializerTest {
             assertTrue(result is VmRequestProvisioningStarted)
             val provisioningStarted = result as VmRequestProvisioningStarted
             assertEquals(event.aggregateId.value, provisioningStarted.aggregateId.value)
+        }
+    }
+
+    @Nested
+    @DisplayName("VmRequestReady Deserialization")
+    inner class VmRequestReadyDeserialization {
+
+        @Test
+        fun `deserializes VmRequestReady event correctly`() {
+            // Given: A stored VmRequestReady event with IP address
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val provisionedAt = Instant.now()
+            val event = VmRequestReady(
+                aggregateId = testVmRequestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = "10.0.0.100",
+                hostname = "test-vm-01",
+                provisionedAt = provisionedAt,
+                warningMessage = null,
+                metadata = createTestMetadata()
+            )
+            val payload = objectMapper.writeValueAsString(event)
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmRequestId.value,
+                aggregateType = "VmRequest",
+                eventType = "VmRequestReady",
+                payload = payload,
+                metadata = createTestMetadata(),
+                version = 4,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Correct event type with all fields
+            assertTrue(result is VmRequestReady)
+            val ready = result as VmRequestReady
+            assertEquals(event.aggregateId.value, ready.aggregateId.value)
+            assertEquals(event.vmwareVmId.value, ready.vmwareVmId.value)
+            assertEquals(event.ipAddress, ready.ipAddress)
+            assertEquals(event.hostname, ready.hostname)
+            assertEquals(event.warningMessage, ready.warningMessage)
+        }
+
+        @Test
+        fun `deserializes VmRequestReady with null IP address and warning message`() {
+            // Given: A VmRequestReady event when VMware Tools timed out
+            val vmwareVmId = VmwareVmId.of("vm-67890")
+            val event = VmRequestReady(
+                aggregateId = testVmRequestId,
+                vmwareVmId = vmwareVmId,
+                ipAddress = null,
+                hostname = "test-vm-02",
+                provisionedAt = Instant.now(),
+                warningMessage = "VMware Tools timeout - IP detection pending",
+                metadata = createTestMetadata()
+            )
+            val payload = objectMapper.writeValueAsString(event)
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmRequestId.value,
+                aggregateType = "VmRequest",
+                eventType = "VmRequestReady",
+                payload = payload,
+                metadata = createTestMetadata(),
+                version = 4,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Null IP and warning preserved
+            assertTrue(result is VmRequestReady)
+            val ready = result as VmRequestReady
+            assertEquals(null, ready.ipAddress)
+            assertEquals("VMware Tools timeout - IP detection pending", ready.warningMessage)
         }
     }
 

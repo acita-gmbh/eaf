@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vm.VmEventDeserializer
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
+import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.StoredEvent
 
@@ -37,6 +38,7 @@ public class JacksonVmEventDeserializer(
         return when (eventType) {
             "VmProvisioningStarted" -> VmProvisioningStarted::class.java
             "VmProvisioningFailed" -> VmProvisioningFailed::class.java
+            "VmProvisioned" -> VmProvisioned::class.java
             else -> throw IllegalArgumentException(
                 "Unknown event type: $eventType. " +
                     "Add mapping to JacksonVmEventDeserializer."
