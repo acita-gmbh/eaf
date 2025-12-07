@@ -593,6 +593,8 @@ public class VsphereClient(
      * Wait for VMware Tools to report the VM's IP address.
      *
      * Returns the IP address if detected within timeout, or null with a warning message.
+     * If the coroutine is cancelled, this throws CancellationException to allow proper
+     * structured concurrency - callers should handle this appropriately.
      */
     private suspend fun waitForVmwareToolsIp(
         session: VsphereSession,
@@ -624,7 +626,8 @@ public class VsphereClient(
             delay(2000) // Poll every 2 seconds
         }
 
-        IpDetectionResult(ipAddress = null, warningMessage = "IP detection cancelled")
+        // If we get here, the coroutine was cancelled - throw to propagate cancellation properly
+        throw kotlinx.coroutines.CancellationException("IP detection cancelled for ${vmRef.value}")
     }
 
     private data class IpDetectionResult(

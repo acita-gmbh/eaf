@@ -1,8 +1,10 @@
 package de.acci.dvmm.domain.vmrequest
 
 import de.acci.dvmm.domain.vm.VmwareVmId
+import de.acci.dvmm.domain.vmrequest.events.VmRequestApproved
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCancelled
 import de.acci.dvmm.domain.vmrequest.events.VmRequestCreated
+import de.acci.dvmm.domain.vmrequest.events.VmRequestProvisioningStarted
 import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -271,6 +273,117 @@ class VmRequestAggregateTest {
             // Then
             assertEquals(id, aggregate.id)
             assertEquals(0, aggregate.version)
+        }
+
+        @Test
+        @DisplayName("should reconstitute to READY state from full event history")
+        fun `should reconstitute to READY state from full event history`() {
+            // Given: Complete event history from PENDING -> APPROVED -> PROVISIONING -> READY
+            val requestId = VmRequestId.generate()
+            val projectId = ProjectId.generate()
+            val vmName = VmName.of("ready-vm-test")
+            val metadata = TestMetadataFactory.create()
+            val adminId = UserId.generate()
+            val vmwareVmId = VmwareVmId.of("vm-12345")
+            val ipAddress = "10.0.0.100"
+            val hostname = "ready-vm-test.local"
+            val provisionedAt = Instant.now()
+
+            val events = listOf(
+                VmRequestCreated(
+                    aggregateId = requestId,
+                    projectId = projectId,
+                    vmName = vmName,
+                    size = VmSize.L,
+                    justification = "Reconstitution READY test",
+                    requesterEmail = "test@example.com",
+                    metadata = metadata
+                ),
+                VmRequestApproved(
+                    aggregateId = requestId,
+                    vmName = vmName,
+                    projectId = projectId,
+                    requesterId = metadata.userId,
+                    requesterEmail = "test@example.com",
+                    metadata = TestMetadataFactory.create(userId = adminId)
+                ),
+                VmRequestProvisioningStarted(
+                    aggregateId = requestId,
+                    metadata = TestMetadataFactory.create()
+                ),
+                VmRequestReady(
+                    aggregateId = requestId,
+                    vmwareVmId = vmwareVmId,
+                    ipAddress = ipAddress,
+                    hostname = hostname,
+                    provisionedAt = provisionedAt,
+                    warningMessage = null,
+                    metadata = TestMetadataFactory.create()
+                )
+            )
+
+            // When: Reconstitute from event history
+            val aggregate = VmRequestAggregate.reconstitute(requestId, events)
+
+            // Then: Aggregate is in READY state with all properties preserved
+            assertEquals(requestId, aggregate.id)
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+            assertEquals(projectId, aggregate.projectId)
+            assertEquals(vmName, aggregate.vmName)
+            assertEquals(VmSize.L, aggregate.size)
+            assertEquals(4, aggregate.version)
+            assertTrue(aggregate.uncommittedEvents.isEmpty())
+        }
+
+        @Test
+        @DisplayName("should reconstitute READY state with null IP and warning")
+        fun `should reconstitute READY state with null IP and warning`() {
+            // Given: Events with VMware Tools timeout scenario
+            val requestId = VmRequestId.generate()
+            val projectId = ProjectId.generate()
+            val vmName = VmName.of("ready-warning-vm")
+            val metadata = TestMetadataFactory.create()
+            val warningMessage = "VMware Tools timeout - IP detection pending"
+
+            val events = listOf(
+                VmRequestCreated(
+                    aggregateId = requestId,
+                    projectId = projectId,
+                    vmName = vmName,
+                    size = VmSize.M,
+                    justification = "Reconstitution warning test",
+                    requesterEmail = "test@example.com",
+                    metadata = metadata
+                ),
+                VmRequestApproved(
+                    aggregateId = requestId,
+                    vmName = vmName,
+                    projectId = projectId,
+                    requesterId = metadata.userId,
+                    requesterEmail = "test@example.com",
+                    metadata = TestMetadataFactory.create(userId = UserId.generate())
+                ),
+                VmRequestProvisioningStarted(
+                    aggregateId = requestId,
+                    metadata = TestMetadataFactory.create()
+                ),
+                VmRequestReady(
+                    aggregateId = requestId,
+                    vmwareVmId = VmwareVmId.of("vm-67890"),
+                    ipAddress = null,
+                    hostname = "ready-warning-vm",
+                    provisionedAt = Instant.now(),
+                    warningMessage = warningMessage,
+                    metadata = TestMetadataFactory.create()
+                )
+            )
+
+            // When: Reconstitute
+            val aggregate = VmRequestAggregate.reconstitute(requestId, events)
+
+            // Then: READY state achieved even without IP
+            assertEquals(VmRequestStatus.READY, aggregate.status)
+            assertEquals(4, aggregate.version)
         }
     }
 

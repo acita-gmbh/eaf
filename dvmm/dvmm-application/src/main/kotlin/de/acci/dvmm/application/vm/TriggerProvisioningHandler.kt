@@ -18,6 +18,7 @@ import de.acci.eaf.eventsourcing.EventStore
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Handles VmProvisioningStarted event by calling VspherePort to create the VM.
@@ -213,10 +214,10 @@ public class TriggerProvisioningHandler(
         )
 
         try {
-            // Load current version to handle potential concurrent modifications
+            // Step 1: Load current version to handle potential concurrent modifications
             val currentEvents = eventStore.load(event.aggregateId.value)
             if (currentEvents.isEmpty()) {
-                logger.error { "Cannot emit VmProvisioningFailed: aggregate ${event.aggregateId.value} not found in event store" }
+                logger.error { "[Step 1/2] Cannot emit VmProvisioningFailed: aggregate ${event.aggregateId.value} not found in event store" }
                 return
             }
             val currentVersion = currentEvents.size.toLong()
@@ -227,11 +228,42 @@ public class TriggerProvisioningHandler(
                 expectedVersion = currentVersion
             )
             when (result) {
-                is Result.Success -> logger.info { "Emitted VmProvisioningFailed for VM ${event.aggregateId.value}" }
-                is Result.Failure -> logger.error { "Failed to emit VmProvisioningFailed: ${result.error}" }
+                is Result.Success -> logger.info { "[Step 1/2] Emitted VmProvisioningFailed for VM ${event.aggregateId.value}" }
+                is Result.Failure -> {
+                    logger.error { "[Step 1/2] Failed to emit VmProvisioningFailed: ${result.error}" }
+                    return
+                }
             }
+        } catch (e: CancellationException) {
+            // Rethrow CancellationException to allow proper coroutine cancellation
+            throw e
         } catch (e: Exception) {
-            logger.error(e) { "Failed to emit VmProvisioningFailed event for VM ${event.aggregateId.value}" }
+            logger.error(e) { "[Step 1/2] Failed to emit VmProvisioningFailed event for VM ${event.aggregateId.value}" }
+            return
+        }
+
+        // Step 2: Add timeline event for PROVISIONING_FAILED
+        try {
+            val timelineResult = timelineUpdater.addTimelineEvent(
+                NewTimelineEvent(
+                    id = UUID.randomUUID(),
+                    requestId = event.requestId,
+                    tenantId = event.metadata.tenantId,
+                    eventType = TimelineEventType.PROVISIONING_FAILED,
+                    actorId = null, // System event
+                    actorName = "System",
+                    details = reason,
+                    occurredAt = Instant.now()
+                )
+            )
+            when (timelineResult) {
+                is Result.Success -> logger.info { "[Step 2/2] Added PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
+                is Result.Failure -> logger.error { "[Step 2/2] Failed to add PROVISIONING_FAILED timeline: ${timelineResult.error}" }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "[Step 2/2] Failed to add PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
         }
     }
 }
