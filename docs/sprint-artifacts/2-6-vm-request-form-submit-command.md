@@ -114,7 +114,7 @@ If any backend modules are missing, create them first following the build-logic 
 ### Frontend Unit Tests
 
 **SubmitButton component:**
-- Renders "Request absenden" text
+- Renders "Submit Request" text
 - Disabled when form is invalid
 - Shows spinner when isPending
 - Calls onSubmit when clicked
@@ -202,11 +202,11 @@ const mutation = useMutation({
 const handleSubmit = (data: VmRequestFormData) => {
   mutation.mutate(data, {
     onSuccess: (result) => {
-      toast.success('Request eingereicht!')
+      toast.success('Request submitted!')
       navigate(`/requests/${result.id}`)
     },
     onError: (error) => {
-      toast.error('Verbindungsfehler')
+      toast.error('Connection error')
     },
   })
 }

@@ -774,8 +774,8 @@ So that I understand how to get started.
 **Given** I am a new user with zero VM requests
 **When** I view the dashboard
 **Then** I see an empty state illustration with:
-  - Friendly message: "Noch keine VMs angefordert"
-  - Clear CTA: "Erste VM anfordern" button
+  - Friendly message: "No VMs requested yet"
+  - Clear CTA: "Request your first VM" button
   - Brief explanation of the workflow
 
 **And** first-time tooltip hints appear on key UI elements
@@ -801,7 +801,7 @@ So that I can specify what I need.
 
 **Acceptance Criteria:**
 
-**Given** I click "Neue VM anfordern"
+**Given** I click "Request new VM"
 **When** the request form opens
 **Then** I see form fields for:
   - VM Name (required, alphanumeric + hyphens, 3-63 chars)
@@ -871,11 +871,11 @@ So that it enters the approval workflow.
 **Acceptance Criteria:**
 
 **Given** I have filled all required fields
-**When** I click "Request absenden"
+**When** I click "Submit request"
 **Then** a `CreateVmRequestCommand` is dispatched
 **And** the command handler creates `VmRequestAggregate`
 **And** `VmRequestCreated` event is persisted
-**And** I see success toast: "Request eingereicht!"
+**And** I see success toast: "Request submitted!"
 **And** I am redirected to request detail view
 
 **Given** the request violates quota
@@ -1002,7 +1002,7 @@ So that I can efficiently process approvals.
 
 **Given** I am logged in as an admin
 **When** I view the admin dashboard
-**Then** I see "Offene Requests" section with:
+**Then** I see "Pending Requests" section with:
   - Count badge showing number of pending requests
   - List of pending requests with: Requester, VM Name, Project, Size, Age, Actions
   - Sorting by age (oldest first by default)
@@ -1511,7 +1511,7 @@ So that I can connect to and use my VM.
 **Given** my VM is successfully provisioned
 **When** I view the request detail
 **Then** I see VM information:
-  - Status: "Bereit" (green badge)
+  - Status: "Ready" (green badge)
   - IP Address: `192.168.1.x` (clickable to copy)
   - Hostname: `projectprefix-myvm`
   - CPU: 4 vCPU
