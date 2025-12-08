@@ -19,7 +19,8 @@ export function useProvisioningProgress(requestId: string, isProvisioning: boole
     enabled: !!auth.user?.access_token && !!requestId && isProvisioning,
     // Data considered stale after 2.5s (slightly less than poll interval)
     staleTime: 2500,
-    // Poll every 3s + jitter to prevent thundering herd across clients
+    // Poll every 3s + variable jitter (0-500ms) to prevent thundering herd across clients.
+    // Jitter is intentionally recalculated each interval to spread requests over time.
     refetchInterval: () => 3000 + Math.floor(Math.random() * 500),
     // Don't poll in background to save resources
     refetchIntervalInBackground: false,

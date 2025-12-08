@@ -267,19 +267,26 @@ export function RequestDetail() {
       </Card>
 
       {/* Provisioning Progress (AC-3.5) */}
-      {isProvisioning && progress && (
+      {isProvisioning && (
         <Card>
           <CardHeader>
             <CardTitle>Provisioning Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <ProvisioningProgress
-              stage={progress.stage}
-              updatedAt={progress.updatedAt}
-              startedAt={progress.startedAt}
-              stageTimestamps={progress.stageTimestamps}
-              estimatedRemainingSeconds={progress.estimatedRemainingSeconds}
-            />
+            {progress ? (
+              <ProvisioningProgress
+                stage={progress.stage}
+                updatedAt={progress.updatedAt}
+                startedAt={progress.startedAt}
+                stageTimestamps={progress.stageTimestamps}
+                estimatedRemainingSeconds={progress.estimatedRemainingSeconds}
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                <span>Loading provisioning status...</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

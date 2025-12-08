@@ -13,12 +13,12 @@ so that I know my VM is being created.
 **Given** my request is in "Provisioning" status
 **When** I view the request detail
 **Then** I see progress stages:
-  - ○ Created (queued)
-  - ● Cloning from template... (in progress)
-  - ○ Apply configuration
-  - ○ Start VM
-  - ○ Wait for network
-  - ○ Ready
+- ○ Created (queued)
+- ● Cloning from template... (in progress)
+- ○ Apply configuration
+- ○ Start VM
+- ○ Wait for network
+- ○ Ready
 
 **And** progress updates without page refresh (SSE/polling)
 **And** each stage shows timestamp when completed
@@ -95,9 +95,9 @@ gemini-1.5-pro
 - Added comprehensive unit tests in `VmAggregateProgressTest`.
 - Updated `VspherePort` interface with `onProgress` callback.
 - Implemented progress tracking in `VsphereClient` (Infrastructure) calling the callback.
-- Updated `VcsimAdapter` to simulate progress delays.
-- Updated `JacksonVmEventDeserializer` to handle the new event.
-- Updated `TriggerProvisioningHandler` to persist progress events during provisioning.
+- Modified `VcsimAdapter` to simulate progress delays.
+- Enhanced `JacksonVmEventDeserializer` to handle the new event.
+- Extended `TriggerProvisioningHandler` to persist progress events during provisioning.
 - Created `provisioning_progress` table and jOOQ mapping.
 - Implemented `VmProvisioningProgressProjection`, Repository, and Query Service.
 - Exposed progress via `VmProvisioningProgressController`.
