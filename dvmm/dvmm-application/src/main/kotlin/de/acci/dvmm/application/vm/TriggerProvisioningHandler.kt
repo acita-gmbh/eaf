@@ -154,6 +154,8 @@ public class TriggerProvisioningHandler(
                             ),
                             event.metadata.tenantId
                         )
+                    } catch (e: CancellationException) {
+                        throw e  // Allow proper coroutine cancellation
                     } catch (e: Exception) {
                         logger.error(e) { "Failed to update progress projection for VM $vmId" }
                     }
@@ -187,6 +189,8 @@ public class TriggerProvisioningHandler(
         // Cleanup progress projection
         try {
             progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.warn(e) { "Failed to cleanup progress projection for request $requestId" }
         }
@@ -325,6 +329,8 @@ public class TriggerProvisioningHandler(
         // Cleanup progress projection
         try {
             progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.warn(e) { "Failed to cleanup progress projection for request ${event.requestId.value}" }
         }

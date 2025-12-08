@@ -4,6 +4,7 @@ import de.acci.dvmm.application.vm.VmProvisioningProgressProjection
 import de.acci.dvmm.application.vm.VmProvisioningProgressQueryService
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,12 +17,13 @@ import java.util.UUID
 public class VmProvisioningProgressController(
     private val queryService: VmProvisioningProgressQueryService
 ) {
+    private val logger = KotlinLogging.logger {}
 
     @GetMapping("/{id}/provisioning-progress")
     public suspend fun getProgress(@PathVariable id: UUID): ResponseEntity<VmProvisioningProgressProjection> {
         // VmRequestId.fromString handles UUID string
         val result = queryService.getProgress(VmRequestId.fromString(id.toString()))
-        
+
         return when (result) {
             is Result.Success -> {
                 val projection = result.value
@@ -33,7 +35,8 @@ public class VmProvisioningProgressController(
                 }
             }
             is Result.Failure -> {
-                // Opaque error for security
+                // Log actual error for audit trail, return opaque 404 for security
+                logger.warn { "Failed to get provisioning progress for request $id: ${result.error}" }
                 ResponseEntity.notFound().build()
             }
         }

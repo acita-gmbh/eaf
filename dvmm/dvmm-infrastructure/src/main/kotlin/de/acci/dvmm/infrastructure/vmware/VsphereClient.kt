@@ -554,6 +554,9 @@ public class VsphereClient(
                     this.pool = rpRef
                 }
 
+                // Signal CONFIGURING while building the clone spec
+                onProgress(VmProvisioningStage.CONFIGURING)
+
                 val configSpec = VirtualMachineConfigSpec().apply {
                     this.numCPUs = spec.cpu
                     this.memoryMB = (spec.memoryGb * 1024).toLong()
@@ -562,7 +565,7 @@ public class VsphereClient(
                 val cloneSpec = VirtualMachineCloneSpec().apply {
                     this.location = relocateSpec
                     this.config = configSpec
-                    this.isPowerOn = true
+                    this.isPowerOn = true  // VM powers on automatically after clone
                     this.isTemplate = false
                 }
 
@@ -579,11 +582,11 @@ public class VsphereClient(
                 val vmwareVmId = VmwareVmId.of(vmRef.value)
                 logger.info { "Clone task completed, VM created: ${vmRef.value}" }
 
-                onProgress(VmProvisioningStage.CONFIGURING)
+                // VM is now powered on (isPowerOn=true in cloneSpec)
                 onProgress(VmProvisioningStage.POWERING_ON)
-                onProgress(VmProvisioningStage.WAITING_FOR_NETWORK)
 
                 // Wait for VMware Tools to report IP address
+                onProgress(VmProvisioningStage.WAITING_FOR_NETWORK)
                 val ipDetectionResult = waitForVmwareToolsIp(session, vmRef)
 
                 // Signal provisioning complete (matches VcsimAdapter contract)
