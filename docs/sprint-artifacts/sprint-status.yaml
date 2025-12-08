@@ -143,7 +143,7 @@ development_status:
   3-2-vsphere-api-client: done                      # PR #74 - Code review PASSED 2025-12-06
   3-3-provisioning-trigger-on-approval: done
   3-4-vm-provisioning-execution: done
-  3-5-provisioning-progress-tracking: backlog
+  3-5-provisioning-progress-tracking: in-progress
   3-6-provisioning-error-handling: backlog
   3-7-provisioned-vm-details: backlog
   3-8-vm-ready-notification: backlog

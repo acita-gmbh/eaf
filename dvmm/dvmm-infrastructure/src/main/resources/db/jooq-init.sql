@@ -282,3 +282,30 @@ COMMENT ON TABLE "VMWARE_CONFIGURATIONS" IS 'VMware vCenter connection configura
 COMMENT ON COLUMN "VMWARE_CONFIGURATIONS"."PASSWORD_ENCRYPTED" IS 'AES-256 encrypted password';
 COMMENT ON COLUMN "VMWARE_CONFIGURATIONS"."VERSION" IS 'Optimistic locking version';
 -- [jooq ignore stop]
+
+-- ============================================================================
+-- V009__create_provisioning_progress_table.sql content
+-- Story 3.5: Provisioning Progress Tracking
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS PUBLIC."PROVISIONING_PROGRESS" (
+    "VM_REQUEST_ID"   UUID PRIMARY KEY,
+    "STAGE"           VARCHAR(255) NOT NULL,
+    "DETAILS"         VARCHAR(4000) NOT NULL,
+    "STARTED_AT"      TIMESTAMP WITH TIME ZONE NOT NULL,
+    "UPDATED_AT"      TIMESTAMP WITH TIME ZONE NOT NULL,
+    "TENANT_ID"       UUID NOT NULL
+);
+
+-- [jooq ignore start]
+ALTER TABLE "PROVISIONING_PROGRESS" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_progress ON "PROVISIONING_PROGRESS"
+    FOR ALL
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+
+ALTER TABLE "PROVISIONING_PROGRESS" FORCE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON "PROVISIONING_PROGRESS" TO eaf_app;
+-- [jooq ignore stop]

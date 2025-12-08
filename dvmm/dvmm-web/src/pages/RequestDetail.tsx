@@ -14,8 +14,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { StatusBadge } from '@/components/requests/StatusBadge'
 import { Timeline } from '@/components/requests/Timeline'
 import { CancelConfirmDialog } from '@/components/requests/CancelConfirmDialog'
+import { ProvisioningProgress } from '@/components/requests/ProvisioningProgress'
 import { useRequestDetail } from '@/hooks/useRequestDetail'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
+import { useProvisioningProgress } from '@/hooks/useProvisioningProgress'
 import {
   ApiError,
   isNotFoundError,
@@ -50,6 +52,10 @@ export function RequestDetail() {
     polling: true,
     pollInterval: 30000, // 30 seconds per AC-4
   })
+
+  // Fetch progress if provisioning (AC-3.5)
+  const isProvisioning = data?.status === 'PROVISIONING'
+  const { data: progress } = useProvisioningProgress(id || '', isProvisioning)
 
   const cancelMutation = useCancelRequest()
 
@@ -260,6 +266,22 @@ export function RequestDetail() {
         </CardContent>
       </Card>
 
+      {/* Provisioning Progress (AC-3.5) */}
+      {isProvisioning && progress && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Provisioning Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProvisioningProgress
+              stage={progress.stage}
+              updatedAt={progress.updatedAt}
+              startedAt={progress.startedAt}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Timeline Card (AC-3) */}
       <Card>
         <CardHeader>
@@ -286,7 +308,7 @@ interface BackButtonProps {
   onClick: () => void
 }
 
-function BackButton({ onClick }: BackButtonProps) {
+function BackButton({ onClick }: Readonly<BackButtonProps>) {
   return (
     <Button variant="ghost" size="sm" className="gap-2" onClick={onClick}>
       <ArrowLeft className="h-4 w-4" />

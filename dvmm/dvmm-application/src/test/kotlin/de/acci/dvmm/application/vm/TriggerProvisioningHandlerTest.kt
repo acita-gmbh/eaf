@@ -55,6 +55,7 @@ class TriggerProvisioningHandlerTest {
     private val vmRequestEventDeserializer = mockk<VmRequestEventDeserializer>()
     private val timelineUpdater = mockk<TimelineEventProjectionUpdater>()
     private val vmRequestReadRepository = mockk<VmRequestReadRepository>()
+    private val progressRepository = mockk<VmProvisioningProgressProjectionRepository>(relaxed = true)
 
     private fun createHandler() = TriggerProvisioningHandler(
         vspherePort = vspherePort,
@@ -63,7 +64,8 @@ class TriggerProvisioningHandlerTest {
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
-        vmRequestReadRepository = vmRequestReadRepository
+        vmRequestReadRepository = vmRequestReadRepository,
+        progressRepository = progressRepository
     )
 
     private fun createProvisioningResult(
@@ -143,7 +145,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
             val specSlot = slot<VmSpec>()
-            coEvery { vspherePort.createVm(capture(specSlot)) } returns provisioningResult.success()
+            coEvery { vspherePort.createVm(capture(specSlot), any()) } returns provisioningResult.success()
 
             // Mock event store loads for success path
             setupSuccessPathMocks(event)
@@ -154,7 +156,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { vspherePort.createVm(any()) }
+            coVerify(exactly = 1) { vspherePort.createVm(any(), any()) }
             val spec = specSlot.captured
             // "My Project" -> "MYPR" -> "MYPR-web-server"
             assertEquals("MYPR-${event.vmName.value}", spec.name)
@@ -175,7 +177,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any()) } returns provisioningResult.success()
+            coEvery { vspherePort.createVm(any(), any()) } returns provisioningResult.success()
 
             val vmEventsSlot = slot<List<DomainEvent>>()
             val requestEventsSlot = slot<List<DomainEvent>>()
@@ -243,7 +245,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any()) } returns provisioningResult.success()
+            coEvery { vspherePort.createVm(any(), any()) } returns provisioningResult.success()
             setupSuccessPathMocks(event)
 
             val timelineSlot = slot<NewTimelineEvent>()
@@ -354,7 +356,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { vspherePort.createVm(any()) }
+            coVerify(exactly = 0) { vspherePort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -408,7 +410,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { vspherePort.createVm(any()) }
+            coVerify(exactly = 0) { vspherePort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -431,7 +433,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any()) } returns de.acci.eaf.core.result.Result.Failure(
+            coEvery { vspherePort.createVm(any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
                 VsphereError.Timeout("Connection timeout")
             )
 
@@ -464,7 +466,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { vspherePort.createVm(any()) }
+            coVerify(exactly = 1) { vspherePort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed

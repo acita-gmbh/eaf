@@ -6,6 +6,8 @@ import de.acci.dvmm.application.vm.TriggerProvisioningHandler
 import de.acci.dvmm.application.vm.VmProvisioningListener
 import de.acci.dvmm.application.vm.VmEventDeserializer
 import de.acci.dvmm.application.vm.VmRequestStatusUpdater
+import de.acci.dvmm.application.vm.VmProvisioningProgressProjectionRepository
+import de.acci.dvmm.application.vm.VmProvisioningProgressQueryService
 import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
@@ -196,7 +198,8 @@ public class ApplicationConfig {
         vmEventDeserializer: VmEventDeserializer,
         vmRequestEventDeserializer: VmRequestEventDeserializer,
         timelineUpdater: TimelineEventProjectionUpdater,
-        vmRequestReadRepository: VmRequestReadRepository
+        vmRequestReadRepository: VmRequestReadRepository,
+        progressRepository: VmProvisioningProgressProjectionRepository
     ): TriggerProvisioningHandler = TriggerProvisioningHandler(
         vspherePort = vspherePort,
         configPort = configPort,
@@ -204,13 +207,19 @@ public class ApplicationConfig {
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
-        vmRequestReadRepository = vmRequestReadRepository
+        vmRequestReadRepository = vmRequestReadRepository,
+        progressRepository = progressRepository
     )
 
     @Bean
     public fun vmRequestStatusUpdater(
         markHandler: MarkVmRequestProvisioningHandler
     ): VmRequestStatusUpdater = VmRequestStatusUpdater(markHandler)
+
+    @Bean
+    public fun vmProvisioningProgressQueryService(
+        repository: VmProvisioningProgressProjectionRepository
+    ): VmProvisioningProgressQueryService = VmProvisioningProgressQueryService(repository)
 
     // ==================== Command Handlers ====================
 

@@ -26,6 +26,7 @@ import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -511,7 +512,10 @@ public class VsphereClient(
      */
     private val createVmTimeoutMs: Long = 480_000 // 8 minutes
 
-    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> =
+    public suspend fun createVm(
+        spec: VmSpec,
+        onProgress: suspend (VmProvisioningStage) -> Unit = {}
+    ): Result<VmProvisioningResult, VsphereError> =
         executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
         val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -566,6 +570,7 @@ public class VsphereClient(
                     ?: return@withContext VsphereError.ProvisioningError("VM folder not found").failure()
 
                 logger.info { "Cloning VM '${spec.name}' from template '$templateName'" }
+                onProgress(VmProvisioningStage.CLONING)
                 val task = vimPort.cloneVMTask(templateRef, folderRef, spec.name, cloneSpec)
                 waitForTask(session, task)
 
@@ -574,8 +579,15 @@ public class VsphereClient(
                 val vmwareVmId = VmwareVmId.of(vmRef.value)
                 logger.info { "Clone task completed, VM created: ${vmRef.value}" }
 
+                onProgress(VmProvisioningStage.CONFIGURING)
+                onProgress(VmProvisioningStage.POWERING_ON)
+                onProgress(VmProvisioningStage.WAITING_FOR_NETWORK)
+
                 // Wait for VMware Tools to report IP address
                 val ipDetectionResult = waitForVmwareToolsIp(session, vmRef)
+
+                // Signal provisioning complete (matches VcsimAdapter contract)
+                onProgress(VmProvisioningStage.READY)
 
                 VmProvisioningResult(
                     vmwareVmId = vmwareVmId,

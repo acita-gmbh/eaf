@@ -1,6 +1,7 @@
 package de.acci.dvmm.application.vmware
 
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 
@@ -83,9 +84,13 @@ public interface VspherePort {
      * 6. Detect IP address via VMware Tools
      *
      * @param spec VM specification (name, template, CPU, memory, disk)
+     * @param onProgress Callback for tracking provisioning progress stages
      * @return Result containing VmProvisioningResult on success, or VsphereError on failure
      */
-    public suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError>
+    public suspend fun createVm(
+        spec: VmSpec,
+        onProgress: suspend (VmProvisioningStage) -> Unit = {}
+    ): Result<VmProvisioningResult, VsphereError>
 
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError>
     public suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError>

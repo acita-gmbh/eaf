@@ -11,6 +11,7 @@ import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vm.VmAggregate
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
@@ -41,7 +42,8 @@ public class TriggerProvisioningHandler(
     private val vmEventDeserializer: VmEventDeserializer,
     private val vmRequestEventDeserializer: VmRequestEventDeserializer,
     private val timelineUpdater: TimelineEventProjectionUpdater,
-    private val vmRequestReadRepository: VmRequestReadRepository
+    private val vmRequestReadRepository: VmRequestReadRepository,
+    private val progressRepository: VmProvisioningProgressProjectionRepository
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -91,7 +93,10 @@ public class TriggerProvisioningHandler(
             memoryGb = event.size.memoryGb
         )
 
-        val result = vspherePort.createVm(spec)
+        val result = vspherePort.createVm(spec) { stage ->
+            emitProgress(event, stage)
+        }
+        
         when (result) {
             is Result.Success -> {
                 val provisioningResult = result.value
@@ -111,6 +116,57 @@ public class TriggerProvisioningHandler(
         }
     }
 
+    private suspend fun emitProgress(event: VmProvisioningStarted, stage: VmProvisioningStage) {
+        val vmId = event.aggregateId.value
+        try {
+            val vmEvents = eventStore.load(vmId)
+            if (vmEvents.isEmpty()) {
+                logger.error { "Cannot emit progress: VM aggregate $vmId not found" }
+                return
+            }
+
+            val vmAggregate = VmAggregate.reconstitute(
+                id = event.aggregateId,
+                events = vmEvents.map { vmEventDeserializer.deserialize(it) }
+            )
+            
+            vmAggregate.updateProgress(stage, event.metadata)
+
+            val appendResult = eventStore.append(
+                aggregateId = vmId,
+                events = vmAggregate.uncommittedEvents,
+                expectedVersion = vmEvents.size.toLong()
+            )
+            
+            when (appendResult) {
+                is Result.Success -> {
+                    logger.debug { "Emitted progress $stage for VM $vmId" }
+                    // Update projection
+                    try {
+                        val now = Instant.now()
+                        progressRepository.save(
+                            VmProvisioningProgressProjection(
+                                vmRequestId = event.requestId,
+                                stage = stage,
+                                details = "Provisioning stage updated to $stage",
+                                startedAt = now, // On first insert this becomes the start time; on update it's preserved by UPSERT
+                                updatedAt = now
+                            ),
+                            event.metadata.tenantId
+                        )
+                    } catch (e: Exception) {
+                        logger.error(e) { "Failed to update progress projection for VM $vmId" }
+                    }
+                }
+                is Result.Failure -> logger.error { "Failed to emit progress $stage: ${appendResult.error}" }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+             logger.error(e) { "Failed to emit progress $stage for VM $vmId" }
+        }
+    }
+
     /**
      * Emits success events for VM and VmRequest aggregates, plus timeline update.
      *
@@ -127,6 +183,13 @@ public class TriggerProvisioningHandler(
     ) {
         val vmId = event.aggregateId.value
         val requestId = event.requestId.value
+
+        // Cleanup progress projection
+        try {
+            progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to cleanup progress projection for request $requestId" }
+        }
 
         // Step 1: Update VM aggregate with VmProvisioned event
         try {
@@ -258,6 +321,13 @@ public class TriggerProvisioningHandler(
             reason = reason,
             metadata = event.metadata
         )
+
+        // Cleanup progress projection
+        try {
+            progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to cleanup progress projection for request ${event.requestId.value}" }
+        }
 
         try {
             // Step 1: Load current version to handle potential concurrent modifications
