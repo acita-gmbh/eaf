@@ -116,6 +116,8 @@ public class VsphereClient(
         } catch (e: io.github.resilience4j.circuitbreaker.CallNotPermittedException) {
             logger.warn { "Operation $name blocked by circuit breaker" }
             VsphereError.ConnectionError("Circuit breaker open - vCenter is unstable").failure()
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "Operation $name failed unexpectedly" }
             VsphereError.ApiError("Unexpected error in $name", e).failure()
@@ -200,6 +202,8 @@ public class VsphereClient(
                         vimPort.currentTime(getVimServiceInstanceRef())
                         sessionManager.touchSession(tenantId)
                         logger.debug { "Keepalive successful for tenant $tenantId" }
+                    } catch (e: CancellationException) {
+                        throw e  // Allow proper coroutine cancellation
                     } catch (e: Exception) {
                         logger.warn(e) { "Keepalive failed for tenant $tenantId" }
                         if (e is InvalidLoginFaultMsg || e.message?.contains("session") == true) {
@@ -219,6 +223,8 @@ public class VsphereClient(
             logger.info { "Established new vSphere session for tenant $tenantId" }
 
             session.success()
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "Failed to connect to vSphere for tenant $tenantId" }
             VsphereError.ConnectionError("Failed to connect to vSphere", e).failure()
