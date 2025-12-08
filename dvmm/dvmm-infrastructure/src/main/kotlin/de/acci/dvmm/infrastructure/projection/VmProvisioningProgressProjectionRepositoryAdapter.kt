@@ -8,12 +8,15 @@ import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.infrastructure.jooq.public.tables.references.PROVISIONING_PROGRESS
 import de.acci.eaf.core.types.TenantId
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+
+private val logger = KotlinLogging.logger {}
 
 @Repository
 internal class VmProvisioningProgressProjectionRepositoryAdapter(
@@ -93,6 +96,7 @@ internal class VmProvisioningProgressProjectionRepositoryAdapter(
             try {
                 VmProvisioningStage.valueOf(key) to Instant.parse(value)
             } catch (e: Exception) {
+                logger.warn(e) { "Failed to deserialize stage timestamp entry: key='$key', value='$value'" }
                 null
             }
         }.toMap()

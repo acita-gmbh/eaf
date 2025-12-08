@@ -190,13 +190,15 @@ class ArchitectureTest {
                 if (!hasBroadCatch) return@filter false
 
                 // Check if CancellationException is properly handled:
-                // 1. Has a catch block for CancellationException
-                // 2. Or rethrows in the Exception catch block
-                val hasCancellationCatch = source.contains(Regex("""catch\s*\(\s*\w+\s*:\s*CancellationException\s*\)"""))
-                val hasRethrowPattern = source.contains(Regex("""catch\s*\(\s*(\w+)\s*:\s*CancellationException\s*\)\s*\{[^}]*throw\s+\1"""))
+                // Must have a catch block for CancellationException that rethrows it.
+                // Pattern: catch (e: CancellationException) { throw e } or similar
+                val cancellationCatchWithRethrow = Regex(
+                    """catch\s*\(\s*(\w+)\s*:\s*CancellationException\s*\)\s*\{[^}]*throw\s+\1"""
+                )
+                val hasCancellationRethrow = source.contains(cancellationCatchWithRethrow)
 
-                // If neither pattern exists, it's a potential violation
-                !hasCancellationCatch && !hasRethrowPattern
+                // If the rethrow pattern is missing, it's a violation
+                !hasCancellationRethrow
             }
             .map { "${it.containingFile.name}:${it.name}" }
 

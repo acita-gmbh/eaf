@@ -71,8 +71,8 @@ so that I know my VM is being created.
 
 ### Review Follow-ups (AI)
 
-- [x] [AI-Review][HIGH] AC implemented: "estimated remaining time shown (based on average)" - Added `ESTIMATED_STAGE_DURATIONS` map in `VmProvisioningProgressProjection`, ETA calculation in `calculateEstimatedRemaining()`, and frontend display with `formatEta()` helper.
-- [x] [AI-Review][HIGH] AC implemented: "each stage shows timestamp when completed" - Added `stage_timestamps` JSONB column, handler accumulates per-stage timestamps, frontend displays correct timestamp for each completed stage.
+- [x] **[AI-Review][HIGH]** AC implemented: "estimated remaining time shown (based on average)" - Added `ESTIMATED_STAGE_DURATIONS` map in `VmProvisioningProgressProjection`, ETA calculation in `calculateEstimatedRemaining()`, and frontend display with `formatEta()` helper.
+- [x] **[AI-Review][HIGH]** AC implemented: "each stage shows timestamp when completed" - Added `stage_timestamps` JSONB column, handler accumulates per-stage timestamps, frontend displays correct timestamp for each completed stage.
 
 ## Dev Agent Record
 

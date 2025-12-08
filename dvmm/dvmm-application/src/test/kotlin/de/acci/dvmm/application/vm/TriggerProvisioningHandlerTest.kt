@@ -502,8 +502,6 @@ class TriggerProvisioningHandlerTest {
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
-            // Track progress callbacks - capture the stages reported
-            val reportedStages = mutableListOf<VmProvisioningStage>()
             coEvery { vspherePort.createVm(any(), any()) } coAnswers {
                 val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
                 // Simulate vSphere reporting progress through stages
