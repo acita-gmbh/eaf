@@ -18,6 +18,8 @@ class VmProvisioningProgressProjectionRepositoryAdapter(
 ) : VmProvisioningProgressProjectionRepository {
 
     override suspend fun save(projection: VmProvisioningProgressProjection, tenantId: TenantId) {
+        // VM_REQUEST_ID is the PK and globally unique (UUID from VmRequest aggregate).
+        // ON CONFLICT targets PK only - RLS ensures tenant isolation via WHERE clause.
         dsl.insertInto(PROVISIONING_PROGRESS)
             .set(PROVISIONING_PROGRESS.VM_REQUEST_ID, projection.vmRequestId.value)
             .set(PROVISIONING_PROGRESS.STAGE, projection.stage.name)

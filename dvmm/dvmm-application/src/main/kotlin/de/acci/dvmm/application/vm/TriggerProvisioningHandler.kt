@@ -63,6 +63,8 @@ public class TriggerProvisioningHandler(
         // Get project name for prefixing (AC1: {projectPrefix}-{requestedName})
         val projectInfo = try {
              vmRequestReadRepository.findById(event.requestId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "Failed to load project info for request ${event.requestId.value}" }
             null
