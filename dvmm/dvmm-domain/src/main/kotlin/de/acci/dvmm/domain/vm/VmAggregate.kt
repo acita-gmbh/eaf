@@ -90,10 +90,10 @@ public class VmAggregate private constructor(
         hostname = event.hostname
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun apply(event: VmProvisioningProgressUpdated) {
-        // No state change needed in the aggregate for progress updates yet,
-        // as status remains PROVISIONING until completion.
-        // We might track currentStage later if needed for validation.
+        // No state change needed in the aggregate for progress updates.
+        // Status remains PROVISIONING until completion.
     }
 
     /**

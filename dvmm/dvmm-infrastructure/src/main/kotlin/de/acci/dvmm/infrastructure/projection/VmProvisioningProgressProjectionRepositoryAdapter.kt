@@ -10,7 +10,7 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 @Repository
 class VmProvisioningProgressProjectionRepositoryAdapter(
@@ -22,15 +22,15 @@ class VmProvisioningProgressProjectionRepositoryAdapter(
             .set(PROVISIONING_PROGRESS.VM_REQUEST_ID, projection.vmRequestId.value)
             .set(PROVISIONING_PROGRESS.STAGE, projection.stage.name)
             .set(PROVISIONING_PROGRESS.DETAILS, projection.details)
-            .set(PROVISIONING_PROGRESS.STARTED_AT, OffsetDateTime.ofInstant(projection.startedAt, ZoneId.of("UTC")))
-            .set(PROVISIONING_PROGRESS.UPDATED_AT, OffsetDateTime.ofInstant(projection.updatedAt, ZoneId.of("UTC")))
+            .set(PROVISIONING_PROGRESS.STARTED_AT, OffsetDateTime.ofInstant(projection.startedAt, ZoneOffset.UTC))
+            .set(PROVISIONING_PROGRESS.UPDATED_AT, OffsetDateTime.ofInstant(projection.updatedAt, ZoneOffset.UTC))
             .set(PROVISIONING_PROGRESS.TENANT_ID, tenantId.value)
             .onConflict(PROVISIONING_PROGRESS.VM_REQUEST_ID)
             .doUpdate()
             .set(PROVISIONING_PROGRESS.STAGE, projection.stage.name)
             .set(PROVISIONING_PROGRESS.DETAILS, projection.details)
             // Keep startedAt unchanged on update - only set on first insert
-            .set(PROVISIONING_PROGRESS.UPDATED_AT, OffsetDateTime.ofInstant(projection.updatedAt, ZoneId.of("UTC")))
+            .set(PROVISIONING_PROGRESS.UPDATED_AT, OffsetDateTime.ofInstant(projection.updatedAt, ZoneOffset.UTC))
             .awaitFirstOrNull()
     }
 

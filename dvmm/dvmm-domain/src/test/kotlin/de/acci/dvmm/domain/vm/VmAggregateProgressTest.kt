@@ -68,11 +68,7 @@ class VmAggregateProgressTest {
             aggregate.updateProgress(VmProvisioningStage.CONFIGURING, metadata)
 
             // Then
-            // Assuming we might add a property for currentStage later, but for now just checking event
-            // If the aggregate keeps track of the stage, we'd assert it here.
-            // The story doesn't explicitly say the aggregate MUST expose currentStage as a property,
-            // but usually it does for state reconstruction.
-            // Let's assume for now we only care about the event, or maybe the aggregate status remains PROVISIONING.
+            // Progress updates don't change the overall provisioning status
             assertEquals(VmStatus.PROVISIONING, aggregate.status)
         }
         

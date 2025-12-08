@@ -18,6 +18,7 @@ import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -106,6 +107,8 @@ public class VcsimAdapter : VspherePort {
                 clusterHosts = 3, // VCSIM default
                 datastoreFreeGb = 500L // Simulated value
             ).success()
+        } catch (e: CancellationException) {
+            throw e // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "VCSIM connection test failed" }
             de.acci.dvmm.application.vmware.ConnectionError.ApiError(
