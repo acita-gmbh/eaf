@@ -1,4 +1,5 @@
 import { CheckCircle, Circle, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import type { VmProvisioningStage } from '../../api/vm-requests'
 import { format } from 'date-fns'
 
@@ -18,6 +19,7 @@ const STAGES: { id: VmProvisioningStage; label: string }[] = [
 ]
 
 const TIMEOUT_WARNING_MS = 10 * 60 * 1000 // 10 minutes
+const ELAPSED_UPDATE_INTERVAL_MS = 10_000 // Update elapsed time every 10 seconds
 
 export function ProvisioningProgress({
   stage,
@@ -26,9 +28,25 @@ export function ProvisioningProgress({
 }: Readonly<ProvisioningProgressProps>) {
   const currentStageIndex = STAGES.findIndex((s) => s.id === stage)
 
-  // Calculate if provisioning is taking longer than expected (AC: 10 minutes)
-  const elapsedMs = startedAt ? Date.now() - new Date(startedAt).getTime() : 0
-  const isTakingLong = elapsedMs > TIMEOUT_WARNING_MS
+  // Track elapsed time in state to avoid impure Date.now() during render
+  // Initialize with a function to compute initial value (avoids effect-based setState)
+  const [isTakingLong, setIsTakingLong] = useState(() => {
+    if (!startedAt) return false
+    const elapsedMs = Date.now() - new Date(startedAt).getTime()
+    return elapsedMs > TIMEOUT_WARNING_MS
+  })
+
+  useEffect(() => {
+    if (!startedAt) return
+
+    // Update periodically to detect timeout
+    const interval = setInterval(() => {
+      const elapsedMs = Date.now() - new Date(startedAt).getTime()
+      setIsTakingLong(elapsedMs > TIMEOUT_WARNING_MS)
+    }, ELAPSED_UPDATE_INTERVAL_MS)
+
+    return () => clearInterval(interval)
+  }, [startedAt])
 
   return (
     <div className="rounded-lg border p-4 bg-muted/30">
