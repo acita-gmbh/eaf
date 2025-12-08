@@ -73,7 +73,7 @@ class VmAggregateProgressTest {
         }
         
         @Test
-        fun `should throw when updating progress for non-provisioning aggregate`() {
+        fun `should throw when updating progress for failed aggregate`() {
              // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
@@ -83,6 +83,26 @@ class VmAggregateProgressTest {
             // When/Then
             assertThrows(IllegalStateException::class.java) {
                 aggregate.updateProgress(VmProvisioningStage.POWERING_ON, metadata)
+            }
+        }
+
+        @Test
+        fun `should throw when updating progress for ready aggregate`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            aggregate.markProvisioned(
+                vmwareVmId = VmwareVmId.of("vm-123"),
+                ipAddress = "192.168.1.100",
+                hostname = "test-vm",
+                warningMessage = null,
+                metadata = metadata
+            )
+            aggregate.clearUncommittedEvents()
+
+            // When/Then
+            assertThrows(IllegalStateException::class.java) {
+                aggregate.updateProgress(VmProvisioningStage.CLONING, metadata)
             }
         }
     }
