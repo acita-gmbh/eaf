@@ -12,8 +12,10 @@ import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vm.VmId
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
+import de.acci.dvmm.domain.vm.events.VmProvisioningProgressUpdated
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
 import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.ProjectId
@@ -38,6 +40,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -473,6 +476,188 @@ class TriggerProvisioningHandlerTest {
             assertEquals(event.aggregateId, failedEvent.aggregateId)
             assertEquals(event.requestId, failedEvent.requestId)
             assertTrue(failedEvent.reason.contains("vSphere provisioning failed"))
+        }
+    }
+
+    @Nested
+    @DisplayName("progress tracking")
+    inner class ProgressTracking {
+
+        /**
+         * Verifies that the handler correctly accumulates stage timestamps when
+         * updating progress. Each call to emitProgress should:
+         * 1. Load existing projection to get previously accumulated timestamps
+         * 2. Add the current stage timestamp to the accumulated map
+         * 3. Save with the merged timestamps
+         */
+        @Test
+        fun `should accumulate stage timestamps when updating progress`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+
+            // Track progress callbacks - capture the stages reported
+            val reportedStages = mutableListOf<VmProvisioningStage>()
+            coEvery { vspherePort.createVm(any(), any()) } coAnswers {
+                val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
+                // Simulate vSphere reporting progress through stages
+                progressCallback(VmProvisioningStage.CLONING)
+                progressCallback(VmProvisioningStage.CONFIGURING)
+                createProvisioningResult().success()
+            }
+
+            // Set up non-relaxed progress repository to track calls
+            val nonRelaxedProgressRepository = mockk<VmProvisioningProgressProjectionRepository>()
+
+            // Capture saved projections to verify accumulation
+            val savedProjections = mutableListOf<VmProvisioningProgressProjection>()
+
+            // First call (CLONING) - no existing projection
+            coEvery {
+                nonRelaxedProgressRepository.findByVmRequestId(event.requestId, tenantId)
+            } returnsMany listOf(
+                null, // First call: no existing projection
+                VmProvisioningProgressProjection( // Second call: return what was saved in first call
+                    vmRequestId = event.requestId,
+                    stage = VmProvisioningStage.CLONING,
+                    details = "Provisioning stage: cloning",
+                    startedAt = Instant.now(),
+                    updatedAt = Instant.now(),
+                    stageTimestamps = mapOf(VmProvisioningStage.CLONING to Instant.now()),
+                    estimatedRemainingSeconds = 80L
+                )
+            )
+
+            coEvery { nonRelaxedProgressRepository.save(capture(savedProjections), tenantId) } returns Unit
+            coEvery { nonRelaxedProgressRepository.delete(event.requestId, tenantId) } returns Unit
+
+            // Mock event store for VM aggregate
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            // Mock VmRequest aggregate
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+
+            // Mock timeline updater
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            // Create handler with non-relaxed progress repository
+            val handler = TriggerProvisioningHandler(
+                vspherePort = vspherePort,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = nonRelaxedProgressRepository
+            )
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            // Verify findByVmRequestId was called to load existing projection
+            coVerify(atLeast = 2) { nonRelaxedProgressRepository.findByVmRequestId(event.requestId, tenantId) }
+
+            // Verify save was called for each progress update
+            coVerify(atLeast = 2) { nonRelaxedProgressRepository.save(any(), tenantId) }
+
+            // Verify first save has CLONING stage
+            assertTrue(savedProjections.isNotEmpty(), "Should have saved at least one projection")
+            assertEquals(VmProvisioningStage.CLONING, savedProjections[0].stage)
+            assertTrue(savedProjections[0].stageTimestamps.containsKey(VmProvisioningStage.CLONING))
+
+            // Verify second save has CONFIGURING stage AND accumulated CLONING timestamp
+            if (savedProjections.size >= 2) {
+                assertEquals(VmProvisioningStage.CONFIGURING, savedProjections[1].stage)
+                assertTrue(
+                    savedProjections[1].stageTimestamps.containsKey(VmProvisioningStage.CLONING),
+                    "Second save should preserve CLONING timestamp from previous save"
+                )
+                assertTrue(
+                    savedProjections[1].stageTimestamps.containsKey(VmProvisioningStage.CONFIGURING),
+                    "Second save should add CONFIGURING timestamp"
+                )
+            }
+
+            // Verify cleanup was called after successful provisioning
+            coVerify { nonRelaxedProgressRepository.delete(event.requestId, tenantId) }
+        }
+
+        @Test
+        fun `should calculate estimated remaining time based on current stage`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+
+            // Track the projection saved for CLONING stage
+            val savedProjection = slot<VmProvisioningProgressProjection>()
+            val nonRelaxedProgressRepository = mockk<VmProvisioningProgressProjectionRepository>()
+            coEvery { nonRelaxedProgressRepository.findByVmRequestId(any(), any()) } returns null
+            coEvery { nonRelaxedProgressRepository.save(capture(savedProjection), any()) } returns Unit
+            coEvery { nonRelaxedProgressRepository.delete(any(), any()) } returns Unit
+
+            // Only trigger one progress callback to capture
+            coEvery { vspherePort.createVm(any(), any()) } coAnswers {
+                val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
+                progressCallback(VmProvisioningStage.CLONING)
+                createProvisioningResult().success()
+            }
+
+            // Mock event store
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            val handler = TriggerProvisioningHandler(
+                vspherePort = vspherePort,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = nonRelaxedProgressRepository
+            )
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            assertTrue(savedProjection.isCaptured, "Should have saved a projection")
+            assertNotNull(savedProjection.captured.estimatedRemainingSeconds)
+
+            // CLONING stage: remaining = CONFIGURING(15) + POWERING_ON(20) + WAITING_FOR_NETWORK(45) + READY(0) = 80
+            val expectedRemaining = VmProvisioningProgressProjection.calculateEstimatedRemaining(VmProvisioningStage.CLONING)
+            assertEquals(expectedRemaining, savedProjection.captured.estimatedRemainingSeconds)
+            assertEquals(80L, expectedRemaining, "ETA after CLONING should be ~80 seconds")
         }
     }
 }

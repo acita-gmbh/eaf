@@ -17,6 +17,7 @@ import de.acci.eaf.eventsourcing.projection.ProjectionError
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur when approving a VM request.
@@ -120,6 +121,8 @@ public class ApproveVmRequestHandler(
         // Load events from event store
         val storedEvents = try {
             eventStore.load(command.requestId.value)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to load events for request: " +
@@ -142,6 +145,8 @@ public class ApproveVmRequestHandler(
         // Deserialize events and reconstitute aggregate
         val domainEvents = try {
             storedEvents.map { eventDeserializer.deserialize(it) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to deserialize events for request: " +
@@ -197,6 +202,8 @@ public class ApproveVmRequestHandler(
                 events = aggregate.uncommittedEvents,
                 expectedVersion = expectedVersion
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to persist approval event: " +

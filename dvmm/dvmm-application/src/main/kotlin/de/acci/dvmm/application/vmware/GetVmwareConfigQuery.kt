@@ -8,6 +8,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Query to retrieve VMware configuration for a tenant.
@@ -161,6 +162,8 @@ public class GetVmwareConfigHandler(
                 updatedBy = configuration.updatedBy,
                 version = configuration.version
             ).success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to query VMware configuration for tenant ${query.tenantId.value}"

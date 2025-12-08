@@ -39,6 +39,7 @@ import java.net.URI
 import java.net.UnknownHostException
 import java.security.KeyStore
 import javax.net.ssl.SSLException
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Production vCenter adapter using VCF SDK 9.0 (Official VMware SDK).
@@ -271,6 +272,9 @@ public class VcenterAdapter(
                 message = "SSL certificate error: ${e.message}",
                 cause = e
             ).failure()
+
+        } catch (e: CancellationException) {
+            throw e
 
         } catch (e: Exception) {
             // Check for authentication errors in exception message

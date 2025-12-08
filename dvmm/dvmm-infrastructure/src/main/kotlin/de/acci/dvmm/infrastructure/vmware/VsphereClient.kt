@@ -305,6 +305,8 @@ public class VsphereClient(
         } finally {
             try {
                 vimPort.destroyView(containerView)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.warn { "Failed to destroy ContainerView" }
             }
@@ -382,7 +384,7 @@ public class VsphereClient(
     }
 
     public suspend fun listDatacenters(): Result<List<Datacenter>, VsphereError> = executeResilient("listDatacenters") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -403,7 +405,7 @@ public class VsphereClient(
     }
 
     public suspend fun listClusters(datacenter: Datacenter): Result<List<Cluster>, VsphereError> = executeResilient("listClusters") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -420,7 +422,7 @@ public class VsphereClient(
     }
 
     public suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError> = executeResilient("listNetworks") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -437,7 +439,7 @@ public class VsphereClient(
     }
 
     public suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> = executeResilient("listResourcePools") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -454,7 +456,7 @@ public class VsphereClient(
     }
 
     public suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError> = executeResilient("listDatastores") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -523,7 +525,7 @@ public class VsphereClient(
         onProgress: suspend (VmProvisioningStage) -> Unit = {}
     ): Result<VmProvisioningResult, VsphereError> =
         executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -661,7 +663,7 @@ public class VsphereClient(
     )
 
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> = executeResilient("getVm") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -673,6 +675,8 @@ public class VsphereClient(
                 val vmRef = moRef("VirtualMachine", vmId.value)
                 val name = getProperty(session, vmRef, "name") as? String ?: throw RuntimeException("Name not found")
                 VmInfo(vmId.value, name).success()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 VsphereError.NotFound("VM not found: ${vmId.value}").failure()
             }
@@ -680,7 +684,7 @@ public class VsphereClient(
     }
 
     public suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> = executeResilient("deleteVm") {
-        val tenantId = try { TenantContext.current() } catch (e: Exception) { return@executeResilient VsphereError.DeletionError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.DeletionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -693,6 +697,8 @@ public class VsphereClient(
                 val task = session.vimPort.destroyTask(vmRef)
                 waitForTask(session, task)
                 Unit.success()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 VsphereError.DeletionError("Delete failed", e).failure()
             }

@@ -113,6 +113,8 @@ class VmProvisioningIntegrationTest {
                     """.trimIndent())
 
                     // Provisioning Progress (for Story 3.5)
+                    // Note: STAGE_TIMESTAMPS added in V010 migration - stored as JSONB in prod,
+                    // using TEXT here for PostgreSQL test container compatibility
                     stmt.execute("""
                         CREATE TABLE IF NOT EXISTS public."PROVISIONING_PROGRESS" (
                             "VM_REQUEST_ID" UUID PRIMARY KEY,
@@ -120,7 +122,8 @@ class VmProvisioningIntegrationTest {
                             "DETAILS" VARCHAR(4000) NOT NULL,
                             "STARTED_AT" TIMESTAMPTZ NOT NULL,
                             "UPDATED_AT" TIMESTAMPTZ NOT NULL,
-                            "TENANT_ID" UUID NOT NULL
+                            "TENANT_ID" UUID NOT NULL,
+                            "STAGE_TIMESTAMPS" JSONB NOT NULL DEFAULT '{}'
                         )
                     """.trimIndent())
                 }

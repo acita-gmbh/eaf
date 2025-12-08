@@ -284,7 +284,7 @@ COMMENT ON COLUMN "VMWARE_CONFIGURATIONS"."VERSION" IS 'Optimistic locking versi
 -- [jooq ignore stop]
 
 -- ============================================================================
--- V009__create_provisioning_progress_table.sql content
+-- V009__create_provisioning_progress_table.sql content + V010 (stage_timestamps)
 -- Story 3.5: Provisioning Progress Tracking
 -- ============================================================================
 
@@ -295,6 +295,10 @@ CREATE TABLE IF NOT EXISTS PUBLIC."PROVISIONING_PROGRESS" (
     "STARTED_AT"      TIMESTAMP WITH TIME ZONE NOT NULL,
     "UPDATED_AT"      TIMESTAMP WITH TIME ZONE NOT NULL,
     "TENANT_ID"       UUID NOT NULL,
+    -- Note: JSONB in PostgreSQL (V010 migration), VARCHAR here for H2 DDLDatabase compatibility.
+    -- H2 doesn't support JSONB natively; jOOQ generates String type for both, so functionally equivalent.
+    -- The adapter serializes/deserializes JSON via Jackson ObjectMapper.
+    "STAGE_TIMESTAMPS" VARCHAR(4000) NOT NULL DEFAULT '{}',
     CONSTRAINT "FK_PROVISIONING_PROGRESS_REQUEST"
         FOREIGN KEY ("VM_REQUEST_ID") REFERENCES PUBLIC."VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE
 );

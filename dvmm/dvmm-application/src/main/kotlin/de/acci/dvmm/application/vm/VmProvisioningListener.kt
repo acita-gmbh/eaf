@@ -8,6 +8,7 @@ import de.acci.eaf.core.result.onFailure
 import de.acci.eaf.core.result.onSuccess
 import de.acci.eaf.eventsourcing.EventStore
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Listens for VmRequestApproved events and triggers VM provisioning.
@@ -37,6 +38,8 @@ public class VmProvisioningListener(
 
         val events = try {
             storedEvents.map { deserializer.deserialize(it) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
              logger.error(e) { "Failed to deserialize events for request ${event.aggregateId.value}" }
              return

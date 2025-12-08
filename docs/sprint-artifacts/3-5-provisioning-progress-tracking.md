@@ -1,6 +1,6 @@
 # Story 3.5: provisioning-progress-tracking
 
-Status: review
+Status: in-progress
 
 ## Story
 
@@ -35,7 +35,8 @@ so that I know my VM is being created.
 ## Tasks / Subtasks
 
 - [x] **Domain:** Define `VmProvisioningStage` enum for tracking progress
-  - [x] Add `CREATED`, `CLONING`, `CONFIGURING`, `POWERING_ON`, `WAITING_FOR_NETWORK`, `READY` stages.
+  - [x] Add `CLONING`, `CONFIGURING`, `POWERING_ON`, `WAITING_FOR_NETWORK`, `READY` stages.
+  - [x] **Note:** `CREATED` is a UI-only concept (not signaled by vSphere) - kept in frontend only.
 - [x] **Domain:** Add `VmProvisioningProgressUpdated` event to `VmAggregate`
   - [x] Include `currentStage: VmProvisioningStage`, `details: String`.
   - [x] **Constraint:** Do NOT include granular `progressPercent` to prevent Event Store flooding. Track discrete stages only.
@@ -68,6 +69,11 @@ so that I know my VM is being created.
   - [x] Display discrete stages (stepper UI).
 - [x] **Tests:** Integration test using VCSIM to verify intermediate events are persisted and projection is updated.
 
+### Review Follow-ups (AI)
+
+- [x] [AI-Review][HIGH] AC implemented: "estimated remaining time shown (based on average)" - Added `ESTIMATED_STAGE_DURATIONS` map in `VmProvisioningProgressProjection`, ETA calculation in `calculateEstimatedRemaining()`, and frontend display with `formatEta()` helper.
+- [x] [AI-Review][HIGH] AC implemented: "each stage shows timestamp when completed" - Added `stage_timestamps` JSONB column, handler accumulates per-stage timestamps, frontend displays correct timestamp for each completed stage.
+
 ## Dev Agent Record
 
 ### Context Reference
@@ -96,6 +102,8 @@ gemini-1.5-pro
 - Implemented `VmProvisioningProgressProjection`, Repository, and Query Service.
 - Exposed progress via `VmProvisioningProgressController`.
 - Implemented frontend progress tracking with `useProvisioningProgress` hook and `ProvisioningProgress` component.
+- **[2025-12-08]** Added per-stage timestamps: V010 migration adds `stage_timestamps` JSONB column, handler accumulates timestamps per stage, frontend displays correct timestamp for each completed stage.
+- **[2025-12-08]** Added ETA calculation: `ESTIMATED_STAGE_DURATIONS` map with typical stage durations, `calculateEstimatedRemaining()` computes remaining seconds, frontend displays "ETA: ~Xm Ys" with Clock icon.
 
 ### File List
 - Ultimate context engine analysis completed - comprehensive developer guide created on 2025-12-07.
@@ -110,6 +118,7 @@ gemini-1.5-pro
 - dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt
 - dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt
 - dvmm/dvmm-infrastructure/src/main/resources/db/migration/V009__create_provisioning_progress_table.sql
+- dvmm/dvmm-infrastructure/src/main/resources/db/migration/V010__add_stage_timestamps_to_progress.sql
 - dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql
 - dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmProvisioningProgressProjection.kt
 - dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmProvisioningProgressProjectionRepository.kt
@@ -124,3 +133,7 @@ gemini-1.5-pro
 - dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt
 - dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt
 - dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapterTest.kt
+- dvmm/dvmm-web/src/components/requests/ProvisioningProgress.test.tsx
+- dvmm/dvmm-web/src/pages/RequestDetail.test.tsx
+- docs/sprint-artifacts/sprint-status.yaml
+- docs/sprint-artifacts/validation-report-3-5-provisioning-progress-tracking-2025-12-07.md

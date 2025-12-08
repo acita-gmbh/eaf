@@ -131,7 +131,7 @@ public class TriggerProvisioningHandler(
                 id = event.aggregateId,
                 events = vmEvents.map { vmEventDeserializer.deserialize(it) }
             )
-            
+
             vmAggregate.updateProgress(stage, event.metadata)
 
             val appendResult = eventStore.append(
@@ -139,20 +139,34 @@ public class TriggerProvisioningHandler(
                 events = vmAggregate.uncommittedEvents,
                 expectedVersion = vmEvents.size.toLong()
             )
-            
+
             when (appendResult) {
                 is Result.Success -> {
                     logger.debug { "Emitted progress $stage for VM $vmId" }
-                    // Update projection
+                    // Update projection with accumulated stage timestamps
                     try {
                         val now = Instant.now()
+
+                        // Load existing projection to preserve accumulated timestamps
+                        val existing = progressRepository.findByVmRequestId(
+                            event.requestId,
+                            event.metadata.tenantId
+                        )
+
+                        // Build accumulated timestamps: existing + current stage
+                        val accumulatedTimestamps = (existing?.stageTimestamps ?: emptyMap()) + (stage to now)
+                        val startedAt = existing?.startedAt ?: now
+                        val estimatedRemaining = VmProvisioningProgressProjection.calculateEstimatedRemaining(stage)
+
                         progressRepository.save(
                             VmProvisioningProgressProjection(
                                 vmRequestId = event.requestId,
                                 stage = stage,
-                                details = "Provisioning stage updated to $stage",
-                                startedAt = now, // On first insert this becomes the start time; on update it's preserved by UPSERT
-                                updatedAt = now
+                                details = "Provisioning stage: ${stage.name.lowercase().replace('_', ' ')}",
+                                startedAt = startedAt,
+                                updatedAt = now,
+                                stageTimestamps = accumulatedTimestamps,
+                                estimatedRemainingSeconds = estimatedRemaining
                             ),
                             event.metadata.tenantId
                         )

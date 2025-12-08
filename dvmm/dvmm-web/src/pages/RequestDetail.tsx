@@ -277,6 +277,8 @@ export function RequestDetail() {
               stage={progress.stage}
               updatedAt={progress.updatedAt}
               startedAt={progress.startedAt}
+              stageTimestamps={progress.stageTimestamps}
+              estimatedRemainingSeconds={progress.estimatedRemainingSeconds}
             />
           </CardContent>
         </Card>

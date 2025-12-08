@@ -605,6 +605,10 @@ export interface VmProvisioningProgressResponse {
   details: string
   startedAt: string
   updatedAt: string
+  /** Map of stage name to ISO timestamp when that stage completed */
+  stageTimestamps: Record<string, string>
+  /** Estimated seconds remaining until provisioning completes (null if unknown) */
+  estimatedRemainingSeconds: number | null
 }
 
 /**

@@ -8,6 +8,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Query to retrieve detailed VM request information with timeline.
@@ -167,6 +168,8 @@ public class GetRequestDetailHandler(
                 createdAt = requestDetails.createdAt,
                 timeline = timelineEvents
             ).success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to query request details: " +

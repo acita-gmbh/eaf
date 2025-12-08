@@ -10,6 +10,7 @@ import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Infrastructure adapter that implements TimelineEventProjectionUpdater
@@ -53,6 +54,8 @@ public class TimelineEventProjectionUpdaterAdapter(
                 "Added timeline event for request ${data.requestId.value}: ${data.eventType}"
             }
             Unit.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to add timeline event for request ${data.requestId.value}: ${data.eventType}. " +

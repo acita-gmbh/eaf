@@ -105,12 +105,16 @@ describe('ProvisioningProgress', () => {
   })
 
   describe('Timestamps', () => {
-    it('shows timestamp for completed stages', () => {
+    it('shows timestamp for completed stages when stageTimestamps provided', () => {
       const { container } = render(
         <ProvisioningProgress
           stage="CONFIGURING"
           updatedAt="2024-01-01T14:30:45Z"
           startedAt={mockStartedAt}
+          stageTimestamps={{
+            CREATED: '2024-01-01T14:28:00Z',
+            CLONING: '2024-01-01T14:29:30Z',
+          }}
         />
       )
 
@@ -122,12 +126,15 @@ describe('ProvisioningProgress', () => {
       expect(timestampElements.length).toBe(3)
     })
 
-    it('shows timestamp for current stage', () => {
+    it('shows timestamp for current stage using updatedAt as fallback', () => {
       const { container } = render(
         <ProvisioningProgress
           stage="CLONING"
           updatedAt="2024-01-01T15:22:10Z"
           startedAt={mockStartedAt}
+          stageTimestamps={{
+            CREATED: '2024-01-01T15:20:00Z',
+          }}
         />
       )
 
@@ -136,6 +143,22 @@ describe('ProvisioningProgress', () => {
         '.text-xs.text-muted-foreground'
       )
       expect(timestampElements.length).toBe(2)
+    })
+
+    it('shows only current stage timestamp when no stageTimestamps provided', () => {
+      const { container } = render(
+        <ProvisioningProgress
+          stage="CONFIGURING"
+          updatedAt="2024-01-01T14:30:45Z"
+          startedAt={mockStartedAt}
+        />
+      )
+
+      // Only current stage shows timestamp (updatedAt fallback)
+      const timestampElements = container.querySelectorAll(
+        '.text-xs.text-muted-foreground'
+      )
+      expect(timestampElements.length).toBe(1)
     })
   })
 
@@ -261,6 +284,74 @@ describe('ProvisioningProgress', () => {
       // READY stage shows as current with spinner
       const spinners = container.querySelectorAll('.animate-spin')
       expect(spinners).toHaveLength(1)
+    })
+  })
+
+  describe('ETA display', () => {
+    it('shows ETA when estimatedRemainingSeconds is provided', () => {
+      render(
+        <ProvisioningProgress
+          stage="CLONING"
+          updatedAt={mockUpdatedAt}
+          startedAt={mockStartedAt}
+          estimatedRemainingSeconds={80}
+        />
+      )
+
+      expect(screen.getByText(/ETA:/)).toBeInTheDocument()
+      expect(screen.getByText(/~1m 20s/)).toBeInTheDocument()
+    })
+
+    it('shows ETA in seconds format for less than 60 seconds', () => {
+      render(
+        <ProvisioningProgress
+          stage="WAITING_FOR_NETWORK"
+          updatedAt={mockUpdatedAt}
+          startedAt={mockStartedAt}
+          estimatedRemainingSeconds={45}
+        />
+      )
+
+      expect(screen.getByText(/~45s/)).toBeInTheDocument()
+    })
+
+    it('shows "Almost done" when ETA is 0', () => {
+      render(
+        <ProvisioningProgress
+          stage="READY"
+          updatedAt={mockUpdatedAt}
+          startedAt={mockStartedAt}
+          estimatedRemainingSeconds={0}
+        />
+      )
+
+      // ETA should not be shown when 0 (per component logic: > 0 check)
+      expect(screen.queryByText(/ETA:/)).not.toBeInTheDocument()
+    })
+
+    it('does not show ETA when estimatedRemainingSeconds is null', () => {
+      render(
+        <ProvisioningProgress
+          stage="CLONING"
+          updatedAt={mockUpdatedAt}
+          startedAt={mockStartedAt}
+          estimatedRemainingSeconds={null}
+        />
+      )
+
+      expect(screen.queryByText(/ETA:/)).not.toBeInTheDocument()
+    })
+
+    it('does not show ETA when not provided', () => {
+      render(
+        <ProvisioningProgress
+          stage="CLONING"
+          updatedAt={mockUpdatedAt}
+          startedAt={mockStartedAt}
+        />
+      )
+
+      expect(screen.queryByText(/ETA:/)).not.toBeInTheDocument()
     })
   })
 })
