@@ -9,7 +9,7 @@ spring-boot = "3.5.8"
 # Note: SDK requires port 443 - see ADR-011 for testing implications
 vcf-sdk = "9.0.0.0"
 spring-dependency-management = "1.1.7"
-jooq = "3.20.9"
+jooq = "3.20.10"
 jooq-gradle-plugin = "9.0"
 testcontainers = "2.0.2"
 konsist = "0.17.3"
