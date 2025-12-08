@@ -24,6 +24,7 @@ const STAGES: { id: VmProvisioningStage; label: string }[] = [
 
 const TIMEOUT_WARNING_MS = 10 * 60 * 1000 // 10 minutes
 const ELAPSED_UPDATE_INTERVAL_MS = 10_000 // Update elapsed time every 10 seconds
+const EMPTY_STAGE_TIMESTAMPS: Record<string, string> = {}
 
 /**
  * Formats ETA in a human-readable format.
@@ -43,7 +44,7 @@ export function ProvisioningProgress({
   stage,
   updatedAt,
   startedAt,
-  stageTimestamps = {},
+  stageTimestamps = EMPTY_STAGE_TIMESTAMPS,
   estimatedRemainingSeconds,
 }: Readonly<ProvisioningProgressProps>) {
   const currentStageIndex = STAGES.findIndex((s) => s.id === stage)
