@@ -110,7 +110,7 @@ Each hypervisor has a different resource organization model. We need a translati
 ### 2.1 Resource Hierarchy Models
 
 **VMware vSphere:**
-```
+```text
 Datacenter
 └── Cluster
     └── Host
@@ -119,21 +119,21 @@ Datacenter
 ```
 
 **Proxmox VE:**
-```
+```text
 Datacenter (logical only)
 └── Node (physical host)
     └── VM
 ```
 
 **Hyper-V:**
-```
+```text
 Cluster (optional)
 └── Host
     └── VM
 ```
 
 **PowerVM:**
-```
+```text
 CEC (Central Electronics Complex)
 └── Frame
     └── LPAR (Logical Partition)
@@ -463,7 +463,7 @@ sealed class HypervisorConnectionParams {
 
 ### 4.2 Migration Strategy (Two-Phase)
 
-**Phase 1: Deprecation (Release N)**
+#### Phase 1: Deprecation (Release N)
 
 ```kotlin
 // Keep old type with deprecation warning
@@ -484,7 +484,7 @@ typealias VcenterConnectionParams = HypervisorConnectionParams.Vsphere
 typealias VsphereError = HypervisorError
 ```
 
-**Phase 2: Removal (Release N+1)**
+#### Phase 2: Removal (Release N+1)
 
 - Remove deprecated type aliases
 - Update all references to use new types
@@ -752,7 +752,7 @@ class ProxmoxAdapterContractTest : HypervisorPortContractTest() {
 
 ### 6.2 Breaking Changes
 
-**Story 6.1: Type Generalization**
+#### Story 6.1: Type Generalization
 
 - `VcenterConnectionParams` → `HypervisorConnectionParams.Vsphere`
 - `VsphereError` → `HypervisorError`
@@ -775,23 +775,27 @@ class ProxmoxAdapterContractTest : HypervisorPortContractTest() {
 
 ### 6.4 Rollout Strategy
 
-**Phase 1: Foundation (Story 6.1)**
+#### Phase 1: Foundation (Story 6.1)
+
 - Generalize types with deprecated aliases
 - Add capability detection to `HypervisorPort`
 - Implement error taxonomy
 - Update existing VMware adapter
 
-**Phase 2: Proxmox Support (Story 6.2)**
+#### Phase 2: Proxmox Support (Story 6.2)
+
 - Implement `ProxmoxAdapter`
 - Add WireMock-based tests
 - Create tenant configuration UI for Proxmox
 
-**Phase 3: Hyper-V Support (Story 6.3)**
+#### Phase 3: Hyper-V Support (Story 6.3)
+
 - Implement `HyperVAdapter`
 - Add WinRM integration
 - Create tenant configuration UI for Hyper-V
 
-**Phase 4: PowerVM Support (Story 6.4 - Enterprise Only)**
+#### Phase 4: PowerVM Support (Story 6.4 - Enterprise Only)
+
 - Implement `PowerVmAdapter`
 - Add HMC REST API integration
 - Create tenant configuration UI for PowerVM
