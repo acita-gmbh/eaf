@@ -13,7 +13,7 @@
 import { createApiHeaders } from './api-client'
 import { ApiError } from './vm-requests'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
 // ==================== Response Types ====================
 

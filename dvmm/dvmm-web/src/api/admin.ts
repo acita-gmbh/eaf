@@ -30,7 +30,7 @@ function validateStatus(status: string, context: string): VmRequestStatus {
   return status as VmRequestStatus
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
 // ==================== Pending Requests API ====================
 

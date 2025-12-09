@@ -24,6 +24,8 @@ const variantStyles = {
 }
 
 export function StatsCard({ title, value, icon, variant }: Readonly<StatsCardProps>) {
+  // Safe: variant is typed as literal union, not user input
+  // eslint-disable-next-line security/detect-object-injection
   const styles = variantStyles[variant]
 
   return (

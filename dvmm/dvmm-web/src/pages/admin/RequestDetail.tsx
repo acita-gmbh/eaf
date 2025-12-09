@@ -140,7 +140,7 @@ export function AdminRequestDetail() {
   }
 
   // Error state - Not Found (also handles Forbidden per security pattern)
-  if (isError && error?.status === 404) {
+  if (isError && error.status === 404) {
     // Log for debugging - helps track down 404s that might be permission issues
     console.debug('[AdminRequestDetail] 404 for request', { id, error })
     return (
@@ -169,7 +169,7 @@ export function AdminRequestDetail() {
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-lg font-semibold mb-2">Error Loading Request</h2>
           <p className="text-muted-foreground mb-4">
-            {error?.message || 'Could not load request details.'}
+            {error.message || 'Could not load request details.'}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
             Try Again

@@ -74,7 +74,8 @@ export function ProvisioningProgress({
    * Uses per-stage timestamps when available, falls back to updatedAt.
    */
   const getStageTimestamp = (stageId: VmProvisioningStage, isCurrent: boolean): string | null => {
-    // Check if we have a specific timestamp for this stage
+    // Safe: stageId is typed enum, not user input
+    // eslint-disable-next-line security/detect-object-injection
     const stageTs = stageTimestamps[stageId]
     if (stageTs) {
       return stageTs

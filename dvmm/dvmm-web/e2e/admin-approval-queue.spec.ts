@@ -116,7 +116,7 @@ test.describe('Admin Approval Queue - Display @requires-auth @requires-backend',
 
     // Badge should contain a number
     const badgeText = await countBadge.textContent()
-    expect(parseInt(badgeText || '0', 10)).toBeGreaterThanOrEqual(0)
+    expect(parseInt(badgeText ?? '0', 10)).toBeGreaterThanOrEqual(0)
   })
 
   test.skip('displays empty state when no pending requests', async ({ page }) => {
@@ -208,8 +208,8 @@ test.describe('Admin Approval Queue - Project Filter @requires-auth @requires-ba
       const filteredCount = await page.getByTestId('count-badge').textContent()
 
       // Filtered count should be <= initial count
-      expect(parseInt(filteredCount || '0', 10)).toBeLessThanOrEqual(
-        parseInt(initialCount || '0', 10)
+      expect(parseInt(filteredCount ?? '0', 10)).toBeLessThanOrEqual(
+        parseInt(initialCount ?? '0', 10)
       )
     }
   })

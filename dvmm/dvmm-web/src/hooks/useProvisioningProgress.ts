@@ -15,7 +15,7 @@ export function useProvisioningProgress(requestId: string, isProvisioning: boole
 
   return useQuery<VmProvisioningProgressResponse>({
     queryKey: ['provisioning-progress', requestId],
-    queryFn: () => getProvisioningProgress(requestId, auth.user?.access_token || ''),
+    queryFn: () => getProvisioningProgress(requestId, auth.user?.access_token ?? ''),
     enabled: !!auth.user?.access_token && !!requestId && isProvisioning,
     // Data considered stale after 2.5s (slightly less than poll interval)
     staleTime: 2500,

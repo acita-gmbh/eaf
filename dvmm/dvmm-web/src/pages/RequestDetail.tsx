@@ -55,7 +55,7 @@ export function RequestDetail() {
 
   // Fetch progress if provisioning (AC-3.5)
   const isProvisioning = data?.status === 'PROVISIONING'
-  const { data: progress } = useProvisioningProgress(id || '', isProvisioning)
+  const { data: progress } = useProvisioningProgress(id ?? '', isProvisioning)
 
   const cancelMutation = useCancelRequest()
 
@@ -117,7 +117,7 @@ export function RequestDetail() {
   }
 
   // Error state - Not Found (AC-6)
-  if (isError && error?.status === 404) {
+  if (isError && error.status === 404) {
     return (
       <div className="space-y-6" data-testid="request-detail-not-found">
         <BackButton onClick={handleBack} />
@@ -144,7 +144,7 @@ export function RequestDetail() {
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-lg font-semibold mb-2">Error Loading Request</h2>
           <p className="text-muted-foreground mb-4">
-            {error?.message || 'Could not load request details.'}
+            {error.message || 'Could not load request details.'}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
             Try Again
