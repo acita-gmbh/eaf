@@ -8,7 +8,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmAggregate
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmProvisioningStage
@@ -27,16 +27,21 @@ import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Handles VmProvisioningStarted event by calling VspherePort to create the VM.
+ * Handles VmProvisioningStarted event by calling the hypervisor to create the VM.
  *
  * On success, emits VmProvisioned (VM aggregate) and VmRequestReady (VmRequest aggregate)
  * events, plus updates the timeline projection.
  *
- * On failure (missing config or vSphere error), emits VmProvisioningFailed event
+ * On failure (missing config or hypervisor error), emits VmProvisioningFailed event
  * so downstream systems can react appropriately.
+ *
+ * ## Multi-Hypervisor Support (ADR-004)
+ *
+ * This handler uses [HypervisorPort] abstraction, enabling support for multiple
+ * hypervisors (VMware vSphere, Proxmox, Hyper-V, PowerVM) without changing handler logic.
  */
 public class TriggerProvisioningHandler(
-    private val vspherePort: VspherePort,
+    private val hypervisorPort: HypervisorPort,
     private val configPort: VmwareConfigurationPort,
     private val eventStore: EventStore,
     private val vmEventDeserializer: VmEventDeserializer,
@@ -95,7 +100,7 @@ public class TriggerProvisioningHandler(
             memoryGb = event.size.memoryGb
         )
 
-        val result = vspherePort.createVm(spec) { stage ->
+        val result = hypervisorPort.createVm(spec) { stage ->
             emitProgress(event, stage)
         }
         

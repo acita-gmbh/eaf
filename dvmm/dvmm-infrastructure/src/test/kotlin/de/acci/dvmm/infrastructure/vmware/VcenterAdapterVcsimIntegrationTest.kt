@@ -38,7 +38,7 @@ private val logger = KotlinLogging.logger {}
  *
  * ## Recommended Testing Strategy
  *
- * 1. **Unit Tests**: Mock VspherePort interface
+ * 1. **Unit Tests**: Mock HypervisorPort interface
  * 2. **VCSIM Tests**: Use VcsimAdapter mock (doesn't use VCF SDK)
  * 3. **Contract Tests**: Against real vCenter in staging (Story 3-9)
  */

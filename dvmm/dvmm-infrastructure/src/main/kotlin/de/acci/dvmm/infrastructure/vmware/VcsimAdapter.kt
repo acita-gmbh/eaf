@@ -9,7 +9,7 @@ import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
@@ -60,7 +60,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 @Profile("vcsim")
-public class VcsimAdapter : VspherePort {
+public class VcsimAdapter : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
 
