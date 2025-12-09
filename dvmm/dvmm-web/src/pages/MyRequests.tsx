@@ -79,7 +79,8 @@ export function MyRequests() {
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-lg font-semibold mb-2">Error Loading</h2>
           <p className="text-muted-foreground mb-4">
-            {error.message || 'Could not load requests.'}
+            {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- error can be null in tests */}
+            {error?.message ?? 'Could not load requests.'}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
             Try Again
