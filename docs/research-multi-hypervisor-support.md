@@ -131,6 +131,21 @@ Hyper-V management is primarily PowerShell-based. Java applications can execute 
 - Developed by Cloudsoft Corporation
 - Used by Apache Brooklyn for Windows automation
 
+**⚠️ Maintenance Risk Warning:**
+| Attribute | Value |
+|-----------|-------|
+| **Latest Stable Version** | v0.12.3 |
+| **Last Release Date** | August 31, 2021 |
+| **Last Repo Activity** | March 2022 |
+| **Open Issues** | Multiple unresolved (auth, SSL, timeout issues) |
+| **Production Readiness** | ⚠️ **RISKY** - effectively unmaintained |
+
+**Required Next Steps Before Adoption:**
+1. **Evaluate alternatives:** Research actively maintained WinRM Java libraries (e.g., Apache MINA SSHD with WinRM extension, custom REST client for WS-Management)
+2. **Security assessment:** Audit winrm4j for known CVEs and security vulnerabilities in dependencies
+3. **Maintenance plan:** If no alternatives exist, budget for internal fork maintenance (security patches, dependency updates)
+4. **Fallback strategy:** Consider Python-based WinRM tools (pywinrm) with subprocess integration as a backup
+
 ```java
 // Example: Create a VM via WinRM + PowerShell
 WinRmTool tool = WinRmTool.Builder.builder("hyperv-host.local", "admin", "password")
@@ -150,14 +165,16 @@ WinRmToolResponse response = tool.executePs(psScript);
 
 **Pros:**
 - Full access to all Hyper-V PowerShell cmdlets
-- Mature, production-tested library
 - Supports NTLM, Kerberos, CredSSP authentication
+- Apache Brooklyn validates basic functionality
 
 **Cons:**
+- ⚠️ **Unmaintained since 2021** - significant production risk
 - Requires WinRM configuration on Hyper-V hosts
 - CredSSP needed for certain operations (security implications)
 - Command-output parsing required (brittle)
 - Higher latency than native API calls
+- Potential security vulnerabilities in outdated dependencies
 
 #### Option B: Direct WMI via Java-COM Bridge
 
@@ -237,11 +254,20 @@ Proxmox VE provides a **RESTful API** with JSON Schema definitions:
 |-----------|-------|
 | **GroupId** | `it.corsinvest.proxmoxve` |
 | **ArtifactId** | `cv4pve-api-java` |
-| **Version** | 9.0.0 |
+| **Version** | 7.3.0 |
 | **License** | GPL-3.0 |
 | **Java Version** | 8+ |
-| **Last Update** | April 2025 (actively maintained) |
-| **Maven Central** | ✅ Available |
+| **Last Update** | April 2024 (no major release in 12+ months) |
+| **Maven Central** | ❌ **Not available** |
+| **Distribution** | GitHub releases, manual JAR inclusion, or JitPack |
+
+**⚠️ Installation Note:**
+This library is **not published to Maven Central**. To use it:
+1. **JitPack:** Add JitPack repository and use `com.github.Corsinvest:cv4pve-api-java:7.3.0`
+2. **Manual:** Download JAR from [GitHub releases](https://github.com/Corsinvest/cv4pve-api-java/releases) and add to classpath
+3. **Local build:** Clone repo and run `mvn install` to install to local Maven repository
+
+**Maintenance Status:** The library has not had a major release in over 12 months. Verify compatibility with your target Proxmox VE version before adoption. Consider community activity level when planning production use.
 
 **Key Features:**
 - Full REST API coverage
@@ -307,11 +333,11 @@ if (client.login("root@pam", "password")) {
 
 | Aspect | Rating | Notes |
 |--------|--------|-------|
-| SDK Maturity | ⭐⭐⭐⭐ | Active maintenance, Maven Central |
+| SDK Maturity | ⭐⭐⭐ | Not on Maven Central, no release in 12+ months |
 | API Design | ⭐⭐⭐⭐⭐ | Clean REST, JSON Schema documented |
 | Authentication | ⭐⭐⭐⭐⭐ | API tokens, standard HTTPS |
 | Documentation | ⭐⭐⭐⭐ | Good API viewer, community resources |
-| **Overall Effort** | **LOW** | Easiest integration of all alternatives |
+| **Overall Effort** | **LOW-MEDIUM** | Easiest of alternatives, but SDK concerns |
 
 ---
 
@@ -681,10 +707,14 @@ class ProxmoxAdapter : HypervisorPort {
 
 | Hypervisor | Integration Effort | SDK Quality | Market Fit | Recommendation |
 |------------|-------------------|-------------|------------|----------------|
-| **Proxmox VE** | 9-12 weeks | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | **First priority** |
-| **Hyper-V** | 13-17 weeks | ⭐⭐⭐ | ⭐⭐⭐ | Second priority |
+| **Proxmox VE** | 9-12 weeks | ⭐⭐⭐ ⚠️ | ⭐⭐⭐⭐ | **First priority** |
+| **Hyper-V** | 13-17 weeks | ⭐⭐ ⚠️ | ⭐⭐⭐ | Second priority |
 | **KVM/libvirt** | 8-11 weeks | ⭐⭐⭐ | ⭐⭐ | Consider for specific cases |
 | **PowerVM** | 16-20 weeks | ⭐⭐ | ⭐ | Only if customer demands |
+
+**SDK Quality Notes:**
+- ⚠️ **Proxmox (cv4pve-api-java):** Not on Maven Central, no release in 12+ months
+- ⚠️ **Hyper-V (winrm4j):** Unmaintained since Aug 2021, security risk
 
 ### Resource Requirements
 
