@@ -9,7 +9,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmId
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmProvisioningStage
@@ -51,7 +51,7 @@ import java.util.UUID
 @DisplayName("TriggerProvisioningHandler")
 class TriggerProvisioningHandlerTest {
 
-    private val vspherePort = mockk<VspherePort>()
+    private val hypervisorPort = mockk<HypervisorPort>()
     private val configPort = mockk<VmwareConfigurationPort>()
     private val eventStore = mockk<EventStore>()
     private val vmEventDeserializer = mockk<VmEventDeserializer>()
@@ -61,7 +61,7 @@ class TriggerProvisioningHandlerTest {
     private val progressRepository = mockk<VmProvisioningProgressProjectionRepository>(relaxed = true)
 
     private fun createHandler() = TriggerProvisioningHandler(
-        vspherePort = vspherePort,
+        hypervisorPort = hypervisorPort,
         configPort = configPort,
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
@@ -135,7 +135,7 @@ class TriggerProvisioningHandlerTest {
     inner class SuccessfulProvisioning {
 
         @Test
-        fun `should call VspherePort createVm with correct spec including project prefix`() = runTest {
+        fun `should call HypervisorPort createVm with correct spec including project prefix`() = runTest {
             // Given
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
@@ -148,7 +148,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
             val specSlot = slot<VmSpec>()
-            coEvery { vspherePort.createVm(capture(specSlot), any()) } returns provisioningResult.success()
+            coEvery { hypervisorPort.createVm(capture(specSlot), any()) } returns provisioningResult.success()
 
             // Mock event store loads for success path
             setupSuccessPathMocks(event)
@@ -159,7 +159,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { vspherePort.createVm(any(), any()) }
+            coVerify(exactly = 1) { hypervisorPort.createVm(any(), any()) }
             val spec = specSlot.captured
             // "My Project" -> "MYPR" -> "MYPR-web-server"
             assertEquals("MYPR-${event.vmName.value}", spec.name)
@@ -180,7 +180,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any(), any()) } returns provisioningResult.success()
+            coEvery { hypervisorPort.createVm(any(), any()) } returns provisioningResult.success()
 
             val vmEventsSlot = slot<List<DomainEvent>>()
             val requestEventsSlot = slot<List<DomainEvent>>()
@@ -248,7 +248,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any(), any()) } returns provisioningResult.success()
+            coEvery { hypervisorPort.createVm(any(), any()) } returns provisioningResult.success()
             setupSuccessPathMocks(event)
 
             val timelineSlot = slot<NewTimelineEvent>()
@@ -359,7 +359,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { vspherePort.createVm(any(), any()) }
+            coVerify(exactly = 0) { hypervisorPort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -413,7 +413,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { vspherePort.createVm(any(), any()) }
+            coVerify(exactly = 0) { hypervisorPort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -436,7 +436,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { vspherePort.createVm(any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
+            coEvery { hypervisorPort.createVm(any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
                 VsphereError.Timeout("Connection timeout")
             )
 
@@ -469,7 +469,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { vspherePort.createVm(any(), any()) }
+            coVerify(exactly = 1) { hypervisorPort.createVm(any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -502,7 +502,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
-            coEvery { vspherePort.createVm(any(), any()) } coAnswers {
+            coEvery { hypervisorPort.createVm(any(), any()) } coAnswers {
                 val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
                 // Simulate vSphere reporting progress through stages
                 progressCallback(VmProvisioningStage.CLONING)
@@ -553,7 +553,7 @@ class TriggerProvisioningHandlerTest {
 
             // Create handler with non-relaxed progress repository
             val handler = TriggerProvisioningHandler(
-                vspherePort = vspherePort,
+                hypervisorPort = hypervisorPort,
                 configPort = configPort,
                 eventStore = eventStore,
                 vmEventDeserializer = vmEventDeserializer,
@@ -615,7 +615,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { nonRelaxedProgressRepository.delete(any(), any()) } returns Unit
 
             // Only trigger one progress callback to capture
-            coEvery { vspherePort.createVm(any(), any()) } coAnswers {
+            coEvery { hypervisorPort.createVm(any(), any()) } coAnswers {
                 val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
                 progressCallback(VmProvisioningStage.CLONING)
                 createProvisioningResult().success()
@@ -635,7 +635,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
 
             val handler = TriggerProvisioningHandler(
-                vspherePort = vspherePort,
+                hypervisorPort = hypervisorPort,
                 configPort = configPort,
                 eventStore = eventStore,
                 vmEventDeserializer = vmEventDeserializer,

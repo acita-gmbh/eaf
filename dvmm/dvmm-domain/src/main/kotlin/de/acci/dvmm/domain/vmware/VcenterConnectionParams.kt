@@ -9,7 +9,7 @@ package de.acci.dvmm.domain.vmware
  *
  * ## Usage
  *
- * Used by [VspherePort.testConnection] to validate vCenter connectivity without
+ * Used by [HypervisorPort.testConnection] to validate vCenter connectivity without
  * requiring a full [VmwareConfiguration] entity:
  *
  * ```kotlin

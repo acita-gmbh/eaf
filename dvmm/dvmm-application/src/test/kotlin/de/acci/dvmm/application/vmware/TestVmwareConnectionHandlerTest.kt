@@ -22,14 +22,14 @@ import java.time.ZoneOffset
 @DisplayName("TestVmwareConnectionHandler")
 class TestVmwareConnectionHandlerTest {
 
-    private val vspherePort = mockk<VspherePort>()
+    private val hypervisorPort = mockk<HypervisorPort>()
     private val configurationPort = mockk<VmwareConfigurationPort>()
     private val credentialEncryptor = mockk<CredentialEncryptor>()
     private val fixedInstant = Instant.parse("2025-01-15T10:00:00Z")
     private val clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
 
     private val handler = TestVmwareConnectionHandler(
-        vspherePort = vspherePort,
+        hypervisorPort = hypervisorPort,
         configurationPort = configurationPort,
         credentialEncryptor = credentialEncryptor,
         clock = clock
@@ -87,7 +87,7 @@ class TestVmwareConnectionHandlerTest {
             val command = createCommand(password = "secret123")
             val connectionInfo = createConnectionInfo()
 
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
 
             // When
             val result = handler.handle(command)
@@ -101,7 +101,7 @@ class TestVmwareConnectionHandlerTest {
             assertEquals(500L, success.value.datastoreFreeGb)
             assertTrue(success.value.message.contains("Connected to vCenter"))
 
-            coVerify(exactly = 1) { vspherePort.testConnection(any(), eq("secret123")) }
+            coVerify(exactly = 1) { hypervisorPort.testConnection(any(), eq("secret123")) }
             coVerify(exactly = 0) { configurationPort.findByTenantId(any()) } // Not needed when password provided
         }
 
@@ -130,7 +130,7 @@ class TestVmwareConnectionHandlerTest {
 
             coEvery { configurationPort.findByTenantId(testTenantId) } returns existingConfig
             coEvery { credentialEncryptor.decrypt(encryptedPassword) } returns decryptedPassword
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
 
             // When
             val result = handler.handle(command)
@@ -139,7 +139,7 @@ class TestVmwareConnectionHandlerTest {
             assertTrue(result is Result.Success)
             coVerify(exactly = 1) { configurationPort.findByTenantId(testTenantId) }
             coVerify(exactly = 1) { credentialEncryptor.decrypt(encryptedPassword) }
-            coVerify(exactly = 1) { vspherePort.testConnection(any(), eq(decryptedPassword)) }
+            coVerify(exactly = 1) { hypervisorPort.testConnection(any(), eq(decryptedPassword)) }
         }
 
         @Test
@@ -157,7 +157,7 @@ class TestVmwareConnectionHandlerTest {
             assertTrue(result is Result.Failure)
             val failure = result as Result.Failure
             assertTrue(failure.error is TestVmwareConnectionError.PasswordRequired)
-            coVerify(exactly = 0) { vspherePort.testConnection(any(), any()) }
+            coVerify(exactly = 0) { hypervisorPort.testConnection(any(), any()) }
         }
 
         @Test
@@ -191,7 +191,7 @@ class TestVmwareConnectionHandlerTest {
             assertTrue(result is Result.Failure)
             val failure = result as Result.Failure
             assertTrue(failure.error is TestVmwareConnectionError.PasswordRequired)
-            coVerify(exactly = 0) { vspherePort.testConnection(any(), any()) }
+            coVerify(exactly = 0) { hypervisorPort.testConnection(any(), any()) }
         }
 
         @Test
@@ -215,7 +215,7 @@ class TestVmwareConnectionHandlerTest {
                 timestamp = Instant.parse("2025-01-01T00:00:00Z")
             )
 
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
             coEvery { configurationPort.findByTenantId(testTenantId) } returns existingConfig
             coEvery { configurationPort.update(any()) } returns Unit.success()
 
@@ -237,7 +237,7 @@ class TestVmwareConnectionHandlerTest {
             val command = createCommand(updateVerifiedAt = false)
             val connectionInfo = createConnectionInfo()
 
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
 
             // When
             val result = handler.handle(command)
@@ -255,7 +255,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error on network failure`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.NetworkError(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.NetworkError(
                 message = "Connection refused"
             ).failure()
 
@@ -275,7 +275,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error on SSL failure`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.SslError(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.SslError(
                 message = "Certificate not trusted"
             ).failure()
 
@@ -293,7 +293,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error on authentication failure`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.AuthenticationFailed(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.AuthenticationFailed(
                 message = "Invalid credentials"
             ).failure()
 
@@ -311,7 +311,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error when datacenter not found`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.DatacenterNotFound(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.DatacenterNotFound(
                 datacenterName = "DC1"
             ).failure()
 
@@ -331,7 +331,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error when cluster not found`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.ClusterNotFound(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.ClusterNotFound(
                 clusterName = "Cluster1"
             ).failure()
 
@@ -349,7 +349,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error when datastore not found`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.DatastoreNotFound(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.DatastoreNotFound(
                 datastoreName = "Datastore1"
             ).failure()
 
@@ -367,7 +367,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error when network not found`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.NetworkNotFound(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.NetworkNotFound(
                 networkName = "VM-Network"
             ).failure()
 
@@ -385,7 +385,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error when template not found`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.TemplateNotFound(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.TemplateNotFound(
                 templateName = "ubuntu-22.04-template"
             ).failure()
 
@@ -403,7 +403,7 @@ class TestVmwareConnectionHandlerTest {
         fun `should return error on API failure`() = runTest {
             // Given
             val command = createCommand()
-            coEvery { vspherePort.testConnection(any(), any()) } returns ConnectionError.ApiError(
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns ConnectionError.ApiError(
                 message = "vSphere API error"
             ).failure()
 
@@ -437,7 +437,7 @@ class TestVmwareConnectionHandlerTest {
                 timestamp = Instant.parse("2025-01-01T00:00:00Z")
             )
 
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
             coEvery { configurationPort.findByTenantId(testTenantId) } returns existingConfig
             coEvery { configurationPort.update(any()) } returns VmwareConfigurationError.PersistenceFailure(
                 message = "Update failed"
@@ -459,7 +459,7 @@ class TestVmwareConnectionHandlerTest {
             val command = createCommand(updateVerifiedAt = true)
             val connectionInfo = createConnectionInfo()
 
-            coEvery { vspherePort.testConnection(any(), any()) } returns connectionInfo.success()
+            coEvery { hypervisorPort.testConnection(any(), any()) } returns connectionInfo.success()
             coEvery { configurationPort.findByTenantId(testTenantId) } throws RuntimeException("DB error")
 
             // When

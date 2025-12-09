@@ -21,7 +21,7 @@ import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
@@ -80,7 +80,7 @@ public class VcenterAdapter(
     private val vsphereClient: VsphereClient,
     @Value("\${dvmm.vcenter.ignore-cert:false}")
     private val ignoreCert: Boolean = false
-) : VspherePort {
+) : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
 

@@ -953,6 +953,146 @@ These are runtime concerns that don't affect generated jOOQ code.
 
 ---
 
+## ADR-004: Multi-Hypervisor Architecture (Post-MVP)
+
+**Status:** Accepted (Design Only)
+**Date:** 2025-12-09
+**Deciders:** Wall-E, John (PM)
+
+### Context
+
+The Broadcom VMware acquisition (November 2023) has triggered massive market disruption:
+- 98% of VMware customers evaluating alternatives
+- Price increases of 150-1500%
+- Proxmox VE experiencing 650% growth (1.5M+ hosts)
+
+See `docs/research-multi-hypervisor-support.md` for comprehensive market and technical analysis.
+
+### Decision
+
+DVMM will support multiple hypervisors through a **port/adapter abstraction layer**, implemented **post-MVP**.
+
+**MVP:** VMware vSphere only (current implementation via `VspherePort`)
+**Post-MVP:** Extensible `HypervisorPort` interface supporting Proxmox VE, Hyper-V, PowerVM
+
+### Architecture Pattern
+
+#### Interface Abstraction
+
+```kotlin
+// dvmm-application/src/main/kotlin/.../hypervisor/HypervisorPort.kt
+public interface HypervisorPort {
+    suspend fun testConnection(config: HypervisorConfig, credentials: Credentials): Result<ConnectionInfo, ConnectionError>
+    suspend fun listResources(): Result<HypervisorResources, HypervisorError>
+    suspend fun createVm(spec: VmProvisionSpec): Result<VmProvisioningResult, HypervisorError>
+    suspend fun getVm(vmId: VmIdentifier): Result<VmInfo, HypervisorError>
+    suspend fun startVm(vmId: VmIdentifier): Result<Unit, HypervisorError>
+    suspend fun stopVm(vmId: VmIdentifier): Result<Unit, HypervisorError>
+    suspend fun deleteVm(vmId: VmIdentifier): Result<Unit, HypervisorError>
+}
+```
+
+#### Adapter Implementations
+
+```
+dvmm-infrastructure/
+└── hypervisor/
+    ├── vsphere/
+    │   └── VsphereAdapter.kt      # MVP (existing VcenterAdapter)
+    ├── proxmox/
+    │   └── ProxmoxAdapter.kt      # Post-MVP Phase 1
+    ├── hyperv/
+    │   └── HyperVAdapter.kt       # Post-MVP Phase 2
+    └── powervm/
+        └── PowerVmAdapter.kt      # Post-MVP Phase 3
+```
+
+#### Adapter Factory Pattern
+
+```kotlin
+@Component
+class HypervisorAdapterFactory(
+    private val vsphereAdapter: VsphereAdapter,
+    private val proxmoxAdapter: ProxmoxAdapter?,  // Optional, loaded if available
+    private val hypervAdapter: HyperVAdapter?,
+    private val powerVmAdapter: PowerVmAdapter?,
+    private val configRepository: TenantHypervisorConfigRepository
+) {
+    fun getAdapter(tenantId: TenantId): HypervisorPort {
+        val config = configRepository.findByTenantId(tenantId)
+            ?: throw NoHypervisorConfiguredException(tenantId)
+
+        return when (config.hypervisorType) {
+            HypervisorType.VSPHERE -> vsphereAdapter.withConfig(config)
+            HypervisorType.PROXMOX -> proxmoxAdapter?.withConfig(config)
+                ?: throw UnsupportedHypervisorException(HypervisorType.PROXMOX)
+            HypervisorType.HYPERV -> hypervAdapter?.withConfig(config)
+                ?: throw UnsupportedHypervisorException(HypervisorType.HYPERV)
+            HypervisorType.POWERVM -> powerVmAdapter?.withConfig(config)
+                ?: throw UnsupportedHypervisorException(HypervisorType.POWERVM)
+        }
+    }
+}
+```
+
+#### Tenant Configuration
+
+```kotlin
+data class TenantHypervisorConfig(
+    val tenantId: TenantId,
+    val hypervisorType: HypervisorType,
+    val connectionConfig: HypervisorConnectionConfig,
+    val resourceMappings: HypervisorResourceMappings
+)
+
+enum class HypervisorType {
+    VSPHERE,   // MVP
+    PROXMOX,   // Post-MVP Phase 1
+    HYPERV,    // Post-MVP Phase 2
+    POWERVM    // Post-MVP Phase 3 (enterprise only)
+}
+```
+
+### SDK Landscape
+
+| Hypervisor | SDK | Maven Central | Effort |
+|------------|-----|---------------|--------|
+| VMware vSphere | VCF SDK 9.0 | Yes | ✅ Complete |
+| Proxmox VE | cv4pve-api-java 9.0.0 | Yes | Low |
+| Hyper-V | winrm4j / MetricsHub winrm-java | Yes | High |
+| PowerVM | Custom (no Java SDK) | N/A | Very High |
+
+### Migration Path
+
+1. **MVP (Current):** Continue with `VspherePort` interface
+2. **Story 6.1:** Rename `VspherePort` → `HypervisorPort`, adjust implementations
+3. **Story 6.2+:** Add new adapter implementations
+
+### Consequences
+
+**Positive:**
+- Clean separation between interface and implementation (already exists)
+- Tenant-level hypervisor selection without code changes
+- Low MVP impact (design only, optional interface rename)
+- Market opportunity capture for VMware refugees
+
+**Negative:**
+- Each hypervisor has unique resource models requiring mapping
+- Test infrastructure needed per hypervisor
+- Support complexity increases with each hypervisor
+
+**Neutral:**
+- Domain events remain hypervisor-agnostic
+- All existing workflows work identically regardless of hypervisor
+
+### References
+
+- Research Document: `docs/research-multi-hypervisor-support.md`
+- Epic 6: Multi-Hypervisor Support (Post-MVP)
+- FR-HYPERVISOR-001 through FR-HYPERVISOR-005 in PRD
+
+---
+
 ## Decision Summary
 
 | Category | Decision | Version | Affects FR Categories | Rationale |
@@ -2920,6 +3060,7 @@ See ADR sections above:
 - **ADR-001: EAF Framework-First Architecture** - Hexagonal Architecture, Gradle Multi-Module
 - **ADR-002: IdP-Agnostic Authentication & Modular Starters** - Pluggable Identity Providers
 - **ADR-003: Core Technology Decisions** - WebFlux, Event Store, RLS, jOOQ
+- **ADR-004: Multi-Hypervisor Architecture** - Post-MVP extensibility for Proxmox, Hyper-V, PowerVM
 
 ---
 
