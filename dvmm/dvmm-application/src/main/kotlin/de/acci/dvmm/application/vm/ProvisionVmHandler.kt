@@ -9,6 +9,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur during VM provisioning command handling.
@@ -57,6 +58,8 @@ public class ProvisionVmHandler(
                 events = aggregate.uncommittedEvents,
                 expectedVersion = 0 // New aggregate
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) { "Failed to persist new VmAggregate for request ${command.requestId.value}" }
             return ProvisionVmError.PersistenceFailure(e.message ?: "Unknown error").failure()

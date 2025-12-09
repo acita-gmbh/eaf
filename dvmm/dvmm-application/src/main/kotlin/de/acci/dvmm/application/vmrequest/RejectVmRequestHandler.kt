@@ -18,6 +18,7 @@ import de.acci.eaf.eventsourcing.projection.ProjectionError
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur when rejecting a VM request.
@@ -136,6 +137,8 @@ public class RejectVmRequestHandler(
         // Load events from event store
         val storedEvents = try {
             eventStore.load(command.requestId.value)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to load events for request: " +
@@ -158,6 +161,8 @@ public class RejectVmRequestHandler(
         // Deserialize events and reconstitute aggregate
         val domainEvents = try {
             storedEvents.map { eventDeserializer.deserialize(it) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to deserialize events for request: " +
@@ -224,6 +229,8 @@ public class RejectVmRequestHandler(
                 events = aggregate.uncommittedEvents,
                 expectedVersion = expectedVersion
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to persist rejection event: " +
@@ -265,6 +272,8 @@ public class RejectVmRequestHandler(
                 // Serialize reason to JSON, with fallback if serialization fails
                 val details = try {
                     objectMapper.writeValueAsString(mapOf("reason" to command.reason))
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.warn(e) {
                         "Failed to serialize rejection reason for timeline: " +

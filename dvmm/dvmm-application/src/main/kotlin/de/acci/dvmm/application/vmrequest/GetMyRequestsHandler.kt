@@ -5,6 +5,7 @@ import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
 import de.acci.eaf.eventsourcing.projection.PagedResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur when retrieving user's requests.
@@ -57,6 +58,8 @@ public class GetMyRequestsHandler(
                 pageRequest = query.pageRequest
             )
             response.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to query user requests: " +

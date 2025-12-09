@@ -10,6 +10,7 @@ import de.acci.eaf.core.result.success
 import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.OffsetDateTime
+import kotlin.coroutines.cancellation.CancellationException
 import java.time.ZoneOffset
 
 /**
@@ -61,6 +62,8 @@ public class VmRequestProjectionUpdaterAdapter(
             projectionRepository.insert(projection)
             logger.debug { "Inserted projection for VM request: ${data.id.value}" }
             Unit.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to insert projection for VM request: ${data.id.value}. " +
@@ -101,6 +104,8 @@ public class VmRequestProjectionUpdaterAdapter(
                     aggregateId = data.id.value.toString()
                 ).failure()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to update projection for VM request: ${data.id.value}. " +

@@ -8,6 +8,7 @@ import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.StoredEvent
 import org.springframework.context.ApplicationEventPublisher
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 
@@ -33,6 +34,8 @@ public class PublishingEventStore(
                 try {
                     logger.debug { "Publishing domain event: ${event::class.simpleName} (Agg: $aggregateId)" }
                     publisher.publishEvent(event)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to publish event ${event::class.simpleName} for aggregate $aggregateId" }
                 }

@@ -6,7 +6,7 @@
 
 import { createApiHeaders } from './api-client'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
 /**
  * API Error with structured response body.
@@ -581,4 +581,59 @@ export async function getRequestDetail(
     createdAt: backendResponse.createdAt,
     timeline: backendResponse.timeline,
   }
+}
+
+// ==================== Provisioning Progress API ====================
+
+/**
+ * Provisioning stage enum.
+ */
+export type VmProvisioningStage =
+  | 'CREATED'
+  | 'CLONING'
+  | 'CONFIGURING'
+  | 'POWERING_ON'
+  | 'WAITING_FOR_NETWORK'
+  | 'READY'
+
+/**
+ * Provisioning progress response.
+ */
+export interface VmProvisioningProgressResponse {
+  vmRequestId: string
+  stage: VmProvisioningStage
+  details: string
+  startedAt: string
+  updatedAt: string
+  /** Map of stage name to ISO timestamp when that stage completed */
+  stageTimestamps: Record<string, string>
+  /** Estimated seconds remaining until provisioning completes (null if unknown) */
+  estimatedRemainingSeconds: number | null
+}
+
+/**
+ * Gets provisioning progress for a request.
+ *
+ * @param requestId - The ID of the request
+ * @param accessToken - OAuth2 access token
+ * @returns Provisioning progress
+ * @throws ApiError on failure
+ */
+export async function getProvisioningProgress(
+  requestId: string,
+  accessToken: string
+): Promise<VmProvisioningProgressResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/provisioning-progress`, {
+    method: 'GET',
+    headers: createApiHeaders(accessToken, false),
+    credentials: 'include',
+  })
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as VmProvisioningProgressResponse
 }

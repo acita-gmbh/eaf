@@ -48,6 +48,14 @@ vi.mock('sonner', () => ({
   },
 }))
 
+// Mock react-oidc-context for useProvisioningProgress hook
+vi.mock('react-oidc-context', () => ({
+  useAuth: vi.fn(() => ({
+    user: { access_token: 'test-token' },
+    isAuthenticated: true,
+  })),
+}))
+
 import { useCancelRequest } from '@/hooks/useCancelRequest'
 import { toast } from 'sonner'
 

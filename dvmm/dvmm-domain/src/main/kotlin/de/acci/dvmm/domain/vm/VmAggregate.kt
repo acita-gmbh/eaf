@@ -13,6 +13,8 @@ import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.EventMetadata
 
+import de.acci.dvmm.domain.vm.events.VmProvisioningProgressUpdated
+
 /**
  * Aggregate Root for a Virtual Machine.
  * Handles the lifecycle of the VM resource.
@@ -62,6 +64,7 @@ public class VmAggregate private constructor(
             is VmProvisioningStarted -> apply(event)
             is VmProvisioningFailed -> apply(event)
             is VmProvisioned -> apply(event)
+            is VmProvisioningProgressUpdated -> apply(event)
         }
     }
 
@@ -85,6 +88,33 @@ public class VmAggregate private constructor(
         vmwareVmId = event.vmwareVmId
         ipAddress = event.ipAddress
         hostname = event.hostname
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun apply(event: VmProvisioningProgressUpdated) {
+        // No state change needed in the aggregate for progress updates.
+        // Status remains PROVISIONING until completion.
+    }
+
+    /**
+     * Updates the provisioning progress stage.
+     *
+     * @param stage The new provisioning stage
+     * @param metadata Event metadata including tenant and correlation info
+     */
+    public fun updateProgress(stage: VmProvisioningStage, metadata: EventMetadata) {
+        check(status == VmStatus.PROVISIONING) {
+            "Cannot update progress for VM ${id.value}: expected status PROVISIONING, but was $status"
+        }
+
+        val event = VmProvisioningProgressUpdated(
+            aggregateId = id,
+            requestId = requestId,
+            currentStage = stage,
+            details = "Provisioning stage updated to $stage",
+            metadata = metadata
+        )
+        applyEvent(event)
     }
 
     /**

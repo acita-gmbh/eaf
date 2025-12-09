@@ -30,7 +30,7 @@ export function VmwareConfigWarning() {
   }
 
   // Don't show if config exists and has been verified
-  if (data?.exists && data?.verifiedAt) {
+  if (data?.exists && data.verifiedAt) {
     return null
   }
 
@@ -72,8 +72,8 @@ export function VmwareConfigWarning() {
   }
 
   // Config exists but never verified - show milder warning
-  if (data?.exists && !data?.verifiedAt) {
-    return (
+  // (This is the fallback case after all early returns above)
+  return (
       <div
         className="rounded-lg border border-yellow-500/50 bg-yellow-50/50 p-4 dark:border-yellow-600/50 dark:bg-yellow-950/10"
         role="alert"
@@ -106,7 +106,4 @@ export function VmwareConfigWarning() {
         </div>
       </div>
     )
-  }
-
-  return null
 }

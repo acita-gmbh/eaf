@@ -76,7 +76,7 @@ function parseJwtPayload(accessToken: string | undefined): Record<string, unknow
     console.warn('Failed to parse JWT payload:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       tokenPresent: !!accessToken,
-      tokenLength: accessToken?.length,
+      tokenLength: accessToken.length,
     })
     return null
   }

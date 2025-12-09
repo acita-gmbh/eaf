@@ -61,7 +61,7 @@ export function VmRequestForm({ onSubmit, disabled = false }: Readonly<VmRequest
 
   // Use useWatch instead of watch() for React Compiler compatibility
   const justificationValue = useWatch({ control, name: 'justification' })
-  const justificationLength = justificationValue?.length || 0
+  const justificationLength = justificationValue.length
   const isJustificationBelowMin = justificationLength < 10
 
   // Watch project selection for quota display

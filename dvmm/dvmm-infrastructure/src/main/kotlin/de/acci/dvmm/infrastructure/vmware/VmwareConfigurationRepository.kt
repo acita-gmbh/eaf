@@ -21,6 +21,7 @@ import org.springframework.stereotype.Repository
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * jOOQ-based repository for VMware configuration persistence.
@@ -252,6 +253,8 @@ public class VmwareConfigurationRepository(
                 }
 
                 Unit.success()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) {
                     "Failed to save VMware configuration for tenant ${configuration.tenantId.value}"
@@ -331,6 +334,8 @@ public class VmwareConfigurationRepository(
                 }
 
                 Unit.success()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) {
                     "Failed to update VMware configuration: id=${configuration.id.value}"

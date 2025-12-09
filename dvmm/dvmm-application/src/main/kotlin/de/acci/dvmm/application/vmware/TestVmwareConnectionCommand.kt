@@ -10,6 +10,7 @@ import de.acci.eaf.core.types.UserId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Clock
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Command to test VMware vCenter connection with provided configuration.
@@ -336,6 +337,8 @@ public class TestVmwareConnectionHandler(
                 logger.debug { "No existing config to update verifiedAt for tenant ${tenantId.value}" }
                 false
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.warn(e) { "Failed to update verifiedAt timestamp for tenant ${tenantId.value}" }
             false

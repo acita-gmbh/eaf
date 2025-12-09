@@ -11,13 +11,16 @@ import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.VspherePort
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -104,6 +107,8 @@ public class VcsimAdapter : VspherePort {
                 clusterHosts = 3, // VCSIM default
                 datastoreFreeGb = 500L // Simulated value
             ).success()
+        } catch (e: CancellationException) {
+            throw e // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "VCSIM connection test failed" }
             de.acci.dvmm.application.vmware.ConnectionError.ApiError(
@@ -133,8 +138,22 @@ public class VcsimAdapter : VspherePort {
         return listOf(ResourcePool("rp-1", "Resources")).success()
     }
 
-    override suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> {
+    override suspend fun createVm(
+        spec: VmSpec,
+        onProgress: suspend (VmProvisioningStage) -> Unit
+    ): Result<VmProvisioningResult, VsphereError> {
         logger.info { "VCSIM simulating VM creation: ${spec.name}" }
+
+        onProgress(VmProvisioningStage.CLONING)
+        delay(500)
+        onProgress(VmProvisioningStage.CONFIGURING)
+        delay(200)
+        onProgress(VmProvisioningStage.POWERING_ON)
+        delay(200)
+        onProgress(VmProvisioningStage.WAITING_FOR_NETWORK)
+        delay(500)
+        onProgress(VmProvisioningStage.READY)
+
         return VmProvisioningResult(
             vmwareVmId = VmwareVmId.of("vm-100"),
             ipAddress = "192.168.1.100", // Simulated VCSIM IP

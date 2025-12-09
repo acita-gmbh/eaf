@@ -16,6 +16,7 @@ import de.acci.eaf.eventsourcing.EventStoreError
 import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur when cancelling a VM request.
@@ -121,6 +122,8 @@ public class CancelVmRequestHandler(
         // Load events from event store
         val storedEvents = try {
             eventStore.load(command.requestId.value)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to load events for request: " +
@@ -188,6 +191,8 @@ public class CancelVmRequestHandler(
                 events = aggregate.uncommittedEvents,
                 expectedVersion = expectedVersion
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to persist cancel event: " +

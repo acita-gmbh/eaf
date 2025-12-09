@@ -139,13 +139,13 @@ class VcenterAdapterTest {
             hostname = "test-vm",
             warningMessage = null
         )
-        coEvery { vsphereClient.createVm(spec) } returns expectedResult.success()
+        coEvery { vsphereClient.createVm(spec, any()) } returns expectedResult.success()
 
-        val result = adapter.createVm(spec)
+        val result = adapter.createVm(spec) {}
 
         assertTrue(result is Result.Success)
         assertEquals(expectedResult, (result as Result.Success).value)
-        coVerify(exactly = 1) { vsphereClient.createVm(spec) }
+        coVerify(exactly = 1) { vsphereClient.createVm(spec, any()) }
     }
 
     @Test
@@ -196,9 +196,9 @@ class VcenterAdapterTest {
             memoryGb = 16
         )
         val expectedError = VsphereError.ProvisioningError("VM creation failed")
-        coEvery { vsphereClient.createVm(spec) } returns Result.Failure(expectedError)
+        coEvery { vsphereClient.createVm(spec, any()) } returns Result.Failure(expectedError)
 
-        val result = adapter.createVm(spec)
+        val result = adapter.createVm(spec) {}
 
         assertTrue(result is Result.Failure)
         assertEquals(expectedError, (result as Result.Failure).error)

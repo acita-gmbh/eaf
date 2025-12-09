@@ -83,6 +83,7 @@ export function VmwareConfigForm() {
         datastoreName: existingConfig.datastoreName,
         networkName: existingConfig.networkName,
         templateName: existingConfig.templateName || '',
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- null to empty string for form
         folderPath: existingConfig.folderPath || '',
       })
     }
@@ -106,13 +107,13 @@ export function VmwareConfigForm() {
     const payload = {
       vcenterUrl: data.vcenterUrl,
       username: data.username,
-      password: data.password || null, // null = keep existing for updates
+      password: data.password ?? null, // null = keep existing for updates
       datacenterName: data.datacenterName,
       clusterName: data.clusterName,
       datastoreName: data.datastoreName,
       networkName: data.networkName,
-      templateName: data.templateName || undefined,
-      folderPath: data.folderPath || undefined,
+      templateName: data.templateName ?? undefined,
+      folderPath: data.folderPath ?? undefined,
       clearFolderPath: folderPathCleared, // Explicitly clear folderPath to null
       version: existingConfig?.version ?? null, // null = create, number = update
     }
@@ -183,7 +184,7 @@ export function VmwareConfigForm() {
     setTestError(null)
 
     // Send null if no password - backend will fetch and decrypt stored password
-    const testPassword = values.password || null
+    const testPassword = values.password ?? null
 
     testMutation.mutate(
       {
@@ -194,7 +195,7 @@ export function VmwareConfigForm() {
         clusterName: values.clusterName,
         datastoreName: values.datastoreName,
         networkName: values.networkName,
-        templateName: values.templateName || undefined,
+        templateName: values.templateName ?? undefined,
         // Update verifiedAt when using stored password
         updateVerifiedAt: Boolean(existingConfig) && !values.password,
       },
