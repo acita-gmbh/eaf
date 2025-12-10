@@ -57,9 +57,13 @@ Three patterns used inconsistently:
 
 ### 🟡 Low: Disabled Tests Without Tracking
 
-Three `@Disabled` tests in `VsphereClientIntegrationTest.kt` without GitHub issue references:
-- `should create and list VM`
-- `should delete VM`
+Three `@Disabled` tests without GitHub issue references:
+
+| Test | File | Reason |
+|------|------|--------|
+| `should create and list VM` | `VsphereClientIntegrationTest.kt` | VCSIM doesn't support VMware Tools IP detection |
+| `should delete VM` | `VsphereClientIntegrationTest.kt` | VCSIM doesn't support VMware Tools IP detection |
+| `VCF SDK 9_0 port limitation` | `VcenterAdapterVcsimIntegrationTest.kt` | VCF SDK 9.0 does not support custom ports |
 
 **Recommended Action:** Create GitHub issues and update annotations to reference them.
 
