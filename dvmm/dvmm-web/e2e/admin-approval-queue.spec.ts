@@ -49,7 +49,7 @@ import { test, expect } from '@playwright/test'
  *
  * ### CI Execution
  *
- * In CI, these tests are skipped by default (marked with `test.skip`).
+ * In CI, these tests are skipped by default (marked with `test`).
  * To enable them in CI:
  * 1. Configure Keycloak Testcontainer in CI pipeline
  * 2. Set environment variables (KEYCLOAK_URL, API_URL)
@@ -66,7 +66,7 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Admin Approval Queue - Access Control @requires-auth', () => {
-  test.skip('admin user can access /admin/requests', async ({ page }) => {
+  test('admin user can access /admin/requests', async ({ page }) => {
     // This test requires admin role authentication
     await page.goto('/admin/requests')
 
@@ -77,7 +77,7 @@ test.describe('Admin Approval Queue - Access Control @requires-auth', () => {
     await expect(page.getByText(/open requests/i)).toBeVisible()
   })
 
-  test.skip('non-admin user sees access denied on /admin/requests', async ({ page }) => {
+  test('non-admin user sees access denied on /admin/requests', async ({ page }) => {
     // This test requires non-admin authentication
     await page.goto('/admin/requests')
 
@@ -92,7 +92,7 @@ test.describe('Admin Approval Queue - Access Control @requires-auth', () => {
 })
 
 test.describe('Admin Approval Queue - Display @requires-auth @requires-backend', () => {
-  test.skip('displays pending requests table with all required columns', async ({ page }) => {
+  test('displays pending requests table with all required columns', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -107,7 +107,7 @@ test.describe('Admin Approval Queue - Display @requires-auth @requires-backend',
     await expect(page.getByRole('columnheader', { name: /actions/i })).toBeVisible()
   })
 
-  test.skip('shows count badge with total pending requests', async ({ page }) => {
+  test('shows count badge with total pending requests', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Count badge should be visible
@@ -119,7 +119,7 @@ test.describe('Admin Approval Queue - Display @requires-auth @requires-backend',
     expect(parseInt(badgeText ?? '0', 10)).toBeGreaterThanOrEqual(0)
   })
 
-  test.skip('displays empty state when no pending requests', async ({ page }) => {
+  test('displays empty state when no pending requests', async ({ page }) => {
     // This test requires a tenant with no pending requests
     await page.goto('/admin/requests')
 
@@ -128,7 +128,7 @@ test.describe('Admin Approval Queue - Display @requires-auth @requires-backend',
     await expect(page.getByText(/all requests have been processed/i)).toBeVisible()
   })
 
-  test.skip('shows loading skeleton while fetching data', async ({ page }) => {
+  test('shows loading skeleton while fetching data', async ({ page }) => {
     // Intercept API to slow down response
     await page.route('**/api/admin/requests/pending*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -146,7 +146,7 @@ test.describe('Admin Approval Queue - Display @requires-auth @requires-backend',
 })
 
 test.describe('Admin Approval Queue - Age Highlighting @requires-auth @requires-backend', () => {
-  test.skip('highlights requests older than 48 hours with amber background', async ({ page }) => {
+  test('highlights requests older than 48 hours with amber background', async ({ page }) => {
     // This test requires seeded data with old requests
     await page.goto('/admin/requests')
 
@@ -160,7 +160,7 @@ test.describe('Admin Approval Queue - Age Highlighting @requires-auth @requires-
     }
   })
 
-  test.skip('shows "Waiting long" badge on old requests', async ({ page }) => {
+  test('shows "Waiting long" badge on old requests', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // If there are old requests, they should have the badge
@@ -173,7 +173,7 @@ test.describe('Admin Approval Queue - Age Highlighting @requires-auth @requires-
 })
 
 test.describe('Admin Approval Queue - Project Filter @requires-auth @requires-backend', () => {
-  test.skip('shows project filter dropdown', async ({ page }) => {
+  test('shows project filter dropdown', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Project filter should be visible
@@ -184,7 +184,7 @@ test.describe('Admin Approval Queue - Project Filter @requires-auth @requires-ba
     await expect(filterTrigger).toHaveText(/all projects/i)
   })
 
-  test.skip('filters requests by selected project', async ({ page }) => {
+  test('filters requests by selected project', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Get initial count
@@ -214,7 +214,7 @@ test.describe('Admin Approval Queue - Project Filter @requires-auth @requires-ba
     }
   })
 
-  test.skip('shows filtered empty state for project with no requests', async ({ page }) => {
+  test('shows filtered empty state for project with no requests', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Mock scenario: Select a project that has no pending requests
@@ -226,7 +226,7 @@ test.describe('Admin Approval Queue - Project Filter @requires-auth @requires-ba
 })
 
 test.describe('Admin Approval Queue - Navigation @requires-auth @requires-backend', () => {
-  test.skip('clicking request row navigates to detail page', async ({ page }) => {
+  test('clicking request row navigates to detail page', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -243,7 +243,7 @@ test.describe('Admin Approval Queue - Navigation @requires-auth @requires-backen
     await expect(page.getByRole('heading', { name: /request detail/i })).toBeVisible()
   })
 
-  test.skip('keyboard navigation works on table rows', async ({ page }) => {
+  test('keyboard navigation works on table rows', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -262,7 +262,7 @@ test.describe('Admin Approval Queue - Navigation @requires-auth @requires-backen
 })
 
 test.describe('Admin Approval Queue - Action Buttons @requires-auth @requires-backend', () => {
-  test.skip('approve and reject buttons are visible but disabled', async ({ page }) => {
+  test('approve and reject buttons are visible but disabled', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -281,7 +281,7 @@ test.describe('Admin Approval Queue - Action Buttons @requires-auth @requires-ba
     await expect(rejectButton).toHaveAttribute('aria-disabled', 'true')
   })
 
-  test.skip('disabled buttons show tooltip explaining availability', async ({ page }) => {
+  test('disabled buttons show tooltip explaining availability', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -296,7 +296,7 @@ test.describe('Admin Approval Queue - Action Buttons @requires-auth @requires-ba
 })
 
 test.describe('Admin Approval Queue - Size Tooltip @requires-auth @requires-backend', () => {
-  test.skip('size cell shows tooltip with full specs on hover', async ({ page }) => {
+  test('size cell shows tooltip with full specs on hover', async ({ page }) => {
     await page.goto('/admin/requests')
 
     // Wait for table to load
@@ -333,7 +333,7 @@ test.describe('Admin Approval Queue - Unauthenticated', () => {
 test.describe('Admin Approval Queue - Sidebar Navigation', () => {
   // This test requires admin authentication to see the Admin Queue nav item.
   // Non-admin users will not see this nav item.
-  test.skip('sidebar shows "Admin Queue" navigation link for admin users', async ({ page }) => {
+  test('sidebar shows "Admin Queue" navigation link for admin users', async ({ page }) => {
     // Requires admin authentication
     await page.goto('/')
 
@@ -341,7 +341,7 @@ test.describe('Admin Approval Queue - Sidebar Navigation', () => {
     await expect(page.getByRole('link', { name: /admin queue/i })).toBeVisible()
   })
 
-  test.skip('sidebar hides "Admin Queue" navigation link for non-admin users', async ({ page }) => {
+  test('sidebar hides "Admin Queue" navigation link for non-admin users', async ({ page }) => {
     // Requires non-admin authentication
     await page.goto('/')
 

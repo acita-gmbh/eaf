@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test'
  *
  * ## Running Authenticated Tests
  *
- * Tests marked `test.skip` require authentication setup:
+ * Tests marked `test` require authentication setup:
  * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
  * 2. Run auth setup: `npm run test:e2e -- --project=setup`
  * 3. Run tests: `npm run test:e2e -- --project=chromium-user my-requests.spec.ts`
@@ -31,7 +31,7 @@ import { test, expect } from '@playwright/test'
 test.describe('My Requests Page @requires-auth', () => {
   // These tests require authentication via Keycloak
 
-  test.skip('displays page header and empty state when no requests', async ({ page }) => {
+  test('displays page header and empty state when no requests', async ({ page }) => {
     await page.goto('/requests')
 
     // Page header should be visible
@@ -46,7 +46,7 @@ test.describe('My Requests Page @requires-auth', () => {
     await expect(page.getByText(/request new vm/i)).toBeVisible()
   })
 
-  test.skip('displays request cards with all required information', async ({ page }) => {
+  test('displays request cards with all required information', async ({ page }) => {
     // This test requires existing request data
     await page.goto('/requests')
 
@@ -63,7 +63,7 @@ test.describe('My Requests Page @requires-auth', () => {
     await expect(firstCard.getByTestId('request-created-at')).toBeVisible()
   })
 
-  test.skip('shows status badges with correct colors', async ({ page }) => {
+  test('shows status badges with correct colors', async ({ page }) => {
     await page.goto('/requests')
 
     // Test PENDING badge (yellow)
@@ -75,7 +75,7 @@ test.describe('My Requests Page @requires-auth', () => {
     // Visual verification would require screenshot comparison
   })
 
-  test.skip('shows cancel button only for PENDING requests', async ({ page }) => {
+  test('shows cancel button only for PENDING requests', async ({ page }) => {
     await page.goto('/requests')
 
     // Find a PENDING request card
@@ -101,7 +101,7 @@ test.describe('My Requests Page @requires-auth', () => {
 test.describe('My Requests Cancel Flow @requires-backend', () => {
   // These tests require full backend stack
 
-  test.skip('opens cancel confirmation dialog', async ({ page }) => {
+  test('opens cancel confirmation dialog', async ({ page }) => {
     await page.goto('/requests')
 
     // Find and click cancel button on first pending request
@@ -124,7 +124,7 @@ test.describe('My Requests Cancel Flow @requires-backend', () => {
     await expect(dialog.getByTestId('cancel-dialog-confirm')).toBeVisible()
   })
 
-  test.skip('cancels dialog without cancelling request', async ({ page }) => {
+  test('cancels dialog without cancelling request', async ({ page }) => {
     await page.goto('/requests')
 
     // Open cancel dialog
@@ -140,7 +140,7 @@ test.describe('My Requests Cancel Flow @requires-backend', () => {
     await expect(page.getByTestId('status-badge-pending').first()).toBeVisible()
   })
 
-  test.skip('successfully cancels a pending request', async ({ page }) => {
+  test('successfully cancels a pending request', async ({ page }) => {
     await page.goto('/requests')
 
     // Count pending requests before
@@ -166,7 +166,7 @@ test.describe('My Requests Cancel Flow @requires-backend', () => {
     expect(pendingCountAfter).toBe(pendingCountBefore - 1)
   })
 
-  test.skip('shows loading state during cancellation', async ({ page }) => {
+  test('shows loading state during cancellation', async ({ page }) => {
     await page.goto('/requests')
 
     // Open cancel dialog
@@ -189,7 +189,7 @@ test.describe('My Requests Cancel Flow @requires-backend', () => {
 test.describe('My Requests Pagination @requires-auth', () => {
   // These tests require multiple requests to test pagination
 
-  test.skip('displays page size selector with options', async ({ page }) => {
+  test('displays page size selector with options', async ({ page }) => {
     await page.goto('/requests')
 
     // Page size selector should be visible
@@ -205,7 +205,7 @@ test.describe('My Requests Pagination @requires-auth', () => {
     await expect(page.getByRole('option', { name: '50' })).toBeVisible()
   })
 
-  test.skip('changes page size and reloads data', async ({ page }) => {
+  test('changes page size and reloads data', async ({ page }) => {
     await page.goto('/requests')
 
     // Change page size to 25
@@ -220,7 +220,7 @@ test.describe('My Requests Pagination @requires-auth', () => {
     expect(count).toBeLessThanOrEqual(25)
   })
 
-  test.skip('navigates between pages', async ({ page }) => {
+  test('navigates between pages', async ({ page }) => {
     await page.goto('/requests')
 
     // Wait for pagination to be visible (indicates multiple pages)
@@ -262,7 +262,7 @@ test.describe('My Requests Page - Unauthenticated', () => {
 test.describe('My Requests Navigation', () => {
   // This test requires authentication because unauthenticated users see the login screen,
   // not the sidebar navigation. Marking as skip until auth E2E setup is complete.
-  test.skip('sidebar shows "My Requests" navigation link', async ({ page }) => {
+  test('sidebar shows "My Requests" navigation link', async ({ page }) => {
     await page.goto('/')
 
     // After authentication, verify the My Requests link is in the sidebar
