@@ -30,7 +30,7 @@ dependencies {
     // Flyway 10+ split database logic (needed for Postgres 16+)
     // We force this for all Spring Boot modules to ensure compatibility if they use Flyway
     // It's safe to add as implementation or runtimeOnly, but implementation ensures visibility
-    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation(libs.findLibrary("flyway-database-postgresql").get())
 }
 
 configurations.all {
