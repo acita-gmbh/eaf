@@ -136,64 +136,64 @@ ALTER TABLE eaf_events.snapshots FORCE ROW LEVEL SECURITY;
 -- ============================================================================
 
 -- Projection table for VM requests read model
--- Note: Explicit PUBLIC schema prefix ensures jOOQ generates code in the 'public' package
-CREATE TABLE IF NOT EXISTS PUBLIC.vm_requests_projection (
-    id                  UUID PRIMARY KEY,
-    tenant_id           UUID NOT NULL,
-    requester_id        UUID NOT NULL,
-    requester_name      VARCHAR(255) NOT NULL,
-    requester_email     VARCHAR(255),
-    requester_role      VARCHAR(100),
-    project_id          UUID NOT NULL,
-    project_name        VARCHAR(255) NOT NULL,
-    vm_name             VARCHAR(255) NOT NULL,
-    size                VARCHAR(10) NOT NULL,
-    cpu_cores           INT NOT NULL,
-    memory_gb           INT NOT NULL,
-    disk_gb             INT NOT NULL,
-    justification       TEXT NOT NULL,
-    status              VARCHAR(50) NOT NULL,
-    approved_by         UUID,
-    approved_by_name    VARCHAR(255),
-    rejected_by         UUID,
-    rejected_by_name    VARCHAR(255),
-    rejection_reason    TEXT,
-    created_at          TIMESTAMPTZ NOT NULL,
-    updated_at          TIMESTAMPTZ NOT NULL,
-    version             INT NOT NULL DEFAULT 1
+-- Note: Quoted uppercase identifiers required for H2 DDL compatibility (jOOQ DDLDatabase)
+CREATE TABLE IF NOT EXISTS PUBLIC."VM_REQUESTS_PROJECTION" (
+    "ID"                  UUID PRIMARY KEY,
+    "TENANT_ID"           UUID NOT NULL,
+    "REQUESTER_ID"        UUID NOT NULL,
+    "REQUESTER_NAME"      VARCHAR(255) NOT NULL,
+    "REQUESTER_EMAIL"     VARCHAR(255),
+    "REQUESTER_ROLE"      VARCHAR(100),
+    "PROJECT_ID"          UUID NOT NULL,
+    "PROJECT_NAME"        VARCHAR(255) NOT NULL,
+    "VM_NAME"             VARCHAR(255) NOT NULL,
+    "SIZE"                VARCHAR(10) NOT NULL,
+    "CPU_CORES"           INT NOT NULL,
+    "MEMORY_GB"           INT NOT NULL,
+    "DISK_GB"             INT NOT NULL,
+    "JUSTIFICATION"       TEXT NOT NULL,
+    "STATUS"              VARCHAR(50) NOT NULL,
+    "APPROVED_BY"         UUID,
+    "APPROVED_BY_NAME"    VARCHAR(255),
+    "REJECTED_BY"         UUID,
+    "REJECTED_BY_NAME"    VARCHAR(255),
+    "REJECTION_REASON"    TEXT,
+    "CREATED_AT"          TIMESTAMPTZ NOT NULL,
+    "UPDATED_AT"          TIMESTAMPTZ NOT NULL,
+    "VERSION"             INT NOT NULL DEFAULT 1
 );
 
-CREATE INDEX idx_vm_requests_projection_tenant ON PUBLIC.vm_requests_projection (tenant_id);
-CREATE INDEX idx_vm_requests_projection_status ON PUBLIC.vm_requests_projection (status);
-CREATE INDEX idx_vm_requests_projection_requester ON PUBLIC.vm_requests_projection (requester_id);
-CREATE INDEX idx_vm_requests_projection_created ON PUBLIC.vm_requests_projection (created_at DESC);
-CREATE INDEX idx_vm_requests_projection_project ON PUBLIC.vm_requests_projection (project_id);
+CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_TENANT" ON PUBLIC."VM_REQUESTS_PROJECTION" ("TENANT_ID");
+CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_STATUS" ON PUBLIC."VM_REQUESTS_PROJECTION" ("STATUS");
+CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_REQUESTER" ON PUBLIC."VM_REQUESTS_PROJECTION" ("REQUESTER_ID");
+CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_CREATED" ON PUBLIC."VM_REQUESTS_PROJECTION" ("CREATED_AT" DESC);
+CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_PROJECT" ON PUBLIC."VM_REQUESTS_PROJECTION" ("PROJECT_ID");
 
 -- [jooq ignore start]
 -- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON vm_requests_projection TO eaf_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "VM_REQUESTS_PROJECTION" TO eaf_app;
 
-ALTER TABLE vm_requests_projection ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "VM_REQUESTS_PROJECTION" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection
+CREATE POLICY tenant_isolation_vm_requests_projection ON "VM_REQUESTS_PROJECTION"
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
-ALTER TABLE vm_requests_projection FORCE ROW LEVEL SECURITY;
+ALTER TABLE "VM_REQUESTS_PROJECTION" FORCE ROW LEVEL SECURITY;
 
 -- Column comments for documentation
-COMMENT ON COLUMN vm_requests_projection.id IS 'Unique identifier for the VM request';
-COMMENT ON COLUMN vm_requests_projection.tenant_id IS 'Tenant identifier for multi-tenancy isolation';
-COMMENT ON COLUMN vm_requests_projection.requester_id IS 'User ID who requested the VM';
-COMMENT ON COLUMN vm_requests_projection.vm_name IS 'Requested name for the virtual machine';
-COMMENT ON COLUMN vm_requests_projection.cpu_cores IS 'Number of CPU cores requested';
-COMMENT ON COLUMN vm_requests_projection.memory_gb IS 'Amount of memory in GB requested';
-COMMENT ON COLUMN vm_requests_projection.status IS 'Current status: PENDING, APPROVED, REJECTED, PROVISIONING, COMPLETED, FAILED';
-COMMENT ON COLUMN vm_requests_projection.created_at IS 'Timestamp when the request was created';
-COMMENT ON COLUMN vm_requests_projection.updated_at IS 'Timestamp when the request was last updated';
-COMMENT ON COLUMN vm_requests_projection.version IS 'Optimistic locking version for concurrent updates';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."ID" IS 'Unique identifier for the VM request';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."TENANT_ID" IS 'Tenant identifier for multi-tenancy isolation';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REQUESTER_ID" IS 'User ID who requested the VM';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."VM_NAME" IS 'Requested name for the virtual machine';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."CPU_CORES" IS 'Number of CPU cores requested';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."MEMORY_GB" IS 'Amount of memory in GB requested';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."STATUS" IS 'Current status: PENDING, APPROVED, REJECTED, PROVISIONING, COMPLETED, FAILED';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."CREATED_AT" IS 'Timestamp when the request was created';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."UPDATED_AT" IS 'Timestamp when the request was last updated';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."VERSION" IS 'Optimistic locking version for concurrent updates';
 
 -- [jooq ignore stop]
 
