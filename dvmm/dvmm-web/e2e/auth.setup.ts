@@ -52,8 +52,16 @@ async function authenticateUser(page: Page, username: string, outputFile: string
     await page.waitForURL(`${KEYCLOAK_URL}/**`, {timeout: 10000})
 
     await log.step(`Enter credentials for ${username}`)
-    await page.getByLabel(/username/i).fill(username)
-    await page.getByLabel(/password/i).fill(TEST_PASSWORD)
+    // Wait for username field to be visible first
+    const usernameField = page.locator('#username')
+    await expect(usernameField).toBeVisible({timeout: 10000})
+    await usernameField.fill(username)
+
+    // Wait for password field (sometimes animates or loads async in some themes)
+    const passwordField = page.locator('#password')
+    await expect(passwordField).toBeVisible({timeout: 10000})
+    await passwordField.fill(TEST_PASSWORD)
+
     await page.getByRole('button', {name: /sign in/i}).click()
 
     await log.step('Verify redirect back to app')
