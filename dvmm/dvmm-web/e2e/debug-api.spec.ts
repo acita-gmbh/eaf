@@ -1,6 +1,20 @@
-
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+
+// Playwright auth storage types
+interface LocalStorageItem {
+  name: string;
+  value: string;
+}
+
+interface StorageOrigin {
+  origin: string;
+  localStorage: LocalStorageItem[];
+}
+
+interface AuthStorageState {
+  origins: StorageOrigin[];
+}
 
 test('debug api connection', async ({ request }) => {
   const health = await request.get('http://127.0.0.1:8080/actuator/health');
@@ -15,16 +29,16 @@ test('create and list requests', async ({ request }) => {
   if (!fs.existsSync(authFile)) {
     throw new Error('Auth file not found: ' + authFile);
   }
-  const authData = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
-  const origin = authData.origins.find((o: any) => o.origin === 'http://127.0.0.1:5173' || o.origin === 'http://localhost:5173');
-  
+  const authData: AuthStorageState = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
+  const origin = authData.origins.find((o) => o.origin === 'http://127.0.0.1:5173' || o.origin === 'http://localhost:5173');
+
   if (!origin) {
       console.log('Auth Data:', JSON.stringify(authData, null, 2));
       throw new Error('No origin found in auth file');
   }
 
   const localStorage = origin.localStorage;
-  const oidcKey = localStorage.find((item: any) => item.name.startsWith('oidc.user'));
+  const oidcKey = localStorage.find((item) => item.name.startsWith('oidc.user'));
   
   if (!oidcKey) {
       console.log('Local Storage:', JSON.stringify(localStorage, null, 2));
