@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { MobileNav } from '../MobileNav'
+import { MobileNav } from './MobileNav'
 
 /**
  * Mock useAuth from react-oidc-context.

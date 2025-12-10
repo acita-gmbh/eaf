@@ -190,6 +190,10 @@ val expectedVersion = currentEvents.size.toLong()
 
 ## Frontend Patterns
 
+**Test File Colocation (Enforced):**
+- Tests MUST be colocated with source files (e.g., `Button.test.tsx` next to `Button.tsx`)
+- `__tests__` directories are FORBIDDEN - vitest.config.ts excludes them
+
 **TanStack Query Polling (for admin queues, dashboards):**
 - Use both `staleTime` (cache freshness) AND `refetchInterval` (active background polling)
 - Add jitter to `refetchInterval` to prevent thundering herd: `30000 + Math.floor(Math.random() * 5000)`

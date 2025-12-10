@@ -6,7 +6,9 @@
 
 ## Executive Summary
 
-Overall test infrastructure is **well-organized and mature**. Two critical issues identified, one fixed in this review.
+Overall test infrastructure is **well-organized and mature**. Three issues identified and fixed in this review:
+1. Backend test package naming violation
+2. Frontend test location inconsistency (now enforced via vitest config)
 
 ## Issues Fixed
 
@@ -46,14 +48,16 @@ Overall test infrastructure is **well-organized and mature**. Two critical issue
 | `VmProvisioningProgressProjectionRepositoryAdapter` | `dvmm-infrastructure/projection/` | Database interaction |
 | `TimelineEventProjectionUpdaterAdapter` | `dvmm-infrastructure/projection/` | Write-side projection logic |
 
-### 🟠 Medium: Frontend Test Location Inconsistency
+### ✅ Frontend Test Location Inconsistency (FIXED)
 
-Three patterns used inconsistently:
-1. Colocated: `src/components/admin/VmwareConfigForm.test.tsx`
-2. `__tests__` subdirectory: `src/components/admin/__tests__/PendingRequestsTable.test.tsx`
-3. Top-level `__tests__`: `src/__tests__/App.integration.test.tsx`
+**Problem:** Three patterns were used inconsistently (colocated, `__tests__` subdirectory, top-level `__tests__`).
 
-**Recommended Action:** Standardize on colocated `*.test.tsx` pattern.
+**Fix Applied:**
+- Moved 8 test files from `__tests__/` directories to colocated positions
+- Updated `vitest.config.ts` to exclude `**/__tests__/**` from test discovery
+- This enforces the colocated pattern going forward
+
+**Convention:** Tests MUST be colocated with source files (e.g., `Button.test.tsx` next to `Button.tsx`)
 
 ### 🟡 Low: Disabled Tests Without Tracking
 
@@ -96,4 +100,3 @@ Three `@Disabled` tests without GitHub issue references:
 1. **Immediate:** Review this document with team
 2. **Short-term:** Add missing unit tests for `VmProvisioningProgressQueryService`
 3. **Medium-term:** Enable E2E tests with proper CI authentication setup
-4. **Ongoing:** Standardize frontend test file locations

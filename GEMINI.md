@@ -325,6 +325,21 @@ npm run test:e2e:ui  # Run with Playwright UI mode
 npm run lint         # Run ESLint
 ```
 
+### Frontend Test File Convention
+
+**Tests MUST be colocated with their source files.** Do NOT use `__tests__` directories.
+
+```tsx
+// CORRECT - Test file next to source file
+src/components/Button.tsx
+src/components/Button.test.tsx
+
+// FORBIDDEN - __tests__ directory (vitest will ignore these)
+src/components/__tests__/Button.test.tsx
+```
+
+Enforced via `vitest.config.ts` which excludes `**/__tests__/**`.
+
 ### React Coding Standards
 
 **React Compiler handles memoization automatically. Manual optimization is PROHIBITED.**

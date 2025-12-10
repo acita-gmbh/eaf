@@ -277,6 +277,7 @@ npm run lint         # Run ESLint
 - **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
 - Use function components with TypeScript - class components are FORBIDDEN
 - **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
+- **Test files MUST be colocated** with source (e.g., `Button.test.tsx` next to `Button.tsx`) - `__tests__` directories are FORBIDDEN
 
 ```tsx
 // FORBIDDEN - watch() causes React Compiler lint warnings
