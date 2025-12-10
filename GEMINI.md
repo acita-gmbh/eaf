@@ -505,6 +505,68 @@ useQuery({
 useQuery({ staleTime: 30000 })  // Admin won't see new requests!
 ```
 
+## Docker Compose (E2E Environment)
+
+The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
+
+```
+docker/
+├── eaf/                    # EAF infrastructure (reusable by future products)
+│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
+└── dvmm/                   # DVMM product services
+    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
+    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
+```
+
+### Quick Start
+
+```bash
+# 1. Build backend JAR first (jOOQ needs Docker access on host)
+./gradlew :dvmm:dvmm-app:bootJar -x test
+
+# 2. Start everything (postgres, keycloak, backend, frontend)
+docker compose -f docker/dvmm/docker-compose.yml up -d
+
+# 3. Wait for services (or use --wait flag)
+docker compose -f docker/dvmm/docker-compose.yml ps
+
+# 4. Run E2E tests
+cd dvmm/dvmm-web && npm run test:e2e
+
+# 5. Stop and clean up
+docker compose -f docker/dvmm/docker-compose.yml down -v
+```
+
+### Development Mode (Backend on Host)
+
+For debugging with hot-reload, run only infrastructure containers:
+
+```bash
+# Start only postgres + keycloak
+docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+
+# Run backend on host with debugger
+./gradlew :dvmm:dvmm-app:bootRun
+
+# Run frontend on host
+cd dvmm/dvmm-web && npm run dev
+```
+
+### Service Ports
+
+| Service | Port | URL |
+|---------|------|-----|
+| PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eaf_test` |
+| Keycloak | 8180 | http://localhost:8180 |
+| Backend | 8080 | http://localhost:8080 |
+| Frontend | 5173 | http://localhost:5173 |
+
+### Credentials
+
+- **PostgreSQL:** `eaf` / `eaf` (database: `eaf_test`)
+- **Keycloak Admin:** `admin` / `admin`
+- **Test Users:** See `eaf/eaf-testing/src/main/resources/test-realm.json`
+
 ## jOOQ Code Generation
 
 jOOQ uses **Testcontainers + Flyway** to generate code from a real PostgreSQL database with production-identical schema.

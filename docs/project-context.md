@@ -260,6 +260,40 @@ suspend fun createVm(spec: VmSpec) = executeResilient("createVm", createVmTimeou
 
 ---
 
+## Docker Compose (E2E Environment)
+
+The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
+
+```
+docker/
+├── eaf/                    # EAF infrastructure (reusable by future products)
+│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
+└── dvmm/                   # DVMM product services
+    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
+    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
+```
+
+**Quick Start:**
+```bash
+./gradlew :dvmm:dvmm-app:bootJar -x test           # 1. Build backend JAR
+docker compose -f docker/dvmm/docker-compose.yml up -d  # 2. Start all services
+cd dvmm/dvmm-web && npm run test:e2e              # 3. Run E2E tests
+docker compose -f docker/dvmm/docker-compose.yml down -v  # 4. Cleanup
+```
+
+**Development Mode (backend on host):**
+```bash
+docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+./gradlew :dvmm:dvmm-app:bootRun   # Backend with debugger
+cd dvmm/dvmm-web && npm run dev    # Frontend with hot-reload
+```
+
+**Service Ports:** PostgreSQL 5432, Keycloak 8180, Backend 8080, Frontend 5173
+
+**Credentials:** PostgreSQL `eaf`/`eaf` (db: `eaf_test`), Keycloak `admin`/`admin`
+
+---
+
 ## jOOQ Code Generation (Testcontainers + Flyway)
 
 **Single source of truth:** Just add Flyway migrations - jOOQ generates code from a real PostgreSQL database via Testcontainers.
