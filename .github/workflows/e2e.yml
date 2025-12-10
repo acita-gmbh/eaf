@@ -93,15 +93,6 @@ jobs:
           timeout 120s bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
           echo "Backend is up!"
 
-      - name: Start Frontend
-        run: |
-          cd dvmm/dvmm-web
-          npm run dev &
-
-          echo "Waiting for Frontend to start on port 5173..."
-          timeout 60s bash -c 'until curl -s http://localhost:5173 > /dev/null; do sleep 2; done'
-          echo "Frontend is up!"
-
       - name: Run E2E Tests
         run: |
           cd dvmm/dvmm-web
