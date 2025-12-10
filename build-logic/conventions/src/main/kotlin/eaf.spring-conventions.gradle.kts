@@ -26,4 +26,20 @@ dependencies {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation("io.projectreactor:reactor-test")
+
+    // Flyway 10+ split database logic (needed for Postgres 16+)
+    // We force this for all Spring Boot modules to ensure compatibility if they use Flyway
+    // It's safe to add as implementation or runtimeOnly, but implementation ensures visibility
+    implementation("org.flywaydb:flyway-database-postgresql")
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.flywaydb" && requested.name == "flyway-core") {
+            // Force version from catalog to override Spring Boot managed dependency
+            // which downgrades Flyway to 11.7.2 (incompatible with Postgres 16.11)
+            useVersion(libs.findVersion("flyway").get().toString())
+            because("PostgreSQL 16.11 support requires Flyway 11.10+")
+        }
+    }
 }
