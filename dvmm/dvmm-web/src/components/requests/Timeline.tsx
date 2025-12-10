@@ -74,7 +74,7 @@ function parseEventReason(details: string | null): string | null {
   if (!details) return null
   try {
     const parsed = JSON.parse(details)
-    return parsed.reason || null
+    return parsed.reason ?? null
   } catch {
     return null
   }
@@ -110,7 +110,7 @@ export function Timeline({ events }: Readonly<TimelineProps>) {
 
         return (
           <div
-            key={`${event.eventType}-${event.occurredAt}-${index}`}
+            key={`${event.eventType}-${event.occurredAt}`}
             className="relative flex gap-4"
             data-testid={`timeline-event-${event.eventType.toLowerCase()}`}
           >

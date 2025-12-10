@@ -6,6 +6,8 @@ import de.acci.dvmm.application.vm.TriggerProvisioningHandler
 import de.acci.dvmm.application.vm.VmProvisioningListener
 import de.acci.dvmm.application.vm.VmEventDeserializer
 import de.acci.dvmm.application.vm.VmRequestStatusUpdater
+import de.acci.dvmm.application.vm.VmProvisioningProgressProjectionRepository
+import de.acci.dvmm.application.vm.VmProvisioningProgressQueryService
 import de.acci.dvmm.application.vmrequest.AdminRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.ApproveVmRequestHandler
 import de.acci.dvmm.application.vmrequest.CancelVmRequestHandler
@@ -29,7 +31,7 @@ import de.acci.dvmm.application.vmware.GetVmwareConfigHandler
 import de.acci.dvmm.application.vmware.TestVmwareConnectionHandler
 import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmEventDeserializer
 import de.acci.dvmm.infrastructure.eventsourcing.JacksonVmRequestEventDeserializer
 import de.acci.dvmm.infrastructure.eventsourcing.PublishingEventStore
@@ -190,27 +192,34 @@ public class ApplicationConfig {
 
     @Bean
     public fun triggerProvisioningHandler(
-        vspherePort: VspherePort,
+        hypervisorPort: HypervisorPort,
         configPort: VmwareConfigurationPort,
         eventStore: EventStore,
         vmEventDeserializer: VmEventDeserializer,
         vmRequestEventDeserializer: VmRequestEventDeserializer,
         timelineUpdater: TimelineEventProjectionUpdater,
-        vmRequestReadRepository: VmRequestReadRepository
+        vmRequestReadRepository: VmRequestReadRepository,
+        progressRepository: VmProvisioningProgressProjectionRepository
     ): TriggerProvisioningHandler = TriggerProvisioningHandler(
-        vspherePort = vspherePort,
+        hypervisorPort = hypervisorPort,
         configPort = configPort,
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
-        vmRequestReadRepository = vmRequestReadRepository
+        vmRequestReadRepository = vmRequestReadRepository,
+        progressRepository = progressRepository
     )
 
     @Bean
     public fun vmRequestStatusUpdater(
         markHandler: MarkVmRequestProvisioningHandler
     ): VmRequestStatusUpdater = VmRequestStatusUpdater(markHandler)
+
+    @Bean
+    public fun vmProvisioningProgressQueryService(
+        repository: VmProvisioningProgressProjectionRepository
+    ): VmProvisioningProgressQueryService = VmProvisioningProgressQueryService(repository)
 
     // ==================== Command Handlers ====================
 
@@ -443,17 +452,17 @@ public class ApplicationConfig {
      *
      * Story 3.1: VMware Connection Configuration (AC-3.1.2, AC-3.1.3)
      *
-     * @param vspherePort Port for vSphere API operations
+     * @param hypervisorPort Port for hypervisor API operations (ADR-004)
      * @param configurationPort Port for configuration persistence
      * @param credentialEncryptor Encryptor for decrypting stored credentials
      */
     @Bean
     public fun testVmwareConnectionHandler(
-        vspherePort: VspherePort,
+        hypervisorPort: HypervisorPort,
         configurationPort: VmwareConfigurationPort,
         credentialEncryptor: CredentialEncryptor,
     ): TestVmwareConnectionHandler = TestVmwareConnectionHandler(
-        vspherePort = vspherePort,
+        hypervisorPort = hypervisorPort,
         configurationPort = configurationPort,
         credentialEncryptor = credentialEncryptor
     )

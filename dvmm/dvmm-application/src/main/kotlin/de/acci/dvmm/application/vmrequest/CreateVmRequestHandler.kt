@@ -14,6 +14,7 @@ import de.acci.eaf.eventsourcing.projection.ProjectionError
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Errors that can occur when creating a VM request.
@@ -121,6 +122,8 @@ public class CreateVmRequestHandler(
                 events = aggregate.uncommittedEvents,
                 expectedVersion = 0 // New aggregate starts at version 0
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) {
                 "Failed to persist VM request: " +

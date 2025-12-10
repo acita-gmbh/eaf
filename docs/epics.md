@@ -26,8 +26,9 @@ This document provides the complete epic and story breakdown for DVMM (Dynamic V
 | 3 | VM Provisioning | 10 | "VM is actually created" | **Critical** |
 | 4 | Projects & Quota | 9 | "Resources organized & controlled" | Medium |
 | 5 | Compliance & Oversight | 10 | "Audit-ready in 30 seconds" | Medium |
+| 6 | Multi-Hypervisor Support | TBD | "Freedom from vendor lock-in" | Medium |
 
-**Total: 53 Stories for MVP**
+**Total: 53 Stories for MVP** (Epic 6 is Post-MVP)
 
 ### Epic Sequence & Dependencies
 
@@ -2473,6 +2474,71 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 
 ---
 
+## Epic 6: Multi-Hypervisor Support (Post-MVP)
+
+**Goal:** Enable DVMM to provision VMs on hypervisors beyond VMware vSphere, starting with Proxmox VE.
+
+**User Value:** "Freedom from vendor lock-in" — Customers can choose their preferred hypervisor or migrate away from VMware post-Broadcom acquisition.
+
+**Risk Level:** Medium (per-hypervisor complexity varies)
+
+**Prerequisites:** Epic 3 (VM Provisioning) complete
+
+**Market Context:** The Broadcom VMware acquisition (November 2023) has triggered massive market disruption:
+- 98% of VMware customers evaluating alternatives
+- Price increases of 150-1500%
+- Proxmox VE growing 650% (1.5M+ hosts, Vienna-based)
+- See: `docs/research-multi-hypervisor-support.md`
+
+### Epic 6 Stories (Post-MVP)
+
+Stories will be detailed during post-MVP planning. Preliminary breakdown:
+
+#### Phase 1: Proxmox VE (LOW effort)
+
+| Story | Description | Effort |
+|-------|-------------|--------|
+| 6.1 | Refactor VspherePort to HypervisorPort abstraction | S |
+| 6.2 | Implement ProxmoxAdapter with cv4pve-api-java SDK | M |
+| 6.3 | Proxmox connection configuration UI | M |
+| 6.4 | Proxmox VM provisioning (clone from template) | M |
+| 6.5 | Proxmox resource discovery (nodes, storage, networks) | M |
+| 6.6 | Proxmox provisioning progress tracking | S |
+| 6.7 | Integration tests with Proxmox test environment | M |
+
+#### Phase 2: Microsoft Hyper-V (HIGH effort)
+
+| Story | Description | Effort |
+|-------|-------------|--------|
+| 6.8 | Implement HyperVAdapter with WinRM/PowerShell | L |
+| 6.9 | Hyper-V connection configuration UI | M |
+| 6.10 | Hyper-V VM provisioning | L |
+| 6.11 | Hyper-V authentication (NTLM/Kerberos) | L |
+
+#### Phase 3: IBM PowerVM (VERY HIGH effort — Enterprise Only)
+
+| Story | Description | Effort |
+|-------|-------------|--------|
+| 6.12 | Custom HMC REST client development | XL |
+| 6.13 | PowerVM LPAR provisioning | XL |
+| 6.14 | VIOS storage/network integration | L |
+
+### Technical Design Reference
+
+See ADR-004 for architectural patterns:
+- `HypervisorPort` interface abstraction
+- Adapter factory pattern for tenant-level hypervisor selection
+- Hypervisor-agnostic value objects (`VmProvisionSpec`, `VmInfo`)
+
+### Acceptance Criteria (Epic Level)
+
+**Given** a tenant configured with Proxmox VE hypervisor
+**When** a user submits a VM request and admin approves
+**Then** the VM is provisioned on Proxmox (not VMware)
+**And** all existing workflows (notifications, timeline, audit) work identically
+
+---
+
 ## Final Summary
 
 ### Story Count by Epic
@@ -2484,7 +2550,8 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 | Epic 3: VM Provisioning | 10 | VM is created |
 | Epic 4: Projects & Quota | 9 | Organization & Control |
 | Epic 5: Compliance & Oversight | 10 | Audit-ready + GDPR |
-| **Total** | **53** | |
+| **MVP Total** | **53** | |
+| Epic 6: Multi-Hypervisor | ~14 | Vendor freedom (Post-MVP) |
 
 ### FR Coverage Summary
 
@@ -2495,8 +2562,9 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 ### Dependency Chain
 
 ```
-Epic 1 ──► Epic 2 ──► Epic 3 ──► Epic 4 ──► Epic 5
-  │           │          │          │          │
+Epic 1 ──► Epic 2 ──► Epic 3 ──► Epic 4 ──► Epic 5 ──► Epic 6
+  │           │          │          │          │          │
+  │           │          │          │          │          └─ Multi-Hypervisor (Post-MVP)
   │           │          │          │          └─ Audit & Compliance
   │           │          │          └─ Projects & Quotas
   │           │          └─ VMware Integration (Critical Risk)

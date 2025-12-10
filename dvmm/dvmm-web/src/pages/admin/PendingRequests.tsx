@@ -112,7 +112,7 @@ export function PendingRequests() {
           )}
 
           {/* Loading state */}
-          {isLoading && !isError && (
+          {isLoading && (
             <PendingRequestsTable requests={[]} isLoading={true} />
           )}
 
@@ -125,7 +125,7 @@ export function PendingRequests() {
           {!isLoading && !isError && data?.items.length === 0 && projectId && (
             <EmptyState
               icon={Inbox}
-              title={`No requests for ${selectedProjectName || 'selected project'}`}
+              title={`No requests for ${selectedProjectName ?? 'selected project'}`}
               description="There are no pending requests for this project."
             />
           )}
@@ -167,9 +167,9 @@ export function PendingRequests() {
                         />
                       </PaginationItem>
 
-                      {generatePageNumbers(page, data.totalPages).map((pageNum, index) =>
+                      {generatePageNumbers(page, data.totalPages).map((pageNum, index, arr) =>
                         pageNum === -1 ? (
-                          <PaginationItem key={`ellipsis-${index}`}>
+                          <PaginationItem key={`ellipsis-after-${arr[index - 1]}`}>
                             <span className="px-3 py-2">...</span>
                           </PaginationItem>
                         ) : (
@@ -243,7 +243,7 @@ function ErrorState({ error, onRetry }: Readonly<ErrorStateProps>) {
       <AlertCircle className="h-12 w-12 text-destructive mb-4" />
       <h2 className="text-lg font-semibold mb-2">Error Loading Requests</h2>
       <p className="text-muted-foreground mb-4">
-        {error?.message || 'Could not load pending requests.'}
+        {error?.message ?? 'Could not load pending requests.'}
       </p>
       <Button variant="outline" onClick={onRetry}>
         Try Again

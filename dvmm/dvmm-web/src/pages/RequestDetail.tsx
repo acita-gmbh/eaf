@@ -14,8 +14,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { StatusBadge } from '@/components/requests/StatusBadge'
 import { Timeline } from '@/components/requests/Timeline'
 import { CancelConfirmDialog } from '@/components/requests/CancelConfirmDialog'
+import { ProvisioningProgress } from '@/components/requests/ProvisioningProgress'
 import { useRequestDetail } from '@/hooks/useRequestDetail'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
+import { useProvisioningProgress } from '@/hooks/useProvisioningProgress'
 import {
   ApiError,
   isNotFoundError,
@@ -50,6 +52,10 @@ export function RequestDetail() {
     polling: true,
     pollInterval: 30000, // 30 seconds per AC-4
   })
+
+  // Fetch progress if provisioning (AC-3.5)
+  const isProvisioning = data?.status === 'PROVISIONING'
+  const { data: progress } = useProvisioningProgress(id ?? '', isProvisioning)
 
   const cancelMutation = useCancelRequest()
 
@@ -111,7 +117,7 @@ export function RequestDetail() {
   }
 
   // Error state - Not Found (AC-6)
-  if (isError && error?.status === 404) {
+  if (isError && error.status === 404) {
     return (
       <div className="space-y-6" data-testid="request-detail-not-found">
         <BackButton onClick={handleBack} />
@@ -138,7 +144,7 @@ export function RequestDetail() {
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-lg font-semibold mb-2">Error Loading Request</h2>
           <p className="text-muted-foreground mb-4">
-            {error?.message || 'Could not load request details.'}
+            {error.message || 'Could not load request details.'}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
             Try Again
@@ -260,6 +266,31 @@ export function RequestDetail() {
         </CardContent>
       </Card>
 
+      {/* Provisioning Progress (AC-3.5) */}
+      {isProvisioning && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Provisioning Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {progress ? (
+              <ProvisioningProgress
+                stage={progress.stage}
+                updatedAt={progress.updatedAt}
+                startedAt={progress.startedAt}
+                stageTimestamps={progress.stageTimestamps}
+                estimatedRemainingSeconds={progress.estimatedRemainingSeconds}
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                <span>Loading provisioning status...</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Timeline Card (AC-3) */}
       <Card>
         <CardHeader>
@@ -286,7 +317,7 @@ interface BackButtonProps {
   onClick: () => void
 }
 
-function BackButton({ onClick }: BackButtonProps) {
+function BackButton({ onClick }: Readonly<BackButtonProps>) {
   return (
     <Button variant="ghost" size="sm" className="gap-2" onClick={onClick}>
       <ArrowLeft className="h-4 w-4" />

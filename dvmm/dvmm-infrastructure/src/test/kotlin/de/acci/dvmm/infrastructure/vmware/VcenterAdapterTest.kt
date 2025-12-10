@@ -9,7 +9,7 @@ import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.eaf.core.result.Result
@@ -25,21 +25,21 @@ import org.junit.jupiter.api.Test
 /**
  * Unit tests for [VcenterAdapter] delegation to [VsphereClient].
  *
- * These tests verify that the adapter correctly delegates all VspherePort
+ * These tests verify that the adapter correctly delegates all HypervisorPort
  * methods to the underlying VsphereClient implementation.
  */
 class VcenterAdapterTest {
 
     private val vsphereClient = mockk<VsphereClient>()
-    private val adapter: VspherePort = VcenterAdapter(vsphereClient = vsphereClient)
+    private val adapter: HypervisorPort = VcenterAdapter(vsphereClient = vsphereClient)
 
     // ==========================================
     // Interface Implementation
     // ==========================================
 
     @Test
-    fun `adapter implements VspherePort`() {
-        assertTrue(adapter is VspherePort)
+    fun `adapter implements HypervisorPort`() {
+        assertTrue(adapter is HypervisorPort)
     }
 
     // ==========================================
@@ -139,13 +139,13 @@ class VcenterAdapterTest {
             hostname = "test-vm",
             warningMessage = null
         )
-        coEvery { vsphereClient.createVm(spec) } returns expectedResult.success()
+        coEvery { vsphereClient.createVm(spec, any()) } returns expectedResult.success()
 
-        val result = adapter.createVm(spec)
+        val result = adapter.createVm(spec) {}
 
         assertTrue(result is Result.Success)
         assertEquals(expectedResult, (result as Result.Success).value)
-        coVerify(exactly = 1) { vsphereClient.createVm(spec) }
+        coVerify(exactly = 1) { vsphereClient.createVm(spec, any()) }
     }
 
     @Test
@@ -196,9 +196,9 @@ class VcenterAdapterTest {
             memoryGb = 16
         )
         val expectedError = VsphereError.ProvisioningError("VM creation failed")
-        coEvery { vsphereClient.createVm(spec) } returns Result.Failure(expectedError)
+        coEvery { vsphereClient.createVm(spec, any()) } returns Result.Failure(expectedError)
 
-        val result = adapter.createVm(spec)
+        val result = adapter.createVm(spec) {}
 
         assertTrue(result is Result.Failure)
         assertEquals(expectedError, (result as Result.Failure).error)

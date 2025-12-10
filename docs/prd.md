@@ -264,18 +264,39 @@ This de-risks the demo and allows parallel development.
 | **CSP/White-Label** | Multi-tenant SaaS for partners | High |
 | **Advanced Reporting** | Dashboards, trends, forecasting | Medium |
 | **ServiceNow Integration** | ITSM ticket sync | Medium |
-| **Proxmox Support** | Alternative hypervisor | Medium |
 | **API for Automation** | External system integration | Low |
+
+**Phase 4: Multi-Hypervisor Support (Epic 6)**
+
+See `docs/research-multi-hypervisor-support.md` for comprehensive market and technical analysis.
+
+| Feature | Value | Complexity | Priority |
+|---------|-------|------------|----------|
+| **Proxmox VE Support** | DACH market leader, 650% growth, Vienna-based | Low | 1st |
+| **Microsoft Hyper-V Support** | Windows Server environments | High | 2nd |
+| **IBM PowerVM Support** | Enterprise banking/government | Very High | 3rd |
+
+**Market Driver:** Broadcom VMware acquisition (98% customers evaluating alternatives, 150-1500% price increases).
+
+**Post-MVP Functional Requirements:**
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-HYPERVISOR-001 | Tenants can configure their hypervisor type (VMware, Proxmox, Hyper-V) | Phase 4 |
+| FR-HYPERVISOR-002 | System provisions VMs on tenant-configured hypervisor | Phase 4 |
+| FR-HYPERVISOR-003 | Admins can test hypervisor connection before saving configuration | Phase 4 |
+| FR-HYPERVISOR-004 | System discovers available resources (clusters, storage, networks) per hypervisor | Phase 4 |
+| FR-HYPERVISOR-005 | All existing workflows work identically regardless of hypervisor type | Phase 4 |
 
 ### Vision (Future)
 
 **Long-Term Product Evolution:**
 
 1. **Multi-Hypervisor Platform**
-   - VMware ESXi (MVP)
-   - Proxmox VE (Growth)
-   - Microsoft Hyper-V (Vision)
-   - Nutanix AHV (Vision)
+   - VMware ESXi (MVP) ✅
+   - Proxmox VE (Post-MVP Phase 1) — Low effort, cv4pve-api-java SDK
+   - Microsoft Hyper-V (Post-MVP Phase 2) — High effort, WinRM/PowerShell
+   - IBM PowerVM (Post-MVP Phase 3) — Enterprise contracts only
 
 2. **Beyond VMs**
    - Kubernetes namespace provisioning
@@ -852,11 +873,12 @@ DVMM Portal
 
 | Metric | Count |
 |--------|-------|
-| **Functional Requirements** | 90 (65 MVP, 25 Growth) |
+| **Functional Requirements** | 95 (65 MVP, 25 Growth, 5 Post-MVP Phase 4) |
 | **Non-Functional Requirements** | 96 (83 MVP, 13 Growth) |
-| **Total Requirements** | 186 |
+| **Total Requirements** | 191 |
 | **MVP Requirements** | 148 |
 | **Growth Requirements** | 38 |
+| **Post-MVP Phase 4 (Multi-Hypervisor)** | 5 |
 
 ### Validation Status
 

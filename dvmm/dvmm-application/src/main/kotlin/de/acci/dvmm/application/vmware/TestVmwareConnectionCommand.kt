@@ -10,6 +10,7 @@ import de.acci.eaf.core.types.UserId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Clock
 import java.time.Instant
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Command to test VMware vCenter connection with provided configuration.
@@ -195,9 +196,13 @@ public data class TestVmwareConnectionResult(
  * 3. Uses it for the connection test
  *
  * This allows testing with stored credentials without re-entering the password.
+ *
+ * ## Multi-Hypervisor Support (ADR-004)
+ *
+ * Uses [HypervisorPort] abstraction for future extensibility to other hypervisors.
  */
 public class TestVmwareConnectionHandler(
-    private val vspherePort: VspherePort,
+    private val hypervisorPort: HypervisorPort,
     private val configurationPort: VmwareConfigurationPort,
     private val credentialEncryptor: CredentialEncryptor,
     private val clock: Clock = Clock.systemUTC()
@@ -238,7 +243,7 @@ public class TestVmwareConnectionHandler(
         )
 
         // Test the connection
-        val connectionResult = vspherePort.testConnection(
+        val connectionResult = hypervisorPort.testConnection(
             params = connectionParams,
             password = resolvedPassword
         )
@@ -278,7 +283,7 @@ public class TestVmwareConnectionHandler(
     }
 
     /**
-     * Maps VspherePort errors to command-level errors.
+     * Maps HypervisorPort errors to command-level errors.
      */
     private fun mapConnectionError(error: ConnectionError): TestVmwareConnectionError = when (error) {
         is ConnectionError.NetworkError -> TestVmwareConnectionError.ConnectionRefused(
@@ -336,6 +341,8 @@ public class TestVmwareConnectionHandler(
                 logger.debug { "No existing config to update verifiedAt for tenant ${tenantId.value}" }
                 false
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.warn(e) { "Failed to update verifiedAt timestamp for tenant ${tenantId.value}" }
             false

@@ -4,6 +4,7 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.ext.list.withNameMatching
 import com.lemonappdev.konsist.api.verify.assertTrue
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 
 /**
@@ -148,6 +149,65 @@ class ArchitectureTest {
                 "$errorClassName must include a Forbidden subtype for authorization errors. " +
                     "Add: data class Forbidden(val message: String = \"Not authorized\") : $errorClassName()"
             }
+        }
+    }
+
+    /**
+     * Ensures suspend functions that catch generic Exception also handle CancellationException.
+     *
+     * Pattern: Catches `catch (e: Exception)` or `catch (e: Throwable)` in suspend functions
+     * without a preceding CancellationException handler or rethrow.
+     *
+     * Rationale: Kotlin's structured concurrency uses CancellationException to propagate
+     * cancellation signals. Catching it with a broad Exception handler breaks cancellation,
+     * causing resource leaks and preventing proper cleanup. See CLAUDE.md for details.
+     *
+     * Note: This is a heuristic check using text patterns. It may have false positives
+     * for intentionally swallowed exceptions, but errs on the side of safety.
+     */
+    @Test
+    fun `suspend functions catching Exception must handle CancellationException`() {
+        val applicationScope = Konsist.scopeFromModule("dvmm/dvmm-application")
+        val infrastructureScope = Konsist.scopeFromModule("dvmm/dvmm-infrastructure")
+
+        val allFunctions = applicationScope.functions() + infrastructureScope.functions()
+
+        // Find suspend functions with catch blocks using text-based detection
+        // (Konsist API for modifiers varies between versions, text matching is more stable)
+        val violations = allFunctions
+            .filter { func ->
+                val source = func.text
+
+                // Check if it's a suspend function
+                val isSuspend = source.trimStart().startsWith("suspend ") ||
+                    source.contains(Regex("""\bsuspend\s+fun\b"""))
+
+                if (!isSuspend) return@filter false
+
+                // Check if function has a broad exception catch
+                val hasBroadCatch = source.contains(Regex("""catch\s*\(\s*\w+\s*:\s*(Exception|Throwable)\s*\)"""))
+
+                if (!hasBroadCatch) return@filter false
+
+                // Check if CancellationException is properly handled:
+                // Must have a catch block for CancellationException that rethrows it.
+                // Pattern: catch (e: CancellationException) { throw e } or similar
+                val cancellationCatchWithRethrow = Regex(
+                    """catch\s*\(\s*(\w+)\s*:\s*CancellationException\s*\)\s*\{[^}]*throw\s+\1"""
+                )
+                val hasCancellationRethrow = source.contains(cancellationCatchWithRethrow)
+
+                // If the rethrow pattern is missing, it's a violation
+                !hasCancellationRethrow
+            }
+            .map { "${it.containingFile.name}:${it.name}" }
+
+        if (violations.isNotEmpty()) {
+            fail<Unit>(
+                "Suspend functions with catch(Exception) must also handle CancellationException.\n" +
+                    "Add: catch (e: CancellationException) { throw e }\n" +
+                    "Violations found in:\n${violations.joinToString("\n") { "  - $it" }}"
+            )
         }
     }
 }

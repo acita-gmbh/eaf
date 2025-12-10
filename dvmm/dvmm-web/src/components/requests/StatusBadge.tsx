@@ -49,13 +49,19 @@ interface StatusBadgeProps {
  * - FAILED: Red (error)
  */
 export function StatusBadge({ status, className }: Readonly<StatusBadgeProps>) {
+  // Safe: status is typed VmRequestStatus enum, not user input
+  // eslint-disable-next-line security/detect-object-injection
+  const colors = statusColors[status]
+  // eslint-disable-next-line security/detect-object-injection
+  const label = statusLabels[status]
+
   return (
     <Badge
       variant="outline"
-      className={cn(statusColors[status], className)}
+      className={cn(colors, className)}
       data-testid={`status-badge-${status.toLowerCase()}`}
     >
-      {statusLabels[status]}
+      {label}
     </Badge>
   )
 }

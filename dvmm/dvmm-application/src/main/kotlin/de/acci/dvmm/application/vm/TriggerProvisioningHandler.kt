@@ -8,9 +8,10 @@ import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmAggregate
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vm.VmwareVmId
 import de.acci.dvmm.domain.vm.events.VmProvisioningFailed
 import de.acci.dvmm.domain.vm.events.VmProvisioningStarted
@@ -26,22 +27,28 @@ import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Handles VmProvisioningStarted event by calling VspherePort to create the VM.
+ * Handles VmProvisioningStarted event by calling the hypervisor to create the VM.
  *
  * On success, emits VmProvisioned (VM aggregate) and VmRequestReady (VmRequest aggregate)
  * events, plus updates the timeline projection.
  *
- * On failure (missing config or vSphere error), emits VmProvisioningFailed event
+ * On failure (missing config or hypervisor error), emits VmProvisioningFailed event
  * so downstream systems can react appropriately.
+ *
+ * ## Multi-Hypervisor Support (ADR-004)
+ *
+ * This handler uses [HypervisorPort] abstraction, enabling support for multiple
+ * hypervisors (VMware vSphere, Proxmox, Hyper-V, PowerVM) without changing handler logic.
  */
 public class TriggerProvisioningHandler(
-    private val vspherePort: VspherePort,
+    private val hypervisorPort: HypervisorPort,
     private val configPort: VmwareConfigurationPort,
     private val eventStore: EventStore,
     private val vmEventDeserializer: VmEventDeserializer,
     private val vmRequestEventDeserializer: VmRequestEventDeserializer,
     private val timelineUpdater: TimelineEventProjectionUpdater,
-    private val vmRequestReadRepository: VmRequestReadRepository
+    private val vmRequestReadRepository: VmRequestReadRepository,
+    private val progressRepository: VmProvisioningProgressProjectionRepository
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -61,6 +68,8 @@ public class TriggerProvisioningHandler(
         // Get project name for prefixing (AC1: {projectPrefix}-{requestedName})
         val projectInfo = try {
              vmRequestReadRepository.findById(event.requestId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.error(e) { "Failed to load project info for request ${event.requestId.value}" }
             null
@@ -91,7 +100,10 @@ public class TriggerProvisioningHandler(
             memoryGb = event.size.memoryGb
         )
 
-        val result = vspherePort.createVm(spec)
+        val result = hypervisorPort.createVm(spec) { stage ->
+            emitProgress(event, stage)
+        }
+        
         when (result) {
             is Result.Success -> {
                 val provisioningResult = result.value
@@ -111,6 +123,73 @@ public class TriggerProvisioningHandler(
         }
     }
 
+    private suspend fun emitProgress(event: VmProvisioningStarted, stage: VmProvisioningStage) {
+        val vmId = event.aggregateId.value
+        try {
+            val vmEvents = eventStore.load(vmId)
+            if (vmEvents.isEmpty()) {
+                logger.error { "Cannot emit progress: VM aggregate $vmId not found" }
+                return
+            }
+
+            val vmAggregate = VmAggregate.reconstitute(
+                id = event.aggregateId,
+                events = vmEvents.map { vmEventDeserializer.deserialize(it) }
+            )
+
+            vmAggregate.updateProgress(stage, event.metadata)
+
+            val appendResult = eventStore.append(
+                aggregateId = vmId,
+                events = vmAggregate.uncommittedEvents,
+                expectedVersion = vmEvents.size.toLong()
+            )
+
+            when (appendResult) {
+                is Result.Success -> {
+                    logger.debug { "Emitted progress $stage for VM $vmId" }
+                    // Update projection with accumulated stage timestamps
+                    try {
+                        val now = Instant.now()
+
+                        // Load existing projection to preserve accumulated timestamps
+                        val existing = progressRepository.findByVmRequestId(
+                            event.requestId,
+                            event.metadata.tenantId
+                        )
+
+                        // Build accumulated timestamps: existing + current stage
+                        val accumulatedTimestamps = (existing?.stageTimestamps ?: emptyMap()) + (stage to now)
+                        val startedAt = existing?.startedAt ?: now
+                        val estimatedRemaining = VmProvisioningProgressProjection.calculateEstimatedRemaining(stage)
+
+                        progressRepository.save(
+                            VmProvisioningProgressProjection(
+                                vmRequestId = event.requestId,
+                                stage = stage,
+                                details = "Provisioning stage: ${stage.name.lowercase().replace('_', ' ')}",
+                                startedAt = startedAt,
+                                updatedAt = now,
+                                stageTimestamps = accumulatedTimestamps,
+                                estimatedRemainingSeconds = estimatedRemaining
+                            ),
+                            event.metadata.tenantId
+                        )
+                    } catch (e: CancellationException) {
+                        throw e  // Allow proper coroutine cancellation
+                    } catch (e: Exception) {
+                        logger.error(e) { "Failed to update progress projection for VM $vmId" }
+                    }
+                }
+                is Result.Failure -> logger.error { "Failed to emit progress $stage: ${appendResult.error}" }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+             logger.error(e) { "Failed to emit progress $stage for VM $vmId" }
+        }
+    }
+
     /**
      * Emits success events for VM and VmRequest aggregates, plus timeline update.
      *
@@ -127,6 +206,15 @@ public class TriggerProvisioningHandler(
     ) {
         val vmId = event.aggregateId.value
         val requestId = event.requestId.value
+
+        // Cleanup progress projection
+        try {
+            progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to cleanup progress projection for request $requestId" }
+        }
 
         // Step 1: Update VM aggregate with VmProvisioned event
         try {
@@ -258,6 +346,15 @@ public class TriggerProvisioningHandler(
             reason = reason,
             metadata = event.metadata
         )
+
+        // Cleanup progress projection
+        try {
+            progressRepository.delete(event.requestId, event.metadata.tenantId)
+        } catch (e: CancellationException) {
+            throw e  // Allow proper coroutine cancellation
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to cleanup progress projection for request ${event.requestId.value}" }
+        }
 
         try {
             // Step 1: Load current version to handle potential concurrent modifications

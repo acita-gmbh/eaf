@@ -21,8 +21,9 @@ import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.VspherePort
+import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmProvisioningResult
+import de.acci.dvmm.domain.vm.VmProvisioningStage
 import de.acci.dvmm.domain.vmware.VcenterConnectionParams
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
@@ -38,6 +39,7 @@ import java.net.URI
 import java.net.UnknownHostException
 import java.security.KeyStore
 import javax.net.ssl.SSLException
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Production vCenter adapter using VCF SDK 9.0 (Official VMware SDK).
@@ -78,7 +80,7 @@ public class VcenterAdapter(
     private val vsphereClient: VsphereClient,
     @Value("\${dvmm.vcenter.ignore-cert:false}")
     private val ignoreCert: Boolean = false
-) : VspherePort {
+) : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
 
@@ -271,6 +273,9 @@ public class VcenterAdapter(
                 cause = e
             ).failure()
 
+        } catch (e: CancellationException) {
+            throw e
+
         } catch (e: Exception) {
             // Check for authentication errors in exception message
             val message = e.message?.lowercase() ?: ""
@@ -316,8 +321,11 @@ public class VcenterAdapter(
     override suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> =
         vsphereClient.listResourcePools(cluster)
 
-    override suspend fun createVm(spec: VmSpec): Result<VmProvisioningResult, VsphereError> =
-        vsphereClient.createVm(spec)
+    override suspend fun createVm(
+        spec: VmSpec,
+        onProgress: suspend (VmProvisioningStage) -> Unit
+    ): Result<VmProvisioningResult, VsphereError> =
+        vsphereClient.createVm(spec, onProgress)
 
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> =
         vsphereClient.getVm(vmId)
