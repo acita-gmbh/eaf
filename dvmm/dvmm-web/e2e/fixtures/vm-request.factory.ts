@@ -23,7 +23,7 @@ export type VmRequestFactory = (overrides?: Partial<CreateVmRequest>) => Promise
 
 // Extend the test fixture
 export const test = base.extend<{ requestFactory: VmRequestFactory }>({
-    requestFactory: async ({ request }, use) => {
+    requestFactory: async ({ request }, run) => {
         // Factory implementation
         const createRequest = async (overrides: Partial<CreateVmRequest> = {}) => {
             const defaultRequest: CreateVmRequest = {
@@ -46,7 +46,7 @@ export const test = base.extend<{ requestFactory: VmRequestFactory }>({
             return await response.json();
         };
 
-        await use(createRequest);
+        await run(createRequest);
     }
 });
 

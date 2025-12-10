@@ -84,8 +84,10 @@ jobs:
         run: |
           # Start Backend in background (using test profile if needed, or default)
           # BootRun blocks, so we use java -jar or nohup gradle
-          # Ideally, we build the jar and run it
-          java -jar dvmm/dvmm-app/build/libs/dvmm-app-*.jar --spring.profiles.active=local &
+          # Find the boot jar (not the plain one)
+          JAR_FILE=$(find dvmm/dvmm-app/build/libs -name "dvmm-app-*.jar" ! -name "*-plain.jar" | head -n 1)
+          echo "Starting Backend with jar: $JAR_FILE"
+          java -jar "$JAR_FILE" --spring.profiles.active=local &
 
           echo "Waiting for Backend to start on port 8080..."
           timeout 120s bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
