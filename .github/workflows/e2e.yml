@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     name: E2E Tests (Full Stack)
@@ -62,6 +65,7 @@ jobs:
       - name: Start Keycloak (Port 8180)
         run: |
           docker run -d \
+            --name keycloak-e2e \
             -p 8180:8080 \
             -e KEYCLOAK_ADMIN=${{ env.KEYCLOAK_ADMIN }} \
             -e KEYCLOAK_ADMIN_PASSWORD=${{ env.KEYCLOAK_ADMIN_PASSWORD }} \
@@ -86,7 +90,7 @@ jobs:
 
       - name: Start Backend
         run: |
-          # Start Backend in background (using test profile if needed, or default)
+          # Start Backend in background using local profile for CI environment
           # BootRun blocks, so we use java -jar or nohup gradle
           # Find the boot jar (not the plain one)
           JAR_FILE=$(find dvmm/dvmm-app/build/libs -name "dvmm-app-*.jar" ! -name "*-plain.jar" | head -n 1)

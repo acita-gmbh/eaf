@@ -36,10 +36,10 @@ dependencies {
 configurations.all {
     resolutionStrategy.eachDependency {
         if (requested.group == "org.flywaydb" && requested.name == "flyway-core") {
-            // Force version from catalog to override Spring Boot managed dependency
-            // which downgrades Flyway to 11.7.2 (incompatible with Postgres 16.11)
+            // Force version 11.18.0+ from catalog to override Spring Boot managed dependency
+            // which might resolve to an older 11.x version (e.g. 11.7.2) incompatible with Postgres 16
             useVersion(libs.findVersion("flyway").get().toString())
-            because("PostgreSQL 16.11 support requires Flyway 11.10+")
+            because("PostgreSQL 16 support requires new Flyway database extensions and recent core version")
         }
     }
 }

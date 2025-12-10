@@ -1,4 +1,3 @@
-
 import { test as base } from '@playwright/test';
 
 // Define the interface for the create request payload

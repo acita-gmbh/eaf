@@ -86,7 +86,7 @@ npm run test:e2e -- --project=chromium-user
 
 | Requirement | Effort | Notes |
 |-------------|--------|-------|
-| Keycloak Testcontainer in CI | Medium | Need to start container, configure env vars |
+| Keycloak Testcontainers in CI | Medium | Need to start container, configure env vars |
 | Backend in CI | Medium | Already have Gradle build; need bootRun step |
 | Test data fixtures | Medium | Create seed data via API or SQL |
 | Session creation | Low | Run setup project before test projects |
@@ -117,7 +117,7 @@ npm run test:e2e -- --project=chromium-user
 
 | Class | Location | Reason |
 |-------|----------|--------|
-| `VmProvisioningProgressQueryService` | `dvmm-application/vm/` | Contains error handling and tenant validation logic |
+
 | `VmProvisioningProgressProjectionRepositoryAdapter` | `dvmm-infrastructure/projection/` | Database interaction |
 | `TimelineEventProjectionUpdaterAdapter` | `dvmm-infrastructure/projection/` | Write-side projection logic |
 
