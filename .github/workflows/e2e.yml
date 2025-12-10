@@ -1,0 +1,118 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-tests:
+    name: E2E Tests (Full Stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Application Configuration
+      KEYCLOAK_URL: http://localhost:8180
+      BASE_URL: http://localhost:5173
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eaf_test
+      SPRING_DATASOURCE_USERNAME: eaf
+      SPRING_DATASOURCE_PASSWORD: eaf
+      # Keycloak Configuration
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: eaf
+          POSTGRES_PASSWORD: eaf
+          POSTGRES_DB: eaf_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: dvmm/dvmm-web/package-lock.json
+
+      - name: Start Keycloak (Port 8180)
+        run: |
+          docker run -d \
+            -p 8180:8080 \
+            -e KEYCLOAK_ADMIN=${{ env.KEYCLOAK_ADMIN }} \
+            -e KEYCLOAK_ADMIN_PASSWORD=${{ env.KEYCLOAK_ADMIN_PASSWORD }} \
+            -v ${{ github.workspace }}/eaf/eaf-testing/src/main/resources/test-realm.json:/opt/keycloak/data/import/realm.json \
+            quay.io/keycloak/keycloak:24.0.1 \
+            start-dev --import-realm
+
+      - name: Wait for Keycloak
+        run: |
+          echo "Waiting for Keycloak to start on port 8180..."
+          timeout 120s bash -c 'until curl -s http://localhost:8180/realms/dvmm > /dev/null; do sleep 5; done'
+          echo "Keycloak is up!"
+
+      - name: Install Dependencies
+        run: |
+          npm ci --prefix dvmm/dvmm-web
+          npx playwright install --with-deps chromium --prefix dvmm/dvmm-web
+
+      - name: Build Backend
+        run: ./gradlew assemble compileTestKotlin --no-daemon
+
+      - name: Start Backend
+        run: |
+          # Start Backend in background (using test profile if needed, or default)
+          # BootRun blocks, so we use java -jar or nohup gradle
+          # Ideally, we build the jar and run it
+          java -jar dvmm/dvmm-app/build/libs/dvmm-app-*.jar --spring.profiles.active=local &
+          
+          echo "Waiting for Backend to start on port 8080..."
+          timeout 120s bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
+          echo "Backend is up!"
+
+      - name: Start Frontend
+        run: |
+          cd dvmm/dvmm-web
+          npm run dev &
+          
+          echo "Waiting for Frontend to start on port 5173..."
+          timeout 60s bash -c 'until curl -s http://localhost:5173 > /dev/null; do sleep 2; done'
+          echo "Frontend is up!"
+
+      - name: Run E2E Tests
+        run: |
+          cd dvmm/dvmm-web
+          # Run setup project first to create auth sessions
+          npm run test:e2e -- --project=setup
+          
+          # Run authenticated tests (skipping unauthenticated for speed in this pass, or run all)
+          # Running all projects
+          npm run test:e2e
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: dvmm/dvmm-web/playwright-report/
+          retention-days: 14
