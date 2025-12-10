@@ -5,15 +5,15 @@ buildscript {
     }
     dependencies {
         // Testcontainers for spinning up PostgreSQL
-        classpath("org.testcontainers:postgresql:1.20.4")
+        classpath("org.testcontainers:postgresql:1.21.3")
         // Flyway for running migrations
-        classpath("org.flywaydb:flyway-core:11.8.2")
-        classpath("org.flywaydb:flyway-database-postgresql:11.8.2")
+        classpath("org.flywaydb:flyway-core:11.16.0")
+        classpath("org.flywaydb:flyway-database-postgresql:11.16.0")
         // PostgreSQL driver
-        classpath("org.postgresql:postgresql:42.7.5")
+        classpath("org.postgresql:postgresql:42.7.8")
         // jOOQ codegen
-        classpath("org.jooq:jooq-codegen:3.20.4")
-        classpath("org.jooq:jooq-meta:3.20.4")
+        classpath("org.jooq:jooq-codegen:3.20.9")
+        classpath("org.jooq:jooq-meta:3.20.9")
     }
 }
 

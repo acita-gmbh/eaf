@@ -15,13 +15,12 @@ import { test, expect } from '@playwright/test'
  *
  * ## Running Authenticated Tests
  *
- * Tests marked `test` require authentication setup:
+ * These tests require authentication setup:
  * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
  * 2. Run auth setup: `npm run test:e2e -- --project=setup`
  * 3. Run tests: `npm run test:e2e -- --project=chromium-user request-detail.spec.ts`
  *
- * In CI, these tests are skipped by default. Enable them by configuring
- * Keycloak Testcontainer in the CI pipeline. See `e2e/README.md` for details.
+ * In CI, these tests are active by default. See `e2e/README.md` for details.
  */
 
 test.describe('Request Detail Page @requires-auth', () => {

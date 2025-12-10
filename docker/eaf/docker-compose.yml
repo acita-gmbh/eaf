@@ -30,12 +30,15 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      # Realm name for healthcheck (can be overridden by product compose files)
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-dvmm}
     ports:
       - "8180:8080"
     volumes:
       - ../../eaf/eaf-testing/src/main/resources/test-realm.json:/opt/keycloak/data/import/realm.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /realms/dvmm HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3;grep -q '200 OK' <&3"]
+      # Use configurable realm via environment variable
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e \"GET /realms/$${KEYCLOAK_REALM} HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3;grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 10s
       retries: 12

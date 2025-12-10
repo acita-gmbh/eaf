@@ -35,9 +35,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON "VM_REQUESTS_PROJECTION" TO eaf_app;
 ALTER TABLE "VM_REQUESTS_PROJECTION" ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policy using same pattern as event store (fail-closed)
+-- WITH CHECK ensures writes are also tenant-isolated (prevents cross-tenant data injection)
 CREATE POLICY tenant_isolation_vm_requests_projection ON "VM_REQUESTS_PROJECTION"
     FOR ALL
-    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
 -- Force RLS for ALL users including table owner
 ALTER TABLE "VM_REQUESTS_PROJECTION" FORCE ROW LEVEL SECURITY;

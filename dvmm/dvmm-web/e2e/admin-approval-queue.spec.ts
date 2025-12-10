@@ -49,8 +49,8 @@ import { test, expect } from '@playwright/test'
  *
  * ### CI Execution
  *
- * In CI, these tests are skipped by default (marked with `test`).
- * To enable them in CI:
+ * In CI, these tests are active by default.
+ * To run them in CI:
  * 1. Configure Keycloak Testcontainer in CI pipeline
  * 2. Set environment variables (KEYCLOAK_URL, API_URL)
  * 3. Run setup project first
