@@ -11,6 +11,7 @@ import de.acci.eaf.core.types.TenantId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.jooq.DSLContext
+import org.jooq.JSONB
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -62,7 +63,7 @@ internal class VmProvisioningProgressProjectionRepositoryAdapter(
             .awaitFirstOrNull() ?: return null
 
         val stage = VmProvisioningStage.valueOf(record.stage)
-        val stageTimestamps = deserializeStageTimestamps(record.stageTimestamps ?: "{}")
+        val stageTimestamps = deserializeStageTimestamps(record.stageTimestamps)
         val estimatedRemaining = VmProvisioningProgressProjection.calculateEstimatedRemaining(stage)
 
         return VmProvisioningProgressProjection(
@@ -77,19 +78,18 @@ internal class VmProvisioningProgressProjectionRepositoryAdapter(
     }
 
     /**
-     * Serializes stage timestamps to JSON string for JSONB column storage.
+     * Serializes stage timestamps to jOOQ JSONB type for column storage.
      *
-     * Note: PostgreSQL JSONB column accepts JSON as a string, which is then parsed
-     * and stored in binary format. jOOQ's JSONB binding expects String input,
-     * so we serialize the map to JSON here. On read, PostgreSQL returns the JSONB
-     * as a JSON string which we deserialize back to the map.
+     * Note: PostgreSQL JSONB column stores JSON in binary format. jOOQ's JSONB class
+     * wraps the JSON string. On read, we extract the JSON string and deserialize.
      */
-    private fun serializeStageTimestamps(timestamps: Map<VmProvisioningStage, Instant>): String {
+    private fun serializeStageTimestamps(timestamps: Map<VmProvisioningStage, Instant>): JSONB {
         val stringMap = timestamps.mapKeys { it.key.name }.mapValues { it.value.toString() }
-        return objectMapper.writeValueAsString(stringMap)
+        return JSONB.jsonb(objectMapper.writeValueAsString(stringMap))
     }
 
-    private fun deserializeStageTimestamps(json: String): Map<VmProvisioningStage, Instant> {
+    private fun deserializeStageTimestamps(jsonb: JSONB?): Map<VmProvisioningStage, Instant> {
+        val json = jsonb?.data() ?: return emptyMap()
         if (json.isBlank() || json == "{}") return emptyMap()
         val stringMap: Map<String, String> = objectMapper.readValue(json, object : TypeReference<Map<String, String>>() {})
         return stringMap.mapNotNull { (key, value) ->

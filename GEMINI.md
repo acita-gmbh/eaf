@@ -74,7 +74,7 @@ Convention plugins for consistent configuration:
 - **Spring Boot 3.5** with WebFlux/Coroutines
 - **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security for multi-tenancy
-- **jOOQ 3.20** with DDLDatabase for type-safe SQL
+- **jOOQ 3.20** with Testcontainers + Flyway for type-safe SQL generation
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
@@ -507,38 +507,44 @@ useQuery({ staleTime: 30000 })  // Admin won't see new requests!
 
 ## jOOQ Code Generation
 
-jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
+jOOQ uses **Testcontainers + Flyway** to generate code from a real PostgreSQL database with production-identical schema.
 
 ```bash
 # Regenerate jOOQ code
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
+# Or simply build (runs automatically before compileKotlin)
+./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
 
 ### Adding New Tables
 
-**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations (production) and jooq-init.sql (code generation).
+**Just add the Flyway migration - no additional files needed!**
 
-1. Add migration to `db/migration/`
-2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
-   - Use quoted uppercase identifiers (jOOQ DDLDatabase uses H2 which generates uppercase)
+1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+2. Use PostgreSQL-native types (JSONB, TIMESTAMPTZ, UUID, etc.) - they all work
+3. Use quoted uppercase identifiers for consistency:
    - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
-3. Wrap PostgreSQL-specific statements with ignore tokens:
+4. Include RLS policies with both `USING` AND `WITH CHECK`:
    ```sql
-   -- [jooq ignore start]
-   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   -- CRITICAL: RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
-   CREATE POLICY tenant_isolation ON my_table
+   ALTER TABLE "MY_TABLE" ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY tenant_isolation ON "MY_TABLE"
        FOR ALL
-       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
-   -- [jooq ignore stop]
+       USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
    ```
-4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
-5. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+5. Build to regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration created, jooq-init.sql updated, ignore tokens added, RLS policies include both USING AND WITH CHECK, jOOQ regenerated, integration tests updated for FK constraints, tests pass.
+**Checklist:** Flyway migration created, RLS policies include both USING AND WITH CHECK, jOOQ regenerated (automatic), integration tests updated for FK constraints, tests pass.
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+### PostgreSQL Types in Generated Code
+
+| PostgreSQL Type | jOOQ Type | Usage |
+|----------------|-----------|-------|
+| `JSONB` | `org.jooq.JSONB` | Use `JSONB.jsonb(jsonString)` to create, `.data()` to read |
+| `UUID` | `java.util.UUID` | Direct mapping |
+| `TIMESTAMPTZ` | `java.time.OffsetDateTime` | Direct mapping |
 
 ### Projection Column Symmetry (CRITICAL)
 
@@ -546,7 +552,7 @@ jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running 
 
 When adding a new column to a projection table:
 1. Add the column to the Flyway migration
-2. Add the column to jooq-init.sql
+2. Regenerate jOOQ code (automatic on build)
 3. Add the column to `mapRecord()` (read path)
 4. Add the column to `insert()` (write path)
 5. **Compile fails if any step is missed** - use sealed class pattern

@@ -13,6 +13,9 @@
 -- 2. eaf_events.events (Story 1.2)
 -- 3. eaf_events.snapshots (Story 1.2)
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: RLS policy fixes (entire file is RLS-related)
+
 -- ============================================================================
 -- Fix "VM_REQUESTS_PROJECTION" RLS policy
 -- ============================================================================
@@ -62,3 +65,4 @@ CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
 
 COMMENT ON POLICY tenant_isolation_snapshots ON eaf_events.snapshots IS
     'Enforces tenant isolation for reads (USING) and writes (WITH CHECK). Returns zero rows when app.tenant_id is not set (fail-closed).';
+-- [jooq ignore stop]

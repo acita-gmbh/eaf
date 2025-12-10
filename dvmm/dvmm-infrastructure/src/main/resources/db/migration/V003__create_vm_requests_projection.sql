@@ -25,6 +25,9 @@ CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_STATUS" ON "VM_REQUESTS_PROJECTION" ("S
 CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_REQUESTER" ON "VM_REQUESTS_PROJECTION" ("REQUESTER_ID");
 CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_CREATED" ON "VM_REQUESTS_PROJECTION" ("CREATED_AT" DESC);
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
+
 -- Grant permissions to application role
 GRANT SELECT, INSERT, UPDATE, DELETE ON "VM_REQUESTS_PROJECTION" TO eaf_app;
 
@@ -42,3 +45,4 @@ ALTER TABLE "VM_REQUESTS_PROJECTION" FORCE ROW LEVEL SECURITY;
 -- Add comments
 COMMENT ON TABLE "VM_REQUESTS_PROJECTION" IS 'Read model for VM requests. Updated asynchronously from events.';
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."VERSION" IS 'Optimistic locking version for projection updates.';
+-- [jooq ignore stop]

@@ -39,6 +39,9 @@ ALTER TABLE "VM_REQUESTS_PROJECTION"
 -- Add index for project filtering
 CREATE INDEX "IDX_VM_REQUESTS_PROJECTION_PROJECT" ON "VM_REQUESTS_PROJECTION" ("PROJECT_ID");
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: Comments (not needed for jOOQ code generation)
+
 -- Add comments for new columns
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."PROJECT_ID" IS 'Project the VM belongs to';
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."PROJECT_NAME" IS 'Denormalized project name for display';
@@ -51,3 +54,4 @@ COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."APPROVED_BY_NAME" IS 'Denormalized a
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REJECTED_BY" IS 'Admin who rejected the request (nullable)';
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REJECTED_BY_NAME" IS 'Denormalized rejector name for display';
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REJECTION_REASON" IS 'Reason provided for rejection (nullable)';
+-- [jooq ignore stop]

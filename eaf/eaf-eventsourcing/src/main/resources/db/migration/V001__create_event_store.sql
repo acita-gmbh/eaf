@@ -46,6 +46,9 @@ CREATE TABLE eaf_events.snapshots (
 
 CREATE INDEX idx_snapshots_tenant ON eaf_events.snapshots (tenant_id);
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: Roles, Grants, Triggers, Functions (not needed for jOOQ code generation)
+
 -- Create application role for RLS enforcement (non-superuser)
 DO $$
 BEGIN
@@ -89,3 +92,4 @@ COMMENT ON TABLE eaf_events.events IS 'Immutable event log for event sourcing. N
 COMMENT ON TABLE eaf_events.snapshots IS 'Aggregate state snapshots for performance optimization.';
 COMMENT ON COLUMN eaf_events.events.version IS 'Aggregate version. Starts at 1, increments with each event.';
 COMMENT ON COLUMN eaf_events.events.metadata IS 'Event metadata: tenant_id, user_id, correlation_id, timestamp';
+-- [jooq ignore stop]

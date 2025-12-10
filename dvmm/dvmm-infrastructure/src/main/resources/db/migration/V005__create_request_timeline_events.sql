@@ -18,6 +18,9 @@ CREATE INDEX "IDX_TIMELINE_EVENTS_REQUEST" ON "REQUEST_TIMELINE_EVENTS" ("REQUES
 -- Index for tenant isolation queries
 CREATE INDEX "IDX_TIMELINE_EVENTS_TENANT" ON "REQUEST_TIMELINE_EVENTS" ("TENANT_ID");
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: Grants, RLS, Comments (not needed for jOOQ code generation)
+
 -- Enable Row-Level Security for multi-tenancy
 ALTER TABLE "REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
 
@@ -40,3 +43,4 @@ COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."ACTOR_ID" IS 'User ID who performed
 COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."ACTOR_NAME" IS 'Display name of actor (resolved at projection time)';
 COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."DETAILS" IS 'Additional event details (e.g., rejection reason)';
 COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."OCCURRED_AT" IS 'When the event occurred';
+-- [jooq ignore stop]

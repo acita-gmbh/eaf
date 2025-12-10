@@ -66,7 +66,7 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Spring Boot 3.5** with WebFlux/Coroutines
 - **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security
-- **jOOQ 3.20** with DDLDatabase for type-safe SQL
+- **jOOQ 3.20** with Testcontainers + Flyway for type-safe SQL generation
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
@@ -388,48 +388,41 @@ useQuery({
 
 ## jOOQ Code Generation
 
-jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
+jOOQ uses **Testcontainers + Flyway** to generate code from a real PostgreSQL database with production-identical schema.
 
 ```bash
 # Regenerate jOOQ code
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
+# Or simply build (runs automatically before compileKotlin)
+./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
 
 ### Adding New Tables
 
-**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations and jooq-init.sql.
+**Just add the Flyway migration - no additional files needed!**
 
-1. Add migration to `db/migration/`
-2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
-   - Use quoted uppercase identifiers (jOOQ DDLDatabase uses H2)
-   - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
-3. Wrap PostgreSQL-specific statements with ignore tokens:
-   ```sql
-   -- [jooq ignore start]
-   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   -- RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
-   CREATE POLICY tenant_isolation ON my_table
-       FOR ALL
-       USING (tenant_id = ...)
-       WITH CHECK (tenant_id = ...);
-   -- [jooq ignore stop]
-   ```
-4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
-5. Verify: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+2. Use PostgreSQL-native types (JSONB, TIMESTAMPTZ, UUID, etc.) - they all work
+3. Use quoted uppercase identifiers for consistency
+4. Include RLS policies with both `USING` AND `WITH CHECK`
+5. Build to regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + RLS WITH CHECK + regenerate + integration tests for FK + tests pass.
+**Checklist:** Flyway migration + RLS WITH CHECK + regenerate (automatic) + integration tests for FK + tests pass.
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+**PostgreSQL Types:** `JSONB` → `org.jooq.JSONB` (use `.jsonb()` to create, `.data()` to read)
 
 ### Projection Column Symmetry (CRITICAL)
 
 **CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
 
 When adding a new column to a projection table:
-1. Add the column to the Flyway migration + jooq-init.sql
-2. Add the column to `mapRecord()` (read path)
-3. Add the column to `insert()` (write path)
-4. **Compile fails if any step is missed** - use sealed class pattern
+1. Add the column to the Flyway migration
+2. Regenerate jOOQ code (automatic on build)
+3. Add the column to `mapRecord()` (read path)
+4. Add the column to `insert()` (write path)
+5. **Compile fails if any step is missed** - use sealed class pattern
 
 ```kotlin
 sealed interface ProjectionColumns {

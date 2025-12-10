@@ -3,6 +3,9 @@
 -- AC: 1 (RLS enabled on tenant-scoped tables), 3 (RLS policy definition),
 --     5 (Flyway migration), 6 (Superuser bypass disabled)
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: RLS policies (not supported by H2 DDLDatabase)
+
 -- Enable RLS on events table
 ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
 
@@ -32,3 +35,4 @@ COMMENT ON POLICY tenant_isolation_events ON eaf_events.events IS
     'Enforces tenant isolation. Returns zero rows when app.tenant_id session variable is not set (fail-closed).';
 COMMENT ON POLICY tenant_isolation_snapshots ON eaf_events.snapshots IS
     'Enforces tenant isolation. Returns zero rows when app.tenant_id session variable is not set (fail-closed).';
+-- [jooq ignore stop]

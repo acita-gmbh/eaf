@@ -13,7 +13,7 @@ _Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvio
 | Gradle | 9.2 | Version Catalog at `gradle/libs.versions.toml` |
 | JVM | 21 | Target and toolchain |
 | PostgreSQL | 16 | Row-Level Security for multi-tenancy |
-| jOOQ | 3.20 | DDLDatabase code generation |
+| jOOQ | 3.20 | Testcontainers + Flyway code generation |
 | JUnit | 6 | With MockK + Testcontainers |
 
 ### Frontend (dvmm-web)
@@ -260,34 +260,31 @@ suspend fun createVm(spec: VmSpec) = executeResilient("createVm", createVmTimeou
 
 ---
 
-## jOOQ Code Generation (Critical Gotchas)
+## jOOQ Code Generation (Testcontainers + Flyway)
 
-**Two SQL files must stay in sync:**
-- Flyway migrations (production): `*/resources/db/migration/`
-- jOOQ DDL (codegen): `dvmm-infrastructure/src/main/resources/db/jooq-init.sql`
+**Single source of truth:** Just add Flyway migrations - jOOQ generates code from a real PostgreSQL database via Testcontainers.
 
-**H2 Compatibility (DDLDatabase uses H2 internally):**
+**Migration locations:**
+- EAF framework: `eaf/eaf-eventsourcing/src/main/resources/db/migration/`
+- DVMM product: `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+
+**PostgreSQL-native types work directly:**
 ```sql
--- Use quoted UPPERCASE for table/column names
-CREATE TABLE "DOMAIN_EVENTS" (...)  -- ✅ Correct
-CREATE TABLE domain_events (...)    -- ❌ Wrong
-
--- Wrap PostgreSQL-specific statements
--- [jooq ignore start]
-ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
+-- JSONB, TIMESTAMPTZ, UUID, etc. all work
+CREATE TABLE "DOMAIN_EVENTS" (
+    "ID" UUID PRIMARY KEY,
+    "METADATA" JSONB NOT NULL DEFAULT '{}'
+)
 -- RLS policies MUST have both USING (reads) AND WITH CHECK (writes)
-CREATE POLICY tenant_isolation ON my_table
-    FOR ALL
-    USING (tenant_id = ...)
-    WITH CHECK (tenant_id = ...);
--- [jooq ignore stop]
 ```
 
-**After schema changes:**
+**After schema changes (automatic on build):**
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
 ./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
+
+**PostgreSQL Types in Generated Code:**
+- `JSONB` → `org.jooq.JSONB` (use `JSONB.jsonb(json)` to create, `.data()` to read)
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first (use `ON CONFLICT DO NOTHING` for idempotency), and cleanup must use `TRUNCATE ... CASCADE`.
 

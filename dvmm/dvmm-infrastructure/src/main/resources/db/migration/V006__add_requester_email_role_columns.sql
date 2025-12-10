@@ -7,6 +7,10 @@ ALTER TABLE "VM_REQUESTS_PROJECTION"
     ADD COLUMN "REQUESTER_EMAIL" VARCHAR(255),
     ADD COLUMN "REQUESTER_ROLE" VARCHAR(100);
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: Comments (not needed for jOOQ code generation)
+
 -- Add comments for new columns
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REQUESTER_EMAIL" IS 'Denormalized requester email for display in admin view';
 COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REQUESTER_ROLE" IS 'Denormalized requester role for display in admin view';
+-- [jooq ignore stop]
