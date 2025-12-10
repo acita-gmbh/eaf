@@ -9,8 +9,17 @@ interface CreateVmRequest {
     justification: string;
 }
 
+interface VmRequestResponse {
+    requestId: string;
+    vmName: string;
+    projectId: string;
+    size: 'S' | 'M' | 'L' | 'XL';
+    status: string;
+    createdAt: string;
+}
+
 // Define the type for the factory function
-export type VmRequestFactory = (overrides?: Partial<CreateVmRequest>) => Promise<any>;
+export type VmRequestFactory = (overrides?: Partial<CreateVmRequest>) => Promise<VmRequestResponse>;
 
 // Extend the test fixture
 export const test = base.extend<{ requestFactory: VmRequestFactory }>({

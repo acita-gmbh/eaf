@@ -45,14 +45,14 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: dvmm/dvmm-web/package-lock.json
 
       - name: Start Keycloak (Port 8180)
@@ -73,8 +73,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci --prefix dvmm/dvmm-web
-          npx playwright install --with-deps chromium --prefix dvmm/dvmm-web
+          cd dvmm/dvmm-web
+          npm ci
+          npx playwright install --with-deps chromium
 
       - name: Build Backend
         run: ./gradlew assemble compileTestKotlin --no-daemon
@@ -85,7 +86,7 @@ jobs:
           # BootRun blocks, so we use java -jar or nohup gradle
           # Ideally, we build the jar and run it
           java -jar dvmm/dvmm-app/build/libs/dvmm-app-*.jar --spring.profiles.active=local &
-          
+
           echo "Waiting for Backend to start on port 8080..."
           timeout 120s bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
           echo "Backend is up!"
@@ -94,7 +95,7 @@ jobs:
         run: |
           cd dvmm/dvmm-web
           npm run dev &
-          
+
           echo "Waiting for Frontend to start on port 5173..."
           timeout 60s bash -c 'until curl -s http://localhost:5173 > /dev/null; do sleep 2; done'
           echo "Frontend is up!"
@@ -104,7 +105,7 @@ jobs:
           cd dvmm/dvmm-web
           # Run setup project first to create auth sessions
           npm run test:e2e -- --project=setup
-          
+
           # Run authenticated tests (skipping unauthenticated for speed in this pass, or run all)
           # Running all projects
           npm run test:e2e
