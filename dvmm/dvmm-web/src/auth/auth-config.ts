@@ -1,4 +1,5 @@
 import type { AuthProviderProps } from "react-oidc-context"
+import { WebStorageStateStore } from "oidc-client-ts"
 
 // Validate required environment variables at module load time
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL
@@ -26,6 +27,7 @@ if (!KEYCLOAK_CLIENT_ID) {
 export const oidcConfig: AuthProviderProps = {
   authority: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`,
   client_id: KEYCLOAK_CLIENT_ID,
+  userStore: new WebStorageStateStore({ store: window.localStorage }),
   redirect_uri: window.location.origin,
   post_logout_redirect_uri: window.location.origin,
   scope: "openid profile email",

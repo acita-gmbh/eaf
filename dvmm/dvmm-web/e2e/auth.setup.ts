@@ -27,8 +27,8 @@ import {log} from '@seontechnologies/playwright-utils/log'
  * ```
  */
 
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://localhost:8080'
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:5173'
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://127.0.0.1:8180'
+const BASE_URL = process.env.BASE_URL ?? 'http://127.0.0.1:5173'
 const TEST_PASSWORD = process.env.TEST_PASSWORD ?? 'test'
 
 const adminFile = 'playwright/.auth/admin.json'

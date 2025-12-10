@@ -2,41 +2,41 @@
 -- Stores timeline events for VM request status history
 -- Story 2.8: Request Status Timeline
 
-CREATE TABLE IF NOT EXISTS PUBLIC.request_timeline_events (
-    id              UUID PRIMARY KEY,
-    request_id      UUID NOT NULL REFERENCES vm_requests_projection(id) ON DELETE CASCADE,
-    tenant_id       UUID NOT NULL,
-    event_type      VARCHAR(50) NOT NULL,
-    actor_id        UUID,
-    actor_name      VARCHAR(255),
-    details         VARCHAR(4000),
-    occurred_at     TIMESTAMPTZ NOT NULL
+CREATE TABLE IF NOT EXISTS "REQUEST_TIMELINE_EVENTS" (
+    "ID"              UUID PRIMARY KEY,
+    "REQUEST_ID"      UUID NOT NULL REFERENCES "VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
+    "TENANT_ID"       UUID NOT NULL,
+    "EVENT_TYPE"      VARCHAR(50) NOT NULL,
+    "ACTOR_ID"        UUID,
+    "ACTOR_NAME"      VARCHAR(255),
+    "DETAILS"         VARCHAR(4000),
+    "OCCURRED_AT"     TIMESTAMPTZ NOT NULL
 );
 
 -- Index for efficient timeline queries by request
-CREATE INDEX idx_timeline_events_request ON PUBLIC.request_timeline_events (request_id, occurred_at);
+CREATE INDEX "IDX_TIMELINE_EVENTS_REQUEST" ON "REQUEST_TIMELINE_EVENTS" ("REQUEST_ID", "OCCURRED_AT");
 -- Index for tenant isolation queries
-CREATE INDEX idx_timeline_events_tenant ON PUBLIC.request_timeline_events (tenant_id);
+CREATE INDEX "IDX_TIMELINE_EVENTS_TENANT" ON "REQUEST_TIMELINE_EVENTS" ("TENANT_ID");
 
 -- Enable Row-Level Security for multi-tenancy
-ALTER TABLE request_timeline_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "REQUEST_TIMELINE_EVENTS" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation_timeline_events ON request_timeline_events
+CREATE POLICY tenant_isolation_timeline_events ON "REQUEST_TIMELINE_EVENTS"
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
-ALTER TABLE request_timeline_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE "REQUEST_TIMELINE_EVENTS" FORCE ROW LEVEL SECURITY;
 
 -- Grant permissions to application role
-GRANT SELECT, INSERT, UPDATE, DELETE ON request_timeline_events TO eaf_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "REQUEST_TIMELINE_EVENTS" TO eaf_app;
 
 -- Documentation
-COMMENT ON TABLE request_timeline_events IS 'Projection table for VM request timeline events';
-COMMENT ON COLUMN request_timeline_events.id IS 'Unique identifier for the timeline event';
-COMMENT ON COLUMN request_timeline_events.request_id IS 'FK to vm_requests_projection.id';
-COMMENT ON COLUMN request_timeline_events.event_type IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
-COMMENT ON COLUMN request_timeline_events.actor_id IS 'User ID who performed the action';
-COMMENT ON COLUMN request_timeline_events.actor_name IS 'Display name of actor (resolved at projection time)';
-COMMENT ON COLUMN request_timeline_events.details IS 'Additional event details (e.g., rejection reason)';
-COMMENT ON COLUMN request_timeline_events.occurred_at IS 'When the event occurred';
+COMMENT ON TABLE "REQUEST_TIMELINE_EVENTS" IS 'Projection table for VM request timeline events';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."ID" IS 'Unique identifier for the timeline event';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."REQUEST_ID" IS 'FK to vm_requests_projection.id';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."EVENT_TYPE" IS 'Type: CREATED, APPROVED, REJECTED, CANCELLED, PROVISIONING_STARTED, VM_READY';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."ACTOR_ID" IS 'User ID who performed the action';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."ACTOR_NAME" IS 'Display name of actor (resolved at projection time)';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."DETAILS" IS 'Additional event details (e.g., rejection reason)';
+COMMENT ON COLUMN "REQUEST_TIMELINE_EVENTS"."OCCURRED_AT" IS 'When the event occurred';
