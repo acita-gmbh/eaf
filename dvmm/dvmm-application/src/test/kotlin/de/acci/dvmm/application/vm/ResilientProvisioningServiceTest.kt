@@ -1,7 +1,6 @@
 package de.acci.dvmm.application.vm
 
 import de.acci.dvmm.application.vmware.HypervisorPort
-import de.acci.dvmm.application.vmware.ProvisioningErrorCode
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.domain.vm.VmProvisioningResult
@@ -19,7 +18,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Tests for ResilientProvisioningService retry logic (AC-3.6.1, AC-3.6.2, AC-3.6.3).
@@ -241,9 +242,9 @@ class ResilientProvisioningServiceTest {
 
             // Then
             assertTrue(result is Result.Failure)
-            val error = (result as Result.Failure).error
-            assertTrue(error is ResilientProvisioningService.RetryExhaustedError)
-            assertEquals(5, (error as ResilientProvisioningService.RetryExhaustedError).attemptCount)
+            val failure = (result as Result.Failure).error
+            assertTrue(failure is ProvisioningFailure.Exhausted)
+            assertEquals(5, (failure as ProvisioningFailure.Exhausted).error.attemptCount)
         }
 
         @Test
@@ -257,9 +258,9 @@ class ResilientProvisioningServiceTest {
 
             // Then
             assertTrue(result is Result.Failure)
-            val error = (result as Result.Failure).error as ResilientProvisioningService.RetryExhaustedError
-            assertEquals(originalError.errorCode, error.lastErrorCode)
-            assertEquals(originalError.userMessage, error.userMessage)
+            val failure = (result as Result.Failure).error as ProvisioningFailure.Exhausted
+            assertEquals(originalError.errorCode, failure.error.lastErrorCode)
+            assertEquals(originalError.userMessage, failure.error.userMessage)
         }
     }
 
@@ -286,6 +287,39 @@ class ResilientProvisioningServiceTest {
 
             // Then
             assertEquals(listOf(VmProvisioningStage.CLONING, VmProvisioningStage.READY), stagesReceived)
+        }
+    }
+
+    @Nested
+    inner class ExceptionHandling {
+
+        @Test
+        fun `propagates CancellationException without retry`() = runTest {
+            // Given: HypervisorPort throws CancellationException (coroutine cancelled)
+            coEvery { hypervisorPort.createVm(any(), any()) } throws CancellationException("Job was cancelled")
+
+            // When/Then: CancellationException should propagate (not be caught)
+            assertThrows<CancellationException> {
+                service.createVmWithRetry(testSpec, "test-correlation")
+            }
+            coVerify(exactly = 1) { hypervisorPort.createVm(any(), any()) }
+        }
+
+        @Test
+        fun `wraps unexpected exceptions as HypervisorError with ApiError`() = runTest {
+            // Given: HypervisorPort throws unexpected RuntimeException
+            coEvery { hypervisorPort.createVm(any(), any()) } throws RuntimeException("Unexpected failure")
+
+            // When
+            val result = service.createVmWithRetry(testSpec, "test-correlation")
+
+            // Then: Should be wrapped in ProvisioningFailure.HypervisorError with ApiError inside
+            assertTrue(result is Result.Failure)
+            val failure = (result as Result.Failure).error
+            assertTrue(failure is ProvisioningFailure.HypervisorError)
+            val apiError = (failure as ProvisioningFailure.HypervisorError).error
+            assertTrue(apiError is VsphereError.ApiError)
+            assertTrue(apiError.message!!.contains("Unexpected"))
         }
     }
 }

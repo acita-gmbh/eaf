@@ -54,6 +54,24 @@ class VsphereErrorTest {
             )
             assertTrue(error.retriable)
         }
+
+        @Test
+        fun `ProvisioningError is retriable`() {
+            val error = VsphereError.ProvisioningError(
+                message = "Clone failed",
+                cause = RuntimeException("underlying cause")
+            )
+            assertTrue(error.retriable)
+        }
+
+        @Test
+        fun `DeletionError is retriable`() {
+            val error = VsphereError.DeletionError(
+                message = "Delete failed",
+                cause = RuntimeException("underlying cause")
+            )
+            assertTrue(error.retriable)
+        }
     }
 
     @Nested
@@ -278,6 +296,18 @@ class VsphereErrorTest {
         @Test
         fun `ApiError has correct error code`() {
             val error = VsphereError.ApiError("test")
+            assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)
+        }
+
+        @Test
+        fun `ProvisioningError has correct error code`() {
+            val error = VsphereError.ProvisioningError("Clone failed")
+            assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)
+        }
+
+        @Test
+        fun `DeletionError has correct error code`() {
+            val error = VsphereError.DeletionError("Delete failed")
             assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)
         }
     }

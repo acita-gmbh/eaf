@@ -450,7 +450,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             // Permanent error - ResilientProvisioningService skips retry and returns immediately
             coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
-                VsphereError.AuthenticationError("Invalid credentials")
+                ProvisioningFailure.HypervisorError(VsphereError.AuthenticationError("Invalid credentials"))
             )
 
             // Mock event store load to return 1 event (VmProvisioningStarted)
@@ -513,11 +513,13 @@ class TriggerProvisioningHandlerTest {
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             // RetryExhaustedError - all 5 attempts failed
             coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
-                ResilientProvisioningService.RetryExhaustedError(
-                    attemptCount = 5,
-                    lastErrorCode = ProvisioningErrorCode.CONNECTION_TIMEOUT,
-                    userMessage = "Temporary connection issue. We will retry automatically.",
-                    lastError = VsphereError.ConnectionError("Connection timeout after 5 attempts")
+                ProvisioningFailure.Exhausted(
+                    ResilientProvisioningService.RetryExhaustedError(
+                        attemptCount = 5,
+                        lastErrorCode = ProvisioningErrorCode.CONNECTION_TIMEOUT,
+                        userMessage = "Temporary connection issue. We will retry automatically.",
+                        lastError = VsphereError.ConnectionError("Connection timeout after 5 attempts")
+                    )
                 )
             )
 

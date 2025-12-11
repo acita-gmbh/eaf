@@ -129,17 +129,11 @@ public class TriggerProvisioningHandler(
                 emitSuccess(event, provisioningResult, prefixedVmName)
             }
             is Result.Failure -> {
-                val error = result.error
-                logger.error { "Failed to provision $prefixedVmName: $error" }
-                when (error) {
-                    is ResilientProvisioningService.RetryExhaustedError -> emitFailure(event, error)
-                    is VsphereError -> emitFailure(event, error)
-                    else -> {
-                        logger.error {
-                            "Unexpected error type ${error::class.qualifiedName} while provisioning $prefixedVmName"
-                        }
-                        emitFailure(event, "Unexpected error: $error")
-                    }
+                val failure = result.error
+                logger.error { "Failed to provision $prefixedVmName: $failure" }
+                when (failure) {
+                    is ProvisioningFailure.Exhausted -> emitFailure(event, failure.error)
+                    is ProvisioningFailure.HypervisorError -> emitFailure(event, failure.error)
                 }
             }
         }
@@ -597,7 +591,8 @@ public class TriggerProvisioningHandler(
                 errorCode = errorCode,
                 retryCount = retryCount,
                 correlationId = event.metadata.correlationId,
-                requesterEmail = requesterEmail ?: requestDetails.requesterName
+                // Use "email-unavailable" to clearly indicate missing email for troubleshooting
+                requesterEmail = requesterEmail ?: "email-unavailable (${requestDetails.requesterName})"
             )
 
             val adminResult = notificationSender.sendProvisioningFailedAdminNotification(adminNotification)
