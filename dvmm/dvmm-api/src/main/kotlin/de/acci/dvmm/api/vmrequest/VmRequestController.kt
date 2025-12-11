@@ -12,6 +12,9 @@ import de.acci.dvmm.application.vmrequest.GetMyRequestsQuery
 import de.acci.dvmm.application.vmrequest.GetRequestDetailError
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailQuery
+import de.acci.dvmm.application.vmrequest.SyncVmStatusCommand
+import de.acci.dvmm.application.vmrequest.SyncVmStatusError
+import de.acci.dvmm.application.vmrequest.SyncVmStatusHandler
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmName
 import de.acci.dvmm.domain.vmrequest.VmRequestId
@@ -66,7 +69,8 @@ public class VmRequestController(
     private val createVmRequestHandler: CreateVmRequestHandler,
     private val getMyRequestsHandler: GetMyRequestsHandler,
     private val getRequestDetailHandler: GetRequestDetailHandler,
-    private val cancelVmRequestHandler: CancelVmRequestHandler
+    private val cancelVmRequestHandler: CancelVmRequestHandler,
+    private val syncVmStatusHandler: SyncVmStatusHandler
 ) {
 
     /**
@@ -368,6 +372,92 @@ public class VmRequestController(
             is CancelVmRequestError.PersistenceFailure -> {
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     InternalErrorResponse(message = "Failed to cancel request")
+                )
+            }
+        }
+    }
+
+    /**
+     * Sync VM status from vSphere.
+     *
+     * Refreshes the VM runtime details (power state, IP address, hostname, guest OS)
+     * by querying vSphere and updating the projection.
+     *
+     * Story 3-7: Users can manually refresh VM status when viewing their provisioned VMs.
+     *
+     * @param id The ID of the request to sync
+     * @param jwt The authenticated user's JWT
+     * @return 200 OK with synced status, or appropriate error response
+     */
+    @PostMapping("/{id}/sync-status")
+    public suspend fun syncVmStatus(
+        @PathVariable id: String,
+        @AuthenticationPrincipal jwt: Jwt
+    ): ResponseEntity<Any> {
+        val tenantId = TenantContext.current()
+        val userId = UserId.fromString(jwt.subject)
+
+        val requestId = try {
+            VmRequestId.fromString(id)
+        } catch (e: InvalidIdentifierFormatException) {
+            return ResponseEntity.badRequest().body(
+                ValidationErrorResponse(
+                    errors = listOf(
+                        ValidationErrorResponse.FieldError(
+                            field = "id",
+                            message = "Invalid request ID format"
+                        )
+                    )
+                )
+            )
+        }
+
+        val command = SyncVmStatusCommand(
+            tenantId = tenantId,
+            requestId = requestId,
+            userId = userId
+        )
+
+        return when (val result = syncVmStatusHandler.handle(command)) {
+            is Result.Success -> {
+                ResponseEntity.ok(
+                    SyncVmStatusResponse(
+                        requestId = result.value.requestId.value.toString(),
+                        powerState = result.value.powerState,
+                        ipAddress = result.value.ipAddress,
+                        message = "VM status synced successfully"
+                    )
+                )
+            }
+            is Result.Failure -> handleSyncError(result.error)
+        }
+    }
+
+    private fun handleSyncError(error: SyncVmStatusError): ResponseEntity<Any> {
+        return when (error) {
+            is SyncVmStatusError.NotFound -> {
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotFoundResponse(message = error.message)
+                )
+            }
+            is SyncVmStatusError.NotProvisioned -> {
+                // Return 409 Conflict - VM not yet ready for status sync
+                ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    SyncNotProvisionedResponse(
+                        message = error.message,
+                        requestId = error.requestId.value.toString()
+                    )
+                )
+            }
+            is SyncVmStatusError.HypervisorError -> {
+                // Return 502 Bad Gateway - upstream vSphere error
+                ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(
+                    HypervisorErrorResponse(message = error.message)
+                )
+            }
+            is SyncVmStatusError.UpdateFailure -> {
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    InternalErrorResponse(message = "Failed to update VM status")
                 )
             }
         }

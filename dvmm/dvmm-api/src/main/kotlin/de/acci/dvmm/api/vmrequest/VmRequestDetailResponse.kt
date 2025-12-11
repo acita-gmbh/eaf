@@ -5,7 +5,9 @@ import de.acci.dvmm.application.vmrequest.VmRequestDetail
 import java.time.Instant
 
 /**
- * Response DTO for detailed VM request with timeline.
+ * Response DTO for detailed VM request with timeline and VM runtime details.
+ *
+ * Story 3-7: Includes VM runtime information for provisioned VMs.
  *
  * @property id Unique identifier for this request
  * @property vmName Requested VM name
@@ -16,6 +18,7 @@ import java.time.Instant
  * @property requesterName Display name of the requester
  * @property createdAt When the request was created
  * @property timeline List of timeline events in chronological order
+ * @property vmDetails VM runtime details (null if not yet provisioned)
  */
 public data class VmRequestDetailResponse(
     val id: String,
@@ -26,7 +29,8 @@ public data class VmRequestDetailResponse(
     val projectName: String,
     val requesterName: String,
     val createdAt: Instant,
-    val timeline: List<TimelineEventResponse>
+    val timeline: List<TimelineEventResponse>,
+    val vmDetails: VmRuntimeDetailsResponse? = null
 ) {
     public companion object {
         public fun fromDomain(detail: VmRequestDetail): VmRequestDetailResponse =
@@ -44,8 +48,51 @@ public data class VmRequestDetailResponse(
                 projectName = detail.projectName,
                 requesterName = detail.requesterName,
                 createdAt = detail.createdAt,
-                timeline = detail.timeline.map { TimelineEventResponse.fromDomain(it) }
+                timeline = detail.timeline.map { TimelineEventResponse.fromDomain(it) },
+                vmDetails = VmRuntimeDetailsResponse.fromDomain(detail)
             )
+    }
+}
+
+/**
+ * VM runtime details for provisioned VMs.
+ *
+ * Story 3-7: Shows IP address, hostname, power state, and other runtime info.
+ *
+ * @property vmwareVmId VMware MoRef ID (e.g., vm-123)
+ * @property ipAddress Primary IP address from VMware Tools
+ * @property hostname Guest hostname from VMware Tools
+ * @property powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED
+ * @property guestOs Detected guest OS from VMware Tools
+ * @property lastSyncedAt Timestamp of last status sync from vSphere
+ */
+public data class VmRuntimeDetailsResponse(
+    val vmwareVmId: String?,
+    val ipAddress: String?,
+    val hostname: String?,
+    val powerState: String?,
+    val guestOs: String?,
+    val lastSyncedAt: Instant?
+) {
+    public companion object {
+        /**
+         * Creates VmRuntimeDetailsResponse from VmRequestDetail.
+         * Returns null if no VM details are available (not yet provisioned).
+         */
+        public fun fromDomain(detail: VmRequestDetail): VmRuntimeDetailsResponse? {
+            // Return null if VM hasn't been provisioned yet (no vmwareVmId)
+            if (detail.vmwareVmId == null) {
+                return null
+            }
+            return VmRuntimeDetailsResponse(
+                vmwareVmId = detail.vmwareVmId,
+                ipAddress = detail.ipAddress,
+                hostname = detail.hostname,
+                powerState = detail.powerState,
+                guestOs = detail.guestOs,
+                lastSyncedAt = detail.lastSyncedAt
+            )
+        }
     }
 }
 

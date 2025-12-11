@@ -978,6 +978,120 @@ class VmRequestProjectionRepositoryIntegrationTest {
         }
 
         @Test
+        fun `updateVmDetails persists VM runtime information`() = runBlocking {
+            // Given: An existing projection
+            val id = insertTestProjection(
+                tenantId = tenantA,
+                vmName = "test-vm",
+                status = "PROVISIONED"
+            )
+            val syncTime = OffsetDateTime.now()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Update VM details
+                val rowsUpdated = repository.updateVmDetails(
+                    id = id,
+                    vmwareVmId = "vm-123",
+                    ipAddress = "192.168.1.100",
+                    hostname = "test-vm.local",
+                    powerState = "POWERED_ON",
+                    guestOs = "Ubuntu 22.04 LTS",
+                    lastSyncedAt = syncTime
+                )
+
+                // Then: Update succeeded
+                assertEquals(1, rowsUpdated)
+
+                // And: Data is correctly updated
+                val result = repository.findById(id)
+                assertNotNull(result)
+                assertEquals("vm-123", result?.vmwareVmId)
+                assertEquals("192.168.1.100", result?.ipAddress)
+                assertEquals("test-vm.local", result?.hostname)
+                assertEquals("POWERED_ON", result?.powerState)
+                assertEquals("Ubuntu 22.04 LTS", result?.guestOs)
+                assertNotNull(result?.lastSyncedAt)
+            }
+        }
+
+        @Test
+        fun `updateVmDetails handles null values for partial sync`() = runBlocking {
+            // Given: An existing projection
+            val id = insertTestProjection(
+                tenantId = tenantA,
+                vmName = "test-vm",
+                status = "PROVISIONED"
+            )
+            val syncTime = OffsetDateTime.now()
+
+            withTenantDsl(tenantA) { dsl ->
+                repository = VmRequestProjectionRepository(dsl)
+
+                // When: Update with partial info (IP not yet assigned)
+                val rowsUpdated = repository.updateVmDetails(
+                    id = id,
+                    vmwareVmId = "vm-456",
+                    ipAddress = null, // No IP yet
+                    hostname = null, // No hostname yet
+                    powerState = "POWERED_ON",
+                    guestOs = "Windows Server 2022",
+                    lastSyncedAt = syncTime
+                )
+
+                // Then: Update succeeded
+                assertEquals(1, rowsUpdated)
+
+                // And: Nullable fields are correctly null
+                val result = repository.findById(id)
+                assertNotNull(result)
+                assertEquals("vm-456", result?.vmwareVmId)
+                assertNull(result?.ipAddress)
+                assertNull(result?.hostname)
+                assertEquals("POWERED_ON", result?.powerState)
+                assertEquals("Windows Server 2022", result?.guestOs)
+            }
+        }
+
+        @Test
+        fun `updateVmDetails respects RLS - cannot update other tenant projection`() = runBlocking {
+            // Given: A projection for tenant B
+            val id = insertTestProjection(
+                tenantId = tenantB,
+                vmName = "tenant-b-vm",
+                status = "PROVISIONED"
+            )
+
+            // When: Tenant A tries to update it
+            withTenantDsl(tenantA) { dslA ->
+                val repoA = VmRequestProjectionRepository(dslA)
+
+                val rowsUpdated = repoA.updateVmDetails(
+                    id = id,
+                    vmwareVmId = "malicious-vm-id",
+                    ipAddress = "10.0.0.1",
+                    hostname = "hacked.local",
+                    powerState = "POWERED_ON",
+                    guestOs = "Malicious OS",
+                    lastSyncedAt = OffsetDateTime.now()
+                )
+
+                // Then: RLS prevents the update
+                assertEquals(0, rowsUpdated, "Tenant A should not be able to update Tenant B's projection")
+            }
+
+            // And: Verify the projection is unchanged
+            withTenantDsl(tenantB) { dslB ->
+                val repoB = VmRequestProjectionRepository(dslB)
+                val result = repoB.findById(id)
+                assertNotNull(result)
+                assertNull(result?.vmwareVmId, "vmwareVmId should remain null")
+                assertNull(result?.ipAddress, "ipAddress should remain null")
+            }
+        }
+
+        @Test
         fun `RLS WITH CHECK prevents cross-tenant insert`() = runBlocking {
             // Given: Tenant A is authenticated
             val id = UUID.randomUUID()

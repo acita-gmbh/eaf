@@ -84,6 +84,12 @@ public class VmRequestProjectionRepository(
         public data object CreatedAt : ProjectionColumns
         public data object UpdatedAt : ProjectionColumns
         public data object Version : ProjectionColumns
+        public data object VmwareVmId : ProjectionColumns
+        public data object IpAddress : ProjectionColumns
+        public data object Hostname : ProjectionColumns
+        public data object PowerState : ProjectionColumns
+        public data object GuestOs : ProjectionColumns
+        public data object LastSyncedAt : ProjectionColumns
 
         public companion object {
             /**
@@ -94,7 +100,8 @@ public class VmRequestProjectionRepository(
                 Id, TenantId, RequesterId, RequesterName, RequesterEmail, RequesterRole,
                 ProjectId, ProjectName, VmName, Size, CpuCores, MemoryGb, DiskGb,
                 Justification, Status, ApprovedBy, ApprovedByName, RejectedBy,
-                RejectedByName, RejectionReason, CreatedAt, UpdatedAt, Version
+                RejectedByName, RejectionReason, CreatedAt, UpdatedAt, Version,
+                VmwareVmId, IpAddress, Hostname, PowerState, GuestOs, LastSyncedAt
             )
         }
     }
@@ -127,6 +134,12 @@ public class VmRequestProjectionRepository(
         ProjectionColumns.CreatedAt -> record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!
         ProjectionColumns.UpdatedAt -> record.get(VM_REQUESTS_PROJECTION.UPDATED_AT)!!
         ProjectionColumns.Version -> record.get(VM_REQUESTS_PROJECTION.VERSION)
+        ProjectionColumns.VmwareVmId -> record.get(VM_REQUESTS_PROJECTION.VMWARE_VM_ID)
+        ProjectionColumns.IpAddress -> record.get(VM_REQUESTS_PROJECTION.IP_ADDRESS)
+        ProjectionColumns.Hostname -> record.get(VM_REQUESTS_PROJECTION.HOSTNAME)
+        ProjectionColumns.PowerState -> record.get(VM_REQUESTS_PROJECTION.POWER_STATE)
+        ProjectionColumns.GuestOs -> record.get(VM_REQUESTS_PROJECTION.GUEST_OS)
+        ProjectionColumns.LastSyncedAt -> record.get(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT)
     }
 
     /**
@@ -162,6 +175,12 @@ public class VmRequestProjectionRepository(
         ProjectionColumns.CreatedAt -> step.set(VM_REQUESTS_PROJECTION.CREATED_AT, projection.createdAt)
         ProjectionColumns.UpdatedAt -> step.set(VM_REQUESTS_PROJECTION.UPDATED_AT, projection.updatedAt)
         ProjectionColumns.Version -> step.set(VM_REQUESTS_PROJECTION.VERSION, projection.version)
+        ProjectionColumns.VmwareVmId -> step.set(VM_REQUESTS_PROJECTION.VMWARE_VM_ID, projection.vmwareVmId)
+        ProjectionColumns.IpAddress -> step.set(VM_REQUESTS_PROJECTION.IP_ADDRESS, projection.ipAddress)
+        ProjectionColumns.Hostname -> step.set(VM_REQUESTS_PROJECTION.HOSTNAME, projection.hostname)
+        ProjectionColumns.PowerState -> step.set(VM_REQUESTS_PROJECTION.POWER_STATE, projection.powerState)
+        ProjectionColumns.GuestOs -> step.set(VM_REQUESTS_PROJECTION.GUEST_OS, projection.guestOs)
+        ProjectionColumns.LastSyncedAt -> step.set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, projection.lastSyncedAt)
     }
 
     override fun mapRecord(record: Record): VmRequestsProjection {
@@ -189,7 +208,13 @@ public class VmRequestProjectionRepository(
             rejectionReason = mapColumn(record, ProjectionColumns.RejectionReason) as String?,
             createdAt = mapColumn(record, ProjectionColumns.CreatedAt) as OffsetDateTime,
             updatedAt = mapColumn(record, ProjectionColumns.UpdatedAt) as OffsetDateTime,
-            version = mapColumn(record, ProjectionColumns.Version) as Int?
+            version = mapColumn(record, ProjectionColumns.Version) as Int?,
+            vmwareVmId = mapColumn(record, ProjectionColumns.VmwareVmId) as String?,
+            ipAddress = mapColumn(record, ProjectionColumns.IpAddress) as String?,
+            hostname = mapColumn(record, ProjectionColumns.Hostname) as String?,
+            powerState = mapColumn(record, ProjectionColumns.PowerState) as String?,
+            guestOs = mapColumn(record, ProjectionColumns.GuestOs) as String?,
+            lastSyncedAt = mapColumn(record, ProjectionColumns.LastSyncedAt) as OffsetDateTime?
         )
     }
 
@@ -258,6 +283,42 @@ public class VmRequestProjectionRepository(
             .set(VM_REQUESTS_PROJECTION.REJECTION_REASON, rejectionReason)
             .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
             .set(VM_REQUESTS_PROJECTION.VERSION, version)
+            .where(VM_REQUESTS_PROJECTION.ID.eq(id))
+            .execute()
+    }
+
+    /**
+     * Updates VM details on an existing VM request projection.
+     *
+     * Story 3-7: Called when:
+     * 1. Provisioning completes (from VmProvisioned event handler)
+     * 2. Admin triggers "Sync Status" from vSphere
+     *
+     * @param id The ID of the projection to update
+     * @param vmwareVmId VMware MoRef ID (e.g., vm-123)
+     * @param ipAddress Primary IP address from VMware Tools
+     * @param hostname Guest hostname from VMware Tools
+     * @param powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED
+     * @param guestOs Detected guest OS from VMware Tools
+     * @param lastSyncedAt Timestamp of the sync operation
+     */
+    public suspend fun updateVmDetails(
+        id: UUID,
+        vmwareVmId: String?,
+        ipAddress: String?,
+        hostname: String?,
+        powerState: String?,
+        guestOs: String?,
+        lastSyncedAt: OffsetDateTime
+    ): Int = withContext(Dispatchers.IO) {
+        dsl.update(VM_REQUESTS_PROJECTION)
+            .set(VM_REQUESTS_PROJECTION.VMWARE_VM_ID, vmwareVmId)
+            .set(VM_REQUESTS_PROJECTION.IP_ADDRESS, ipAddress)
+            .set(VM_REQUESTS_PROJECTION.HOSTNAME, hostname)
+            .set(VM_REQUESTS_PROJECTION.POWER_STATE, powerState)
+            .set(VM_REQUESTS_PROJECTION.GUEST_OS, guestOs)
+            .set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, lastSyncedAt)
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
             .where(VM_REQUESTS_PROJECTION.ID.eq(id))
             .execute()
     }

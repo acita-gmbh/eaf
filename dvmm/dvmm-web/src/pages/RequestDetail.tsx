@@ -15,9 +15,11 @@ import { StatusBadge } from '@/components/requests/StatusBadge'
 import { Timeline } from '@/components/requests/Timeline'
 import { CancelConfirmDialog } from '@/components/requests/CancelConfirmDialog'
 import { ProvisioningProgress } from '@/components/requests/ProvisioningProgress'
+import { VmDetailsCard } from '@/components/requests/VmDetailsCard'
 import { useRequestDetail } from '@/hooks/useRequestDetail'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
 import { useProvisioningProgress } from '@/hooks/useProvisioningProgress'
+import { useSyncVmStatus } from '@/hooks/useSyncVmStatus'
 import {
   ApiError,
   isNotFoundError,
@@ -68,6 +70,28 @@ export function RequestDetail() {
   const { data: progress } = useProvisioningProgress(id ?? '', isProvisioning)
 
   const cancelMutation = useCancelRequest()
+
+  // Sync VM status mutation (Story 3-7)
+  const syncMutation = useSyncVmStatus(id ?? '', {
+    onSuccess: () => {
+      toast.success('VM status refreshed')
+    },
+    onError: (err) => {
+      if (err.status === 502) {
+        toast.error('Unable to connect to vSphere', {
+          description: 'Please try again later.',
+        })
+      } else {
+        toast.error('Failed to refresh VM status', {
+          description: err.message,
+        })
+      }
+    },
+  })
+
+  const handleRefreshVmStatus = () => {
+    syncMutation.mutate()
+  }
 
   const handleCancelConfirm = (reason?: string) => {
     if (!id) return
@@ -299,6 +323,15 @@ export function RequestDetail() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* VM Details Card (Story 3-7) */}
+      {data.status === 'READY' && data.vmDetails && (
+        <VmDetailsCard
+          vmDetails={data.vmDetails}
+          onRefresh={handleRefreshVmStatus}
+          isRefreshing={syncMutation.isPending}
+        />
       )}
 
       {/* Provisioning Failed Alert (AC-3.6.3) */}

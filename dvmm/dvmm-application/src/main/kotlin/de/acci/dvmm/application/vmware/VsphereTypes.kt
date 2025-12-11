@@ -291,7 +291,38 @@ public data class Cluster(public val id: String, public val name: String)
 public data class Datastore(public val id: String, public val name: String)
 public data class Network(public val id: String, public val name: String)
 public data class ResourcePool(public val id: String, public val name: String)
-public data class VmInfo(public val id: String, public val name: String)
+/**
+ * VM information returned from hypervisor queries.
+ *
+ * Story 3-7: Extended with runtime details for VM status display.
+ *
+ * @property id VMware MoRef ID (e.g., "vm-123")
+ * @property name VM name
+ * @property powerState Power state: POWERED_ON, POWERED_OFF, SUSPENDED
+ * @property ipAddress Primary IP address from VMware Tools (null if tools not running/installed)
+ * @property hostname Guest hostname from VMware Tools (null if tools not running/installed)
+ * @property guestOs Detected guest OS type from VMware Tools (null if not detected)
+ */
+public data class VmInfo(
+    public val id: String,
+    public val name: String,
+    public val powerState: VmPowerState = VmPowerState.UNKNOWN,
+    public val ipAddress: String? = null,
+    public val hostname: String? = null,
+    public val guestOs: String? = null
+)
+
+/**
+ * VM power states as reported by VMware vSphere.
+ *
+ * Maps to VirtualMachinePowerState enum values from VCF SDK 9.0.
+ */
+public enum class VmPowerState {
+    POWERED_ON,
+    POWERED_OFF,
+    SUSPENDED,
+    UNKNOWN
+}
 public data class VmId(public val value: String)
 
 /**

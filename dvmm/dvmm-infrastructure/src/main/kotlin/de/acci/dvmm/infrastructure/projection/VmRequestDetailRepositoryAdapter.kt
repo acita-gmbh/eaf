@@ -37,7 +37,13 @@ public class VmRequestDetailRepositoryAdapter(
                         status = record.get(VM_REQUESTS_PROJECTION.STATUS)!!,
                         projectName = record.get(VM_REQUESTS_PROJECTION.PROJECT_NAME)!!,
                         requesterName = record.get(VM_REQUESTS_PROJECTION.REQUESTER_NAME)!!,
-                        createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!.toInstant()
+                        createdAt = record.get(VM_REQUESTS_PROJECTION.CREATED_AT)!!.toInstant(),
+                        vmwareVmId = record.get(VM_REQUESTS_PROJECTION.VMWARE_VM_ID),
+                        ipAddress = record.get(VM_REQUESTS_PROJECTION.IP_ADDRESS),
+                        hostname = record.get(VM_REQUESTS_PROJECTION.HOSTNAME),
+                        powerState = record.get(VM_REQUESTS_PROJECTION.POWER_STATE),
+                        guestOs = record.get(VM_REQUESTS_PROJECTION.GUEST_OS),
+                        lastSyncedAt = record.get(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT)?.toInstant()
                     )
                 }
         }
