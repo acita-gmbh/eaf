@@ -33,21 +33,22 @@ SPEC_COUNT=$(echo "$CHANGED_SPECS" | wc -l | xargs)
 echo "Running burn-in on $SPEC_COUNT test file(s)..."
 echo ""
 
+# Convert specs to array for safe handling
+mapfile -t SPEC_ARRAY <<< "$CHANGED_SPECS"
+
 # Burn-in loop
-FAILURES=()
-for i in $(seq 1 $ITERATIONS); do
+for i in $(seq 1 "$ITERATIONS"); do
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "🔄 Iteration $i/$ITERATIONS"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Run tests with explicit file list
+  # Run tests with explicit file list (properly quoted array expansion)
   # Using npm run test -- which usually defaults to Playwright or Vitest depending on context
   # Assuming E2E context for .spec.ts files
-  if npm run test:e2e -- $CHANGED_SPECS 2>&1 | tee "burn-in-log-$i.txt"; then
+  if npm run test:e2e -- "${SPEC_ARRAY[@]}" 2>&1 | tee "burn-in-log-$i.txt"; then
     echo "✅ Iteration $i passed"
   else
     echo "❌ Iteration $i failed"
-    FAILURES+=($i)
 
     # Save failure artifacts
     mkdir -p burn-in-failures/iteration-$i

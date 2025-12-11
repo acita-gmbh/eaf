@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Overall test infrastructure is **well-organized and mature**. Three issues identified and fixed in this review:
+Overall test infrastructure is **well-organized and mature**. Two issues identified and fixed in this review:
 1. Backend test package naming violation
 2. Frontend test location inconsistency (now enforced via vitest config)
 
@@ -26,7 +26,7 @@ Overall test infrastructure is **well-organized and mature**. Three issues ident
 
 **Location:** `dvmm/dvmm-web/e2e/*.spec.ts`
 
-**Scope:** ~52 test cases across 6 spec files are marked `test.skip`:
+**Scope:** 56 test cases across 5 spec files are marked `test.skip`:
 
 | Spec File | Skipped Tests | Working Tests |
 |-----------|---------------|---------------|
