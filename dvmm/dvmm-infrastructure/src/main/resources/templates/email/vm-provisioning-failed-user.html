@@ -115,17 +115,17 @@
                 <dd th:text="${projectName}">Production</dd>
 
                 <dt>Status</dt>
-                <dd><span class="status-badge" aria-label="Status: Failed">❌ Failed</span></dd>
+                <dd><span class="status-badge">❌ Failed</span></dd>
             </dl>
         </div>
 
         <div class="error-box" role="alert">
-            <h3 aria-label="Warning: What Happened">⚠️ What Happened</h3>
+            <h3>⚠️ What Happened</h3>
             <p th:text="${errorMessage}">An error occurred during VM provisioning.</p>
         </div>
 
         <div class="action-box">
-            <h3 aria-label="Tip: What You Can Do">💡 What You Can Do</h3>
+            <h3>💡 What You Can Do</h3>
             <ul>
                 <li>Wait a few minutes and try submitting a new request</li>
                 <li>If the problem persists, contact your administrator</li>

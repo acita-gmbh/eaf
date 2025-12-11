@@ -168,8 +168,12 @@ public sealed class VsphereError(
 
     /**
      * Provisioning error - clone or VM creation failure.
-     * Kept for backward compatibility.
+     * @deprecated Use [OperationFailed] for specific operation failures or other typed error classes.
      */
+    @Deprecated(
+        message = "Use OperationFailed for specific operation failures or other typed error classes",
+        replaceWith = ReplaceWith("OperationFailed(operation = \"clone\", details = message)")
+    )
     public class ProvisioningError(
         message: String,
         cause: Throwable? = null

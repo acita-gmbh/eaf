@@ -673,8 +673,23 @@ public class VsphereClient(
             if (powerState == VirtualMachinePowerState.POWERED_ON) {
                 logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
                 val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
-                waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
-                logger.debug { "Successfully powered off VM '${vmRef.value}'" }
+                try {
+                    waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
+                    logger.debug { "Successfully powered off VM '${vmRef.value}'" }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Check if VM was already powered off (race condition or state changed)
+                    // VMware throws InvalidPowerState when VM is not in expected power state
+                    val isAlreadyPoweredOff = e.message?.contains("InvalidPowerState") == true ||
+                        e.message?.contains("already powered off", ignoreCase = true) == true ||
+                        e.message?.contains("not powered on", ignoreCase = true) == true
+                    if (isAlreadyPoweredOff) {
+                        logger.info { "VM '${vmRef.value}' is already powered off. Proceeding with deletion." }
+                    } else {
+                        throw e // Rethrow other exceptions to be handled by the outer catch
+                    }
+                }
             } else if (powerState == null) {
                 logger.debug { "Power state unknown for VM '${vmRef.value}', attempting deletion anyway" }
             }
