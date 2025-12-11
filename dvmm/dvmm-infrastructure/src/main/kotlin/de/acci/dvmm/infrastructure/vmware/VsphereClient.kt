@@ -680,7 +680,13 @@ public class VsphereClient(
                     throw e
                 } catch (e: Exception) {
                     // Check if VM was already powered off (race condition or state changed)
-                    // VMware throws InvalidPowerState when VM is not in expected power state
+                    // VMware throws InvalidPowerState when VM is not in expected power state.
+                    //
+                    // KNOWN LIMITATION: String-based exception message matching is fragile and
+                    // may break if VMware changes error message formats across SDK versions.
+                    // Unfortunately, VCF SDK 9.0 doesn't expose specific exception types
+                    // (like InvalidPowerStateFault) directly - they're wrapped in generic
+                    // RuntimeException with messages. Monitor this during SDK upgrades.
                     val isAlreadyPoweredOff = e.message?.contains("InvalidPowerState") == true ||
                         e.message?.contains("already powered off", ignoreCase = true) == true ||
                         e.message?.contains("not powered on", ignoreCase = true) == true

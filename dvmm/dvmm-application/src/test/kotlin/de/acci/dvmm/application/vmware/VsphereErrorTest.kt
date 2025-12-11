@@ -196,13 +196,14 @@ class VsphereErrorTest {
         }
 
         @Test
-        fun `ResourceNotFound for unknown type includes resource type in message`() {
+        fun `ResourceNotFound for unknown type uses generic message`() {
             val error = VsphereError.ResourceNotFound(
                 resourceType = "Datacenter",
                 resourceId = "dc-01"
             )
+            // Generic message avoids exposing internal resource type names
             assertEquals(
-                "Resource 'datacenter' not available. IT has been notified.",
+                "Resource not available. IT has been notified.",
                 error.userMessage
             )
             assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)

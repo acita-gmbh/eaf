@@ -213,7 +213,17 @@ public class ResilientProvisioningService(
             ProvisioningFailure.HypervisorError(e.error).failure()
         } catch (e: io.github.resilience4j.retry.MaxRetriesExceededException) {
             // All retries exhausted - wrap in ProvisioningFailure.Exhausted
-            val error = lastError ?: VsphereError.ApiError("Unknown error after retries")
+            // If lastError is null, it indicates a bug in retry/error tracking - fail fast
+            val error = lastError ?: run {
+                logger.error {
+                    "INTERNAL LOGIC ERROR: lastError is null after retry exhaustion. " +
+                        "This indicates a bug in retry/error tracking. CorrelationId: $correlationId"
+                }
+                throw IllegalStateException(
+                    "lastError is null after retry exhaustion. " +
+                        "This indicates a bug in retry/error tracking."
+                )
+            }
             logger.error(e) {
                 "Max retries (${retryConfiguration.maxAttempts}) exhausted for provisioning. " +
                     "CorrelationId: $correlationId, " +

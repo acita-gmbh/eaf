@@ -148,8 +148,8 @@ public sealed class VsphereError(
                 "resourcepool", "resource pool" -> ProvisioningErrorCode.RESOURCE_POOL_NOT_FOUND.userMessage
                 "cluster" -> ProvisioningErrorCode.CLUSTER_NOT_FOUND.userMessage
                 "folder" -> ProvisioningErrorCode.FOLDER_NOT_FOUND.userMessage
-                // Fallback includes resource type for context (lowercase for consistency)
-                else -> "Resource '${resourceType.lowercase()}' not available. IT has been notified."
+                // Fallback uses generic message to avoid exposing internal resource type names
+                else -> "Resource not available. IT has been notified."
             }
         override val errorCode: ProvisioningErrorCode
             get() = when (resourceType.lowercase()) {

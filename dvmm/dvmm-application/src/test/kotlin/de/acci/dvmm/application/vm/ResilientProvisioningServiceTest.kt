@@ -36,10 +36,25 @@ class ResilientProvisioningServiceTest {
     private lateinit var hypervisorPort: HypervisorPort
     private lateinit var service: ResilientProvisioningService
 
+    // Fast retry configuration for tests - minimal backoff to avoid slow test execution
+    // Resilience4j requires:
+    //   - initialBackoff in seconds (minimum 1 second due to Duration.ofSeconds)
+    //   - maxBackoff in milliseconds (must be >= initialBackoff in ms)
+    // This preserves retry semantics (same maxAttempts, error classification) while being fast
+    private val fastRetryConfig = RetryConfiguration(
+        maxAttempts = RetryConfiguration.DEFAULT_MAX_ATTEMPTS,
+        initialBackoffSeconds = 1L,     // 1 second minimum
+        backoffMultiplier = 1.0,        // No exponential growth
+        maxBackoffMs = 1000L            // 1 second max (must be >= initialBackoff in ms)
+    )
+
     @BeforeEach
     fun setup() {
         hypervisorPort = mockk()
-        service = ResilientProvisioningService(hypervisorPort)
+        service = ResilientProvisioningService(
+            hypervisorPort = hypervisorPort,
+            retryConfiguration = fastRetryConfig
+        )
     }
 
     private val testSpec = VmSpec(
