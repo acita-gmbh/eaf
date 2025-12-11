@@ -27,7 +27,7 @@ import kotlin.coroutines.cancellation.CancellationException
  *   - Attempt 2: after 10s
  *   - Attempt 3: after 20s (10s * 2)
  *   - Attempt 4: after 40s (20s * 2)
- *   - Attempt 5: after 80s (max 120s cap applies here)
+ *   - Attempt 5: after 80s (40s * 2, under 120s cap)
  *
  * ## Error Classification (AC-3.6.3)
  *

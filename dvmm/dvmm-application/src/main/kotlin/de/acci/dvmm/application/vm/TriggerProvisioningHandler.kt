@@ -489,7 +489,7 @@ public class TriggerProvisioningHandler(
                 is Result.Failure -> logger.error {
                     "CRITICAL: [Step 2/4] Failed to add PROVISIONING_FAILED timeline for request ${event.requestId.value} " +
                         "after VM ${event.aggregateId.value} was already marked failed. " +
-                        "Timeline may be inconsistent. Error: ${timelineResult.error}"
+                        "Timeline is now inconsistent - users will not see the failure event. Error: ${timelineResult.error}"
                 }
             }
         } catch (e: CancellationException) {
@@ -498,7 +498,7 @@ public class TriggerProvisioningHandler(
             logger.error(e) {
                 "CRITICAL: [Step 2/4] Failed to add PROVISIONING_FAILED timeline for request ${event.requestId.value} " +
                     "after VM ${event.aggregateId.value} was already marked failed. " +
-                    "Timeline may be inconsistent."
+                    "Timeline is now inconsistent - users will not see the failure event."
             }
         }
 
@@ -531,7 +531,7 @@ public class TriggerProvisioningHandler(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.warn(e) { "[Step 3/4] Failed to load request details for notifications, skipping" }
+            logger.warn(e) { "[Step 3/4] Failed to load request details for notifications, skipping: ${e::class.simpleName}" }
             return
         }
 
@@ -592,7 +592,7 @@ public class TriggerProvisioningHandler(
                 errorCode = errorCode,
                 retryCount = retryCount,
                 correlationId = event.metadata.correlationId,
-                requesterEmail = requesterEmail ?: "unknown"
+                requesterEmail = requesterEmail ?: requestDetails.requesterName
             )
 
             val adminResult = notificationSender.sendProvisioningFailedAdminNotification(adminNotification)

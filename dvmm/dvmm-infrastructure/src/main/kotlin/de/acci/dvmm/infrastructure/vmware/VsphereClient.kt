@@ -660,6 +660,7 @@ public class VsphereClient(
                 logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
                 val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
                 waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
+                logger.debug { "Successfully powered off VM '${vmRef.value}'" }
             }
 
             // Delete the VM

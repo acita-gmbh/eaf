@@ -94,7 +94,7 @@ public sealed class VsphereError(
 
     /**
      * Authentication error - credentials or session invalid.
-     * NOT retriable - requires configuration change.
+     * Not retriable - requires configuration change.
      */
     public class AuthenticationError(
         message: String,
@@ -120,7 +120,7 @@ public sealed class VsphereError(
 
     /**
      * Resource not found - template, datastore, or other resource missing.
-     * NOT retriable - requires configuration change or resource creation.
+     * Not retriable - requires configuration change or resource creation.
      */
     public class ResourceNotFound(
         public val resourceType: String,
@@ -215,7 +215,7 @@ public sealed class VsphereError(
 
     /**
      * Invalid configuration - VM config doesn't meet requirements.
-     * NOT retriable - requires request modification.
+     * Not retriable - requires request modification.
      *
      * Corresponds to HypervisorError.InvalidConfiguration in ADR-004a.
      */

@@ -174,8 +174,11 @@ public class VmAggregate private constructor(
      * @param metadata Event metadata including tenant and correlation info
      */
     @Deprecated(
-        "Use markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata) instead",
-        ReplaceWith("markFailed(\"UNKNOWN\", reason, 1, lastAttemptAt, metadata)")
+        message = "Use markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata) instead",
+        replaceWith = ReplaceWith(
+            "markFailed(errorCode = \"UNKNOWN\", errorMessage = reason, retryCount = 1, " +
+                "lastAttemptAt = lastAttemptAt, metadata = metadata)"
+        )
     )
     public fun markFailed(reason: String, lastAttemptAt: Instant, metadata: EventMetadata) {
         markFailed(
