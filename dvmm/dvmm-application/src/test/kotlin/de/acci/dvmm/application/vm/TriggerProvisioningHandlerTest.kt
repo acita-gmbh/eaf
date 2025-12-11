@@ -512,13 +512,15 @@ class TriggerProvisioningHandlerTest {
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
             // RetryExhaustedError - all 5 attempts failed
+            val lastAttemptTime = java.time.Instant.now()
             coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
                 ProvisioningFailure.Exhausted(
                     ResilientProvisioningService.RetryExhaustedError(
                         attemptCount = 5,
                         lastErrorCode = ProvisioningErrorCode.CONNECTION_TIMEOUT,
                         userMessage = "Temporary connection issue. We will retry automatically.",
-                        lastError = VsphereError.ConnectionError("Connection timeout after 5 attempts")
+                        lastError = VsphereError.ConnectionError("Connection timeout after 5 attempts"),
+                        lastAttemptAt = lastAttemptTime
                     )
                 )
             )

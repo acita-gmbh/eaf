@@ -359,7 +359,7 @@ public class TriggerProvisioningHandler(
      * Emits failure event for retry exhaustion (AC-3.6.2).
      *
      * Called when all retry attempts have been exhausted. Extracts actual
-     * retry count from the RetryExhaustedError for accurate error reporting.
+     * retry count and timestamp from the RetryExhaustedError for accurate reporting.
      */
     private suspend fun emitFailure(
         event: VmProvisioningStarted,
@@ -371,7 +371,7 @@ public class TriggerProvisioningHandler(
             errorCode = error.lastErrorCode.name,
             errorMessage = error.userMessage,
             retryCount = error.attemptCount,
-            lastAttemptAt = Instant.now()
+            lastAttemptAt = error.lastAttemptAt
         )
     }
 

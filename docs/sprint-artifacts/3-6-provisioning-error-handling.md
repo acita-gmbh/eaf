@@ -191,10 +191,10 @@ so that users understand what went wrong and the system recovers cleanly from pa
         }
 
         // Corresponds to HypervisorError.ConnectionFailed
-        data class ConnectionFailed(
-            override val message: String,
-            override val cause: Throwable? = null
-        ) : VsphereError() {
+        class ConnectionError(
+            message: String,
+            cause: Throwable? = null
+        ) : VsphereError(message, cause = cause) {
             override val retriable = true
         }
 
@@ -372,7 +372,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### Completion Notes List
 
 **Backend Implementation (Tasks 1-7):**
-1. Created `VsphereError` sealed class hierarchy with ADR-004a alignment (ConnectionFailed, OperationFailed, ResourceExhausted, ResourceNotFound, InvalidConfiguration, AuthenticationFailed)
+1. Created `VsphereError` sealed class hierarchy with ADR-004a alignment (ConnectionError, OperationFailed, ResourceExhausted, ResourceNotFound, InvalidConfiguration, AuthenticationFailed)
 2. Implemented Resilience4j retry policy in `ResilientProvisioningService` with exponential backoff (10s base, 2x multiplier, 120s max, 5 total attempts)
 3. Added `VmProvisioningFailed` domain event and `markProvisioningFailed()` method to VmRequest aggregate
 4. Implemented saga compensation pattern in `VcsimAdapter` with CRITICAL logging for cleanup failures

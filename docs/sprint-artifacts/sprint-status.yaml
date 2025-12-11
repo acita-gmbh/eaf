@@ -143,7 +143,7 @@ development_status:
   3-3-provisioning-trigger-on-approval: done     # Provisioning trigger implemented
   3-4-vm-provisioning-execution: done            # VM cloning implementation complete
   3-5-provisioning-progress-tracking: done       # Progress tracking implemented
-  3-6-provisioning-error-handling: done            # PR #94 code review PASSED 2025-12-11
+  3-6-provisioning-error-handling: review          # PR #94 code review PASSED 2025-12-11, awaiting merge
   3-7-provisioned-vm-details: backlog            # VM details view for users
   3-8-vm-ready-notification: backlog             # Email notification when VM ready
   3-9-vcenter-contract-test-suite: backlog       # BLOCKED: Awaiting vCenter access

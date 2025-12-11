@@ -15,6 +15,7 @@ import io.github.resilience4j.kotlin.retry.executeSuspendFunction
 import io.github.resilience4j.retry.Retry
 import io.github.resilience4j.retry.RetryConfig
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
@@ -123,7 +124,9 @@ public class ResilientProvisioningService(
         /** User-friendly error message */
         val userMessage: String,
         /** The underlying vSphere error from the last attempt */
-        val lastError: VsphereError
+        val lastError: VsphereError,
+        /** Timestamp when the last attempt failed (for accurate failure reporting) */
+        val lastAttemptAt: Instant
     )
 
     private val retryConfig: RetryConfig = RetryConfig.custom<Result<VmProvisioningResult, VsphereError>>()
@@ -141,6 +144,9 @@ public class ResilientProvisioningService(
             // Only retry if the error is retriable (transient)
             result is Result.Failure && result.error.retriable
         }
+        // Prevent retry on unexpected exceptions (NPE, misconfigured client, etc.)
+        // Without this, Resilience4j's default retries all exceptions
+        .retryOnException { false }
         // Don't retry these exceptions - they should propagate immediately:
         // - PermanentErrorException: Our escape hatch for non-retriable errors
         // - CancellationException: Coroutine cancellation must propagate for structured concurrency
@@ -167,6 +173,7 @@ public class ResilientProvisioningService(
         // (Resilience4j's onRetry callback may execute on different thread than retry block)
         val attemptCount = AtomicInteger(0)
         val lastError = AtomicReference<VsphereError?>(null)
+        val lastErrorTimestamp = AtomicReference<Instant?>(null)
 
         retry.eventPublisher.onRetry { event ->
             logger.warn {
@@ -188,9 +195,11 @@ public class ResilientProvisioningService(
 
                 val result = hypervisorPort.createVm(spec, onProgress)
 
-                // Track last error for RetryExhaustedError
+                // Track last error and timestamp for RetryExhaustedError
+                // Capture timestamp at actual failure time for accurate reporting
                 if (result is Result.Failure) {
                     lastError.set(result.error)
+                    lastErrorTimestamp.set(Instant.now())
                     // If permanent error, don't retry - return immediately
                     if (!result.error.retriable) {
                         logger.info {
@@ -237,7 +246,8 @@ public class ResilientProvisioningService(
                 attemptCount = attemptCount.get(),
                 lastErrorCode = error.errorCode,
                 userMessage = error.userMessage,
-                lastError = error
+                lastError = error,
+                lastAttemptAt = lastErrorTimestamp.get() ?: Instant.now()
             )
             ProvisioningFailure.Exhausted(exhaustedError).failure()
         } catch (e: CancellationException) {
