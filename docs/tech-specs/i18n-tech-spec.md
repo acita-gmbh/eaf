@@ -1600,7 +1600,7 @@ When implementing i18n, the following existing documentation files will need upd
 | Document | Section | Change Required |
 |----------|---------|-----------------|
 | `docs/prd.md` | Localization (lines 806-814) | Update NFR-L10N-5 from `React-intl` → `react-i18next`; clarify primary language strategy |
-| `docs/ux-design-specification.md` | 8.6 Internationalization (lines 942-951) | Add reference to this tech spec; update implementation details |
+| `docs/ux/design-specification.md` | 8.6 Internationalization (lines 942-951) | Add reference to this tech spec; update implementation details |
 | `docs/epics.md` | — | Add i18n epic with stories for each implementation phase |
 
 ### PRD NFR Alignment

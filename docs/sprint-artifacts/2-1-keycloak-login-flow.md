@@ -231,7 +231,7 @@ so that I can access DVMM securely with my company credentials.
 - [Source: docs/sprint-artifacts/tech-spec-epic-2.md#Section-2.1-In-Scope]
 - [Source: docs/sprint-artifacts/tech-spec-epic-2.md#Section-2.3-Technical-Debt]
 - [Source: docs/architecture.md#Authentication]
-- [Source: docs/ux-design-specification.md#Login-Screen]
+- [Source: docs/ux/design-specification.md#Login-Screen]
 - [Source: docs/sprint-artifacts/1-11-cicd-quality-gates.md#Completion-Notes-List]
 - [Source: CLAUDE.md#Zero-Tolerance-Policies]
 

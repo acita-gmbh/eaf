@@ -14,7 +14,7 @@ So that I understand how to get started.
 - **FRs Satisfied:** FR85 (Empty states with guidance), FR86 (First-time user onboarding)
 - **Architecture constraint:** shadcn-admin-kit patterns, localStorage for onboarding state
 - **Prerequisites:** Story 2.2 (End User Dashboard Layout) - DONE
-- **UX Reference:** `docs/ux-design-specification.md` Section 7.6 (Empty States)
+- **UX Reference:** `docs/ux/design-specification.md` Section 7.6 (Empty States)
 - **Existing Code:** Dashboard components in `dvmm/dvmm-web/src/components/dashboard/`
 
 ## Acceptance Criteria
@@ -395,7 +395,7 @@ beforeEach(() => {
 ### References
 
 - [Source: docs/epics.md#Story-2.3-Empty-States-Onboarding]
-- [Source: docs/ux-design-specification.md#Section-7.6-Empty-States]
+- [Source: docs/ux/design-specification.md#Section-7.6-Empty-States]
 - [Source: docs/sprint-artifacts/2-2-end-user-dashboard-layout.md#Dev-Agent-Record]
 - [Source: CLAUDE.md#Zero-Tolerance-Policies]
 

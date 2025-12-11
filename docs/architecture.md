@@ -2124,6 +2124,8 @@ This architecture document is part of the DVMM Enterprise Method documentation s
 | [Security Architecture](security-architecture.md) | Threat model (STRIDE), multi-tenant isolation, crypto-shredding, ISO 27001 control mapping, API security, incident response |
 | [DevOps Strategy](devops-strategy.md) | CI/CD pipeline, quality gates, Blue-Green deployment, monitoring (Grafana/Prometheus/Loki), disaster recovery |
 | [Test Design System](test-design-system.md) | System-level test design, testability concerns (TC-001–TC-004), VCSIM for VMware, k6 for performance, ASR Utility Tree |
+| [Spring Boot Rules](spring-boot-rules.md) | Constructor injection, configuration properties, transaction boundaries, REST conventions, logging, Testcontainers |
+| [UX Design Specification](ux/design-specification.md) | Design system (shadcn-admin-kit), user journeys, component patterns, Tech Teal theme |
 
 ---
 

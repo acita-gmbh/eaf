@@ -4,7 +4,7 @@
 **Date:** 2025-12-09
 **Author:** DVMM Team
 **Deciders:** Wall-E, John (PM)
-**Related:** [Research Document](../research-multi-hypervisor-support.md), [Epic 6](../epics.md#epic-6-multi-hypervisor-support-post-mvp)
+**Related:** [Research Document](../research/multi-hypervisor-support.md), [Epic 6](../epics.md#epic-6-multi-hypervisor-support-post-mvp)
 
 ---
 
@@ -15,7 +15,7 @@ The Broadcom VMware acquisition (November 2023) has triggered massive market dis
 - Price increases of 150-1500%
 - Proxmox VE experiencing 650% growth (1.5M+ hosts)
 
-See `docs/research-multi-hypervisor-support.md` for comprehensive market and technical analysis.
+See `docs/research/multi-hypervisor-support.md` for comprehensive market and technical analysis.
 
 ### Current State
 
@@ -154,7 +154,7 @@ The following VMware-specific types will be generalized in Epic 6:
 
 ## References
 
-- Research Document: `docs/research-multi-hypervisor-support.md`
+- Research Document: `docs/research/multi-hypervisor-support.md`
 - Epic 6: Multi-Hypervisor Support (Post-MVP) in `docs/epics.md`
 - FR-HYPERVISOR-001 through FR-HYPERVISOR-005 in `docs/prd.md`
 - `HypervisorPort` interface: `dvmm-application/.../vmware/HypervisorPort.kt`

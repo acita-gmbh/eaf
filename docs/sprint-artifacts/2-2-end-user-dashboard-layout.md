@@ -14,7 +14,7 @@ So that I have a single place to see all my activity.
 - **FRs Satisfied:** FR85 (Empty states - partial, full implementation in Story 2.3)
 - **Architecture constraint:** shadcn-admin-kit patterns, Tailwind CSS, Tech Teal theme
 - **Prerequisites:** Story 2.1 (Keycloak Login Flow) - DONE
-- **UX Reference:** `docs/ux-design-specification.md` Section 4.2 (Layout Strategy)
+- **UX Reference:** `docs/ux/design-specification.md` Section 4.2 (Layout Strategy)
 - **Existing Code:** `dvmm/dvmm-web/src/App.tsx` - basic header and placeholder content
 
 ## Acceptance Criteria
@@ -71,7 +71,7 @@ So that I have a single place to see all my activity.
    - Then primary actions use Tech Teal (#0D9488) as defined in `index.css`
    - And hover states use Teal 700 (#0f766e)
    - And status indicators use defined semantic colors (CSS variables)
-   - And the design follows `ux-design-specification.md` guidelines.
+   - And the design follows `ux/design-specification.md` guidelines.
 
 ## Test Plan
 
@@ -390,7 +390,7 @@ Object.defineProperty(window, 'matchMedia', {
 ### References
 
 - [Source: docs/epics.md#Story-2.2-End-User-Dashboard-Layout]
-- [Source: docs/ux-design-specification.md#Section-4.2-Layout-Strategy]
+- [Source: docs/ux/design-specification.md#Section-4.2-Layout-Strategy]
 - [Source: docs/sprint-artifacts/tech-spec-epic-2.md#Section-4.4-Frontend-Architecture]
 - [Source: docs/sprint-artifacts/2-1-keycloak-login-flow.md#Code-Review]
 - [Source: CLAUDE.md#Zero-Tolerance-Policies]

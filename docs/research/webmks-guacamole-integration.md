@@ -1398,7 +1398,7 @@ describe('WebMksConsole', () => {
 
 ### Related DVMM Documentation
 
-- [Guacamole Integration Research](research-guacamole-integration.md)
+- [Guacamole Integration Research](guacamole-integration.md)
 - [Architecture](architecture.md)
 - [Epics - Story 3.7](epics.md#story-37-provisioned-vm-details)
 

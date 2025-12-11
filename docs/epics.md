@@ -2488,7 +2488,7 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 - 98% of VMware customers evaluating alternatives
 - Price increases of 150-1500%
 - Proxmox VE growing 650% (1.5M+ hosts, Vienna-based)
-- See: `docs/research-multi-hypervisor-support.md`
+- See: `docs/research/multi-hypervisor-support.md`
 
 ### Epic 6 Stories (Post-MVP)
 

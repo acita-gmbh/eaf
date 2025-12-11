@@ -39,7 +39,7 @@ workflow_status:
 
       - id: "research"
         name: "Research"
-        status: "docs/research-market-2025-11-24.md"
+        status: "docs/research/market-2025-11-24.md"
         agent: "analyst"
         command: "/bmad:bmm:workflows:research"
         completed: "2025-11-24"
@@ -77,7 +77,7 @@ workflow_status:
 
       - id: "create-ux-design"
         name: "Create UX Design"
-        status: "docs/ux-design-specification.md"
+        status: "docs/ux/design-specification.md"
         agent: "ux-designer"
         command: "/bmad:bmm:workflows:create-ux-design"
         completed: "2025-11-24"

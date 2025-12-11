@@ -148,7 +148,7 @@
         Token expiration: 1h access, 8h refresh. CSRF protection via X-CSRF-Token header.
         Login flow: User → Keycloak → JWT → DVMM validates → Session established.
       </doc>
-      <doc path="docs/ux-design-specification.md" title="UX Design" section="User Journeys">
+      <doc path="docs/ux/design-specification.md" title="UX Design" section="User Journeys">
         Login via Keycloak SSO. Land on My VMs dashboard after authentication.
         Header displays user name and logout button. Tech Teal theme (#0D9488).
       </doc>

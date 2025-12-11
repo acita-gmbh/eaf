@@ -1034,7 +1034,7 @@ This request uses 8 of 32 remaining vCPUs
 
 - Product Requirements: `docs/prd.md`
 - Product Brief: `docs/product-brief-dvmm-2025-11-24.md`
-- Market Research: `docs/research-market-2025-11-24.md`
+- Market Research: `docs/research/market-2025-11-24.md`
 
 ### Core Interactive Deliverables
 

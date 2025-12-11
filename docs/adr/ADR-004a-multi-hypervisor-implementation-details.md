@@ -835,7 +835,7 @@ Accept this addendum as the **implementation blueprint** for ADR-004. All future
 
 - [ADR-004: Multi-Hypervisor Architecture](./ADR-004-multi-hypervisor-architecture.md)
 - [Epic 6: Multi-Hypervisor Support](../epics.md#epic-6-multi-hypervisor-support-post-mvp)
-- [Research: Multi-Hypervisor Support](../research-multi-hypervisor-support.md)
+- [Research: Multi-Hypervisor Support](../research/multi-hypervisor-support.md)
 - [Proxmox API Documentation](https://pve.proxmox.com/pve-docs/api-viewer/)
 - [Hyper-V WinRM Documentation](https://learn.microsoft.com/en-us/windows/win32/winrm/portal)
 - [PowerVM HMC REST API](https://www.ibm.com/docs/en/power-systems/latest?topic=apis-hmc-rest-api)

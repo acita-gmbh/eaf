@@ -14,7 +14,7 @@ So that I can choose the right resources for my needs.
 - **FRs Satisfied:** FR18 (VM Size Selection), FR83 (Quota Visibility)
 - **Architecture constraint:** React Hook Form + Zod validation, shadcn-admin-kit patterns, Radio Group + Cards
 - **Prerequisites:** Story 2.4 (VM Request Form - Basic Fields) - DONE
-- **UX Reference:** `docs/ux-design-specification.md` Section 6.4 - VMSizeSelector component
+- **UX Reference:** `docs/ux/design-specification.md` Section 6.4 - VMSizeSelector component
 - **Existing Code:** VmRequestForm with placeholder in `dvmm/dvmm-web/src/components/requests/VmRequestForm.tsx`
 
 ## Pre-Flight Setup Checklist
@@ -202,7 +202,7 @@ Your Quota                      75% used
 This request uses 8 of 32 remaining vCPUs
 ```
 
-[Source: docs/ux-design-specification.md#Section-6.4]
+[Source: docs/ux/design-specification.md#Section-6.4]
 
 ### Architecture Patterns
 
@@ -544,7 +544,7 @@ const form = useForm<VmRequestFormData>({
 ### References
 
 - [Source: docs/epics.md#Story-2.5-VM-Request-Form-Size-Selector]
-- [Source: docs/ux-design-specification.md#Section-6.4-VMSizeSelector]
+- [Source: docs/ux/design-specification.md#Section-6.4-VMSizeSelector]
 - [Source: docs/sprint-artifacts/2-4-vm-request-form-basic-fields.md]
 - [shadcn RadioGroup Documentation](https://ui.shadcn.com/docs/components/radio-group)
 - [Radix RadioGroup Accessibility](https://www.radix-ui.com/primitives/docs/components/radio-group)

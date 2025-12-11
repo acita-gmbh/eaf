@@ -5,7 +5,7 @@
 **Version:** 2.0
 **Status:** Draft
 **Epic:** 6 (Post-MVP Enhancement)
-**Related:** [TUI Analysis](../tui-analysis.md) | [Architecture](../architecture.md)
+**Related:** [TUI Analysis](tui-analysis.md) | [Architecture](../architecture.md)
 
 ---
 
@@ -829,7 +829,7 @@ For each story in Epic 6:
 - [Lanterna 3.1.2 Documentation](https://github.com/mabe02/lanterna/tree/master/docs)
 - [gRPC Kotlin Documentation](https://grpc.io/docs/languages/kotlin/)
 - [DVMM Architecture](../architecture.md)
-- [TUI Analysis](../tui-analysis.md)
+- [TUI Analysis](tui-analysis.md)
 
 ---
 
