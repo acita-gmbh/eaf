@@ -18,7 +18,7 @@ npm run lint         # ESLint
 
 ## Test File Convention
 
-**Tests MUST be colocated with source files.** No `__tests__` directories (vitest ignores them).
+**Tests MUST be colocated with source files.** `__tests__` directories are forbidden by project convention.
 
 ```text
 src/components/Button.tsx       # ✅

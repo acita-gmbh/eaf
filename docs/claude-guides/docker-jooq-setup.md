@@ -112,4 +112,4 @@ fun cleanup() {
 | `JSONB`      | `org.jooq.JSONB`            | `JSONB.jsonb(str)`, `.data()`      |
 | `UUID`       | `java.util.UUID`            | Direct                             |
 | `TIMESTAMPTZ`| `java.time.OffsetDateTime`  | Direct                             |
-| `BYTEA`      | `ByteArray`                 | Direct                             |
+| `BYTEA`      | `byte[]`                    | Direct                             |
