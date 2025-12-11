@@ -606,15 +606,18 @@ public class VsphereClient(
                 // Signal provisioning complete (matches VcsimAdapter contract)
                 onProgress(VmProvisioningStage.READY)
 
-                // Success - clear partial VM tracker (no cleanup needed)
-                partialVmRef = null
-
-                VmProvisioningResult(
+                // Build success result first, then clear tracker
+                // This prevents race condition where exception after clearing would skip cleanup
+                val successResult = VmProvisioningResult(
                     vmwareVmId = vmwareVmId,
                     ipAddress = ipDetectionResult.ipAddress,
                     hostname = spec.name,
                     warningMessage = ipDetectionResult.warningMessage
                 ).success()
+
+                // Success - clear partial VM tracker only after result is constructed
+                partialVmRef = null
+                successResult
 
             } catch (e: CancellationException) {
                 // Saga compensation: cleanup partial VM on cancellation
@@ -655,12 +658,25 @@ public class VsphereClient(
             logger.info { "Saga compensation: Cleaning up partial VM '${vmRef.value}' ($vmName) due to: $failureReason" }
 
             // Power off first if running (destroyTask requires VM to be powered off)
-            val powerState = getProperty(session, vmRef, "runtime.powerState") as? VirtualMachinePowerState
+            val powerState: VirtualMachinePowerState? = try {
+                getProperty(session, vmRef, "runtime.powerState") as? VirtualMachinePowerState
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) {
+                    "Could not retrieve power state for VM '${vmRef.value}' ($vmName) during cleanup. " +
+                        "Proceeding with deletion attempt."
+                }
+                null
+            }
+
             if (powerState == VirtualMachinePowerState.POWERED_ON) {
                 logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
                 val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
                 waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
                 logger.debug { "Successfully powered off VM '${vmRef.value}'" }
+            } else if (powerState == null) {
+                logger.debug { "Power state unknown for VM '${vmRef.value}', attempting deletion anyway" }
             }
 
             // Delete the VM

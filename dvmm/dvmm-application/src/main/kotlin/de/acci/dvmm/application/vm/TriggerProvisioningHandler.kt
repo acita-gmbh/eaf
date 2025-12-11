@@ -134,7 +134,12 @@ public class TriggerProvisioningHandler(
                 when (error) {
                     is ResilientProvisioningService.RetryExhaustedError -> emitFailure(event, error)
                     is VsphereError -> emitFailure(event, error)
-                    else -> emitFailure(event, "Unexpected error: $error")
+                    else -> {
+                        logger.error {
+                            "Unexpected error type ${error::class.qualifiedName} while provisioning $prefixedVmName"
+                        }
+                        emitFailure(event, "Unexpected error: $error")
+                    }
                 }
             }
         }

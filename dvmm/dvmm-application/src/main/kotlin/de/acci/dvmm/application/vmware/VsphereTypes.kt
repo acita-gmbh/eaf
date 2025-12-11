@@ -277,7 +277,8 @@ public data class VmId(public val value: String)
  * @property memoryGb Memory in GB
  * @property diskGb Disk size in GB. Use 0 (default) to keep the template's disk size.
  *                  If greater than 0 and larger than the template's disk, the disk will be extended.
- *                  Values smaller than the template's disk size are ignored (disks cannot shrink).
+ *                  If a value smaller than the template's disk size is provided, the template's
+ *                  disk size will be used instead (disks cannot shrink).
  */
 public data class VmSpec(
     public val name: String,
