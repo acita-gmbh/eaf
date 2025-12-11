@@ -1,6 +1,7 @@
 package de.acci.dvmm.vmrequest
 
 import de.acci.dvmm.DvmmApplication
+import de.acci.dvmm.TestNotificationConfiguration
 import de.acci.eaf.testing.TestContainers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit
 import org.awaitility.Awaitility.await
 
 @SpringBootTest(
-    classes = [DvmmApplication::class, VmProvisioningIntegrationTest.TestConfig::class],
+    classes = [DvmmApplication::class, VmProvisioningIntegrationTest.TestConfig::class, TestNotificationConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.flyway.enabled=false",

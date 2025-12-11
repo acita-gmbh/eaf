@@ -13,6 +13,7 @@ import de.acci.eaf.core.result.success
 import de.acci.eaf.notifications.NotificationError
 import de.acci.eaf.notifications.NotificationService
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.stereotype.Component
 
 /**
  * Infrastructure adapter that sends VM request notifications using the EAF notification service.
@@ -42,6 +43,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
  * Email failures are converted to [VmRequestNotificationError] and returned.
  * Callers should log errors but not fail the parent command.
  */
+@Component
 public class VmRequestNotificationSenderAdapter(
     private val notificationService: NotificationService
 ) : VmRequestNotificationSender {

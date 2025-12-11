@@ -27,7 +27,7 @@ import javax.sql.DataSource
  * For full integration tests with database, see VmRequestIntegrationTest.
  */
 @SpringBootTest(
-    classes = [DvmmApplication::class, DvmmApplicationTest.TestConfig::class],
+    classes = [DvmmApplication::class, DvmmApplicationTest.TestConfig::class, TestNotificationConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 )
 @ActiveProfiles("test")
