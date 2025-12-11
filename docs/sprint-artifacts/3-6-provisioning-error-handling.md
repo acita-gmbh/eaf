@@ -77,7 +77,7 @@ so that users understand what went wrong and the system recovers cleanly from pa
 
 - [x] **Task 2: Implement Resilience4j Retry Policy (AC: 3.6.1)**
   - [x] Add `resilience4j-kotlin` and `resilience4j-retry` dependencies to `dvmm-application`
-  - [x] Configure retry policy: 4 retries (5 total attempts), exponential backoff starting at 10s, multiplier 2.0, max 120s
+  - [x] Configure retry policy: 5 total attempts (1 initial + 4 retries), exponential backoff starting at 10s, multiplier 2.0, max 120s
   - [x] Wrap `vspherePort.createVm()` calls with retry policy in `ResilientProvisioningService`
   - [x] Log each retry attempt with correlation ID and attempt number
 
@@ -174,56 +174,63 @@ so that users understand what went wrong and the system recovers cleanly from pa
 
     ```kotlin
     // dvmm-application/.../vmware/VsphereError.kt
-    sealed class VsphereError {
-        abstract val message: String
+    // Extends RuntimeException to provide standard exception behavior
+    sealed class VsphereError(
+        message: String,
+        cause: Throwable? = null
+    ) : RuntimeException(message, cause) {
         abstract val retriable: Boolean
-        abstract val cause: Throwable?
+        abstract val userMessage: String  // User-friendly error message
 
         // Corresponds to HypervisorError.ResourceExhausted
-        data class ResourceExhausted(
-            override val message: String,
+        class ResourceExhausted(
+            message: String,
             val resourceType: String, // "CPU", "MEMORY", "STORAGE"
             val requested: Int,
             val available: Int,
-            override val cause: Throwable? = null
-        ) : VsphereError() {
+            cause: Throwable? = null
+        ) : VsphereError(message, cause) {
             override val retriable = true // Might free up later
+            override val userMessage = "Insufficient $resourceType resources"
         }
 
         // Corresponds to HypervisorError.ConnectionFailed
         class ConnectionError(
             message: String,
             cause: Throwable? = null
-        ) : VsphereError(message, cause = cause) {
+        ) : VsphereError(message, cause) {
             override val retriable = true
+            override val userMessage = "Connection error - will retry automatically"
         }
 
         // Corresponds to HypervisorError.OperationFailed (Generic retryable)
-        data class OperationFailed(
+        class OperationFailed(
             val operation: String,
-            override val message: String,
-            override val cause: Throwable? = null
-        ) : VsphereError() {
+            message: String,
+            cause: Throwable? = null
+        ) : VsphereError(message, cause) {
             override val retriable = true
+            override val userMessage = "Operation '$operation' failed - will retry"
         }
 
         // Corresponds to HypervisorError.InvalidConfiguration (Non-retryable)
-        data class InvalidConfiguration(
-            override val message: String,
+        class InvalidConfiguration(
+            message: String,
             val field: String,
-            override val cause: Throwable? = null
-        ) : VsphereError() {
+            cause: Throwable? = null
+        ) : VsphereError(message, cause) {
             override val retriable = false
+            override val userMessage = "Invalid configuration: $field"
         }
-        
-        // Corresponds to HypervisorError.ResourceNotFound
-        data class ResourceNotFound(
+
+        // Corresponds to HypervisorError.ResourceNotFound (Non-retryable)
+        class ResourceNotFound(
              val resourceType: String,
              val resourceId: String,
-             override val cause: Throwable? = null
-        ) : VsphereError() {
-             override val message = "$resourceType not found: $resourceId"
+             cause: Throwable? = null
+        ) : VsphereError("$resourceType not found: $resourceId", cause) {
              override val retriable = false
+             override val userMessage = "$resourceType not found"
         }
     }
     ```
