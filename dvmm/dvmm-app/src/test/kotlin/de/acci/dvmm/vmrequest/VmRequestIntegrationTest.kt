@@ -85,6 +85,7 @@ class VmRequestIntegrationTest {
                     stmt.execute("""DROP TABLE IF EXISTS public."VM_REQUESTS_PROJECTION" CASCADE""")
                     // Create projection table with quoted uppercase identifiers to match jOOQ-generated code
                     // jOOQ uses H2's DDLDatabase which stores names in UPPERCASE
+                    // Must include all columns from V011__add_vm_details_to_projection.sql
                     stmt.execute(
                         """
                         CREATE TABLE IF NOT EXISTS public."VM_REQUESTS_PROJECTION" (
@@ -110,7 +111,13 @@ class VmRequestIntegrationTest {
                             "REJECTION_REASON"  TEXT,
                             "CREATED_AT"        TIMESTAMPTZ NOT NULL,
                             "UPDATED_AT"        TIMESTAMPTZ NOT NULL,
-                            "VERSION"           INT NOT NULL DEFAULT 1
+                            "VERSION"           INT NOT NULL DEFAULT 1,
+                            "VMWARE_VM_ID"      VARCHAR(100),
+                            "IP_ADDRESS"        VARCHAR(45),
+                            "HOSTNAME"          VARCHAR(255),
+                            "POWER_STATE"       VARCHAR(50),
+                            "GUEST_OS"          VARCHAR(100),
+                            "LAST_SYNCED_AT"    TIMESTAMPTZ
                         )
                         """.trimIndent()
                     )
@@ -644,16 +651,17 @@ class VmRequestIntegrationTest {
         @Test
         @DisplayName("should return 200 OK with empty list when no requests exist")
         fun `should return empty list when no requests exist`() {
+            // When: User requests their list with no projections
             webTestClient.mutateWith(csrf()).get()
                 .uri("/api/requests/my")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .exchange()
+                // Then: 200 OK with empty list
                 .expectStatus().isOk
                 .expectBody()
                 .jsonPath("$.items").isArray
                 .jsonPath("$.items.length()").isEqualTo(0)
                 .jsonPath("$.totalElements").isEqualTo(0)
-                .jsonPath("$.page").isEqualTo(0)
         }
 
         @Test

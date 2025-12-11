@@ -71,6 +71,7 @@ class VmProvisioningIntegrationTest {
             TestContainers.postgres.createConnection("").use { conn ->
                 conn.createStatement().use { stmt ->
                     // VM Requests Projection (full schema matching jOOQ code)
+                    // Must include all columns from V011__add_vm_details_to_projection.sql
                     stmt.execute("""
                         CREATE TABLE IF NOT EXISTS public."VM_REQUESTS_PROJECTION" (
                             "ID" UUID PRIMARY KEY,
@@ -95,7 +96,13 @@ class VmProvisioningIntegrationTest {
                             "REJECTION_REASON" TEXT,
                             "CREATED_AT" TIMESTAMPTZ NOT NULL,
                             "UPDATED_AT" TIMESTAMPTZ NOT NULL,
-                            "VERSION" INT NOT NULL DEFAULT 1
+                            "VERSION" INT NOT NULL DEFAULT 1,
+                            "VMWARE_VM_ID" VARCHAR(100),
+                            "IP_ADDRESS" VARCHAR(45),
+                            "HOSTNAME" VARCHAR(255),
+                            "POWER_STATE" VARCHAR(50),
+                            "GUEST_OS" VARCHAR(100),
+                            "LAST_SYNCED_AT" TIMESTAMPTZ
                         )
                     """.trimIndent())
 
