@@ -144,6 +144,71 @@ class VsphereErrorTest {
         }
 
         @Test
+        fun `ResourceNotFound for network has user-friendly message`() {
+            val error = VsphereError.ResourceNotFound(
+                resourceType = "Network",
+                resourceId = "vm-network"
+            )
+            assertEquals(
+                "Network not available. IT has been notified.",
+                error.userMessage
+            )
+            assertEquals(ProvisioningErrorCode.NETWORK_NOT_FOUND, error.errorCode)
+        }
+
+        @Test
+        fun `ResourceNotFound for resourcepool has user-friendly message`() {
+            val error = VsphereError.ResourceNotFound(
+                resourceType = "ResourcePool",
+                resourceId = "production-pool"
+            )
+            assertEquals(
+                "Resource pool not available. IT has been notified.",
+                error.userMessage
+            )
+            assertEquals(ProvisioningErrorCode.RESOURCE_POOL_NOT_FOUND, error.errorCode)
+        }
+
+        @Test
+        fun `ResourceNotFound for cluster has user-friendly message`() {
+            val error = VsphereError.ResourceNotFound(
+                resourceType = "Cluster",
+                resourceId = "compute-cluster"
+            )
+            assertEquals(
+                "Cluster not available. IT has been notified.",
+                error.userMessage
+            )
+            assertEquals(ProvisioningErrorCode.CLUSTER_NOT_FOUND, error.errorCode)
+        }
+
+        @Test
+        fun `ResourceNotFound for folder has user-friendly message`() {
+            val error = VsphereError.ResourceNotFound(
+                resourceType = "Folder",
+                resourceId = "vm-folder"
+            )
+            assertEquals(
+                "VM folder not available. IT has been notified.",
+                error.userMessage
+            )
+            assertEquals(ProvisioningErrorCode.FOLDER_NOT_FOUND, error.errorCode)
+        }
+
+        @Test
+        fun `ResourceNotFound for unknown type includes resource type in message`() {
+            val error = VsphereError.ResourceNotFound(
+                resourceType = "Datacenter",
+                resourceId = "dc-01"
+            )
+            assertEquals(
+                "Resource 'datacenter' not available. IT has been notified.",
+                error.userMessage
+            )
+            assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)
+        }
+
+        @Test
         fun `InvalidConfiguration has user-friendly message`() {
             val error = VsphereError.InvalidConfiguration(
                 message = "VmConfigFault",

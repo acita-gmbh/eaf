@@ -27,6 +27,18 @@ public enum class ProvisioningErrorCode(
     /** NetworkConfigFailed - network setup failure */
     NETWORK_CONFIG_FAILED("Network setup failed. IT has been notified."),
 
+    /** NetworkNotFound - network not available in vCenter */
+    NETWORK_NOT_FOUND("Network not available. IT has been notified."),
+
+    /** ResourcePoolNotFound - resource pool missing */
+    RESOURCE_POOL_NOT_FOUND("Resource pool not available. IT has been notified."),
+
+    /** ClusterNotFound - compute cluster missing */
+    CLUSTER_NOT_FOUND("Cluster not available. IT has been notified."),
+
+    /** FolderNotFound - VM folder missing */
+    FOLDER_NOT_FOUND("VM folder not available. IT has been notified."),
+
     /** GuestToolsTimeout - VMware Tools didn't respond */
     VMWARE_TOOLS_TIMEOUT("VM started but tools didn't respond. Please restart the VM."),
 
@@ -119,7 +131,7 @@ public sealed class VsphereError(
     }
 
     /**
-     * Resource not found - template, datastore, or other resource missing.
+     * Resource not found - template, datastore, network, or other resource missing.
      * Not retriable - requires configuration change or resource creation.
      */
     public class ResourceNotFound(
@@ -132,12 +144,22 @@ public sealed class VsphereError(
             get() = when (resourceType.lowercase()) {
                 "template" -> ProvisioningErrorCode.TEMPLATE_NOT_FOUND.userMessage
                 "datastore" -> ProvisioningErrorCode.DATASTORE_NOT_AVAILABLE.userMessage
-                else -> ProvisioningErrorCode.UNKNOWN.userMessage
+                "network" -> ProvisioningErrorCode.NETWORK_NOT_FOUND.userMessage
+                "resourcepool", "resource pool" -> ProvisioningErrorCode.RESOURCE_POOL_NOT_FOUND.userMessage
+                "cluster" -> ProvisioningErrorCode.CLUSTER_NOT_FOUND.userMessage
+                "folder" -> ProvisioningErrorCode.FOLDER_NOT_FOUND.userMessage
+                // Fallback includes resource type for context (lowercase for consistency)
+                else -> "Resource '${resourceType.lowercase()}' not available. IT has been notified."
             }
         override val errorCode: ProvisioningErrorCode
             get() = when (resourceType.lowercase()) {
                 "template" -> ProvisioningErrorCode.TEMPLATE_NOT_FOUND
                 "datastore" -> ProvisioningErrorCode.DATASTORE_NOT_AVAILABLE
+                "network" -> ProvisioningErrorCode.NETWORK_NOT_FOUND
+                "resourcepool", "resource pool" -> ProvisioningErrorCode.RESOURCE_POOL_NOT_FOUND
+                "cluster" -> ProvisioningErrorCode.CLUSTER_NOT_FOUND
+                "folder" -> ProvisioningErrorCode.FOLDER_NOT_FOUND
+                // UNKNOWN is still used for unrecognized resource types
                 else -> ProvisioningErrorCode.UNKNOWN
             }
     }
