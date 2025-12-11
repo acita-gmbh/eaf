@@ -530,7 +530,10 @@ public class TriggerProvisioningHandler(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.warn(e) { "[Step 3/4] Failed to load request details for notifications, skipping: ${e::class.simpleName}" }
+            logger.warn(e) {
+                "[Step 3/4] Failed to load request details for notifications, skipping. " +
+                    "RequestId: ${event.requestId.value}, Error: ${e::class.simpleName}: ${e.message}"
+            }
             return
         }
 
