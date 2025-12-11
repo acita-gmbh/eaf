@@ -485,12 +485,20 @@ public class TriggerProvisioningHandler(
             )
             when (timelineResult) {
                 is Result.Success -> logger.info { "[Step 2/4] Added PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
-                is Result.Failure -> logger.error { "[Step 2/4] Failed to add PROVISIONING_FAILED timeline: ${timelineResult.error}" }
+                is Result.Failure -> logger.error {
+                    "CRITICAL: [Step 2/4] Failed to add PROVISIONING_FAILED timeline for request ${event.requestId.value} " +
+                        "after VM ${event.aggregateId.value} was already marked failed. " +
+                        "Timeline may be inconsistent. Error: ${timelineResult.error}"
+                }
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.error(e) { "[Step 2/4] Failed to add PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
+            logger.error(e) {
+                "CRITICAL: [Step 2/4] Failed to add PROVISIONING_FAILED timeline for request ${event.requestId.value} " +
+                    "after VM ${event.aggregateId.value} was already marked failed. " +
+                    "Timeline may be inconsistent."
+            }
         }
 
         // Step 3 & 4: Send failure notifications (AC-3.6.5)
