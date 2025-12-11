@@ -354,8 +354,11 @@ public class TriggerProvisioningHandler(
     private suspend fun emitFailure(event: VmProvisioningStarted, error: VsphereError) {
         val errorCode = error.errorCode.name
         val userMessage = error.userMessage
-        // Note: retryCount would come from Resilience4j context in full implementation.
-        // For now, set to 1 since retries happen transparently inside HypervisorPort.
+        // TODO: Integrate ResilientProvisioningService to get actual retry count.
+        // Currently retries happen inside the adapter (e.g., VcsimAdapter), but
+        // ResilientProvisioningService tracks attemptCount. To use it, inject
+        // ResilientProvisioningService instead of HypervisorPort and handle
+        // RetryExhaustedError in the failure path. See Story 3.7 for follow-up.
         val retryCount = 1
         val lastAttemptAt = Instant.now()
 

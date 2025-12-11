@@ -26,7 +26,7 @@ import kotlin.coroutines.cancellation.CancellationException
  *   - Attempt 1: immediate
  *   - Attempt 2: after 10s
  *   - Attempt 3: after 20s (10s * 2)
- *   - Attempt 4: after 40s (40s * 2)
+ *   - Attempt 4: after 40s (20s * 2)
  *   - Attempt 5: after 80s (max 120s cap applies here)
  *
  * ## Error Classification (AC-3.6.3)
@@ -149,7 +149,7 @@ public class ResilientProvisioningService(
         } catch (e: io.github.resilience4j.retry.MaxRetriesExceededException) {
             // All retries exhausted
             val error = lastError ?: VsphereError.ApiError("Unknown error after retries")
-            logger.error {
+            logger.error(e) {
                 "Max retries ($MAX_ATTEMPTS) exhausted for provisioning. " +
                     "CorrelationId: $correlationId, " +
                     "LastError: ${error.message}, " +

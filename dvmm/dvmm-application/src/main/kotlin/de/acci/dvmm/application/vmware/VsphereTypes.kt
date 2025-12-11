@@ -236,15 +236,13 @@ public sealed class VsphereError(
         override val retriable: Boolean = true
         override val userMessage: String
             get() = when {
-                operation.contains("network", ignoreCase = true) ||
-                    operation.contains("Network", ignoreCase = true) ->
+                operation.contains("network", ignoreCase = true) ->
                     ProvisioningErrorCode.NETWORK_CONFIG_FAILED.userMessage
                 else -> ProvisioningErrorCode.UNKNOWN.userMessage
             }
         override val errorCode: ProvisioningErrorCode
             get() = when {
-                operation.contains("network", ignoreCase = true) ||
-                    operation.contains("Network", ignoreCase = true) ->
+                operation.contains("network", ignoreCase = true) ->
                     ProvisioningErrorCode.NETWORK_CONFIG_FAILED
                 else -> ProvisioningErrorCode.UNKNOWN
             }

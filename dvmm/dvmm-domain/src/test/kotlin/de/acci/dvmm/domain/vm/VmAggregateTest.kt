@@ -275,6 +275,7 @@ class VmAggregateTest {
             // Given - VM already failed
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
+            @Suppress("DEPRECATION")
             aggregate.markFailed("Initial failure", metadata)
             aggregate.clearUncommittedEvents()
 
