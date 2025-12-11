@@ -36,7 +36,7 @@ public data class VmProvisioningFailed(
     public val errorCode: String = "UNKNOWN",
     public val errorMessage: String = reason,
     public val retryCount: Int = 1,
-    public val lastAttemptAt: Instant = Instant.now(),
+    public val lastAttemptAt: Instant,
     override val metadata: EventMetadata
 ) : DomainEvent {
     override val aggregateType: String = AGGREGATE_TYPE

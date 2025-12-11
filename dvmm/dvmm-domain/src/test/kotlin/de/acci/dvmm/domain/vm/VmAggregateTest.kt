@@ -108,7 +108,7 @@ class VmAggregateTest {
 
             // When
             @Suppress("DEPRECATION")
-            aggregate.markFailed("Connection timeout", metadata)
+            aggregate.markFailed("Connection timeout", Instant.now(), metadata)
 
             // Then
             assertEquals(VmStatus.FAILED, aggregate.status)
@@ -140,17 +140,17 @@ class VmAggregateTest {
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
             val reason = "vSphere API error: ResourcePool not found"
+            val testTimestamp = Instant.parse("2025-01-15T15:30:00Z")
 
             // When - using deprecated method
             @Suppress("DEPRECATION")
-            aggregate.markFailed(reason, metadata)
+            aggregate.markFailed(reason, testTimestamp, metadata)
 
             // Then - should use defaults for new fields
             assertEquals(reason, aggregate.failureReason)
             assertEquals("UNKNOWN", aggregate.failureErrorCode)
             assertEquals(1, aggregate.failureRetryCount)
-            // lastAttemptAt is set to current time, just verify it's not null
-            assertEquals(true, aggregate.failureLastAttemptAt != null)
+            assertEquals(testTimestamp, aggregate.failureLastAttemptAt)
         }
 
         @Test
@@ -159,13 +159,13 @@ class VmAggregateTest {
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
             @Suppress("DEPRECATION")
-            aggregate.markFailed("First failure", metadata)
+            aggregate.markFailed("First failure", Instant.now(), metadata)
             aggregate.clearUncommittedEvents()
 
             // When/Then - check() throws IllegalStateException for state validation
             assertThrows(IllegalStateException::class.java) {
                 @Suppress("DEPRECATION")
-                aggregate.markFailed("Second failure", metadata)
+                aggregate.markFailed("Second failure", Instant.now(), metadata)
             }
         }
     }
@@ -276,7 +276,7 @@ class VmAggregateTest {
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
             @Suppress("DEPRECATION")
-            aggregate.markFailed("Initial failure", metadata)
+            aggregate.markFailed("Initial failure", Instant.now(), metadata)
             aggregate.clearUncommittedEvents()
 
             // When/Then

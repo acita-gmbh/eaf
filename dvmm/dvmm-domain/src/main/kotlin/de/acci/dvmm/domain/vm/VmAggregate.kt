@@ -170,18 +170,19 @@ public class VmAggregate private constructor(
      * Marks the VM provisioning as failed (simplified version for permanent errors).
      *
      * @param reason Description of why provisioning failed (used as errorMessage)
+     * @param lastAttemptAt Timestamp of the failed attempt (avoids non-deterministic Instant.now())
      * @param metadata Event metadata including tenant and correlation info
      */
     @Deprecated(
         "Use markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata) instead",
-        ReplaceWith("markFailed(\"UNKNOWN\", reason, 1, Instant.now(), metadata)")
+        ReplaceWith("markFailed(\"UNKNOWN\", reason, 1, lastAttemptAt, metadata)")
     )
-    public fun markFailed(reason: String, metadata: EventMetadata) {
+    public fun markFailed(reason: String, lastAttemptAt: Instant, metadata: EventMetadata) {
         markFailed(
             errorCode = "UNKNOWN",
             errorMessage = reason,
             retryCount = 1,
-            lastAttemptAt = Instant.now(),
+            lastAttemptAt = lastAttemptAt,
             metadata = metadata
         )
     }

@@ -13,6 +13,7 @@ import com.vmware.vim25.TraversalSpec
 import com.vmware.vim25.VimService
 import com.vmware.vim25.VirtualMachineCloneSpec
 import com.vmware.vim25.VirtualMachineConfigSpec
+import com.vmware.vim25.VirtualMachinePowerState
 import com.vmware.vim25.VirtualMachineRelocateSpec
 import de.acci.dvmm.application.vmware.Cluster
 import de.acci.dvmm.application.vmware.CredentialEncryptor
@@ -654,8 +655,8 @@ public class VsphereClient(
             logger.info { "Saga compensation: Cleaning up partial VM '${vmRef.value}' ($vmName) due to: $failureReason" }
 
             // Power off first if running (destroyTask requires VM to be powered off)
-            val powerState = getProperty(session, vmRef, "runtime.powerState") as? String
-            if (powerState == "poweredOn") {
+            val powerState = getProperty(session, vmRef, "runtime.powerState") as? VirtualMachinePowerState
+            if (powerState == VirtualMachinePowerState.POWERED_ON) {
                 logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
                 val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
                 waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
