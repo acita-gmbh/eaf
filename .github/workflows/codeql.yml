@@ -44,16 +44,16 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
-      - name: Cache Gradle dependencies
+      # Note: We intentionally do NOT cache Gradle build outputs for CodeQL.
+      # CodeQL needs to observe actual compilation to extract code for analysis.
+      # Cached .class files bypass the compiler, causing "no source code seen" errors.
+      # We only cache the Gradle wrapper to speed up downloads.
+      - name: Cache Gradle wrapper
         if: matrix.language == 'java-kotlin'
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+          path: ~/.gradle/wrapper
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
