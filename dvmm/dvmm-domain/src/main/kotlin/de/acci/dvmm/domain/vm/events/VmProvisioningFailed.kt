@@ -36,7 +36,8 @@ public data class VmProvisioningFailed(
     public val errorCode: String = "UNKNOWN",
     public val errorMessage: String = reason,
     public val retryCount: Int = 1,
-    public val lastAttemptAt: Instant,
+    /** Defaults to EPOCH for backward compatibility with legacy events missing this field */
+    public val lastAttemptAt: Instant = Instant.EPOCH,
     override val metadata: EventMetadata
 ) : DomainEvent {
     override val aggregateType: String = AGGREGATE_TYPE
