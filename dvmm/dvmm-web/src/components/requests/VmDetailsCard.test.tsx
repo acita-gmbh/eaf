@@ -133,7 +133,7 @@ describe('VmDetailsCard', () => {
       render(<VmDetailsCard vmDetails={fullVmDetails} />)
 
       expect(screen.getByTestId('vm-ssh-command')).toHaveTextContent(
-        'ssh user@192.168.1.100'
+        'ssh <username>@192.168.1.100'
       )
     })
 
@@ -164,7 +164,7 @@ describe('VmDetailsCard', () => {
       fireEvent.click(copyButton)
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith(
-        'ssh user@192.168.1.100'
+        'ssh <username>@192.168.1.100'
       )
     })
   })

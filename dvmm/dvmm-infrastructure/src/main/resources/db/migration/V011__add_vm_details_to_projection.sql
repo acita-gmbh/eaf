@@ -3,7 +3,7 @@
 --
 -- These columns store VM runtime information that is populated:
 -- 1. When provisioning completes (from VmProvisioned event)
--- 2. When admin triggers "Sync Status" (from live vSphere query)
+-- 2. When an authenticated user with VM access triggers "Sync Status" (from live vSphere query)
 --
 -- The IP_ADDRESS and HOSTNAME come from VMware Tools after provisioning.
 -- POWER_STATE and GUEST_OS are fetched from vSphere runtime properties.

@@ -37,7 +37,7 @@ public class VmStatusProjectionAdapter(
             .set(VM_REQUESTS_PROJECTION.POWER_STATE, powerState)
             .set(VM_REQUESTS_PROJECTION.GUEST_OS, guestOs)
             .set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, OffsetDateTime.ofInstant(lastSyncedAt, ZoneOffset.UTC))
-            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now(ZoneOffset.UTC))
             .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
             .execute()
     }

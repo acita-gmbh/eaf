@@ -48,17 +48,22 @@ export function VmDetailsCard({
   const isSuspended = vmDetails.powerState === 'SUSPENDED'
 
   const sshCommand = vmDetails.ipAddress
-    ? `ssh user@${vmDetails.ipAddress}`
+    ? `ssh <username>@${vmDetails.ipAddress}`
     : null
 
   const copyToClipboard = async (text: string, type: 'ip' | 'ssh') => {
-    await navigator.clipboard.writeText(text)
-    if (type === 'ip') {
-      setCopiedIp(true)
-      setTimeout(() => setCopiedIp(false), 2000)
-    } else {
-      setCopiedSsh(true)
-      setTimeout(() => setCopiedSsh(false), 2000)
+    try {
+      await navigator.clipboard.writeText(text)
+      if (type === 'ip') {
+        setCopiedIp(true)
+        setTimeout(() => setCopiedIp(false), 2000)
+      } else {
+        setCopiedSsh(true)
+        setTimeout(() => setCopiedSsh(false), 2000)
+      }
+    } catch (error) {
+      // Clipboard API can fail in insecure contexts or when permissions are denied
+      console.error('Failed to copy to clipboard:', error)
     }
   }
 

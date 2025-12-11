@@ -13,6 +13,7 @@ import org.jooq.Record
 import org.jooq.SortField
 import org.jooq.Table
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 /**
@@ -281,7 +282,7 @@ public class VmRequestProjectionRepository(
             .set(VM_REQUESTS_PROJECTION.REJECTED_BY, rejectedBy)
             .set(VM_REQUESTS_PROJECTION.REJECTED_BY_NAME, rejectedByName)
             .set(VM_REQUESTS_PROJECTION.REJECTION_REASON, rejectionReason)
-            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now(ZoneOffset.UTC))
             .set(VM_REQUESTS_PROJECTION.VERSION, version)
             .where(VM_REQUESTS_PROJECTION.ID.eq(id))
             .execute()
@@ -292,7 +293,7 @@ public class VmRequestProjectionRepository(
      *
      * Story 3-7: Called when:
      * 1. Provisioning completes (from VmProvisioned event handler)
-     * 2. Admin triggers "Sync Status" from vSphere
+     * 2. User triggers "Sync Status" from vSphere (any authenticated user with access)
      *
      * @param id The ID of the projection to update
      * @param vmwareVmId VMware MoRef ID (e.g., vm-123)
@@ -318,7 +319,7 @@ public class VmRequestProjectionRepository(
             .set(VM_REQUESTS_PROJECTION.POWER_STATE, powerState)
             .set(VM_REQUESTS_PROJECTION.GUEST_OS, guestOs)
             .set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, lastSyncedAt)
-            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now())
+            .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now(ZoneOffset.UTC))
             .where(VM_REQUESTS_PROJECTION.ID.eq(id))
             .execute()
     }

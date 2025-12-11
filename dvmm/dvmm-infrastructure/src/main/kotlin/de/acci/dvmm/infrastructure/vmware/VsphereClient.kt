@@ -862,11 +862,14 @@ public class VsphereClient(
                     ?: throw RuntimeException("VM name not found for ${vmId.value}")
 
                 // Map VMware power state to our enum
-                val powerState = when (props["runtime.powerState"]) {
+                val powerState = when (val rawState = props["runtime.powerState"]) {
                     VirtualMachinePowerState.POWERED_ON -> VmPowerState.POWERED_ON
                     VirtualMachinePowerState.POWERED_OFF -> VmPowerState.POWERED_OFF
                     VirtualMachinePowerState.SUSPENDED -> VmPowerState.SUSPENDED
-                    else -> VmPowerState.UNKNOWN
+                    else -> {
+                        logger.warn { "Unexpected VM power state '$rawState' for VM ${vmId.value}, mapping to UNKNOWN" }
+                        VmPowerState.UNKNOWN
+                    }
                 }
 
                 VmInfo(
