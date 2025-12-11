@@ -69,7 +69,7 @@ public class VsphereClient(
     @Value("\${dvmm.vsphere.timeout-ms:60000}")
     private val timeoutMs: Long = 60000
 ) {
-    companion object {
+    private companion object {
         init {
             // Force CXF to use legacy HttpURLConnection transport which respects JVM SSL defaults.
             // Must be set before any CXF classes are loaded.
@@ -526,14 +526,14 @@ public class VsphereClient(
         onProgress: suspend (VmProvisioningStage) -> Unit = {}
     ): Result<VmProvisioningResult, VsphereError> =
         executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
-        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.OperationFailed(operation = "createVm", details = "No tenant context", cause = e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
-            is Result.Failure -> return@executeResilient VsphereError.ProvisioningError("Connection failed", sessionResult.error).failure()
+            is Result.Failure -> return@executeResilient VsphereError.OperationFailed(operation = "createVm", details = "Connection failed", cause = sessionResult.error).failure()
         }
 
-        val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ProvisioningError("Configuration not found").failure()
+        val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ResourceNotFound(resourceType = "Configuration", resourceId = tenantId.toString()).failure()
 
         // Saga compensation: Track partial VM for cleanup on failure
         var partialVmRef: ManagedObjectReference? = null
@@ -548,18 +548,18 @@ public class VsphereClient(
                 val templatePath = "$dcPath/vm/$templateName"
 
                 val templateRef = vimPort.findByInventoryPath(searchIndex, templatePath)
-                    ?: return@withContext VsphereError.ProvisioningError("Template not found: $templatePath").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Template", resourceId = templatePath).failure()
 
                 val dsPath = "$dcPath/datastore/${config.datastoreName}"
                 val dsRef = vimPort.findByInventoryPath(searchIndex, dsPath)
-                    ?: return@withContext VsphereError.ProvisioningError("Datastore not found: ${config.datastoreName}").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Datastore", resourceId = config.datastoreName).failure()
 
                 val clusterPath = "$dcPath/host/${config.clusterName}"
                 val clusterRef = vimPort.findByInventoryPath(searchIndex, clusterPath)
-                    ?: return@withContext VsphereError.ProvisioningError("Cluster not found: ${config.clusterName}").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Cluster", resourceId = config.clusterName).failure()
 
                 val rpRef = getProperty(session, clusterRef, "resourcePool") as? ManagedObjectReference
-                    ?: return@withContext VsphereError.ProvisioningError("Cluster has no resource pool").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "ResourcePool", resourceId = "${config.clusterName}/default").failure()
 
                 val relocateSpec = VirtualMachineRelocateSpec().apply {
                     this.datastore = dsRef
@@ -582,7 +582,7 @@ public class VsphereClient(
                 }
 
                 val folderRef = vimPort.findByInventoryPath(searchIndex, "$dcPath/vm")
-                    ?: return@withContext VsphereError.ProvisioningError("VM folder not found").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Folder", resourceId = "$dcPath/vm").failure()
 
                 logger.info { "Cloning VM '${spec.name}' from template '$templateName'" }
                 onProgress(VmProvisioningStage.CLONING)
@@ -631,7 +631,7 @@ public class VsphereClient(
                     cleanupPartialVm(session, vmRef, spec.name, e.message ?: "unknown error")
                 }
                 logger.error(e) { "VM provisioning failed: ${e.message}" }
-                VsphereError.ProvisioningError("VM provisioning failed", e).failure()
+                VsphereError.OperationFailed(operation = "clone", details = e.message ?: "VM provisioning failed", cause = e).failure()
             }
         }
     }
@@ -778,7 +778,7 @@ public class VsphereClient(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                VsphereError.NotFound("VM not found: ${vmId.value}").failure()
+                VsphereError.ResourceNotFound(resourceType = "VirtualMachine", resourceId = vmId.value, cause = e).failure()
             }
         }
     }
