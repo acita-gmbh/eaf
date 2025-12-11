@@ -1,4 +1,4 @@
-package integration.vmware
+package de.acci.dvmm.infrastructure.vmware
 
 import de.acci.dvmm.application.vmware.CredentialEncryptor
 import de.acci.dvmm.application.vmware.NoOpCredentialEncryptor
@@ -6,8 +6,6 @@ import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.domain.vmware.VmwareConfiguration
-import de.acci.dvmm.infrastructure.vmware.VsphereClient
-import de.acci.dvmm.infrastructure.vmware.VsphereSessionManager
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -103,7 +101,7 @@ class VsphereClientIntegrationTest {
         // 2. Prepare VCSIM
         // Create template VM
         fixture.createVm(de.acci.eaf.testing.vcsim.VmSpec("ubuntu-template"))
-        
+
         // 3. Execute VsphereClient.createVm
         val spec = VmSpec(
             name = "test-client-vm",
@@ -111,7 +109,7 @@ class VsphereClientIntegrationTest {
             cpu = 2,
             memoryGb = 4
         )
-        
+
         val result = client.createVm(spec)
 
         assertTrue(result is Result.Success, "Create VM failed: ${if(result is Result.Failure) result.error else ""}")
@@ -123,7 +121,7 @@ class VsphereClientIntegrationTest {
         assertTrue(getResult is Result.Success)
         assertEquals("test-client-vm", (getResult as Result.Success).value.name)
     }
-    
+
     @Test
     fun `should list datacenters`() = runBlocking(TenantContextElement(tenantId)) {
         // Setup Config (reuse)

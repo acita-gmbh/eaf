@@ -65,13 +65,13 @@ test.describe('Loading State', () => {
 test.describe('Full Authentication Flow @requires-keycloak', () => {
   // Skip: Requires Keycloak. The full login flow is now tested in auth.setup.ts
 
-  test.skip('completes full login flow with Keycloak', async () => {
+  test('completes full login flow with Keycloak', async () => {
     // Note: This scenario is now implemented in auth.setup.ts
     // which authenticates and saves sessions for other tests.
     // Keep this test as documentation of the expected flow.
   })
 
-  test.skip('completes full logout flow', async () => {
+  test('completes full logout flow', async () => {
     // Note: Logout flow test placeholder.
     // Requires authenticated session from auth.setup.ts.
     // 4. Verify return to login page

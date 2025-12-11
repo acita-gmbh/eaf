@@ -9,24 +9,27 @@
 -- enabling cross-tenant data injection."
 --
 -- Affected tables:
--- 1. vm_requests_projection (Story 1.8)
--- 2. eaf_events.events (Story 1.2) - less critical due to immutability trigger
+-- 1. "VM_REQUESTS_PROJECTION" (Story 1.8)
+-- 2. eaf_events.events (Story 1.2)
 -- 3. eaf_events.snapshots (Story 1.2)
 
+-- [jooq ignore start]
+-- PostgreSQL-specific: RLS policy fixes (entire file is RLS-related)
+
 -- ============================================================================
--- Fix vm_requests_projection RLS policy
+-- Fix "VM_REQUESTS_PROJECTION" RLS policy
 -- ============================================================================
 
 -- Drop existing policy (missing WITH CHECK)
-DROP POLICY IF EXISTS tenant_isolation_vm_requests_projection ON vm_requests_projection;
+DROP POLICY IF EXISTS tenant_isolation_vm_requests_projection ON "VM_REQUESTS_PROJECTION";
 
 -- Recreate with both USING (reads) and WITH CHECK (writes)
-CREATE POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection
+CREATE POLICY tenant_isolation_vm_requests_projection ON "VM_REQUESTS_PROJECTION"
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
-COMMENT ON POLICY tenant_isolation_vm_requests_projection ON vm_requests_projection IS
+COMMENT ON POLICY tenant_isolation_vm_requests_projection ON "VM_REQUESTS_PROJECTION" IS
     'Enforces tenant isolation for reads (USING) and writes (WITH CHECK). Returns zero rows when app.tenant_id is not set (fail-closed).';
 
 -- ============================================================================
@@ -62,3 +65,4 @@ CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
 
 COMMENT ON POLICY tenant_isolation_snapshots ON eaf_events.snapshots IS
     'Enforces tenant isolation for reads (USING) and writes (WITH CHECK). Returns zero rows when app.tenant_id is not set (fail-closed).';
+-- [jooq ignore stop]

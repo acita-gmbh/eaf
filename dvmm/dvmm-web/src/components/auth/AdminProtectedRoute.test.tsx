@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { AdminProtectedRoute } from '../AdminProtectedRoute'
+import { AdminProtectedRoute } from './AdminProtectedRoute'
 
 // Mock react-oidc-context
 const mockSigninRedirect = vi.fn()

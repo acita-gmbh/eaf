@@ -66,7 +66,7 @@ This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copil
 - **Spring Boot 3.5** with WebFlux/Coroutines
 - **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security
-- **jOOQ 3.20** with DDLDatabase for type-safe SQL
+- **jOOQ 3.20** with Testcontainers + Flyway for type-safe SQL generation
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
 - **Pitest** for mutation testing
@@ -277,6 +277,7 @@ npm run lint         # Run ESLint
 - **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
 - Use function components with TypeScript - class components are FORBIDDEN
 - **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
+- **Test files MUST be colocated** with source (e.g., `Button.test.tsx` next to `Button.tsx`) - `__tests__` directories are FORBIDDEN
 
 ```tsx
 // FORBIDDEN - watch() causes React Compiler lint warnings
@@ -385,50 +386,105 @@ useQuery({
 })
 ```
 
+## Docker Compose (E2E Environment)
+
+The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
+
+```
+docker/
+├── eaf/                    # EAF infrastructure (reusable by future products)
+│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
+└── dvmm/                   # DVMM product services
+    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
+    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
+```
+
+### Quick Start
+
+```bash
+# 1. Build backend JAR first (jOOQ needs Docker access on host)
+./gradlew :dvmm:dvmm-app:bootJar -x test
+
+# 2. Start everything (postgres, keycloak, backend, frontend)
+docker compose -f docker/dvmm/docker-compose.yml up -d
+
+# 3. Wait for services (or use --wait flag)
+docker compose -f docker/dvmm/docker-compose.yml ps
+
+# 4. Run E2E tests
+cd dvmm/dvmm-web && npm run test:e2e
+
+# 5. Stop and clean up
+docker compose -f docker/dvmm/docker-compose.yml down -v
+```
+
+### Development Mode (Backend on Host)
+
+For debugging with hot-reload, run only infrastructure containers:
+
+```bash
+# Start only postgres + keycloak
+docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+
+# Run backend on host with debugger
+./gradlew :dvmm:dvmm-app:bootRun
+
+# Run frontend on host
+cd dvmm/dvmm-web && npm run dev
+```
+
+### Service Ports
+
+| Service | Port | URL |
+|---------|------|-----|
+| PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eaf_test` |
+| Keycloak | 8180 | http://localhost:8180 |
+| Backend | 8080 | http://localhost:8080 |
+| Frontend | 5173 | http://localhost:5173 |
+
+### Credentials
+
+- **PostgreSQL:** `eaf` / `eaf` (database: `eaf_test`)
+- **Keycloak Admin:** `admin` / `admin`
+- **Test Users:** See `eaf/eaf-testing/src/main/resources/test-realm.json`
+
 ## jOOQ Code Generation
 
-jOOQ uses **DDLDatabase** to generate code from SQL DDL files without a running database.
+jOOQ uses **Testcontainers + Flyway** to generate code from a real PostgreSQL database with production-identical schema.
 
 ```bash
 # Regenerate jOOQ code
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
+# Or simply build (runs automatically before compileKotlin)
+./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
 
 ### Adding New Tables
 
-**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations and jooq-init.sql.
+**Just add the Flyway migration - no additional files needed!**
 
-1. Add migration to `db/migration/`
-2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
-   - Use quoted uppercase identifiers (jOOQ DDLDatabase uses H2)
-   - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
-3. Wrap PostgreSQL-specific statements with ignore tokens:
-   ```sql
-   -- [jooq ignore start]
-   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   -- RLS policies MUST include both USING (reads) AND WITH CHECK (writes)
-   CREATE POLICY tenant_isolation ON my_table
-       FOR ALL
-       USING (tenant_id = ...)
-       WITH CHECK (tenant_id = ...);
-   -- [jooq ignore stop]
-   ```
-4. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
-5. Verify: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+2. Use PostgreSQL-native types (JSONB, TIMESTAMPTZ, UUID, etc.) - they all work
+3. Use quoted uppercase identifiers for consistency
+4. Include RLS policies with both `USING` AND `WITH CHECK`
+5. Build to regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
-**Checklist:** Flyway migration + jooq-init.sql + ignore tokens + RLS WITH CHECK + regenerate + integration tests for FK + tests pass.
+**Checklist:** Flyway migration + RLS WITH CHECK + regenerate (automatic) + integration tests for FK + tests pass.
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
+
+**PostgreSQL Types:** `JSONB` → `org.jooq.JSONB` (use `.jsonb()` to create, `.data()` to read)
 
 ### Projection Column Symmetry (CRITICAL)
 
 **CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
 
 When adding a new column to a projection table:
-1. Add the column to the Flyway migration + jooq-init.sql
-2. Add the column to `mapRecord()` (read path)
-3. Add the column to `insert()` (write path)
-4. **Compile fails if any step is missed** - use sealed class pattern
+1. Add the column to the Flyway migration
+2. Regenerate jOOQ code (automatic on build)
+3. Add the column to `mapRecord()` (read path)
+4. Add the column to `insert()` (write path)
+5. **Compile fails if any step is missed** - use sealed class pattern
 
 ```kotlin
 sealed interface ProjectionColumns {

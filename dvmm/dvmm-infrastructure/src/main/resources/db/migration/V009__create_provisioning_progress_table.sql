@@ -1,26 +1,27 @@
-CREATE TABLE provisioning_progress (
-    vm_request_id UUID PRIMARY KEY,
-    stage TEXT NOT NULL,
-    details TEXT NOT NULL,
-    started_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    tenant_id UUID NOT NULL,
-    CONSTRAINT fk_provisioning_progress_request
-        FOREIGN KEY (vm_request_id) REFERENCES vm_requests_projection(id) ON DELETE CASCADE
+-- Create provisioning progress table (Quoted Uppercase for jOOQ/H2 compatibility)
+CREATE TABLE "PROVISIONING_PROGRESS" (
+    "VM_REQUEST_ID" UUID PRIMARY KEY,
+    "STAGE" TEXT NOT NULL,
+    "DETAILS" TEXT NOT NULL,
+    "STARTED_AT" TIMESTAMPTZ NOT NULL,
+    "UPDATED_AT" TIMESTAMPTZ NOT NULL,
+    "TENANT_ID" UUID NOT NULL,
+    CONSTRAINT "FK_PROVISIONING_PROGRESS_REQUEST"
+        FOREIGN KEY ("VM_REQUEST_ID") REFERENCES "VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE
 );
 
 -- Index for tenant queries (RLS performance)
-CREATE INDEX idx_provisioning_progress_tenant ON provisioning_progress(tenant_id);
+CREATE INDEX "IDX_PROVISIONING_PROGRESS_TENANT" ON "PROVISIONING_PROGRESS"("TENANT_ID");
 
 -- [jooq ignore start]
-ALTER TABLE provisioning_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PROVISIONING_PROGRESS" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation ON provisioning_progress
+CREATE POLICY tenant_isolation_provisioning_progress ON "PROVISIONING_PROGRESS"
     FOR ALL
-    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+    USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
 
-ALTER TABLE provisioning_progress FORCE ROW LEVEL SECURITY;
+ALTER TABLE "PROVISIONING_PROGRESS" FORCE ROW LEVEL SECURITY;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON provisioning_progress TO eaf_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "PROVISIONING_PROGRESS" TO eaf_app;
 -- [jooq ignore stop]

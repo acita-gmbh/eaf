@@ -49,7 +49,7 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Admin Request Detail - Access Control @requires-auth', () => {
-  test.skip('admin user can access /admin/requests/:id', async ({ page }) => {
+  test('admin user can access /admin/requests/:id', async ({ page }) => {
     // Navigate to a request detail from the queue
     await page.goto('/admin/requests')
 
@@ -65,7 +65,7 @@ test.describe('Admin Request Detail - Access Control @requires-auth', () => {
     await expect(page.getByTestId('admin-request-detail-page')).toBeVisible()
   })
 
-  test.skip('non-admin user sees access denied on /admin/requests/:id', async ({ page }) => {
+  test('non-admin user sees access denied on /admin/requests/:id', async ({ page }) => {
     // Direct navigation to an admin request detail page
     await page.goto('/admin/requests/test-uuid-123')
 
@@ -76,7 +76,7 @@ test.describe('Admin Request Detail - Access Control @requires-auth', () => {
 })
 
 test.describe('Admin Request Detail - Page Content (AC 1) @requires-auth @requires-backend', () => {
-  test.skip('displays VM name and status in header', async ({ page }) => {
+  test('displays VM name and status in header', async ({ page }) => {
     // Navigate to request detail
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
@@ -92,7 +92,7 @@ test.describe('Admin Request Detail - Page Content (AC 1) @requires-auth @requir
     await expect(page.getByTestId('admin-request-detail-project')).toBeVisible()
   })
 
-  test.skip('shows back button to return to pending requests', async ({ page }) => {
+  test('shows back button to return to pending requests', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -108,7 +108,7 @@ test.describe('Admin Request Detail - Page Content (AC 1) @requires-auth @requir
 })
 
 test.describe('Admin Request Detail - Requester Information (AC 2) @requires-auth @requires-backend', () => {
-  test.skip('displays requester name, email, and role', async ({ page }) => {
+  test('displays requester name, email, and role', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -127,7 +127,7 @@ test.describe('Admin Request Detail - Requester Information (AC 2) @requires-aut
 })
 
 test.describe('Admin Request Detail - Project Context (AC 4) @requires-auth @requires-backend', () => {
-  test.skip('displays quota placeholder for Epic 4', async ({ page }) => {
+  test('displays quota placeholder for Epic 4', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -140,7 +140,7 @@ test.describe('Admin Request Detail - Project Context (AC 4) @requires-auth @req
 })
 
 test.describe('Admin Request Detail - Request Details (AC 3) @requires-auth @requires-backend', () => {
-  test.skip('displays VM size specifications', async ({ page }) => {
+  test('displays VM size specifications', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -161,7 +161,7 @@ test.describe('Admin Request Detail - Request Details (AC 3) @requires-auth @req
     await expect(diskElement).toContainText(/\d+ GB/)
   })
 
-  test.skip('displays business justification', async ({ page }) => {
+  test('displays business justification', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -170,7 +170,7 @@ test.describe('Admin Request Detail - Request Details (AC 3) @requires-auth @req
     await expect(page.getByTestId('admin-request-detail-justification')).toBeVisible()
   })
 
-  test.skip('displays creation timestamp', async ({ page }) => {
+  test('displays creation timestamp', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -181,7 +181,7 @@ test.describe('Admin Request Detail - Request Details (AC 3) @requires-auth @req
 })
 
 test.describe('Admin Request Detail - Timeline (AC 5) @requires-auth @requires-backend', () => {
-  test.skip('displays request timeline with events', async ({ page }) => {
+  test('displays request timeline with events', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -193,7 +193,7 @@ test.describe('Admin Request Detail - Timeline (AC 5) @requires-auth @requires-b
     await expect(page.getByTestId('timeline-event-created')).toBeVisible()
   })
 
-  test.skip('timeline events show timestamp and actor', async ({ page }) => {
+  test('timeline events show timestamp and actor', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -207,7 +207,7 @@ test.describe('Admin Request Detail - Timeline (AC 5) @requires-auth @requires-b
 })
 
 test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @requires-backend', () => {
-  test.skip('displays "Recent Requests" section', async ({ page }) => {
+  test('displays "Recent Requests" section', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -216,7 +216,7 @@ test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @r
     await expect(page.getByRole('heading', { name: /recent requests/i })).toBeVisible()
   })
 
-  test.skip('shows up to 5 previous requests from same requester', async ({ page }) => {
+  test('shows up to 5 previous requests from same requester', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -232,7 +232,7 @@ test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @r
     }
   })
 
-  test.skip('history items link to their respective detail pages', async ({ page }) => {
+  test('history items link to their respective detail pages', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -250,7 +250,7 @@ test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @r
     }
   })
 
-  test.skip('shows empty message when no previous requests', async ({ page }) => {
+  test('shows empty message when no previous requests', async ({ page }) => {
     // This test requires a request from a user with no history
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
@@ -262,7 +262,7 @@ test.describe('Admin Request Detail - Requester History (AC 6) @requires-auth @r
 })
 
 test.describe('Admin Request Detail - Action Buttons @requires-auth @requires-backend', () => {
-  test.skip('shows enabled approve/reject buttons for PENDING requests', async ({ page }) => {
+  test('shows enabled approve/reject buttons for PENDING requests', async ({ page }) => {
     // Story 2.11: Approve/Reject Actions
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
@@ -279,7 +279,7 @@ test.describe('Admin Request Detail - Action Buttons @requires-auth @requires-ba
     await expect(rejectButton).toBeEnabled()
   })
 
-  test.skip('hides action buttons for non-PENDING requests', async () => {
+  test('hides action buttons for non-PENDING requests', async () => {
     // Story 2.11: AC - Buttons only shown for PENDING status
     // This test requires an APPROVED request in the database
     // Navigate to a known approved request or filter by status
@@ -300,7 +300,7 @@ test.describe('Admin Request Detail - Action Buttons @requires-auth @requires-ba
  * - AC 7: Toast notification on success
  */
 test.describe('Admin Request Detail - Approve Action @requires-auth @requires-backend', () => {
-  test.skip('clicking approve button opens confirmation modal', async ({ page }) => {
+  test('clicking approve button opens confirmation modal', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -314,7 +314,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await expect(page.getByText(/are you sure you want to approve/i)).toBeVisible()
   })
 
-  test.skip('approve modal has confirm and cancel buttons', async ({ page }) => {
+  test('approve modal has confirm and cancel buttons', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -325,7 +325,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await expect(page.getByTestId('approve-confirm-button')).toBeVisible()
   })
 
-  test.skip('cancel button closes approve modal without action', async ({ page }) => {
+  test('cancel button closes approve modal without action', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -341,7 +341,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await expect(page.locator('[data-testid="status-badge-pending"]')).toBeVisible()
   })
 
-  test.skip('confirming approve updates status and shows success toast', async ({ page }) => {
+  test('confirming approve updates status and shows success toast', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -363,7 +363,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
     await expect(page.getByTestId('reject-button')).not.toBeVisible()
   })
 
-  test.skip('approve adds APPROVED event to timeline', async ({ page }) => {
+  test('approve adds APPROVED event to timeline', async ({ page }) => {
     // This test assumes the approve action was just completed
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
@@ -390,7 +390,7 @@ test.describe('Admin Request Detail - Approve Action @requires-auth @requires-ba
  * - AC 7: Toast notification on success
  */
 test.describe('Admin Request Detail - Reject Action @requires-auth @requires-backend', () => {
-  test.skip('clicking reject button opens rejection modal', async ({ page }) => {
+  test('clicking reject button opens rejection modal', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -404,7 +404,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
     await expect(page.getByTestId('reject-reason-input')).toBeVisible()
   })
 
-  test.skip('reject modal requires reason with character count', async ({ page }) => {
+  test('reject modal requires reason with character count', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -417,7 +417,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
     await expect(page.getByTestId('confirm-reject-button')).toBeDisabled()
   })
 
-  test.skip('reject modal validates minimum reason length (10 chars)', async ({ page }) => {
+  test('reject modal validates minimum reason length (10 chars)', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -436,7 +436,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
     await expect(page.getByTestId('confirm-reject-button')).toBeEnabled()
   })
 
-  test.skip('cancel button closes reject modal without action', async ({ page }) => {
+  test('cancel button closes reject modal without action', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -452,7 +452,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
     await expect(page.locator('[data-testid="status-badge-pending"]')).toBeVisible()
   })
 
-  test.skip('confirming reject updates status and shows success toast', async ({ page }) => {
+  test('confirming reject updates status and shows success toast', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -475,7 +475,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
     await expect(page.getByTestId('reject-button')).not.toBeVisible()
   })
 
-  test.skip('reject adds REJECTED event to timeline with reason', async ({ page }) => {
+  test('reject adds REJECTED event to timeline with reason', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
     await page.locator('[data-testid^="pending-request-row-"]').first().click()
@@ -501,7 +501,7 @@ test.describe('Admin Request Detail - Reject Action @requires-auth @requires-bac
  * - AC 6: Stale version error shows conflict message
  */
 test.describe('Admin Request Detail - Concurrency Handling @requires-auth @requires-backend', () => {
-  test.skip('shows conflict error when request was modified by another admin', async ({ page }) => {
+  test('shows conflict error when request was modified by another admin', async ({ page }) => {
     // This test requires simulating a concurrent modification
     // Intercept the approve/reject API call and return 409 Conflict
 
@@ -529,7 +529,7 @@ test.describe('Admin Request Detail - Concurrency Handling @requires-auth @requi
 })
 
 test.describe('Admin Request Detail - Error Handling @requires-auth', () => {
-  test.skip('shows 404 page for non-existent request', async ({ page }) => {
+  test('shows 404 page for non-existent request', async ({ page }) => {
     // Navigate directly to a non-existent request
     await page.goto('/admin/requests/non-existent-uuid-12345')
 
@@ -538,7 +538,7 @@ test.describe('Admin Request Detail - Error Handling @requires-auth', () => {
     await expect(page.getByRole('heading', { name: /request not found/i })).toBeVisible()
   })
 
-  test.skip('shows link to return to pending requests on 404', async ({ page }) => {
+  test('shows link to return to pending requests on 404', async ({ page }) => {
     await page.goto('/admin/requests/non-existent-uuid-12345')
 
     const returnLink = page.getByRole('link', { name: /view pending requests/i })
@@ -550,7 +550,7 @@ test.describe('Admin Request Detail - Error Handling @requires-auth', () => {
 })
 
 test.describe('Admin Request Detail - Loading States @requires-auth @requires-backend', () => {
-  test.skip('shows loading state while fetching data', async ({ page }) => {
+  test('shows loading state while fetching data', async ({ page }) => {
     // Intercept API to slow down response
     await page.route('**/api/admin/requests/*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -584,7 +584,7 @@ test.describe('Admin Request Detail - Unauthenticated', () => {
  * Navigation tests from queue to detail.
  */
 test.describe('Admin Request Detail - Queue Navigation @requires-auth @requires-backend', () => {
-  test.skip('navigates from pending requests table row click', async ({ page }) => {
+  test('navigates from pending requests table row click', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
 
@@ -603,7 +603,7 @@ test.describe('Admin Request Detail - Queue Navigation @requires-auth @requires-
     await expect(page.getByTestId('admin-request-detail-page')).toBeVisible()
   })
 
-  test.skip('navigates via keyboard Enter on focused row', async ({ page }) => {
+  test('navigates via keyboard Enter on focused row', async ({ page }) => {
     await page.goto('/admin/requests')
     await expect(page.getByTestId('pending-requests-table')).toBeVisible()
 

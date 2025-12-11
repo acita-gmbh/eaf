@@ -13,7 +13,7 @@ _Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvio
 | Gradle | 9.2 | Version Catalog at `gradle/libs.versions.toml` |
 | JVM | 21 | Target and toolchain |
 | PostgreSQL | 16 | Row-Level Security for multi-tenancy |
-| jOOQ | 3.20 | DDLDatabase code generation |
+| jOOQ | 3.20 | Testcontainers + Flyway code generation |
 | JUnit | 6 | With MockK + Testcontainers |
 
 ### Frontend (dvmm-web)
@@ -190,6 +190,10 @@ val expectedVersion = currentEvents.size.toLong()
 
 ## Frontend Patterns
 
+**Test File Colocation (Enforced):**
+- Tests MUST be colocated with source files (e.g., `Button.test.tsx` next to `Button.tsx`)
+- `__tests__` directories are FORBIDDEN - vitest.config.ts excludes them
+
 **TanStack Query Polling (for admin queues, dashboards):**
 - Use both `staleTime` (cache freshness) AND `refetchInterval` (active background polling)
 - Add jitter to `refetchInterval` to prevent thundering herd: `30000 + Math.floor(Math.random() * 5000)`
@@ -256,34 +260,65 @@ suspend fun createVm(spec: VmSpec) = executeResilient("createVm", createVmTimeou
 
 ---
 
-## jOOQ Code Generation (Critical Gotchas)
+## Docker Compose (E2E Environment)
 
-**Two SQL files must stay in sync:**
-- Flyway migrations (production): `*/resources/db/migration/`
-- jOOQ DDL (codegen): `dvmm-infrastructure/src/main/resources/db/jooq-init.sql`
+The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
 
-**H2 Compatibility (DDLDatabase uses H2 internally):**
-```sql
--- Use quoted UPPERCASE for table/column names
-CREATE TABLE "DOMAIN_EVENTS" (...)  -- ✅ Correct
-CREATE TABLE domain_events (...)    -- ❌ Wrong
-
--- Wrap PostgreSQL-specific statements
--- [jooq ignore start]
-ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
--- RLS policies MUST have both USING (reads) AND WITH CHECK (writes)
-CREATE POLICY tenant_isolation ON my_table
-    FOR ALL
-    USING (tenant_id = ...)
-    WITH CHECK (tenant_id = ...);
--- [jooq ignore stop]
+```
+docker/
+├── eaf/                    # EAF infrastructure (reusable by future products)
+│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
+└── dvmm/                   # DVMM product services
+    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
+    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
 ```
 
-**After schema changes:**
+**Quick Start:**
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dvmm:dvmm-app:bootJar -x test           # 1. Build backend JAR
+docker compose -f docker/dvmm/docker-compose.yml up -d  # 2. Start all services
+cd dvmm/dvmm-web && npm run test:e2e              # 3. Run E2E tests
+docker compose -f docker/dvmm/docker-compose.yml down -v  # 4. Cleanup
+```
+
+**Development Mode (backend on host):**
+```bash
+docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+./gradlew :dvmm:dvmm-app:bootRun   # Backend with debugger
+cd dvmm/dvmm-web && npm run dev    # Frontend with hot-reload
+```
+
+**Service Ports:** PostgreSQL 5432, Keycloak 8180, Backend 8080, Frontend 5173
+
+**Credentials:** PostgreSQL `eaf`/`eaf` (db: `eaf_test`), Keycloak `admin`/`admin`
+
+---
+
+## jOOQ Code Generation (Testcontainers + Flyway)
+
+**Single source of truth:** Just add Flyway migrations - jOOQ generates code from a real PostgreSQL database via Testcontainers.
+
+**Migration locations:**
+- EAF framework: `eaf/eaf-eventsourcing/src/main/resources/db/migration/`
+- DVMM product: `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+
+**PostgreSQL-native types work directly:**
+```sql
+-- JSONB, TIMESTAMPTZ, UUID, etc. all work
+CREATE TABLE "DOMAIN_EVENTS" (
+    "ID" UUID PRIMARY KEY,
+    "METADATA" JSONB NOT NULL DEFAULT '{}'
+)
+-- RLS policies MUST have both USING (reads) AND WITH CHECK (writes)
+```
+
+**After schema changes (automatic on build):**
+```bash
 ./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
+
+**PostgreSQL Types in Generated Code:**
+- `JSONB` → `org.jooq.JSONB` (use `JSONB.jsonb(json)` to create, `.data()` to read)
 
 **FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first (use `ON CONFLICT DO NOTHING` for idempotency), and cleanup must use `TRUNCATE ... CASCADE`.
 

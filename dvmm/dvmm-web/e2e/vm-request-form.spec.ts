@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
  *
  * ## Running Authenticated Tests
  *
- * Tests marked `test.skip` require authentication setup:
+ * Tests marked `test` require authentication setup:
  * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
  * 2. Run auth setup: `npm run test:e2e -- --project=setup`
  * 3. Run tests: `npm run test:e2e -- --project=chromium-user vm-request-form.spec.ts`
@@ -24,7 +24,7 @@ import { test, expect } from '@playwright/test'
 test.describe('VM Request Form @requires-auth', () => {
   // Skip: Requires Keycloak auth. Enable with `--project=chromium-user` after setup.
 
-  test.skip('displays form with all required fields', async ({ page }) => {
+  test('displays form with all required fields', async ({ page }) => {
     await page.goto('/requests/new')
 
     // All form fields should be visible
@@ -39,7 +39,7 @@ test.describe('VM Request Form @requires-auth', () => {
     await expect(submitButton).toBeDisabled()
   })
 
-  test.skip('shows validation errors for invalid VM name', async ({ page }) => {
+  test('shows validation errors for invalid VM name', async ({ page }) => {
     await page.goto('/requests/new')
 
     // Enter invalid VM name
@@ -51,7 +51,7 @@ test.describe('VM Request Form @requires-auth', () => {
     await expect(page.getByText(/minimum 3 characters/i)).toBeVisible()
   })
 
-  test.skip('shows validation errors for invalid characters in VM name', async ({ page }) => {
+  test('shows validation errors for invalid characters in VM name', async ({ page }) => {
     await page.goto('/requests/new')
 
     const vmNameInput = page.getByPlaceholder('e.g. web-server-01')
@@ -61,7 +61,7 @@ test.describe('VM Request Form @requires-auth', () => {
     await expect(page.getByText(/Only lowercase/i)).toBeVisible()
   })
 
-  test.skip('enables submit button when form is valid', async ({ page }) => {
+  test('enables submit button when form is valid', async ({ page }) => {
     await page.goto('/requests/new')
 
     // Fill valid VM name
@@ -87,7 +87,7 @@ test.describe('VM Request Form @requires-auth', () => {
  * These are marked as skip by default.
  */
 test.describe('VM Request Form Submission @requires-backend', () => {
-  test.skip('happy path: submits form and shows success toast', async () => {
+  test('happy path: submits form and shows success toast', async () => {
     // This test requires:
     // 1. Backend API running
     // 2. Keycloak running with test user
@@ -102,12 +102,12 @@ test.describe('VM Request Form Submission @requires-backend', () => {
     // 6. Verify redirect to /requests/{id}
   })
 
-  test.skip('shows error for backend validation failures', async () => {
+  test('shows error for backend validation failures', async () => {
     // This test requires backend running
     // Would test 400 response handling
   })
 
-  test.skip('shows error for quota exceeded', async () => {
+  test('shows error for quota exceeded', async () => {
     // This test requires backend running with quota limits
     // Would test 409 response handling
   })

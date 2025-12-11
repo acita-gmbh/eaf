@@ -1,3 +1,22 @@
+// Buildscript dependencies for custom jOOQ generation task (runs in Gradle's context)
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        // Testcontainers for spinning up PostgreSQL
+        classpath("org.testcontainers:postgresql:1.21.3")
+        // Flyway for running migrations
+        classpath("org.flywaydb:flyway-core:11.16.0")
+        classpath("org.flywaydb:flyway-database-postgresql:11.16.0")
+        // PostgreSQL driver
+        classpath("org.postgresql:postgresql:42.7.8")
+        // jOOQ codegen
+        classpath("org.jooq:jooq-codegen:3.20.9")
+        classpath("org.jooq:jooq-meta:3.20.9")
+    }
+}
+
 plugins {
     id("eaf.spring-conventions")
     id("eaf.logging-conventions")
@@ -39,11 +58,14 @@ dependencies {
     implementation(libs.resilience4j.kotlin)
 
     // jOOQ code generation dependencies
-    // jooq-meta-extensions is required for DDLDatabase (generates code from DDL files without running DB)
+    // Uses Testcontainers to spin up PostgreSQL + Flyway migrations for real schema generation
     jooqGenerator(libs.jooq)
     jooqGenerator(libs.jooq.codegen)
     jooqGenerator(libs.jooq.meta)
-    jooqGenerator(libs.jooq.meta.extensions)
+    jooqGenerator(libs.postgresql)
+    jooqGenerator(libs.testcontainers.postgresql)
+    jooqGenerator(libs.flyway.core)
+    jooqGenerator(libs.flyway.database.postgresql)
     jooqGenerator(libs.slf4j.simple)
 
     // Test dependencies
@@ -59,80 +81,135 @@ kotlin {
     explicitApi = org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode.Warning
 }
 
-// jOOQ code generation configuration
-// Uses DDLDatabase to generate code from SQL DDL files without requiring a running database.
-// This enables builds without Docker/PostgreSQL and works in any CI environment.
-// See: https://www.jooq.org/doc/latest/manual/code-generation/codegen-ddl/
+// =============================================================================
+// jOOQ CODE GENERATION CONFIGURATION (Option 2: Testcontainers + Flyway)
+// =============================================================================
+// Uses Testcontainers to spin up a real PostgreSQL database, runs Flyway migrations
+// against it, then generates jOOQ code from the actual production-identical schema.
 //
-// The jooq-init.sql file uses [jooq ignore start/stop] tokens to skip PostgreSQL-specific
-// statements (RLS, grants, triggers) that H2 (used internally by DDLDatabase) doesn't support.
-jooq {
-    version.set("3.20.8")
+// Benefits:
+// - Single source of truth: Flyway migrations ARE the schema definition
+// - No jooq-init.sql to maintain - eliminates synchronization issues
+// - Full PostgreSQL compatibility - RLS, triggers, functions all work
+// - Catches migration errors at build time
+//
+// Requirements:
+// - Docker must be running (locally and on CI)
+// - Build time increases ~10-15s for container startup
+//
+// See: https://www.jooq.org/doc/latest/manual/code-generation/codegen-jooq-database/
+// =============================================================================
 
-    configurations {
-        create("main") {
-            generateSchemaSourceOnCompilation.set(true)
+// Resolve migration paths at configuration time (not execution time)
+val eafMigrationsPath = "${rootProject.projectDir}/eaf/eaf-eventsourcing/src/main/resources/db/migration"
+val dvmmMigrationsPath = "${projectDir}/src/main/resources/db/migration"
 
-            jooqConfiguration.apply {
-                logging = org.jooq.meta.jaxb.Logging.WARN
+// Custom task that:
+// 1. Starts a PostgreSQL Testcontainer
+// 2. Runs Flyway migrations from both EAF and DVMM
+// 3. Generates jOOQ code from the migrated schema
+// 4. Stops the container
+val generateJooqWithTestcontainers by tasks.registering {
+    group = "jooq"
+    description = "Generate jOOQ code using Testcontainers PostgreSQL + Flyway migrations"
 
-                // No JDBC connection needed - DDLDatabase parses DDL files directly
-                generator.apply {
-                    name = "org.jooq.codegen.KotlinGenerator"
+    // Mark as incompatible with configuration cache (uses Testcontainers at execution time)
+    notCompatibleWithConfigurationCache("Uses Testcontainers which manages Docker containers")
 
-                    database.apply {
-                        // DDLDatabase generates code from SQL DDL scripts without a live database
-                        // Located in jooq-meta-extensions module
-                        name = "org.jooq.meta.extensions.ddl.DDLDatabase"
+    // Track migration files as inputs for up-to-date checking
+    inputs.files(
+        fileTree(eafMigrationsPath) { include("*.sql") },
+        fileTree(dvmmMigrationsPath) { include("*.sql") }
+    )
+    outputs.dir("${layout.buildDirectory.get()}/generated-sources/jooq")
 
-                        // Path to the combined DDL script with all schema definitions
-                        properties.add(
-                            org.jooq.meta.jaxb.Property()
-                                .withKey("scripts")
-                                .withValue("src/main/resources/db/jooq-init.sql")
+    doLast {
+        // Start PostgreSQL container (uses Testcontainers default random credentials)
+        val postgres = org.testcontainers.containers.PostgreSQLContainer("postgres:16")
+            .withDatabaseName("jooq_codegen")
+            .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))  // Faster I/O
+
+        postgres.start()
+        logger.lifecycle("PostgreSQL container started: ${postgres.jdbcUrl}")
+
+        try {
+            // Run Flyway migrations from both locations
+            val flyway = org.flywaydb.core.Flyway.configure()
+                .dataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+                .locations(
+                    "filesystem:$eafMigrationsPath",
+                    "filesystem:$dvmmMigrationsPath"
+                )
+                .load()
+
+            val result = flyway.migrate()
+            logger.lifecycle("Flyway applied ${result.migrationsExecuted} migrations")
+
+            // Generate jOOQ code from the migrated database
+            val jooqConfig = org.jooq.meta.jaxb.Configuration()
+                .withLogging(org.jooq.meta.jaxb.Logging.WARN)
+                .withJdbc(
+                    org.jooq.meta.jaxb.Jdbc()
+                        .withDriver("org.postgresql.Driver")
+                        .withUrl(postgres.jdbcUrl)
+                        .withUser(postgres.username)
+                        .withPassword(postgres.password)
+                )
+                .withGenerator(
+                    org.jooq.meta.jaxb.Generator()
+                        .withName("org.jooq.codegen.KotlinGenerator")
+                        .withDatabase(
+                            org.jooq.meta.jaxb.Database()
+                                .withName("org.jooq.meta.postgres.PostgresDatabase")
+                                .withIncludes(".*")
+                                .withExcludes("flyway_schema_history")
+                                .withSchemata(
+                                    org.jooq.meta.jaxb.SchemaMappingType()
+                                        .withInputSchema("public")
+                                        .withOutputSchema("public"),
+                                    org.jooq.meta.jaxb.SchemaMappingType()
+                                        .withInputSchema("eaf_events")
+                                        .withOutputSchema("eaf_events")
+                                )
                         )
-
-                        // Parse comments to enable [jooq ignore start/stop] tokens
-                        properties.add(
-                            org.jooq.meta.jaxb.Property()
-                                .withKey("parseIgnoreComments")
-                                .withValue("true")
+                        .withGenerate(
+                            org.jooq.meta.jaxb.Generate()
+                                .withDeprecated(false)
+                                .withRecords(true)
+                                .withPojos(true)
+                                .withImmutablePojos(true)
+                                .withFluentSetters(true)
+                                .withKotlinNotNullRecordAttributes(true)
+                                .withKotlinNotNullPojoAttributes(true)
+                                .withKotlinNotNullInterfaceAttributes(true)
                         )
-
-                        includes = ".*"
-                        excludes = "flyway_schema_history"
-
-                        // Include both public and eaf_events schemas for event store tables
-                        // H2 uses uppercase schema names, but we need lowercase for Kotlin package names
-                        schemata.addAll(
-                            listOf(
-                                org.jooq.meta.jaxb.SchemaMappingType()
-                                    .withInputSchema("PUBLIC")
-                                    .withOutputSchema("public"),
-                                org.jooq.meta.jaxb.SchemaMappingType()
-                                    .withInputSchema("EAF_EVENTS")
-                                    .withOutputSchema("eaf_events")
-                            )
+                        .withTarget(
+                            org.jooq.meta.jaxb.Target()
+                                .withPackageName("de.acci.dvmm.infrastructure.jooq")
+                                .withDirectory("${layout.buildDirectory.get()}/generated-sources/jooq")
                         )
-                    }
+                )
 
-                    generate.apply {
-                        isDeprecated = false
-                        isRecords = true
-                        isPojos = true
-                        isImmutablePojos = true
-                        isFluentSetters = true
-                        isKotlinNotNullRecordAttributes = true
-                        isKotlinNotNullPojoAttributes = true
-                        isKotlinNotNullInterfaceAttributes = true
-                    }
+            org.jooq.codegen.GenerationTool.generate(jooqConfig)
+            logger.lifecycle("jOOQ code generation complete")
 
-                    target.apply {
-                        packageName = "de.acci.dvmm.infrastructure.jooq"
-                        directory = "${layout.buildDirectory.get()}/generated-sources/jooq"
-                    }
-                }
-            }
+        } finally {
+            postgres.stop()
+            logger.lifecycle("PostgreSQL container stopped")
+        }
+    }
+}
+
+// Ensure compileKotlin depends on our custom jOOQ generation
+tasks.named("compileKotlin") {
+    dependsOn(generateJooqWithTestcontainers)
+}
+
+// Add generated sources to the main source set
+sourceSets {
+    main {
+        kotlin {
+            srcDir("${layout.buildDirectory.get()}/generated-sources/jooq")
         }
     }
 }
