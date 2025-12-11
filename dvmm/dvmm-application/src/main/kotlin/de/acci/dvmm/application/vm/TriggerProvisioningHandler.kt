@@ -42,11 +42,12 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * ## Multi-Hypervisor Support (ADR-004)
  *
- * This handler uses [HypervisorPort] abstraction, enabling support for multiple
+ * This handler uses [ResilientProvisioningService] which wraps [HypervisorPort] with
+ * automatic retry logic for transient errors (AC-3.6.1). The service supports multiple
  * hypervisors (VMware vSphere, Proxmox, Hyper-V, PowerVM) without changing handler logic.
  */
 public class TriggerProvisioningHandler(
-    private val hypervisorPort: HypervisorPort,
+    private val provisioningService: ResilientProvisioningService,
     private val configPort: VmwareConfigurationPort,
     private val eventStore: EventStore,
     private val vmEventDeserializer: VmEventDeserializer,
@@ -108,10 +109,14 @@ public class TriggerProvisioningHandler(
             memoryGb = event.size.memoryGb
         )
 
-        val result = hypervisorPort.createVm(spec) { stage ->
+        val correlationId = event.metadata.correlationId?.value?.toString() ?: event.aggregateId.value.toString()
+        val result = provisioningService.createVmWithRetry(
+            spec = spec,
+            correlationId = correlationId
+        ) { stage ->
             emitProgress(event, stage)
         }
-        
+
         when (result) {
             is Result.Success -> {
                 val provisioningResult = result.value
@@ -124,8 +129,12 @@ public class TriggerProvisioningHandler(
             }
             is Result.Failure -> {
                 val error = result.error
-                logger.error { "Failed to initiate provisioning for $prefixedVmName: $error" }
-                emitFailure(event, error)
+                logger.error { "Failed to provision $prefixedVmName: $error" }
+                when (error) {
+                    is ResilientProvisioningService.RetryExhaustedError -> emitFailure(event, error)
+                    is VsphereError -> emitFailure(event, error)
+                    else -> emitFailure(event, "Unexpected error: $error")
+                }
             }
         }
     }
@@ -347,18 +356,35 @@ public class TriggerProvisioningHandler(
     }
 
     /**
-     * Emits failure event with enhanced error information from VsphereError (AC-3.6.3).
+     * Emits failure event for retry exhaustion (AC-3.6.2).
      *
+     * Called when all retry attempts have been exhausted. Extracts actual
+     * retry count from the RetryExhaustedError for accurate error reporting.
+     */
+    private suspend fun emitFailure(
+        event: VmProvisioningStarted,
+        error: ResilientProvisioningService.RetryExhaustedError
+    ) {
+        emitFailureInternal(
+            event = event,
+            reason = error.userMessage,
+            errorCode = error.lastErrorCode.name,
+            errorMessage = error.userMessage,
+            retryCount = error.attemptCount,
+            lastAttemptAt = Instant.now()
+        )
+    }
+
+    /**
+     * Emits failure event for permanent VsphereError (AC-3.6.3).
+     *
+     * Called for non-retriable errors that fail immediately without retry.
      * Extracts user-friendly error code and message from the VsphereError type.
      */
     private suspend fun emitFailure(event: VmProvisioningStarted, error: VsphereError) {
         val errorCode = error.errorCode.name
         val userMessage = error.userMessage
-        // TODO: Integrate ResilientProvisioningService to get actual retry count.
-        // Currently retries happen inside the adapter (e.g., VcsimAdapter), but
-        // ResilientProvisioningService tracks attemptCount. To use it, inject
-        // ResilientProvisioningService instead of HypervisorPort and handle
-        // RetryExhaustedError in the failure path. See Story 3.7 for follow-up.
+        // Permanent errors fail immediately without retry (retryCount=1 means single attempt)
         val retryCount = 1
         val lastAttemptAt = Instant.now()
 
