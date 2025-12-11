@@ -500,4 +500,127 @@ describe('RequestDetail', () => {
       expect(container.firstChild).toBeNull()
     })
   })
+
+  describe('Failed Status Display (AC-3.6.3)', () => {
+    const failedRequestData = {
+      ...mockRequestData,
+      status: 'FAILED' as const,
+      timeline: [
+        {
+          eventType: 'CREATED' as const,
+          actorName: 'John Doe',
+          details: null,
+          occurredAt: '2024-01-01T10:00:00Z',
+        },
+        {
+          eventType: 'APPROVED' as const,
+          actorName: 'Admin User',
+          details: null,
+          occurredAt: '2024-01-01T11:00:00Z',
+        },
+        {
+          eventType: 'PROVISIONING_STARTED' as const,
+          actorName: 'System',
+          details: null,
+          occurredAt: '2024-01-01T12:00:00Z',
+        },
+        {
+          eventType: 'PROVISIONING_FAILED' as const,
+          actorName: 'System',
+          details: 'The vSphere infrastructure is temporarily unavailable.',
+          occurredAt: '2024-01-01T12:05:00Z',
+        },
+      ],
+    }
+
+    it('displays provisioning failed alert card when status is FAILED', () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: failedRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<RequestDetail />)
+
+      const alertCard = screen.getByTestId('provisioning-failed-alert')
+      expect(alertCard).toBeInTheDocument()
+      // Title should be within the alert card
+      expect(alertCard).toHaveTextContent('Provisioning Failed')
+      expect(alertCard).toHaveTextContent('Our team has been notified')
+    })
+
+    it('displays error message from timeline event', () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: failedRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<RequestDetail />)
+
+      expect(screen.getByTestId('provisioning-error-message')).toHaveTextContent(
+        'Error: The vSphere infrastructure is temporarily unavailable.'
+      )
+    })
+
+    it('does not display error message section when timeline has no failure details', () => {
+      const failedWithoutDetails = {
+        ...failedRequestData,
+        timeline: [
+          ...failedRequestData.timeline.slice(0, 3),
+          {
+            eventType: 'PROVISIONING_FAILED' as const,
+            actorName: 'System',
+            details: null,
+            occurredAt: '2024-01-01T12:05:00Z',
+          },
+        ],
+      }
+
+      mockUseRequestDetail.mockReturnValue({
+        data: failedWithoutDetails,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<RequestDetail />)
+
+      expect(screen.getByTestId('provisioning-failed-alert')).toBeInTheDocument()
+      expect(screen.queryByTestId('provisioning-error-message')).not.toBeInTheDocument()
+    })
+
+    it('does not show cancel button for FAILED status', () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: failedRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<RequestDetail />)
+
+      expect(screen.queryByTestId('cancel-request-button')).not.toBeInTheDocument()
+    })
+
+    it('shows Failed status badge', () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: failedRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      render(<RequestDetail />)
+
+      expect(screen.getByTestId('status-badge-failed')).toBeInTheDocument()
+    })
+  })
 })

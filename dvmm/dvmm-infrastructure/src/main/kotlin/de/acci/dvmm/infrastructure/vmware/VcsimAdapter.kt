@@ -18,6 +18,8 @@ import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -63,6 +65,40 @@ import org.springframework.stereotype.Component
 public class VcsimAdapter : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
+
+    // Error simulation support for testing (thread-safe for parallel test execution)
+    private val simulatedError = AtomicReference<VsphereError?>(null)
+    private val errorAfterStage = AtomicReference<VmProvisioningStage?>(null)
+    private val deletedVmIds: MutableList<String> = Collections.synchronizedList(mutableListOf())
+
+    /**
+     * Configure error simulation for testing saga compensation.
+     *
+     * @param error The error to return
+     * @param afterStage If set, error occurs after this stage (simulating partial creation)
+     */
+    public fun simulateError(error: VsphereError?, afterStage: VmProvisioningStage? = null) {
+        this.simulatedError.set(error)
+        this.errorAfterStage.set(afterStage)
+        logger.info { "VCSIM error simulation configured: error=$error, afterStage=$afterStage" }
+    }
+
+    /**
+     * Clear any configured error simulation.
+     */
+    public fun clearSimulatedError() {
+        this.simulatedError.set(null)
+        this.errorAfterStage.set(null)
+        synchronized(this.deletedVmIds) {
+            this.deletedVmIds.clear()
+        }
+        logger.info { "VCSIM error simulation cleared" }
+    }
+
+    /**
+     * Get list of VM IDs that were deleted (for verifying saga compensation).
+     */
+    public fun getDeletedVmIds(): List<String> = synchronized(deletedVmIds) { deletedVmIds.toList() }
 
     /**
      * Test connection to VCSIM.
@@ -144,14 +180,40 @@ public class VcsimAdapter : HypervisorPort {
     ): Result<VmProvisioningResult, VsphereError> {
         logger.info { "VCSIM simulating VM creation: ${spec.name}" }
 
+        // Capture current error state atomically for this operation
+        val currentError = simulatedError.get()
+        val currentErrorAfterStage = errorAfterStage.get()
+
+        // Check for immediate error (no partial creation)
+        if (currentError != null && currentErrorAfterStage == null) {
+            logger.info { "VCSIM returning simulated error (immediate): $currentError" }
+            return currentError.failure()
+        }
+
+        // Helper to check if error should occur after this stage
+        suspend fun checkError(stage: VmProvisioningStage) {
+            if (currentErrorAfterStage == stage && currentError != null) {
+                logger.info { "VCSIM simulating error after stage $stage: $currentError" }
+                throw SimulatedVsphereException(currentError)
+            }
+        }
+
         onProgress(VmProvisioningStage.CLONING)
         delay(500)
+        checkError(VmProvisioningStage.CLONING)
+
         onProgress(VmProvisioningStage.CONFIGURING)
         delay(200)
+        checkError(VmProvisioningStage.CONFIGURING)
+
         onProgress(VmProvisioningStage.POWERING_ON)
         delay(200)
+        checkError(VmProvisioningStage.POWERING_ON)
+
         onProgress(VmProvisioningStage.WAITING_FOR_NETWORK)
         delay(500)
+        checkError(VmProvisioningStage.WAITING_FOR_NETWORK)
+
         onProgress(VmProvisioningStage.READY)
 
         return VmProvisioningResult(
@@ -162,11 +224,39 @@ public class VcsimAdapter : HypervisorPort {
         ).success()
     }
 
+    /**
+     * Exception wrapper for simulated vSphere errors during saga compensation testing.
+     *
+     * This exception is thrown during staged error simulation (when [simulateError] is called
+     * with a non-null `afterStage` parameter). It allows testing saga compensation patterns
+     * where a VM is partially created before an error occurs.
+     *
+     * ## Usage in Tests
+     *
+     * ```kotlin
+     * // Simulate error after CLONING stage (VM partially created)
+     * vcsimAdapter.simulateError(
+     *     error = VsphereError.Timeout("VMware Tools timeout"),
+     *     afterStage = VmProvisioningStage.CLONING
+     * )
+     *
+     * // createVm will throw SimulatedVsphereException after CLONING completes
+     * // saga compensation should then delete the partially created VM
+     * ```
+     *
+     * @property error The underlying [VsphereError] that caused the simulated failure
+     * @see simulateError for configuring error simulation
+     * @see clearSimulatedError for resetting simulation state
+     */
+    public class SimulatedVsphereException(public val error: VsphereError) : RuntimeException(error.message)
+
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> {
         return VmInfo(vmId.value, "simulated-vm").success()
     }
 
     override suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> {
+        logger.info { "VCSIM simulating VM deletion: ${vmId.value}" }
+        deletedVmIds.add(vmId.value)
         return Unit.success()
     }
 }

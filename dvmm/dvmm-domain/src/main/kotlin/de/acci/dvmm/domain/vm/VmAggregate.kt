@@ -12,6 +12,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.EventMetadata
+import java.time.Instant
 
 import de.acci.dvmm.domain.vm.events.VmProvisioningProgressUpdated
 
@@ -47,6 +48,18 @@ public class VmAggregate private constructor(
     public var failureReason: String? = null
         private set
 
+    /** Machine-readable error code for the failure (e.g., "CONNECTION_TIMEOUT") */
+    public var failureErrorCode: String? = null
+        private set
+
+    /** Number of retry attempts made before final failure */
+    public var failureRetryCount: Int? = null
+        private set
+
+    /** Timestamp of the final failed attempt */
+    public var failureLastAttemptAt: Instant? = null
+        private set
+
     /** VMware MoRef assigned to this VM after provisioning */
     public var vmwareVmId: VmwareVmId? = null
         private set
@@ -80,7 +93,10 @@ public class VmAggregate private constructor(
 
     private fun apply(event: VmProvisioningFailed) {
         status = VmStatus.FAILED
-        failureReason = event.reason
+        failureReason = event.errorMessage
+        failureErrorCode = event.errorCode
+        failureRetryCount = event.retryCount
+        failureLastAttemptAt = event.lastAttemptAt
     }
 
     private fun apply(event: VmProvisioned) {
@@ -120,10 +136,19 @@ public class VmAggregate private constructor(
     /**
      * Marks the VM provisioning as failed.
      *
-     * @param reason Description of why provisioning failed
+     * @param errorCode Machine-readable error code (e.g., "CONNECTION_TIMEOUT", "INSUFFICIENT_RESOURCES")
+     * @param errorMessage User-friendly error message suitable for display
+     * @param retryCount Number of retry attempts made (including the initial attempt)
+     * @param lastAttemptAt Timestamp of the final failed attempt
      * @param metadata Event metadata including tenant and correlation info
      */
-    public fun markFailed(reason: String, metadata: EventMetadata) {
+    public fun markFailed(
+        errorCode: String,
+        errorMessage: String,
+        retryCount: Int,
+        lastAttemptAt: Instant,
+        metadata: EventMetadata
+    ) {
         check(status == VmStatus.PROVISIONING) {
             "Cannot mark VM ${id.value} as failed: expected status PROVISIONING, but was $status"
         }
@@ -131,10 +156,35 @@ public class VmAggregate private constructor(
         val event = VmProvisioningFailed(
             aggregateId = id,
             requestId = requestId,
-            reason = reason,
+            reason = errorMessage, // Legacy field for backward compatibility
+            errorCode = errorCode,
+            errorMessage = errorMessage,
+            retryCount = retryCount,
+            lastAttemptAt = lastAttemptAt,
             metadata = metadata
         )
         applyEvent(event)
+    }
+
+    /**
+     * Marks the VM provisioning as failed (simplified version for permanent errors).
+     *
+     * @param reason Description of why provisioning failed (used as errorMessage)
+     * @param lastAttemptAt Timestamp of the failed attempt (avoids non-deterministic Instant.now())
+     * @param metadata Event metadata including tenant and correlation info
+     */
+    @Deprecated(
+        message = "Use markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata) instead",
+        replaceWith = ReplaceWith("markFailed(errorCode = \"UNKNOWN\", errorMessage = reason, retryCount = 1, lastAttemptAt = lastAttemptAt, metadata = metadata)")
+    )
+    public fun markFailed(reason: String, lastAttemptAt: Instant, metadata: EventMetadata) {
+        markFailed(
+            errorCode = "UNKNOWN",
+            errorMessage = reason,
+            retryCount = 1,
+            lastAttemptAt = lastAttemptAt,
+            metadata = metadata
+        )
     }
 
     /**

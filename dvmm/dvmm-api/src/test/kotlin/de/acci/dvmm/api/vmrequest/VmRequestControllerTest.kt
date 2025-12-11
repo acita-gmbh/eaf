@@ -871,7 +871,8 @@ class VmRequestControllerTest {
             justification = "Test justification",
             status = VmRequestStatus.PENDING,
             createdAt = now,
-            updatedAt = now
+            updatedAt = now,
+            requesterEmail = "test@example.com"
         )
     }
 }

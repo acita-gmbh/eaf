@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VM Provisioning Failed - Admin Alert</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #7f1d1d;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .header-badge {
+            display: inline-block;
+            background-color: #fef2f2;
+            color: #7f1d1d;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .content {
+            background-color: #f9fafb;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 15px 0;
+            margin: 15px -15px;
+        }
+        .details-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0;
+        }
+        .detail-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 15px;
+        }
+        .detail-card dt {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .detail-card dd {
+            margin: 5px 0 0 0;
+            color: #111827;
+            font-family: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .error-badge {
+            display: inline-block;
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .error-section {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .error-section h3 {
+            margin: 0 0 10px 0;
+            color: #991b1b;
+            font-size: 0.875rem;
+        }
+        .error-section .error-code {
+            font-family: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background-color: #991b1b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .error-section .error-message {
+            margin-top: 10px;
+            color: #7f1d1d;
+        }
+        .tech-details {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+        }
+        .tech-details dt {
+            color: #6b7280;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        .tech-details dd {
+            margin: 2px 0 10px 0;
+            color: #374151;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-badge">ADMIN ALERT</span>
+        <h1 style="margin: 0; font-size: 1.5rem;">VM Provisioning Failed</h1>
+    </div>
+    <div class="content">
+        <p>A VM provisioning request has failed and requires your attention.</p>
+
+        <!--/* Table-based layout for Outlook compatibility */-->
+        <table class="details-table" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+                <td style="width: 50%; vertical-align: top; padding: 0 15px 0 0;">
+                    <div class="detail-card">
+                        <dl>
+                            <dt>Request ID</dt>
+                            <dd th:text="${requestId}">abc-123</dd>
+                        </dl>
+                    </div>
+                    <div class="detail-card">
+                        <dl>
+                            <dt>Project</dt>
+                            <dd th:text="${projectName}">Production</dd>
+                        </dl>
+                    </div>
+                </td>
+                <td style="width: 50%; vertical-align: top; padding: 0 0 0 15px;">
+                    <div class="detail-card">
+                        <dl>
+                            <dt>VM Name</dt>
+                            <dd th:text="${vmName}">web-server-01</dd>
+                        </dl>
+                    </div>
+                    <div class="detail-card">
+                        <dl>
+                            <dt>Requester</dt>
+                            <dd th:text="${requesterEmail}">user@example.com</dd>
+                        </dl>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="error-section" role="alert">
+            <h3>⚠️ Error Details</h3>
+            <span class="error-code" th:text="${errorCode}">UNKNOWN</span>
+            <p class="error-message" th:text="${errorMessage}">An error occurred during VM provisioning.</p>
+        </div>
+
+        <div class="tech-details">
+            <dl>
+                <dt>Correlation ID</dt>
+                <dd th:text="${correlationId}">00000000-0000-0000-0000-000000000000</dd>
+                <dt>Retry Attempts</dt>
+                <dd th:text="${retryCount}">1</dd>
+            </dl>
+        </div>
+
+        <p style="font-size: 0.875rem; color: #6b7280;">
+            Use the Correlation ID to search logs for detailed error information.
+            The requester has been notified with a user-friendly error message.
+        </p>
+
+        <div class="footer">
+            <p>This is an automated admin alert from the VM Management System.</p>
+        </div>
+    </div>
+</body>
+</html>

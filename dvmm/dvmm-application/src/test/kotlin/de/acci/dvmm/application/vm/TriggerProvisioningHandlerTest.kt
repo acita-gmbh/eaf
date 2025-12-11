@@ -1,15 +1,17 @@
 package de.acci.dvmm.application.vm
 
 import de.acci.dvmm.application.vmrequest.NewTimelineEvent
+import de.acci.dvmm.application.vmrequest.NoOpVmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestSummary
+import de.acci.dvmm.application.vmware.ProvisioningErrorCode
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
-import de.acci.dvmm.application.vmware.HypervisorPort
 import de.acci.dvmm.domain.vm.VmId
 import de.acci.dvmm.domain.vm.VmProvisioningResult
 import de.acci.dvmm.domain.vm.VmProvisioningStage
@@ -51,7 +53,7 @@ import java.util.UUID
 @DisplayName("TriggerProvisioningHandler")
 class TriggerProvisioningHandlerTest {
 
-    private val hypervisorPort = mockk<HypervisorPort>()
+    private val provisioningService = mockk<ResilientProvisioningService>()
     private val configPort = mockk<VmwareConfigurationPort>()
     private val eventStore = mockk<EventStore>()
     private val vmEventDeserializer = mockk<VmEventDeserializer>()
@@ -59,16 +61,18 @@ class TriggerProvisioningHandlerTest {
     private val timelineUpdater = mockk<TimelineEventProjectionUpdater>()
     private val vmRequestReadRepository = mockk<VmRequestReadRepository>()
     private val progressRepository = mockk<VmProvisioningProgressProjectionRepository>(relaxed = true)
+    private val notificationSender: VmRequestNotificationSender = NoOpVmRequestNotificationSender
 
     private fun createHandler() = TriggerProvisioningHandler(
-        hypervisorPort = hypervisorPort,
+        provisioningService = provisioningService,
         configPort = configPort,
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
         vmRequestReadRepository = vmRequestReadRepository,
-        progressRepository = progressRepository
+        progressRepository = progressRepository,
+        notificationSender = notificationSender
     )
 
     private fun createProvisioningResult(
@@ -114,12 +118,14 @@ class TriggerProvisioningHandlerTest {
 
     private fun createVmRequestSummary(
         id: VmRequestId,
-        projectName: String = "My Project"
+        projectName: String = "My Project",
+        requesterEmail: String? = "user@example.com"
     ): VmRequestSummary = VmRequestSummary(
         id = id,
         tenantId = TenantId.generate(),
         requesterId = UserId.generate(),
         requesterName = "User",
+        requesterEmail = requesterEmail,
         projectId = ProjectId.generate(),
         projectName = projectName,
         vmName = "web-server",
@@ -148,7 +154,7 @@ class TriggerProvisioningHandlerTest {
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
             val specSlot = slot<VmSpec>()
-            coEvery { hypervisorPort.createVm(capture(specSlot), any()) } returns provisioningResult.success()
+            coEvery { provisioningService.createVmWithRetry(capture(specSlot), any(), any()) } returns provisioningResult.success()
 
             // Mock event store loads for success path
             setupSuccessPathMocks(event)
@@ -159,7 +165,7 @@ class TriggerProvisioningHandlerTest {
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { hypervisorPort.createVm(any(), any()) }
+            coVerify(exactly = 1) { provisioningService.createVmWithRetry(any(), any(), any()) }
             val spec = specSlot.captured
             // "My Project" -> "MYPR" -> "MYPR-web-server"
             assertEquals("MYPR-${event.vmName.value}", spec.name)
@@ -180,7 +186,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { hypervisorPort.createVm(any(), any()) } returns provisioningResult.success()
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
 
             val vmEventsSlot = slot<List<DomainEvent>>()
             val requestEventsSlot = slot<List<DomainEvent>>()
@@ -248,7 +254,7 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { hypervisorPort.createVm(any(), any()) } returns provisioningResult.success()
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
             setupSuccessPathMocks(event)
 
             val timelineSlot = slot<NewTimelineEvent>()
@@ -353,13 +359,16 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { hypervisorPort.createVm(any(), any()) }
+            coVerify(exactly = 0) { provisioningService.createVmWithRetry(any(), any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -407,13 +416,16 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 0) { hypervisorPort.createVm(any(), any()) }
+            coVerify(exactly = 0) { provisioningService.createVmWithRetry(any(), any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
@@ -426,8 +438,8 @@ class TriggerProvisioningHandlerTest {
     inner class VsphereFailure {
 
         @Test
-        fun `should emit VmProvisioningFailed when vSphere call fails`() = runTest {
-            // Given
+        fun `should emit VmProvisioningFailed for permanent VsphereError (AC-3-6-3)`() = runTest {
+            // Given - permanent error (AuthenticationError) is not retriable, returned directly
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
             val event = createEvent(tenantId, userId)
@@ -436,8 +448,9 @@ class TriggerProvisioningHandlerTest {
 
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
-            coEvery { hypervisorPort.createVm(any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
-                VsphereError.Timeout("Connection timeout")
+            // Permanent error - ResilientProvisioningService skips retry and returns immediately
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
+                ProvisioningFailure.HypervisorError(VsphereError.AuthenticationError("Invalid credentials"))
             )
 
             // Mock event store load to return 1 event (VmProvisioningStarted)
@@ -463,19 +476,100 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
             handler.onVmProvisioningStarted(event)
 
             // Then
-            coVerify(exactly = 1) { hypervisorPort.createVm(any(), any()) }
+            coVerify(exactly = 1) { provisioningService.createVmWithRetry(any(), any(), any()) }
             coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
 
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
             assertEquals(event.aggregateId, failedEvent.aggregateId)
             assertEquals(event.requestId, failedEvent.requestId)
-            assertTrue(failedEvent.reason.contains("vSphere provisioning failed"))
+            // AC-3.6.3: Verify enhanced error information for permanent error
+            assertEquals("CONNECTION_FAILED", failedEvent.errorCode)
+            assertEquals("System authentication failed. IT has been notified.", failedEvent.errorMessage)
+            assertEquals(1, failedEvent.retryCount)  // Permanent error = 1 attempt
+            assertTrue(failedEvent.lastAttemptAt != null)
+            // Legacy reason field is populated with user message
+            assertEquals(failedEvent.errorMessage, failedEvent.reason)
+        }
+
+        @Test
+        fun `should emit VmProvisioningFailed with retry count when RetryExhaustedError (AC-3-6-2)`() = runTest {
+            // Given - transient error exhausted all retries
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val projectInfo = createVmRequestSummary(event.requestId, "My Project")
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+            // RetryExhaustedError - all 5 attempts failed
+            val lastAttemptTime = java.time.Instant.now()
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns de.acci.eaf.core.result.Result.Failure(
+                ProvisioningFailure.Exhausted(
+                    ResilientProvisioningService.RetryExhaustedError(
+                        attemptCount = 5,
+                        lastErrorCode = ProvisioningErrorCode.CONNECTION_TIMEOUT,
+                        userMessage = "Temporary connection issue. We will retry automatically.",
+                        lastError = VsphereError.ConnectionError("Connection timeout after 5 attempts"),
+                        lastAttemptAt = lastAttemptTime
+                    )
+                )
+            )
+
+            // Mock event store load to return 1 event (VmProvisioningStarted)
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(
+                de.acci.eaf.eventsourcing.StoredEvent(
+                    id = java.util.UUID.randomUUID(),
+                    aggregateId = event.aggregateId.value,
+                    aggregateType = "Vm",
+                    eventType = "VmProvisioningStarted",
+                    payload = "{}",
+                    metadata = event.metadata,
+                    version = 1,
+                    createdAt = java.time.Instant.now()
+                )
+            )
+
+            val eventsSlot = slot<List<DomainEvent>>()
+            coEvery {
+                eventStore.append(
+                    aggregateId = event.aggregateId.value,
+                    events = capture(eventsSlot),
+                    expectedVersion = 1L
+                )
+            } returns 2L.success()
+
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            val handler = createHandler()
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            coVerify(exactly = 1) { provisioningService.createVmWithRetry(any(), any(), any()) }
+            coVerify(exactly = 1) { eventStore.append(any(), any(), any()) }
+
+            val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
+            assertEquals(event.aggregateId, failedEvent.aggregateId)
+            assertEquals(event.requestId, failedEvent.requestId)
+            // AC-3.6.2: Verify retry count is captured from RetryExhaustedError
+            assertEquals("CONNECTION_TIMEOUT", failedEvent.errorCode)
+            assertEquals("Temporary connection issue. We will retry automatically.", failedEvent.errorMessage)
+            assertEquals(5, failedEvent.retryCount)  // All 5 attempts were exhausted
+            assertTrue(failedEvent.lastAttemptAt != null)
+            // Legacy reason field is populated with user message
+            assertEquals(failedEvent.errorMessage, failedEvent.reason)
         }
     }
 
@@ -502,8 +596,8 @@ class TriggerProvisioningHandlerTest {
             coEvery { configPort.findByTenantId(tenantId) } returns config
             coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
 
-            coEvery { hypervisorPort.createVm(any(), any()) } coAnswers {
-                val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } coAnswers {
+                val progressCallback = thirdArg<suspend (VmProvisioningStage) -> Unit>()
                 // Simulate vSphere reporting progress through stages
                 progressCallback(VmProvisioningStage.CLONING)
                 progressCallback(VmProvisioningStage.CONFIGURING)
@@ -553,14 +647,15 @@ class TriggerProvisioningHandlerTest {
 
             // Create handler with non-relaxed progress repository
             val handler = TriggerProvisioningHandler(
-                hypervisorPort = hypervisorPort,
+                provisioningService = provisioningService,
                 configPort = configPort,
                 eventStore = eventStore,
                 vmEventDeserializer = vmEventDeserializer,
                 vmRequestEventDeserializer = vmRequestEventDeserializer,
                 timelineUpdater = timelineUpdater,
                 vmRequestReadRepository = vmRequestReadRepository,
-                progressRepository = nonRelaxedProgressRepository
+                progressRepository = nonRelaxedProgressRepository,
+                notificationSender = notificationSender
             )
 
             // When
@@ -615,8 +710,8 @@ class TriggerProvisioningHandlerTest {
             coEvery { nonRelaxedProgressRepository.delete(any(), any()) } returns Unit
 
             // Only trigger one progress callback to capture
-            coEvery { hypervisorPort.createVm(any(), any()) } coAnswers {
-                val progressCallback = secondArg<suspend (VmProvisioningStage) -> Unit>()
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } coAnswers {
+                val progressCallback = thirdArg<suspend (VmProvisioningStage) -> Unit>()
                 progressCallback(VmProvisioningStage.CLONING)
                 createProvisioningResult().success()
             }
@@ -635,14 +730,15 @@ class TriggerProvisioningHandlerTest {
             coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
 
             val handler = TriggerProvisioningHandler(
-                hypervisorPort = hypervisorPort,
+                provisioningService = provisioningService,
                 configPort = configPort,
                 eventStore = eventStore,
                 vmEventDeserializer = vmEventDeserializer,
                 vmRequestEventDeserializer = vmRequestEventDeserializer,
                 timelineUpdater = timelineUpdater,
                 vmRequestReadRepository = vmRequestReadRepository,
-                progressRepository = nonRelaxedProgressRepository
+                progressRepository = nonRelaxedProgressRepository,
+                notificationSender = notificationSender
             )
 
             // When

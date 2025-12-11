@@ -2,6 +2,7 @@ package de.acci.dvmm.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.dvmm.application.vm.ProvisionVmHandler
+import de.acci.dvmm.application.vm.ResilientProvisioningService
 import de.acci.dvmm.application.vm.TriggerProvisioningHandler
 import de.acci.dvmm.application.vm.VmProvisioningListener
 import de.acci.dvmm.application.vm.VmEventDeserializer
@@ -23,6 +24,7 @@ import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestProjectionUpdater
+import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmware.CheckVmwareConfigExistsHandler
 import de.acci.dvmm.application.vmware.CreateVmwareConfigHandler
@@ -190,25 +192,39 @@ public class ApplicationConfig {
         provisionVmHandler = provisionVmHandler
     )
 
+    /**
+     * Resilient provisioning service that wraps HypervisorPort with retry logic.
+     *
+     * Implements AC-3.6.1 (transient error retry with exponential backoff).
+     */
+    @Bean
+    public fun resilientProvisioningService(
+        hypervisorPort: HypervisorPort
+    ): ResilientProvisioningService = ResilientProvisioningService(
+        hypervisorPort = hypervisorPort
+    )
+
     @Bean
     public fun triggerProvisioningHandler(
-        hypervisorPort: HypervisorPort,
+        provisioningService: ResilientProvisioningService,
         configPort: VmwareConfigurationPort,
         eventStore: EventStore,
         vmEventDeserializer: VmEventDeserializer,
         vmRequestEventDeserializer: VmRequestEventDeserializer,
         timelineUpdater: TimelineEventProjectionUpdater,
         vmRequestReadRepository: VmRequestReadRepository,
-        progressRepository: VmProvisioningProgressProjectionRepository
+        progressRepository: VmProvisioningProgressProjectionRepository,
+        notificationSender: VmRequestNotificationSender
     ): TriggerProvisioningHandler = TriggerProvisioningHandler(
-        hypervisorPort = hypervisorPort,
+        provisioningService = provisioningService,
         configPort = configPort,
         eventStore = eventStore,
         vmEventDeserializer = vmEventDeserializer,
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
         vmRequestReadRepository = vmRequestReadRepository,
-        progressRepository = progressRepository
+        progressRepository = progressRepository,
+        notificationSender = notificationSender
     )
 
     @Bean

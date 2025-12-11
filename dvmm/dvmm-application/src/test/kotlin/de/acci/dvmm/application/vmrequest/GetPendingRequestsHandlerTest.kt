@@ -52,6 +52,7 @@ class GetPendingRequestsHandlerTest {
         tenantId = tenantId,
         requesterId = requesterId,
         requesterName = "Test User",
+        requesterEmail = "test@example.com",
         projectId = ProjectId.generate(),
         projectName = "Test Project",
         vmName = "test-vm-01",

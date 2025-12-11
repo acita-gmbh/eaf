@@ -93,12 +93,17 @@ class JacksonVmEventDeserializerTest {
     inner class VmProvisioningFailedDeserialization {
 
         @Test
-        fun `deserializes VmProvisioningFailed event correctly`() {
-            // Given: A stored VmProvisioningFailed event
+        fun `deserializes VmProvisioningFailed event with all AC-3-6-2 fields`() {
+            // Given: A stored VmProvisioningFailed event with all new fields (AC-3.6.2)
+            val lastAttemptAt = Instant.parse("2025-01-15T10:30:00Z")
             val event = VmProvisioningFailed(
                 aggregateId = testVmId,
                 requestId = testRequestId,
-                reason = "VMware configuration missing for tenant",
+                reason = "Temporary connection issue. We will retry automatically.",
+                errorCode = "CONNECTION_TIMEOUT",
+                errorMessage = "Temporary connection issue. We will retry automatically.",
+                retryCount = 5,
+                lastAttemptAt = lastAttemptAt,
                 metadata = createTestMetadata()
             )
             val payload = objectMapper.writeValueAsString(event)
@@ -116,12 +121,58 @@ class JacksonVmEventDeserializerTest {
             // When: Deserialize
             val result = deserializer.deserialize(storedEvent)
 
-            // Then: Correct event type returned
+            // Then: All AC-3.6.2 fields correctly deserialized
             assertTrue(result is VmProvisioningFailed)
             val provisioningFailed = result as VmProvisioningFailed
             assertEquals(event.aggregateId.value, provisioningFailed.aggregateId.value)
             assertEquals(event.requestId.value, provisioningFailed.requestId.value)
+            assertEquals("CONNECTION_TIMEOUT", provisioningFailed.errorCode)
+            assertEquals("Temporary connection issue. We will retry automatically.", provisioningFailed.errorMessage)
+            assertEquals(5, provisioningFailed.retryCount)
+            assertEquals(lastAttemptAt, provisioningFailed.lastAttemptAt)
+            // Legacy field also preserved
             assertEquals(event.reason, provisioningFailed.reason)
+        }
+
+        @Test
+        fun `deserializes legacy VmProvisioningFailed event without new fields`() {
+            // Given: A legacy event JSON that only has the original fields
+            // (simulating data stored before AC-3.6.2 enhancement)
+            val legacyPayload = """
+                {
+                    "aggregateId": "${testVmId.value}",
+                    "requestId": "${testRequestId.value}",
+                    "reason": "VMware configuration missing for tenant",
+                    "metadata": {
+                        "tenantId": "${testTenantId.value}",
+                        "userId": "${testUserId.value}",
+                        "correlationId": "${testCorrelationId.value}",
+                        "timestamp": "2025-01-15T10:00:00Z"
+                    }
+                }
+            """.trimIndent()
+            val storedEvent = StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testVmId.value,
+                aggregateType = "Vm",
+                eventType = "VmProvisioningFailed",
+                payload = legacyPayload,
+                metadata = createTestMetadata(),
+                version = 2,
+                createdAt = Instant.now()
+            )
+
+            // When: Deserialize legacy event
+            val result = deserializer.deserialize(storedEvent)
+
+            // Then: Legacy field preserved, new fields get defaults
+            assertTrue(result is VmProvisioningFailed)
+            val provisioningFailed = result as VmProvisioningFailed
+            assertEquals("VMware configuration missing for tenant", provisioningFailed.reason)
+            // New fields should have sensible defaults
+            assertEquals("UNKNOWN", provisioningFailed.errorCode)
+            assertEquals("VMware configuration missing for tenant", provisioningFailed.errorMessage) // defaults to reason
+            assertEquals(1, provisioningFailed.retryCount)
         }
     }
 

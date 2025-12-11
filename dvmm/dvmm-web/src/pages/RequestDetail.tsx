@@ -23,8 +23,18 @@ import {
   isNotFoundError,
   isForbiddenError,
   isInvalidStateError,
+  type TimelineEvent,
 } from '@/api/vm-requests'
 import { formatDateTime } from '@/lib/date-utils'
+
+/**
+ * Extracts the error message from the PROVISIONING_FAILED timeline event.
+ * Returns null if no failure event exists or if details are empty.
+ */
+function getProvisioningErrorMessage(timeline: TimelineEvent[]): string | null {
+  const failedEvent = timeline.find((e) => e.eventType === 'PROVISIONING_FAILED')
+  return failedEvent?.details ?? null
+}
 
 /**
  * Page displaying detailed VM request information with timeline.
@@ -290,6 +300,38 @@ export function RequestDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Provisioning Failed Alert (AC-3.6.3) */}
+      {data.status === 'FAILED' && (() => {
+        const errorMessage = getProvisioningErrorMessage(data.timeline)
+        return (
+          <Card
+            className="border-destructive bg-destructive/5"
+            data-testid="provisioning-failed-alert"
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Provisioning Failed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                The VM could not be provisioned. Our team has been notified and will
+                investigate the issue.
+              </p>
+              {errorMessage && (
+                <p
+                  className="text-sm font-medium text-destructive"
+                  data-testid="provisioning-error-message"
+                >
+                  Error: {errorMessage}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })()}
 
       {/* Timeline Card (AC-3) */}
       <Card>

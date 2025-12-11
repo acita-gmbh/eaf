@@ -69,6 +69,44 @@ public data class RequestRejectedNotification(
 )
 
 /**
+ * Data for sending a "provisioning failed" notification to the requester.
+ * Contains user-friendly error information (AC-3.6.5).
+ */
+public data class ProvisioningFailedUserNotification(
+    val requestId: VmRequestId,
+    val tenantId: TenantId,
+    val requesterEmail: EmailAddress,
+    val vmName: String,
+    val projectName: String,
+    /** User-friendly error message suitable for display */
+    val errorMessage: String,
+    /** Machine-readable error code for categorization */
+    val errorCode: String
+)
+
+/**
+ * Data for sending a "provisioning failed" notification to admins.
+ * Contains full technical details for troubleshooting (AC-3.6.5).
+ */
+public data class ProvisioningFailedAdminNotification(
+    val requestId: VmRequestId,
+    val tenantId: TenantId,
+    val adminEmail: EmailAddress,
+    val vmName: String,
+    val projectName: String,
+    /** User-friendly error message */
+    val errorMessage: String,
+    /** Machine-readable error code */
+    val errorCode: String,
+    /** Number of retry attempts before final failure */
+    val retryCount: Int,
+    /** Correlation ID for distributed tracing */
+    val correlationId: CorrelationId,
+    /** Requester's email for context */
+    val requesterEmail: String
+)
+
+/**
  * Interface for sending VM request notifications.
  *
  * Implementations send email notifications to users when their
@@ -118,6 +156,24 @@ public interface VmRequestNotificationSender {
     public suspend fun sendRejectedNotification(
         notification: RequestRejectedNotification
     ): Result<Unit, VmRequestNotificationError>
+
+    /**
+     * Send notification to user when VM provisioning fails (AC-3.6.5).
+     *
+     * Contains user-friendly error summary and suggested actions.
+     */
+    public suspend fun sendProvisioningFailedUserNotification(
+        notification: ProvisioningFailedUserNotification
+    ): Result<Unit, VmRequestNotificationError>
+
+    /**
+     * Send notification to admin when VM provisioning fails (AC-3.6.5).
+     *
+     * Contains full technical details for troubleshooting.
+     */
+    public suspend fun sendProvisioningFailedAdminNotification(
+        notification: ProvisioningFailedAdminNotification
+    ): Result<Unit, VmRequestNotificationError>
 }
 
 /**
@@ -152,6 +208,24 @@ public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
     ): Result<Unit, VmRequestNotificationError> {
         logger.debug {
             "Notifications disabled - skipping 'rejected' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
+
+    override suspend fun sendProvisioningFailedUserNotification(
+        notification: ProvisioningFailedUserNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'provisioning failed (user)' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
+
+    override suspend fun sendProvisioningFailedAdminNotification(
+        notification: ProvisioningFailedAdminNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'provisioning failed (admin)' notification for request ${notification.requestId.value}"
         }
         return Result.Success(Unit)
     }

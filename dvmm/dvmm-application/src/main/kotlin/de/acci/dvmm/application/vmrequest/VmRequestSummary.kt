@@ -22,6 +22,8 @@ public data class VmRequestSummary(
     val tenantId: TenantId,
     val requesterId: UserId,
     val requesterName: String,
+    /** Requester's email for notifications (null for legacy data) */
+    val requesterEmail: String?,
     val projectId: ProjectId,
     val projectName: String,
     val vmName: String,

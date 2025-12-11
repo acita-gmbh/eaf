@@ -13,6 +13,7 @@ import com.vmware.vim25.TraversalSpec
 import com.vmware.vim25.VimService
 import com.vmware.vim25.VirtualMachineCloneSpec
 import com.vmware.vim25.VirtualMachineConfigSpec
+import com.vmware.vim25.VirtualMachinePowerState
 import com.vmware.vim25.VirtualMachineRelocateSpec
 import de.acci.dvmm.application.vmware.Cluster
 import de.acci.dvmm.application.vmware.CredentialEncryptor
@@ -68,7 +69,7 @@ public class VsphereClient(
     @Value("\${dvmm.vsphere.timeout-ms:60000}")
     private val timeoutMs: Long = 60000
 ) {
-    companion object {
+    private companion object {
         init {
             // Force CXF to use legacy HttpURLConnection transport which respects JVM SSL defaults.
             // Must be set before any CXF classes are loaded.
@@ -525,14 +526,17 @@ public class VsphereClient(
         onProgress: suspend (VmProvisioningStage) -> Unit = {}
     ): Result<VmProvisioningResult, VsphereError> =
         executeResilient(name = "createVm", operationTimeoutMs = createVmTimeoutMs) {
-        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ProvisioningError("No tenant context", e).failure() }
+        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.OperationFailed(operation = "createVm", details = "No tenant context", cause = e).failure() }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
-            is Result.Failure -> return@executeResilient VsphereError.ProvisioningError("Connection failed", sessionResult.error).failure()
+            is Result.Failure -> return@executeResilient VsphereError.OperationFailed(operation = "createVm", details = "Connection failed", cause = sessionResult.error).failure()
         }
 
-        val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ProvisioningError("Configuration not found").failure()
+        val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ResourceNotFound(resourceType = "Configuration", resourceId = tenantId.toString()).failure()
+
+        // Saga compensation: Track partial VM for cleanup on failure
+        var partialVmRef: ManagedObjectReference? = null
 
         withContext(Dispatchers.IO) {
             try {
@@ -544,18 +548,18 @@ public class VsphereClient(
                 val templatePath = "$dcPath/vm/$templateName"
 
                 val templateRef = vimPort.findByInventoryPath(searchIndex, templatePath)
-                    ?: return@withContext VsphereError.ProvisioningError("Template not found: $templatePath").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Template", resourceId = templatePath).failure()
 
                 val dsPath = "$dcPath/datastore/${config.datastoreName}"
                 val dsRef = vimPort.findByInventoryPath(searchIndex, dsPath)
-                    ?: return@withContext VsphereError.ProvisioningError("Datastore not found: ${config.datastoreName}").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Datastore", resourceId = config.datastoreName).failure()
 
                 val clusterPath = "$dcPath/host/${config.clusterName}"
                 val clusterRef = vimPort.findByInventoryPath(searchIndex, clusterPath)
-                    ?: return@withContext VsphereError.ProvisioningError("Cluster not found: ${config.clusterName}").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Cluster", resourceId = config.clusterName).failure()
 
                 val rpRef = getProperty(session, clusterRef, "resourcePool") as? ManagedObjectReference
-                    ?: return@withContext VsphereError.ProvisioningError("Cluster has no resource pool").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "ResourcePool", resourceId = "${config.clusterName}/default").failure()
 
                 val relocateSpec = VirtualMachineRelocateSpec().apply {
                     this.datastore = dsRef
@@ -578,7 +582,7 @@ public class VsphereClient(
                 }
 
                 val folderRef = vimPort.findByInventoryPath(searchIndex, "$dcPath/vm")
-                    ?: return@withContext VsphereError.ProvisioningError("VM folder not found").failure()
+                    ?: return@withContext VsphereError.ResourceNotFound(resourceType = "Folder", resourceId = "$dcPath/vm").failure()
 
                 logger.info { "Cloning VM '${spec.name}' from template '$templateName'" }
                 onProgress(VmProvisioningStage.CLONING)
@@ -587,6 +591,8 @@ public class VsphereClient(
 
                 val info = getTaskInfo(session, task)
                 val vmRef = info.result as ManagedObjectReference
+                // Track for saga compensation - VM now exists in vCenter
+                partialVmRef = vmRef
                 val vmwareVmId = VmwareVmId.of(vmRef.value)
                 logger.info { "Clone task completed, VM created: ${vmRef.value}" }
 
@@ -600,19 +606,122 @@ public class VsphereClient(
                 // Signal provisioning complete (matches VcsimAdapter contract)
                 onProgress(VmProvisioningStage.READY)
 
-                VmProvisioningResult(
+                // Build success result first, then clear tracker
+                // This prevents race condition where exception after clearing would skip cleanup
+                val successResult = VmProvisioningResult(
                     vmwareVmId = vmwareVmId,
                     ipAddress = ipDetectionResult.ipAddress,
                     hostname = spec.name,
                     warningMessage = ipDetectionResult.warningMessage
                 ).success()
 
+                // Success - clear partial VM tracker only after result is constructed
+                partialVmRef = null
+                successResult
+
             } catch (e: CancellationException) {
+                // Saga compensation: cleanup partial VM on cancellation
+                partialVmRef?.let { vmRef ->
+                    cleanupPartialVm(session, vmRef, spec.name, "coroutine cancellation")
+                }
                 throw e  // Allow proper coroutine cancellation
             } catch (e: Exception) {
-                logger.error(e) { "Clone failed: ${e.message}" }
-                VsphereError.ProvisioningError("Clone failed", e).failure()
+                // Saga compensation: cleanup partial VM on failure
+                partialVmRef?.let { vmRef ->
+                    cleanupPartialVm(session, vmRef, spec.name, e.message ?: "unknown error")
+                }
+                logger.error(e) { "VM provisioning failed: ${e.message}" }
+                VsphereError.OperationFailed(operation = "clone", details = e.message ?: "VM provisioning failed", cause = e).failure()
             }
+        }
+    }
+
+    /**
+     * Saga compensation: Delete a partially created VM to prevent orphaned resources.
+     *
+     * This method is called when provisioning fails after the VM clone has completed
+     * but before the entire process succeeds. It ensures we don't leave orphaned VMs
+     * in vCenter that consume resources but aren't tracked by our system.
+     *
+     * @param session Active vSphere session
+     * @param vmRef ManagedObjectReference to the partial VM
+     * @param vmName VM name for logging
+     * @param failureReason Reason for the cleanup (for logging)
+     */
+    private suspend fun cleanupPartialVm(
+        session: VsphereSession,
+        vmRef: ManagedObjectReference,
+        vmName: String,
+        failureReason: String
+    ) {
+        try {
+            logger.info { "Saga compensation: Cleaning up partial VM '${vmRef.value}' ($vmName) due to: $failureReason" }
+
+            // Power off first if running (destroyTask requires VM to be powered off)
+            val powerState: VirtualMachinePowerState? = try {
+                getProperty(session, vmRef, "runtime.powerState") as? VirtualMachinePowerState
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) {
+                    "Could not retrieve power state for VM '${vmRef.value}' ($vmName) during cleanup. " +
+                        "Proceeding with deletion attempt."
+                }
+                null
+            }
+
+            if (powerState == VirtualMachinePowerState.POWERED_ON) {
+                logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
+                val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
+                try {
+                    waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
+                    logger.debug { "Successfully powered off VM '${vmRef.value}'" }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Check if VM was already powered off (race condition or state changed)
+                    // VMware throws InvalidPowerState when VM is not in expected power state.
+                    //
+                    // KNOWN LIMITATION: String-based exception message matching is fragile and
+                    // may break if VMware changes error message formats across SDK versions.
+                    // Unfortunately, VCF SDK 9.0 doesn't expose specific exception types
+                    // (like InvalidPowerStateFault) directly - they're wrapped in generic
+                    // RuntimeException with messages. Monitor this during SDK upgrades.
+                    val isAlreadyPoweredOff = e.message?.contains("InvalidPowerState") == true ||
+                        e.message?.contains("already powered off", ignoreCase = true) == true ||
+                        e.message?.contains("not powered on", ignoreCase = true) == true
+                    if (isAlreadyPoweredOff) {
+                        // Log at INFO with exception for debugging - helps diagnose if wrong exception was caught
+                        logger.info(e) {
+                            "VM '${vmRef.value}' is already powered off (exception: ${e.message}). Proceeding with deletion."
+                        }
+                    } else {
+                        throw e // Rethrow other exceptions to be handled by the outer catch
+                    }
+                }
+            } else if (powerState == null) {
+                logger.debug { "Power state unknown for VM '${vmRef.value}', attempting deletion anyway" }
+            }
+
+            // Delete the VM
+            val destroyTask = session.vimPort.destroyTask(vmRef)
+            waitForTask(session, destroyTask, timeoutMs = 60_000) // 1 minute timeout for destroy
+
+            logger.info { "Saga compensation: Successfully cleaned up partial VM '${vmRef.value}' ($vmName)" }
+        } catch (e: CancellationException) {
+            // Don't swallow cancellation, but log the cleanup failure
+            logger.error {
+                "CRITICAL: Saga compensation interrupted during cleanup of partial VM '${vmRef.value}' ($vmName). " +
+                    "Manual cleanup may be required in vCenter."
+            }
+            throw e
+        } catch (e: Exception) {
+            // Cleanup failed - log with CRITICAL prefix for alerting
+            logger.error(e) {
+                "CRITICAL: Failed to cleanup partial VM '${vmRef.value}' ($vmName). " +
+                    "Manual cleanup required in vCenter. Original failure: $failureReason"
+            }
+            // Don't rethrow - we want to return the original error, not the cleanup error
         }
     }
 
@@ -678,7 +787,7 @@ public class VsphereClient(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                VsphereError.NotFound("VM not found: ${vmId.value}").failure()
+                VsphereError.ResourceNotFound(resourceType = "VirtualMachine", resourceId = vmId.value, cause = e).failure()
             }
         }
     }

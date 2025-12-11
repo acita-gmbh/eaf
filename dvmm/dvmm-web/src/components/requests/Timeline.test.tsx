@@ -71,6 +71,7 @@ describe('Timeline', () => {
       { type: 'CANCELLED', expectedLabel: 'Cancelled' },
       { type: 'PROVISIONING_STARTED', expectedLabel: 'Provisioning Started' },
       { type: 'PROVISIONING_QUEUED', expectedLabel: 'Queued for Provisioning' },
+      { type: 'PROVISIONING_FAILED', expectedLabel: 'Provisioning Failed' },
       { type: 'VM_READY', expectedLabel: 'VM Ready' },
     ]
 
@@ -146,6 +147,37 @@ describe('Timeline', () => {
       }
 
       render(<Timeline events={[eventWithNullDetails]} />)
+
+      expect(screen.queryByTestId('timeline-event-reason')).not.toBeInTheDocument()
+    })
+
+    it('displays plain text error message for PROVISIONING_FAILED', () => {
+      const failedEvent: TimelineEvent = {
+        ...baseEvent,
+        eventType: 'PROVISIONING_FAILED',
+        actorName: 'System',
+        details: 'The vSphere infrastructure is temporarily unavailable. Please try again later.',
+      }
+
+      render(<Timeline events={[failedEvent]} />)
+
+      const errorElement = screen.getByTestId('timeline-event-reason')
+      expect(errorElement).toHaveTextContent(
+        'Error: The vSphere infrastructure is temporarily unavailable. Please try again later.'
+      )
+      // Error message should have red styling
+      expect(errorElement).toHaveClass('text-red-600')
+    })
+
+    it('does not display reason section for PROVISIONING_FAILED with empty details', () => {
+      const failedEvent: TimelineEvent = {
+        ...baseEvent,
+        eventType: 'PROVISIONING_FAILED',
+        actorName: 'System',
+        details: null,
+      }
+
+      render(<Timeline events={[failedEvent]} />)
 
       expect(screen.queryByTestId('timeline-event-reason')).not.toBeInTheDocument()
     })

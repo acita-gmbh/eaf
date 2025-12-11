@@ -299,6 +299,22 @@ suspend fun createVm(spec: VmSpec) = executeResilient(
 
 **Rule:** Calculate total worst-case inner duration, then add buffer for outer timeout.
 
+**Enum Conventions (CRITICAL - AI Tool False Positive Risk):**
+
+VCF SDK 9.0 uses **standard Java UPPER_SNAKE_CASE** enum constants, NOT legacy camelCase:
+
+```kotlin
+// CORRECT - VCF SDK 9.0 uses UPPER_SNAKE_CASE
+VirtualMachinePowerState.POWERED_ON
+VirtualMachinePowerState.POWERED_OFF
+VirtualMachinePowerState.SUSPENDED
+
+// WRONG - Legacy vim25 SDK camelCase (does not exist in VCF SDK 9.0!)
+VirtualMachinePowerState.poweredOn  // Unresolved reference!
+```
+
+**Why this matters:** AI code review tools may suggest legacy camelCase based on outdated documentation. Always verify third-party API conventions against the actual binary (`javap -c`).
+
 ## Frontend (dvmm-web)
 
 The frontend is a **React 19 + TypeScript + Vite** application located at `dvmm/dvmm-web/`.

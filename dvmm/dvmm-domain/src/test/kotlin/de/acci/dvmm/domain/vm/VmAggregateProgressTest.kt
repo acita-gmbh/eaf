@@ -8,6 +8,7 @@ import de.acci.dvmm.domain.vmrequest.VmSize
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.EventMetadata
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.DisplayName
@@ -77,7 +78,8 @@ class VmAggregateProgressTest {
              // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
-            aggregate.markFailed("Failed", metadata)
+            @Suppress("DEPRECATION")
+            aggregate.markFailed("Failed", Instant.now(), metadata)
             aggregate.clearUncommittedEvents()
 
             // When/Then
