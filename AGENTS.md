@@ -49,9 +49,9 @@ Convention plugins: `eaf.kotlin-conventions`, `eaf.spring-conventions`, `eaf.tes
 
 **Enforced by Konsist tests in `ArchitectureTest.kt`:**
 - EAF modules MUST NOT import from `de.acci.dvmm.*`
-- DVMM modules CAN import from `de.acci.eaf.*`
 - `dvmm-domain` MUST NOT import from `org.springframework.*`
-- Detail query handlers MUST have `Forbidden` error type
+- Detail query handlers (`Get*Detail*Handler`) MUST have `Forbidden` error type
+- Suspend functions catching `Exception` MUST handle `CancellationException`
 
 ## Tech Stack
 
