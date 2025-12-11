@@ -11,6 +11,7 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 permissions:
   contents: read
   security-events: write
@@ -53,6 +54,7 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-${{ runner.os }}-
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -60,6 +62,7 @@ jobs:
           build-mode: ${{ matrix.build-mode }}
 
       # Manual build for Java/Kotlin to ensure correct JDK is used
+      # Note: jOOQ generation requires Docker (available on GitHub runners)
       - name: Build Java/Kotlin
         if: matrix.language == 'java-kotlin'
         run: ./gradlew classes testClasses --no-daemon
