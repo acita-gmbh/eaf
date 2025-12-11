@@ -691,7 +691,10 @@ public class VsphereClient(
                         e.message?.contains("already powered off", ignoreCase = true) == true ||
                         e.message?.contains("not powered on", ignoreCase = true) == true
                     if (isAlreadyPoweredOff) {
-                        logger.info { "VM '${vmRef.value}' is already powered off. Proceeding with deletion." }
+                        // Log at INFO with exception for debugging - helps diagnose if wrong exception was caught
+                        logger.info(e) {
+                            "VM '${vmRef.value}' is already powered off (exception: ${e.message}). Proceeding with deletion."
+                        }
                     } else {
                         throw e // Rethrow other exceptions to be handled by the outer catch
                     }

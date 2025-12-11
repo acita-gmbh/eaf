@@ -15,6 +15,8 @@ import io.github.resilience4j.kotlin.retry.executeSuspendFunction
 import io.github.resilience4j.retry.Retry
 import io.github.resilience4j.retry.RetryConfig
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -161,9 +163,10 @@ public class ResilientProvisioningService(
     ): Result<VmProvisioningResult, ProvisioningFailure> {
         val retry = Retry.of("provisioning-$correlationId", retryConfig)
 
-        // Track retry attempts for logging
-        var attemptCount = 0
-        var lastError: VsphereError? = null
+        // Track retry attempts for logging - use atomic types for thread-safety
+        // (Resilience4j's onRetry callback may execute on different thread than retry block)
+        val attemptCount = AtomicInteger(0)
+        val lastError = AtomicReference<VsphereError?>(null)
 
         retry.eventPublisher.onRetry { event ->
             logger.warn {
@@ -176,10 +179,10 @@ public class ResilientProvisioningService(
 
         return try {
             val innerResult = retry.executeSuspendFunction {
-                attemptCount++
-                if (attemptCount > 1) {
+                val currentAttempt = attemptCount.incrementAndGet()
+                if (currentAttempt > 1) {
                     logger.info {
-                        "Provisioning attempt $attemptCount/${retryConfiguration.maxAttempts}. CorrelationId: $correlationId"
+                        "Provisioning attempt $currentAttempt/${retryConfiguration.maxAttempts}. CorrelationId: $correlationId"
                     }
                 }
 
@@ -187,7 +190,7 @@ public class ResilientProvisioningService(
 
                 // Track last error for RetryExhaustedError
                 if (result is Result.Failure) {
-                    lastError = result.error
+                    lastError.set(result.error)
                     // If permanent error, don't retry - return immediately
                     if (!result.error.retriable) {
                         logger.info {
@@ -214,7 +217,7 @@ public class ResilientProvisioningService(
         } catch (e: io.github.resilience4j.retry.MaxRetriesExceededException) {
             // All retries exhausted - wrap in ProvisioningFailure.Exhausted
             // If lastError is null, it indicates a bug in retry/error tracking - fail fast
-            val error = lastError ?: run {
+            val error = lastError.get() ?: run {
                 logger.error {
                     "INTERNAL LOGIC ERROR: lastError is null after retry exhaustion. " +
                         "This indicates a bug in retry/error tracking. CorrelationId: $correlationId"
@@ -231,7 +234,7 @@ public class ResilientProvisioningService(
                     "ErrorCode: ${error.errorCode}"
             }
             val exhaustedError = RetryExhaustedError(
-                attemptCount = attemptCount,
+                attemptCount = attemptCount.get(),
                 lastErrorCode = error.errorCode,
                 userMessage = error.userMessage,
                 lastError = error

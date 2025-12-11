@@ -1,6 +1,6 @@
 # Story 3.6: Provisioning Error Handling
 
-Status: review
+Status: done
 
 ## Story
 
@@ -401,15 +401,22 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 **Backend Files Modified/Created:**
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VsphereError.kt`
+- `dvmm-application/build.gradle.kts` (resilience4j dependencies)
+- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt` (VsphereError sealed class hierarchy)
 - `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/ResilientProvisioningService.kt`
-- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/request/events/VmProvisioningFailed.kt`
-- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/request/VmRequest.kt`
+- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt`
+- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestNotificationSender.kt`
+- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestSummary.kt`
+- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmAggregate.kt`
+- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioningFailed.kt`
+- `dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt`
 - `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/persistence/JacksonVmRequestEventDeserializer.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/notification/NotificationService.kt`
+- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt`
+- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt`
+- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
 - `dvmm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-user.html`
 - `dvmm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-admin.html`
+- `gradle/libs.versions.toml` (resilience4j version)
 
 **Frontend Files Modified:**
 - `dvmm-web/src/api/vm-requests.ts`
@@ -420,6 +427,19 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 **Test Files:**
 - `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/ResilientProvisioningServiceTest.kt`
+- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt`
+- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmware/VsphereErrorTest.kt`
+- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/GetMyRequestsHandlerTest.kt`
+- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/GetPendingRequestsHandlerTest.kt`
+- `dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateTest.kt`
+- `dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateProgressTest.kt`
+- `dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
 - `dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapterSagaCompensationTest.kt`
+- `dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerTest.kt`
+- `dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/VmRequestControllerTest.kt`
 
-- Ultimate context engine analysis completed - comprehensive developer guide created on 2025-12-11.
+**Documentation Files (VCF SDK enum convention warning):**
+- `CLAUDE.md`
+- `GEMINI.md`
+- `AGENTS.md`
+- `docs/project-context.md`
