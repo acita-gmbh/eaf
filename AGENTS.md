@@ -2,586 +2,107 @@
 
 This file provides guidance for AI coding assistants (OpenAI Codex, GitHub Copilot, Cursor, etc.) when working with this repository.
 
-## Project Overview
+## Specialized Guides
 
-**EAF/DVMM** is a Gradle multi-module monorepo with two main component groups:
+Read these guides when working on specific areas:
+- **[Backend Patterns](docs/claude-guides/backend-patterns.md)** - MockK, Coroutines, Event Sourcing, CQRS
+- **[Frontend Patterns](docs/claude-guides/frontend-patterns.md)** - React 19, Vitest, Playwright, TanStack Query
+- **[VMware Patterns](docs/claude-guides/vmware-patterns.md)** - VCF SDK 9.0 integration
+- **[Docker/jOOQ Setup](docs/claude-guides/docker-jooq-setup.md)** - Docker Compose, jOOQ generation, PostgreSQL
 
-- **EAF** (`eaf/`) - Enterprise Application Framework (reusable, zero product dependencies)
-- **DVMM** (`dvmm/`) - Dynamic Virtual Machine Manager (product modules)
+---
 
 ## Build Commands
 
 ```bash
-# Pre-push gate (runs ktlint, Detekt, Konsist, unit & integration tests)
-./gradlew clean build
-
-# Run tests only
-./gradlew test
-
-# Single module build
-./gradlew :dvmm:dvmm-app:build
-./gradlew :eaf:eaf-core:build
-
-# Code coverage (70% minimum)
-./gradlew koverHtmlReport          # Per-module reports
-./gradlew :koverHtmlReport         # Merged report (root)
-./gradlew koverVerify              # Verify 70% threshold
-
-# Mutation testing (70% threshold)
-./gradlew pitest
+./gradlew clean build           # Full build (ktlint, Detekt, Konsist, tests)
+./gradlew test                  # Run all tests
+./gradlew koverVerify           # Verify 70% coverage threshold
+./gradlew pitest                # Mutation testing (70% threshold)
 ```
 
-## Module Structure
+## Architecture Overview
 
-### EAF Framework (`eaf/`)
-| Module | Purpose |
-|--------|---------|
-| `eaf-core` | Domain primitives (Entity, AggregateRoot, ValueObject, DomainEvent) |
-| `eaf-eventsourcing` | Event Store interfaces, projection base classes |
-| `eaf-tenant` | Multi-tenancy with PostgreSQL RLS |
-| `eaf-auth` | IdP-agnostic authentication interfaces |
-| `eaf-auth-keycloak` | Keycloak implementation (reusable across products) |
-| `eaf-testing` | Test utilities (InMemoryEventStore, TestClock) |
+**Gradle multi-module monorepo** with two component groups:
 
-### DVMM Product (`dvmm/`)
-| Module | Purpose | Constraints |
-|--------|---------|-------------|
-| `dvmm-domain` | Business logic, aggregates | NO Spring dependencies |
-| `dvmm-application` | Use cases, command/query handlers | - |
-| `dvmm-api` | REST controllers, DTOs | - |
-| `dvmm-infrastructure` | Persistence, external integrations | - |
-| `dvmm-app` | Spring Boot entry point | - |
+### EAF (Enterprise Application Framework) - `eaf/`
+Reusable framework with **zero product dependencies**:
+- `eaf-core` - Domain primitives (Entity, AggregateRoot, ValueObject, DomainEvent)
+- `eaf-eventsourcing` - Event Store interfaces and projections
+- `eaf-tenant` - Multi-tenancy with PostgreSQL RLS
+- `eaf-auth` - IdP-agnostic authentication interfaces
+- `eaf-auth-keycloak` - Keycloak implementation
+- `eaf-testing` - Test utilities (InMemoryEventStore, TestClock)
 
-## Critical Architecture Rules
+### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
+Product modules following **Hexagonal Architecture**:
+- `dvmm-domain` - Business logic (NO Spring dependencies)
+- `dvmm-application` - Use cases, command/query handlers
+- `dvmm-api` - REST controllers, DTOs
+- `dvmm-infrastructure` - Persistence, external integrations
+- `dvmm-app` - Spring Boot entry point
 
-**These rules are enforced by Konsist tests and CI will block violations:**
+### Build Logic - `build-logic/`
+Convention plugins: `eaf.kotlin-conventions`, `eaf.spring-conventions`, `eaf.test-conventions`, `eaf.pitest-conventions`
 
-1. **EAF modules MUST NOT import from `de.acci.dvmm.*`**
-2. **DVMM modules CAN import from `de.acci.eaf.*`**
-3. **`dvmm-domain` MUST NOT import from `org.springframework.*`**
+## Critical Architecture Rules (ADR-001)
+
+**Enforced by Konsist tests in `ArchitectureTest.kt`:**
+- EAF modules MUST NOT import from `de.acci.dvmm.*`
+- DVMM modules CAN import from `de.acci.eaf.*`
+- `dvmm-domain` MUST NOT import from `org.springframework.*`
+- Detail query handlers MUST have `Forbidden` error type
 
 ## Tech Stack
 
-- **Kotlin 2.2** with context parameters (`-Xcontext-parameters`)
+- **Kotlin 2.2** with context parameters
 - **Spring Boot 3.5** with WebFlux/Coroutines
-- **Gradle 9.2** with Version Catalog (`gradle/libs.versions.toml`)
 - **PostgreSQL** with Row-Level Security
-- **jOOQ 3.20** with Testcontainers + Flyway for type-safe SQL generation
+- **jOOQ 3.20** for type-safe SQL
 - **JUnit 6** + MockK + Testcontainers
 - **Konsist** for architecture testing
-- **Pitest** for mutation testing
+- **Pitest + Arcmutate** for mutation testing
 
-### MockK Unit Testing Patterns
+---
 
-**Use `any()` for ALL parameters when stubbing functions with default arguments.**
+## Zero-Tolerance Policies
 
-When stubbing Kotlin functions that have default parameters, MockK evaluates default values at stub setup time, not at call time:
-
+### Code Style
 ```kotlin
-// Given a handler with a default parameter:
-public suspend fun handle(
-    command: RejectVmRequestCommand,
-    correlationId: CorrelationId = CorrelationId.generate()  // Default generates UUID
-)
-
-// ❌ WRONG - MockK evaluates the default at setup time
-coEvery { handler.handle(any()) } returns result.success()
-
-// ✅ CORRECT - Explicitly match ALL parameters
-coEvery { handler.handle(any(), any()) } returns result.success()
-```
-
-### Coroutine Event Listener Patterns
-
-**Launch handlers independently** when multiple handlers react to the same event:
-
-```kotlin
-// ✅ CORRECT - Handlers execute independently
-@EventListener
-fun onEvent(event: SomeEvent) {
-    scope.launch {
-        try { handlerA.handle(event) }
-        catch (e: Exception) { logger.error(e) { "Handler A failed" } }
-    }
-    scope.launch {
-        try { handlerB.handle(event) }
-        catch (e: Exception) { logger.error(e) { "Handler B failed" } }
-    }
-}
-
-// ❌ WRONG - Handler B blocked if Handler A fails
-@EventListener
-fun onEvent(event: SomeEvent) {
-    scope.launch {
-        handlerA.handle(event)
-        handlerB.handle(event)  // Never runs if A throws!
-    }
-}
-```
-
-**Rationale:** In eventual consistency architectures, handlers should be independent. Failure of one shouldn't prevent others from executing.
-
-### Coroutine CancellationException Handling
-
-**NEVER catch `CancellationException` with a broad `catch (e: Exception)` - always rethrow it.**
-
-Kotlin's structured concurrency uses `CancellationException` to propagate cancellation. Catching it breaks cancellation:
-
-```kotlin
-// ❌ WRONG - Swallows coroutine cancellation
-private suspend fun doWork() {
-    try {
-        eventStore.append(aggregateId, events, version)
-    } catch (e: Exception) {
-        logger.error(e) { "Failed" }
-        return  // CancellationException caught and not rethrown!
-    }
-}
-
-// ✅ CORRECT - Explicitly rethrow CancellationException
-import kotlin.coroutines.cancellation.CancellationException
-
-private suspend fun doWork() {
-    try {
-        eventStore.append(aggregateId, events, version)
-    } catch (e: CancellationException) {
-        throw e  // Allow proper coroutine cancellation
-    } catch (e: Exception) {
-        logger.error(e) { "Failed" }
-        return
-    }
-}
-```
-
-**Why:** CancellationException is used by `withTimeout`, `Job.cancel()`, and scope cancellation. Catching it prevents parent coroutines from being notified, and resources may not clean up properly.
-
-### Event Sourcing Defensive Patterns
-
-**Always check for empty event lists when loading events to determine `expectedVersion`.**
-
-```kotlin
-// ✅ CORRECT - Check for empty events before using size
-val currentEvents = eventStore.load(aggregateId)
-if (currentEvents.isEmpty()) {
-    logger.error { "Cannot append: aggregate $aggregateId not found" }
-    return
-}
-val expectedVersion = currentEvents.size.toLong()
-
-// ❌ WRONG - Empty list silently becomes expectedVersion = 0
-val currentEvents = eventStore.load(aggregateId)
-val expectedVersion = currentEvents.size.toLong()  // 0 if empty!
-```
-
-**Why empty results are dangerous:**
-1. Aggregate doesn't exist (data corruption)
-2. Race condition deleted events
-3. Wrong aggregate ID passed
-
-Failing silently with `expectedVersion = 0` causes concurrency conflicts.
-
-**When adding new domain events, ALWAYS update event deserializers.**
-
-```kotlin
-// In *EventDeserializer.resolveEventClass():
-"VmRequestProvisioningStarted" -> VmRequestProvisioningStarted::class.java  // Don't forget!
-```
-
-**Checklist for new domain events:**
-1. Create event class in `dvmm-domain/.../events/`
-2. Add case to `resolveEventClass()` in deserializer
-3. Add deserialization test
-4. If aggregate handles event, add `apply()` method
-
-Without deserializer registration, aggregate loads throw `IllegalArgumentException: Unknown event type`.
-
-### CQRS Command Handler Pattern
-
-**Command handlers must update BOTH write-side AND read-side together.**
-
-In CQRS/Event Sourcing, the write-side (event store) and read-side (projections) are separate. Command handlers must update both:
-
-```kotlin
-// ✅ CORRECT - Update BOTH write-side and read-side
-public suspend fun handle(command: MarkProvisioningCommand): Result<Unit, Error> {
-    // 1. Write-side: Persist domain event
-    aggregate.markProvisioning(metadata)
-    eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
-
-    // 2. Read-side: Update projection (timeline, status views)
-    timelineUpdater.addTimelineEvent(NewTimelineEvent(
-        eventType = TimelineEventType.PROVISIONING_STARTED,
-        details = "VM provisioning has started"
-    ))
-    return Unit.success()
-}
-
-// ❌ WRONG - Only updates write-side, forgets read-side projection
-eventStore.append(aggregate.id.value, aggregate.uncommittedEvents, expectedVersion)
-// Missing: timelineUpdater.addTimelineEvent(...) ← Users won't see state change!
-```
-
-**Why this matters:** Write-side is easy to verify (event persisted), but read-side (timeline events, status views) is easy to forget. Acceptance criteria like "Timeline event added" won't be satisfied.
-
-**Reference implementations:** `CreateVmRequestHandler`, `ApproveVmRequestHandler`, `MarkVmRequestProvisioningHandler`
-
-### CQRS Partial Failure Observability
-
-When operations span multiple aggregates, use "CRITICAL" prefix + full context for alerting and reconciliation:
-
-```kotlin
-// ✅ CORRECT - Detailed logging for partial failures
-logger.error {
-    "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
-        "after VM $vmId was already marked provisioned. " +
-        "System may be in inconsistent state. Error: ${error}"
-}
-```
-
-**Why:** Partial success (aggregate A updated, aggregate B failed) is silent without proper logging. "CRITICAL" enables alerting; both IDs help operators reconcile.
-
-### VMware VCF SDK 9.0 Patterns
-
-The project uses **VCF SDK 9.0** for VMware vCenter integration.
-
-**Key Patterns:**
-- **PropertyCollector:** Fetch properties via `PropertySpec` + `ObjectSpec` + `FilterSpec`
-- **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
-- **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
-- **Timeout Layering:** When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Example: `createVm = clone (~60s) + IP detection (120s) = needs 5 min outer timeout`
-- **Enum Conventions (AI False Positive Risk):** VCF SDK 9.0 uses **UPPER_SNAKE_CASE** enums (`POWERED_ON`, `POWERED_OFF`, `SUSPENDED`), NOT legacy camelCase (`poweredOn`). AI tools may suggest wrong casing based on outdated vim25 docs. Verify against actual binary.
-
-```kotlin
-// SearchIndex navigation
-val clusterRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/host/MyCluster")
-val datastoreRef = vimPort.findByInventoryPath(searchIndex, "MyDatacenter/datastore/MyDatastore")
-```
-
-## Frontend (dvmm-web)
-
-The frontend is a **React 19 + TypeScript + Vite** application at `dvmm/dvmm-web/`.
-
-### Frontend Commands
-
-```bash
-cd dvmm/dvmm-web
-
-npm run dev          # Start dev server (port 5173)
-npm run build        # Type-check and build for production
-npm run test         # Run Vitest unit tests
-npm run test:e2e     # Run Playwright E2E tests
-npm run lint         # Run ESLint
-```
-
-### Key Constraints
-
-- **React Compiler** handles memoization - manual `useMemo`/`useCallback`/`memo` is PROHIBITED
-- Use function components with TypeScript - class components are FORBIDDEN
-- **React Hook Form:** Use `useWatch` instead of `watch()` for React Compiler compatibility
-- **Test files MUST be colocated** with source (e.g., `Button.test.tsx` next to `Button.tsx`) - `__tests__` directories are FORBIDDEN
-
-```tsx
-// FORBIDDEN - watch() causes React Compiler lint warnings
-const { watch } = useForm()
-const value = watch('fieldName')
-
-// CORRECT - useWatch is React Compiler compatible
-import { useForm, useWatch } from 'react-hook-form'
-const { control } = useForm()
-const value = useWatch({ control, name: 'fieldName' })
-```
-
-### Floating Promises and the `void` Operator
-
-**All promises must be explicitly handled - either awaited or marked as fire-and-forget with `void`.**
-
-```tsx
-// FORBIDDEN - Floating promise (ESLint error)
-const handleClick = () => {
-  navigate('/dashboard')  // Returns Promise in React Router v6!
-}
-
-// CORRECT - Use `void` for fire-and-forget
-const handleClick = () => {
-  void navigate('/dashboard')
-}
-```
-
-**Common patterns requiring `void`:**
-```tsx
-void navigate('/path')                                      // React Router v6
-void queryClient.invalidateQueries({ queryKey: ['data'] })  // TanStack Query
-void refetch()                                              // TanStack Query
-void auth.signinRedirect({ state: { returnTo: '/' } })      // OIDC
-```
-
-**Rationale:** React Router v6's `navigate()` returns a Promise (unlike v5). ESLint rule `@typescript-eslint/no-floating-promises` catches these at compile time.
-
-### E2E Testing with Playwright
-
-Use **@seontechnologies/playwright-utils** fixtures for consistent patterns:
-
-```tsx
-// Use playwright-utils fixtures for API requests
-import { test } from '@seontechnologies/playwright-utils/fixtures'
-
-test('creates VM request', async ({ apiRequest }) => {
-  const { status } = await apiRequest({
-    method: 'POST',
-    path: '/api/vm-requests',
-    data: { vmName: 'web-01', cpuCores: 4 }
-  })
-  expect(status).toBe(201)
-})
-```
-
-```tsx
-// Use recurse for polling async conditions
-import { recurse } from '@seontechnologies/playwright-utils/recurse'
-
-const result = await recurse(
-  () => page.locator('[data-testid="status"]').textContent(),
-  (text) => text === 'Provisioned',
-  { timeout: 30000 }
-)
-```
-
-**Key features:** `apiRequest` fixture, `recurse` polling, `log` integration, network interception, auth session persistence.
-
-**Security: Avoid dynamic RegExp in E2E tests (CWE-1333 ReDoS)**
-
-```tsx
-// FORBIDDEN - Dynamic RegExp can cause ReDoS
-await expect(page).toHaveURL(new RegExp(`/admin/requests/${requestId}`))
-
-// CORRECT - String literal with interpolation
-await expect(page).toHaveURL(`/admin/requests/${requestId}`)
-```
-
-**ESLint enforces this:** The `security/detect-non-literal-regexp` rule blocks dynamic RegExp construction.
-
-### Vitest Unit Testing Patterns
-
-**Module mocking:** Use `vi.hoisted()` to ensure mocks exist before ES module imports:
-
-```tsx
-const mockUseAuth = vi.hoisted(() => vi.fn(() => ({ user: { access_token: 'token' } })))
-vi.mock('react-oidc-context', () => ({ useAuth: mockUseAuth }))
-```
-
-**Sequential responses:** Use `mockResolvedValueOnce()` for deterministic refetch/retry tests:
-
-```tsx
-mockGetData.mockResolvedValueOnce({ status: 'PENDING' }).mockResolvedValueOnce({ status: 'APPROVED' })
-```
-
-### TanStack Query Polling
-
-For real-time data (admin queues, dashboards), use both `staleTime` AND `refetchInterval`:
-
-```tsx
-useQuery({
-  staleTime: 10000,  // Stale after 10s (triggers refetch on access)
-  refetchInterval: 30000 + Math.floor(Math.random() * 5000), // Jitter prevents thundering herd
-  refetchIntervalInBackground: false,
-})
-```
-
-## Docker Compose (E2E Environment)
-
-The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
-
-```
-docker/
-├── eaf/                    # EAF infrastructure (reusable by future products)
-│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
-└── dvmm/                   # DVMM product services
-    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
-    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
-```
-
-### Quick Start
-
-```bash
-# 1. Build backend JAR first (jOOQ needs Docker access on host)
-./gradlew :dvmm:dvmm-app:bootJar -x test
-
-# 2. Start everything (postgres, keycloak, backend, frontend)
-docker compose -f docker/dvmm/docker-compose.yml up -d
-
-# 3. Wait for services (or use --wait flag)
-docker compose -f docker/dvmm/docker-compose.yml ps
-
-# 4. Run E2E tests
-cd dvmm/dvmm-web && npm run test:e2e
-
-# 5. Stop and clean up
-docker compose -f docker/dvmm/docker-compose.yml down -v
-```
-
-### Development Mode (Backend on Host)
-
-For debugging with hot-reload, run only infrastructure containers:
-
-```bash
-# Start only postgres + keycloak
-docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
-
-# Run backend on host with debugger
-./gradlew :dvmm:dvmm-app:bootRun
-
-# Run frontend on host
-cd dvmm/dvmm-web && npm run dev
-```
-
-### Service Ports
-
-| Service | Port | URL |
-|---------|------|-----|
-| PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eaf_test` |
-| Keycloak | 8180 | http://localhost:8180 |
-| Backend | 8080 | http://localhost:8080 |
-| Frontend | 5173 | http://localhost:5173 |
-
-### Credentials
-
-- **PostgreSQL:** `eaf` / `eaf` (database: `eaf_test`)
-- **Keycloak Admin:** `admin` / `admin`
-- **Test Users:** See `eaf/eaf-testing/src/main/resources/test-realm.json`
-
-## jOOQ Code Generation
-
-jOOQ uses **Testcontainers + Flyway** to generate code from a real PostgreSQL database with production-identical schema.
-
-```bash
-# Regenerate jOOQ code
-./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
-# Or simply build (runs automatically before compileKotlin)
-./gradlew :dvmm:dvmm-infrastructure:compileKotlin
-```
-
-### Adding New Tables
-
-**Just add the Flyway migration - no additional files needed!**
-
-1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
-2. Use PostgreSQL-native types (JSONB, TIMESTAMPTZ, UUID, etc.) - they all work
-3. Use quoted uppercase identifiers for consistency
-4. Include RLS policies with both `USING` AND `WITH CHECK`
-5. Build to regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
-
-**Checklist:** Flyway migration + RLS WITH CHECK + regenerate (automatic) + integration tests for FK + tests pass.
-
-**FK Constraints in Tests:** When adding FK constraints, test helpers must create parent records first using `ON CONFLICT DO NOTHING` for idempotency. Cleanup should use `TRUNCATE ... CASCADE`.
-
-**PostgreSQL Types:** `JSONB` → `org.jooq.JSONB` (use `.jsonb()` to create, `.data()` to read)
-
-### Projection Column Symmetry (CRITICAL)
-
-**CQRS projection repositories must handle all columns symmetrically in both read and write operations.**
-
-When adding a new column to a projection table:
-1. Add the column to the Flyway migration
-2. Regenerate jOOQ code (automatic on build)
-3. Add the column to `mapRecord()` (read path)
-4. Add the column to `insert()` (write path)
-5. **Compile fails if any step is missed** - use sealed class pattern
-
-```kotlin
-sealed interface ProjectionColumns {
-    data object Id : ProjectionColumns
-    data object NewColumn : ProjectionColumns  // Add new columns here
-    companion object { val all = listOf(Id, NewColumn) }
-}
-
-// Exhaustive when expressions force handling all columns
-private fun mapColumn(record: Record, column: ProjectionColumns) = when (column) {
-    ProjectionColumns.Id -> record.get(TABLE.ID)
-    ProjectionColumns.NewColumn -> record.get(TABLE.NEW_COLUMN)  // Compiler forces this
-}
-```
-
-**See:** `VmRequestProjectionRepository.kt` for the reference implementation.
-
-## Code Style Requirements
-
-### Imports
-```kotlin
-// CORRECT - Explicit imports
+// Explicit imports (NO wildcards)
 import de.acci.eaf.core.domain.AggregateRoot
-import de.acci.eaf.core.domain.DomainEvent
 
-// FORBIDDEN - Wildcard imports
-import de.acci.eaf.core.domain.*
+// Named arguments for >2 parameters
+val request = VmRequest.create(tenantId = tenantId, requesterId = userId, vmName = "web-01")
 ```
 
-### Named Arguments
-```kotlin
-// CORRECT - Named arguments for >2 parameters
-val request = VmRequest.create(
-    tenantId = tenantId,
-    requesterId = userId,
-    vmName = "web-server-01",
-    cpuCores = 4,
-    memoryGb = 16
-)
-
-// FORBIDDEN - Positional arguments for >2 parameters
-val request = VmRequest.create(tenantId, userId, "web-server-01", 4, 16)
-```
-
-### Error Handling
-```kotlin
-// CORRECT - Domain-specific exceptions with context
-throw VmProvisioningException(
-    vmRequestId = requestId,
-    reason = VmProvisioningFailure.RESOURCE_EXHAUSTED,
-    details = "vCenter cluster 'prod-01' has insufficient memory"
-)
-
-// FORBIDDEN - Generic exceptions
-throw RuntimeException("VM creation failed")
-```
-
-### Security Patterns (Multi-Tenant)
-
-**Resource access errors MUST return 404 to prevent tenant enumeration:**
-
-```kotlin
-// CORRECT - Return 404 for both NotFound and Forbidden
-when (result.error) {
-    is NotFound, is Forbidden -> ResponseEntity.notFound().build()
-}
-// Log actual error for audit
-logger.warn { "Access error: ${result.error}" }
-
-// FORBIDDEN - Returning 403 reveals resource exists in another tenant
-```
-
-### Dependency Injection
-```kotlin
-// CORRECT - Constructor injection (testable)
-class VmService(
-    private val httpClient: HttpClient
-)
-
-// FORBIDDEN - Hard-coded dependencies (untestable)
-class VmService {
-    private val httpClient = HttpClient.newHttpClient()
-}
-```
-
-## Testing Requirements
-
+### Testing Requirements
 - Write tests BEFORE implementation (Tests First)
-- Achieve ≥70% line coverage per module
-- Achieve ≥70% mutation score (Pitest)
+- ≥70% line coverage per module
+- ≥70% mutation score (Pitest)
 - Run `./gradlew clean build` before committing
 
-### Test Order for New Features
-1. Integration test (proves feature works end-to-end)
-2. Unit tests (prove individual components)
-3. Implementation
+### Security (Multi-Tenant)
+**Return 404 for Forbidden errors to prevent tenant enumeration:**
+```kotlin
+when (result.error) {
+    is NotFound -> ResponseEntity.notFound().build()
+    is Forbidden -> ResponseEntity.notFound().build()  // NOT 403!
+}
+logger.warn { "Access denied: ${result.error}" }  // Log for audit
+```
+
+---
+
+## Anti-Patterns (PROHIBITED)
+
+1. **Deferred Architectural Decisions** - No "TODO: decide later" comments
+2. **Untestable Code** - Use constructor injection, not hard-coded dependencies
+3. **Missing Error Context** - Use domain-specific exceptions with full context
+4. **Silent Failures** - Log errors with context, rethrow appropriately
+5. **Parameter Bag Anti-Pattern** - Don't create entities with invalid state; use value objects
+
+---
 
 ## Git Conventions
 
@@ -589,57 +110,32 @@ class VmService {
 ```
 <type>: <description>
 
-[optional body]
+Types: feat, fix, docs, refactor, test, chore
 ```
-
-**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-
-**Rules:**
-- Lowercase type and description
-- No period at end
-- Under 72 characters
-- Reference Jira: `[DVMM-123] feat: ...`
 
 ### Branch Naming
-| Pattern | Example |
-|---------|---------|
-| `feature/<story-id>-<description>` | `feature/story-1.2-eaf-core-module` |
-| `fix/<issue>-<description>` | `fix/tenant-leak-in-projections` |
-| `docs/<description>` | `docs/claude-md-setup` |
+- `feature/<story-id>-<description>`
+- `fix/<issue>-<description>`
 
-## Anti-Patterns to Avoid
+---
 
-1. **Deferred architectural decisions** - Decide NOW or raise blocking issue
-2. **Untestable code** - Always use constructor injection
-3. **Silent failures** - Log with context and re-throw appropriately
-4. **Over-engineering** - Keep it simple until complexity is needed
-5. **Copy-paste without understanding** - Adapt code to specific context
-6. **Parameter bag (entities with invalid state)** - Never create entities with placeholder/invalid values just to pass parameters. Create a dedicated value object instead:
+## Project Documentation
 
-```kotlin
-// FORBIDDEN - Entity with invalid state
-val config = VmwareConfiguration(passwordEncrypted = ByteArray(0), ...)
+| Document | Purpose |
+|----------|---------|
+| [PRD](docs/prd.md) | Requirements (90 FRs + 95 NFRs) |
+| [Architecture](docs/architecture.md) | System design, ADRs |
+| [Epics](docs/epics.md) | 5 Epics, 51 Stories |
+| [Sprint Status](docs/sprint-artifacts/sprint-status.yaml) | Story tracking |
 
-// REQUIRED - Value object with only needed fields
-val params = VcenterConnectionParams(vcenterUrl = url, username = user, ...)
-```
+---
 
-**Why:** Entities should NEVER exist in invalid states. Value objects preserve invariants and make APIs type-safe.
+## Quick Reference
 
-## Quality Gates
-
-| Gate | Threshold | Enforcement |
-|------|-----------|-------------|
-| Test Coverage | ≥70% | CI blocks merge |
-| Mutation Score | ≥70% | CI blocks merge |
-| Architecture Tests | All pass | CI blocks merge |
-| Security Scan | Zero critical | CI blocks merge |
-
-## Key Documentation
-
-| Document | Path |
-|----------|------|
-| Architecture | `docs/architecture.md` |
-| PRD | `docs/prd.md` |
-| Sprint Status | `docs/sprint-artifacts/sprint-status.yaml` |
-| Test Design | `docs/test-design-system.md` |
+| Action | Command |
+|--------|---------|
+| Build all | `./gradlew clean build` |
+| Run tests | `./gradlew test` |
+| Coverage report | `./gradlew :koverHtmlReport` |
+| Mutation testing | `./gradlew pitest` |
+| Architecture tests | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
