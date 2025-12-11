@@ -1,10 +1,14 @@
 package de.acci.dvmm.application.vm
 
 import de.acci.dvmm.application.vmrequest.NewTimelineEvent
+import de.acci.dvmm.application.vmrequest.ProvisioningFailedAdminNotification
+import de.acci.dvmm.application.vmrequest.ProvisioningFailedUserNotification
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
+import de.acci.dvmm.application.vmrequest.logNotificationError
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
@@ -19,8 +23,9 @@ import de.acci.dvmm.domain.vm.events.VmProvisioned
 import de.acci.dvmm.domain.vmrequest.VmRequestAggregate
 import de.acci.dvmm.domain.vmrequest.events.VmRequestReady
 import de.acci.eaf.core.result.Result
-import de.acci.eaf.eventsourcing.EventMetadata
+import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventStore
+import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Instant
 import java.util.UUID
@@ -48,7 +53,10 @@ public class TriggerProvisioningHandler(
     private val vmRequestEventDeserializer: VmRequestEventDeserializer,
     private val timelineUpdater: TimelineEventProjectionUpdater,
     private val vmRequestReadRepository: VmRequestReadRepository,
-    private val progressRepository: VmProvisioningProgressProjectionRepository
+    private val progressRepository: VmProvisioningProgressProjectionRepository,
+    private val notificationSender: VmRequestNotificationSender,
+    /** Admin email for provisioning failure alerts (AC-3.6.5). Null disables admin notifications. */
+    private val adminNotificationEmail: String? = null
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -116,9 +124,8 @@ public class TriggerProvisioningHandler(
             }
             is Result.Failure -> {
                 val error = result.error
-                val reason = "vSphere provisioning failed: $error"
                 logger.error { "Failed to initiate provisioning for $prefixedVmName: $error" }
-                emitFailure(event, reason)
+                emitFailure(event, error)
             }
         }
     }
@@ -339,11 +346,59 @@ public class TriggerProvisioningHandler(
         return parts.joinToString(", ")
     }
 
+    /**
+     * Emits failure event with enhanced error information from VsphereError (AC-3.6.3).
+     *
+     * Extracts user-friendly error code and message from the VsphereError type.
+     */
+    private suspend fun emitFailure(event: VmProvisioningStarted, error: VsphereError) {
+        val errorCode = error.errorCode.name
+        val userMessage = error.userMessage
+        // Note: retryCount would come from Resilience4j context in full implementation.
+        // For now, set to 1 since retries happen transparently inside HypervisorPort.
+        val retryCount = 1
+        val lastAttemptAt = Instant.now()
+
+        emitFailureInternal(
+            event = event,
+            reason = userMessage,
+            errorCode = errorCode,
+            errorMessage = userMessage,
+            retryCount = retryCount,
+            lastAttemptAt = lastAttemptAt
+        )
+    }
+
+    /**
+     * Emits failure event with a simple reason string (for non-vSphere errors).
+     */
     private suspend fun emitFailure(event: VmProvisioningStarted, reason: String) {
+        emitFailureInternal(
+            event = event,
+            reason = reason,
+            errorCode = "UNKNOWN",
+            errorMessage = reason,
+            retryCount = 1,
+            lastAttemptAt = Instant.now()
+        )
+    }
+
+    private suspend fun emitFailureInternal(
+        event: VmProvisioningStarted,
+        reason: String,
+        errorCode: String,
+        errorMessage: String,
+        retryCount: Int,
+        lastAttemptAt: Instant
+    ) {
         val failedEvent = VmProvisioningFailed(
             aggregateId = event.aggregateId,
             requestId = event.requestId,
             reason = reason,
+            errorCode = errorCode,
+            errorMessage = errorMessage,
+            retryCount = retryCount,
+            lastAttemptAt = lastAttemptAt,
             metadata = event.metadata
         )
 
@@ -360,7 +415,7 @@ public class TriggerProvisioningHandler(
             // Step 1: Load current version to handle potential concurrent modifications
             val currentEvents = eventStore.load(event.aggregateId.value)
             if (currentEvents.isEmpty()) {
-                logger.error { "[Step 1/2] Cannot emit VmProvisioningFailed: aggregate ${event.aggregateId.value} not found in event store" }
+                logger.error { "[Step 1/4] Cannot emit VmProvisioningFailed: aggregate ${event.aggregateId.value} not found in event store" }
                 return
             }
             val currentVersion = currentEvents.size.toLong()
@@ -371,9 +426,9 @@ public class TriggerProvisioningHandler(
                 expectedVersion = currentVersion
             )
             when (result) {
-                is Result.Success -> logger.info { "[Step 1/2] Emitted VmProvisioningFailed for VM ${event.aggregateId.value}" }
+                is Result.Success -> logger.info { "[Step 1/4] Emitted VmProvisioningFailed for VM ${event.aggregateId.value}" }
                 is Result.Failure -> {
-                    logger.error { "[Step 1/2] Failed to emit VmProvisioningFailed: ${result.error}" }
+                    logger.error { "[Step 1/4] Failed to emit VmProvisioningFailed: ${result.error}" }
                     return
                 }
             }
@@ -381,7 +436,7 @@ public class TriggerProvisioningHandler(
             // Rethrow CancellationException to allow proper coroutine cancellation
             throw e
         } catch (e: Exception) {
-            logger.error(e) { "[Step 1/2] Failed to emit VmProvisioningFailed event for VM ${event.aggregateId.value}" }
+            logger.error(e) { "[Step 1/4] Failed to emit VmProvisioningFailed event for VM ${event.aggregateId.value}" }
             return
         }
 
@@ -400,13 +455,124 @@ public class TriggerProvisioningHandler(
                 )
             )
             when (timelineResult) {
-                is Result.Success -> logger.info { "[Step 2/2] Added PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
-                is Result.Failure -> logger.error { "[Step 2/2] Failed to add PROVISIONING_FAILED timeline: ${timelineResult.error}" }
+                is Result.Success -> logger.info { "[Step 2/4] Added PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
+                is Result.Failure -> logger.error { "[Step 2/4] Failed to add PROVISIONING_FAILED timeline: ${timelineResult.error}" }
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.error(e) { "[Step 2/2] Failed to add PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
+            logger.error(e) { "[Step 2/4] Failed to add PROVISIONING_FAILED timeline event for request ${event.requestId.value}" }
+        }
+
+        // Step 3 & 4: Send failure notifications (AC-3.6.5)
+        sendFailureNotifications(
+            event = event,
+            errorCode = errorCode,
+            errorMessage = errorMessage,
+            retryCount = retryCount
+        )
+    }
+
+    /**
+     * Sends provisioning failure notifications to user and admin (AC-3.6.5).
+     *
+     * - User notification: user-friendly error message
+     * - Admin notification: technical details for troubleshooting
+     *
+     * Notification failures are logged but do not fail the overall operation.
+     */
+    private suspend fun sendFailureNotifications(
+        event: VmProvisioningStarted,
+        errorCode: String,
+        errorMessage: String,
+        retryCount: Int
+    ) {
+        // Load request details for notification context
+        val requestDetails = try {
+            vmRequestReadRepository.findById(event.requestId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "[Step 3/4] Failed to load request details for notifications, skipping" }
+            return
+        }
+
+        if (requestDetails == null) {
+            logger.warn { "[Step 3/4] Request ${event.requestId.value} not found, skipping notifications" }
+            return
+        }
+
+        val requesterEmail = requestDetails.requesterEmail
+        if (requesterEmail == null) {
+            logger.warn { "[Step 3/4] No requester email for request ${event.requestId.value}, skipping user notification" }
+        } else {
+            // Step 3: Send user notification with user-friendly error
+            try {
+                val userNotification = ProvisioningFailedUserNotification(
+                    requestId = event.requestId,
+                    tenantId = event.metadata.tenantId,
+                    requesterEmail = EmailAddress.of(requesterEmail),
+                    vmName = requestDetails.vmName,
+                    projectName = requestDetails.projectName,
+                    errorMessage = errorMessage,
+                    errorCode = errorCode
+                )
+
+                val userResult = notificationSender.sendProvisioningFailedUserNotification(userNotification)
+                when (userResult) {
+                    is Result.Success -> logger.info {
+                        "[Step 3/4] Sent provisioning failed notification to user $requesterEmail"
+                    }
+                    is Result.Failure -> logger.logNotificationError(
+                        notificationError = userResult.error,
+                        requestId = event.requestId,
+                        correlationId = event.metadata.correlationId,
+                        action = "ProvisioningFailed (user)"
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.error(e) { "[Step 3/4] Failed to send user notification for request ${event.requestId.value}" }
+            }
+        }
+
+        // Step 4: Send admin notification with technical details
+        if (adminNotificationEmail == null) {
+            logger.debug { "[Step 4/4] Admin notification email not configured, skipping admin notification" }
+            return
+        }
+
+        try {
+            val adminNotification = ProvisioningFailedAdminNotification(
+                requestId = event.requestId,
+                tenantId = event.metadata.tenantId,
+                adminEmail = EmailAddress.of(adminNotificationEmail),
+                vmName = requestDetails.vmName,
+                projectName = requestDetails.projectName,
+                errorMessage = errorMessage,
+                errorCode = errorCode,
+                retryCount = retryCount,
+                correlationId = event.metadata.correlationId,
+                requesterEmail = requesterEmail ?: "unknown"
+            )
+
+            val adminResult = notificationSender.sendProvisioningFailedAdminNotification(adminNotification)
+            when (adminResult) {
+                is Result.Success -> logger.info {
+                    "[Step 4/4] Sent provisioning failed notification to admin $adminNotificationEmail"
+                }
+                is Result.Failure -> logger.logNotificationError(
+                    notificationError = adminResult.error,
+                    requestId = event.requestId,
+                    correlationId = event.metadata.correlationId,
+                    action = "ProvisioningFailed (admin)"
+                )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "[Step 4/4] Failed to send admin notification for request ${event.requestId.value}" }
         }
     }
 }

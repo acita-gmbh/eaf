@@ -1,5 +1,7 @@
 package de.acci.dvmm.infrastructure.notification
 
+import de.acci.dvmm.application.vmrequest.ProvisioningFailedAdminNotification
+import de.acci.dvmm.application.vmrequest.ProvisioningFailedUserNotification
 import de.acci.dvmm.application.vmrequest.RequestApprovedNotification
 import de.acci.dvmm.application.vmrequest.RequestCreatedNotification
 import de.acci.dvmm.application.vmrequest.RequestRejectedNotification
@@ -119,6 +121,64 @@ public class VmRequestNotificationSenderAdapter(
         ).mapToNotificationError(TEMPLATE_REJECTED)
     }
 
+    override suspend fun sendProvisioningFailedUserNotification(
+        notification: ProvisioningFailedUserNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        val context = mapOf(
+            "requestId" to notification.requestId.value.toString(),
+            "vmName" to notification.vmName,
+            "projectName" to notification.projectName,
+            "errorMessage" to notification.errorMessage,
+            "errorCode" to notification.errorCode
+        )
+
+        logger.debug {
+            "Sending provisioning failed (user) notification: " +
+                "requestId=${notification.requestId.value}, " +
+                "to=${notification.requesterEmail.value}, " +
+                "errorCode=${notification.errorCode}"
+        }
+
+        return notificationService.sendEmail(
+            tenantId = notification.tenantId,
+            recipient = notification.requesterEmail,
+            subject = "VM Provisioning Failed: ${notification.vmName}",
+            templateName = TEMPLATE_PROVISIONING_FAILED_USER,
+            context = context
+        ).mapToNotificationError(TEMPLATE_PROVISIONING_FAILED_USER)
+    }
+
+    override suspend fun sendProvisioningFailedAdminNotification(
+        notification: ProvisioningFailedAdminNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        val context = mapOf(
+            "requestId" to notification.requestId.value.toString(),
+            "vmName" to notification.vmName,
+            "projectName" to notification.projectName,
+            "errorMessage" to notification.errorMessage,
+            "errorCode" to notification.errorCode,
+            "retryCount" to notification.retryCount.toString(),
+            "correlationId" to notification.correlationId.value.toString(),
+            "requesterEmail" to notification.requesterEmail
+        )
+
+        logger.debug {
+            "Sending provisioning failed (admin) notification: " +
+                "requestId=${notification.requestId.value}, " +
+                "to=${notification.adminEmail.value}, " +
+                "errorCode=${notification.errorCode}, " +
+                "correlationId=${notification.correlationId.value}"
+        }
+
+        return notificationService.sendEmail(
+            tenantId = notification.tenantId,
+            recipient = notification.adminEmail,
+            subject = "[ADMIN] VM Provisioning Failed: ${notification.vmName}",
+            templateName = TEMPLATE_PROVISIONING_FAILED_ADMIN,
+            context = context
+        ).mapToNotificationError(TEMPLATE_PROVISIONING_FAILED_ADMIN)
+    }
+
     /**
      * Map NotificationService errors to VmRequestNotificationError.
      */
@@ -152,5 +212,7 @@ public class VmRequestNotificationSenderAdapter(
         const val TEMPLATE_CREATED = "vm-request-created"
         const val TEMPLATE_APPROVED = "vm-request-approved"
         const val TEMPLATE_REJECTED = "vm-request-rejected"
+        const val TEMPLATE_PROVISIONING_FAILED_USER = "vm-provisioning-failed-user"
+        const val TEMPLATE_PROVISIONING_FAILED_ADMIN = "vm-provisioning-failed-admin"
     }
 }

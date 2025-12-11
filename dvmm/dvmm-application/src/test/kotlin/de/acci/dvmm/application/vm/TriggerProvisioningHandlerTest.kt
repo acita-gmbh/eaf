@@ -1,9 +1,11 @@
 package de.acci.dvmm.application.vm
 
 import de.acci.dvmm.application.vmrequest.NewTimelineEvent
+import de.acci.dvmm.application.vmrequest.NoOpVmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
+import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.application.vmware.VmSpec
@@ -59,6 +61,7 @@ class TriggerProvisioningHandlerTest {
     private val timelineUpdater = mockk<TimelineEventProjectionUpdater>()
     private val vmRequestReadRepository = mockk<VmRequestReadRepository>()
     private val progressRepository = mockk<VmProvisioningProgressProjectionRepository>(relaxed = true)
+    private val notificationSender: VmRequestNotificationSender = NoOpVmRequestNotificationSender
 
     private fun createHandler() = TriggerProvisioningHandler(
         hypervisorPort = hypervisorPort,
@@ -68,7 +71,8 @@ class TriggerProvisioningHandlerTest {
         vmRequestEventDeserializer = vmRequestEventDeserializer,
         timelineUpdater = timelineUpdater,
         vmRequestReadRepository = vmRequestReadRepository,
-        progressRepository = progressRepository
+        progressRepository = progressRepository,
+        notificationSender = notificationSender
     )
 
     private fun createProvisioningResult(
@@ -114,12 +118,14 @@ class TriggerProvisioningHandlerTest {
 
     private fun createVmRequestSummary(
         id: VmRequestId,
-        projectName: String = "My Project"
+        projectName: String = "My Project",
+        requesterEmail: String? = "user@example.com"
     ): VmRequestSummary = VmRequestSummary(
         id = id,
         tenantId = TenantId.generate(),
         requesterId = UserId.generate(),
         requesterName = "User",
+        requesterEmail = requesterEmail,
         projectId = ProjectId.generate(),
         projectName = projectName,
         vmName = "web-server",
@@ -353,6 +359,9 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
@@ -407,6 +416,9 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
@@ -426,7 +438,7 @@ class TriggerProvisioningHandlerTest {
     inner class VsphereFailure {
 
         @Test
-        fun `should emit VmProvisioningFailed when vSphere call fails`() = runTest {
+        fun `should emit VmProvisioningFailed with AC-3-6-3 enhanced error info`() = runTest {
             // Given
             val tenantId = TenantId.generate()
             val userId = UserId.generate()
@@ -463,6 +475,9 @@ class TriggerProvisioningHandlerTest {
                 )
             } returns 2L.success()
 
+            // Mock timeline updater (called in emitFailureInternal)
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
             val handler = createHandler()
 
             // When
@@ -475,7 +490,13 @@ class TriggerProvisioningHandlerTest {
             val failedEvent = eventsSlot.captured.single() as VmProvisioningFailed
             assertEquals(event.aggregateId, failedEvent.aggregateId)
             assertEquals(event.requestId, failedEvent.requestId)
-            assertTrue(failedEvent.reason.contains("vSphere provisioning failed"))
+            // AC-3.6.3: Verify enhanced error information
+            assertEquals("VMWARE_TOOLS_TIMEOUT", failedEvent.errorCode)
+            assertEquals("VM started but tools didn't respond. Please restart the VM.", failedEvent.errorMessage)
+            assertEquals(1, failedEvent.retryCount)
+            assertTrue(failedEvent.lastAttemptAt != null)
+            // Legacy reason field is populated with user message
+            assertEquals(failedEvent.errorMessage, failedEvent.reason)
         }
     }
 
@@ -560,7 +581,8 @@ class TriggerProvisioningHandlerTest {
                 vmRequestEventDeserializer = vmRequestEventDeserializer,
                 timelineUpdater = timelineUpdater,
                 vmRequestReadRepository = vmRequestReadRepository,
-                progressRepository = nonRelaxedProgressRepository
+                progressRepository = nonRelaxedProgressRepository,
+                notificationSender = notificationSender
             )
 
             // When
@@ -642,7 +664,8 @@ class TriggerProvisioningHandlerTest {
                 vmRequestEventDeserializer = vmRequestEventDeserializer,
                 timelineUpdater = timelineUpdater,
                 vmRequestReadRepository = vmRequestReadRepository,
-                progressRepository = nonRelaxedProgressRepository
+                progressRepository = nonRelaxedProgressRepository,
+                notificationSender = notificationSender
             )
 
             // When

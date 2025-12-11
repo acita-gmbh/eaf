@@ -534,6 +534,9 @@ public class VsphereClient(
 
         val config = configPort.findByTenantId(tenantId) ?: return@executeResilient VsphereError.ProvisioningError("Configuration not found").failure()
 
+        // Saga compensation: Track partial VM for cleanup on failure
+        var partialVmRef: ManagedObjectReference? = null
+
         withContext(Dispatchers.IO) {
             try {
                 val vimPort = session.vimPort
@@ -587,6 +590,8 @@ public class VsphereClient(
 
                 val info = getTaskInfo(session, task)
                 val vmRef = info.result as ManagedObjectReference
+                // Track for saga compensation - VM now exists in vCenter
+                partialVmRef = vmRef
                 val vmwareVmId = VmwareVmId.of(vmRef.value)
                 logger.info { "Clone task completed, VM created: ${vmRef.value}" }
 
@@ -600,6 +605,9 @@ public class VsphereClient(
                 // Signal provisioning complete (matches VcsimAdapter contract)
                 onProgress(VmProvisioningStage.READY)
 
+                // Success - clear partial VM tracker (no cleanup needed)
+                partialVmRef = null
+
                 VmProvisioningResult(
                     vmwareVmId = vmwareVmId,
                     ipAddress = ipDetectionResult.ipAddress,
@@ -608,11 +616,70 @@ public class VsphereClient(
                 ).success()
 
             } catch (e: CancellationException) {
+                // Saga compensation: cleanup partial VM on cancellation
+                partialVmRef?.let { vmRef ->
+                    cleanupPartialVm(session, vmRef, spec.name, "coroutine cancellation")
+                }
                 throw e  // Allow proper coroutine cancellation
             } catch (e: Exception) {
-                logger.error(e) { "Clone failed: ${e.message}" }
-                VsphereError.ProvisioningError("Clone failed", e).failure()
+                // Saga compensation: cleanup partial VM on failure
+                partialVmRef?.let { vmRef ->
+                    cleanupPartialVm(session, vmRef, spec.name, e.message ?: "unknown error")
+                }
+                logger.error(e) { "VM provisioning failed: ${e.message}" }
+                VsphereError.ProvisioningError("VM provisioning failed", e).failure()
             }
+        }
+    }
+
+    /**
+     * Saga compensation: Delete a partially created VM to prevent orphaned resources.
+     *
+     * This method is called when provisioning fails after the VM clone has completed
+     * but before the entire process succeeds. It ensures we don't leave orphaned VMs
+     * in vCenter that consume resources but aren't tracked by our system.
+     *
+     * @param session Active vSphere session
+     * @param vmRef ManagedObjectReference to the partial VM
+     * @param vmName VM name for logging
+     * @param failureReason Reason for the cleanup (for logging)
+     */
+    private suspend fun cleanupPartialVm(
+        session: VsphereSession,
+        vmRef: ManagedObjectReference,
+        vmName: String,
+        failureReason: String
+    ) {
+        try {
+            logger.info { "Saga compensation: Cleaning up partial VM '${vmRef.value}' ($vmName) due to: $failureReason" }
+
+            // Power off first if running (destroyTask requires VM to be powered off)
+            val powerState = getProperty(session, vmRef, "runtime.powerState") as? String
+            if (powerState == "poweredOn") {
+                logger.debug { "Powering off VM '${vmRef.value}' before deletion" }
+                val powerOffTask = session.vimPort.powerOffVMTask(vmRef)
+                waitForTask(session, powerOffTask, timeoutMs = 60_000) // 1 minute timeout for power off
+            }
+
+            // Delete the VM
+            val destroyTask = session.vimPort.destroyTask(vmRef)
+            waitForTask(session, destroyTask, timeoutMs = 60_000) // 1 minute timeout for destroy
+
+            logger.info { "Saga compensation: Successfully cleaned up partial VM '${vmRef.value}' ($vmName)" }
+        } catch (e: CancellationException) {
+            // Don't swallow cancellation, but log the cleanup failure
+            logger.error {
+                "CRITICAL: Saga compensation interrupted during cleanup of partial VM '${vmRef.value}' ($vmName). " +
+                    "Manual cleanup may be required in vCenter."
+            }
+            throw e
+        } catch (e: Exception) {
+            // Cleanup failed - log with CRITICAL prefix for alerting
+            logger.error(e) {
+                "CRITICAL: Failed to cleanup partial VM '${vmRef.value}' ($vmName). " +
+                    "Manual cleanup required in vCenter. Original failure: $failureReason"
+            }
+            // Don't rethrow - we want to return the original error, not the cleanup error
         }
     }
 

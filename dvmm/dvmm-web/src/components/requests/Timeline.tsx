@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   CheckCircle,
   XCircle,
   Clock,
@@ -60,6 +61,11 @@ const eventConfig: Record<
     colorClass: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-950',
     label: 'Queued for Provisioning',
   },
+  PROVISIONING_FAILED: {
+    icon: AlertCircle,
+    colorClass: 'text-red-500 bg-red-100 dark:bg-red-950',
+    label: 'Provisioning Failed',
+  },
   VM_READY: {
     icon: Server,
     colorClass: 'text-green-500 bg-green-100 dark:bg-green-950',
@@ -68,10 +74,23 @@ const eventConfig: Record<
 }
 
 /**
- * Parses event details JSON to extract rejection/cancellation reason.
+ * Parses event details to extract displayable reason/message.
+ * - For REJECTED/CANCELLED: expects JSON with { reason: string }
+ * - For PROVISIONING_FAILED: plain text error message
+ * - For other events: returns null
  */
-function parseEventReason(details: string | null): string | null {
+function parseEventDetails(
+  eventType: TimelineEventType,
+  details: string | null
+): string | null {
   if (!details) return null
+
+  // PROVISIONING_FAILED stores plain text user-friendly error message
+  if (eventType === 'PROVISIONING_FAILED') {
+    return details
+  }
+
+  // REJECTED/CANCELLED store JSON with reason field
   try {
     const parsed = JSON.parse(details)
     return parsed.reason ?? null
@@ -106,7 +125,7 @@ export function Timeline({ events }: Readonly<TimelineProps>) {
         const config = eventConfig[event.eventType]
         const Icon = config.icon
         const isLast = index === events.length - 1
-        const reason = parseEventReason(event.details)
+        const reason = parseEventDetails(event.eventType, event.details)
 
         return (
           <div
@@ -155,10 +174,11 @@ export function Timeline({ events }: Readonly<TimelineProps>) {
 
               {reason && (
                 <p
-                  className="text-sm text-muted-foreground mt-2 italic"
+                  className={`text-sm mt-2 italic ${event.eventType === 'PROVISIONING_FAILED' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
                   data-testid="timeline-event-reason"
                 >
-                  Reason: {reason}
+                  {event.eventType === 'PROVISIONING_FAILED' ? 'Error: ' : 'Reason: '}
+                  {reason}
                 </p>
               )}
             </div>

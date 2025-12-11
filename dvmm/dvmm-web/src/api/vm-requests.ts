@@ -487,6 +487,7 @@ export type TimelineEventType =
   | 'CANCELLED'
   | 'PROVISIONING_STARTED'
   | 'PROVISIONING_QUEUED'
+  | 'PROVISIONING_FAILED'
   | 'VM_READY'
 
 /**
