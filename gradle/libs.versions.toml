@@ -35,7 +35,7 @@ kotlinLogging = "7.0.13"
 bouncycastle = "1.83"
 resilience4j = "2.3.0"
 # CVE-2024-47554: commons-io < 2.14.0 is vulnerable to DoS via XmlStreamReader
-# Force 2.18.0 to override vulnerable transitive dependencies from testcontainers-keycloak
+# Force 2.21.0 to override vulnerable transitive dependencies from testcontainers-keycloak
 commons-io = "2.21.0"
 
 [libraries]
