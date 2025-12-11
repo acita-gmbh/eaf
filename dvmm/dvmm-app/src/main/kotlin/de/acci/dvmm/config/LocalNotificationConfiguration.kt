@@ -46,8 +46,6 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 public class LocalNotificationConfiguration {
 
-    private val logger = KotlinLogging.logger {}
-
     /**
      * Fallback NotificationService that logs email content instead of sending.
      *
@@ -55,21 +53,23 @@ public class LocalNotificationConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(NotificationService::class)
-    public fun loggingNotificationService(): NotificationService {
-        logger.warn {
-            "No SMTP configured - using logging-only NotificationService. " +
-                "Emails will NOT be sent. Configure spring.mail.* to enable real email sending."
-        }
-        return LoggingNotificationService()
-    }
+    public fun loggingNotificationService(): NotificationService = LoggingNotificationService()
 
     /**
      * NotificationService implementation that logs email content for local development.
      *
      * Useful for verifying email content and template rendering without SMTP.
+     * Logs a startup warning and then logs each email that would be sent.
      */
     private class LoggingNotificationService : NotificationService {
         private val logger = KotlinLogging.logger {}
+
+        init {
+            logger.warn {
+                "No SMTP configured - using logging-only NotificationService. " +
+                    "Emails will NOT be sent. Configure spring.mail.* to enable real email sending."
+            }
+        }
 
         override suspend fun sendEmail(
             tenantId: TenantId,
