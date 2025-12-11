@@ -78,6 +78,7 @@ public class LocalNotificationConfiguration {
             templateName: String,
             context: Map<String, Any>
         ): Result<Unit, NotificationError> {
+            val sanitizedContext = sanitizeContext(context)
             logger.info {
                 """
                 |╔════════════════════════════════════════════════════════════════════
@@ -87,11 +88,39 @@ public class LocalNotificationConfiguration {
                 |║ Subject: $subject
                 |║ Template: $templateName
                 |║ Tenant: ${tenantId.value}
-                |║ Context: $context
+                |║ Context: $sanitizedContext
                 |╚════════════════════════════════════════════════════════════════════
                 """.trimMargin()
             }
             return Unit.success()
+        }
+
+        /**
+         * Sanitize context map by redacting values for sensitive keys.
+         *
+         * Filters out keys containing common sensitive patterns (password, token, secret, etc.)
+         * to prevent accidental exposure in logs, even in local/CI environments.
+         */
+        private fun sanitizeContext(context: Map<String, Any>): Map<String, Any> {
+            return context.mapValues { (key, value) ->
+                if (SENSITIVE_KEY_PATTERNS.any { pattern -> key.lowercase().contains(pattern) }) {
+                    "[REDACTED]"
+                } else {
+                    value
+                }
+            }
+        }
+
+        private companion object {
+            /** Patterns for sensitive keys that should be redacted from logs */
+            val SENSITIVE_KEY_PATTERNS = listOf(
+                "password",
+                "token",
+                "secret",
+                "credential",
+                "apikey",
+                "api_key"
+            )
         }
     }
 }
