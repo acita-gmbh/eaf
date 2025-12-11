@@ -14,6 +14,10 @@ import de.acci.dvmm.application.vmrequest.GetMyRequestsQuery
 import de.acci.dvmm.application.vmrequest.GetRequestDetailError
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailQuery
+import de.acci.dvmm.application.vmrequest.SyncVmStatusCommand
+import de.acci.dvmm.application.vmrequest.SyncVmStatusError
+import de.acci.dvmm.application.vmrequest.SyncVmStatusHandler
+import de.acci.dvmm.application.vmrequest.SyncVmStatusResult
 import de.acci.dvmm.application.vmrequest.TimelineEventItem
 import de.acci.dvmm.application.vmrequest.TimelineEventType
 import de.acci.dvmm.application.vmrequest.VmRequestDetail
@@ -54,6 +58,7 @@ class VmRequestControllerTest {
     private val getMyRequestsHandler = mockk<GetMyRequestsHandler>()
     private val cancelHandler = mockk<CancelVmRequestHandler>()
     private val getRequestDetailHandler = mockk<GetRequestDetailHandler>()
+    private val syncVmStatusHandler = mockk<SyncVmStatusHandler>()
     private lateinit var controller: VmRequestController
     private val testTenantId = TenantId.generate()
 
@@ -63,7 +68,8 @@ class VmRequestControllerTest {
             createVmRequestHandler = createHandler,
             getMyRequestsHandler = getMyRequestsHandler,
             cancelVmRequestHandler = cancelHandler,
-            getRequestDetailHandler = getRequestDetailHandler
+            getRequestDetailHandler = getRequestDetailHandler,
+            syncVmStatusHandler = syncVmStatusHandler
         )
     }
 
@@ -848,6 +854,200 @@ class VmRequestControllerTest {
                     request = null,
                     jwt = jwt
                 )
+            }
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+            val body = response.body as InternalErrorResponse
+            assertEquals("internal_error", body.type)
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/requests/{id}/sync-status")
+    inner class SyncVmStatusTests {
+
+        @Test
+        @DisplayName("should return 200 OK with synced status on success")
+        fun `should return 200 OK with synced status on success`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusResult(
+                requestId = requestId,
+                powerState = "POWERED_ON",
+                ipAddress = "192.168.1.100"
+            ).success()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            val body = response.body as SyncVmStatusResponse
+            assertEquals(requestId.value.toString(), body.requestId)
+            assertEquals("POWERED_ON", body.powerState)
+            assertEquals("192.168.1.100", body.ipAddress)
+        }
+
+        @Test
+        @DisplayName("should pass correct command parameters to handler")
+        fun `should pass correct command parameters to handler`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val userId = UUID.randomUUID().toString()
+            val jwt = createJwt(subject = userId)
+            val commandSlot = slot<SyncVmStatusCommand>()
+
+            coEvery {
+                syncVmStatusHandler.handle(capture(commandSlot))
+            } returns SyncVmStatusResult(
+                requestId = requestId,
+                powerState = "POWERED_ON",
+                ipAddress = null
+            ).success()
+
+            // When
+            withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            val command = commandSlot.captured
+            assertEquals(testTenantId, command.tenantId)
+            assertEquals(requestId, command.requestId)
+            assertEquals(userId, command.userId.value.toString())
+        }
+
+        @Test
+        @DisplayName("should return 400 for invalid request ID format")
+        fun `should return 400 for invalid request ID format`() = runTest {
+            // Given
+            val jwt = createJwt()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = "not-a-valid-uuid", jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            val body = response.body as ValidationErrorResponse
+            assertTrue(body.errors.any { it.field == "id" })
+        }
+
+        @Test
+        @DisplayName("should return 404 when request not found")
+        fun `should return 404 when request not found`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusError.NotFound(requestId).failure()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 404 when user is not authorized (security: prevent enumeration)")
+        fun `should return 404 when user is not authorized`() = runTest {
+            // Given: Security pattern - return 404 instead of 403 to prevent resource enumeration
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusError.Forbidden(requestId).failure()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then: Returns 404 (not 403) per security guidelines
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 409 when VM is not provisioned yet")
+        fun `should return 409 when VM is not provisioned yet`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusError.NotProvisioned(requestId).failure()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT, response.statusCode)
+            val body = response.body as SyncNotProvisionedResponse
+            assertEquals("not_provisioned", body.type)
+            assertEquals(requestId.value.toString(), body.requestId)
+        }
+
+        @Test
+        @DisplayName("should return 502 when vSphere query fails")
+        fun `should return 502 when vSphere query fails`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusError.HypervisorError(
+                message = "Unable to connect to vCenter"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
+            }
+
+            // Then
+            assertEquals(HttpStatus.BAD_GATEWAY, response.statusCode)
+            val body = response.body as HypervisorErrorResponse
+            assertEquals("hypervisor_error", body.type)
+        }
+
+        @Test
+        @DisplayName("should return 500 for update failure")
+        fun `should return 500 for update failure`() = runTest {
+            // Given
+            val requestId = VmRequestId.generate()
+            val jwt = createJwt()
+
+            coEvery {
+                syncVmStatusHandler.handle(any())
+            } returns SyncVmStatusError.UpdateFailure(
+                message = "Database error"
+            ).failure()
+
+            // When
+            val response = withTenant {
+                controller.syncVmStatus(id = requestId.value.toString(), jwt = jwt)
             }
 
             // Then

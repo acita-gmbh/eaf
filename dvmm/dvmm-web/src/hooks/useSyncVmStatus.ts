@@ -47,6 +47,9 @@ export function useSyncVmStatus(requestId: string, options?: UseSyncVmStatusOpti
     onError: (error) => {
       if (error instanceof ApiError) {
         options?.onError?.(error)
+      } else {
+        // Log non-ApiError exceptions for debugging (e.g., network failures)
+        console.error('Unexpected error syncing VM status:', error)
       }
     },
   })

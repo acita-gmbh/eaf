@@ -314,6 +314,52 @@ class SyncVmStatusHandlerTest {
     }
 
     @Nested
+    @DisplayName("when projection lookup fails with exception")
+    inner class WhenProjectionLookupFails {
+
+        @Test
+        fun `returns UpdateFailure when getRequesterId throws exception`() = runBlocking {
+            // Given: Database error during ownership lookup
+            coEvery { projectionPort.getRequesterId(testRequestId) } throws
+                RuntimeException("Database connection refused")
+
+            // When
+            val result = handler.handle(
+                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is SyncVmStatusError.UpdateFailure)
+            assertTrue(
+                (error as SyncVmStatusError.UpdateFailure).message.contains("Failed to verify ownership")
+            )
+        }
+
+        @Test
+        fun `returns UpdateFailure when getVmwareVmId throws exception`() = runBlocking {
+            // Given: Ownership check passes but VM ID lookup fails
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
+            coEvery { projectionPort.getVmwareVmId(testRequestId) } throws
+                RuntimeException("Database timeout")
+
+            // When
+            val result = handler.handle(
+                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is SyncVmStatusError.UpdateFailure)
+            assertTrue(
+                (error as SyncVmStatusError.UpdateFailure).message.contains("Failed to look up VM")
+            )
+        }
+    }
+
+    @Nested
     @DisplayName("when user is not authorized")
     inner class WhenUserNotAuthorized {
 

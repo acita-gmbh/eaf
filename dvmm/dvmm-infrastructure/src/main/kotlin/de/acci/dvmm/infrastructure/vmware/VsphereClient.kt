@@ -880,7 +880,7 @@ public class VsphereClient(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                logger.debug(e) { "Failed to get VM ${vmId.value}" }
+                logger.warn(e) { "Failed to get VM ${vmId.value}" }
                 VsphereError.ResourceNotFound(
                     resourceType = "VirtualMachine",
                     resourceId = vmId.value,
