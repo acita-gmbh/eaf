@@ -107,7 +107,7 @@ logger.warn { "Access denied: ${result.error}" }  // Log for audit
 ## Git Conventions
 
 ### Commit Messages (Conventional Commits)
-```
+```text
 <type>: <description>
 
 Types: feat, fix, docs, refactor, test, chore

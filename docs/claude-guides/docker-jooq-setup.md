@@ -4,7 +4,7 @@
 
 ## Docker Compose Structure
 
-```
+```text
 docker/
 ├── eaf/                    # EAF infrastructure (PostgreSQL 16 + Keycloak 24.0.1)
 │   └── docker-compose.yml
@@ -47,9 +47,9 @@ cd dvmm/dvmm-web && npm run dev
 | Service    | Port | URL                                          |
 |------------|------|----------------------------------------------|
 | PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eaf_test`  |
-| Keycloak   | 8180 | http://localhost:8180                        |
-| Backend    | 8080 | http://localhost:8080                        |
-| Frontend   | 5173 | http://localhost:5173                        |
+| Keycloak   | 8180 | `http://localhost:8180`                      |
+| Backend    | 8080 | `http://localhost:8080`                      |
+| Frontend   | 5173 | `http://localhost:5173`                      |
 
 **Credentials:** PostgreSQL: `eaf/eaf`, Keycloak Admin: `admin/admin`
 

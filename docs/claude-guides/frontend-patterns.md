@@ -20,7 +20,7 @@ npm run lint         # ESLint
 
 **Tests MUST be colocated with source files.** No `__tests__` directories (vitest ignores them).
 
-```
+```text
 src/components/Button.tsx       # ✅
 src/components/Button.test.tsx  # ✅
 src/components/__tests__/...    # ❌ FORBIDDEN
