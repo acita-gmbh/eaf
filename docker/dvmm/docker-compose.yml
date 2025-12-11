@@ -28,7 +28,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/eaf_test
       SPRING_DATASOURCE_USERNAME: eaf
       SPRING_DATASOURCE_PASSWORD: eaf
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/dvmm
+      # issuer-uri must match the `iss` claim in browser-obtained tokens (127.0.0.1:8180)
+      # jwk-set-uri needs network access from within Docker (use internal keycloak:8080)
+      KEYCLOAK_ISSUER_URI: http://127.0.0.1:8180/realms/dvmm
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/dvmm/protocol/openid-connect/certs
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       # Use a fixed encryption key for E2E testing (not for production!)
