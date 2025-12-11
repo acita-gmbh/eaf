@@ -91,13 +91,13 @@ public class TriggerProvisioningHandler(
             return
         }
 
-        // Generate prefix from project name (uppercase, first 4 chars, safe for VM name)
+        // Generate prefix from project name (uppercase, first N chars, safe for VM name)
         // Example: "My Project" -> "MYPR"
         val projectPrefix = projectInfo.projectName
             .filter { it.isLetterOrDigit() }
-            .take(4)
+            .take(PROJECT_PREFIX_LENGTH)
             .uppercase()
-            .ifBlank { "PROJ" }
+            .ifBlank { DEFAULT_PROJECT_PREFIX }
 
         val prefixedVmName = "$projectPrefix-${event.vmName.value}"
         logger.info { "Provisioning VM with name: $prefixedVmName (Original: ${event.vmName.value}, Project: ${projectInfo.projectName})" }
@@ -612,5 +612,13 @@ public class TriggerProvisioningHandler(
         } catch (e: Exception) {
             logger.error(e) { "[Step 4/4] Failed to send admin notification for request ${event.requestId.value}" }
         }
+    }
+
+    private companion object {
+        /** Maximum length of project name prefix for VM naming (e.g., "MYPR" from "My Project") */
+        const val PROJECT_PREFIX_LENGTH = 4
+
+        /** Default prefix when project name has no valid alphanumeric characters */
+        const val DEFAULT_PROJECT_PREFIX = "PROJ"
     }
 }

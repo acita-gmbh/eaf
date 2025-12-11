@@ -225,7 +225,28 @@ public class VcsimAdapter : HypervisorPort {
     }
 
     /**
-     * Exception wrapper for simulated errors (allows saga compensation testing).
+     * Exception wrapper for simulated vSphere errors during saga compensation testing.
+     *
+     * This exception is thrown during staged error simulation (when [simulateError] is called
+     * with a non-null `afterStage` parameter). It allows testing saga compensation patterns
+     * where a VM is partially created before an error occurs.
+     *
+     * ## Usage in Tests
+     *
+     * ```kotlin
+     * // Simulate error after CLONING stage (VM partially created)
+     * vcsimAdapter.simulateError(
+     *     error = VsphereError.Timeout("VMware Tools timeout"),
+     *     afterStage = VmProvisioningStage.CLONING
+     * )
+     *
+     * // createVm will throw SimulatedVsphereException after CLONING completes
+     * // saga compensation should then delete the partially created VM
+     * ```
+     *
+     * @property error The underlying [VsphereError] that caused the simulated failure
+     * @see simulateError for configuring error simulation
+     * @see clearSimulatedError for resetting simulation state
      */
     public class SimulatedVsphereException(public val error: VsphereError) : RuntimeException(error.message)
 

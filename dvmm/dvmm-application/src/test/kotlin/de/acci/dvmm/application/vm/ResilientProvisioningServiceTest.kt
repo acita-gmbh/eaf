@@ -156,6 +156,23 @@ class ResilientProvisioningServiceTest {
             assertTrue(result is Result.Failure)
             coVerify(exactly = 5) { hypervisorPort.createVm(any(), any()) }
         }
+
+        @Test
+        fun `retries on OperationFailed (transient)`() = runTest {
+            // Given: Operation failures are typically transient
+            coEvery { hypervisorPort.createVm(any(), any()) } returns
+                VsphereError.OperationFailed(
+                    operation = "cloneVm",
+                    details = "Clone task failed temporarily"
+                ).failure()
+
+            // When
+            val result = service.createVmWithRetry(testSpec, "test-correlation")
+
+            // Then
+            assertTrue(result is Result.Failure)
+            coVerify(exactly = 5) { hypervisorPort.createVm(any(), any()) }
+        }
     }
 
     @Nested
