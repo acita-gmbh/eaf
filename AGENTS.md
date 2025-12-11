@@ -249,6 +249,7 @@ The project uses **VCF SDK 9.0** for VMware vCenter integration.
 - **SearchIndex:** Use inventory paths like `datacenter/host/clusterName` to find objects
 - **Port 443:** `VcenterClientFactory` only supports port 443 (use `VcsimAdapter` mock for testing)
 - **Timeout Layering:** When you have nested async operations, the outer timeout MUST be longer than all inner timeouts combined. Example: `createVm = clone (~60s) + IP detection (120s) = needs 5 min outer timeout`
+- **Enum Conventions (AI False Positive Risk):** VCF SDK 9.0 uses **UPPER_SNAKE_CASE** enums (`POWERED_ON`, `POWERED_OFF`, `SUSPENDED`), NOT legacy camelCase (`poweredOn`). AI tools may suggest wrong casing based on outdated vim25 docs. Verify against actual binary.
 
 ```kotlin
 // SearchIndex navigation
