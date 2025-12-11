@@ -77,7 +77,7 @@ Multi-tenant Self-Service Portal for VMware ESXi and Windows VM Provisioning wit
 |----------|------|--------|-------------|
 | **PRD** | `docs/prd.md` | ✅ Loaded | 91 FRs (66 MVP), 94 NFRs |
 | **Architecture** | `docs/architecture.md` | ✅ Loaded | 3 ADRs, Implementation Patterns |
-| **UX Design** | `docs/ux-design-specification.md` | ✅ Loaded | Tech Teal, 4 Screens, 3 Journeys |
+| **UX Design** | `docs/ux/design-specification.md` | ✅ Loaded | Tech Teal, 4 Screens, 3 Journeys |
 | **Epics** | `docs/epics.md` | ✅ Loaded | 5 Epics, 51 Stories |
 | **Test Design** | `docs/test-design-system.md` | ✅ Loaded | 4 Testability Concerns |
 | **Product Brief** | `docs/product-brief-dvmm-2025-11-24.md` | ✅ Loaded | Market Context, Vision |

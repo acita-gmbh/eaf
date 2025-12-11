@@ -1177,7 +1177,7 @@ class GuacamoleConnectionFactoryTest {
 
 ### 7.3 Integration Tests with vcsim Containers-as-VMs
 
-The vcsim containers-as-VMs feature enables realistic end-to-end testing. See [research-vcsim-containers-as-vms.md](research-vcsim-containers-as-vms.md) for detailed documentation.
+The vcsim containers-as-VMs feature enables realistic end-to-end testing. See [vcsim-containers-as-vms.md](vcsim-containers-as-vms.md) for detailed documentation.
 
 ```kotlin
 // GuacamoleVcsimIntegrationTest.kt
@@ -1637,7 +1637,7 @@ server {
 - [Architecture](architecture.md)
 - [Security Architecture](security-architecture.md)
 - [Test Design System](test-design-system.md)
-- [vcsim Containers-as-VMs Research](research-vcsim-containers-as-vms.md)
+- [vcsim Containers-as-VMs Research](vcsim-containers-as-vms.md)
 
 ---
 

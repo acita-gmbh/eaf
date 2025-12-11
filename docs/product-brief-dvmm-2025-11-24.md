@@ -462,7 +462,7 @@ gates:
 
 ### Sources
 
-See `docs/research-market-2025-11-24.md` for complete market research with 30 citations.
+See `docs/research/market-2025-11-24.md` for complete market research with 30 citations.
 
 ---
 

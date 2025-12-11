@@ -83,7 +83,7 @@ This distinction matters: DVMM appears simple to users while hiding significant 
 
 **Input Documents:**
 - Product Brief: `docs/product-brief-dvmm-2025-11-24.md`
-- Market Research: `docs/research-market-2025-11-24.md`
+- Market Research: `docs/research/market-2025-11-24.md`
 - Brainstorming Results: `docs/brainstorming-session-results-2025-11-24.md`
 
 ---
@@ -268,7 +268,7 @@ This de-risks the demo and allows parallel development.
 
 **Phase 4: Multi-Hypervisor Support (Epic 6)**
 
-See `docs/research-multi-hypervisor-support.md` for comprehensive market and technical analysis.
+See `docs/research/multi-hypervisor-support.md` for comprehensive market and technical analysis.
 
 | Feature | Value | Complexity | Priority |
 |---------|-------|------------|----------|

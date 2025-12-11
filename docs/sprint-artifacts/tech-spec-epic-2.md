@@ -1101,7 +1101,7 @@ Story 2.1 is the **first user-facing code** after 11 purely technical foundation
 - [Epic 2 Definition](../epics.md#epic-2-core-workflow)
 - [Architecture](../architecture.md)
 - [PRD](../prd.md)
-- [UX Design Specification](../ux-design-specification.md)
+- [UX Design Specification](../ux/design-specification.md)
 - [Test Design System](../test-design-system.md)
 - [Epic 1 Tech Spec](tech-spec-epic-1.md)
 - [Epic 1 Retrospective](retrospectives/epic-1-foundation-retro.md)

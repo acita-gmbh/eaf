@@ -15,7 +15,7 @@ So that I can specify what I need.
 - **Architecture constraint:** React Hook Form + Zod validation, shadcn-admin-kit patterns
 - **Prerequisites:** Story 2.2 (End User Dashboard Layout) - DONE, Story 2.3 (Empty States) - DONE
 - **Routing Note:** This story introduces React Router to the project (first multi-page navigation)
-- **UX Reference:** `docs/ux-design-specification.md` Section 3 (Visual Foundation), custom VM Size Selector component
+- **UX Reference:** `docs/ux/design-specification.md` Section 3 (Visual Foundation), custom VM Size Selector component
 - **Tech Spec Reference:** `docs/sprint-artifacts/tech-spec-epic-2.md` Section 4.4 (Frontend Architecture)
 - **Existing Code:** Dashboard + layout components in `dvmm/dvmm-web/src/`
 
@@ -701,7 +701,7 @@ export default App
 
 - [Source: docs/epics.md#Story-2.4-VM-Request-Form-Basic-Fields]
 - [Source: docs/sprint-artifacts/tech-spec-epic-2.md#Section-4.4-Frontend-Architecture]
-- [Source: docs/ux-design-specification.md#Section-3-Visual-Foundation]
+- [Source: docs/ux/design-specification.md#Section-3-Visual-Foundation]
 - [Source: docs/sprint-artifacts/2-3-empty-states-onboarding.md#Dev-Agent-Record]
 - [React Hook Form Documentation](https://react-hook-form.com/)
 - [Zod Documentation](https://zod.dev/)
