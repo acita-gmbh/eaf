@@ -23,6 +23,14 @@ public sealed class SyncVmStatusError {
     ) : SyncVmStatusError()
 
     /**
+     * User is not authorized to sync this VM's status (not the requester).
+     */
+    public data class Forbidden(
+        val requestId: VmRequestId,
+        val message: String = "Not authorized to sync status for this VM request"
+    ) : SyncVmStatusError()
+
+    /**
      * VM has not been provisioned yet (no vmwareVmId).
      */
     public data class NotProvisioned(
@@ -65,14 +73,16 @@ public data class SyncVmStatusResult(
  *
  * ## Workflow
  *
- * 1. Look up the VMware VM ID from the projection
- * 2. Query vSphere for current VM status
- * 3. Update the projection with new values
+ * 1. Verify ownership (requesterId == userId)
+ * 2. Look up the VMware VM ID from the projection
+ * 3. Query vSphere for current VM status
+ * 4. Update the projection with new values
  *
  * ## Authorization
  *
- * Currently, any authenticated user can sync status for VMs they can view.
- * The underlying projection query uses RLS to enforce tenant isolation.
+ * Only the original requester can sync status for their own VMs.
+ * - Tenant isolation is enforced by RLS at the database level
+ * - Ownership is verified by checking requesterId == command.userId
  *
  * ## Usage
  *
@@ -105,7 +115,27 @@ public class SyncVmStatusHandler(
 
         logger.debug { "Syncing VM status for request ${requestId.value}" }
 
-        // Step 1: Get VMware VM ID from projection
+        // Step 1: Verify ownership (authorization check)
+        val requesterId = try {
+            projectionPort.getRequesterId(requestId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to look up requesterId for request ${requestId.value}" }
+            return SyncVmStatusError.UpdateFailure("Failed to verify ownership: ${e.message}").failure()
+        }
+
+        if (requesterId == null) {
+            logger.debug { "Request not found: ${requestId.value}" }
+            return SyncVmStatusError.NotFound(requestId).failure()
+        }
+
+        if (requesterId != command.userId) {
+            logger.warn { "User ${command.userId.value} attempted to sync status for request ${requestId.value} owned by ${requesterId.value}" }
+            return SyncVmStatusError.Forbidden(requestId).failure()
+        }
+
+        // Step 2: Get VMware VM ID from projection
         val vmwareVmId = try {
             projectionPort.getVmwareVmId(requestId)
         } catch (e: CancellationException) {
@@ -120,7 +150,7 @@ public class SyncVmStatusHandler(
             return SyncVmStatusError.NotProvisioned(requestId).failure()
         }
 
-        // Step 2: Query vSphere for current VM status
+        // Step 3: Query vSphere for current VM status
         val vmInfo = when (val result = hypervisorPort.getVm(VmId(vmwareVmId))) {
             is Result.Success -> result.value
             is Result.Failure -> {
@@ -131,7 +161,7 @@ public class SyncVmStatusHandler(
             }
         }
 
-        // Step 3: Update the projection with new values
+        // Step 4: Update the projection with new values
         val updatedRows = try {
             projectionPort.updateVmDetails(
                 requestId = requestId,

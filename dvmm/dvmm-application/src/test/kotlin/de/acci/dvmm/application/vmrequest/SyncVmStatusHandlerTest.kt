@@ -63,6 +63,7 @@ class SyncVmStatusHandlerTest {
                 guestOs = "Ubuntu 22.04.3 LTS (64-bit)"
             )
 
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns vmInfo.success()
             coEvery {
@@ -117,6 +118,7 @@ class SyncVmStatusHandlerTest {
                 guestOs = null
             )
 
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns vmInfo.success()
             coEvery {
@@ -158,6 +160,7 @@ class SyncVmStatusHandlerTest {
                 guestOs = "Ubuntu 22.04.3 LTS (64-bit)"
             )
 
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns vmInfo.success()
             coEvery {
@@ -190,6 +193,7 @@ class SyncVmStatusHandlerTest {
         @Test
         fun `returns NotProvisioned error`() = runBlocking {
             // Given: No vmwareVmId in projection (VM not yet provisioned)
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns null
 
             // When
@@ -212,6 +216,7 @@ class SyncVmStatusHandlerTest {
         @Test
         fun `returns HypervisorError when VM not found in vSphere`() = runBlocking {
             // Given
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns
                 VsphereError.ResourceNotFound(
@@ -233,6 +238,7 @@ class SyncVmStatusHandlerTest {
         @Test
         fun `returns HypervisorError on connection failure`() = runBlocking {
             // Given
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns
                 VsphereError.ConnectionError("Network unreachable").failure()
@@ -261,6 +267,7 @@ class SyncVmStatusHandlerTest {
                 powerState = VmPowerState.POWERED_ON
             )
 
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns vmInfo.success()
             coEvery {
@@ -286,6 +293,7 @@ class SyncVmStatusHandlerTest {
                 powerState = VmPowerState.POWERED_ON
             )
 
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
             coEvery { hypervisorPort.getVm(VmId(testVmwareVmId)) } returns vmInfo.success()
             coEvery {
@@ -302,6 +310,46 @@ class SyncVmStatusHandlerTest {
             val error = (result as Result.Failure).error
             assertTrue(error is SyncVmStatusError.UpdateFailure)
             assertTrue((error as SyncVmStatusError.UpdateFailure).message.contains("Database connection lost"))
+        }
+    }
+
+    @Nested
+    @DisplayName("when user is not authorized")
+    inner class WhenUserNotAuthorized {
+
+        @Test
+        fun `returns Forbidden when user is not the requester`() = runBlocking {
+            // Given: Request exists but was created by a different user
+            val differentUserId = UserId(UUID.randomUUID())
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns differentUserId
+
+            // When
+            val result = handler.handle(
+                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is SyncVmStatusError.Forbidden)
+            assertEquals(testRequestId, (error as SyncVmStatusError.Forbidden).requestId)
+        }
+
+        @Test
+        fun `returns NotFound when request does not exist`() = runBlocking {
+            // Given: Request doesn't exist (getRequesterId returns null)
+            coEvery { projectionPort.getRequesterId(testRequestId) } returns null
+
+            // When
+            val result = handler.handle(
+                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+            )
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is SyncVmStatusError.NotFound)
+            assertEquals(testRequestId, (error as SyncVmStatusError.NotFound).requestId)
         }
     }
 }

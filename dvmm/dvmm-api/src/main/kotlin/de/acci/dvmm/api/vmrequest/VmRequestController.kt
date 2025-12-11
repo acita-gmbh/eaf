@@ -440,6 +440,13 @@ public class VmRequestController(
                     NotFoundResponse(message = error.message)
                 )
             }
+            is SyncVmStatusError.Forbidden -> {
+                // Return 404 to prevent resource enumeration (per security guidelines)
+                logger.warn { "User not authorized to sync VM status: ${error.requestId.value}" }
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotFoundResponse(message = "VM request not found")
+                )
+            }
             is SyncVmStatusError.NotProvisioned -> {
                 // Return 409 Conflict - VM not yet ready for status sync
                 ResponseEntity.status(HttpStatus.CONFLICT).body(

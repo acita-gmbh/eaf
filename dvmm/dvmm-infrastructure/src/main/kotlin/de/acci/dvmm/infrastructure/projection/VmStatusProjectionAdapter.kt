@@ -3,6 +3,7 @@ package de.acci.dvmm.infrastructure.projection
 import de.acci.dvmm.application.vmrequest.VmStatusProjectionPort
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.dvmm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Companion.VM_REQUESTS_PROJECTION
+import de.acci.eaf.core.types.UserId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -46,5 +47,13 @@ public class VmStatusProjectionAdapter(
             .from(VM_REQUESTS_PROJECTION)
             .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
             .fetchOne(VM_REQUESTS_PROJECTION.VMWARE_VM_ID)
+    }
+
+    override suspend fun getRequesterId(requestId: VmRequestId): UserId? = withContext(Dispatchers.IO) {
+        dsl.select(VM_REQUESTS_PROJECTION.REQUESTER_ID)
+            .from(VM_REQUESTS_PROJECTION)
+            .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
+            .fetchOne(VM_REQUESTS_PROJECTION.REQUESTER_ID)
+            ?.let { UserId(it) }
     }
 }

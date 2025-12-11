@@ -1,6 +1,7 @@
 package de.acci.dvmm.application.vmrequest
 
 import de.acci.dvmm.domain.vmrequest.VmRequestId
+import de.acci.eaf.core.types.UserId
 import java.time.Instant
 
 /**
@@ -46,4 +47,12 @@ public interface VmStatusProjectionPort {
      * @return The VMware VM ID if the VM has been provisioned, null otherwise
      */
     public suspend fun getVmwareVmId(requestId: VmRequestId): String?
+
+    /**
+     * Get the requester ID for a request (for ownership verification).
+     *
+     * @param requestId The VM request to look up
+     * @return The requester's user ID if the request exists, null otherwise
+     */
+    public suspend fun getRequesterId(requestId: VmRequestId): UserId?
 }
