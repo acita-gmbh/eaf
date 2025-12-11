@@ -142,8 +142,14 @@ public sealed class VsphereError(
             }
     }
 
-    /** Kept for backward compatibility - use ResourceNotFound instead */
-    @Deprecated("Use ResourceNotFound instead", ReplaceWith("ResourceNotFound(message)"))
+    /**
+     * Kept for backward compatibility - use ResourceNotFound instead.
+     * @see ResourceNotFound
+     */
+    @Deprecated(
+        message = "Use ResourceNotFound instead",
+        replaceWith = ReplaceWith("ResourceNotFound(resourceType = \"unknown\", resourceId = message)")
+    )
     public class NotFound(message: String) : VsphereError(message) {
         override val retriable: Boolean = false
         override val userMessage: String = ProvisioningErrorCode.UNKNOWN.userMessage
