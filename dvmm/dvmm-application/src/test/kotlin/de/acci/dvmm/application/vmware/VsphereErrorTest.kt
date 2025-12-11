@@ -177,6 +177,18 @@ class VsphereErrorTest {
         }
 
         @Test
+        fun `OperationFailed for non-network uses generic message`() {
+            val error = VsphereError.OperationFailed(
+                operation = "cloneVm",
+                details = "Clone task failed"
+            )
+            assertEquals(
+                "Unexpected error. IT has been notified.",
+                error.userMessage
+            )
+        }
+
+        @Test
         fun `ApiError has generic user-friendly message`() {
             val error = VsphereError.ApiError("Unknown error")
             assertEquals(
@@ -252,6 +264,15 @@ class VsphereErrorTest {
                 details = "test"
             )
             assertEquals(ProvisioningErrorCode.NETWORK_CONFIG_FAILED, error.errorCode)
+        }
+
+        @Test
+        fun `OperationFailed for non-network has UNKNOWN error code`() {
+            val error = VsphereError.OperationFailed(
+                operation = "cloneVm",
+                details = "Clone task failed"
+            )
+            assertEquals(ProvisioningErrorCode.UNKNOWN, error.errorCode)
         }
 
         @Test
