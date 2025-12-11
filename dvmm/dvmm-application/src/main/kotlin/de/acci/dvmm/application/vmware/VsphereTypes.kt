@@ -234,12 +234,16 @@ public sealed class VsphereError(
      * Retriable for transient failures like network config issues.
      *
      * Corresponds to HypervisorError.OperationFailed in ADR-004a.
+     *
+     * @param operation The operation that failed (e.g., "network config", "disk resize")
+     * @param details Error details describing what went wrong
+     * @param cause Optional underlying exception
      */
     public class OperationFailed(
         public val operation: String,
-        override val message: String,
+        public val details: String,
         cause: Throwable? = null
-    ) : VsphereError("$operation failed: $message", cause) {
+    ) : VsphereError("$operation failed: $details", cause) {
         override val retriable: Boolean = true
         override val userMessage: String
             get() = when {
@@ -271,7 +275,9 @@ public data class VmId(public val value: String)
  * @property template Template name to clone from
  * @property cpu Number of CPU cores
  * @property memoryGb Memory in GB
- * @property diskGb Disk size in GB (if larger than template, disk will be extended)
+ * @property diskGb Disk size in GB. Use 0 (default) to keep the template's disk size.
+ *                  If greater than 0 and larger than the template's disk, the disk will be extended.
+ *                  Values smaller than the template's disk size are ignored (disks cannot shrink).
  */
 public data class VmSpec(
     public val name: String,

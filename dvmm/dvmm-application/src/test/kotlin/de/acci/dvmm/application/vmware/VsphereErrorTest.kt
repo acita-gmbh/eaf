@@ -50,7 +50,7 @@ class VsphereErrorTest {
         fun `OperationFailed is retriable`() {
             val error = VsphereError.OperationFailed(
                 operation = "cloneVm",
-                message = "Clone task failed temporarily"
+                details = "Clone task failed temporarily"
             )
             assertTrue(error.retriable)
         }
@@ -168,7 +168,7 @@ class VsphereErrorTest {
         fun `OperationFailed for network has user-friendly message`() {
             val error = VsphereError.OperationFailed(
                 operation = "configureNetwork",
-                message = "Network configuration failed"
+                details = "Network configuration failed"
             )
             assertEquals(
                 "Network setup failed. IT has been notified.",
@@ -249,7 +249,7 @@ class VsphereErrorTest {
         fun `OperationFailed for network has correct error code`() {
             val error = VsphereError.OperationFailed(
                 operation = "configureNetwork",
-                message = "test"
+                details = "test"
             )
             assertEquals(ProvisioningErrorCode.NETWORK_CONFIG_FAILED, error.errorCode)
         }
