@@ -33,6 +33,12 @@ springBoot {
     mainClass.set("de.acci.dvmm.DvmmApplicationKt")
 }
 
+// Disable plain JAR - only bootJar is needed for deployment
+// This prevents confusion when copying JARs in Docker builds
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
 // =============================================================================
 // KOVER CONFIGURATION - Exclude Spring Boot Main Function from Coverage
 // =============================================================================

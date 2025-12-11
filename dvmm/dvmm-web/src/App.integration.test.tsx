@@ -3,10 +3,10 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuth } from 'react-oidc-context'
-import { ErrorBoundary } from '../components/ErrorBoundary'
-import { DashboardLayout } from '../components/layout'
-import { Dashboard } from '../pages/Dashboard'
-import { NewRequest } from '../pages/NewRequest'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { DashboardLayout } from './components/layout'
+import { Dashboard } from './pages/Dashboard'
+import { NewRequest } from './pages/NewRequest'
 
 // Create a new QueryClient for each test
 function createTestQueryClient() {

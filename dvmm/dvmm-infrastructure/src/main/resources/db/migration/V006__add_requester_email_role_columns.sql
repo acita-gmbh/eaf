@@ -3,10 +3,14 @@
 -- Add requester email and role columns for admin view display
 
 -- Add new columns for requester details (nullable for backward compatibility)
-ALTER TABLE vm_requests_projection
-    ADD COLUMN requester_email VARCHAR(255),
-    ADD COLUMN requester_role VARCHAR(100);
+ALTER TABLE "VM_REQUESTS_PROJECTION"
+    ADD COLUMN "REQUESTER_EMAIL" VARCHAR(255),
+    ADD COLUMN "REQUESTER_ROLE" VARCHAR(100);
+
+-- [jooq ignore start]
+-- PostgreSQL-specific: Comments (not needed for jOOQ code generation)
 
 -- Add comments for new columns
-COMMENT ON COLUMN vm_requests_projection.requester_email IS 'Denormalized requester email for display in admin view';
-COMMENT ON COLUMN vm_requests_projection.requester_role IS 'Denormalized requester role for display in admin view';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REQUESTER_EMAIL" IS 'Denormalized requester email for display in admin view';
+COMMENT ON COLUMN "VM_REQUESTS_PROJECTION"."REQUESTER_ROLE" IS 'Denormalized requester role for display in admin view';
+-- [jooq ignore stop]

@@ -409,6 +409,24 @@ npm run test:e2e     # Run Playwright E2E tests
 npm run lint         # Run ESLint
 ```
 
+### Frontend Test File Convention
+
+**Tests MUST be colocated with their source files.** Do NOT use `__tests__` directories.
+
+```tsx
+// ✅ CORRECT - Test file next to source file
+src/components/Button.tsx
+src/components/Button.test.tsx
+
+// ❌ FORBIDDEN - __tests__ directory (vitest will ignore these)
+src/components/__tests__/Button.test.tsx
+```
+
+**Rationale:**
+- Easier to find tests when they're next to the source
+- IDE navigation works better with colocated files
+- Enforced via `vitest.config.ts` which excludes `**/__tests__/**`
+
 ### React Coding Standards (Zero-Tolerance)
 
 **React Compiler handles memoization automatically. Manual optimization is PROHIBITED.**
@@ -699,55 +717,134 @@ useQuery({
 - Without jitter: 100 admins polling at exactly 30s intervals → 100 simultaneous requests
 - With jitter (`+ Math.random() * 5000`): Requests spread over 5s window, reducing server load spikes
 
+## Docker Compose (E2E Environment)
+
+The project uses **Docker Compose** for local development and E2E testing. Infrastructure is layered:
+
+```
+docker/
+├── eaf/                    # EAF infrastructure (reusable by future products)
+│   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
+└── dvmm/                   # DVMM product services
+    ├── docker-compose.yml  # Includes EAF, adds backend + frontend
+    └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
+```
+
+### Quick Start
+
+```bash
+# 1. Build backend JAR first (jOOQ needs Docker access on host)
+./gradlew :dvmm:dvmm-app:bootJar -x test
+
+# 2. Start everything (postgres, keycloak, backend, frontend)
+docker compose -f docker/dvmm/docker-compose.yml up -d
+
+# 3. Wait for services (or use --wait flag)
+docker compose -f docker/dvmm/docker-compose.yml ps
+
+# 4. Run E2E tests
+cd dvmm/dvmm-web && npm run test:e2e
+
+# 5. Stop and clean up
+docker compose -f docker/dvmm/docker-compose.yml down -v
+```
+
+### Development Mode (Backend on Host)
+
+For debugging with hot-reload, run only infrastructure containers:
+
+```bash
+# Start only postgres + keycloak
+docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+
+# Run backend on host with debugger
+./gradlew :dvmm:dvmm-app:bootRun
+
+# Run frontend on host
+cd dvmm/dvmm-web && npm run dev
+```
+
+### Service Ports
+
+| Service | Port | URL |
+|---------|------|-----|
+| PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eaf_test` |
+| Keycloak | 8180 | http://localhost:8180 |
+| Backend | 8080 | http://localhost:8080 |
+| Frontend | 5173 | http://localhost:5173 |
+
+### Credentials
+
+- **PostgreSQL:** `eaf` / `eaf` (database: `eaf_test`)
+- **Keycloak Admin:** `admin` / `admin`
+- **Test Users:** See `eaf/eaf-testing/src/main/resources/test-realm.json`
+
 ## jOOQ Code Generation
 
-jOOQ generates type-safe Kotlin code from SQL DDL files using **DDLDatabase** (no running database required).
+jOOQ generates type-safe Kotlin code using **Testcontainers + Flyway** to spin up a real PostgreSQL database, run migrations, and generate code from the actual production-identical schema.
+
+### How It Works
+
+1. A custom Gradle task `generateJooqWithTestcontainers` starts a PostgreSQL Testcontainer
+2. Flyway runs all migrations from both `eaf/eaf-eventsourcing/.../db/migration/` and `dvmm/dvmm-infrastructure/.../db/migration/`
+3. jOOQ generates code from the real PostgreSQL schema
+4. The container is stopped after generation
+
+**Benefits:**
+- Single source of truth: Flyway migrations ARE the schema definition
+- No jooq-init.sql to maintain - eliminates synchronization issues
+- Full PostgreSQL compatibility - JSONB, RLS, triggers, functions all work
+- Catches migration errors at build time
+
+**Requirements:**
+- Docker must be running (locally and on CI)
+- Build time increases ~10-15s for container startup
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` | Combined DDL for jOOQ generation |
-| `dvmm/dvmm-infrastructure/build.gradle.kts` | jOOQ Gradle configuration |
+| `dvmm/dvmm-infrastructure/build.gradle.kts` | Custom jOOQ generation task with Testcontainers |
+| `eaf/eaf-eventsourcing/src/main/resources/db/migration/` | EAF framework migrations |
+| `dvmm/dvmm-infrastructure/src/main/resources/db/migration/` | DVMM product migrations |
 
 ### Regenerate jOOQ Code
 
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
+```
+
+Or simply build the project - jOOQ generation runs automatically before `compileKotlin`:
+
+```bash
+./gradlew :dvmm:dvmm-infrastructure:compileKotlin
 ```
 
 ### Adding New Tables
 
-**IMPORTANT:** Two SQL files must be kept in sync - Flyway migrations (production) and jooq-init.sql (code generation).
+**Just add the Flyway migration - no additional files needed!**
 
 1. Add migration to `eaf/eaf-eventsourcing/src/main/resources/db/migration/` or `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
-2. Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL:
-   - Use quoted uppercase identifiers for table/column names (jOOQ DDLDatabase uses H2 which generates uppercase)
+2. Use PostgreSQL-native types (JSONB, TIMESTAMPTZ, UUID, etc.) - they all work
+3. Use quoted uppercase identifiers for table/column names for consistency:
    - Example: `CREATE TABLE "DOMAIN_EVENTS"` not `CREATE TABLE domain_events`
-3. Update `dvmm/dvmm-infrastructure/src/test/resources/db/jooq-init.sql` (test-specific version) if it exists
-4. Wrap PostgreSQL-specific statements with jOOQ ignore tokens:
+4. Include RLS policies with both `USING` AND `WITH CHECK` clauses:
    ```sql
-   -- [jooq ignore start]
-   ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY tenant_isolation ON my_table
+   ALTER TABLE "MY_TABLE" ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY tenant_isolation ON "MY_TABLE"
        FOR ALL
-       USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
-       WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
-   ALTER TABLE my_table FORCE ROW LEVEL SECURITY;
-   GRANT SELECT, INSERT, UPDATE, DELETE ON my_table TO eaf_app;
-   -- [jooq ignore stop]
+       USING ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+       WITH CHECK ("TENANT_ID" = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+   ALTER TABLE "MY_TABLE" FORCE ROW LEVEL SECURITY;
    ```
    **CRITICAL: Always include `WITH CHECK` in RLS policies.** Without it, RLS only filters reads but allows writes to any tenant, enabling cross-tenant data injection.
-5. Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
-6. Verify generated code compiles: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
+5. Build to regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:compileKotlin`
 
 **Checklist before committing:**
 - [ ] Flyway migration created (V00X__*.sql)
-- [ ] jooq-init.sql updated with H2-compatible DDL
-- [ ] PostgreSQL-specific statements wrapped with ignore tokens
 - [ ] RLS policies include both `USING` AND `WITH CHECK` clauses
 - [ ] FK constraints added for related tables (e.g., `REFERENCES parent_table(id) ON DELETE CASCADE`)
-- [ ] jOOQ code regenerated
+- [ ] jOOQ code regenerated (happens automatically on build)
 - [ ] Integration tests updated for FK constraints (see below)
 - [ ] Tests pass with new schema
 
@@ -777,15 +874,28 @@ fun cleanup() {
 }
 ```
 
-### What Gets Ignored
+### PostgreSQL Types in Generated Code
 
-DDLDatabase uses H2 internally, so PostgreSQL-specific statements must be wrapped:
-- RLS: `ENABLE/FORCE ROW LEVEL SECURITY`, `CREATE POLICY`
-- Permissions: `GRANT`, `REVOKE`, `CREATE ROLE`
-- Triggers/Functions: `CREATE TRIGGER`, `CREATE FUNCTION`, `DO $$ ... $$`
-- Comments: `COMMENT ON TABLE/COLUMN`
+Since we now generate from real PostgreSQL, jOOQ correctly types PostgreSQL-specific columns:
 
-These are runtime concerns that don't affect generated jOOQ code.
+| PostgreSQL Type | jOOQ Type | Usage |
+|----------------|-----------|-------|
+| `JSONB` | `org.jooq.JSONB` | Use `JSONB.jsonb(jsonString)` to create, `.data()` to read |
+| `UUID` | `java.util.UUID` | Direct mapping |
+| `TIMESTAMPTZ` | `java.time.OffsetDateTime` | Direct mapping |
+| `BYTEA` | `ByteArray` | Direct mapping |
+
+Example for JSONB columns:
+
+```kotlin
+// Writing JSONB
+val jsonb = JSONB.jsonb("""{"key": "value"}""")
+dsl.insertInto(TABLE).set(TABLE.JSON_COLUMN, jsonb).execute()
+
+// Reading JSONB
+val record = dsl.selectFrom(TABLE).fetchOne()
+val json: String = record.jsonColumn?.data() ?: "{}"
+```
 
 ### Projection Column Symmetry (CRITICAL)
 
@@ -793,7 +903,7 @@ These are runtime concerns that don't affect generated jOOQ code.
 
 When adding a new column to a projection table:
 1. Add the column to the Flyway migration
-2. Add the column to jooq-init.sql
+2. Regenerate jOOQ code (automatic on build)
 3. Add the column to `mapRecord()` (read path)
 4. Add the column to `insert()` (write path)
 5. **Compile fails if any step is missed** - use sealed class pattern

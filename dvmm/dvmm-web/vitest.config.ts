@@ -8,7 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
-    exclude: ['**/node_modules/**', '**/e2e/**'],
+    // Convention: Tests MUST be colocated with source files (e.g., Button.test.tsx next to Button.tsx)
+    // __tests__ directories are explicitly excluded to enforce this pattern
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/__tests__/**'],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',

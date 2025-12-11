@@ -1,0 +1,35 @@
+# DVMM Backend - Runtime-only Dockerfile
+# Expects JAR to be pre-built (jOOQ generation needs host Docker access)
+#
+# Build JAR first:
+#   ./gradlew :dvmm:dvmm-app:bootJar -x test
+#
+# Then build image:
+#   docker compose -f docker/dvmm/docker-compose.yml build backend
+
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Install wget for healthcheck (Alpine doesn't include it by default)
+# Must be done before switching to non-root user
+USER root
+RUN apk add --no-cache wget
+
+# Create non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copy the pre-built bootJar
+# Note: The plain JAR is disabled in dvmm-app/build.gradle.kts, so only bootJar exists
+COPY --chown=spring:spring dvmm/dvmm-app/build/libs/dvmm-app-*-SNAPSHOT.jar app.jar
+
+# Expose the application port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=10 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

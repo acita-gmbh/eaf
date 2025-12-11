@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { DashboardLayout } from '../DashboardLayout'
+import { DashboardLayout } from './DashboardLayout'
 
 // Mock child components to isolate DashboardLayout testing
-vi.mock('../Header', () => ({
+vi.mock('./Header', () => ({
   Header: ({ onMobileMenuToggle }: { onMobileMenuToggle?: () => void }) => (
     <header data-testid="mock-header">
       <button onClick={onMobileMenuToggle} data-testid="mobile-menu-button">
@@ -14,7 +14,7 @@ vi.mock('../Header', () => ({
   ),
 }))
 
-vi.mock('../Sidebar', () => ({
+vi.mock('./Sidebar', () => ({
   Sidebar: ({ className }: { className?: string }) => (
     <aside data-testid="mock-sidebar" className={className}>
       Sidebar
@@ -22,7 +22,7 @@ vi.mock('../Sidebar', () => ({
   ),
 }))
 
-vi.mock('../MobileNav', () => ({
+vi.mock('./MobileNav', () => ({
   MobileNav: ({
     open,
     onOpenChange,

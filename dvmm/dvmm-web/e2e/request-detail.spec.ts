@@ -15,19 +15,18 @@ import { test, expect } from '@playwright/test'
  *
  * ## Running Authenticated Tests
  *
- * Tests marked `test.skip` require authentication setup:
+ * These tests require authentication setup:
  * 1. Start backend: `./gradlew :dvmm:dvmm-app:bootRun`
  * 2. Run auth setup: `npm run test:e2e -- --project=setup`
  * 3. Run tests: `npm run test:e2e -- --project=chromium-user request-detail.spec.ts`
  *
- * In CI, these tests are skipped by default. Enable them by configuring
- * Keycloak Testcontainer in the CI pipeline. See `e2e/README.md` for details.
+ * In CI, these tests are active by default. See `e2e/README.md` for details.
  */
 
 test.describe('Request Detail Page @requires-auth', () => {
   // These tests require authentication via Keycloak
 
-  test.skip('AC-1: clicking request card navigates to detail page', async ({ page }) => {
+  test('AC-1: clicking request card navigates to detail page', async ({ page }) => {
     await page.goto('/requests')
 
     // Wait for request cards to load
@@ -48,7 +47,7 @@ test.describe('Request Detail Page @requires-auth', () => {
     await expect(page.getByTestId('request-detail-page')).toBeVisible()
   })
 
-  test.skip('AC-2: displays full request details', async ({ page }) => {
+  test('AC-2: displays full request details', async ({ page }) => {
     // Navigate directly to a known request detail page
     // (In real tests, this ID would come from test data setup)
     await page.goto('/requests/test-request-id')
@@ -73,7 +72,7 @@ test.describe('Request Detail Page @requires-auth', () => {
     await expect(page.getByTestId('request-detail-created')).toBeVisible()
   })
 
-  test.skip('AC-3: timeline shows chronological history', async ({ page }) => {
+  test('AC-3: timeline shows chronological history', async ({ page }) => {
     await page.goto('/requests/test-request-id')
 
     // Timeline should be visible
@@ -89,7 +88,7 @@ test.describe('Request Detail Page @requires-auth', () => {
     await expect(page.getByTestId('timeline-event-time').first()).toBeVisible()
   })
 
-  test.skip('shows timeline with rejection reason', async ({ page }) => {
+  test('shows timeline with rejection reason', async ({ page }) => {
     // Navigate to a rejected request
     await page.goto('/requests/rejected-request-id')
 
@@ -100,7 +99,7 @@ test.describe('Request Detail Page @requires-auth', () => {
     await expect(page.getByTestId('timeline-event-reason')).toBeVisible()
   })
 
-  test.skip('shows timeline with cancellation reason', async ({ page }) => {
+  test('shows timeline with cancellation reason', async ({ page }) => {
     // Navigate to a cancelled request
     await page.goto('/requests/cancelled-request-id')
 
@@ -114,7 +113,7 @@ test.describe('Request Detail Page @requires-auth', () => {
     }
   })
 
-  test.skip('back button navigates to My Requests', async ({ page }) => {
+  test('back button navigates to My Requests', async ({ page }) => {
     await page.goto('/requests/test-request-id')
 
     // Click back button
@@ -126,7 +125,7 @@ test.describe('Request Detail Page @requires-auth', () => {
 })
 
 test.describe('Request Detail Cancel Action @requires-backend', () => {
-  test.skip('AC-7: shows cancel button for pending requests', async ({ page }) => {
+  test('AC-7: shows cancel button for pending requests', async ({ page }) => {
     // Navigate to a pending request
     await page.goto('/requests/pending-request-id')
 
@@ -134,7 +133,7 @@ test.describe('Request Detail Cancel Action @requires-backend', () => {
     await expect(page.getByTestId('cancel-request-button')).toBeVisible()
   })
 
-  test.skip('does not show cancel button for approved requests', async ({ page }) => {
+  test('does not show cancel button for approved requests', async ({ page }) => {
     // Navigate to an approved request
     await page.goto('/requests/approved-request-id')
 
@@ -142,7 +141,7 @@ test.describe('Request Detail Cancel Action @requires-backend', () => {
     await expect(page.getByTestId('cancel-request-button')).not.toBeVisible()
   })
 
-  test.skip('cancel from detail page updates timeline', async ({ page }) => {
+  test('cancel from detail page updates timeline', async ({ page }) => {
     await page.goto('/requests/pending-request-id')
 
     // Click cancel button
@@ -167,7 +166,7 @@ test.describe('Request Detail Cancel Action @requires-backend', () => {
 })
 
 test.describe('Request Detail Loading & Error States', () => {
-  test.skip('AC-5: shows loading state during data fetch', async ({ page }) => {
+  test('AC-5: shows loading state during data fetch', async ({ page }) => {
     // Intercept and delay the API call
     await page.route('**/api/requests/*', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -180,7 +179,7 @@ test.describe('Request Detail Loading & Error States', () => {
     await expect(page.getByTestId('request-detail-loading')).toBeVisible()
   })
 
-  test.skip('AC-6: shows not found state for invalid request ID', async ({ page }) => {
+  test('AC-6: shows not found state for invalid request ID', async ({ page }) => {
     // Navigate to a non-existent request
     await page.goto('/requests/non-existent-id')
 
@@ -192,7 +191,7 @@ test.describe('Request Detail Loading & Error States', () => {
     await expect(page.getByRole('link', { name: /view my requests/i })).toBeVisible()
   })
 
-  test.skip('AC-6: shows error state on API failure', async ({ page }) => {
+  test('AC-6: shows error state on API failure', async ({ page }) => {
     // Intercept and fail the API call
     await page.route('**/api/requests/*', async (route) => {
       await route.fulfill({
@@ -214,7 +213,7 @@ test.describe('Request Detail Loading & Error States', () => {
 })
 
 test.describe('Request Detail Polling @requires-backend', () => {
-  test.skip('AC-4: polls for updates at 30 second intervals', async ({ page }) => {
+  test('AC-4: polls for updates at 30 second intervals', async ({ page }) => {
     let requestCount = 0
 
     // Count API requests
@@ -255,7 +254,7 @@ test.describe('Request Detail Page - Unauthenticated', () => {
  * Navigation accessibility tests.
  */
 test.describe('Request Detail Accessibility', () => {
-  test.skip('card navigation is keyboard accessible', async ({ page }) => {
+  test('card navigation is keyboard accessible', async ({ page }) => {
     await page.goto('/requests')
 
     // Wait for request cards to load

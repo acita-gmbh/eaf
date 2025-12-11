@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { PendingRequestsTable } from '../PendingRequestsTable'
+import { PendingRequestsTable } from './PendingRequestsTable'
 import type { PendingRequest } from '@/api/admin'
 
 // Mock react-router-dom navigation
