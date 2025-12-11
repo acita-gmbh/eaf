@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @DisplayName("VmAggregate")
 class VmAggregateTest {
@@ -73,14 +74,17 @@ class VmAggregateTest {
     inner class MarkFailed {
 
         @Test
-        fun `should emit VmProvisioningFailed event`() {
+        fun `should emit VmProvisioningFailed event with all AC-3-6-2 fields`() {
             // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
-            val reason = "VMware configuration missing"
+            val errorCode = "CONNECTION_TIMEOUT"
+            val errorMessage = "Temporary connection issue. We will retry automatically."
+            val retryCount = 5
+            val lastAttemptAt = Instant.parse("2025-01-15T10:30:00Z")
 
             // When
-            aggregate.markFailed(reason, metadata)
+            aggregate.markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata)
 
             // Then
             assertEquals(1, aggregate.uncommittedEvents.size)
@@ -88,7 +92,12 @@ class VmAggregateTest {
 
             assertEquals(aggregate.id, event.aggregateId)
             assertEquals(requestId, event.requestId)
-            assertEquals(reason, event.reason)
+            assertEquals(errorCode, event.errorCode)
+            assertEquals(errorMessage, event.errorMessage)
+            assertEquals(retryCount, event.retryCount)
+            assertEquals(lastAttemptAt, event.lastAttemptAt)
+            // Verify legacy field is also populated
+            assertEquals(errorMessage, event.reason)
         }
 
         @Test
@@ -98,6 +107,7 @@ class VmAggregateTest {
             aggregate.clearUncommittedEvents()
 
             // When
+            @Suppress("DEPRECATION")
             aggregate.markFailed("Connection timeout", metadata)
 
             // Then
@@ -105,17 +115,42 @@ class VmAggregateTest {
         }
 
         @Test
-        fun `should store failure reason`() {
+        fun `should store all failure details`() {
+            // Given
+            val aggregate = createProvisioningAggregate()
+            aggregate.clearUncommittedEvents()
+            val errorCode = "INSUFFICIENT_RESOURCES"
+            val errorMessage = "Cluster capacity reached. Please try a smaller size."
+            val retryCount = 3
+            val lastAttemptAt = Instant.parse("2025-01-15T14:00:00Z")
+
+            // When
+            aggregate.markFailed(errorCode, errorMessage, retryCount, lastAttemptAt, metadata)
+
+            // Then
+            assertEquals(errorMessage, aggregate.failureReason)
+            assertEquals(errorCode, aggregate.failureErrorCode)
+            assertEquals(retryCount, aggregate.failureRetryCount)
+            assertEquals(lastAttemptAt, aggregate.failureLastAttemptAt)
+        }
+
+        @Test
+        fun `deprecated markFailed should still work for backward compatibility`() {
             // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
             val reason = "vSphere API error: ResourcePool not found"
 
-            // When
+            // When - using deprecated method
+            @Suppress("DEPRECATION")
             aggregate.markFailed(reason, metadata)
 
-            // Then
+            // Then - should use defaults for new fields
             assertEquals(reason, aggregate.failureReason)
+            assertEquals("UNKNOWN", aggregate.failureErrorCode)
+            assertEquals(1, aggregate.failureRetryCount)
+            // lastAttemptAt is set to current time, just verify it's not null
+            assertEquals(true, aggregate.failureLastAttemptAt != null)
         }
 
         @Test
@@ -123,11 +158,13 @@ class VmAggregateTest {
             // Given
             val aggregate = createProvisioningAggregate()
             aggregate.clearUncommittedEvents()
+            @Suppress("DEPRECATION")
             aggregate.markFailed("First failure", metadata)
             aggregate.clearUncommittedEvents()
 
             // When/Then - check() throws IllegalStateException for state validation
             assertThrows(IllegalStateException::class.java) {
+                @Suppress("DEPRECATION")
                 aggregate.markFailed("Second failure", metadata)
             }
         }
@@ -285,6 +322,7 @@ class VmAggregateTest {
         fun `should reconstitute from VmProvisioningStarted and VmProvisioningFailed`() {
             // Given
             val vmId = VmId.generate()
+            val lastAttemptAt = Instant.parse("2025-01-15T12:00:00Z")
             val startedEvent = VmProvisioningStarted(
                 aggregateId = vmId,
                 requestId = requestId,
@@ -298,6 +336,10 @@ class VmAggregateTest {
                 aggregateId = vmId,
                 requestId = requestId,
                 reason = "Config missing",
+                errorCode = "VM_CONFIG_INVALID",
+                errorMessage = "Config missing",
+                retryCount = 1,
+                lastAttemptAt = lastAttemptAt,
                 metadata = metadata
             )
 
@@ -308,6 +350,9 @@ class VmAggregateTest {
             assertEquals(vmId, aggregate.id)
             assertEquals(VmStatus.FAILED, aggregate.status)
             assertEquals("Config missing", aggregate.failureReason)
+            assertEquals("VM_CONFIG_INVALID", aggregate.failureErrorCode)
+            assertEquals(1, aggregate.failureRetryCount)
+            assertEquals(lastAttemptAt, aggregate.failureLastAttemptAt)
         }
 
         @Test

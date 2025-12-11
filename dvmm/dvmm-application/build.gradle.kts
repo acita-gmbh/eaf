@@ -14,6 +14,10 @@ dependencies {
     // Jackson for JSON serialization (timeline event details)
     implementation(libs.jackson.kotlin)
 
+    // Resilience4j for retry logic (AC-3.6.1: exponential backoff retry)
+    implementation(libs.resilience4j.retry)
+    implementation(libs.resilience4j.kotlin)
+
     testImplementation(testFixtures(project(":eaf:eaf-testing")))
     testImplementation(libs.kotlin.coroutines.test)
 }
