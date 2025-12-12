@@ -1,6 +1,6 @@
 # Backend Patterns Guide
 
-> Referenced from CLAUDE.md - Read when working on Kotlin backend code.
+> This guide is referenced from the main CLAUDE.md documentation
 
 ## MockK Unit Testing
 

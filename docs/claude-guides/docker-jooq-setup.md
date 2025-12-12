@@ -1,6 +1,6 @@
 # Docker Compose & jOOQ Setup
 
-> Referenced from CLAUDE.md - Read when working on database, Docker, or jOOQ code.
+> This guide is referenced from the main CLAUDE.md documentation.
 
 ## Docker Compose Structure
 

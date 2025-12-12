@@ -1,6 +1,6 @@
 # Frontend Patterns Guide
 
-> Referenced from CLAUDE.md - Read when working on React/TypeScript frontend code.
+> This guide is referenced from the main CLAUDE.md documentation.
 
 **Location:** `dvmm/dvmm-web/`
 **Stack:** React 19 + TypeScript 5.9 + Vite 7.2 + Tailwind CSS 4 + shadcn/ui

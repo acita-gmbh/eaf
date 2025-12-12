@@ -1,6 +1,6 @@
 # VMware VCF SDK 9.0 Patterns
 
-> Referenced from CLAUDE.md - Read when working on VMware/vSphere integration code.
+> This guide is referenced from the main CLAUDE.md documentation. Read when working on VMware/vSphere integration code.
 
 **SDK:** `com.vmware.sdk:vsphere-utils:9.0.0.0`
 
