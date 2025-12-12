@@ -132,7 +132,7 @@ describe('VmDetailsCard', () => {
     it('shows SSH command when VM is powered on with IP', () => {
       render(<VmDetailsCard vmDetails={fullVmDetails} />)
 
-      expect(screen.getByTestId('vm-ssh-command')).toHaveTextContent(
+      expect(screen.getByTestId('vm-connection-command')).toHaveTextContent(
         'ssh <username>@192.168.1.100'
       )
     })
@@ -144,7 +144,7 @@ describe('VmDetailsCard', () => {
         />
       )
 
-      expect(screen.queryByTestId('vm-ssh-command')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('vm-connection-command')).not.toBeInTheDocument()
     })
 
     it('does not show SSH command when IP is null', () => {
@@ -152,14 +152,14 @@ describe('VmDetailsCard', () => {
         <VmDetailsCard vmDetails={{ ...fullVmDetails, ipAddress: null }} />
       )
 
-      expect(screen.queryByTestId('vm-ssh-command')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('vm-connection-command')).not.toBeInTheDocument()
     })
 
     it('copies SSH command to clipboard when copy button clicked', async () => {
       render(<VmDetailsCard vmDetails={fullVmDetails} />)
 
       // Find the Copy button inside the SSH section (not the IP copy icon button)
-      const sshSection = screen.getByTestId('vm-ssh-command').parentElement!
+      const sshSection = screen.getByTestId('vm-connection-command').parentElement!
       const copyButton = sshSection.querySelector('button')!
       fireEvent.click(copyButton)
 
@@ -274,7 +274,7 @@ describe('VmDetailsCard', () => {
 
       expect(screen.getByTestId('vm-power-state')).toHaveTextContent('Running')
       expect(screen.queryByTestId('vm-guest-os')).not.toBeInTheDocument()
-      expect(screen.queryByTestId('vm-ssh-command')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('vm-connection-command')).not.toBeInTheDocument()
     })
   })
 })
