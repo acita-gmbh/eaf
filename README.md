@@ -1,4 +1,4 @@
-# Dynamic Virtual Machine Manager (DCM)
+# Dynamic Cloud Manager (DCM)
 
 **Enterprise-grade VM provisioning platform built on the EAF framework for ISO 27001-compliant organizations.**
 

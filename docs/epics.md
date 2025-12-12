@@ -10,7 +10,7 @@
 
 ## Overview
 
-This document provides the complete epic and story breakdown for DCM (Dynamic Virtual Machine Manager), decomposing the requirements from the [PRD](./prd.md) into implementable stories.
+This document provides the complete epic and story breakdown for DCM (Dynamic Cloud Manager), decomposing the requirements from the [PRD](./prd.md) into implementable stories.
 
 **Living Document Notice:** This document incorporates context from:
 - ✅ PRD (90 FRs, 95 NFRs)

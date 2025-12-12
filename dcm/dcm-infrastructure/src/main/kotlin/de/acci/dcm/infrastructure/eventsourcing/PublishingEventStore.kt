@@ -26,7 +26,11 @@ public class PublishingEventStore(
         events: List<DomainEvent>,
         expectedVersion: Long
     ): Result<Long, EventStoreError> {
-        val result = delegate.append(aggregateId, events, expectedVersion)
+        val result = delegate.append(
+            aggregateId = aggregateId,
+            events = events,
+            expectedVersion = expectedVersion
+        )
         
         result.onSuccess {
             // Publish events to Spring context

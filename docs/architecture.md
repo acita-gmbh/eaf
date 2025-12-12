@@ -13,7 +13,7 @@ DCM is a multi-tenant self-service portal for VMware VM provisioning, built as t
 
 ## Project Context Understanding
 
-**Project:** DCM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Cloud Manager)
 **Type:** Multi-Tenant Self-Service Portal for VMware ESXi/Windows VM Provisioning
 **Framework:** Enterprise Application Framework (EAF) Pilot Project
 
@@ -1398,7 +1398,7 @@ jobs:
 
 ```kotlin
 @Component
-class DvmmMetrics(registry: MeterRegistry) {
+class DcmMetrics(registry: MeterRegistry) {
     val vmRequestsCreated = registry.counter("dcm.vm_requests.created")
     val vmRequestsApproved = registry.counter("dcm.vm_requests.approved")
     val vmRequestsRejected = registry.counter("dcm.vm_requests.rejected")

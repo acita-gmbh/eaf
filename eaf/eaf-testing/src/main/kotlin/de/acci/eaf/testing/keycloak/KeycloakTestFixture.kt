@@ -30,9 +30,9 @@ public class KeycloakTestFixture private constructor(
 ) {
 
     public companion object {
-        public const val REALM: String = "dvmm"
-        public const val WEB_CLIENT_ID: String = "dvmm-web"
-        public const val API_CLIENT_ID: String = "dvmm-api"
+        public const val REALM: String = "dcm"
+        public const val WEB_CLIENT_ID: String = "dcm-web"
+        public const val API_CLIENT_ID: String = "dcm-api"
 
         /**
          * Creates a new KeycloakTestFixture using the shared Keycloak container.
@@ -51,27 +51,27 @@ public class KeycloakTestFixture private constructor(
 
     /**
      * Returns the JWKS URI for JWT signature validation.
-     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/certs"
+     * Example: "http://localhost:32768/realms/dcm/protocol/openid-connect/certs"
      */
     public fun getJwksUri(): String =
         "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/certs"
 
     /**
      * Returns the issuer URI for JWT issuer validation.
-     * Example: "http://localhost:32768/realms/dvmm"
+     * Example: "http://localhost:32768/realms/dcm"
      */
     public fun getIssuerUri(): String = "${keycloak.authServerUrl}/realms/$REALM"
 
     /**
      * Returns the token endpoint URL.
-     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/token"
+     * Example: "http://localhost:32768/realms/dcm/protocol/openid-connect/token"
      */
     public fun getTokenEndpoint(): String =
         "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/token"
 
     /**
      * Returns the UserInfo endpoint URL.
-     * Example: "http://localhost:32768/realms/dvmm/protocol/openid-connect/userinfo"
+     * Example: "http://localhost:32768/realms/dcm/protocol/openid-connect/userinfo"
      */
     public fun getUserInfoEndpoint(): String =
         "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/userinfo"

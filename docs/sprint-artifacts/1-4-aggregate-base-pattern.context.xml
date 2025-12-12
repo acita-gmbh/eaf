@@ -92,7 +92,7 @@
       <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.4: Aggregate Base Pattern">
         AggregateRoot&lt;TId&gt; implementation guide with code samples for event application, version tracking, uncommitted events, and snapshot support (lines 405-476).
       </doc>
-      <doc path="docs/epics.md" title="DVMM Epics" section="Story 1.4">
+      <doc path="docs/epics.md" title="DCM Epics" section="Story 1.4">
         Story definition and acceptance criteria as originally specified.
       </doc>
       <doc path="docs/architecture.md" title="System Architecture" section="Aggregate Pattern">

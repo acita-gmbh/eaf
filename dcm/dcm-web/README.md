@@ -1,6 +1,6 @@
 # DCM Web Frontend
 
-React 19 + TypeScript + Vite frontend for the Dynamic Virtual Machine Manager.
+React 19 + TypeScript + Vite frontend for the Dynamic Cloud Manager.
 
 ## Tech Stack
 

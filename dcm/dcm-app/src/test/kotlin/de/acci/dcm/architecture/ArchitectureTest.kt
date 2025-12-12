@@ -4,6 +4,7 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.ext.list.withNameMatching
 import com.lemonappdev.konsist.api.verify.assertTrue
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 
@@ -101,9 +102,10 @@ class ArchitectureTest {
             .filterNot { it.hasAnnotationModifier }
             .forEach { clazz ->
                 // Check that path contains test source directory marker
-                assert(clazz.path.contains("/src/test/")) {
+                assertTrue(
+                    clazz.path.contains("/src/test/"),
                     "Class ${clazz.name} with Test suffix should be in test source set, but found at: ${clazz.path}"
-                }
+                )
             }
     }
 
@@ -135,9 +137,10 @@ class ArchitectureTest {
                 .classes()
                 .firstOrNull { it.name == errorClassName }
 
-            assert(errorClass != null) {
+            assertTrue(
+                errorClass != null,
                 "Handler ${handler.name} must have corresponding $errorClassName sealed class"
-            }
+            )
 
             // Verify Forbidden is a nested class within the error sealed class.
             // We check the error class source for "data class Forbidden" or "class Forbidden"
@@ -145,10 +148,11 @@ class ArchitectureTest {
             val errorClassSource = errorClass?.text ?: ""
             val hasForbiddenSubtype = errorClassSource.contains(Regex("""(data\s+)?class\s+Forbidden"""))
 
-            assert(hasForbiddenSubtype) {
+            assertTrue(
+                hasForbiddenSubtype,
                 "$errorClassName must include a Forbidden subtype for authorization errors. " +
                     "Add: data class Forbidden(val message: String = \"Not authorized\") : $errorClassName()"
-            }
+            )
         }
     }
 

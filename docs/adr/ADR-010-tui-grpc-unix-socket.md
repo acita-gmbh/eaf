@@ -171,7 +171,7 @@ grpc:
 ### Protobuf Service Definition
 
 ```protobuf
-service DvmmTuiService {
+service DcmTuiService {
   // Unary RPCs
   rpc Authenticate(AuthRequest) returns (AuthResponse);
   rpc ApproveRequest(ApproveCommand) returns (CommandResult);

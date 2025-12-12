@@ -107,13 +107,13 @@
     <docs>
       <doc>
         <path>docs/devops-strategy.md</path>
-        <title>DVMM DevOps Strategy</title>
+        <title>DCM DevOps Strategy</title>
         <section>1. CI/CD Pipeline Architecture</section>
         <snippet>GitHub Actions pipeline with quality gates: Coverage 80% (Kover), Mutation 70% (Pitest), Architecture tests (Konsist), Zero critical vulnerabilities.</snippet>
       </doc>
       <doc>
         <path>docs/epics.md</path>
-        <title>DVMM Epics</title>
+        <title>DCM Epics</title>
         <section>Story 1.11: CI/CD Quality Gates</section>
         <snippet>Implement GitHub Actions workflow with build, test, coverage, mutation gates. Pipeline FAILS if ANY gate fails.</snippet>
       </doc>
@@ -149,17 +149,17 @@
         <kind>gradle-convention</kind>
         <symbol>PitestPluginExtension</symbol>
         <lines>11-20</lines>
-        <reason>Pitest configuration with 70% mutationThreshold, target classes de.acci.eaf.* and de.acci.dvmm.*</reason>
+        <reason>Pitest configuration with 70% mutationThreshold, target classes de.acci.eaf.* and de.acci.dcm.*</reason>
       </artifact>
       <artifact>
         <path>build.gradle.kts</path>
         <kind>gradle-root</kind>
         <symbol>kover.reports</symbol>
         <lines>20-54</lines>
-        <reason>Root Kover aggregation for merged coverage report across all EAF and DVMM modules</reason>
+        <reason>Root Kover aggregation for merged coverage report across all EAF and DCM modules</reason>
       </artifact>
       <artifact>
-        <path>dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ArchitectureTest.kt</path>
+        <path>dcm/dcm-app/src/test/kotlin/de/acci/dcm/architecture/ArchitectureTest.kt</path>
         <kind>test</kind>
         <symbol>ArchitectureTest</symbol>
         <lines>1-104</lines>
@@ -268,7 +268,7 @@
     </standards>
     <locations>
       <location>.github/workflows/ (workflow files)</location>
-      <location>dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ (Konsist tests)</location>
+      <location>dcm/dcm-app/src/test/kotlin/de/acci/dcm/architecture/ (Konsist tests)</location>
       <location>build/reports/kover/html/ (coverage reports)</location>
       <location>*/build/reports/pitest/ (mutation reports)</location>
     </locations>

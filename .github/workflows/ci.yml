@@ -1,4 +1,4 @@
-# CI Pipeline - DVMM/EAF Monorepo
+# CI Pipeline - DCM/EAF Monorepo
 # Quality Gates: Coverage ≥70%, Mutation ≥70%, Architecture tests pass
 # See: docs/devops-strategy.md, CLAUDE.md
 #
@@ -142,7 +142,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: dvmm/dvmm-web
+        working-directory: dcm/dcm-web
 
     steps:
       - name: Checkout repository
@@ -153,7 +153,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: dvmm/dvmm-web/package-lock.json
+          cache-dependency-path: dcm/dcm-web/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -175,5 +175,5 @@ jobs:
         if: always()
         with:
           name: frontend-coverage-report
-          path: dvmm/dvmm-web/coverage/
+          path: dcm/dcm-web/coverage/
           retention-days: 14

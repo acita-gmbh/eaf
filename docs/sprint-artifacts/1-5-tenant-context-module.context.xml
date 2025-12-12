@@ -52,7 +52,7 @@
       - Kotlin 2.2 (coroutines) — coroutine context propagation.
       - Spring Boot 3.5 WebFlux — filter adapter layer (no Spring in core).
       - kotlinx-coroutines-core — context elements, Dispatchers.IO, async.
-      - JWT parsing (existing stack in dvmm-api) — reuse claim extraction utilities if available.
+      - JWT parsing (existing stack in dcm-api) — reuse claim extraction utilities if available.
     </dependencies>
   </artifacts>
 

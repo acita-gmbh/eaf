@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Primary
  * Import this configuration in test classes:
  * ```kotlin
  * @SpringBootTest(
- *     classes = [DvmmApplication::class, TestNotificationConfiguration::class],
+ *     classes = [DcmApplication::class, TestNotificationConfiguration::class],
  *     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
  * )
  * ```

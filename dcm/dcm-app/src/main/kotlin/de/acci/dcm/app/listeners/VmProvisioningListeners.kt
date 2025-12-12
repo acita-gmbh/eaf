@@ -41,6 +41,8 @@ public class VmProvisioningListeners(
             try {
                 logger.info { "Listener received VmRequestApproved: ${event.aggregateId.value}" }
                 provisioningListener.onVmRequestApproved(event)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) { "Error handling VmRequestApproved for ${event.aggregateId.value}" }
             }
@@ -54,6 +56,8 @@ public class VmProvisioningListeners(
         scope.launch {
             try {
                 triggerProvisioningHandler.onVmProvisioningStarted(event)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) { "Error in triggerProvisioningHandler for ${event.aggregateId.value}" }
             }
@@ -61,6 +65,8 @@ public class VmProvisioningListeners(
         scope.launch {
             try {
                 requestStatusUpdater.onVmProvisioningStarted(event)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) { "Error in requestStatusUpdater for ${event.aggregateId.value}" }
             }

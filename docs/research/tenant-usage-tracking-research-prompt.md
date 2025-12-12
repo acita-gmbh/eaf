@@ -2,7 +2,7 @@
 
 ## Research Context
 
-**Product:** DCM (Dynamic Virtual Machine Manager) - A multi-tenant VM lifecycle management platform
+**Product:** DCM (Dynamic Cloud Manager) - A multi-tenant VM lifecycle management platform
 **Infrastructure:** VMware vSphere/VCF, PostgreSQL with Row-Level Security
 **Architecture:** CQRS/Event Sourcing, Hexagonal Architecture
 **Target Market:** DACH region enterprises, MSPs, and internal IT departments

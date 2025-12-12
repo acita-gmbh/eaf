@@ -45,7 +45,7 @@
       </doc>
       <doc>
         <path>docs/architecture.md</path>
-        <title>DVMM Architecture</title>
+        <title>DCM Architecture</title>
         <section>ADR-002: IdP-Agnostic Authentication</section>
         <snippet>Identity Provider abstraction with IdentityProvider interface in eaf-auth. Products choose implementation via eaf-auth-{provider} modules. Keycloak adapter for MVP.</snippet>
       </doc>
@@ -57,7 +57,7 @@
       </doc>
       <doc>
         <path>docs/security-architecture.md</path>
-        <title>DVMM Security Architecture</title>
+        <title>DCM Security Architecture</title>
         <section>Authentication Architecture</section>
         <snippet>Keycloak OIDC with JWT tokens containing tenant_id claim. Token stored in httpOnly cookie (Secure, SameSite=Lax). CSRF protection via X-CSRF-Token header.</snippet>
       </doc>
@@ -171,14 +171,14 @@
       <name>SecurityWebFilterChain</name>
       <kind>Spring Security bean</kind>
       <signature>@Bean fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain</signature>
-      <path>dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt (TO CREATE)</path>
+      <path>dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/security/SecurityConfig.kt (TO CREATE)</path>
     </interface>
   </interfaces>
 
   <constraints>
     <constraint source="ADR-002">eaf-auth module must contain IdP-agnostic IdentityProvider interface with NO Spring dependencies (pure Kotlin)</constraint>
     <constraint source="ADR-002">Keycloak-specific implementation in eaf-auth-keycloak module implements IdentityProvider</constraint>
-    <constraint source="ADR-001">EAF modules (eaf-auth) must not import from de.acci.dvmm.* - enforced by Konsist</constraint>
+    <constraint source="ADR-001">EAF modules (eaf-auth) must not import from de.acci.dcm.* - enforced by Konsist</constraint>
     <constraint source="Story-1.5">TenantContextWebFilter has @Order(HIGHEST_PRECEDENCE + 10). SecurityWebFilter must run before it (default order is higher precedence).</constraint>
     <constraint source="CLAUDE.md">Test coverage ≥80%, mutation score ≥70% - CI blocks merge if not met</constraint>
     <constraint source="CLAUDE.md">No wildcard imports, named arguments for >2 parameters</constraint>
@@ -197,8 +197,8 @@
     <locations>
       <location>eaf/eaf-auth/src/test/kotlin/de/acci/eaf/auth/</location>
       <location>eaf/eaf-auth-keycloak/src/test/kotlin/de/acci/eaf/auth/keycloak/</location>
-      <location>dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/security/</location>
-      <location>dvmm/dvmm-app/src/test/kotlin/ (integration tests)</location>
+      <location>dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/security/</location>
+      <location>dcm/dcm-app/src/test/kotlin/ (integration tests)</location>
     </locations>
     <ideas>
       <idea ac="1">Valid JWT token grants access to protected /api/** endpoint</idea>

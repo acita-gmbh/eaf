@@ -289,7 +289,7 @@ claude-opus-4-5-20251101
 - `dcm/dcm-api/build.gradle.kts` - REST controllers (library, bootJar disabled)
 - `dcm/dcm-infrastructure/build.gradle.kts` - Adapters, jOOQ projections (library, bootJar disabled)
 - `dcm/dcm-app/build.gradle.kts` - Main application (runnable)
-- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/DvmmApplication.kt` - Application entry point
+- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/DcmApplication.kt` - Application entry point
 - `dcm/dcm-app/src/test/kotlin/de/acci/dcm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
 
 ## Change Log

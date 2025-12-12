@@ -3,14 +3,14 @@
 **Author:** Wall-E
 **Date:** 2025-11-24
 **Version:** 1.1 (Validated)
-**Product:** Dynamic Virtual Machine Manager (DCM)
+**Product:** Dynamic Cloud Manager (DCM)
 **Framework:** Enterprise Application Framework (EAF)
 
 ---
 
 ## Executive Summary
 
-DCM (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
+DCM (Dynamic Cloud Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
 
 **The Core Value Proposition:**
 

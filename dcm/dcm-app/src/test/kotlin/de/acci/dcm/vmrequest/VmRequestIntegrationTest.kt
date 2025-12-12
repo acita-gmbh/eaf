@@ -1,6 +1,6 @@
 package de.acci.dcm.vmrequest
 
-import de.acci.dcm.DvmmApplication
+import de.acci.dcm.DcmApplication
 import de.acci.dcm.TestNotificationConfiguration
 import de.acci.eaf.auth.keycloak.KeycloakJwtAuthenticationConverter
 import de.acci.eaf.testing.TestContainers
@@ -42,7 +42,7 @@ import java.util.UUID
  * Uses Testcontainers for PostgreSQL database.
  */
 @SpringBootTest(
-    classes = [DvmmApplication::class, VmRequestIntegrationTest.TestConfig::class, TestNotificationConfiguration::class],
+    classes = [DcmApplication::class, VmRequestIntegrationTest.TestConfig::class, TestNotificationConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.flyway.enabled=false",

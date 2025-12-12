@@ -7,7 +7,7 @@ _Generated using BMad Method - Create UX Design Workflow v1.0_
 
 ## Executive Summary
 
-**Project:** DCM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Cloud Manager)
 **Vision:** Self-Service VM-Provisioning that empowers end-users with autonomy and transparency while freeing IT-Admins from email chaos.
 
 **Target Users:**

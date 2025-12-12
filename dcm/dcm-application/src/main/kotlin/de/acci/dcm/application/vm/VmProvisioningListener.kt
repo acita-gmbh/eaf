@@ -32,8 +32,9 @@ public class VmProvisioningListener(
         val storedEvents = eventStore.load(event.aggregateId.value)
         
         if (storedEvents.isEmpty()) {
-            logger.error { "Failed to load VM request aggregate ${event.aggregateId.value}: Aggregate not found" }
-            return
+            val message = "Failed to load VM request aggregate ${event.aggregateId.value}: Aggregate not found"
+            logger.error { message }
+            throw IllegalStateException(message)
         }
 
         val events = try {
@@ -41,8 +42,8 @@ public class VmProvisioningListener(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-             logger.error(e) { "Failed to deserialize events for request ${event.aggregateId.value}" }
-             return
+            logger.error(e) { "Failed to deserialize events for request ${event.aggregateId.value}" }
+            throw e
         }
         
         val aggregate = VmRequestAggregate.reconstitute(event.aggregateId, events)
@@ -68,7 +69,9 @@ public class VmProvisioningListener(
 
         provisionVmHandler.handle(command, event.metadata.correlationId)
             .onFailure { error ->
-                 logger.error { "Failed to dispatch ProvisionVmCommand for request ${aggregate.id.value}: $error" }
+                val message = "Failed to dispatch ProvisionVmCommand for request ${aggregate.id.value}: $error"
+                logger.error { message }
+                throw IllegalStateException(message)
             }
             .onSuccess { result ->
                 logger.info { "Provisioning started for VM ${result.vmId.value} (Request: ${aggregate.id.value})" }

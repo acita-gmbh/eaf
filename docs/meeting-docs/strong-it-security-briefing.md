@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive overview of the **EAF (Enterprise Application Framework)** and **DCM (Dynamic Virtual Machine Manager)** project to facilitate evaluation by our internal SOC team for security partnership opportunities.
+This document provides a comprehensive overview of the **EAF (Enterprise Application Framework)** and **DCM (Dynamic Cloud Manager)** project to facilitate evaluation by our internal SOC team for security partnership opportunities.
 
 **Key Facts:**
 - **Product Type:** Multi-tenant B2B SaaS for VMware VM provisioning

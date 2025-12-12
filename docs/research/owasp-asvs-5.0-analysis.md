@@ -3,7 +3,7 @@
 **Date:** 2025-12-10
 **Version:** 1.0
 **Author:** Claude (AI Research)
-**Project:** DCM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Cloud Manager)
 **Target Compliance:** ASVS Level 2 (Standard) with Level 3 for critical controls
 
 ---

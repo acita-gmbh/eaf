@@ -20,7 +20,7 @@ project: "EAF"
 project_type: "enterprise"
 selected_track: "enterprise"
 field_type: "greenfield"
-user_description: "DCM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal for VMware/Windows VM provisioning. Replaces legacy ZEWSSP. Pilot project for EAF framework. Complex enterprise requirements: strict multi-tenancy, ISO 27001 compliance, CQRS/Event Sourcing architecture."
+user_description: "DCM (Dynamic Cloud Manager) - Multi-tenant self-service portal for VMware/Windows VM provisioning. Replaces legacy ZEWSSP. Pilot project for EAF framework. Complex enterprise requirements: strict multi-tenancy, ISO 27001 compliance, CQRS/Event Sourcing architecture."
 brainstorm_requested: true
 research_requested: true
 product_brief_requested: true

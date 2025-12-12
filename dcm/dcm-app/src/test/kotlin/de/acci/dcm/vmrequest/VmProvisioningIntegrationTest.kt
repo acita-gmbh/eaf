@@ -1,6 +1,6 @@
 package de.acci.dcm.vmrequest
 
-import de.acci.dcm.DvmmApplication
+import de.acci.dcm.DcmApplication
 import de.acci.dcm.TestNotificationConfiguration
 import de.acci.eaf.testing.TestContainers
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
 import org.awaitility.Awaitility.await
 
 @SpringBootTest(
-    classes = [DvmmApplication::class, VmProvisioningIntegrationTest.TestConfig::class, TestNotificationConfiguration::class],
+    classes = [DcmApplication::class, VmProvisioningIntegrationTest.TestConfig::class, TestNotificationConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "spring.flyway.enabled=false",
@@ -95,8 +95,22 @@ class VmProvisioningIntegrationTest {
             val isRequesterToken = payloadJson.contains(requesterId.toString())
 
             when {
-                isAdminToken -> Mono.just(createJwt(tenantId, adminId, token, listOf("admin")))
-                isRequesterToken -> Mono.just(createJwt(tenantId, requesterId, token, listOf("user")))
+                isAdminToken -> Mono.just(
+                    createJwt(
+                        tenantId = tenantId,
+                        userId = adminId,
+                        tokenValue = token,
+                        roles = listOf("admin")
+                    )
+                )
+                isRequesterToken -> Mono.just(
+                    createJwt(
+                        tenantId = tenantId,
+                        userId = requesterId,
+                        tokenValue = token,
+                        roles = listOf("user")
+                    )
+                )
                 else -> Mono.error(BadJwtException("Invalid token - no matching user ID found in payload"))
             }
         }

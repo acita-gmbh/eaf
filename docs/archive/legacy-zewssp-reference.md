@@ -39,7 +39,7 @@
 
 ### 1.2 Why DCM as Successor?
 
-DCM (Dynamic Virtual Machine Manager) replaces ZEWSSP to address:
+DCM (Dynamic Cloud Manager) replaces ZEWSSP to address:
 
 | Challenge in ZEWSSP | Solution in DCM |
 |---------------------|------------------|
@@ -983,7 +983,7 @@ Since ZEWSSP was single-tenant and uses JSONB:
 | Term | Definition |
 |------|------------|
 | **ZEWSSP** | ZEW Self Service Portal - Legacy system |
-| **DCM** | Dynamic Virtual Machine Manager - Successor |
+| **DCM** | Dynamic Cloud Manager - Successor |
 | **POPS** | Patch Operator - Ansible collection |
 | **DCA** | Data Center Automation - API collection |
 | **Docket** | Automation workflow definition |

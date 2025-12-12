@@ -67,7 +67,7 @@ function AppRoutes() {
         <div className="text-center max-w-md p-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">DCM</h1>
           <p className="text-muted-foreground mb-6">
-            Dynamic Virtual Machine Manager
+            Dynamic Cloud Manager
           </p>
           <Button
             size="lg"

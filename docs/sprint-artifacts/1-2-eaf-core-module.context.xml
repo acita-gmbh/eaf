@@ -30,15 +30,15 @@
 2. DomainError sealed hierarchy includes ValidationFailed, ResourceNotFound, InvalidStateTransition, QuotaExceeded, InfrastructureError with contextual fields.
 3. TenantId, UserId, CorrelationId implemented as @JvmInline value classes with generate() and fromString().
 4. Module compiles with Kotlin 2.2 (K2) and explicit API enabled; no experimental warnings.
-5. eaf-core has zero external runtime deps (Kotlin stdlib only); no de.acci.dvmm imports; Konsist rule passes.
+5. eaf-core has zero external runtime deps (Kotlin stdlib only); no de.acci.dcm imports; Konsist rule passes.
 6. Unit tests cover Result and DomainError; Kover ≥80% line coverage; Pitest ≥70% mutation score for eaf-core.
   ]]></acceptanceCriteria>
 
   <artifacts>
     <docs>
-      <doc path="docs/epics.md" title="DVMM - Epic Breakdown" section="Story 1.2: EAF Core Module" snippet="Story 1.2 requires Result/DomainError primitives and zero external dependencies as the shared kernel for all modules." />
+      <doc path="docs/epics.md" title="DCM - Epic Breakdown" section="Story 1.2: EAF Core Module" snippet="Story 1.2 requires Result/DomainError primitives and zero external dependencies as the shared kernel for all modules." />
       <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.2 Implementation Checklist" snippet="Defines Result sealed class, DomainError hierarchy, value objects for TenantId/UserId/CorrelationId, and quality gates (Kover ≥80%, Pitest ≥70%)." />
-      <doc path="docs/architecture.md" title="DVMM Architecture" section="EAF Module Definitions & Dependency Rules" snippet="EAF modules must not import DVMM code; eaf-core has zero external dependencies and enforces framework-first boundaries with Konsist tests." />
+      <doc path="docs/architecture.md" title="DCM Architecture" section="EAF Module Definitions & Dependency Rules" snippet="EAF modules must not import DCM code; eaf-core has zero external dependencies and enforces framework-first boundaries with Konsist tests." />
       <doc path="docs/security-architecture.md" title="Security Architecture" section="Audit & Compliance / Correlation IDs" snippet="CorrelationId required for traceability across audit logs; error handling must carry context for observability." />
       <doc path="docs/test-design-system.md" title="Test Design System" section="Critical Test Scenarios TC-001..004" snippet="Emphasizes isolation, tenant context propagation, projection waiting; sets expectations for ≥80% coverage and ≥70% mutation score." />
       <doc path="docs/prd.md" title="Product Requirements" section="Non-Functional Requirements / Maintainability & Quality Gates" snippet="NFRs demand ≥80% coverage, ≥70% mutation, and architecture rule adherence; FR80 logging with correlation IDs informs core design." />
@@ -57,7 +57,7 @@
 
   <constraints>
     <![CDATA[
-- EAF ← DVMM dependency direction: eaf-core must not import de.acci.dvmm.* (Konsist rule).
+- EAF ← DCM dependency direction: eaf-core must not import de.acci.dcm.* (Konsist rule).
 - Zero external runtime dependencies in eaf-core; Kotlin stdlib only.
 - Use Kotlin 2.2 (K2) with explicit API enabled.
 - No wildcard imports; adhere to named-argument rule (>2 params) per coding standards.
@@ -76,7 +76,7 @@
   <tests>
     <standards><![CDATA[
 - JUnit 6, MockK for mocking, Kover coverage gate ≥80%, Pitest mutation ≥70%.
-- Architecture checks via Konsist to enforce zero DVMM imports and dependency cleanliness.
+- Architecture checks via Konsist to enforce zero DCM imports and dependency cleanliness.
 - Prefer property-based/parameterized tests for Result helpers; ensure null-safety and short-circuit behavior.
     ]]></standards>
     <locations><![CDATA[
@@ -87,7 +87,7 @@
 - AC2: DomainError equality/serialization round-trips for each variant; ensure contextual fields retained.
 - AC3: TenantId/UserId/CorrelationId generate()/fromString() round-trips; assert UUID format validation failures.
 - AC4: Build should fail if explicit API disabled—add gradle functional test or compile task assertion.
-- AC5: Konsist rule: assert no external imports and no de.acci.dvmm.* usage.
+- AC5: Konsist rule: assert no external imports and no de.acci.dcm.* usage.
 - AC6: Mutation tests targeting error mapping branches and value-object factories; ensure survival rate <30% (target ≥70% score).
     ]]></ideas>
   </tests>

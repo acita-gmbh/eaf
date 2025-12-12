@@ -187,7 +187,7 @@ dcm/
 └── dcm-tui/             # NEW: TUI adapter module
     ├── build.gradle.kts
     └── src/main/kotlin/de/acci/dcm/tui/
-        ├── DvmmTuiApplication.kt
+        ├── DcmTuiApplication.kt
         ├── config/
         ├── screens/
         ├── widgets/

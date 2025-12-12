@@ -34,7 +34,7 @@ Reusable framework with **zero product dependencies**:
 - `eaf-auth-keycloak` - Keycloak implementation
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock)
 
-### DCM (Dynamic Virtual Machine Manager) - `dcm/`
+### DCM (Dynamic Cloud Manager) - `dcm/`
 Product modules following **Hexagonal Architecture**:
 - `dcm-domain` - Business logic (NO Spring dependencies)
 - `dcm-application` - Use cases, command/query handlers

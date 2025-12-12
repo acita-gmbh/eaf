@@ -64,7 +64,7 @@ kover {
         //
         // Temporary exclusions (to be removed in Story 2.1):
         // - eaf-auth-keycloak: Requires Keycloak Testcontainer
-        // - dvmm-api (SecurityConfig): Requires Spring Security integration tests
+        // - dcm-api (SecurityConfig): Requires Spring Security integration tests
         //
         // Permanent exclusions:
         // - jOOQ generated code

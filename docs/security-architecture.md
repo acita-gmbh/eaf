@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document defines the security architecture for DCM (Dynamic Virtual Machine Manager), a multi-tenant self-service portal for VMware VM provisioning. Security is a first-class architectural concern, with defense-in-depth principles applied across all layers.
+This document defines the security architecture for DCM (Dynamic Cloud Manager), a multi-tenant self-service portal for VMware VM provisioning. Security is a first-class architectural concern, with defense-in-depth principles applied across all layers.
 
 **Key Security Decisions:**
 - **Multi-Tenant Isolation:** PostgreSQL Row-Level Security (RLS) with fail-closed semantics

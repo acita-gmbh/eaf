@@ -10,7 +10,7 @@
 
 ### ZEWSSP-Nachfolger: DCM
 
-Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DCM (Dynamic Virtual Machine Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschränkungen zu überwinden:
+Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DCM (Dynamic Cloud Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschränkungen zu überwinden:
 
 | Problem (ZEWSSP) | Lösung (DCM) |
 |------------------|---------------|

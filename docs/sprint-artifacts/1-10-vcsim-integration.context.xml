@@ -127,7 +127,7 @@
         <path>docs/architecture.md</path>
         <title>Architecture Overview</title>
         <section>Integration - External Systems</section>
-        <snippet>VMware vSphere integration uses Ports &amp; Adapters pattern in dvmm-infrastructure/vmware/. Contract tests (Pact) + graceful degradation with request queuing. Circuit breaker, retry, and queue resilience patterns.</snippet>
+        <snippet>VMware vSphere integration uses Ports &amp; Adapters pattern in dcm-infrastructure/vmware/. Contract tests (Pact) + graceful degradation with request queuing. Circuit breaker, retry, and queue resilience patterns.</snippet>
       </doc>
       <doc>
         <path>docs/sprint-artifacts/1-8-jooq-projection-base.md</path>
@@ -197,8 +197,8 @@
 
   <constraints>
     <constraint type="architecture">
-      <rule>VCSIM container must be added to eaf-testing module (EAF layer), NOT dvmm modules</rule>
-      <rationale>EAF provides test infrastructure reusable across products; dvmm-specific tests consume eaf-testing utilities</rationale>
+      <rule>VCSIM container must be added to eaf-testing module (EAF layer), NOT dcm modules</rule>
+      <rationale>EAF provides test infrastructure reusable across products; dcm-specific tests consume eaf-testing utilities</rationale>
     </constraint>
     <constraint type="architecture">
       <rule>VcsimTestFixture must use public API for Explicit API mode compliance</rule>

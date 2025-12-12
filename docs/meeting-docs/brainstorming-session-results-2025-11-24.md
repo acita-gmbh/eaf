@@ -7,7 +7,7 @@
 ## Session Start
 
 **Context:**
-- DCM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal replacing legacy ZEWSSP
+- DCM (Dynamic Cloud Manager) - Multi-tenant self-service portal replacing legacy ZEWSSP
 - Product Brief exists outlining enterprise requirements (multi-tenancy, ISO 27001, CQRS/Event Sourcing)
 - Access to legacy ZEWSSP codebase (/Users/michael/zewssp) for learning and migration insights
 - Access to failed EAF attempt (/Users/michael/old_eaf) for lessons learned

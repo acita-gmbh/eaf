@@ -1,17 +1,17 @@
-# DVMM Product - Full Stack E2E Environment
+# DCM Product - Full Stack E2E Environment
 #
 # Usage:
 #   # Start everything (full E2E environment)
-#   docker compose -f docker/dvmm/docker-compose.yml up -d --wait
+#   docker compose -f docker/dcm/docker-compose.yml up -d --wait
 #
 #   # Start only infrastructure (for local backend development)
-#   docker compose -f docker/dvmm/docker-compose.yml --profile dev up -d --wait
+#   docker compose -f docker/dcm/docker-compose.yml --profile dev up -d --wait
 #
 #   # Run E2E tests
-#   cd dvmm/dvmm-web && npm run test:e2e
+#   cd dcm/dcm-web && npm run test:e2e
 #
 #   # Stop everything
-#   docker compose -f docker/dvmm/docker-compose.yml down
+#   docker compose -f docker/dcm/docker-compose.yml down
 
 include:
   - path: ../eaf/docker-compose.yml
@@ -20,8 +20,8 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: docker/dvmm/Dockerfile.backend
-    container_name: dvmm-backend
+      dockerfile: docker/dcm/Dockerfile.backend
+    container_name: dcm-backend
     profiles: ["", "default"]  # Exclude from 'dev' profile
     environment:
       SPRING_PROFILES_ACTIVE: local
@@ -30,8 +30,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: eaf
       # issuer-uri must match the `iss` claim in browser-obtained tokens (127.0.0.1:8180)
       # jwk-set-uri needs network access from within Docker (use internal keycloak:8080)
-      KEYCLOAK_ISSUER_URI: http://127.0.0.1:8180/realms/dvmm
-      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/dvmm/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER_URI: http://127.0.0.1:8180/realms/dcm
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/dcm/protocol/openid-connect/certs
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       # Use a fixed encryption key for E2E testing (not for production!)
       ENCRYPTION_SECRET_KEY: e2e-test-key-32-chars-exactly!!
@@ -47,26 +47,26 @@ services:
 
   frontend:
     image: node:22-alpine
-    container_name: dvmm-frontend
+    container_name: dcm-frontend
     profiles: ["", "default"]  # Exclude from 'dev' profile
     working_dir: /app
     # Skip playwright-utils git submodule (not needed for dev server)
     command: sh -c "npm ci --ignore-scripts && npm run dev -- --host 0.0.0.0"
     environment:
       VITE_KEYCLOAK_URL: http://localhost:8180
-      VITE_KEYCLOAK_REALM: dvmm
-      VITE_KEYCLOAK_CLIENT_ID: dvmm-web
+      VITE_KEYCLOAK_REALM: dcm
+      VITE_KEYCLOAK_CLIENT_ID: dcm-web
       VITE_API_URL: http://localhost:8080
     ports:
       - "5173:5173"
     volumes:
-      - ../../dvmm/dvmm-web:/app
-      - dvmm-frontend-node-modules:/app/node_modules
+      - ../../dcm/dcm-web:/app
+      - dcm-frontend-node-modules:/app/node_modules
     depends_on:
       - backend
     networks:
       - eaf-network
 
 volumes:
-  dvmm-frontend-node-modules:
-    name: dvmm-frontend-node-modules
+  dcm-frontend-node-modules:
+    name: dcm-frontend-node-modules

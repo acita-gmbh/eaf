@@ -120,10 +120,10 @@ class TestContainersIntegrationTest {
 
     @Test
     @Order(2)
-    fun `keycloak realm dvmm is imported with test user`() {
+    fun `keycloak realm dcm is imported with test user`() {
         // Verify the test realm was imported correctly by checking OpenID configuration
         val keycloak = TestContainers.keycloak
-        val realmUrl = "${keycloak.authServerUrl}/realms/dvmm"
+        val realmUrl = "${keycloak.authServerUrl}/realms/dcm"
 
         val httpClient = HttpClient.newHttpClient()
         val request = HttpRequest.newBuilder()
@@ -134,10 +134,10 @@ class TestContainersIntegrationTest {
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
 
         // Realm exists if OpenID configuration is accessible
-        assertEquals(200, response.statusCode(), "Realm 'dvmm' should be accessible")
+        assertEquals(200, response.statusCode(), "Realm 'dcm' should be accessible")
         assertNotNull(response.body())
         assertTrue(response.body().contains("\"issuer\""), "Response should contain OpenID issuer")
-        assertTrue(response.body().contains("dvmm"), "Issuer should reference 'dvmm' realm")
+        assertTrue(response.body().contains("dcm"), "Issuer should reference 'dcm' realm")
     }
 
     @Test

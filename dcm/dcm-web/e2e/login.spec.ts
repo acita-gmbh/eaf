@@ -20,7 +20,7 @@ test.describe('Login Flow', () => {
     await expect(page.getByRole('heading', { name: 'DCM' })).toBeVisible()
 
     // Should show the login description
-    await expect(page.getByText('Dynamic Virtual Machine Manager')).toBeVisible()
+    await expect(page.getByText('Dynamic Cloud Manager')).toBeVisible()
 
     // Should show the login button
     await expect(page.getByRole('button', { name: /Sign in with Keycloak/i })).toBeVisible()

@@ -9,7 +9,7 @@
 
 ## Zusammenfassung
 
-Dieses Dokument bietet einen umfassenden Überblick über das **EAF (Enterprise Application Framework)** und **DCM (Dynamic Virtual Machine Manager)** Projekt, um unserem internen SOC-Team die Evaluierung von Möglichkeiten zur Sicherheitspartnerschaft zu ermöglichen.
+Dieses Dokument bietet einen umfassenden Überblick über das **EAF (Enterprise Application Framework)** und **DCM (Dynamic Cloud Manager)** Projekt, um unserem internen SOC-Team die Evaluierung von Möglichkeiten zur Sicherheitspartnerschaft zu ermöglichen.
 
 **Eckdaten:**
 - **Produkttyp:** Multi-Tenant B2B SaaS für VMware VM-Provisionierung

@@ -42,7 +42,7 @@ This document presents a comprehensive technical research on integrating **Apach
 
 ### 1.1 Product Overview
 
-**DCM (Dynamic Virtual Machine Manager)** is a multi-tenant self-service portal for VMware VM provisioning with workflow-based approval automation. The core value proposition:
+**DCM (Dynamic Cloud Manager)** is a multi-tenant self-service portal for VMware VM provisioning with workflow-based approval automation. The core value proposition:
 
 > "Request a VM. Get approval. VM is provisioned. That's it."
 

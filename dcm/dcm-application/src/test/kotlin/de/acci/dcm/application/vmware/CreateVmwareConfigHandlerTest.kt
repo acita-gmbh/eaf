@@ -10,6 +10,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -84,7 +85,7 @@ class CreateVmwareConfigHandlerTest {
             assertTrue(success.value.configurationId.value.toString().isNotEmpty())
 
             coVerify(exactly = 1) { configurationPort.existsByTenantId(command.tenantId) }
-            coVerify(exactly = 1) { credentialEncryptor.encrypt(command.password) }
+            verify(exactly = 1) { credentialEncryptor.encrypt(command.password) }
             coVerify(exactly = 1) { configurationPort.save(any()) }
         }
 
@@ -106,7 +107,7 @@ class CreateVmwareConfigHandlerTest {
             assertEquals(command.tenantId, error.tenantId)
 
             coVerify(exactly = 1) { configurationPort.existsByTenantId(command.tenantId) }
-            coVerify(exactly = 0) { credentialEncryptor.encrypt(any()) }
+            verify(exactly = 0) { credentialEncryptor.encrypt(any()) }
             coVerify(exactly = 0) { configurationPort.save(any()) }
         }
 
@@ -130,6 +131,7 @@ class CreateVmwareConfigHandlerTest {
             assertTrue(error.message.contains("Encryption failed"))
 
             coVerify(exactly = 1) { configurationPort.existsByTenantId(command.tenantId) }
+            verify(exactly = 1) { credentialEncryptor.encrypt(command.password) }
             coVerify(exactly = 0) { configurationPort.save(any()) }
         }
 

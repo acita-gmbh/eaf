@@ -1,4 +1,4 @@
-# Product Brief: DCM (Dynamic Virtual Machine Manager)
+# Product Brief: DCM (Dynamic Cloud Manager)
 
 **Date:** 2025-11-24
 **Author:** Mary (Analyst Agent) + Wall-E
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-**DCM** (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
+**DCM** (Dynamic Cloud Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
 
 ### Market Timing
 

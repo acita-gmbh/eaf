@@ -255,7 +255,7 @@ claude-opus-4-5-20251101
 - **Additional Build Fixes:**
   1. Root `build.gradle.kts` - Global Kover exclusions for merged coverage report
   2. `dcm/dcm-infrastructure/build.gradle.kts` - jOOQ generated code exclusion from coverage
-  3. `dcm/dcm-app/build.gradle.kts` - DvmmApplicationKt (main) exclusion from coverage
+  3. `dcm/dcm-app/build.gradle.kts` - DcmApplicationKt (main) exclusion from coverage
   4. `ArchitectureTest.kt` - Fixed to exclude annotation classes from Test suffix check
 
 ### File List
@@ -270,7 +270,7 @@ claude-opus-4-5-20251101
 - `dcm/dcm-infrastructure/src/test/resources/db/jooq-init.sql` (new) - Test-specific SQL with uppercase identifiers
 - `dcm/dcm-infrastructure/src/test/kotlin/.../VmRequestProjectionRepositoryIntegrationTest.kt` (modified) - Updated for jOOQ compatibility
 - `dcm/dcm-app/src/test/kotlin/.../ArchitectureTest.kt` (modified) - Fixed annotation class exclusion
-- `dcm/dcm-app/src/test/kotlin/.../DvmmApplicationTest.kt` (new) - Context load smoke test
+- `dcm/dcm-app/src/test/kotlin/.../DcmApplicationTest.kt` (new) - Context load smoke test
 - `eaf/eaf-testing/src/main/kotlin/.../VcsimTestFixture.kt` (modified) - SSL hostname verification bypass
 - `eaf/eaf-testing/src/test/kotlin/.../VcsimIntegrationTest.kt` (modified) - CI-resilient SSL tests
 - `docs/epics.md` (modified) - Story 2.1 coverage/mutation restoration requirements

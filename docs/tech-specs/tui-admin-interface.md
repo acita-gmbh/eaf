@@ -140,7 +140,7 @@ dcm/
 │   ├── build.gradle.kts
 │   └── src/
 │       ├── main/kotlin/de/acci/dcm/tui/
-│       │   ├── DvmmTuiApplication.kt           # Entry point
+│       │   ├── DcmTuiApplication.kt           # Entry point
 │       │   ├── TuiRunner.kt                    # Main loop
 │       │   ├── config/TuiConfig.kt             # YAML config loading
 │       │   ├── auth/
@@ -150,9 +150,9 @@ dcm/
 │       │   │   ├── TuiGrpcClient.kt            # Unix socket channel
 │       │   │   └── EventSubscriber.kt          # Stream handler
 │       │   ├── dsl/                            # Kotlin DSL for Lanterna
-│       │   │   ├── DvmmWindow.kt
-│       │   │   ├── DvmmPanel.kt
-│       │   │   └── DvmmTable.kt
+│       │   │   ├── DcmWindow.kt
+│       │   │   ├── DcmPanel.kt
+│       │   │   └── DcmTable.kt
 │       │   ├── screens/
 │       │   │   ├── MainScreen.kt
 │       │   │   ├── ApprovalScreen.kt
@@ -369,7 +369,7 @@ package de.acci.dcm.tui;
 option java_multiple_files = true;
 option java_package = "de.acci.dcm.tui.proto";
 
-service DvmmTuiService {
+service DcmTuiService {
   // Authentication
   rpc Authenticate(AuthRequest) returns (AuthResponse);
 

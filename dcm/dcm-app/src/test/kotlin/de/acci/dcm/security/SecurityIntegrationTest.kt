@@ -1,6 +1,6 @@
 package de.acci.dcm.security
 
-import de.acci.dcm.DvmmApplication
+import de.acci.dcm.DcmApplication
 import de.acci.dcm.TestNotificationConfiguration
 import de.acci.dcm.application.vmrequest.CreateVmRequestHandler
 import de.acci.eaf.auth.keycloak.KeycloakJwtAuthenticationConverter
@@ -33,7 +33,7 @@ import java.util.UUID
  * - Filter chain runs correctly (SecurityConfig -> TenantContextWebFilter)
  */
 @SpringBootTest(
-    classes = [DvmmApplication::class, SecurityIntegrationTest.TestSecurityConfig::class, TestNotificationConfiguration::class],
+    classes = [DcmApplication::class, SecurityIntegrationTest.TestSecurityConfig::class, TestNotificationConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 )
 @AutoConfigureWebTestClient
