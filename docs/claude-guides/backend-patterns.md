@@ -17,6 +17,8 @@ fun process(userId: UserId, tenantId: TenantId) { }
 process(tenantId, userId)  // Compiles! Arguments swapped silently
 
 // ✅ Value classes provide true type safety with zero runtime overhead
+import java.util.UUID
+
 @JvmInline
 public value class UserId(public val value: String)
 
@@ -27,7 +29,7 @@ fun process(userId: UserId, tenantId: TenantId) { }
 process(tenantId, userId)  // Compile error! Type mismatch
 ```
 
-Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers.
+Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers. Validate inputs at construction boundaries to ensure value objects never hold invalid state.
 
 ## MockK Unit Testing
 
@@ -50,15 +52,19 @@ MockK stub setup evaluates all parameters immediately. Default parameter express
 Launch handlers independently when multiple handlers react to the same event:
 
 ```kotlin
+import kotlin.coroutines.cancellation.CancellationException
+
 // ✅ Handlers execute independently - failure of one doesn't block others
 @EventListener
 fun onEvent(event: SomeEvent) {
     scope.launch {
         try { handlerA.handle(event) }
+        catch (e: CancellationException) { throw e }
         catch (e: Exception) { logger.error(e) { "Handler A failed" } }
     }
     scope.launch {
         try { handlerB.handle(event) }
+        catch (e: CancellationException) { throw e }
         catch (e: Exception) { logger.error(e) { "Handler B failed" } }
     }
 }
@@ -87,17 +93,17 @@ Without this, `withTimeout`, `Job.cancel()`, and scope cancellation break. Appli
 
 ### Dispatcher Injection
 
-**Never hardcode dispatchers - inject them for testability.**
+**Accept dispatchers as constructor parameters (with sensible defaults) so tests can override them.**
 
 ```kotlin
-// ❌ Hardcoded dispatcher - untestable, uses real threads
+// ❌ Direct dispatcher usage at call site - tests cannot substitute
 class VmwareService {
     suspend fun cloneVm() = withContext(Dispatchers.IO) {
         // blocking I/O
     }
 }
 
-// ✅ Injected dispatcher - can substitute TestDispatcher in tests
+// ✅ Injectable dispatcher with sensible default - tests can override
 class VmwareService(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
@@ -130,6 +136,7 @@ suspend fun notifyAll(users: List<User>) = supervisorScope {
     users.forEach { user ->
         launch {
             try { notificationService.send(user) }
+            catch (e: CancellationException) { throw e }
             catch (e: Exception) { logger.error(e) { "Failed to notify ${user.id}" } }
         }
     }
