@@ -5,6 +5,7 @@ import de.acci.dvmm.application.vmrequest.ProvisioningFailedUserNotification
 import de.acci.dvmm.application.vmrequest.RequestApprovedNotification
 import de.acci.dvmm.application.vmrequest.RequestCreatedNotification
 import de.acci.dvmm.application.vmrequest.RequestRejectedNotification
+import de.acci.dvmm.application.vmrequest.VmReadyNotification
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationError
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.eaf.core.result.Result
@@ -181,6 +182,55 @@ public class VmRequestNotificationSenderAdapter(
         ).mapToNotificationError(TEMPLATE_PROVISIONING_FAILED_ADMIN)
     }
 
+    override suspend fun sendVmReadyNotification(
+        notification: VmReadyNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        val connectionCommand = determineConnectionCommand(
+            guestOs = notification.guestOs,
+            ipAddress = notification.ipAddress
+        )
+
+        val context = mapOf(
+            "vmName" to notification.vmName,
+            "projectName" to notification.projectName,
+            "ipAddress" to (notification.ipAddress ?: "Pending assignment"),
+            "hostname" to notification.hostname,
+            "connectionCommand" to connectionCommand,
+            "portalLink" to notification.portalLink,
+            "provisioningDuration" to notification.provisioningDurationMinutes.toString()
+        )
+
+        logger.debug {
+            "Sending VM ready notification: " +
+                "requestId=${notification.requestId.value}, " +
+                "to=${notification.requesterEmail.value}, " +
+                "hostname=${notification.hostname}"
+        }
+
+        return notificationService.sendEmail(
+            tenantId = notification.tenantId,
+            recipient = notification.requesterEmail,
+            subject = "[DVMM] VM ready: ${notification.vmName}",
+            templateName = TEMPLATE_VM_READY,
+            context = context
+        ).mapToNotificationError(TEMPLATE_VM_READY)
+    }
+
+    /**
+     * Determine the appropriate connection command based on guest OS.
+     *
+     * @param guestOs The guest operating system (e.g., "Windows Server 2019", "Ubuntu Linux")
+     * @param ipAddress The IP address of the VM
+     * @return SSH command for Linux/Unix, RDP command for Windows
+     */
+    private fun determineConnectionCommand(guestOs: String?, ipAddress: String?): String {
+        val ip = ipAddress ?: "pending"
+        return when {
+            guestOs?.contains("Windows", ignoreCase = true) == true -> "mstsc /v:$ip"
+            else -> "ssh user@$ip"
+        }
+    }
+
     /**
      * Map NotificationService errors to VmRequestNotificationError.
      */
@@ -216,5 +266,6 @@ public class VmRequestNotificationSenderAdapter(
         const val TEMPLATE_REJECTED = "vm-request-rejected"
         const val TEMPLATE_PROVISIONING_FAILED_USER = "vm-provisioning-failed-user"
         const val TEMPLATE_PROVISIONING_FAILED_ADMIN = "vm-provisioning-failed-admin"
+        const val TEMPLATE_VM_READY = "vm-ready"
     }
 }

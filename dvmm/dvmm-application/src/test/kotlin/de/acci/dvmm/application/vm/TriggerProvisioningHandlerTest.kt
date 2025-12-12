@@ -4,6 +4,7 @@ import de.acci.dvmm.application.vmrequest.NewTimelineEvent
 import de.acci.dvmm.application.vmrequest.NoOpVmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
+import de.acci.dvmm.application.vmrequest.VmReadyNotification
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
@@ -752,6 +753,196 @@ class TriggerProvisioningHandlerTest {
             val expectedRemaining = VmProvisioningProgressProjection.calculateEstimatedRemaining(VmProvisioningStage.CLONING)
             assertEquals(expectedRemaining, savedProjection.captured.estimatedRemainingSeconds)
             assertEquals(80L, expectedRemaining, "ETA after CLONING should be ~80 seconds")
+        }
+    }
+
+    @Nested
+    @DisplayName("success notifications (AC-3.8.1)")
+    inner class SuccessNotifications {
+
+        @Test
+        fun `should send VM ready notification on successful provisioning`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val provisioningResult = createProvisioningResult(
+                ipAddress = "192.168.1.100",
+                hostname = "web-server"
+            )
+            val projectInfo = createVmRequestSummary(
+                id = event.requestId,
+                projectName = "My Project",
+                requesterEmail = "user@example.com"
+            )
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
+
+            // Mock event store for success path
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            // Use mock notification sender to verify call
+            val mockNotificationSender = mockk<VmRequestNotificationSender>()
+            val notificationSlot = slot<VmReadyNotification>()
+            coEvery { mockNotificationSender.sendVmReadyNotification(capture(notificationSlot)) } returns Unit.success()
+
+            val handler = TriggerProvisioningHandler(
+                provisioningService = provisioningService,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = progressRepository,
+                notificationSender = mockNotificationSender,
+                portalBaseUrl = "https://dvmm.example.com"
+            )
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            coVerify(exactly = 1) { mockNotificationSender.sendVmReadyNotification(any()) }
+
+            val notification = notificationSlot.captured
+            assertEquals(event.requestId, notification.requestId)
+            assertEquals(tenantId, notification.tenantId)
+            assertEquals("user@example.com", notification.requesterEmail.value)
+            assertEquals("web-server", notification.vmName)
+            assertEquals("My Project", notification.projectName)
+            assertEquals("192.168.1.100", notification.ipAddress)
+            assertEquals("MYPR-web-server", notification.hostname)
+            assertEquals("https://dvmm.example.com/requests/${event.requestId.value}", notification.portalLink)
+            assertTrue(notification.provisioningDurationMinutes >= 0)
+        }
+
+        @Test
+        fun `should not send notification when requester email is missing`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(
+                id = event.requestId,
+                projectName = "My Project",
+                requesterEmail = null  // No email
+            )
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
+
+            // Mock event store for success path
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            // Use mock notification sender
+            val mockNotificationSender = mockk<VmRequestNotificationSender>()
+
+            val handler = TriggerProvisioningHandler(
+                provisioningService = provisioningService,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = progressRepository,
+                notificationSender = mockNotificationSender,
+                portalBaseUrl = "https://dvmm.example.com"
+            )
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then - notification should NOT be sent due to missing email
+            coVerify(exactly = 0) { mockNotificationSender.sendVmReadyNotification(any()) }
+        }
+
+        @Test
+        fun `should use fallback portal link when baseUrl not configured`() = runTest {
+            // Given
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(
+                id = event.requestId,
+                projectName = "My Project",
+                requesterEmail = "user@example.com"
+            )
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
+
+            // Mock event store for success path
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            // Use mock notification sender
+            val mockNotificationSender = mockk<VmRequestNotificationSender>()
+            val notificationSlot = slot<VmReadyNotification>()
+            coEvery { mockNotificationSender.sendVmReadyNotification(capture(notificationSlot)) } returns Unit.success()
+
+            // Handler without portalBaseUrl configured
+            val handler = TriggerProvisioningHandler(
+                provisioningService = provisioningService,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = progressRepository,
+                notificationSender = mockNotificationSender,
+                portalBaseUrl = null  // Not configured
+            )
+
+            // When
+            handler.onVmProvisioningStarted(event)
+
+            // Then
+            coVerify(exactly = 1) { mockNotificationSender.sendVmReadyNotification(any()) }
+            assertEquals("#", notificationSlot.captured.portalLink)
         }
     }
 }

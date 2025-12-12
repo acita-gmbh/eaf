@@ -107,6 +107,28 @@ public data class ProvisioningFailedAdminNotification(
 )
 
 /**
+ * Data for sending a "VM ready" notification to the requester (AC-3.8.1).
+ * Sent when VM provisioning completes successfully.
+ */
+public data class VmReadyNotification(
+    val requestId: VmRequestId,
+    val tenantId: TenantId,
+    val requesterEmail: EmailAddress,
+    val vmName: String,
+    val projectName: String,
+    /** IP address of the provisioned VM, null if not yet assigned */
+    val ipAddress: String?,
+    /** Hostname of the provisioned VM */
+    val hostname: String,
+    /** Guest operating system for connection command generation */
+    val guestOs: String?,
+    /** Time taken to provision the VM in minutes */
+    val provisioningDurationMinutes: Long,
+    /** Link to view VM details in the portal */
+    val portalLink: String
+)
+
+/**
  * Interface for sending VM request notifications.
  *
  * Implementations send email notifications to users when their
@@ -174,6 +196,15 @@ public interface VmRequestNotificationSender {
     public suspend fun sendProvisioningFailedAdminNotification(
         notification: ProvisioningFailedAdminNotification
     ): Result<Unit, VmRequestNotificationError>
+
+    /**
+     * Send notification to user when VM provisioning succeeds (AC-3.8.1).
+     *
+     * Contains VM details, connection instructions, and portal link.
+     */
+    public suspend fun sendVmReadyNotification(
+        notification: VmReadyNotification
+    ): Result<Unit, VmRequestNotificationError>
 }
 
 /**
@@ -226,6 +257,15 @@ public object NoOpVmRequestNotificationSender : VmRequestNotificationSender {
     ): Result<Unit, VmRequestNotificationError> {
         logger.debug {
             "Notifications disabled - skipping 'provisioning failed (admin)' notification for request ${notification.requestId.value}"
+        }
+        return Result.Success(Unit)
+    }
+
+    override suspend fun sendVmReadyNotification(
+        notification: VmReadyNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        logger.debug {
+            "Notifications disabled - skipping 'VM ready' notification for request ${notification.requestId.value}"
         }
         return Result.Success(Unit)
     }
