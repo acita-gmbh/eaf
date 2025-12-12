@@ -581,7 +581,8 @@ public class TriggerProvisioningHandler(
                 val userResult = notificationSender.sendProvisioningFailedUserNotification(userNotification)
                 when (userResult) {
                     is Result.Success -> logger.info {
-                        "[Step 3/4] Sent provisioning failed notification to user $requesterEmail"
+                        "[Step 3/4] Sent provisioning failed notification to user. " +
+                            "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
                     }
                     is Result.Failure -> logger.logNotificationError(
                         notificationError = userResult.error,
@@ -621,7 +622,8 @@ public class TriggerProvisioningHandler(
             val adminResult = notificationSender.sendProvisioningFailedAdminNotification(adminNotification)
             when (adminResult) {
                 is Result.Success -> logger.info {
-                    "[Step 4/4] Sent provisioning failed notification to admin $adminNotificationEmail"
+                    "[Step 4/4] Sent provisioning failed notification to admin. " +
+                        "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
                 }
                 is Result.Failure -> logger.logNotificationError(
                     notificationError = adminResult.error,
