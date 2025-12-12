@@ -306,30 +306,95 @@ public class VcenterAdapter(
         }
     }
 
+    /**
+     * Lists all datacenters available in the vCenter inventory.
+     *
+     * Delegates to [VsphereClient.listDatacenters] for resilient execution.
+     *
+     * @return List of datacenters or error.
+     */
     override suspend fun listDatacenters(): Result<List<Datacenter>, VsphereError> =
         vsphereClient.listDatacenters()
 
+    /**
+     * Lists all clusters in the specified datacenter.
+     *
+     * Delegates to [VsphereClient.listClusters] for resilient execution.
+     *
+     * @param datacenter Target datacenter.
+     * @return List of clusters or error.
+     */
     override suspend fun listClusters(datacenter: Datacenter): Result<List<Cluster>, VsphereError> =
         vsphereClient.listClusters(datacenter)
 
+    /**
+     * Lists all datastores attached to the specified cluster.
+     *
+     * Delegates to [VsphereClient.listDatastores] for resilient execution.
+     *
+     * @param cluster Target cluster.
+     * @return List of datastores or error.
+     */
     override suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError> =
         vsphereClient.listDatastores(cluster)
 
+    /**
+     * Lists all networks available in the specified datacenter.
+     *
+     * Delegates to [VsphereClient.listNetworks] for resilient execution.
+     *
+     * @param datacenter Target datacenter.
+     * @return List of networks or error.
+     */
     override suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError> =
         vsphereClient.listNetworks(datacenter)
 
+    /**
+     * Lists all resource pools in the specified cluster.
+     *
+     * Delegates to [VsphereClient.listResourcePools] for resilient execution.
+     *
+     * @param cluster Target cluster.
+     * @return List of resource pools or error.
+     */
     override suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> =
         vsphereClient.listResourcePools(cluster)
 
+    /**
+     * Creates a new VM based on the provided specification.
+     *
+     * Delegates to [VsphereClient.createVm] which handles cloning, power-on,
+     * and IP detection with resilience and saga compensation.
+     *
+     * @param spec VM specification (name, cpu, memory, template).
+     * @param onProgress Callback for status updates.
+     * @return Result containing VM details on success, or error.
+     */
     override suspend fun createVm(
         spec: VmSpec,
         onProgress: suspend (VmProvisioningStage) -> Unit
     ): Result<VmProvisioningResult, VsphereError> =
         vsphereClient.createVm(spec, onProgress)
 
+    /**
+     * Retrieves runtime information for a specific VM.
+     *
+     * Delegates to [VsphereClient.getVm] for resilient execution.
+     *
+     * @param vmId The ID of the VM to retrieve.
+     * @return VM information or error if not found.
+     */
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> =
         vsphereClient.getVm(vmId)
 
+    /**
+     * Deletes a VM from vCenter.
+     *
+     * Delegates to [VsphereClient.deleteVm] for resilient execution.
+     *
+     * @param vmId The ID of the VM to delete.
+     * @return Success or error.
+     */
     override suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> =
         vsphereClient.deleteVm(vmId)
 

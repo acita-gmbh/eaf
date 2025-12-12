@@ -2,6 +2,45 @@
 
 > This guide is referenced from the main CLAUDE.md documentation
 
+## Type Safety
+
+### Value Classes Over Type Aliases
+
+**Use `@JvmInline value class` for domain identifiers, NOT `typealias`.**
+
+```kotlin
+// ❌ typealias creates only an alias - no compile-time safety
+typealias UserId = String
+typealias TenantId = String
+
+fun process(userId: UserId, tenantId: TenantId) { }
+process(tenantId, userId)  // Compiles! Arguments swapped silently
+
+// ✅ Value classes provide true type safety with zero runtime overhead
+import java.util.UUID
+
+@JvmInline
+public value class UserId(public val value: String)
+
+@JvmInline
+public value class TenantId(public val value: UUID)
+
+fun process(userId: UserId, tenantId: TenantId) { }
+process(tenantId, userId)  // Compile error! Type mismatch
+```
+
+Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers. Validate inputs at construction boundaries to ensure value objects never hold invalid state:
+
+```kotlin
+@JvmInline
+public value class VmName(public val value: String) {
+    init {
+        require(value.isNotBlank()) { "VM name cannot be blank" }
+        require(value.length <= 80) { "VM name exceeds 80 characters" }
+    }
+}
+```
+
 ## MockK Unit Testing
 
 **Use `any()` for ALL parameters when stubbing functions with default arguments.**
@@ -23,15 +62,19 @@ MockK stub setup evaluates all parameters immediately. Default parameter express
 Launch handlers independently when multiple handlers react to the same event:
 
 ```kotlin
+import kotlin.coroutines.cancellation.CancellationException
+
 // ✅ Handlers execute independently - failure of one doesn't block others
 @EventListener
 fun onEvent(event: SomeEvent) {
     scope.launch {
         try { handlerA.handle(event) }
+        catch (e: CancellationException) { throw e }
         catch (e: Exception) { logger.error(e) { "Handler A failed" } }
     }
     scope.launch {
         try { handlerB.handle(event) }
+        catch (e: CancellationException) { throw e }
         catch (e: Exception) { logger.error(e) { "Handler B failed" } }
     }
 }
@@ -57,6 +100,119 @@ private suspend fun doWork() {
 ```
 
 Without this, `withTimeout`, `Job.cancel()`, and scope cancellation break. Application shutdown can hang.
+
+### Dispatcher Injection
+
+**Accept dispatchers as constructor parameters (with sensible defaults) so tests can override them.**
+
+```kotlin
+// ❌ Direct dispatcher usage at call site - tests cannot substitute
+class VmwareService {
+    suspend fun cloneVm() = withContext(Dispatchers.IO) {
+        // blocking I/O
+    }
+}
+
+// ✅ Injectable dispatcher with sensible default - tests can override
+class VmwareService(
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
+    suspend fun cloneVm() = withContext(ioDispatcher) {
+        // blocking I/O
+    }
+}
+```
+
+For high-concurrency scenarios, limit parallelism to prevent thread exhaustion:
+
+```kotlin
+private val limitedIo = Dispatchers.IO.limitedParallelism(64)
+```
+
+### Structured Concurrency with supervisorScope
+
+**Use `supervisorScope` when child failures should NOT cancel siblings.**
+
+```kotlin
+import kotlin.coroutines.cancellation.CancellationException
+
+// ❌ coroutineScope - one failure cancels all children
+suspend fun notifyAll(users: List<User>) = coroutineScope {
+    users.forEach { user ->
+        launch { notificationService.send(user) }  // One failure cancels ALL
+    }
+}
+
+// ✅ supervisorScope - failures are isolated
+suspend fun notifyAll(users: List<User>) = supervisorScope {
+    users.forEach { user ->
+        launch {
+            try { notificationService.send(user) }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { logger.error(e) { "Failed to notify ${user.id}" } }
+        }
+    }
+}
+```
+
+## Async Testing
+
+### Deterministic Coroutine Tests
+
+**Use `runTest` with `StandardTestDispatcher` for deterministic async testing.**
+
+```kotlin
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.advanceUntilIdle
+
+class VmProvisioningServiceTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Test
+    fun `should complete provisioning`() = runTest(testDispatcher) {
+        val service = VmProvisioningService(ioDispatcher = testDispatcher)
+
+        service.startProvisioning(vmId)
+
+        advanceUntilIdle()  // Fast-forward virtual time - no real delays!
+
+        // Assert final state
+    }
+}
+```
+
+Key benefits:
+- **No flaky tests** - virtual time eliminates real delays
+- **Fast CI/CD** - tests complete in milliseconds
+- **Deterministic** - same input always produces same timing
+
+### Flow Testing with Turbine
+
+**Use Turbine for assertion-based Flow validation.**
+
+```kotlin
+import app.cash.turbine.test
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+
+class ProvisioningProgressServiceTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Test
+    fun `should emit progress updates`() = runTest(testDispatcher) {
+        // Service uses injectable dispatcher (see Dispatcher Injection section)
+        val service = ProvisioningProgressService(ioDispatcher = testDispatcher)
+
+        service.progressFlow(vmRequestId).test {
+            assertEquals(VmProvisioningStage.CLONING, awaitItem().stage)
+            assertEquals(VmProvisioningStage.CUSTOMIZING, awaitItem().stage)
+            assertEquals(VmProvisioningStage.READY, awaitItem().stage)
+            awaitComplete()
+        }
+    }
+}
+```
 
 ## Event Sourcing Patterns
 
@@ -153,3 +309,9 @@ sealed interface ProjectionColumns {
 ```
 
 See `VmRequestProjectionRepository.kt` for reference implementation.
+
+---
+
+## References
+
+- [How Backend Development Teams Use Kotlin in 2025](https://blog.jetbrains.com/kotlin/2025/12/how-backend-development-teams-use-kotlin-in-2025/) - JetBrains survey and best practices

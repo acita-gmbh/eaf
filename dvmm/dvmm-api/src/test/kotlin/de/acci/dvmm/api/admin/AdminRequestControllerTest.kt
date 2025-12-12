@@ -334,9 +334,9 @@ class AdminRequestControllerTest {
         }
 
         @Test
-        @DisplayName("should return 403 for forbidden error")
-        fun `should return 403 for forbidden error`() = runTest {
-            // Given
+        @DisplayName("should return 404 for forbidden error (security: prevent enumeration)")
+        fun `should return 404 for forbidden error`() = runTest {
+            // Given: Security pattern - return 404 instead of 403 to prevent tenant enumeration
             val jwt = createJwt()
 
             coEvery {
@@ -353,11 +353,8 @@ class AdminRequestControllerTest {
                 )
             }
 
-            // Then
-            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-            @Suppress("UNCHECKED_CAST")
-            val body = response.body as Map<String, String>
-            assertEquals("FORBIDDEN", body["error"])
+            // Then: Returns 404 (not 403) per CLAUDE.md security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         }
 
         @Test

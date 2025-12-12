@@ -16,6 +16,7 @@ import de.acci.dvmm.application.vmware.UpdateVmwareConfigError
 import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
 import de.acci.dvmm.domain.vmware.VmwareConfiguration
 import de.acci.eaf.core.result.Result
+import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.tenant.TenantContext
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * REST controller for VMware vCenter configuration management.
@@ -58,8 +60,6 @@ import java.net.URI
  * - **422 Unprocessable Entity**: Validation or connection test failure
  * - **500 Internal Server Error**: Database or encryption failure
  */
-private val logger = KotlinLogging.logger {}
-
 @RestController
 @RequestMapping("/api/admin/vmware-config")
 @PreAuthorize("hasRole('admin')")
@@ -70,6 +70,7 @@ public class VmwareConfigController(
     private val testVmwareConnectionHandler: TestVmwareConnectionHandler,
     private val checkVmwareConfigExistsHandler: CheckVmwareConfigExistsHandler
 ) {
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Get current VMware configuration for the tenant.
@@ -99,19 +100,19 @@ public class VmwareConfigController(
             is Result.Success -> {
                 ResponseEntity.ok(VmwareConfigApiResponse.fromDomain(result.value))
             }
-            is Result.Failure -> handleGetConfigError(result.error)
+            is Result.Failure -> handleGetConfigError(result.error, tenantId)
         }
     }
 
-    private fun handleGetConfigError(error: GetVmwareConfigError): ResponseEntity<Any> {
+    private fun handleGetConfigError(error: GetVmwareConfigError, tenantId: TenantId): ResponseEntity<Any> {
         return when (error) {
             is GetVmwareConfigError.NotFound -> {
-                logger.debug { "VMware configuration not found for tenant" }
+                logger.debug { "VMware configuration not found for tenant: tenantId=${tenantId.value}" }
                 ResponseEntity.notFound().build()
             }
             is GetVmwareConfigError.Forbidden -> {
                 // SECURITY: Return 404 to prevent tenant enumeration
-                logger.warn { "Forbidden access to VMware configuration" }
+                logger.warn { "Forbidden access to VMware configuration: tenantId=${tenantId.value}" }
                 ResponseEntity.notFound().build()
             }
             is GetVmwareConfigError.QueryFailure -> {
@@ -454,6 +455,8 @@ public class VmwareConfigController(
             try {
                 val config = getVmwareConfigHandler.handle(GetVmwareConfigQuery(tenantId))
                 (config as? Result.Success)?.value?.verifiedAt
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) { "Failed to fetch VMware config verifiedAt for tenant=${tenantId.value}" }
                 null

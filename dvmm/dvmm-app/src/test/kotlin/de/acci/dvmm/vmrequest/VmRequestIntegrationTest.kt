@@ -779,9 +779,10 @@ class VmRequestIntegrationTest {
         }
 
         @Test
-        @DisplayName("should return 403 Forbidden when user tries to view another user's request")
-        fun `should return 403 when viewing another user request`() {
+        @DisplayName("should return 404 Not Found when user tries to view another user's request (security: prevent enumeration)")
+        fun `should return 404 when viewing another user request`() {
             // Given: A request owned by user B in tenant A
+            // Security pattern: Return 404 instead of 403 to prevent resource enumeration
             val requestId = UUID.randomUUID()
             insertProjection(
                 id = requestId,
@@ -797,11 +798,11 @@ class VmRequestIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .exchange()
 
-            // Then: 403 Forbidden
+            // Then: 404 Not Found (not 403) per CLAUDE.md security pattern
             response
-                .expectStatus().isForbidden
+                .expectStatus().isNotFound
                 .expectBody()
-                .jsonPath("$.type").isEqualTo("forbidden")
+                .jsonPath("$.type").isEqualTo("not_found")
         }
 
         @Test
@@ -951,9 +952,10 @@ class VmRequestIntegrationTest {
         }
 
         @Test
-        @DisplayName("should return 403 Forbidden when cancelling another user's request")
-        fun `should return 403 when cancelling others request`() {
+        @DisplayName("should return 404 Not Found when cancelling another user's request (security: prevent enumeration)")
+        fun `should return 404 when cancelling others request`() {
             // Given: Create a request as tenant A
+            // Security pattern: Return 404 instead of 403 to prevent resource enumeration
             val requestBody = """
                 {
                     "vmName": "tenant-a-vm",
@@ -981,8 +983,8 @@ class VmRequestIntegrationTest {
                 .uri("/api/requests/$requestId/cancel")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantB()}")
                 .exchange()
-                // Then: 403 Forbidden - authorization check rejects cross-tenant access
-                .expectStatus().isForbidden
+                // Then: 404 Not Found (not 403) per CLAUDE.md security pattern
+                .expectStatus().isNotFound
         }
 
         @Test

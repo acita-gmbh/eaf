@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
+/**
+ * Controller for retrieving VM provisioning progress.
+ */
 @RestController
 @RequestMapping("/api/requests")
 public class VmProvisioningProgressController(
@@ -19,6 +22,7 @@ public class VmProvisioningProgressController(
 ) {
     private val logger = KotlinLogging.logger {}
 
+    /** Gets the progress for a request. */
     @GetMapping("/{id}/provisioning-progress")
     public suspend fun getProgress(@PathVariable id: UUID): ResponseEntity<VmProvisioningProgressProjection> {
         // VmRequestId.fromString handles UUID string

@@ -10,12 +10,19 @@ import io.jsonwebtoken.security.Keys
 import java.util.Date
 import java.util.UUID
 
+/**
+ * Factory for creating test tenants.
+ */
 public object TestTenantFixture {
+    /** Creates a new random TenantId for testing. */
     public fun createTenant(name: String = "Test Tenant"): TenantId {
         return TenantId.generate()
     }
 }
 
+/**
+ * Factory for creating test users with valid JWTs.
+ */
 public object TestUserFixture {
     /**
      * Shared test secret for JWT signing/verification.
@@ -24,6 +31,7 @@ public object TestUserFixture {
     public const val TEST_JWT_SECRET: String =
         "test-secret-key-must-be-at-least-256-bits-long-so-make-it-long"
 
+    /** Creates a new test user model. */
     public fun createUser(
         tenantId: TenantId,
         role: String = "USER"
@@ -36,6 +44,7 @@ public object TestUserFixture {
         )
     }
 
+    /** Generates a signed JWT token for the given user. */
     public fun generateJwt(user: TestUser): String {
         val now = Date()
         val expiry = Date(now.time + 3600000) // 1 hour

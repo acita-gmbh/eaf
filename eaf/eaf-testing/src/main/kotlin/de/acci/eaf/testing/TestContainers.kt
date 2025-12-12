@@ -7,17 +7,30 @@ import org.flywaydb.core.Flyway
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
+/**
+ * Central registry for TestContainers used in integration tests.
+ *
+ * Manages singleton containers for PostgreSQL, Keycloak, and VCSIM to speed up
+ * test execution (containers are started once and reused).
+ */
 public object TestContainers {
 
+    /**
+     * Shared PostgreSQL container for integration tests (reused).
+     *
+     * Note: .withReuse(true) requires 'testcontainers.reuse.enable=true' in ~/.testcontainers.properties.
+     * Uses 'eaf_test' database to avoid collisions with other projects.
+     */
     public val postgres: PostgreSQLContainer by lazy {
         PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
-            .withDatabaseName("dvmm_test")
+            .withDatabaseName("eaf_test")
             .withUsername("test")
             .withPassword("test")
             .withReuse(true)
             .apply { start() }
     }
 
+    /** Shared Keycloak container for integration tests (reused). */
     public val keycloak: KeycloakContainer by lazy {
         KeycloakContainer("quay.io/keycloak/keycloak:26.0")
             .withRealmImportFile("/test-realm.json")
@@ -71,8 +84,10 @@ public object TestContainers {
             }
             postgres.createConnection("").use { conn ->
                 // Drop existing schema to ensure clean state (containers are reused)
-                conn.createStatement().execute("DROP SCHEMA IF EXISTS eaf_events CASCADE")
-                conn.createStatement().execute(migrationSqlSupplier())
+                conn.createStatement().use { stmt ->
+                    stmt.execute("DROP SCHEMA IF EXISTS eaf_events CASCADE")
+                    stmt.execute(migrationSqlSupplier())
+                }
             }
         }
     }
@@ -93,26 +108,28 @@ public object TestContainers {
                 return
             }
             postgres.createConnection("").use { conn ->
-                conn.createStatement().execute(
-                    """
-                    ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
-                    DROP POLICY IF EXISTS tenant_isolation_events ON eaf_events.events;
-                    CREATE POLICY tenant_isolation_events ON eaf_events.events
-                        USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::UUID);
-                    ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
-
-                    -- Create eaf_app role for RLS tests if it doesn't exist
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'eaf_app') THEN
-                            CREATE ROLE eaf_app NOINHERIT;
-                        END IF;
-                    END
-                    $$;
-                    GRANT USAGE ON SCHEMA eaf_events TO eaf_app;
-                    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA eaf_events TO eaf_app;
-                    """.trimIndent()
-                )
+                conn.createStatement().use { stmt ->
+                    stmt.execute(
+                        """
+                        ALTER TABLE eaf_events.events ENABLE ROW LEVEL SECURITY;
+                        DROP POLICY IF EXISTS tenant_isolation_events ON eaf_events.events;
+                        CREATE POLICY tenant_isolation_events ON eaf_events.events
+                            USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::UUID);
+                        ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
+    
+                        -- Create eaf_app role for RLS tests if it doesn't exist
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'eaf_app') THEN
+                                CREATE ROLE eaf_app NOINHERIT;
+                            END IF;
+                        END
+                        $$;
+                        GRANT USAGE ON SCHEMA eaf_events TO eaf_app;
+                        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA eaf_events TO eaf_app;
+                        """.trimIndent()
+                    )
+                }
             }
         }
     }

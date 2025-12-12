@@ -12,14 +12,13 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Query to retrieve detailed VM request information with timeline.
- *
- * @param tenantId The tenant context for RLS
- * @param requestId The ID of the VM request to retrieve
- * @param userId The user making the request (for authorization)
  */
 public data class GetRequestDetailQuery(
+    /** The tenant context for RLS */
     val tenantId: TenantId,
+    /** The ID of the VM request to retrieve */
     val requestId: VmRequestId,
+    /** The user making the request (for authorization) */
     val userId: UserId
 )
 
@@ -31,7 +30,9 @@ public sealed class GetRequestDetailError {
      * Request not found (either doesn't exist or not visible to the user).
      */
     public data class NotFound(
+        /** The ID of the missing request */
         val requestId: VmRequestId,
+        /** Error message */
         val message: String = "VM request not found: ${requestId.value}"
     ) : GetRequestDetailError()
 
@@ -40,6 +41,7 @@ public sealed class GetRequestDetailError {
      * Only the original requester can view their request details.
      */
     public data class Forbidden(
+        /** Error message */
         val message: String = "Not authorized to view this request"
     ) : GetRequestDetailError()
 
@@ -47,67 +49,66 @@ public sealed class GetRequestDetailError {
      * Unexpected failure when querying the read model.
      */
     public data class QueryFailure(
+        /** Error message */
         val message: String
     ) : GetRequestDetailError()
 }
 
 /**
  * A single timeline event for display.
- *
- * @param eventType Type of event (CREATED, APPROVED, REJECTED, CANCELLED, etc.)
- * @param actorName Display name of the user who performed the action (null for system events)
- * @param details Additional event details (e.g., rejection reason)
- * @param occurredAt When the event occurred
  */
 public data class TimelineEventItem(
+    /** Type of event (CREATED, APPROVED, REJECTED, CANCELLED, etc.) */
     val eventType: TimelineEventType,
+    /** Display name of the user who performed the action (null for system events) */
     val actorName: String?,
+    /** Additional event details (e.g., rejection reason) */
     val details: String?,
+    /** When the event occurred */
     val occurredAt: Instant
 )
 
 /**
  * Detailed VM request information with timeline and VM runtime details.
- *
- * @param id Unique identifier for the request
- * @param vmName Name of the requested VM
- * @param size Size tier (SMALL, MEDIUM, LARGE)
- * @param cpuCores Number of CPU cores
- * @param memoryGb RAM in gigabytes
- * @param diskGb Disk space in gigabytes
- * @param justification Business justification for the request
- * @param status Current status of the request
- * @param projectName Name of the project this VM belongs to
- * @param requesterName Name of the user who submitted the request
- * @param createdAt When the request was submitted
- * @param timeline List of timeline events in chronological order
- * @param vmwareVmId VMware MoRef ID (null if not yet provisioned)
- * @param ipAddress Primary IP address from VMware Tools (null if not detected)
- * @param hostname Guest hostname from VMware Tools (null if not detected)
- * @param powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
- * @param guestOs Detected guest OS from VMware Tools (null if not detected)
- * @param lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
- * @param bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetail(
+    /** Unique identifier for the request */
     val id: VmRequestId,
+    /** Name of the requested VM */
     val vmName: String,
+    /** Size tier (SMALL, MEDIUM, LARGE) */
     val size: String,
+    /** Number of CPU cores */
     val cpuCores: Int,
+    /** RAM in gigabytes */
     val memoryGb: Int,
+    /** Disk space in gigabytes */
     val diskGb: Int,
+    /** Business justification for the request */
     val justification: String,
+    /** Current status of the request */
     val status: String,
+    /** Name of the project this VM belongs to */
     val projectName: String,
+    /** Name of the user who submitted the request */
     val requesterName: String,
+    /** When the request was submitted */
     val createdAt: Instant,
+    /** List of timeline events in chronological order */
     val timeline: List<TimelineEventItem>,
+    /** VMware MoRef ID (null if not yet provisioned) */
     val vmwareVmId: String? = null,
+    /** Primary IP address from VMware Tools (null if not detected) */
     val ipAddress: String? = null,
+    /** Guest hostname from VMware Tools (null if not detected) */
     val hostname: String? = null,
+    /** VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned) */
     val powerState: String? = null,
+    /** Detected guest OS from VMware Tools (null if not detected) */
     val guestOs: String? = null,
+    /** Timestamp of last status sync from vSphere (null if never synced) */
     val lastSyncedAt: Instant? = null,
+    /** Timestamp when VM was last powered on (null if not running or not detected) */
     val bootTime: Instant? = null
 )
 
@@ -226,46 +227,45 @@ public interface VmRequestDetailRepository {
  * Projection data for detailed VM request view.
  *
  * Story 3-7: Includes VM runtime details for provisioned VMs.
- *
- * @property id Unique identifier for the request
- * @property requesterId User who created the request (used for authorization checks)
- * @property vmName Name of the requested virtual machine
- * @property size Size category (S, M, L, XL)
- * @property cpuCores Number of CPU cores
- * @property memoryGb Memory allocation in gigabytes
- * @property diskGb Disk storage in gigabytes
- * @property justification Business justification for the request
- * @property status Current status (PENDING, APPROVED, REJECTED, etc.)
- * @property projectName Name of the associated project
- * @property requesterName Display name of the requester
- * @property createdAt Timestamp when the request was created
- * @property vmwareVmId VMware MoRef ID (null if not yet provisioned)
- * @property ipAddress Primary IP address from VMware Tools (null if not detected)
- * @property hostname Guest hostname from VMware Tools (null if not detected)
- * @property powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
- * @property guestOs Detected guest OS from VMware Tools (null if not detected)
- * @property lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
- * @property bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetailProjection(
+    /** Unique identifier for the request */
     val id: VmRequestId,
+    /** User who created the request (used for authorization checks) */
     val requesterId: UserId,
+    /** Name of the requested virtual machine */
     val vmName: String,
+    /** Size category (S, M, L, XL) */
     val size: String,
+    /** Number of CPU cores */
     val cpuCores: Int,
+    /** Memory allocation in gigabytes */
     val memoryGb: Int,
+    /** Disk storage in gigabytes */
     val diskGb: Int,
+    /** Business justification for the request */
     val justification: String,
+    /** Current status (PENDING, APPROVED, REJECTED, etc.) */
     val status: String,
+    /** Name of the associated project */
     val projectName: String,
+    /** Display name of the requester */
     val requesterName: String,
+    /** Timestamp when the request was created */
     val createdAt: Instant,
+    /** VMware MoRef ID (null if not yet provisioned) */
     val vmwareVmId: String? = null,
+    /** Primary IP address from VMware Tools (null if not detected) */
     val ipAddress: String? = null,
+    /** Guest hostname from VMware Tools (null if not detected) */
     val hostname: String? = null,
+    /** VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned) */
     val powerState: String? = null,
+    /** Detected guest OS from VMware Tools (null if not detected) */
     val guestOs: String? = null,
+    /** Timestamp of last status sync from vSphere (null if never synced) */
     val lastSyncedAt: Instant? = null,
+    /** Timestamp when VM was last powered on (null if not running or not detected) */
     val bootTime: Instant? = null
 )
 

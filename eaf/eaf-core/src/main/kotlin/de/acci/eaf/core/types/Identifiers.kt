@@ -8,7 +8,10 @@ import java.util.UUID
  * Purpose: strict typing for multi-tenant context propagation.
  */
 @JvmInline
-public value class TenantId(public val value: UUID) {
+public value class TenantId(
+    /** The raw UUID value */
+    public val value: UUID
+) {
     public companion object {
         /** Generate a new random tenant identifier. */
         public fun generate(): TenantId = TenantId(UUID.randomUUID())
@@ -28,7 +31,10 @@ public value class TenantId(public val value: UUID) {
  * Purpose: avoid leaking raw UUID strings across layers.
  */
 @JvmInline
-public value class UserId(public val value: UUID) {
+public value class UserId(
+    /** The raw UUID value */
+    public val value: UUID
+) {
     public companion object {
         /** Generate a new random user identifier. */
         public fun generate(): UserId = UserId(UUID.randomUUID())
@@ -48,7 +54,10 @@ public value class UserId(public val value: UUID) {
  * Purpose: correlate logs/events without adding Throwable dependencies.
  */
 @JvmInline
-public value class CorrelationId(public val value: UUID) {
+public value class CorrelationId(
+    /** The raw UUID value */
+    public val value: UUID
+) {
     public companion object {
         /** Generate a new correlation ID. */
         public fun generate(): CorrelationId = CorrelationId(UUID.randomUUID())

@@ -51,7 +51,11 @@ class VmProvisioningProgressQueryServiceTest {
         val result = service.getProgress(vmRequestId)
 
         assertTrue(result is Result.Failure)
-        assertEquals("No tenant context", (result as Result.Failure).error.message)
+        val error = (result as Result.Failure).error
+        assertTrue(error is VmProvisioningProgressQueryService.Error.TenantContextUnavailable)
+        val tenantError = error as VmProvisioningProgressQueryService.Error.TenantContextUnavailable
+        assertEquals(vmRequestId, tenantError.vmRequestId)
+        assertTrue(tenantError.message.contains("Tenant context missing or invalid"))
     }
 
     @Test

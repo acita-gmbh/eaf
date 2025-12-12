@@ -60,6 +60,26 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * Resilient client for VMware vSphere integration using VCF SDK 9.0.
+ *
+ * Handles low-level SOAP interactions with vCenter, including:
+ * - Session management and keep-alive (via [VsphereSessionManager])
+ * - Connection resilience (Circuit Breaker pattern via Resilience4j)
+ * - VCF SDK 9.0 specific workarounds (Port 443 limitations, SSL context)
+ * - Saga compensation for partial failures during complex operations (e.g. VM creation):
+ *   If a failure occurs partway through VM creation, the system attempts to delete any partially created VM to prevent orphaned resources. See [createVm] for more details.
+ *
+ * ## Architecture
+ * Uses a [CircuitBreaker] to prevent cascading failures when vCenter is unresponsive.
+ * All operations are executed within [executeResilient] wrapper which handles timeouts,
+ * circuit breaker state, and logging.
+ *
+ * ## Port 443 Limitation
+ * VCF SDK 9.0's `VcenterClientFactory` enforces port 443. This client implements
+ * a custom JAX-WS configuration in [ensureSession] to support dynamic ports required
+ * for VCSIM testing and non-standard vCenter deployments.
+ */
 @Component
 public class VsphereClient(
     private val sessionManager: VsphereSessionManager,
@@ -427,6 +447,11 @@ public class VsphereClient(
         result
     }
 
+    /**
+     * Lists all datacenters available in the vCenter inventory for the current tenant.
+     *
+     * @return List of [Datacenter] objects with ID and name, or error if retrieval fails.
+     */
     public suspend fun listDatacenters(): Result<List<Datacenter>, VsphereError> = executeResilient("listDatacenters") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -435,19 +460,28 @@ public class VsphereClient(
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
 
-        runCatching {
-            retrieveObjects(session, "Datacenter", listOf("name")) { obj, props ->
+        try {
+            retrieveObjects(
+                session = session,
+                type = "Datacenter",
+                properties = listOf("name")
+            ) { obj, props ->
                 Datacenter(obj.value, props["name"] as? String ?: "Unknown")
-            }
-        }.fold(
-            onSuccess = { it.success() },
-            onFailure = { e ->
-                logger.error(e) { "Failed to list datacenters: ${e.message}" }
-                VsphereError.ApiError("Failed to list datacenters", e).failure()
-            }
-        )
+            }.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to list datacenters: ${e.message}" }
+            VsphereError.ApiError("Failed to list datacenters", e).failure()
+        }
     }
 
+    /**
+     * Lists all clusters within a specific datacenter.
+     *
+     * @param datacenter The target datacenter.
+     * @return List of [Cluster] objects, or error if retrieval fails.
+     */
     public suspend fun listClusters(datacenter: Datacenter): Result<List<Cluster>, VsphereError> = executeResilient("listClusters") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -455,16 +489,28 @@ public class VsphereClient(
             is Result.Success -> sessionResult.value
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
-        runCatching {
-            retrieveObjects(session, "ClusterComputeResource", listOf("name"), moRef("Datacenter", datacenter.id)) { obj, props ->
+        try {
+            retrieveObjects(
+                session = session,
+                type = "ClusterComputeResource",
+                properties = listOf("name"),
+                root = moRef(type = "Datacenter", value = datacenter.id)
+            ) { obj, props ->
                 Cluster(obj.value, props["name"] as? String ?: "Unknown")
-            }
-        }.fold(
-            onSuccess = { it.success() },
-            onFailure = { VsphereError.ApiError("Failed to list clusters", it).failure() }
-        )
+            }.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            VsphereError.ApiError("Failed to list clusters", e).failure()
+        }
     }
 
+    /**
+     * Lists all networks (port groups) available in a datacenter.
+     *
+     * @param datacenter The target datacenter.
+     * @return List of [Network] objects, or error if retrieval fails.
+     */
     public suspend fun listNetworks(datacenter: Datacenter): Result<List<Network>, VsphereError> = executeResilient("listNetworks") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -472,16 +518,28 @@ public class VsphereClient(
             is Result.Success -> sessionResult.value
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
-        runCatching {
-            retrieveObjects(session, "Network", listOf("name"), moRef("Datacenter", datacenter.id)) { obj, props ->
+        try {
+            retrieveObjects(
+                session = session,
+                type = "Network",
+                properties = listOf("name"),
+                root = moRef(type = "Datacenter", value = datacenter.id)
+            ) { obj, props ->
                 Network(obj.value, props["name"] as? String ?: "Unknown")
-            }
-        }.fold(
-            onSuccess = { it.success() },
-            onFailure = { VsphereError.ApiError("Failed to list networks", it).failure() }
-        )
+            }.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            VsphereError.ApiError("Failed to list networks", e).failure()
+        }
     }
 
+    /**
+     * Lists all resource pools in a cluster.
+     *
+     * @param cluster The target cluster.
+     * @return List of [ResourcePool] objects.
+     */
     public suspend fun listResourcePools(cluster: Cluster): Result<List<ResourcePool>, VsphereError> = executeResilient("listResourcePools") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -489,16 +547,30 @@ public class VsphereClient(
             is Result.Success -> sessionResult.value
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
-        runCatching {
-            retrieveObjects(session, "ResourcePool", listOf("name"), moRef("ClusterComputeResource", cluster.id)) { obj, props ->
+        try {
+            retrieveObjects(
+                session = session,
+                type = "ResourcePool",
+                properties = listOf("name"),
+                root = moRef(type = "ClusterComputeResource", value = cluster.id)
+            ) { obj, props ->
                 ResourcePool(obj.value, props["name"] as? String ?: "Unknown")
-            }
-        }.fold(
-            onSuccess = { it.success() },
-            onFailure = { VsphereError.ApiError("Failed to list resource pools", it).failure() }
-        )
+            }.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            VsphereError.ApiError("Failed to list resource pools", e).failure()
+        }
     }
 
+    /**
+     * Lists all datastores mounted to a cluster.
+     *
+     * Uses property collection to find datastores associated with the cluster.
+     *
+     * @param cluster The target cluster.
+     * @return List of [Datastore] objects.
+     */
     public suspend fun listDatastores(cluster: Cluster): Result<List<Datastore>, VsphereError> = executeResilient("listDatastores") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)
@@ -506,7 +578,7 @@ public class VsphereClient(
             is Result.Success -> sessionResult.value
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
-        runCatching {
+        try {
             withContext(Dispatchers.IO) {
                 val vimPort = session.vimPort
                 val serviceContent = session.serviceContent
@@ -543,11 +615,12 @@ public class VsphereClient(
                     }
                 }
                 dsList
-            }
-        }.fold(
-            onSuccess = { it.success() },
-            onFailure = { VsphereError.ApiError("Failed to list datastores", it).failure() }
-        )
+            }.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            VsphereError.ApiError("Failed to list datastores", e).failure()
+        }
     }
 
     /**
@@ -564,6 +637,21 @@ public class VsphereClient(
      */
     private val createVmTimeoutMs: Long = 480_000 // 8 minutes
 
+    /**
+     * Creates a new VM by cloning a template.
+     *
+     * Performs a full provisioning workflow:
+     * 1. Clones VM from template
+     * 2. Powers on the VM
+     * 3. Waits for VMware Tools to report IP address
+     *
+     * Implements Saga Compensation: If any step fails (or coroutine is cancelled) after the clone
+     * is created, it attempts to delete the partially created VM to prevent orphans.
+     *
+     * @param spec Specification for the new VM (name, cpu, memory, template).
+     * @param onProgress Callback for reporting provisioning stages.
+     * @return [VmProvisioningResult] with VM details on success, or error.
+     */
     public suspend fun createVm(
         spec: VmSpec,
         onProgress: suspend (VmProvisioningStage) -> Unit = {}
@@ -900,6 +988,12 @@ public class VsphereClient(
         }
     }
 
+    /**
+     * Deletes a VM from vSphere (destroyTask).
+     *
+     * @param vmId VMware MoRef ID of the VM to delete.
+     * @return Success or error.
+     */
     public suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> = executeResilient("deleteVm") {
         val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.DeletionError("No tenant context", e).failure() }
         val sessionResult = ensureSession(tenantId)

@@ -575,9 +575,9 @@ class VmRequestControllerTest {
         }
 
         @Test
-        @DisplayName("should return 403 when user is not authorized to view request")
-        fun `should return 403 when user is not authorized`() = runTest {
-            // Given
+        @DisplayName("should return 404 when user is not authorized (security: prevent enumeration)")
+        fun `should return 404 when user is not authorized`() = runTest {
+            // Given: Security pattern - return 404 instead of 403 to prevent resource enumeration
             val requestId = VmRequestId.generate()
             val jwt = createJwt()
 
@@ -590,10 +590,10 @@ class VmRequestControllerTest {
                 controller.getRequestDetail(id = requestId.value.toString(), jwt = jwt)
             }
 
-            // Then
-            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-            val body = response.body as ForbiddenResponse
-            assertEquals("forbidden", body.type)
+            // Then: Returns 404 (not 403) per CLAUDE.md security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
         }
 
         @Test
@@ -752,9 +752,9 @@ class VmRequestControllerTest {
         }
 
         @Test
-        @DisplayName("should return 403 when user is not request owner")
-        fun `should return 403 when user is not request owner`() = runTest {
-            // Given
+        @DisplayName("should return 404 when user is not request owner (security: prevent enumeration)")
+        fun `should return 404 when user is not request owner`() = runTest {
+            // Given: Security pattern - return 404 instead of 403 to prevent resource enumeration
             val requestId = VmRequestId.generate()
             val jwt = createJwt()
 
@@ -771,10 +771,10 @@ class VmRequestControllerTest {
                 )
             }
 
-            // Then
-            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-            val body = response.body as ForbiddenResponse
-            assertEquals("forbidden", body.type)
+            // Then: Returns 404 (not 403) per CLAUDE.md security pattern
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            val body = response.body as NotFoundResponse
+            assertEquals("not_found", body.type)
         }
 
         @Test

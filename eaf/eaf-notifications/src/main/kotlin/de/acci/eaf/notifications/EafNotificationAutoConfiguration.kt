@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.mail.javamail.JavaMailSender
 import org.thymeleaf.ITemplateEngine
 
+import org.springframework.beans.factory.BeanCreationException
+
 /**
  * Configuration properties for EAF notifications.
  */
@@ -41,12 +43,20 @@ public data class EafNotificationProperties(
 )
 public class EafNotificationAutoConfiguration {
 
+    /**
+     * Creates the template engine bean if not already present.
+     */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(ITemplateEngine::class)
     public fun templateEngine(thymeleafEngine: ITemplateEngine): TemplateEngine =
         ThymeleafEmailTemplateEngine(thymeleafEngine)
 
+    /**
+     * Creates the notification service bean if not already present.
+     *
+     * Validates the 'from' address format.
+     */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(JavaMailSender::class, TemplateEngine::class)
@@ -58,7 +68,7 @@ public class EafNotificationAutoConfiguration {
         val fromAddress = try {
             EmailAddress.of(properties.fromAddress)
         } catch (e: IllegalArgumentException) {
-            throw IllegalStateException(
+            throw BeanCreationException(
                 "Invalid email address configured for 'eaf.notifications.from-address': " +
                     "'${properties.fromAddress}'. Please provide a valid email address.",
                 e

@@ -57,12 +57,10 @@ import java.time.Instant
  *
  * - **400 Bad Request**: Validation errors (field-level)
  * - **401 Unauthorized**: Missing or invalid JWT
- * - **403 Forbidden**: Cross-tenant access attempt or not owner
+ * - **403 Forbidden**: Cross-tenant access attempt or not owner (returns 404 to prevent enumeration)
  * - **404 Not Found**: Request not found
  * - **409 Conflict**: Quota exceeded, concurrency conflict, or invalid state
  */
-private val logger = KotlinLogging.logger {}
-
 @RestController
 @RequestMapping("/api/requests")
 public class VmRequestController(
@@ -72,6 +70,7 @@ public class VmRequestController(
     private val cancelVmRequestHandler: CancelVmRequestHandler,
     private val syncVmStatusHandler: SyncVmStatusHandler
 ) {
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Create a new VM request.
@@ -276,8 +275,8 @@ public class VmRequestController(
             }
             is GetRequestDetailError.Forbidden -> {
                 logger.warn { "Forbidden access to request: ${error.message}" }
-                ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    ForbiddenResponse(message = error.message)
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotFoundResponse(message = "VM request not found")
                 )
             }
             is GetRequestDetailError.QueryFailure -> {
@@ -352,8 +351,9 @@ public class VmRequestController(
                 )
             }
             is CancelVmRequestError.Forbidden -> {
-                ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    ForbiddenResponse(message = error.message)
+                logger.warn { "Forbidden cancel attempt: ${error.message}" }
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotFoundResponse(message = "VM request not found")
                 )
             }
             is CancelVmRequestError.InvalidState -> {
