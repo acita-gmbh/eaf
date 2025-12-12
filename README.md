@@ -5,10 +5,18 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin" alt="Kotlin">
   <img src="https://img.shields.io/badge/Spring%20Boot-3.5.8-brightgreen.svg?logo=spring" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB.svg?logo=react" alt="React">
   <img src="https://img.shields.io/badge/Gradle-9.2.1-02303A.svg?logo=gradle" alt="Gradle">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/JUnit-6.0.1-25A162.svg" alt="JUnit 6">
   <img src="https://img.shields.io/badge/Coverage-70%25-success.svg" alt="Coverage">
+</p>
+
+<p align="center">
+  <a href="docs/architecture.md">Architecture</a> •
+  <a href="docs/prd.md">PRD</a> •
+  <a href="docs/concepts/api-security.md">API Guide</a> •
+  <a href="docs/devops-strategy.md">DevOps</a>
 </p>
 
 ---
@@ -46,6 +54,7 @@ DVMM is a self-service VM provisioning platform designed for medium-sized enterp
 | **DVMM API** | `dvmm/dvmm-api` | REST controllers, DTOs |
 | **DVMM Infrastructure** | `dvmm/dvmm-infrastructure` | Persistence, VMware integration |
 | **DVMM App** | `dvmm/dvmm-app` | Spring Boot entry point |
+| **DVMM Web** | `dvmm/dvmm-web` | React frontend (Vite + TypeScript) |
 
 ## Architecture
 
@@ -96,8 +105,40 @@ graph TD
 ### Prerequisites
 
 - **Java 21+** (Eclipse Temurin recommended)
-- **Docker** and **Docker Compose** (for Testcontainers)
+- **Node.js 20+** (Required for frontend)
+- **Docker** and **Docker Compose** (for infrastructure & tests)
 - **Git**
+
+### Run Locally
+
+#### 1. Start Infrastructure (PostgreSQL + Keycloak)
+```bash
+docker compose -f docker/dvmm/docker-compose.yml up -d postgres keycloak
+```
+*Wait for containers to be healthy.*
+
+#### 2. Start Backend (Spring Boot)
+```bash
+./gradlew :dvmm:dvmm-app:bootRun
+```
+*Backend API runs on: `http://localhost:8080`*
+
+#### 3. Start Frontend (React)
+Open a new terminal:
+```bash
+cd dvmm/dvmm-web
+npm install
+npm run dev
+```
+*Frontend runs on: `http://localhost:5173`*
+
+#### Default Credentials
+
+| Service | Username | Password | URL |
+|---------|----------|----------|-----|
+| **Keycloak Admin** | `admin` | `admin` | http://localhost:8180 |
+| **PostgreSQL** | `eaf` | `eaf` | `jdbc:postgresql://localhost:5432/eaf` |
+| **App Users** | See test-realm.json | (see file) | (see file) |
 
 ### Build & Test
 
