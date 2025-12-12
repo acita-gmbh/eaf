@@ -702,7 +702,8 @@ public class TriggerProvisioningHandler(
             val result = notificationSender.sendVmReadyNotification(notification)
             when (result) {
                 is Result.Success -> logger.info {
-                    "[Step 4/4] Sent VM ready notification for request ${event.requestId.value}, VM $provisionedHostname"
+                    "[Step 4/4] Sent VM ready notification for request ${event.requestId.value}, " +
+                        "VM $provisionedHostname, correlationId=${event.metadata.correlationId.value}"
                 }
                 is Result.Failure -> logger.logNotificationError(
                     notificationError = result.error,

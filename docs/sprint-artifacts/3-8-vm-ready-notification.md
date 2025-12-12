@@ -73,8 +73,8 @@ so that I can start using it immediately without constantly checking the portal.
 - [x] **Task 4: Add Success Notification to TriggerProvisioningHandler (AC: 3.8.1)**
   - [x] Add `sendSuccessNotification()` private method following `sendFailureNotifications()` pattern
   - [x] Call from `emitSuccess()` after Step 3 (timeline event)
-  - [x] Query `vmRequestReadRepository.findById()` for requester email, createdAt (guestOs not available in summary)
-  - [x] Calculate provisioning duration: `Duration.between(requestDetails.createdAt, Instant.now())`
+  - [x] Reuse `requestDetails` (already fetched earlier for project prefix) for requester email
+  - [x] Calculate provisioning duration: `Duration.between(event.metadata.timestamp, Instant.now())`
   - [x] Build portal link: `${baseUrl}/requests/${requestId}`
   - [x] Provide both SSH and RDP commands (OS agnostic)
   - [x] Log success/failure but do NOT fail the handler on email errors
@@ -98,12 +98,17 @@ Notifications are sent **inline** within `TriggerProvisioningHandler`, NOT via s
 
 ```kotlin
 // In TriggerProvisioningHandler.emitSuccess()
-private suspend fun emitSuccess(...) {
+private suspend fun emitSuccess(..., requestDetails: VmRequestSummary) {
     // Step 1: VmProvisioned event
     // Step 2: VmRequestReady event
     // Step 3: Timeline event
     // Step 4: Send success notification (NEW)
-    sendSuccessNotification(event, provisioningResult, provisionedHostname)
+    sendSuccessNotification(
+        event = event,
+        provisioningResult = provisioningResult,
+        provisionedHostname = provisionedHostname,
+        requestDetails = requestDetails
+    )
 }
 ```
 
