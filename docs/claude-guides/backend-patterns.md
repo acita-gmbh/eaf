@@ -2,6 +2,33 @@
 
 > This guide is referenced from the main CLAUDE.md documentation
 
+## Type Safety
+
+### Value Classes Over Type Aliases
+
+**Use `@JvmInline value class` for domain identifiers, NOT `typealias`.**
+
+```kotlin
+// ❌ typealias creates only an alias - no compile-time safety
+typealias UserId = String
+typealias TenantId = String
+
+fun process(userId: UserId, tenantId: TenantId) { }
+process(tenantId, userId)  // Compiles! Arguments swapped silently
+
+// ✅ Value classes provide true type safety with zero runtime overhead
+@JvmInline
+public value class UserId(public val value: String)
+
+@JvmInline
+public value class TenantId(public val value: UUID)
+
+fun process(userId: UserId, tenantId: TenantId) { }
+process(tenantId, userId)  // Compile error! Type mismatch
+```
+
+Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers.
+
 ## MockK Unit Testing
 
 **Use `any()` for ALL parameters when stubbing functions with default arguments.**
@@ -57,6 +84,109 @@ private suspend fun doWork() {
 ```
 
 Without this, `withTimeout`, `Job.cancel()`, and scope cancellation break. Application shutdown can hang.
+
+### Dispatcher Injection
+
+**Never hardcode dispatchers - inject them for testability.**
+
+```kotlin
+// ❌ Hardcoded dispatcher - untestable, uses real threads
+class VmwareService {
+    suspend fun cloneVm() = withContext(Dispatchers.IO) {
+        // blocking I/O
+    }
+}
+
+// ✅ Injected dispatcher - can substitute TestDispatcher in tests
+class VmwareService(
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
+    suspend fun cloneVm() = withContext(ioDispatcher) {
+        // blocking I/O
+    }
+}
+```
+
+For high-concurrency scenarios, limit parallelism to prevent thread exhaustion:
+
+```kotlin
+private val limitedIo = Dispatchers.IO.limitedParallelism(64)
+```
+
+### Structured Concurrency with supervisorScope
+
+**Use `supervisorScope` when child failures should NOT cancel siblings.**
+
+```kotlin
+// ❌ coroutineScope - one failure cancels all children
+suspend fun notifyAll(users: List<User>) = coroutineScope {
+    users.forEach { user ->
+        launch { notificationService.send(user) }  // One failure cancels ALL
+    }
+}
+
+// ✅ supervisorScope - failures are isolated
+suspend fun notifyAll(users: List<User>) = supervisorScope {
+    users.forEach { user ->
+        launch {
+            try { notificationService.send(user) }
+            catch (e: Exception) { logger.error(e) { "Failed to notify ${user.id}" } }
+        }
+    }
+}
+```
+
+## Async Testing
+
+### Deterministic Coroutine Tests
+
+**Use `runTest` with `StandardTestDispatcher` for deterministic async testing.**
+
+```kotlin
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.advanceUntilIdle
+
+class VmProvisioningServiceTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Test
+    fun `should complete provisioning`() = runTest(testDispatcher) {
+        val service = VmProvisioningService(ioDispatcher = testDispatcher)
+
+        service.startProvisioning(vmId)
+
+        advanceUntilIdle()  // Fast-forward virtual time - no real delays!
+
+        // Assert final state
+    }
+}
+```
+
+Key benefits:
+- **No flaky tests** - virtual time eliminates real delays
+- **Fast CI/CD** - tests complete in milliseconds
+- **Deterministic** - same input always produces same timing
+
+### Flow Testing with Turbine
+
+**Use Turbine for assertion-based Flow validation.**
+
+```kotlin
+import app.cash.turbine.test
+
+@Test
+fun `should emit progress updates`() = runTest {
+    val service = ProvisioningProgressService()
+
+    service.progressFlow(vmRequestId).test {
+        assertEquals(VmProvisioningStage.CLONING, awaitItem().stage)
+        assertEquals(VmProvisioningStage.CUSTOMIZING, awaitItem().stage)
+        assertEquals(VmProvisioningStage.READY, awaitItem().stage)
+        awaitComplete()
+    }
+}
+```
 
 ## Event Sourcing Patterns
 
@@ -153,3 +283,9 @@ sealed interface ProjectionColumns {
 ```
 
 See `VmRequestProjectionRepository.kt` for reference implementation.
+
+---
+
+## References
+
+- [How Backend Development Teams Use Kotlin in 2025](https://blog.jetbrains.com/kotlin/2025/12/how-backend-development-teams-use-kotlin-in-2025/) - JetBrains survey and best practices
