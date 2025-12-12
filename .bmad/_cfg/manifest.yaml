@@ -1,7 +1,7 @@
 installation:
   version: 6.0.0-alpha.16
-  installDate: '2025-12-11T20:04:54.035Z'
-  lastUpdated: '2025-12-11T20:04:54.035Z'
+  installDate: '2025-12-12T08:26:09.736Z'
+  lastUpdated: '2025-12-12T08:26:09.736Z'
 modules:
   - core
   - bmm
@@ -17,11 +17,5 @@ ides:
   - antigravity
   - rovo-dev
   - auggie
-  - cline
   - crush
   - roo
-  - iflow
-  - kilo
-  - kiro-cli
-  - qwen
-  - trae
