@@ -1,4 +1,4 @@
-# WebMKS and Guacamole Integration for DVMM
+# WebMKS and Guacamole Integration for DCM
 
 **Author:** Claude (Research Agent)
 **Date:** 2025-12-07
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document provides deep technical research on integrating **VMware WebMKS** (native vSphere console) with **Apache Guacamole** for DVMM. WebMKS enables browser-based VM console access without SSH/RDP, providing true console access including BIOS, boot screens, and pre-OS interaction.
+This document provides deep technical research on integrating **VMware WebMKS** (native vSphere console) with **Apache Guacamole** for DCM. WebMKS enables browser-based VM console access without SSH/RDP, providing true console access including BIOS, boot screens, and pre-OS interaction.
 
 **Key Findings:**
 
@@ -32,7 +32,7 @@ This document provides deep technical research on integrating **VMware WebMKS** 
 3. [vCenter API for WebMKS Tickets](#3-vcenter-api-for-webmks-tickets)
 4. [Integration Architecture Options](#4-integration-architecture-options)
 5. [Security Considerations](#5-security-considerations)
-6. [Recommended Architecture for DVMM](#6-recommended-architecture-for-dvmm)
+6. [Recommended Architecture for DCM](#6-recommended-architecture-for-dcm)
 7. [Implementation Details](#7-implementation-details)
 8. [Testing Strategy](#8-testing-strategy)
 9. [Risk Assessment](#9-risk-assessment)
@@ -232,10 +232,10 @@ vmware-api-session-id: {session-id}
 
 ### 3.3 VCF SDK 9.0 Implementation
 
-Based on DVMM's existing `VsphereClient.kt` architecture:
+Based on DCM's existing `VsphereClient.kt` architecture:
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/.../vmware/VsphereClient.kt
+// dcm-infrastructure/src/main/kotlin/.../vmware/VsphereClient.kt
 
 /**
  * Acquires a WebMKS console ticket for the specified VM.
@@ -297,14 +297,14 @@ fun WebMksTicket.toWebSocketUrl(): String =
 
 ### 4.1 Option A: Direct VMware HTML Console SDK (Recommended for MVP)
 
-Embed VMware's official HTML Console SDK directly in the DVMM frontend.
+Embed VMware's official HTML Console SDK directly in the DCM frontend.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DVMM Architecture                              │
+│                           DCM Architecture                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐     ┌─────────────────┐     ┌──────────────────┐   │
-│  │  React Frontend │     │   DVMM API      │     │   VsphereClient  │   │
+│  │  React Frontend │     │   DCM API      │     │   VsphereClient  │   │
 │  │  + wmks.min.js  │────▶│   (WebFlux)     │────▶│   (VCF SDK 9.0)  │   │
 │  └────────┬────────┘     └────────┬────────┘     └────────┬─────────┘   │
 │           │                       │                       │             │
@@ -332,7 +332,7 @@ Embed VMware's official HTML Console SDK directly in the DVMM frontend.
 - Official VMware SDK with support
 - Direct browser-to-ESXi connection (lowest latency)
 - No additional proxy infrastructure
-- Already works with DVMM's multi-tenant model
+- Already works with DCM's multi-tenant model
 
 **Disadvantages:**
 - Browser must reach ESXi hosts directly (network topology constraint)
@@ -341,14 +341,14 @@ Embed VMware's official HTML Console SDK directly in the DVMM frontend.
 
 ### 4.2 Option B: WebSocket Proxy (Backend-Mediated)
 
-DVMM backend acts as WebSocket proxy between browser and ESXi.
+DCM backend acts as WebSocket proxy between browser and ESXi.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DVMM Architecture                              │
+│                           DCM Architecture                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐     ┌─────────────────────────────────────────┐    │
-│  │  React Frontend │     │              DVMM Backend               │    │
+│  │  React Frontend │     │              DCM Backend               │    │
 │  │  + wmks.min.js  │     │  ┌────────────┐    ┌────────────────┐  │    │
 │  └────────┬────────┘     │  │ REST API   │    │ WS Proxy       │  │    │
 │           │              │  │ /ticket    │    │ /console/ws    │  │    │
@@ -375,7 +375,7 @@ DVMM backend acts as WebSocket proxy between browser and ESXi.
 ```
 
 **Advantages:**
-- Browser only needs to reach DVMM backend (no direct ESXi access)
+- Browser only needs to reach DCM backend (no direct ESXi access)
 - Backend handles SSL certificate validation
 - Single point for security/audit logging
 - Works with restrictive network topologies
@@ -392,10 +392,10 @@ Develop a custom guacd protocol plugin for WebMKS.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DVMM Architecture                              │
+│                           DCM Architecture                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐     ┌─────────────────┐     ┌──────────────────┐   │
-│  │  React Frontend │     │   DVMM API      │     │     guacd        │   │
+│  │  React Frontend │     │   DCM API      │     │     guacd        │   │
 │  │  + guac-common  │────▶│   (WebFlux)     │────▶│  + webmks.so     │   │
 │  │      -js        │     │                 │     │  (custom plugin) │   │
 │  └─────────────────┘     └─────────────────┘     └────────┬─────────┘   │
@@ -443,7 +443,7 @@ Develop a custom guacd protocol plugin for WebMKS.
 
 ```text
 ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
-│ Browser │      │  DVMM   │      │ vCenter │      │  ESXi   │
+│ Browser │      │  DCM   │      │ vCenter │      │  ESXi   │
 └────┬────┘      └────┬────┘      └────┬────┘      └────┬────┘
      │                │                │                │
      │ 1. JWT Auth    │                │                │
@@ -550,7 +550,7 @@ auditLogger.security(
 
 ---
 
-## 6. Recommended Architecture for DVMM
+## 6. Recommended Architecture for DCM
 
 ### 6.1 Phase 1: Direct VMware SDK (MVP)
 
@@ -558,10 +558,10 @@ For MVP, implement **Option A** with the following architecture:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         DVMM Console Integration                         │
+│                         DCM Console Integration                         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  Frontend (dvmm-web)                                                     │
+│  Frontend (dcm-web)                                                     │
 │  ┌────────────────────────────────────────────────────────────────────┐ │
 │  │  src/features/console/                                              │ │
 │  │  ├── components/                                                    │ │
@@ -574,17 +574,17 @@ For MVP, implement **Option A** with the following architecture:
 │  │      └── wmks-loader.ts           # Dynamic SDK loading             │ │
 │  └────────────────────────────────────────────────────────────────────┘ │
 │                                                                          │
-│  Backend (dvmm-*)                                                        │
+│  Backend (dcm-*)                                                        │
 │  ┌────────────────────────────────────────────────────────────────────┐ │
-│  │  dvmm-api/                                                          │ │
+│  │  dcm-api/                                                          │ │
 │  │  └── console/ConsoleController.kt  # POST /api/v1/vms/{id}/console │ │
 │  │                                                                     │ │
-│  │  dvmm-application/                                                  │ │
+│  │  dcm-application/                                                  │ │
 │  │  └── console/                                                       │ │
 │  │      ├── RequestConsoleTicketCommand.kt                            │ │
 │  │      └── RequestConsoleTicketHandler.kt                            │ │
 │  │                                                                     │ │
-│  │  dvmm-infrastructure/                                               │ │
+│  │  dcm-infrastructure/                                               │ │
 │  │  └── vmware/VsphereClient.kt       # +acquireWebMksTicket()        │ │
 │  └────────────────────────────────────────────────────────────────────┘ │
 │                                                                          │
@@ -597,12 +597,12 @@ If network topology prevents direct browser-to-ESXi:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  dvmm-api/                                                              │
+│  dcm-api/                                                              │
 │  └── console/                                                           │
 │      ├── ConsoleController.kt         # REST ticket endpoint            │
 │      └── WebMksProxyHandler.kt        # WebSocket proxy handler         │
 │                                                                          │
-│  dvmm-infrastructure/                                                    │
+│  dcm-infrastructure/                                                    │
 │  └── console/                                                            │
 │      └── WebMksWebSocketClient.kt     # Connects to ESXi                │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -819,12 +819,12 @@ export function WebMksConsole({
 ### 7.2 Backend API Implementation
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/console/ConsoleController.kt
+// dcm-api/src/main/kotlin/de/acci/dcm/api/console/ConsoleController.kt
 
-package de.acci.dvmm.api.console
+package de.acci.dcm.api.console
 
-import de.acci.dvmm.application.console.RequestConsoleTicketCommand
-import de.acci.dvmm.application.console.RequestConsoleTicketHandler
+import de.acci.dcm.application.console.RequestConsoleTicketCommand
+import de.acci.dcm.application.console.RequestConsoleTicketHandler
 import de.acci.eaf.auth.TokenClaims
 import de.acci.eaf.tenant.TenantContext
 import org.springframework.http.HttpStatus
@@ -890,13 +890,13 @@ public data class ConsoleTicketResponse(
 ```
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/console/RequestConsoleTicketHandler.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/console/RequestConsoleTicketHandler.kt
 
-package de.acci.dvmm.application.console
+package de.acci.dcm.application.console
 
-import de.acci.dvmm.application.vmware.VspherePort
-import de.acci.dvmm.application.vmware.WebMksTicket
-import de.acci.dvmm.infrastructure.projection.VmProjectionRepository
+import de.acci.dcm.application.vmware.VspherePort
+import de.acci.dcm.application.vmware.WebMksTicket
+import de.acci.dcm.infrastructure.projection.VmProjectionRepository
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
@@ -998,7 +998,7 @@ public class RequestConsoleTicketHandler(
 ### 7.3 VsphereClient Extension
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt
+// dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt
 // Add to existing class:
 
 /**
@@ -1063,7 +1063,7 @@ public suspend fun acquireWebMksTicket(vmId: String): Result<WebMksTicket, Vsphe
 ```
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/ConnectionTypes.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/ConnectionTypes.kt
 // Add:
 
 /**
@@ -1394,9 +1394,9 @@ describe('WebMksConsole', () => {
 ### Security References
 
 - [WebSocket SSL Certificate Handling](https://stackoverflow.com/questions/5312311/secure-websockets-with-self-signed-certificate)
-- [DVMM Security Architecture](security-architecture.md)
+- [DCM Security Architecture](security-architecture.md)
 
-### Related DVMM Documentation
+### Related DCM Documentation
 
 - [Guacamole Integration Research](guacamole-integration.md)
 - [Architecture](architecture.md)
@@ -1445,7 +1445,7 @@ describe('WebMksConsole', () => {
 │  Corporate Network                                               │
 │                                                                  │
 │  ┌──────────┐      ┌──────────┐      ┌──────────────────────┐  │
-│  │  User    │──────│   DVMM   │──────│   vSphere Cluster    │  │
+│  │  User    │──────│   DCM   │──────│   vSphere Cluster    │  │
 │  │ Browser  │      │ Backend  │      │  ┌──────┐  ┌──────┐  │  │
 │  └──────────┘      └──────────┘      │  │ESXi-1│  │ESXi-2│  │  │
 │       │                  │           │  └──┬───┘  └──┬───┘  │  │
@@ -1456,9 +1456,9 @@ describe('WebMksConsole', () => {
 │       │                  │           └──────────────────────┘  │
 │       │                  │                                      │
 │  Required Firewall Rules:                                       │
-│  • Browser → DVMM:443 (HTTPS + WebSocket)                      │
-│  • DVMM → vCenter:443 (REST API)                               │
-│  • DVMM → ESXi-*:443 (WebSocket)  ← Backend only               │
+│  • Browser → DCM:443 (HTTPS + WebSocket)                      │
+│  • DCM → vCenter:443 (REST API)                               │
+│  • DCM → ESXi-*:443 (WebSocket)  ← Backend only               │
 │                                                                  │
 │  Browser does NOT need direct ESXi access                       │
 │                                                                  │
@@ -1472,9 +1472,9 @@ describe('WebMksConsole', () => {
 If Option B is needed, here's the WebSocket proxy implementation:
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/console/WebMksProxyHandler.kt
+// dcm-api/src/main/kotlin/de/acci/dcm/api/console/WebMksProxyHandler.kt
 
-package de.acci.dvmm.api.console
+package de.acci.dcm.api.console
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -1576,4 +1576,4 @@ public class WebSocketConfig {
 
 ---
 
-*This document provides comprehensive guidance for integrating VMware WebMKS console access into DVMM. The recommended approach (Option A: Direct VMware SDK) provides the best balance of development effort, performance, and official support.*
+*This document provides comprehensive guidance for integrating VMware WebMKS console access into DCM. The recommended approach (Option A: Direct VMware SDK) provides the best balance of development effort, performance, and official support.*

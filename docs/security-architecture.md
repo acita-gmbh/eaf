@@ -1,4 +1,4 @@
-# DVMM Security Architecture
+# DCM Security Architecture
 
 **Author:** Wall-E
 **Date:** 2025-11-25
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document defines the security architecture for DVMM (Dynamic Virtual Machine Manager), a multi-tenant self-service portal for VMware VM provisioning. Security is a first-class architectural concern, with defense-in-depth principles applied across all layers.
+This document defines the security architecture for DCM (Dynamic Virtual Machine Manager), a multi-tenant self-service portal for VMware VM provisioning. Security is a first-class architectural concern, with defense-in-depth principles applied across all layers.
 
 **Key Security Decisions:**
 - **Multi-Tenant Isolation:** PostgreSQL Row-Level Security (RLS) with fail-closed semantics
@@ -64,7 +64,7 @@ This document defines the security architecture for DVMM (Dynamic Virtual Machin
 │     │                                                           │
 │     ▼                                                           │
 │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
-│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DVMM API  │       │
+│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DCM API  │       │
 │  │  (Future)   │     │    (OIDC)   │     │  (Spring)   │       │
 │  └─────────────┘     └─────────────┘     └─────────────┘       │
 │                                                │                │
@@ -97,7 +97,7 @@ This document defines the security architecture for DVMM (Dynamic Virtual Machin
        │ Bearer Token                │ User DB
        ▼                             ▼
 ┌──────────────┐              ┌──────────────┐
-│   DVMM API   │              │   LDAP/AD    │
+│   DCM API   │              │   LDAP/AD    │
 │  (Validate)  │              │  (Optional)  │
 └──────────────┘              └──────────────┘
 ```
@@ -128,11 +128,11 @@ This document defines the security architecture for DVMM (Dynamic Virtual Machin
 ### 2.4 Authentication Flows
 
 **Login Flow:**
-1. User navigates to DVMM
+1. User navigates to DCM
 2. Redirect to Keycloak login
 3. User authenticates (password, MFA if enabled)
 4. Keycloak issues JWT with tenant_id claim
-5. DVMM validates token, extracts tenant context
+5. DCM validates token, extracts tenant context
 6. Session established
 
 **Token Refresh:**
@@ -369,7 +369,7 @@ data class AuditEvent(
 
 ### 7.3 ISO 27001 Control Mapping
 
-| ISO Control | Description | DVMM Implementation |
+| ISO Control | Description | DCM Implementation |
 |-------------|-------------|---------------------|
 | A.9.2.3 | Privileged access management | RBAC, approval workflow |
 | A.9.4.1 | Information access restriction | RLS, tenant isolation |
@@ -395,7 +395,7 @@ data class AuditEvent(
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Tier                         │
 │  ┌─────────────┐     ┌─────────────┐                       │
-│  │   DVMM API  │     │  Frontend   │                       │
+│  │   DCM API  │     │  Frontend   │                       │
 │  └─────────────┘     │   (Static)  │                       │
 │                      └─────────────┘                       │
 └─────────────────────────────────────────────────────────────┘
@@ -503,4 +503,4 @@ security_gates:
 
 ---
 
-*This Security Architecture document is part of the DVMM Enterprise Method documentation.*
+*This Security Architecture document is part of the DCM Enterprise Method documentation.*

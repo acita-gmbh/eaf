@@ -72,7 +72,7 @@ so that users can authenticate securely.
 
 - **RLS Infrastructure:** `set_config('app.tenant_id', ?, false)` used for session-scoped tenant context — authentication must ensure tenant_id is extracted and propagated.
 - **Two Complementary Approaches:** Coroutine-based (`RlsConnectionCustomizer`) and ThreadLocal-based (`TenantAwareDataSourceDecorator`) — authentication flow must set tenant in coroutine context for downstream propagation.
-- **Role Naming:** Framework uses `eaf_app` role (not `dvmm_app`) — authentication should align with EAF patterns.
+- **Role Naming:** Framework uses `eaf_app` role (not `dcm_app`) — authentication should align with EAF patterns.
 - **Tenant Context Chain:** JWT → `JwtTenantClaimExtractor` (Story 1.5) → `TenantContextWebFilter` → `TenantContext` → RLS — this story completes the JWT validation piece.
 
 [Source: docs/sprint-artifacts/1-6-postgresql-rls-policies.md#Dev-Agent-Record]
@@ -87,8 +87,8 @@ so that users can authenticate securely.
 
 - `eaf-auth` module contains IdP-agnostic interfaces (`IdentityProvider`, `TokenClaims`, `UserInfo`).
 - `eaf-auth-keycloak` module contains Keycloak-specific implementation (not yet created).
-- `dvmm-api` module contains `SecurityConfig` Spring bean.
-- `application.yml` in `dvmm-app` configures Keycloak issuer-uri and jwk-set-uri.
+- `dcm-api` module contains `SecurityConfig` Spring bean.
+- `application.yml` in `dcm-app` configures Keycloak issuer-uri and jwk-set-uri.
 
 ## Tasks / Subtasks
 
@@ -106,7 +106,7 @@ so that users can authenticate securely.
   - [x] Configure JWT validation against Keycloak JWKS endpoint
 
 - [x] **Task 3: Configure Spring Security OAuth2 Resource Server** (AC: 1, 2, 4)
-  - [x] Create `SecurityConfig` in `dvmm-api` module
+  - [x] Create `SecurityConfig` in `dcm-api` module
   - [x] Configure `ServerHttpSecurity.oauth2ResourceServer().jwt()`
   - [x] Set issuer-uri and jwk-set-uri from properties
   - [x] Configure actuator health endpoint as permitAll
@@ -150,8 +150,8 @@ so that users can authenticate securely.
   - `eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/IdentityProvider.kt` (new)
   - `eaf/eaf-auth/src/main/kotlin/de/acci/eaf/auth/TokenClaims.kt` (new)
   - `eaf/eaf-auth-keycloak/src/main/kotlin/de/acci/eaf/auth/keycloak/KeycloakIdentityProvider.kt` (new)
-  - `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt` (new)
-  - `dvmm/dvmm-app/src/main/resources/application.yml` (modify)
+  - `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/security/SecurityConfig.kt` (new)
+  - `dcm/dcm-app/src/main/resources/application.yml` (modify)
 - **Testing standards:** Use MockWebServer or WireMock for Keycloak JWKS endpoint mocking; achieve ≥80% coverage and ≥70% mutation score.
 - **Filter ordering note:** Spring Security's `SecurityWebFilter` has high precedence; `TenantContextWebFilter` (Story 1.5) should run after authentication via `@Order(Ordered.HIGHEST_PRECEDENCE + 10)`.
 
@@ -162,15 +162,15 @@ so that users can authenticate securely.
   "exp": 1700000000,
   "iat": 1699999000,
   "jti": "uuid",
-  "iss": "http://localhost:8180/realms/dvmm",
+  "iss": "http://localhost:8180/realms/dcm",
   "sub": "user-uuid",
   "typ": "Bearer",
-  "azp": "dvmm-web",
+  "azp": "dcm-web",
   "realm_access": {
     "roles": ["USER", "ADMIN"]
   },
   "resource_access": {
-    "dvmm-api": {
+    "dcm-api": {
       "roles": ["vm-requester"]
     }
   },
@@ -237,19 +237,19 @@ eaf/eaf-auth-keycloak/src/main/kotlin/de/acci/eaf/auth/keycloak/KeycloakJwtAuthe
 eaf/eaf-auth-keycloak/src/main/kotlin/de/acci/eaf/auth/keycloak/KeycloakProperties.kt
 eaf/eaf-auth-keycloak/src/test/kotlin/de/acci/eaf/auth/keycloak/KeycloakJwtAuthenticationConverterTest.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt
-dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/security/SecurityConfigTest.kt
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/security/SecurityConfig.kt
+dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/security/SecurityConfigTest.kt
 
-dvmm/dvmm-app/src/main/resources/application.yml
-dvmm/dvmm-app/src/test/resources/application-test.yml
-dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/security/SecurityIntegrationTest.kt
+dcm/dcm-app/src/main/resources/application.yml
+dcm/dcm-app/src/test/resources/application-test.yml
+dcm/dcm-app/src/test/kotlin/de/acci/dcm/security/SecurityIntegrationTest.kt
 
 **Modified Files:**
 
 settings.gradle.kts (added eaf-auth-keycloak module)
 gradle/libs.versions.toml (added spring-boot-actuator, spring-boot-oauth2-resource-server, spring-security-test)
-dvmm/dvmm-api/build.gradle.kts (added security dependencies)
-dvmm/dvmm-app/build.gradle.kts (added security and actuator dependencies)
+dcm/dcm-api/build.gradle.kts (added security dependencies)
+dcm/dcm-app/build.gradle.kts (added security and actuator dependencies)
 
 ---
 
@@ -295,7 +295,7 @@ dvmm/dvmm-app/build.gradle.kts (added security and actuator dependencies)
 
 - **Severity:** Medium (build failure)
 - **Description:** Library module had Spring Boot plugin active without disabling bootJar
-- **Resolution:** Added lines 8-15 to disable bootJar and enable jar (same pattern as dvmm-api)
+- **Resolution:** Added lines 8-15 to disable bootJar and enable jar (same pattern as dcm-api)
 - **Status:** Fixed during review
 
 ### Code Quality Assessment
@@ -308,7 +308,7 @@ dvmm/dvmm-app/build.gradle.kts (added security and actuator dependencies)
 5. Proper filter ordering with Story 1.5 TenantContextWebFilter
 
 **Architecture Compliance:**
-- ✅ EAF modules don't depend on DVMM
+- ✅ EAF modules don't depend on DCM
 - ✅ eaf-auth has no Spring dependencies (pure Kotlin)
 - ✅ Keycloak-specific code isolated in eaf-auth-keycloak
 

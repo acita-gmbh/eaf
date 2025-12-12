@@ -1,4 +1,4 @@
-# DVMM UX Design Specification
+# DCM UX Design Specification
 
 _Created on 2025-11-24 by Wall-E_
 _Generated using BMad Method - Create UX Design Workflow v1.0_
@@ -7,7 +7,7 @@ _Generated using BMad Method - Create UX Design Workflow v1.0_
 
 ## Executive Summary
 
-**Project:** DVMM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Virtual Machine Manager)
 **Vision:** Self-Service VM-Provisioning that empowers end-users with autonomy and transparency while freeing IT-Admins from email chaos.
 
 **Target Users:**
@@ -57,7 +57,7 @@ _Generated using BMad Method - Create UX Design Workflow v1.0_
 - Toast notifications
 - Command palette (⌘K)
 
-**Custom components needed for DVMM:**
+**Custom components needed for DCM:**
 | Component | Purpose | shadcn Base |
 |-----------|---------|-------------|
 | VM Request Card | Display VM request with status | Card + Badge |
@@ -97,7 +97,7 @@ User Request → Approval Queue → Admin Decision → VM Provisioned → Notifi
 
 ### 2.2 Novel UX Patterns
 
-No novel patterns required - DVMM uses established patterns:
+No novel patterns required - DCM uses established patterns:
 - Request/Approval Workflow (ServiceNow pattern)
 - Resource Dashboard (AWS/Azure pattern)
 - Status Tracking (standard pattern)
@@ -161,7 +161,7 @@ No novel patterns required - DVMM uses established patterns:
 #### Tailwind Configuration
 
 ```javascript
-// tailwind.config.js - DVMM Theme Extension
+// tailwind.config.js - DCM Theme Extension
 module.exports = {
   theme: {
     extend: {
@@ -645,7 +645,7 @@ Request Rejected → User sees reason
 **LocalStorage Draft Schema:**
 ```json
 {
-  "dvmm_draft_request": {
+  "dcm_draft_request": {
     "step": 2,
     "data": {
       "name": "dev-analytics-01",
@@ -665,7 +665,7 @@ Request Rejected → User sees reason
 ### 6.1 Component Strategy
 
 **Base:** shadcn-admin-kit components (copy-paste, full control)
-**Customization:** Tailwind theme extension for DVMM colors
+**Customization:** Tailwind theme extension for DCM colors
 
 ### 6.1.1 React Coding Standards
 
@@ -694,7 +694,7 @@ export function VMCard({ vm, onSelect }: VMCardProps) {
 
 ### 6.2 shadcn Components Used
 
-| Component | shadcn Name | DVMM Usage |
+| Component | shadcn Name | DCM Usage |
 |-----------|-------------|------------|
 | Button | `button` | Primary/Secondary/Destructive actions |
 | Card | `card` | VM cards, request cards, KPI cards |
@@ -713,7 +713,7 @@ export function VMCard({ vm, onSelect }: VMCardProps) {
 | Sidebar | `sidebar` | Navigation (from admin-kit) |
 | Command | `command` | ⌘K palette (Post-MVP) |
 
-### 6.3 Custom DVMM Components
+### 6.3 Custom DCM Components
 
 | Component | Purpose | Composition |
 |-----------|---------|-------------|
@@ -1033,7 +1033,7 @@ This request uses 8 of 32 remaining vCPUs
 ### Related Documents
 
 - Product Requirements: `docs/prd.md`
-- Product Brief: `docs/product-brief-dvmm-2025-11-24.md`
+- Product Brief: `docs/product-brief-dcm-2025-11-24.md`
 - Market Research: `docs/research/market-2025-11-24.md`
 
 ### Core Interactive Deliverables

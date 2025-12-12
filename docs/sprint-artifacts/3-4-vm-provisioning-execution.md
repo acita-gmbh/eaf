@@ -52,7 +52,7 @@ So that users get exactly what they requested.
 ## Tasks / Subtasks
 
 - [x] **Domain:** Add `VmProvisioned` event to `VmAggregate`
-  - [x] Create `VmProvisioned` data class in `dvmm-domain/.../vm/events/`
+  - [x] Create `VmProvisioned` data class in `dcm-domain/.../vm/events/`
   - [x] Add `READY` status to `VmStatus` enum (after PROVISIONING, before RUNNING)
   - [x] Implement `markProvisioned(vmwareId, ipAddress, hostname, warningMessage?, metadata)` method
   - [x] Add `handleEvent` case: `is VmProvisioned -> apply(event)`
@@ -69,7 +69,7 @@ So that users get exactly what they requested.
   - [x] Unit test: verify reconstitute() works with VmRequestReady in event stream
 
 - [x] **Domain:** Add `VmProvisioningResult` value object
-  - [x] Create in `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt`
+  - [x] Create in `dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmProvisioningResult.kt`
   - [x] Fields: `vmwareVmId: VmwareVmId`, `ipAddress: String?`, `hostname: String`, `warningMessage: String?`
 
 - [x] **Application:** Add `PROVISIONING_FAILED` to `TimelineEventType`
@@ -102,7 +102,7 @@ So that users get exactly what they requested.
   - [x] Load VmRequestAggregate, call `markReady()`, persist events
   - [x] Update timeline with "VM ready" event (or "VM ready (IP pending)" on timeout)
 
-- [x] **Tests:** Integration tests in `dvmm-app`
+- [x] **Tests:** Integration tests in `dcm-app`
   - [x] Test full flow: ProvisionVmCommand → VspherePort.createVm() → VmProvisioned
   - [x] Test VMware Tools timeout handling (ipAddress = null, warning present)
   - [x] Test VcsimAdapter returns complete VmProvisioningResult
@@ -132,7 +132,7 @@ So that users get exactly what they requested.
 - `RUNNING` = VM confirmed running via live vCenter query (future lifecycle management)
 
 ```kotlin
-// dvmm-domain/.../vm/VmStatus.kt
+// dcm-domain/.../vm/VmStatus.kt
 public enum class VmStatus {
     PROVISIONING,
     READY,      // NEW - post-provisioning initial state
@@ -148,7 +148,7 @@ This aligns with `VmRequestStatus.READY` which already exists.
 ### VmProvisioningResult Value Object
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmProvisioningResult.kt
 public data class VmProvisioningResult(
     val vmwareVmId: VmwareVmId,
     val ipAddress: String?,          // null if timeout
@@ -305,20 +305,20 @@ Integration tests using VCSIM are skipped on ARM64 (Apple Silicon). Tests run on
 ### Project Structure
 
 **Files to Create:**
-- `dvmm-domain/.../vm/events/VmProvisioned.kt`
-- `dvmm-domain/.../vm/VmProvisioningResult.kt` (value object)
-- `dvmm-domain/.../vmrequest/events/VmRequestReady.kt`
+- `dcm-domain/.../vm/events/VmProvisioned.kt`
+- `dcm-domain/.../vm/VmProvisioningResult.kt` (value object)
+- `dcm-domain/.../vmrequest/events/VmRequestReady.kt`
 
 **Files to Modify:**
-- `dvmm-domain/.../vm/VmAggregate.kt` - Add `markProvisioned()`, `handleEvent`, `apply()`
-- `dvmm-domain/.../vm/VmStatus.kt` - Add `READY` status
-- `dvmm-domain/.../vmrequest/VmRequestAggregate.kt` - Add `markReady()`, `handleEvent`, `apply()`
-- `dvmm-application/.../vmrequest/TimelineEventProjectionUpdater.kt` - Add `PROVISIONING_FAILED`
-- `dvmm-application/.../ports/VspherePort.kt` - Update return type to `VmProvisioningResult`
-- `dvmm-infrastructure/.../vmware/VsphereClient.kt` - Enhance `createVm()`, add wait logic
-- `dvmm-infrastructure/.../vmware/VcsimAdapter.kt` - Return complete result
-- `dvmm-infrastructure/.../eventsourcing/JacksonVmEventDeserializer.kt` - Add VmProvisioned
-- `dvmm-infrastructure/.../eventsourcing/JacksonVmRequestEventDeserializer.kt` - Add VmRequestReady
+- `dcm-domain/.../vm/VmAggregate.kt` - Add `markProvisioned()`, `handleEvent`, `apply()`
+- `dcm-domain/.../vm/VmStatus.kt` - Add `READY` status
+- `dcm-domain/.../vmrequest/VmRequestAggregate.kt` - Add `markReady()`, `handleEvent`, `apply()`
+- `dcm-application/.../vmrequest/TimelineEventProjectionUpdater.kt` - Add `PROVISIONING_FAILED`
+- `dcm-application/.../ports/VspherePort.kt` - Update return type to `VmProvisioningResult`
+- `dcm-infrastructure/.../vmware/VsphereClient.kt` - Enhance `createVm()`, add wait logic
+- `dcm-infrastructure/.../vmware/VcsimAdapter.kt` - Return complete result
+- `dcm-infrastructure/.../eventsourcing/JacksonVmEventDeserializer.kt` - Add VmProvisioned
+- `dcm-infrastructure/.../eventsourcing/JacksonVmRequestEventDeserializer.kt` - Add VmRequestReady
 
 ## References
 
@@ -395,34 +395,34 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 **Created:**
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioned.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestReady.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmProvisioningResult.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/events/VmProvisioned.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestReady.kt`
 - `docs/sprint-artifacts/validation-report-3-4-vm-provisioning-execution-2025-12-07.md`
 
 **Modified:**
-- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/TimelineEventProjectionUpdater.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VspherePort.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt`
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmAggregate.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmStatus.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmwareVmId.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt`
-- `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateTest.kt`
-- `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateTest.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializer.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapter.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt`
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt`
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapterTest.kt`
-- `dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
-- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt`
+- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandler.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/TimelineEventProjectionUpdater.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VspherePort.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VsphereTypes.kt`
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandlerTest.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmAggregate.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmStatus.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmwareVmId.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt`
+- `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vm/VmAggregateTest.kt`
+- `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregateTest.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializer.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcenterAdapter.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcsimAdapter.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt`
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt`
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VcenterAdapterTest.kt`
+- `dcm/dcm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
+- `dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmProvisioningIntegrationTest.kt`
 
 **Documentation Updated:**
 - `AGENTS.md` - Added CancellationException handling pattern

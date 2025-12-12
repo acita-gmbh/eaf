@@ -2,7 +2,7 @@
 
 **The vocabulary of our architecture.**
 
-In DVMM, we don't just "call functions." We exchange messages. Understanding the three types of messages is key to understanding our CQRS architecture.
+In DCM, we don't just "call functions." We exchange messages. Understanding the three types of messages is key to understanding our CQRS architecture.
 
 ---
 

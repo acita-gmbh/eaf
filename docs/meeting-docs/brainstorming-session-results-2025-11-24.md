@@ -7,7 +7,7 @@
 ## Session Start
 
 **Context:**
-- DVMM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal replacing legacy ZEWSSP
+- DCM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal replacing legacy ZEWSSP
 - Product Brief exists outlining enterprise requirements (multi-tenancy, ISO 27001, CQRS/Event Sourcing)
 - Access to legacy ZEWSSP codebase (/Users/michael/zewssp) for learning and migration insights
 - Access to failed EAF attempt (/Users/michael/old_eaf) for lessons learned
@@ -22,7 +22,7 @@
 
 ## Executive Summary
 
-**Topic:** DVMM - Enterprise Application Framework & Multi-Tenant VM Manager
+**Topic:** DCM - Enterprise Application Framework & Multi-Tenant VM Manager
 
 **Session Goals:**
 - Extract root causes from failed EAF attempt and ZEWSSP problems
@@ -82,7 +82,7 @@
 - 6+ months onboarding time for new developers
 - Multiple products (ZEWSSP, DPCM) blocked from new markets
 
-**Lessons for DVMM/EAF:**
+**Lessons for DCM/EAF:**
 - Framework work MUST be business-prioritized
 - Link architecture decisions to business impact
 - "Tracer Bullet" delivers visible business value immediately
@@ -91,12 +91,12 @@
 
 ### Technique 2: Pre-Mortem Analysis (Structured) - 20 min
 
-**Focus:** Proactive risk identification by imagining DVMM failure in late 2026
+**Focus:** Proactive risk identification by imagining DCM failure in late 2026
 
 #### Failure Scenario 1: Customers See No Value
 
 **What went wrong:**
-- DVMM built but customers ask: "Why switch from ZEWSSP? What's the benefit?"
+- DCM built but customers ask: "Why switch from ZEWSSP? What's the benefit?"
 - Technical excellence without business value
 - Migration too painful/expensive
 - Missing features that ZEWSSP had
@@ -112,7 +112,7 @@
 
 **Early Warning Signs:**
 - Month 3: No end-to-end workflow demo-able yet
-- Month 6: Customers haven't seen DVMM
+- Month 6: Customers haven't seen DCM
 - "We need to finish X before we can show anything..."
 
 #### Failure Scenario 2: Axians Developers Leave Team / Can't Handle EAF Technically
@@ -152,7 +152,7 @@
 #### Failure Scenario 3: Complexity → Bugs → Customer Trust Lost
 
 **What went wrong:**
-- DVMM goes live but bug-ridden
+- DCM goes live but bug-ridden
 - Multi-tenancy leaks, event store corruption, performance problems
 - Customers: "Old ZEWSSP was more reliable!"
 - Insufficient test coverage
@@ -240,7 +240,7 @@
 **REVERSAL:** What if VMs were DYNAMIC?
 - Hot-resize, auto-scaling, flex-VMs, scheduled resize
 
-**Assessment:** Not useful for DVMM use case
+**Assessment:** Not useful for DCM use case
 - Adds complexity without enough value
 - **Decision:** Not all innovations fit the business case
 
@@ -405,7 +405,7 @@ _Key realizations from the session_
 
 #### #3 Priority: Perfektionismus vermeiden 🚀
 
-**Rationale:** First EAF failed due to "foundational features" too early. DVMM must not repeat this mistake. Addresses root cause from Five Whys.
+**Rationale:** First EAF failed due to "foundational features" too early. DCM must not repeat this mistake. Addresses root cause from Five Whys.
 
 **Next steps:**
 
@@ -463,7 +463,7 @@ _Key realizations from the session_
 3. **Developer Portal Structure** - What sections? What content? Integration with code?
 
 **Business Questions:**
-1. **Migration Strategy** - How do we get ZEWSSP customers to switch to DVMM?
+1. **Migration Strategy** - How do we get ZEWSSP customers to switch to DCM?
 2. **Pricing Model** - How does multi-tenancy affect pricing?
 3. **Support Model** - Who supports the SSP? Internal IT or Axians team?
 
@@ -490,9 +490,9 @@ For next brainstorming sessions or workshops:
 ### Questions That Emerged
 
 **Unresolved Questions:**
-1. What's the actual migration path from ZEWSSP to DVMM? Big bang or gradual?
+1. What's the actual migration path from ZEWSSP to DCM? Big bang or gradual?
 2. How do we handle ZEWSSP's legacy "Dockets v1"? Convert or rebuild?
-3. What's the timeline for EAF extraction from DVMM? When does that happen?
+3. What's the timeline for EAF extraction from DCM? When does that happen?
 4. Who are the first customers? Internal teams or external?
 5. How do we measure success? (Beyond "ISO 27001 compliant")
 

@@ -30,7 +30,7 @@ Pass Rate: 5/11 (45%)
 
 Evidence: Lines 11-19 (Epic Overview), Line 27 (FRs Covered: FR66, FR67, FR80)
 
-> "Establish the technical foundation for all DVMM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates." (Line 15)
+> "Establish the technical foundation for all DCM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates." (Line 15)
 
 > "FRs Covered: FR66, FR67, FR80" (Line 27)
 

@@ -1,8 +1,8 @@
-# Event Sourcing in DVMM
+# Event Sourcing in DCM
 
 **How we store *what happened* instead of just *what is*.**
 
-In traditional databases, you overwrite data. If a VM's status changes from `PROVISIONING` to `ACTIVE`, the old state is lost forever. In DVMM, we use **Event Sourcing**, which means we store every state change as an immutable event. The current state is simply the sum of all past events.
+In traditional databases, you overwrite data. If a VM's status changes from `PROVISIONING` to `ACTIVE`, the old state is lost forever. In DCM, we use **Event Sourcing**, which means we store every state change as an immutable event. The current state is simply the sum of all past events.
 
 This approach provides a complete, tamper-evident audit trail—a critical requirement for our ISO 27001 compliance.
 
@@ -57,7 +57,7 @@ This pattern is called **CQRS** (Command Query Responsibility Segregation).
 
 ### Step 1: Defining the Event
 
-Events are simple data classes in `dvmm-domain`. They capture the data relevant to the change.
+Events are simple data classes in `dcm-domain`. They capture the data relevant to the change.
 
 ```kotlin
 data class VmRequestCreated(

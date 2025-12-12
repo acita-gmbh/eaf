@@ -48,7 +48,7 @@ Pass Rate: 4/4 (100%)
 | Status | Item | Evidence |
 |--------|------|----------|
 | ✓ PASS | Story 2.1 learnings documented | Lines 87-107: Frontend stack, existing components, header implementation |
-| ✓ PASS | Existing code referenced | Line 18: "Existing Code: dvmm/dvmm-web/src/App.tsx" |
+| ✓ PASS | Existing code referenced | Line 18: "Existing Code: dcm/dcm-web/src/App.tsx" |
 | ✓ PASS | Architecture patterns noted | Lines 109-121: shadcn-admin-kit, component org, state management, routing deferral |
 | ✓ PASS | Party Mode review documented | Lines 340-355: Full consensus record with participant list |
 
@@ -82,7 +82,7 @@ Pass Rate: 3/3 (100%)
 
 **Current State:**
 ```
-dvmm/dvmm-web/
+dcm/dcm-web/
 ├── eslint.config.js
 ├── playwright.config.ts
 ├── vite.config.ts
@@ -127,7 +127,7 @@ dvmm/dvmm-web/
 
 **Recommendation:** Add Task 0 or subtask to Task 7:
 ```bash
-# From dvmm/dvmm-web directory
+# From dcm/dcm-web directory
 npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
 ```
 

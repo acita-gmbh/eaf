@@ -70,13 +70,13 @@ so that users understand what went wrong and the system recovers cleanly from pa
 ### Backend Tasks
 
 - [x] **Task 1: Enhance VsphereError Types (AC: 3.6.3)**
-  - [x] Create `VsphereError` sealed class hierarchy in `dvmm-application`
+  - [x] Create `VsphereError` sealed class hierarchy in `dcm-application`
   - [x] Define `TransientVsphereError` for retryable errors (connection timeout, service unavailable)
   - [x] Define `PermanentVsphereError` for non-retryable errors (invalid config, insufficient resources)
   - [x] Map VMware fault types to error classes in `VsphereClient`
 
 - [x] **Task 2: Implement Resilience4j Retry Policy (AC: 3.6.1)**
-  - [x] Add `resilience4j-kotlin` and `resilience4j-retry` dependencies to `dvmm-application`
+  - [x] Add `resilience4j-kotlin` and `resilience4j-retry` dependencies to `dcm-application`
   - [x] Configure retry policy: 5 total attempts (1 initial + 4 retries), exponential backoff starting at 10s, multiplier 2.0, max 120s
   - [x] Wrap `vspherePort.createVm()` calls with retry policy in `ResilientProvisioningService`
   - [x] Log each retry attempt with correlation ID and attempt number
@@ -173,7 +173,7 @@ so that users understand what went wrong and the system recovers cleanly from pa
     We MUST structure `VsphereError` to mirror the future `HypervisorError` from ADR-004a. This minimizes refactoring in Epic 6.
 
     ```kotlin
-    // dvmm-application/.../vmware/VsphereError.kt
+    // dcm-application/.../vmware/VsphereError.kt
     // Extends RuntimeException to provide standard exception behavior
     sealed class VsphereError(
         message: String,
@@ -290,7 +290,7 @@ so that users understand what went wrong and the system recovers cleanly from pa
 
 | File | Changes |
 |------|---------|
-| `dvmm-application/build.gradle.kts` | Add resilience4j dependencies |
+| `dcm-application/build.gradle.kts` | Add resilience4j dependencies |
 | `TriggerProvisioningHandler.kt` | Add retry logic, saga compensation |
 | `VsphereError.kt` | NEW: Define sealed class hierarchy (ADR-004a aligned) |
 | `VsphereClient.kt` | Map `vim25` faults to `VsphereError` |
@@ -349,8 +349,8 @@ fun simulatePermanentError(error: VsphereError) {
 ### Project Structure Notes
 
 - Alignment with unified project structure: All new code follows hexagonal architecture
-- Error types in `dvmm-application` (port layer), implementations in `dvmm-infrastructure`
-- Email templates in `dvmm-infrastructure/src/main/resources/templates/email/`
+- Error types in `dcm-application` (port layer), implementations in `dcm-infrastructure`
+- Email templates in `dcm-infrastructure/src/main/resources/templates/email/`
 
 ### References
 
@@ -408,42 +408,42 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 **Backend Files Modified/Created:**
-- `dvmm-application/build.gradle.kts` (resilience4j dependencies)
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt` (VsphereError sealed class hierarchy)
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/ResilientProvisioningService.kt`
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt`
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestNotificationSender.kt`
-- `dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestSummary.kt`
-- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmAggregate.kt`
-- `dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioningFailed.kt`
-- `dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt`
-- `dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
-- `dvmm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-user.html`
-- `dvmm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-admin.html`
+- `dcm-application/build.gradle.kts` (resilience4j dependencies)
+- `dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VsphereTypes.kt` (VsphereError sealed class hierarchy)
+- `dcm-application/src/main/kotlin/de/acci/dcm/application/vm/ResilientProvisioningService.kt`
+- `dcm-application/src/main/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandler.kt`
+- `dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmRequestNotificationSender.kt`
+- `dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmRequestSummary.kt`
+- `dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmAggregate.kt`
+- `dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/events/VmProvisioningFailed.kt`
+- `dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt`
+- `dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcsimAdapter.kt`
+- `dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt`
+- `dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt`
+- `dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
+- `dcm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-user.html`
+- `dcm-infrastructure/src/main/resources/templates/email/vm-provisioning-failed-admin.html`
 - `gradle/libs.versions.toml` (resilience4j version)
 
 **Frontend Files Modified:**
-- `dvmm-web/src/api/vm-requests.ts`
-- `dvmm-web/src/components/requests/Timeline.tsx`
-- `dvmm-web/src/pages/RequestDetail.tsx`
-- `dvmm-web/src/components/requests/Timeline.test.tsx`
-- `dvmm-web/src/pages/RequestDetail.test.tsx`
+- `dcm-web/src/api/vm-requests.ts`
+- `dcm-web/src/components/requests/Timeline.tsx`
+- `dcm-web/src/pages/RequestDetail.tsx`
+- `dcm-web/src/components/requests/Timeline.test.tsx`
+- `dcm-web/src/pages/RequestDetail.test.tsx`
 
 **Test Files:**
-- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/ResilientProvisioningServiceTest.kt`
-- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt`
-- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmware/VsphereErrorTest.kt`
-- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/GetMyRequestsHandlerTest.kt`
-- `dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/GetPendingRequestsHandlerTest.kt`
-- `dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateTest.kt`
-- `dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateProgressTest.kt`
-- `dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
-- `dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapterSagaCompensationTest.kt`
-- `dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerTest.kt`
-- `dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/VmRequestControllerTest.kt`
+- `dcm-application/src/test/kotlin/de/acci/dcm/application/vm/ResilientProvisioningServiceTest.kt`
+- `dcm-application/src/test/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandlerTest.kt`
+- `dcm-application/src/test/kotlin/de/acci/dcm/application/vmware/VsphereErrorTest.kt`
+- `dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/GetMyRequestsHandlerTest.kt`
+- `dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/GetPendingRequestsHandlerTest.kt`
+- `dcm-domain/src/test/kotlin/de/acci/dcm/domain/vm/VmAggregateTest.kt`
+- `dcm-domain/src/test/kotlin/de/acci/dcm/domain/vm/VmAggregateProgressTest.kt`
+- `dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt`
+- `dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VcsimAdapterSagaCompensationTest.kt`
+- `dcm-api/src/test/kotlin/de/acci/dcm/api/admin/AdminRequestControllerTest.kt`
+- `dcm-api/src/test/kotlin/de/acci/dcm/api/vmrequest/VmRequestControllerTest.kt`
 
 **Documentation Files (VCF SDK enum convention warning):**
 - `CLAUDE.md`

@@ -457,7 +457,7 @@ All critical failure conditions **PASSED**:
 
 The PRD and Epics documents are **ready for implementation**. The identified major issues are:
 
-1. **FR Coverage Gap (M1):** Acceptable as-is because FR3-FR7 (user profile, invite, assign roles, deactivate, password reset) are standard Keycloak admin features available out-of-box. Add clarification to PRD: *"MVP: Keycloak Admin Console; Growth: Custom DVMM UI"*
+1. **FR Coverage Gap (M1):** Acceptable as-is because FR3-FR7 (user profile, invite, assign roles, deactivate, password reset) are standard Keycloak admin features available out-of-box. Add clarification to PRD: *"MVP: Keycloak Admin Console; Growth: Custom DCM UI"*
 
 2. **Implementation Note (M2):** Non-blocking. FR84 note can be moved to Architecture doc during implementation.
 

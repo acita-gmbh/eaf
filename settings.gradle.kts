@@ -22,9 +22,9 @@ include(":eaf:eaf-auth-keycloak")
 include(":eaf:eaf-testing")
 include(":eaf:eaf-notifications")
 
-// DVMM Product modules
-include(":dvmm:dvmm-domain")
-include(":dvmm:dvmm-application")
-include(":dvmm:dvmm-api")
-include(":dvmm:dvmm-infrastructure")
-include(":dvmm:dvmm-app")
+// DCM Product modules
+include(":dcm:dcm-domain")
+include(":dcm:dcm-application")
+include(":dcm:dcm-api")
+include(":dcm:dcm-infrastructure")
+include(":dcm:dcm-app")

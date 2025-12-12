@@ -2,7 +2,7 @@
 
 **Protecting the front door.**
 
-Public APIs are a target. Bots, scrapers, and malicious actors will try to overwhelm or exploit them. We implement defense-in-depth to protect DVMM.
+Public APIs are a target. Bots, scrapers, and malicious actors will try to overwhelm or exploit them. We implement defense-in-depth to protect DCM.
 
 ---
 
@@ -18,7 +18,7 @@ We prevent any single user or IP from overwhelming the system.
 
 ## 2. CSRF Protection (Cross-Site Request Forgery)
 
-**The Attack:** A user is logged into DVMM. They visit `evil-site.com`. That site contains a hidden form that POSTs to `dvmm.com/api/delete-vm`. The browser sends the cookies automatically. The VM is deleted.
+**The Attack:** A user is logged into DCM. They visit `evil-site.com`. That site contains a hidden form that POSTs to `dcm.com/api/delete-vm`. The browser sends the cookies automatically. The VM is deleted.
 
 **The Defense:**
 1.  **Safe Methods:** GET, HEAD, OPTIONS are safe.
@@ -43,4 +43,4 @@ We configure Spring Security to send standard hardening headers:
 
 ## Summary
 
-Security is not a feature; it is a baseline requirement. By layering these defenses, we ensure that DVMM is resilient against the most common web attacks.
+Security is not a feature; it is a baseline requirement. By layering these defenses, we ensure that DCM is resilient against the most common web attacks.

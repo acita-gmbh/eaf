@@ -1,6 +1,6 @@
 # WARP.md
 
-Terminal AI rules for the EAF/DVMM Gradle monorepo.
+Terminal AI rules for the EAF/DCM Gradle monorepo.
 
 ## Project Type
 
@@ -34,18 +34,18 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 
 ```bash
 # Build specific module
-./gradlew :dvmm:dvmm-app:build
+./gradlew :dcm:dcm-app:build
 ./gradlew :eaf:eaf-core:build
 
 # Test specific module
-./gradlew :dvmm:dvmm-domain:test
+./gradlew :dcm:dcm-domain:test
 ./gradlew :eaf:eaf-testing:test
 
 # Run single test class
-./gradlew :dvmm:dvmm-app:test --tests "de.acci.dvmm.architecture.ArchitectureTest"
+./gradlew :dcm:dcm-app:test --tests "de.acci.dcm.architecture.ArchitectureTest"
 
 # Run single test method (use quotes for spaces)
-./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest.eaf modules must not depend on dvmm modules"
+./gradlew :dcm:dcm-app:test --tests "ArchitectureTest.eaf modules must not depend on dcm modules"
 
 # Run tests matching pattern
 ./gradlew test --tests "*EventStore*"
@@ -63,14 +63,14 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 # Report: build/reports/pitest/index.html
 
 # Architecture tests only
-./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"
+./gradlew :dcm:dcm-app:test --tests "*ArchitectureTest*"
 ```
 
 ### Dependency Management
 
 ```bash
 # Show dependency tree for module
-./gradlew :dvmm:dvmm-app:dependencies
+./gradlew :dcm:dcm-app:dependencies
 
 # Show outdated dependencies
 ./gradlew dependencyUpdates
@@ -86,7 +86,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 ./gradlew clean
 
 # Clean specific module
-./gradlew :dvmm:dvmm-app:clean
+./gradlew :dcm:dcm-app:clean
 
 # Nuclear option: clean + delete caches
 ./gradlew clean && rm -rf ~/.gradle/caches/build-cache-*
@@ -103,11 +103,11 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 | EAF Tenant | `:eaf:eaf-tenant` |
 | EAF Auth | `:eaf:eaf-auth` |
 | EAF Testing | `:eaf:eaf-testing` |
-| DVMM Domain | `:dvmm:dvmm-domain` |
-| DVMM Application | `:dvmm:dvmm-application` |
-| DVMM API | `:dvmm:dvmm-api` |
-| DVMM Infrastructure | `:dvmm:dvmm-infrastructure` |
-| DVMM App | `:dvmm:dvmm-app` |
+| DCM Domain | `:dcm:dcm-domain` |
+| DCM Application | `:dcm:dcm-application` |
+| DCM API | `:dcm:dcm-api` |
+| DCM Infrastructure | `:dcm:dcm-infrastructure` |
+| DCM App | `:dcm:dcm-app` |
 
 ---
 
@@ -144,7 +144,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 
 ```bash
 # See conflict resolution
-./gradlew :dvmm:dvmm-app:dependencyInsight --dependency spring-boot
+./gradlew :dcm:dcm-app:dependencyInsight --dependency spring-boot
 
 # Force refresh
 ./gradlew build --refresh-dependencies
@@ -211,7 +211,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 ./gradlew tasks
 
 # Tasks for specific module
-./gradlew :dvmm:dvmm-app:tasks
+./gradlew :dcm:dcm-app:tasks
 ```
 
 ---
@@ -222,7 +222,7 @@ Always use the Gradle wrapper (`./gradlew`), never system Gradle.
 |-------|-----------|---------|
 | Test Coverage | ≥70% | `./gradlew koverVerify` |
 | Mutation Score | ≥70% | `./gradlew pitest` |
-| Architecture | All pass | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
+| Architecture | All pass | `./gradlew :dcm:dcm-app:test --tests "*ArchitectureTest*"` |
 
 ---
 
@@ -237,7 +237,7 @@ git commit -m "fix: correct tenant isolation in event store"
 git commit -m "docs: add API documentation"
 
 # With Jira reference
-git commit -m "[DVMM-123] feat: implement VM request validation"
+git commit -m "[DCM-123] feat: implement VM request validation"
 ```
 
 ### Branch Creation
@@ -260,12 +260,12 @@ git checkout -b docs/api-documentation
 ```
 eaf/                    # Root
 ├── build-logic/        # Convention plugins
-├── dvmm/               # Product modules
-│   ├── dvmm-api/
-│   ├── dvmm-app/
-│   ├── dvmm-application/
-│   ├── dvmm-domain/
-│   └── dvmm-infrastructure/
+├── dcm/               # Product modules
+│   ├── dcm-api/
+│   ├── dcm-app/
+│   ├── dcm-application/
+│   ├── dcm-domain/
+│   └── dcm-infrastructure/
 ├── eaf/                # Framework modules
 │   ├── eaf-auth/
 │   ├── eaf-core/

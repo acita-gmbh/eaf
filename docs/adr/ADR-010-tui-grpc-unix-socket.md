@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 **Date:** 2025-11-29
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Architecture Team
 **Related:** [TUI Admin Interface Tech Spec](../tech-specs/tui-admin-interface.md)
 
@@ -10,7 +10,7 @@
 
 ## Context
 
-The DVMM TUI Admin Interface requires communication between a standalone terminal client (`dvmm-tui`) and the Spring Boot backend (`dvmm-app`). The primary use case is SSH administrators performing quick approval actions without needing a web browser.
+The DCM TUI Admin Interface requires communication between a standalone terminal client (`dcm-tui`) and the Spring Boot backend (`dcm-app`). The primary use case is SSH administrators performing quick approval actions without needing a web browser.
 
 ### Requirements
 
@@ -29,7 +29,7 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 
 ```
 ┌─────────────┐      HTTP/SSE      ┌─────────────┐
-│  dvmm-tui   │◄──────────────────►│  dvmm-app   │
+│  dcm-tui   │◄──────────────────►│  dcm-app   │
 └─────────────┘                    └─────────────┘
 ```
 
@@ -48,7 +48,7 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 
 ```
 ┌─────────────┐      WebSocket     ┌─────────────┐
-│  dvmm-tui   │◄─────────────────►│  dvmm-app   │
+│  dcm-tui   │◄─────────────────►│  dcm-app   │
 └─────────────┘                    └─────────────┘
 ```
 
@@ -67,7 +67,7 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 
 ```
 ┌─────────────┐    gRPC (TCP:9090)  ┌─────────────┐
-│  dvmm-tui   │◄───────────────────►│  dvmm-app   │
+│  dcm-tui   │◄───────────────────►│  dcm-app   │
 └─────────────┘                     └─────────────┘
 ```
 
@@ -85,8 +85,8 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 #### Option D: gRPC over Unix Domain Socket (Selected)
 
 ```
-┌─────────────┐   gRPC (/var/run/dvmm/tui.sock)   ┌─────────────┐
-│  dvmm-tui   │◄─────────────────────────────────►│  dvmm-app   │
+┌─────────────┐   gRPC (/var/run/dcm/tui.sock)   ┌─────────────┐
+│  dcm-tui   │◄─────────────────────────────────►│  dcm-app   │
 └─────────────┘                                   └─────────────┘
 ```
 
@@ -112,11 +112,11 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 
 1. **Latency**: Unix sockets provide ~0.1ms latency vs ~1-3ms for TCP. For interactive TUI with frequent key presses, this matters.
 
-2. **Security**: Socket file permissions (660, group `dvmm-admins`) eliminate network attack surface. Unix user mapping provides zero-friction authentication for SSH admins.
+2. **Security**: Socket file permissions (660, group `dcm-admins`) eliminate network attack surface. Unix user mapping provides zero-friction authentication for SSH admins.
 
 3. **Streaming**: gRPC server streaming naturally fits the real-time approval queue and health dashboard requirements.
 
-4. **Type Safety**: Protobuf service definitions in `dvmm-tui-protocol` module are shared between client and server, eliminating serialization bugs.
+4. **Type Safety**: Protobuf service definitions in `dcm-tui-protocol` module are shared between client and server, eliminating serialization bugs.
 
 5. **Scope Alignment**: TUI is explicitly for local SSH admins. Windows/remote access is out of scope (use web UI instead).
 
@@ -149,14 +149,14 @@ The DVMM TUI Admin Interface requires communication between a standalone termina
 ### Unix Socket Configuration
 
 ```yaml
-# dvmm-app application.yml
+# dcm-app application.yml
 grpc:
   server:
     unix-socket:
       enabled: true
-      path: /var/run/dvmm/tui.sock
+      path: /var/run/dcm/tui.sock
       permissions: 660
-      group: dvmm-admins
+      group: dcm-admins
 ```
 
 ### Authentication Flow
@@ -164,7 +164,7 @@ grpc:
 ```
 1. TUI connects to Unix socket
 2. Server extracts Unix UID via SO_PEERCRED
-3. UID mapped to DVMM user via unix-user-mappings config
+3. UID mapped to DCM user via unix-user-mappings config
 4. Session token issued for subsequent calls
 ```
 

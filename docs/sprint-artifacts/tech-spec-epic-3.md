@@ -26,7 +26,7 @@
 
 ### 1.3 Critical Risk Factors
 
-Epic 3 transforms DVMM from a workflow tool into real infrastructure automation. The risk profile is fundamentally different from Epic 2:
+Epic 3 transforms DCM from a workflow tool into real infrastructure automation. The risk profile is fundamentally different from Epic 2:
 
 | Risk Factor | Impact | Mitigation |
 |-------------|--------|------------|
@@ -113,7 +113,7 @@ Epic 3 transforms DVMM from a workflow tool into real infrastructure automation.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                            dvmm-application                                  │
+│                            dcm-application                                  │
 │  ┌─────────────────────┐   ┌─────────────────────────────────────────────┐  │
 │  │ ProvisionVmHandler  │──▶│              VspherePort                    │  │
 │  │                     │   │  - createVm(spec): Result<VmId, Error>      │  │
@@ -157,15 +157,15 @@ class VmProvisioningService {
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          dvmm-app (Spring Boot)                              │
+│                          dcm-app (Spring Boot)                              │
 │   ┌─────────────┐   ┌──────────────────┐   ┌────────────────┐              │
-│   │  dvmm-api   │──▶│ dvmm-application │──▶│  dvmm-domain   │              │
+│   │  dcm-api   │──▶│ dcm-application │──▶│  dcm-domain   │              │
 │   │  (REST)     │   │ (Sagas/Handlers) │   │  (Aggregates)  │              │
 │   └─────────────┘   └──────────────────┘   └────────────────┘              │
 │         │                    │                      ▲                       │
 │         ▼                    ▼                      │                       │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │                    dvmm-infrastructure                               │  │
+│   │                    dcm-infrastructure                               │  │
 │   │   ┌───────────────────┐   ┌────────────────────────────────────┐    │  │
 │   │   │ VcenterAdapter    │   │ VcsimAdapter                       │    │  │
 │   │   │ (Official SDK)    │   │ (VCSIM Testcontainer)              │    │  │
@@ -191,10 +191,10 @@ class VmProvisioningService {
 
 | Rule | Enforcement |
 |------|-------------|
-| EAF modules MUST NOT import `de.acci.dvmm.*` | Konsist `ArchitectureTest` |
-| `dvmm-domain` MUST NOT import `org.springframework.*` | Konsist `ArchitectureTest` |
-| `VspherePort` in `dvmm-application` (port layer) | Package convention |
-| `VcenterAdapter`/`VcsimAdapter` in `dvmm-infrastructure` | Package convention |
+| EAF modules MUST NOT import `de.acci.dcm.*` | Konsist `ArchitectureTest` |
+| `dcm-domain` MUST NOT import `org.springframework.*` | Konsist `ArchitectureTest` |
+| `VspherePort` in `dcm-application` (port layer) | Package convention |
+| `VcenterAdapter`/`VcsimAdapter` in `dcm-infrastructure` | Package convention |
 | VMware credentials encrypted at rest | Security requirement |
 
 ---
@@ -206,7 +206,7 @@ class VmProvisioningService {
 #### 4.1.1 New Domain Events
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/
 
 // Triggered when provisioning starts
 data class VmProvisioningStarted(
@@ -397,7 +397,7 @@ class VmRequestAggregate {
 ### 4.2 VspherePort Interface
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/ports/VspherePort.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/ports/VspherePort.kt
 
 interface VspherePort {
     /**
@@ -472,7 +472,7 @@ enum class GuestToolsStatus { RUNNING, NOT_RUNNING, NOT_INSTALLED }
 ### 4.3 Saga Pattern for Provisioning
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/sagas/ProvisionVmSaga.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/sagas/ProvisionVmSaga.kt
 
 /**
  * Saga orchestrator for VM provisioning.
@@ -993,9 +993,9 @@ document gaps and adjust approach before Story 3.3.
 
 | Library | Version | Module | Purpose |
 |---------|---------|--------|---------|
-| VCF SDK Java | 9.0.0.0 | dvmm-infrastructure | Official VCF SDK (Maven Central) - Includes vSphere Automation & VIM APIs |
-| resilience4j | 2.2.x | dvmm-application | Circuit breaker, retry |
-| spring-security-crypto | 6.x | dvmm-infrastructure | Credential encryption |
+| VCF SDK Java | 9.0.0.0 | dcm-infrastructure | Official VCF SDK (Maven Central) - Includes vSphere Automation & VIM APIs |
+| resilience4j | 2.2.x | dcm-application | Circuit breaker, retry |
+| spring-security-crypto | 6.x | dcm-infrastructure | Credential encryption |
 
 > **Note:** Story 3.1 was initially implemented with yavijava. Story 3.1.1 migrates to the official **VCF SDK** due to yavijava deprecation.
 

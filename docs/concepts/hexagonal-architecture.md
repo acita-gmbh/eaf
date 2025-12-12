@@ -1,10 +1,10 @@
-# Hexagonal Architecture in DVMM
+# Hexagonal Architecture in DCM
 
 **Keeping our business logic clean, testable, and independent.**
 
 Hexagonal Architecture (also known as Ports and Adapters) is a design pattern that protects our core business logic from external technologies. It ensures that our application doesn't care whether it's running on a web server or a CLI, using PostgreSQL or MySQL, or sending emails via SMTP or SendGrid.
 
-In DVMM, this separation is strictly enforced by our build system and architecture tests.
+In DCM, this separation is strictly enforced by our build system and architecture tests.
 
 ---
 
@@ -34,7 +34,7 @@ graph TD
     Application --> Domain
 ```
 
-### 1. Domain Layer (`dvmm-domain`)
+### 1. Domain Layer (`dcm-domain`)
 *   **Role:** The "Brain". Contains purely business rules.
 *   **Dependencies:** None. Zero. (No Spring, No SQL, No HTTP).
 *   **Contents:**
@@ -43,25 +43,25 @@ graph TD
     *   **Domain Events:** (`VmRequestCreated`) facts of what happened.
     *   **Business Rules:** Validations and state transitions.
 
-### 2. Application Layer (`dvmm-application`)
+### 2. Application Layer (`dcm-application`)
 *   **Role:** The "Coordinator". Orchestrates the domain objects to fulfill use cases.
-*   **Dependencies:** Depends on `dvmm-domain`.
+*   **Dependencies:** Depends on `dcm-domain`.
 *   **Contents:**
     *   **Command Handlers:** Receive a command, load an aggregate, invoke a domain method, and save events.
     *   **Ports (Interfaces):** Defines *contracts* for external services (e.g., `NotificationPort`, `HypervisorPort`) without implementing them.
     *   **Queries:** Definitions of read operations.
 
-### 3. API Layer (`dvmm-api`)
+### 3. API Layer (`dcm-api`)
 *   **Role:** The "Entry Point". Exposes the application to the outside world.
-*   **Dependencies:** Depends on `dvmm-application`.
+*   **Dependencies:** Depends on `dcm-application`.
 *   **Contents:**
     *   **REST Controllers:** Handle HTTP requests and responses.
     *   **DTOs:** Data Transfer Objects for API contracts.
     *   **OpenAPI Specs:** Documentation of our API.
 
-### 4. Infrastructure Layer (`dvmm-infrastructure`)
+### 4. Infrastructure Layer (`dcm-infrastructure`)
 *   **Role:** The "Plumbing". Implements the interfaces defined in the Application layer.
-*   **Dependencies:** Depends on `dvmm-application` (to implement ports) and external libraries.
+*   **Dependencies:** Depends on `dcm-application` (to implement ports) and external libraries.
 *   **Contents:**
     *   **Persistence:** PostgreSQL implementations of `EventStore`.
     *   **Adapters:** `SmtpNotificationSender`, `VsphereAdapter`.
@@ -73,9 +73,9 @@ graph TD
 
 The most critical rule is: **Source code dependencies can only point inward.**
 
-*   `dvmm-domain` knows **nothing** about `dvmm-application`.
-*   `dvmm-application` knows **nothing** about `dvmm-infrastructure`.
-*   `dvmm-infrastructure` implements interfaces defined in `dvmm-application`.
+*   `dcm-domain` knows **nothing** about `dcm-application`.
+*   `dcm-application` knows **nothing** about `dcm-infrastructure`.
+*   `dcm-infrastructure` implements interfaces defined in `dcm-application`.
 
 This is achieved via **Dependency Inversion**:
 
@@ -104,6 +104,6 @@ This is achieved via **Dependency Inversion**:
 We don't just hope developers follow these rules—we enforce them.
 
 *   **Konsist Tests:** Our build pipeline runs architecture tests that check import statements.
-*   **Compilation:** The Gradle module structure physically prevents `dvmm-domain` from importing `spring-boot`.
+*   **Compilation:** The Gradle module structure physically prevents `dcm-domain` from importing `spring-boot`.
 
 If you try to import a Controller into an Aggregate, the build will fail.

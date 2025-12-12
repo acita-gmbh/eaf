@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: dcm-test
+
+  # Allow mock beans to override real beans in tests
+  main:
+    allow-bean-definition-overriding: true
+
+  # Disable Flyway for tests that don't use Testcontainers
+  flyway:
+    enabled: false
+
+  # Disable actual Keycloak connection for tests
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/dcm
+          # Disable JWKS validation - we use a mock decoder
+          jwk-set-uri: http://localhost:8180/realms/dcm/protocol/openid-connect/certs
+
+# EAF Auth Configuration for tests
+eaf:
+  auth:
+    keycloak:
+      client-id: dcm-web
+      user-info-uri: http://localhost:8180/realms/dcm/protocol/openid-connect/userinfo
+
+  # CORS for tests
+  cors:
+    allowed-origins: http://localhost:3000
+
+  # Disable CSRF for stateless JWT API tests
+  security:
+    csrf:
+      enabled: false
+
+# Actuator - enable more endpoints for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    de.acci.dcm: DEBUG
+    de.acci.eaf: DEBUG
+    org.springframework.security: DEBUG

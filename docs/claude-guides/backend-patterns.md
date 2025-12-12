@@ -249,7 +249,7 @@ private fun resolveEventClass(eventType: String): Class<out DomainEvent> {
 ```
 
 **Checklist for new domain events:**
-1. Create event class in `dvmm-domain/.../events/`
+1. Create event class in `dcm-domain/.../events/`
 2. Add case to `resolveEventClass()` in deserializer
 3. Add deserialization test
 4. If aggregate handles event, add `apply()` method and test

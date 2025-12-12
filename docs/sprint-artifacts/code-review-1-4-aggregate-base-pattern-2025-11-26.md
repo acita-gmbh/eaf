@@ -133,7 +133,7 @@ Total: 5/5 PASSED
 ### Architecture Conformity ✅
 
 - ✅ No Spring dependencies in eventsourcing module
-- ✅ No DVMM imports in EAF module
+- ✅ No DCM imports in EAF module
 - ✅ Explicit API mode enforced (public/internal modifiers)
 - ✅ Clean separation of concerns
 

@@ -11,7 +11,7 @@
 
 This specification describes the technical implementation of an integrated user management system that exposes Keycloak functionality through a custom UI, eliminating the need for customer admins to use the native Keycloak Admin Console.
 
-**Architecture Decision:** Integration via Keycloak Admin REST API into the DVMM portal (MVP) with later extension to a separate Control Plane (Growth phase).
+**Architecture Decision:** Integration via Keycloak Admin REST API into the DCM portal (MVP) with later extension to a separate Control Plane (Growth phase).
 
 ---
 
@@ -21,7 +21,7 @@ This specification describes the technical implementation of an integrated user 
 
 The Keycloak Admin REST API provides full access to all administrative functions:
 
-| API Area | Base Path | Relevance for DVMM |
+| API Area | Base Path | Relevance for DCM |
 |----------|-----------|-------------------|
 | Users | `/admin/realms/{realm}/users` | High (FR4, FR5, FR6) |
 | Roles | `/admin/realms/{realm}/roles` | High (FR5, FR8) |
@@ -34,7 +34,7 @@ The Keycloak Admin REST API provides full access to all administrative functions
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   DVMM Backend  │────►│    Keycloak     │────►│  Keycloak       │
+│   DCM Backend  │────►│    Keycloak     │────►│  Keycloak       │
 │   Service       │     │    Token        │     │  Admin API      │
 │   Account       │     │    Endpoint     │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
@@ -48,7 +48,7 @@ The Keycloak Admin REST API provides full access to all administrative functions
 
 ```json
 {
-  "clientId": "dvmm-admin-service",
+  "clientId": "dcm-admin-service",
   "serviceAccountsEnabled": true,
   "clientAuthenticatorType": "client-secret",
   "secret": "${KEYCLOAK_ADMIN_SECRET}",
@@ -166,7 +166,7 @@ Content-Type: application/json
 [
   {
     "id": "role-uuid",
-    "name": "dvmm-admin"
+    "name": "dcm-admin"
   }
 ]
 ```
@@ -222,9 +222,9 @@ eaf/
 │           ├── KeycloakAuditQueryAdapter.kt
 │           └── KeycloakAdminProperties.kt
 │
-dvmm/
-├── dvmm-application/                  # NEW: Use Cases
-│   └── src/main/kotlin/de/acci/dvmm/application/
+dcm/
+├── dcm-application/                  # NEW: Use Cases
+│   └── src/main/kotlin/de/acci/dcm/application/
 │       └── admin/
 │           ├── InviteUserUseCase.kt
 │           ├── DeactivateUserUseCase.kt
@@ -233,8 +233,8 @@ dvmm/
 │           ├── SendPasswordResetUseCase.kt
 │           └── ForceLogoutUseCase.kt
 │
-├── dvmm-api/                          # NEW: REST Controller
-│   └── src/main/kotlin/de/acci/dvmm/api/
+├── dcm-api/                          # NEW: REST Controller
+│   └── src/main/kotlin/de/acci/dcm/api/
 │       └── admin/
 │           ├── UserAdminController.kt
 │           ├── UserAdminDto.kt
@@ -1027,11 +1027,11 @@ public data class KeycloakAdminProperties(
 )
 ```
 
-### 3.4 Application Layer (dvmm-application)
+### 3.4 Application Layer (dcm-application)
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/admin/InviteUserUseCase.kt
-package de.acci.dvmm.application.admin
+// dcm-application/src/main/kotlin/de/acci/dcm/application/admin/InviteUserUseCase.kt
+package de.acci.dcm.application.admin
 
 import de.acci.eaf.auth.admin.CreateUserCommand
 import de.acci.eaf.auth.admin.UserAdminPort
@@ -1039,8 +1039,8 @@ import de.acci.eaf.auth.admin.UserAdminError
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.tenant.TenantContext
-import de.acci.dvmm.domain.admin.UserInvitedEvent
-import de.acci.dvmm.domain.admin.UserInvitationRepository
+import de.acci.dcm.domain.admin.UserInvitedEvent
+import de.acci.dcm.domain.admin.UserInvitationRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -1125,14 +1125,14 @@ public sealed interface InviteUserError {
 
 ---
 
-## 4. API-Design (dvmm-api)
+## 4. API-Design (dcm-api)
 
 ### 4.1 REST-Endpunkte
 
 ```yaml
 openapi: 3.0.3
 info:
-  title: DVMM User Administration API
+  title: DCM User Administration API
   version: 1.0.0
 
 paths:
@@ -1527,10 +1527,10 @@ components:
 ### 4.2 Controller-Implementation
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/UserAdminController.kt
-package de.acci.dvmm.api.admin
+// dcm-api/src/main/kotlin/de/acci/dcm/api/admin/UserAdminController.kt
+package de.acci.dcm.api.admin
 
-import de.acci.dvmm.application.admin.*
+import de.acci.dcm.application.admin.*
 import de.acci.eaf.auth.UserInfo
 import de.acci.eaf.auth.admin.ManagedUser
 import de.acci.eaf.auth.admin.PaginationRequest
@@ -1860,7 +1860,7 @@ public data class RoleInfoDto(
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        DVMM Keycloak Realm                          │
+│                        DCM Keycloak Realm                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────────────┐     ┌─────────────────┐     ┌───────────────┐ │
@@ -1983,8 +1983,8 @@ public class DeactivateUserUseCase(...) {
 ### 6.1 Admin Event Structure
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/admin/AdminEvents.kt
-package de.acci.dvmm.domain.admin
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/admin/AdminEvents.kt
+package de.acci.dcm.domain.admin
 
 import de.acci.eaf.core.domain.DomainEvent
 import de.acci.eaf.core.types.TenantId
@@ -2095,10 +2095,10 @@ public data class UserSessionsTerminatedEvent(
 ### 6.2 Admin-Event-Store
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/admin/AdminEventStore.kt
-package de.acci.dvmm.infrastructure.admin
+// dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/admin/AdminEventStore.kt
+package de.acci.dcm.infrastructure.admin
 
-import de.acci.dvmm.domain.admin.AdminEvent
+import de.acci.dcm.domain.admin.AdminEvent
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import kotlinx.coroutines.flow.Flow
@@ -2572,8 +2572,8 @@ class KeycloakUserAdminAdapterTest {
         mockClient = mockk()
         properties = KeycloakAdminProperties(
             serverUrl = "http://keycloak:8080",
-            realm = "dvmm",
-            clientId = "dvmm-admin",
+            realm = "dcm",
+            clientId = "dcm-admin",
             clientSecret = "secret"
         )
         adapter = KeycloakUserAdminAdapter(mockClient, properties)
@@ -2732,7 +2732,7 @@ class KeycloakAdminIntegrationTest {
     fun setup() {
         val properties = KeycloakAdminProperties(
             serverUrl = keycloak.authServerUrl,
-            realm = "dvmm-test",
+            realm = "dcm-test",
             clientId = "admin-cli",
             clientSecret = "test-secret"
         )
@@ -2871,7 +2871,7 @@ class KeycloakAdminIntegrationTest {
 ```json
 // src/test/resources/test-realm.json
 {
-  "realm": "dvmm-test",
+  "realm": "dcm-test",
   "enabled": true,
   "clients": [
     {
@@ -2883,7 +2883,7 @@ class KeycloakAdminIntegrationTest {
       "directAccessGrantsEnabled": true
     },
     {
-      "clientId": "dvmm-web",
+      "clientId": "dcm-web",
       "enabled": true,
       "publicClient": true,
       "redirectUris": ["http://localhost:3000/*"],
@@ -2902,7 +2902,7 @@ class KeycloakAdminIntegrationTest {
       "username": "service-account-admin-cli",
       "enabled": true,
       "serviceAccountClientId": "admin-cli",
-      "realmRoles": ["default-roles-dvmm-test"],
+      "realmRoles": ["default-roles-dcm-test"],
       "clientRoles": {
         "realm-management": [
           "view-users",
@@ -2929,14 +2929,14 @@ eaf:
     keycloak:
       # Standard auth config (existing)
       server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
-      realm: ${KEYCLOAK_REALM:dvmm}
-      client-id: ${KEYCLOAK_CLIENT_ID:dvmm-web}
+      realm: ${KEYCLOAK_REALM:dcm}
+      client-id: ${KEYCLOAK_CLIENT_ID:dcm-web}
 
       # Admin API config (new)
       admin:
         server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
-        realm: ${KEYCLOAK_REALM:dvmm}
-        client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:dvmm-admin-service}
+        realm: ${KEYCLOAK_REALM:dcm}
+        client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:dcm-admin-service}
         client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
 ```
 
@@ -2944,9 +2944,9 @@ eaf:
 
 ```json
 {
-  "clientId": "dvmm-admin-service",
-  "name": "DVMM Admin Service Account",
-  "description": "Service account for DVMM user administration",
+  "clientId": "dcm-admin-service",
+  "name": "DCM Admin Service Account",
+  "description": "Service account for DCM user administration",
   "enabled": true,
   "clientAuthenticatorType": "client-secret",
   "secret": "GENERATE_SECURE_SECRET",
@@ -3017,8 +3017,8 @@ data class AdminFeatureFlags(
 ## 12. References
 
 - [Keycloak Admin REST API Documentation](https://www.keycloak.org/docs-api/24.0/rest-api/index.html)
-- [DVMM Security Architecture](./security-architecture.md)
-- [DVMM Architecture](./architecture.md)
+- [DCM Security Architecture](./security-architecture.md)
+- [DCM Architecture](./architecture.md)
 - [Epic 2: Authentication & Authorization](./epics.md#epic-2)
 
 ---

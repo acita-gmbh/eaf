@@ -2,10 +2,10 @@
 
 ## Executive Summary
 
-This document provides comprehensive research and recommendations for implementing a licensing system for EAF (Enterprise Application Framework) and its products like DVMM. The system must support:
+This document provides comprehensive research and recommendations for implementing a licensing system for EAF (Enterprise Application Framework) and its products like DCM. The system must support:
 
 - **On-premise deployment** with offline/air-gapped capability
-- **Core-based licensing** (CPU cores managed by products like DVMM)
+- **Core-based licensing** (CPU cores managed by products like DCM)
 - **Multi-tenancy** with per-tenant license allocation
 - **Subscription model** with annual renewals
 - **Integration with existing DPCM Service** for migration path
@@ -18,7 +18,7 @@ This document provides comprehensive research and recommendations for implementi
 - **Framework-First Design**: EAF modules (`eaf-core`, `eaf-tenant`, `eaf-auth`, etc.) are reusable across products
 - **Multi-Tenancy**: PostgreSQL RLS with `TenantContext` for isolation
 - **IdP-Agnostic Auth**: Pluggable identity providers (Keycloak for MVP)
-- **Products**: DVMM (VMware management), future products built on EAF
+- **Products**: DCM (VMware management), future products built on EAF
 
 ### Deployment Model
 - Products packaged as **Docker images**
@@ -241,7 +241,7 @@ export const backendInstanceRegistration = async (token) => { ... }
 
 ## 4. VMware Ecosystem Licensing Analysis
 
-Since DVMM targets VMware vSphere environments, understanding how other VMware management software vendors handle licensing is critical for competitive positioning.
+Since DCM targets VMware vSphere environments, understanding how other VMware management software vendors handle licensing is critical for competitive positioning.
 
 ### 4.1 VMware's Own Licensing Changes (2024-2025)
 
@@ -286,7 +286,7 @@ Following Broadcom's acquisition (December 2023), VMware underwent significant l
 - Turbonomic transitioning to this model
 - Risk: customers already fatigued by core counting from VMware itself
 
-### 4.4 Licensing Model Trade-offs for DVMM
+### 4.4 Licensing Model Trade-offs for DCM
 
 | Model | Pros | Cons |
 |-------|------|------|
@@ -304,9 +304,9 @@ Following Broadcom's acquisition (December 2023), VMware underwent significant l
 4. **Tiered editions**: Most vendors offer Standard/Pro/Enterprise capability tiers
 5. **Bundling**: VMware bundles everything (Aria, vSAN, etc.) into VCF/VVF
 
-### 4.6 Recommendation for DVMM
+### 4.6 Recommendation for DCM
 
-Given DVMM's position as a VM provisioning/management tool for vSphere in the DACH market:
+Given DCM's position as a VM provisioning/management tool for vSphere in the DACH market:
 
 **Recommended Approach: Hybrid Model (like NAKIVO)**
 
@@ -325,11 +325,11 @@ Given DVMM's position as a VM provisioning/management tool for vSphere in the DA
 
 ## 5. License Models for EAF Products
 
-### 5.1 Core-Based Licensing (Primary for DVMM)
+### 5.1 Core-Based Licensing (Primary for DCM)
 
 ```text
 License Metric: CPU Cores under management
-Example: DVMM managing vSphere with 150 cores = 150-core license
+Example: DCM managing vSphere with 150 cores = 150-core license
 ```
 
 **Implementation**:
@@ -390,7 +390,7 @@ data class CoreBasedLicense(
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
-│  │   DVMM      │    │  eaf-       │    │   EAF License       │  │
+│  │   DCM      │    │  eaf-       │    │   EAF License       │  │
 │  │   Product   │───▶│  licensing  │───▶│   Server            │  │
 │  │             │    │  (module)   │    │   (Self-hosted)     │  │
 │  └─────────────┘    └─────────────┘    └──────────┬──────────┘  │
@@ -493,7 +493,7 @@ Based on industry standards (Keygen, SoftwareKey):
 <license xmlns="urn:acci:eaf:licensing:v1" version="1.0">
     <id>lic_01HRCvErLiFUq9WTcSDuaLW2</id>
     <product>
-        <id>dvmm</id>
+        <id>dcm</id>
         <version>2.0</version>
     </product>
     <customer>
@@ -691,9 +691,9 @@ data class TenantLicenseAllocation(
 )
 ```
 
-### 10.3 Integration with DVMM Quota System
+### 10.3 Integration with DCM Quota System
 
-The license system integrates with DVMM's existing quota enforcement:
+The license system integrates with DCM's existing quota enforcement:
 
 ```kotlin
 // In VmRequestCommandHandler
@@ -932,7 +932,7 @@ The DPCM V2 registration flow introduced critical security improvements over V1:
 | Decision | Recommendation | Rationale |
 |----------|----------------|-----------|
 | **Build vs. Buy** | Hybrid (Keygen CE + EAF extensions) | Balance of control and proven security |
-| **License Model** | Core-based subscription | Matches DVMM use case (managed infrastructure) |
+| **License Model** | Core-based subscription | Matches DCM use case (managed infrastructure) |
 | **Offline Support** | Signed license files with Ed25519 | Industry standard, performant |
 | **Multi-Tenancy** | Dedicated + shared pool allocation | Flexible for different customer needs |
 | **Grace Period** | 30 days | Industry standard, customer-friendly |

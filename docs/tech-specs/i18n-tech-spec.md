@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This specification defines the internationalization (i18n) strategy for the DVMM application, covering both the Kotlin/Spring backend and React frontend. The primary language remains **English**, with a structured approach to enable future localization.
+This specification defines the internationalization (i18n) strategy for the DCM application, covering both the Kotlin/Spring backend and React frontend. The primary language remains **English**, with a structured approach to enable future localization.
 
 ### Current State
 
@@ -147,7 +147,7 @@ This means untranslated keys display perfectly in English - no "[MISSING: key]" 
 
 ### 2.1 Dependencies
 
-Add to `dvmm/dvmm-web/package.json`:
+Add to `dcm/dcm-web/package.json`:
 
 ```json
 {
@@ -233,7 +233,7 @@ i18n
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
-      lookupLocalStorage: 'dvmm-language',
+      lookupLocalStorage: 'dcm-language',
     },
 
     interpolation: {
@@ -386,7 +386,7 @@ export default defineConfig({
 
 ```json
 {
-  "appName": "DVMM",
+  "appName": "DCM",
   "actions": {
     "save": "Save",
     "cancel": "Cancel",
@@ -910,7 +910,7 @@ The frontend is responsible for resolving the error code to a localized message.
 Update error DTOs to include error codes:
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/ErrorResponses.kt
+// dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/ErrorResponses.kt
 
 /**
  * Base interface for all API error responses.
@@ -1008,7 +1008,7 @@ public object ErrorCodes {
 Update domain value objects to return structured errors:
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmName.kt
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmName.kt
 
 import arrow.core.Either
 import arrow.core.left
@@ -1069,7 +1069,7 @@ public value class VmName private constructor(public val value: String) {
 If the backend needs to send localized messages (e.g., email notifications), configure MessageSource:
 
 ```kotlin
-// dvmm-app/src/main/kotlin/de/acci/dvmm/config/I18nConfig.kt
+// dcm-app/src/main/kotlin/de/acci/dcm/config/I18nConfig.kt
 
 @Configuration
 public class I18nConfig {
@@ -1091,7 +1091,7 @@ public class I18nConfig {
 
 Resource bundle structure:
 ```text
-dvmm-app/src/main/resources/
+dcm-app/src/main/resources/
 ├── messages/
 │   ├── errors.properties          # English (default)
 │   ├── errors_de.properties       # German
@@ -1279,7 +1279,7 @@ export function useApiMutation<TData, TVariables>(
 ### Frontend
 
 ```text
-dvmm/dvmm-web/
+dcm/dcm-web/
 ├── public/
 │   └── locales/
 │       ├── en/
@@ -1310,12 +1310,12 @@ eaf/eaf-core/
     └── error/
         └── ErrorCodes.kt
 
-dvmm/dvmm-api/
-└── src/main/kotlin/de/acci/dvmm/api/
+dcm/dcm-api/
+└── src/main/kotlin/de/acci/dcm/api/
     └── common/
         └── ErrorResponses.kt
 
-dvmm/dvmm-app/
+dcm/dcm-app/
 └── src/main/resources/
     └── messages/
         ├── errors.properties

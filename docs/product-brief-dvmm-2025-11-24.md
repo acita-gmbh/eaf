@@ -1,4 +1,4 @@
-# Product Brief: DVMM (Dynamic Virtual Machine Manager)
+# Product Brief: DCM (Dynamic Virtual Machine Manager)
 
 **Date:** 2025-11-24
 **Author:** Mary (Analyst Agent) + Wall-E
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-**DVMM** (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
+**DCM** (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
 
 ### Market Timing
 
@@ -79,7 +79,7 @@ Broadcom's VMware acquisition has created a **once-in-a-decade market opportunit
 
 ## Proposed Solution
 
-### Product: DVMM Self-Service Portal
+### Product: DCM Self-Service Portal
 
 **Multi-tenant web application** enabling:
 
@@ -98,7 +98,7 @@ User Request → Approval Workflow → VM Provisioned → Notification
 
 ### Differentiators
 
-| Feature | DVMM | ZEWSSP | ServiceNow | VMware vRealize |
+| Feature | DCM | ZEWSSP | ServiceNow | VMware vRealize |
 |---------|------|--------|------------|-----------------|
 | **Multi-tenant** | Yes (RLS) | No | Yes | Limited |
 | **Pricing** | Mid-market | N/A | $165-500/user | $$$$ (Broadcom) |
@@ -208,7 +208,7 @@ Three innovations identified through Assumption Reversal:
 - "We need to finish X before we can show anything..."
 
 **Month 6 Red Flags:**
-- Customers haven't seen DVMM
+- Customers haven't seen DCM
 - Team turnover starting
 - E2E tests becoming "flaky"
 
@@ -314,7 +314,7 @@ gates:
 
 ### Market Positioning
 
-> *"DVMM: Enterprise VM provisioning with self-service workflows.
+> *"DCM: Enterprise VM provisioning with self-service workflows.
 > Multi-tenant. Compliance-ready. Made in Germany."*
 
 **Position:** Enterprise capability at mid-market price
@@ -491,13 +491,13 @@ See `docs/brainstorming-session-results-2025-11-24.md` for complete session.
 
 ## Appendix C: EAF Framework Reference
 
-DVMM is built on the Enterprise Application Framework (EAF). For complete framework specifications, see:
+DCM is built on the Enterprise Application Framework (EAF). For complete framework specifications, see:
 
 - `old_eaf/docs/product-brief-EAF-2025-10-30.md` - Framework Product Brief
 - `old_eaf/docs/architecture.md` - Technical Architecture
 - `old_eaf/docs/prd.md` - Framework PRD
 
-**Key EAF Components Used by DVMM:**
+**Key EAF Components Used by DCM:**
 
 - Hexagonal Architecture (Spring Modulith)
 - CQRS/Event Sourcing (Axon Framework)

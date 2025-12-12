@@ -37,12 +37,12 @@ dependencies {
     kover(project(":eaf:eaf-auth"))
     kover(project(":eaf:eaf-auth-keycloak"))
     kover(project(":eaf:eaf-testing"))
-    // DVMM modules
-    kover(project(":dvmm:dvmm-domain"))
-    kover(project(":dvmm:dvmm-application"))
-    kover(project(":dvmm:dvmm-api"))
-    kover(project(":dvmm:dvmm-infrastructure"))
-    kover(project(":dvmm:dvmm-app"))
+    // DCM modules
+    kover(project(":dcm:dcm-domain"))
+    kover(project(":dcm:dcm-application"))
+    kover(project(":dcm:dcm-api"))
+    kover(project(":dcm:dcm-infrastructure"))
+    kover(project(":dcm:dcm-app"))
 }
 
 kover {
@@ -74,15 +74,15 @@ kover {
             excludes {
                 // Temporary: eaf-auth-keycloak (until Story 2.1)
                 packages("de.acci.eaf.auth.keycloak.*")
-                // Temporary: dvmm-api SecurityConfig (until Story 2.1)
-                packages("de.acci.dvmm.api.security.*")
+                // Temporary: dcm-api SecurityConfig (until Story 2.1)
+                packages("de.acci.dcm.api.security.*")
                 // Permanent: jOOQ generated code
-                packages("de.acci.dvmm.infrastructure.jooq.*")
+                packages("de.acci.dcm.infrastructure.jooq.*")
                 // Permanent: Spring Boot main() function
-                classes("de.acci.dvmm.DvmmApplicationKt")
+                classes("de.acci.dcm.DcmApplicationKt")
                 // Permanent: VcenterAdapter - requires real vCenter (Story 3-9)
                 // VCF SDK port 443 limitation prevents VCSIM testing
-                classes("de.acci.dvmm.infrastructure.vmware.VcenterAdapter")
+                classes("de.acci.dcm.infrastructure.vmware.VcenterAdapter")
             }
         }
         verify {

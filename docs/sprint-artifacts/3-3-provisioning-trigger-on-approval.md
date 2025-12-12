@@ -30,17 +30,17 @@ So that no manual intervention is needed after approval.
 
 ## Tasks / Subtasks
 
-- [x] **Domain:** Implement `VmAggregate` in `dvmm-domain` (Root of the VM lifecycle).
+- [x] **Domain:** Implement `VmAggregate` in `dcm-domain` (Root of the VM lifecycle).
   - [x] Handle `ProvisionVmCommand` to create the aggregate and emit `VmProvisioningStarted`.
-- [x] **Application:** Implement `VmProvisioningSaga` (or Event Listener) in `dvmm-application`.
+- [x] **Application:** Implement `VmProvisioningSaga` (or Event Listener) in `dcm-application`.
   - [x] Listen for `VmRequestApprovedEvent`.
   - [x] Dispatch `ProvisionVmCommand` to the `VmAggregate`.
-- [x] **Infrastructure:** Implement the `VmProvisioningStarted` event handler in `dvmm-infrastructure` (or `dvmm-application` delegating to Port).
+- [x] **Infrastructure:** Implement the `VmProvisioningStarted` event handler in `dcm-infrastructure` (or `dcm-application` delegating to Port).
   - [x] Call `VspherePort.createVm()` (Basic call only - complex logic reserved for Story 3.4).
 - [x] **Application:** Update `VmRequest` status to "Provisioning" based on `VmProvisioningStarted` event (or Saga coordination).
-- [x] **Tests:** Write integration tests in `dvmm-app` (Assembly Module).
+- [x] **Tests:** Write integration tests in `dcm-app` (Assembly Module).
   - [x] Verify `VmRequestApproved` -> `VmAggregate` created -> `VspherePort` called.
-  - [x] Use `VcsimAdapter` configured in `dvmm-app` test context.
+  - [x] Use `VcsimAdapter` configured in `dcm-app` test context.
 - [x] Ensure idempotency: Verify that duplicate `VmRequestApprovedEvent` do not create duplicate `VmAggregate`s.
 
 ## Dev Notes
@@ -51,7 +51,7 @@ So that no manual intervention is needed after approval.
     1.  `VmRequestApproved` (Event) -> Dispatch `ProvisionVmCommand`
     2.  `ProvisionVmCommand` -> Create `VmAggregate` -> Emit `VmProvisioningStarted`
     3.  `VmProvisioningStarted` -> Call `VspherePort`
--   **Module Dependency Rules:** `dvmm-application` cannot see `dvmm-infrastructure`. Integration tests connecting the full flow (Event -> Command -> Adapter) **MUST reside in `dvmm-app`**.
+-   **Module Dependency Rules:** `dcm-application` cannot see `dcm-infrastructure`. Integration tests connecting the full flow (Event -> Command -> Adapter) **MUST reside in `dcm-app`**.
 -   **Scope Clarity:**
     -   **Story 3.3 (This Story):** Wires the flow, creates the `VmAggregate`, and ensures the "Start Provisioning" signal reaches the Infrastructure.
     -   **Story 3.4 (Next Story):** Implements the complex `VspherePort.createVm` logic (cloning, waiting for IP, customization). For 3.3, a simple stub or basic call is sufficient.
@@ -59,9 +59,9 @@ So that no manual intervention is needed after approval.
 -   **Idempotency:** The Saga/Listener must check if a `VmAggregate` already exists for this Request ID before creating a new one.
 
 ### Source Tree Components to Touch
--   `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/` (New `VmAggregate`, `VmProvisioningStarted` event)
--   `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/` (Command Handler, Saga/Listener)
--   `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/app/integration/` (Full flow integration tests)
+-   `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/` (New `VmAggregate`, `VmProvisioningStarted` event)
+-   `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/` (Command Handler, Saga/Listener)
+-   `dcm/dcm-app/src/test/kotlin/de/acci/dcm/app/integration/` (Full flow integration tests)
 
 ### Testing Standards Summary
 -   **Tests First:** Write integration tests for the event handler and command dispatching flow before implementation.
@@ -155,36 +155,36 @@ gemini-1.5-flash
 - Integration test verifies full flow: VmRequestApproved → VmAggregate → VspherePort
 
 ### File List
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmId.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmStatus.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioningStarted.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmAggregate.kt
-dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vm/VmAggregateTest.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestProvisioningStarted.kt
-dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateTest.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/ProvisionVmCommand.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/ProvisionVmHandler.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmProvisioningListener.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmEventDeserializer.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/VmRequestStatusUpdater.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/MarkVmRequestProvisioningCommand.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/MarkVmRequestProvisioningHandler.kt
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CreateVmRequestHandler.kt
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/ProvisionVmHandlerTest.kt
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/VmRequestStatusUpdaterTest.kt
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/VmProvisioningListenerTest.kt
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/MarkVmRequestProvisioningHandlerTest.kt
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/events/VmProvisioningFailed.kt
-dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt
-dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializer.kt
-dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/eventsourcing/PublishingEventStore.kt
-dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt
-dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt
-dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt
-dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/app/listeners/VmProvisioningListeners.kt
-dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt
-dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmRequestIntegrationTest.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmId.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmStatus.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/events/VmProvisioningStarted.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmAggregate.kt
+dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vm/VmAggregateTest.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestProvisioningStarted.kt
+dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregateTest.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/ProvisionVmCommand.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/ProvisionVmHandler.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/VmProvisioningListener.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/VmEventDeserializer.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/VmRequestStatusUpdater.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandler.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/MarkVmRequestProvisioningCommand.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/MarkVmRequestProvisioningHandler.kt
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CreateVmRequestHandler.kt
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/ProvisionVmHandlerTest.kt
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/VmRequestStatusUpdaterTest.kt
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandlerTest.kt
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/VmProvisioningListenerTest.kt
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/MarkVmRequestProvisioningHandlerTest.kt
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/events/VmProvisioningFailed.kt
+dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmEventDeserializer.kt
+dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializer.kt
+dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/eventsourcing/PublishingEventStore.kt
+dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmEventDeserializerTest.kt
+dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/eventsourcing/JacksonVmRequestEventDeserializerTest.kt
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/security/SecurityConfig.kt
+dcm/dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt
+dcm/dcm-app/src/main/kotlin/de/acci/dcm/app/listeners/VmProvisioningListeners.kt
+dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmProvisioningIntegrationTest.kt
+dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmRequestIntegrationTest.kt

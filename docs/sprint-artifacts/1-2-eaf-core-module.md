@@ -24,7 +24,7 @@ so that all modules use consistent patterns.
    - Module compiles with K2, explicit API enabled, and no experimental compiler warnings.
 5. **Dependency Boundaries**
    - `eaf-core` has zero external runtime dependencies (Kotlin stdlib only).
-   - No imports from `de.acci.dvmm.*`; Konsist rule passes.
+   - No imports from `de.acci.dcm.*`; Konsist rule passes.
 6. **Quality Gates**
    - Unit tests for Result and DomainError cover success/failure flows.
    - Kover ≥80% line coverage for `eaf-core`.
@@ -47,10 +47,10 @@ so that all modules use consistent patterns.
 - Story 1.1 status: **done** (sprint-status.yaml) with review resolution on 2025-11-25; no open action items.
 - Build conventions and the version catalog are authoritative—use `libs.versions.toml`; avoid hardcoded versions (Source: docs/sprint-artifacts/1-1-project-scaffolding.md).
 - Pitest is provided via `eaf.pitest-conventions` (70% threshold); apply it to `eaf-core` (Source: docs/sprint-artifacts/1-1-project-scaffolding.md).
-- Konsist rules enforce the EAF ← DVMM boundary; `eaf-core` stays dependency-free and free of Spring imports (Source: docs/architecture.md).
+- Konsist rules enforce the EAF ← DCM boundary; `eaf-core` stays dependency-free and free of Spring imports (Source: docs/architecture.md).
 
 ### Architecture & Constraints
-- EAF modules must not import from `de.acci.dvmm.*`; `eaf-core` has no external runtime deps beyond the Kotlin stdlib (Source: docs/architecture.md).
+- EAF modules must not import from `de.acci.dcm.*`; `eaf-core` has no external runtime deps beyond the Kotlin stdlib (Source: docs/architecture.md).
 - Hexagonal boundaries and explicit API; no wildcard imports; prefer sealed classes and value objects (Source: docs/architecture.md).
 - Security/Audit requires Correlation IDs for logging/tracing (Source: docs/security-architecture.md).
 
@@ -119,7 +119,7 @@ All acceptance criteria and completed tasks verified with code/test evidence. No
 | 2 | DomainError sealed hierarchy with required variants | IMPLEMENTED | eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/error/DomainError.kt:7-25 |
 | 3 | TenantId/UserId/CorrelationId as @JvmInline value classes with generate/fromString | IMPLEMENTED | eaf/eaf-core/src/main/kotlin/de/acci/eaf/core/types/Identifiers.kt:5-47 |
 | 4 | Kotlin 2.2 K2 + explicit API enabled | IMPLEMENTED | build-logic/conventions/src/main/kotlin/eaf.kotlin-conventions.gradle.kts |
-| 5 | Zero external runtime deps; no de.acci.dvmm imports | IMPLEMENTED | eaf/eaf-core/build.gradle.kts:6-24 |
+| 5 | Zero external runtime deps; no de.acci.dcm imports | IMPLEMENTED | eaf/eaf-core/build.gradle.kts:6-24 |
 | 6 | Unit tests + coverage/mutation thresholds met | IMPLEMENTED | eaf/eaf-core/src/test/kotlin/de/acci/eaf/core/result/ResultTest.kt:10-114; eaf/eaf-core/src/test/kotlin/de/acci/eaf/core/error/DomainErrorTest.kt:8-37; eaf/eaf-core/src/test/kotlin/de/acci/eaf/core/types/IdentifiersTest.kt:11-43; gradle run 2025-11-25T00:52Z |
 
 Summary: 6 of 6 ACs fully implemented.
@@ -143,7 +143,7 @@ Summary: 8 of 8 completed tasks verified; 0 questionable; 0 false completions.
 - Pitest mutation score 100%, Kover executed for module.
 
 ### Architectural Alignment
-- EAF core free of external runtime deps; no DVMM imports. Explicit API and Kotlin 2.2 K2 per conventions.
+- EAF core free of external runtime deps; no DCM imports. Explicit API and Kotlin 2.2 K2 per conventions.
 
 ### Security Notes
 - CorrelationId available for tracing; InfrastructureError uses string cause to keep zero deps.

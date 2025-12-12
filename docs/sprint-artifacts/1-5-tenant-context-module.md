@@ -61,7 +61,7 @@ so that all operations are tenant-scoped and fail closed when context is missing
 ## Dev Notes
 
 - Relevant architecture patterns and constraints: see docs/architecture.md (Tenant Context Pattern), docs/security-architecture.md (RLS, fail-closed), docs/prd.md (FR64-67 multi-tenancy expectations), docs/test-design-system.md#TC-001 (TC-001 stress requirements).
-- Source tree components to touch: eaf/eaf-tenant (new TenantContext*, WebFilter adapter), potential reuse of JWT utilities in dvmm-api; keep framework code Spring-free.
+- Source tree components to touch: eaf/eaf-tenant (new TenantContext*, WebFilter adapter), potential reuse of JWT utilities in dcm-api; keep framework code Spring-free.
 - Testing standards summary: Use kotlinx-coroutines-test for propagation; WebFlux filter tests with mock ServerWebExchange; achieve ≥80% coverage and ≥70% mutation where applicable.
 
 ### Project Structure Notes
@@ -165,7 +165,7 @@ All 10 tasks verified complete with file:line evidence.
 - Covers TC-001 requirements (dispatcher switches, async boundaries, 100 concurrent)
 
 **Architecture Compliance:**
-- No EAF → DVMM dependencies
+- No EAF → DCM dependencies
 - Spring imports only in adapter layer
 - Uses `eaf-core` types
 

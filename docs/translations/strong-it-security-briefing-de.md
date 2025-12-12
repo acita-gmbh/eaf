@@ -1,4 +1,4 @@
-# Sicherheitspartnerschaft Briefing: EAF/DVMM Projekt
+# Sicherheitspartnerschaft Briefing: EAF/DCM Projekt
 
 **Erstellt für:** Strong IT SOC Team
 **Datum:** 2025-11-28
@@ -9,7 +9,7 @@
 
 ## Zusammenfassung
 
-Dieses Dokument bietet einen umfassenden Überblick über das **EAF (Enterprise Application Framework)** und **DVMM (Dynamic Virtual Machine Manager)** Projekt, um unserem internen SOC-Team die Evaluierung von Möglichkeiten zur Sicherheitspartnerschaft zu ermöglichen.
+Dieses Dokument bietet einen umfassenden Überblick über das **EAF (Enterprise Application Framework)** und **DCM (Dynamic Virtual Machine Manager)** Projekt, um unserem internen SOC-Team die Evaluierung von Möglichkeiten zur Sicherheitspartnerschaft zu ermöglichen.
 
 **Eckdaten:**
 - **Produkttyp:** Multi-Tenant B2B SaaS für VMware VM-Provisionierung
@@ -29,9 +29,9 @@ Dieses Dokument bietet einen umfassenden Überblick über das **EAF (Enterprise 
 
 ## 1. Projektübersicht
 
-### 1.1 Was ist DVMM?
+### 1.1 Was ist DCM?
 
-DVMM ist ein **Self-Service-Portal**, das Folgendes ermöglicht:
+DCM ist ein **Self-Service-Portal**, das Folgendes ermöglicht:
 - Endbenutzer können virtuelle Maschinen über eine Weboberfläche anfordern
 - IT-Administratoren können Anfragen über Workflows genehmigen/ablehnen
 - Automatisierte VM-Provisionierung auf VMware vSphere
@@ -55,7 +55,7 @@ Benutzeranfrage → Genehmigungsworkflow → VM provisioniert → Benachrichtigu
 
 ### 1.3 EAF Framework
 
-DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EAF)** mit:
+DCM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EAF)** mit:
 - `eaf-core` - Domain-Primitive (reines Kotlin, keine Abhängigkeiten)
 - `eaf-eventsourcing` - Event Store, Projektionen, Snapshots
 - `eaf-tenant` - Multi-Tenancy mit PostgreSQL RLS
@@ -76,7 +76,7 @@ DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EA
 │     │                                                           │
 │     ▼                                                           │
 │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
-│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DVMM API  │       │
+│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DCM API  │       │
 │  │  (Geplant)  │     │    (OIDC)   │     │  (Spring)   │       │
 │  └─────────────┘     └─────────────┘     └─────────────┘       │
 │                                                │                │
@@ -133,7 +133,7 @@ DVMM basiert auf einem wiederverwendbaren **Enterprise Application Framework (EA
 
 **Aktuelle Implementierung:**
 ```text
-Benutzer → Keycloak Login → JWT-Token → DVMM API-Validierung
+Benutzer → Keycloak Login → JWT-Token → DCM API-Validierung
               ↓
         MFA (optional)
         LDAP/AD (optional)
@@ -274,7 +274,7 @@ SET LOCAL app.tenant_id = '123e4567-e89b-12d3-a456-426614174000';
 **Netzwerkisolierung:**
 - VMware vSphere in isoliertem VLAN
 - Kein direkter Internetzugang
-- DVMM API ist einziges Gateway
+- DCM API ist einziges Gateway
 
 **Überprüfung erforderlich:**
 - [ ] Sicherheit der VMware-Credential-Speicherung
@@ -315,7 +315,7 @@ SET LOCAL app.tenant_id = '123e4567-e89b-12d3-a456-426614174000';
 
 ### 4.1 ISO 27001 Kontrollzuordnung
 
-| ISO-Kontrolle | Beschreibung | DVMM-Implementierung |
+| ISO-Kontrolle | Beschreibung | DCM-Implementierung |
 |---------------|--------------|----------------------|
 | A.9.2.3 | Verwaltung privilegierter Zugänge | RBAC, Genehmigungsworkflow |
 | A.9.4.1 | Einschränkung des Informationszugangs | RLS, Mandantenisolierung |
@@ -360,7 +360,7 @@ quality_gates:
   architecture_tests:
     tool: konsist
     rules:
-      - "eaf-Module haben keine dvmm-Abhängigkeiten"
+      - "eaf-Module haben keine dcm-Abhängigkeiten"
       - "Domain hat keine Infrastructure-Abhängigkeiten"
 
   security:
@@ -405,7 +405,7 @@ quality_gates:
 ### 6.1 Monitoring-Stack
 
 ```text
-Grafana (Dashboards) ← Prometheus (Metriken) ← DVMM API (/actuator)
+Grafana (Dashboards) ← Prometheus (Metriken) ← DCM API (/actuator)
         ↑
        Loki (Logs) ← Promtail (Log-Shipping)
         ↑
@@ -440,7 +440,7 @@ Basierend auf dem Serviceportfolio von Strong IT und unseren Projektanforderunge
 
 | Service | Unser Bedarf | Priorität |
 |---------|--------------|-----------|
-| **Web Application Pentest** | Vollständige Sicherheitsbewertung des DVMM-Portals | **HOCH** |
+| **Web Application Pentest** | Vollständige Sicherheitsbewertung des DCM-Portals | **HOCH** |
 | **API-Sicherheitstests** | REST-API-Schwachstellenbewertung | **HOCH** |
 | **Lateral Movement Analyse** | Verifizierung der Multi-Tenant-Isolierung | **HOCH** |
 | **MITRE ATT&CK Assessment** | Validierung des Bedrohungsmodells | MITTEL |
@@ -534,7 +534,7 @@ Basierend auf dem Serviceportfolio von Strong IT und unseren Projektanforderunge
 | System Architecture | Technische Architektur, ADRs | `docs/architecture.md` |
 | Product Requirements | FRs/NFRs inkl. Sicherheit | `docs/prd.md` |
 | DevOps Strategy | CI/CD, Monitoring, DR | `docs/devops-strategy.md` |
-| Product Brief | Geschäftskontext | `docs/product-brief-dvmm-2025-11-24.md` |
+| Product Brief | Geschäftskontext | `docs/product-brief-dcm-2025-11-24.md` |
 
 ---
 

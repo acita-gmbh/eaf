@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2025-11-25
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Architecture Team
 **Origin:** First Principles Analysis
 
@@ -116,7 +116,7 @@ Instead of a monolith, products can selectively choose:
 // Minimal product (Core + Observability only)
 implementation("com.eaf:eaf-starter-core")
 
-// DVMM (Full Stack with Keycloak)
+// DCM (Full Stack with Keycloak)
 implementation("com.eaf:eaf-starter-core")
 implementation("com.eaf:eaf-starter-cqrs")
 implementation("com.eaf:eaf-starter-eventsourcing")

@@ -69,7 +69,7 @@ so that I can build efficient read projections.
 
 - **Module Pattern Established:** New modules follow pattern of `eaf-{module}/build.gradle.kts` with `eaf.kotlin-conventions` plugin.
 - **Library vs Application:** Library modules must disable `bootJar` and enable `jar` (see eaf-auth-keycloak/build.gradle.kts:8-15).
-- **IdP-Agnostic Pattern:** Interfaces in core module, implementations in adapter modules — same pattern applies to projections (interface in eaf-eventsourcing, implementation in dvmm-infrastructure).
+- **IdP-Agnostic Pattern:** Interfaces in core module, implementations in adapter modules — same pattern applies to projections (interface in eaf-eventsourcing, implementation in dcm-infrastructure).
 - **Tenant Context Chain:** JWT → TenantContextWebFilter → TenantContext → RLS — jOOQ queries benefit from automatic RLS filtering.
 - **Test Fixtures:** Use `src/testFixtures` for shared test utilities like `awaitProjection`.
 
@@ -79,19 +79,19 @@ so that I can build efficient read projections.
 
 - `eaf-eventsourcing` module contains projection interfaces (`ProjectionRepository`).
 - `eaf-testing` module contains test utilities (`awaitProjection`, `TenantTestContext`).
-- `dvmm-infrastructure` module contains jOOQ-based repository implementations.
-- jOOQ plugin configured in `dvmm-infrastructure/build.gradle.kts`.
-- Generated jOOQ code goes to `dvmm-infrastructure/build/generated-sources/jooq`.
-- Package: `de.acci.dvmm.infrastructure.jooq`.
+- `dcm-infrastructure` module contains jOOQ-based repository implementations.
+- jOOQ plugin configured in `dcm-infrastructure/build.gradle.kts`.
+- Generated jOOQ code goes to `dcm-infrastructure/build/generated-sources/jooq`.
+- Package: `de.acci.dcm.infrastructure.jooq`.
 
 ## Tasks / Subtasks
 
 - [x] **Task 1: Configure jOOQ Gradle plugin** (AC: 1)
-  - [x] Add `nu.studer.jooq` plugin to `dvmm-infrastructure/build.gradle.kts`
+  - [x] Add `nu.studer.jooq` plugin to `dcm-infrastructure/build.gradle.kts`
   - [x] Configure generator to use `KotlinGenerator`
   - [x] Set input schema to read from Flyway-migrated database
   - [x] Set output directory to `build/generated-sources/jooq`
-  - [x] Set package name to `de.acci.dvmm.infrastructure.jooq`
+  - [x] Set package name to `de.acci.dcm.infrastructure.jooq`
   - [x] Configure to use Testcontainers PostgreSQL for generation
 
 - [x] **Task 2: Add jOOQ dependency to version catalog** (AC: 1, 2)
@@ -106,7 +106,7 @@ so that I can build efficient read projections.
   - [x] Add unit tests for pagination helpers
 
 - [x] **Task 4: Create BaseProjectionRepository** (AC: 3, 4)
-  - [x] Create `BaseProjectionRepository<T>` abstract class in dvmm-infrastructure
+  - [x] Create `BaseProjectionRepository<T>` abstract class in dcm-infrastructure
   - [x] Inject `DSLContext` via constructor
   - [x] Add `paginate()` extension function for jOOQ queries
   - [x] Document that RLS handles tenant filtering automatically
@@ -140,16 +140,16 @@ so that I can build efficient read projections.
   - `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/projection/PageRequest.kt` (new)
   - `eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/projection/PagedResponse.kt` (new)
   - `eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/ProjectionTestUtils.kt` (new)
-  - `dvmm/dvmm-infrastructure/build.gradle.kts` (add jOOQ plugin)
-  - `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/BaseProjectionRepository.kt` (new)
-  - `dvmm/dvmm-infrastructure/src/main/resources/db/migration/V004__create_vm_requests_projection.sql` (new)
+  - `dcm/dcm-infrastructure/build.gradle.kts` (add jOOQ plugin)
+  - `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/BaseProjectionRepository.kt` (new)
+  - `dcm/dcm-infrastructure/src/main/resources/db/migration/V004__create_vm_requests_projection.sql` (new)
 - **Testing standards:** Use Testcontainers PostgreSQL; achieve ≥80% coverage and ≥70% mutation score.
 - **RLS Note:** Unlike typical JDBC patterns, we do NOT add explicit `WHERE tenant_id = ?` clauses. PostgreSQL RLS policies (Story 1.6) handle this automatically when `SET LOCAL app.tenant_id` is executed on the connection.
 
 ### jOOQ Configuration Reference
 
 ```kotlin
-// dvmm-infrastructure/build.gradle.kts
+// dcm-infrastructure/build.gradle.kts
 plugins {
     id("nu.studer.jooq") version "9.0"
 }
@@ -167,7 +167,7 @@ jooq {
                         excludes = "flyway_schema_history"
                     }
                     target.apply {
-                        packageName = "de.acci.dvmm.infrastructure.jooq"
+                        packageName = "de.acci.dcm.infrastructure.jooq"
                         directory = "build/generated-sources/jooq"
                     }
                 }
@@ -228,10 +228,10 @@ All 6 acceptance criteria have been validated with evidence. All 7 tasks complet
 
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
-| jOOQ Gradle plugin configured | PASS | `dvmm-infrastructure/build.gradle.kts:4` - `alias(libs.plugins.jooq.codegen)` |
+| jOOQ Gradle plugin configured | PASS | `dcm-infrastructure/build.gradle.kts:4` - `alias(libs.plugins.jooq.codegen)` |
 | Generated classes in build/generated-sources/jooq | PASS | 18 Kotlin files generated including `VmRequestsProjection.kt`, `Events.kt`, `Snapshots.kt` |
 | KotlinGenerator used | PASS | `build.gradle.kts:73` - `name = "org.jooq.codegen.KotlinGenerator"` |
-| Package name correct | PASS | `de.acci.dvmm.infrastructure.jooq` with `public` and `eaf_events` subpackages |
+| Package name correct | PASS | `de.acci.dcm.infrastructure.jooq` with `public` and `eaf_events` subpackages |
 
 #### AC2: Type-safe queries with generated classes
 
@@ -287,7 +287,7 @@ All 6 acceptance criteria have been validated with evidence. All 7 tasks complet
 
 | Task | Status | Evidence |
 |------|--------|----------|
-| Task 1: jOOQ Gradle plugin | COMPLETE | `dvmm-infrastructure/build.gradle.kts:48-109` |
+| Task 1: jOOQ Gradle plugin | COMPLETE | `dcm-infrastructure/build.gradle.kts:48-109` |
 | Task 2: Version catalog | COMPLETE | `libs.versions.toml` - jooq = "3.20.8", jooq-codegen plugin |
 | Task 3: Pagination helpers | COMPLETE | `PageRequest.kt`, `PagedResponse.kt` with 27 unit tests |
 | Task 4: BaseProjectionRepository | COMPLETE | `BaseProjectionRepository.kt` with defaultOrderBy() pattern |
@@ -299,7 +299,7 @@ All 6 acceptance criteria have been validated with evidence. All 7 tasks complet
 
 #### Strengths
 
-1. **Architecture Compliance**: Strict separation between EAF framework and DVMM product code maintained
+1. **Architecture Compliance**: Strict separation between EAF framework and DCM product code maintained
 2. **RLS Pattern**: Correct implementation - no explicit tenant filters, RLS handles isolation automatically
 3. **Deterministic Pagination**: `defaultOrderBy()` pattern ensures stable pagination results
 4. **Comprehensive Tests**: 48 total tests covering unit, integration, and edge cases
@@ -322,13 +322,13 @@ BUILD SUCCESSFUL in 4s
 
 - **eaf-eventsourcing/projection**: 100% instruction coverage
 - **eaf-testing/ProjectionTestUtils**: Full coverage via 7 unit tests
-- **dvmm-infrastructure/projection**: Full coverage via 14 integration tests
+- **dcm-infrastructure/projection**: Full coverage via 14 integration tests
 
 ### Files Reviewed
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `dvmm-infrastructure/build.gradle.kts` | 110 | jOOQ plugin configuration |
+| `dcm-infrastructure/build.gradle.kts` | 110 | jOOQ plugin configuration |
 | `BaseProjectionRepository.kt` | 95 | Abstract repository with pagination |
 | `VmRequestProjectionRepository.kt` | 129 | Concrete implementation |
 | `PageRequest.kt` | 25 | Pagination request DTO |

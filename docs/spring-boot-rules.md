@@ -63,7 +63,7 @@ Group application-specific configuration properties with a common prefix in `app
 - Overusing profiles with multiple combinations makes the effective configuration hard to reason about.
 
 ```kotlin
-@ConfigurationProperties(prefix = "dvmm.vmware")
+@ConfigurationProperties(prefix = "dcm.vmware")
 @Validated
 data class VmwareProperties(
     @field:NotBlank
@@ -116,10 +116,10 @@ Don't expose domain entities or jOOQ records directly as responses in controller
 - DTOs declare exactly which fields clients can send or receive, improving clarity and security.
 - Per-use-case DTOs allow targeted validation without complex validation groups.
 
-**Our Hexagonal Architecture already enforces this:** The `dvmm-api` module defines DTOs, while `dvmm-domain` contains entities, and `dvmm-infrastructure` holds jOOQ records. These layers cannot intermingle.
+**Our Hexagonal Architecture already enforces this:** The `dcm-api` module defines DTOs, while `dcm-domain` contains entities, and `dcm-infrastructure` holds jOOQ records. These layers cannot intermingle.
 
 ```kotlin
-// Request DTO in dvmm-api
+// Request DTO in dcm-api
 data class CreateVmRequestDto(
     @field:NotBlank
     @field:Size(min = 3, max = 50)
@@ -134,7 +134,7 @@ data class CreateVmRequestDto(
     val memoryGb: Int
 )
 
-// Response DTO in dvmm-api
+// Response DTO in dcm-api
 data class VmRequestResponseDto(
     val id: UUID,
     val vmName: String,
@@ -161,10 +161,10 @@ data class VmRequestResponseDto(
 
 Create purpose-built command records to wrap input data. Accept these commands in service methods to drive creation or update workflows.
 
-**This aligns with our CQRS architecture.** Commands live in `dvmm-application` and clearly communicate what input data is expected.
+**This aligns with our CQRS architecture.** Commands live in `dcm-application` and clearly communicate what input data is expected.
 
 ```kotlin
-// Command in dvmm-application
+// Command in dcm-application
 data class CreateVmRequestCommand(
     val tenantId: TenantId,
     val requesterId: UserId,
@@ -174,7 +174,7 @@ data class CreateVmRequestCommand(
     val purpose: Purpose
 )
 
-// Handler in dvmm-application
+// Handler in dcm-application
 class CreateVmRequestHandler(
     private val eventStore: EventStore
 ) {

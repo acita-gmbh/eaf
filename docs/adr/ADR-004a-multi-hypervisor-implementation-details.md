@@ -28,7 +28,7 @@ Different hypervisors support different feature sets. The `HypervisorPort` inter
 ### 1.1 Capability Detection
 
 ```kotlin
-// dvmm-application/.../hypervisor/HypervisorCapabilities.kt
+// dcm-application/.../hypervisor/HypervisorCapabilities.kt
 data class HypervisorCapabilities(
     val supportsLiveMigration: Boolean,
     val supportsSnapshots: Boolean,
@@ -142,7 +142,7 @@ CEC (Central Electronics Complex)
 ### 2.2 Resource Mapper Interface
 
 ```kotlin
-// dvmm-application/.../hypervisor/ResourceMapper.kt
+// dcm-application/.../hypervisor/ResourceMapper.kt
 interface ResourceMapper {
     suspend fun mapProvisionSpec(
         domainSpec: VmProvisionSpec,
@@ -241,7 +241,7 @@ class VsphereResourceMapper : ResourceMapper {
 ### 3.1 Error Hierarchy
 
 ```kotlin
-// dvmm-application/.../hypervisor/HypervisorError.kt
+// dcm-application/.../hypervisor/HypervisorError.kt
 sealed class HypervisorError {
     abstract val message: String
     abstract val retriable: Boolean
@@ -415,7 +415,7 @@ private fun mapVsphereException(e: Exception): HypervisorError {
 ### 4.1 Connection Parameters - Sealed Class Hierarchy
 
 ```kotlin
-// dvmm-application/.../hypervisor/HypervisorConnectionParams.kt
+// dcm-application/.../hypervisor/HypervisorConnectionParams.kt
 sealed class HypervisorConnectionParams {
     abstract val hypervisorType: HypervisorType
     
@@ -514,7 +514,7 @@ The `connection_params_encrypted` column stores type-specific JSON.
 {
   "type": "VSPHERE",
   "vcenterUrl": "https://vcenter.example.com",
-  "username": "dvmm@vsphere.local",
+  "username": "dcm@vsphere.local",
   "passwordEncrypted": "<base64-encrypted>",
   "port": 443,
   "validateSsl": true
@@ -528,7 +528,7 @@ The `connection_params_encrypted` column stores type-specific JSON.
   "type": "PROXMOX",
   "host": "pve.example.com",
   "port": 8006,
-  "tokenId": "dvmm@pam!api-token",
+  "tokenId": "dcm@pam!api-token",
   "tokenSecretEncrypted": "<base64-encrypted>",
   "validateSsl": true
 }

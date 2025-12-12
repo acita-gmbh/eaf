@@ -32,7 +32,7 @@
 
 The EAF test suite demonstrates excellent quality standards. Tests follow a consistent BDD naming pattern using Kotlin's backtick syntax, making test intent immediately clear. The suite effectively uses fixtures (TestContainers, TestUserFixture) and isolation strategies (@IsolatedEventStore, TenantTestContext) to ensure deterministic, parallel-safe execution.
 
-The architecture tests using Konsist are particularly valuable, enforcing ADR-001 (EAF modules must not depend on DVMM modules) at the code level. This prevents architectural drift and ensures the framework remains product-agnostic.
+The architecture tests using Konsist are particularly valuable, enforcing ADR-001 (EAF modules must not depend on DCM modules) at the code level. This prevents architectural drift and ensures the framework remains product-agnostic.
 
 ---
 
@@ -241,13 +241,13 @@ The architecture tests use Konsist to enforce ADR-001 at compile time, preventin
 ```kotlin
 // ✅ Excellent pattern - enforced architecture rules
 @Test
-fun `eaf modules must not depend on dvmm modules`() {
+fun `eaf modules must not depend on dcm modules`() {
     Konsist
         .scopeFromModule("eaf/eaf-core")
         .files
         .assertTrue { file ->
             file.imports.none { import ->
-                import.name.contains("de.acci.dvmm")
+                import.name.contains("de.acci.dcm")
             }
         }
 }

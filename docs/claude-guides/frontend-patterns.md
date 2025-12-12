@@ -2,13 +2,13 @@
 
 > This guide is referenced from the main CLAUDE.md documentation.
 
-**Location:** `dvmm/dvmm-web/`
+**Location:** `dcm/dcm-web/`
 **Stack:** React 19 + TypeScript 5.9 + Vite 7.2 + Tailwind CSS 4 + shadcn/ui
 
 ## Commands
 
 ```bash
-cd dvmm/dvmm-web
+cd dcm/dcm-web
 npm run dev          # Dev server (port 5173)
 npm run build        # Type-check and build
 npm run test         # Vitest unit tests

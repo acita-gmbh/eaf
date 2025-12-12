@@ -20,7 +20,7 @@ project: "EAF"
 project_type: "enterprise"
 selected_track: "enterprise"
 field_type: "greenfield"
-user_description: "DVMM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal for VMware/Windows VM provisioning. Replaces legacy ZEWSSP. Pilot project for EAF framework. Complex enterprise requirements: strict multi-tenancy, ISO 27001 compliance, CQRS/Event Sourcing architecture."
+user_description: "DCM (Dynamic Virtual Machine Manager) - Multi-tenant self-service portal for VMware/Windows VM provisioning. Replaces legacy ZEWSSP. Pilot project for EAF framework. Complex enterprise requirements: strict multi-tenancy, ISO 27001 compliance, CQRS/Event Sourcing architecture."
 brainstorm_requested: true
 research_requested: true
 product_brief_requested: true
@@ -47,11 +47,11 @@ workflow_status:
 
       - id: "product-brief"
         name: "Product Brief"
-        status: "docs/product-brief-dvmm-2025-11-24.md"
+        status: "docs/product-brief-dcm-2025-11-24.md"
         agent: "analyst"
         command: "/bmad:bmm:workflows:product-brief"
         completed: "2025-11-24"
-        note: "DVMM Product Brief integrating market research + brainstorming insights"
+        note: "DCM Product Brief integrating market research + brainstorming insights"
 
   # Phase 1: Planning
   - phase: 1
@@ -187,4 +187,4 @@ workflow_status:
         command: "/bmad:bmm:workflows:epic-tech-context"
         completed: "2025-11-28"
         output: "docs/sprint-artifacts/tech-spec-epic-2.md"
-        note: "Epic 2 Core Workflow: 12 Stories, 21 FRs. Tracer Bullet for full stack. VmRequestAggregate, CQRS Commands/Queries, React + shadcn frontend. Coverage restoration for eaf-auth-keycloak and dvmm-api required in Story 2.1."
+        note: "Epic 2 Core Workflow: 12 Stories, 21 FRs. Tracer Bullet for full stack. VmRequestAggregate, CQRS Commands/Queries, React + shadcn frontend. Coverage restoration for eaf-auth-keycloak and dcm-api required in Story 2.1."

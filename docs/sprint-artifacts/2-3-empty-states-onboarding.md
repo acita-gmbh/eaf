@@ -15,7 +15,7 @@ So that I understand how to get started.
 - **Architecture constraint:** shadcn-admin-kit patterns, localStorage for onboarding state
 - **Prerequisites:** Story 2.2 (End User Dashboard Layout) - DONE
 - **UX Reference:** `docs/ux/design-specification.md` Section 7.6 (Empty States)
-- **Existing Code:** Dashboard components in `dvmm/dvmm-web/src/components/dashboard/`
+- **Existing Code:** Dashboard components in `dcm/dcm-web/src/components/dashboard/`
 
 ## Acceptance Criteria
 
@@ -49,14 +49,14 @@ So that I understand how to get started.
    - Given I see onboarding tooltips
    - When I click "Got it" on a tooltip OR click elsewhere
    - Then the tooltip dismisses
-   - And my progress is saved to localStorage (`dvmm_onboarding_step`)
+   - And my progress is saved to localStorage (`dcm_onboarding_step`)
    - And dismissed tooltips do not reappear on page refresh
    - And I can reset onboarding via a hidden dev action (Ctrl+Shift+O)
 
 5. **Onboarding completion state**
    - Given I have dismissed all onboarding tooltips
    - When onboarding completes
-   - Then localStorage key `dvmm_onboarding_completed` is set to "true"
+   - Then localStorage key `dcm_onboarding_completed` is set to "true"
    - And no more tooltips appear on subsequent visits
    - And the dashboard functions normally
 
@@ -153,8 +153,8 @@ So that I understand how to get started.
   - [x] Create `src/hooks/` folder (doesn't exist yet)
   - [x] Create `hooks/useOnboarding.ts` - custom hook for onboarding state
   - [x] Define onboarding steps: `['cta-button', 'sidebar-nav']`
-  - [x] Read/write step progress from localStorage (`dvmm_onboarding_step`)
-  - [x] Track completion state (`dvmm_onboarding_completed`)
+  - [x] Read/write step progress from localStorage (`dcm_onboarding_step`)
+  - [x] Track completion state (`dcm_onboarding_completed`)
   - [x] Expose: `currentStep`, `isComplete`, `dismissStep()`, `resetOnboarding()`
   - [x] Handle mobile viewport: skip 'sidebar-nav' step when `window.innerWidth < 768`
 
@@ -213,7 +213,7 @@ So that I understand how to get started.
 ### Component Structure (Target)
 
 ```
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── components/
 │   ├── empty-states/
 │   │   ├── EmptyState.tsx           # Reusable empty state component
@@ -234,7 +234,7 @@ dvmm/dvmm-web/src/
 ### shadcn Components to Add
 
 ```bash
-# From dvmm/dvmm-web directory
+# From dcm/dcm-web directory
 npx shadcn@latest add popover     # REQUIRED: For OnboardingTooltip (supports click interaction + dismiss button)
 # DO NOT use 'tooltip' - it's hover-only and won't work for our use case
 ```
@@ -243,8 +243,8 @@ npx shadcn@latest add popover     # REQUIRED: For OnboardingTooltip (supports cl
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `dvmm_onboarding_step` | `number` | Current step index (0-based) |
-| `dvmm_onboarding_completed` | `"true" \| null` | Flag for completion |
+| `dcm_onboarding_step` | `number` | Current step index (0-based) |
+| `dcm_onboarding_completed` | `"true" \| null` | Flag for completion |
 
 ### Onboarding Steps Definition
 
@@ -467,32 +467,32 @@ N/A - No debug issues encountered
 ### File List
 
 **New Components (11 files):**
-- `dvmm/dvmm-web/src/components/empty-states/EmptyState.tsx`
-- `dvmm/dvmm-web/src/components/empty-states/EmptyState.test.tsx`
-- `dvmm/dvmm-web/src/components/empty-states/AdminQueueEmptyState.tsx`
-- `dvmm/dvmm-web/src/components/empty-states/AdminQueueEmptyState.test.tsx`
-- `dvmm/dvmm-web/src/components/empty-states/index.ts`
-- `dvmm/dvmm-web/src/components/onboarding/OnboardingTooltip.tsx`
-- `dvmm/dvmm-web/src/components/onboarding/OnboardingTooltip.test.tsx`
-- `dvmm/dvmm-web/src/components/onboarding/index.ts`
-- `dvmm/dvmm-web/src/hooks/useOnboarding.ts`
-- `dvmm/dvmm-web/src/hooks/useOnboarding.test.ts`
-- `dvmm/dvmm-web/src/components/ui/popover.tsx`
+- `dcm/dcm-web/src/components/empty-states/EmptyState.tsx`
+- `dcm/dcm-web/src/components/empty-states/EmptyState.test.tsx`
+- `dcm/dcm-web/src/components/empty-states/AdminQueueEmptyState.tsx`
+- `dcm/dcm-web/src/components/empty-states/AdminQueueEmptyState.test.tsx`
+- `dcm/dcm-web/src/components/empty-states/index.ts`
+- `dcm/dcm-web/src/components/onboarding/OnboardingTooltip.tsx`
+- `dcm/dcm-web/src/components/onboarding/OnboardingTooltip.test.tsx`
+- `dcm/dcm-web/src/components/onboarding/index.ts`
+- `dcm/dcm-web/src/hooks/useOnboarding.ts`
+- `dcm/dcm-web/src/hooks/useOnboarding.test.ts`
+- `dcm/dcm-web/src/components/ui/popover.tsx`
 
 **Modified Components (5 files):**
-- `dvmm/dvmm-web/src/pages/Dashboard.tsx` - Integrated onboarding flow
-- `dvmm/dvmm-web/src/pages/Dashboard.test.tsx` - Added onboarding tests
-- `dvmm/dvmm-web/src/components/layout/Sidebar.tsx` - Added data-onboarding attribute
-- `dvmm/dvmm-web/src/components/dashboard/RequestsPlaceholder.tsx` - Refactored to use EmptyState
-- `dvmm/dvmm-web/src/components/dashboard/RequestsPlaceholder.test.tsx` - Updated tests
+- `dcm/dcm-web/src/pages/Dashboard.tsx` - Integrated onboarding flow
+- `dcm/dcm-web/src/pages/Dashboard.test.tsx` - Added onboarding tests
+- `dcm/dcm-web/src/components/layout/Sidebar.tsx` - Added data-onboarding attribute
+- `dcm/dcm-web/src/components/dashboard/RequestsPlaceholder.tsx` - Refactored to use EmptyState
+- `dcm/dcm-web/src/components/dashboard/RequestsPlaceholder.test.tsx` - Updated tests
 
 **Other Modified (6 files):**
-- `dvmm/dvmm-web/src/index.css` - Added animate-fade-in keyframes
-- `dvmm/dvmm-web/src/test/test-utils.tsx` - Added localStorage mock
-- `dvmm/dvmm-web/src/__tests__/App.integration.test.tsx` - Integration test
-- `dvmm/dvmm-web/src/pages/__tests__/Dashboard.test.tsx` - Additional tests
-- `dvmm/dvmm-web/package.json` - Added @radix-ui/react-popover
-- `dvmm/dvmm-web/package-lock.json` - Lockfile update
+- `dcm/dcm-web/src/index.css` - Added animate-fade-in keyframes
+- `dcm/dcm-web/src/test/test-utils.tsx` - Added localStorage mock
+- `dcm/dcm-web/src/__tests__/App.integration.test.tsx` - Integration test
+- `dcm/dcm-web/src/pages/__tests__/Dashboard.test.tsx` - Additional tests
+- `dcm/dcm-web/package.json` - Added @radix-ui/react-popover
+- `dcm/dcm-web/package-lock.json` - Lockfile update
 
 **Documentation (4 files):**
 - `docs/sprint-artifacts/2-3-empty-states-onboarding.md` - This story file

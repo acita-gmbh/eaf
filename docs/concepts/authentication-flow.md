@@ -2,7 +2,7 @@
 
 **Securing the application with OpenID Connect and Keycloak.**
 
-DVMM uses **Keycloak** as its Identity Provider (IdP). We verify identity using standard **OpenID Connect (OIDC)** and Authorization Code Flow. This ensures that we never handle user passwords directly and allows for features like Single Sign-On (SSO) and Multi-Factor Authentication (MFA).
+DCM uses **Keycloak** as its Identity Provider (IdP). We verify identity using standard **OpenID Connect (OIDC)** and Authorization Code Flow. This ensures that we never handle user passwords directly and allows for features like Single Sign-On (SSO) and Multi-Factor Authentication (MFA).
 
 ---
 
@@ -13,7 +13,7 @@ sequenceDiagram
     participant User
     participant Frontend as React Frontend
     participant Keycloak as Keycloak (IdP)
-    participant API as DVMM Backend
+    participant API as DCM Backend
 
     User->>Frontend: Clicks "Login"
     Frontend->>Keycloak: Redirects to Login Page
@@ -54,7 +54,7 @@ The Spring Boot backend intercepts every request.
 
 ### 4. Multi-Tenancy (The Critical Part)
 
-DVMM is multi-tenant. This means data for "Tenant A" and "Tenant B" lives in the same database but must *never* mix.
+DCM is multi-tenant. This means data for "Tenant A" and "Tenant B" lives in the same database but must *never* mix.
 
 **Security Chain:**
 
@@ -69,14 +69,14 @@ DVMM is multi-tenant. This means data for "Tenant A" and "Tenant B" lives in the
 
 ## Key Components
 
-### Frontend (`dvmm-web`)
+### Frontend (`dcm-web`)
 *   **Library:** `react-oidc-context`
-*   **Config:** Connects to Keycloak realm `dvmm`.
+*   **Config:** Connects to Keycloak realm `dcm`.
 *   **Behavior:** Automatically refreshes tokens before they expire.
 
 ### Identity Provider (Keycloak)
-*   **Realm:** `dvmm`
-*   **Client:** `dvmm-web` (Public Client)
+*   **Realm:** `dcm`
+*   **Client:** `dcm-web` (Public Client)
 *   **Users:** Managed in Keycloak. Custom attributes store the `tenant_id`.
 
 ### Backend (`eaf-auth`, `eaf-auth-keycloak`)

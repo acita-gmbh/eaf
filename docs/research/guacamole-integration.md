@@ -1,4 +1,4 @@
-# Apache Guacamole Integration for DVMM
+# Apache Guacamole Integration for DCM
 
 **Author:** Claude (Research Agent)
 **Date:** 2025-11-28
@@ -10,11 +10,11 @@
 
 ## Executive Summary
 
-This document presents a comprehensive technical research on integrating **Apache Guacamole** into DVMM to provide browser-based terminal/console access to provisioned virtual machines. The integration enables users to access VMs directly from the DVMM web interface without requiring local SSH clients or VPN connections.
+This document presents a comprehensive technical research on integrating **Apache Guacamole** into DCM to provide browser-based terminal/console access to provisioned virtual machines. The integration enables users to access VMs directly from the DCM web interface without requiring local SSH clients or VPN connections.
 
 **Key Findings:**
 - Apache Guacamole provides a mature, well-documented solution for browser-based remote access
-- The **embedded tunnel approach** best aligns with DVMM's architecture and security model
+- The **embedded tunnel approach** best aligns with DCM's architecture and security model
 - Integration can leverage existing Keycloak authentication and PostgreSQL RLS multi-tenancy
 - End-to-end testing is achievable using vcsim's containers-as-VMs feature
 
@@ -24,7 +24,7 @@ This document presents a comprehensive technical research on integrating **Apach
 
 ## Table of Contents
 
-1. [DVMM Context](#1-dvmm-context)
+1. [DCM Context](#1-dcm-context)
 2. [Apache Guacamole Overview](#2-apache-guacamole-overview)
 3. [Integration Architecture](#3-integration-architecture)
 4. [Technical Implementation](#4-technical-implementation)
@@ -38,11 +38,11 @@ This document presents a comprehensive technical research on integrating **Apach
 
 ---
 
-## 1. DVMM Context
+## 1. DCM Context
 
 ### 1.1 Product Overview
 
-**DVMM (Dynamic Virtual Machine Manager)** is a multi-tenant self-service portal for VMware VM provisioning with workflow-based approval automation. The core value proposition:
+**DCM (Dynamic Virtual Machine Manager)** is a multi-tenant self-service portal for VMware VM provisioning with workflow-based approval automation. The core value proposition:
 
 > "Request a VM. Get approval. VM is provisioned. That's it."
 
@@ -64,7 +64,7 @@ User Request → Admin Approval → VMware Provisioning → VM Running → User 
 
 ### 1.3 Proposed Enhancement
 
-Add browser-based console access directly within DVMM:
+Add browser-based console access directly within DCM:
 
 ```text
 User Request → Admin Approval → VMware Provisioning → VM Running → User Notified
@@ -81,14 +81,14 @@ User Request → Admin Approval → VMware Provisioning → VM Running → User 
 
 ### 1.4 Architectural Constraints
 
-Any integration must comply with DVMM's architectural principles:
+Any integration must comply with DCM's architectural principles:
 
 | Constraint | Requirement |
 |------------|-------------|
 | **Multi-tenancy** | PostgreSQL RLS enforcement, tenant isolation |
 | **Authentication** | Keycloak OIDC, JWT tokens |
 | **Hexagonal Architecture** | Guacamole as infrastructure adapter |
-| **Domain Purity** | No Spring dependencies in `dvmm-domain` |
+| **Domain Purity** | No Spring dependencies in `dcm-domain` |
 | **Quality Gates** | 80% test coverage, 70% mutation score |
 | **Technology Stack** | Kotlin 2.2, Spring Boot 3.5 WebFlux |
 
@@ -144,7 +144,7 @@ Guacamole provides three APIs for integration:
 
 ### 2.5 Supported Protocols
 
-| Protocol | Use Case | DVMM Relevance |
+| Protocol | Use Case | DCM Relevance |
 |----------|----------|----------------|
 | **SSH** | Linux terminal access | Primary for MVP |
 | **RDP** | Windows desktop | Future enhancement |
@@ -159,19 +159,19 @@ Guacamole provides three APIs for integration:
 
 #### Option A: Embedded Tunnel (Recommended)
 
-Embed Guacamole's Java API directly into DVMM's Spring Boot application.
+Embed Guacamole's Java API directly into DCM's Spring Boot application.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         DVMM Application                            │
+│                         DCM Application                            │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐   ┌────────────────┐   ┌────────────────────────┐ │
-│  │  React UI    │   │  DVMM API      │   │  Guacamole Tunnel     │ │
+│  │  React UI    │   │  DCM API      │   │  Guacamole Tunnel     │ │
 │  │  + guac-js   │──▶│  (WebFlux)     │──▶│  (WebSocket Endpoint) │ │
 │  └──────────────┘   └────────────────┘   └──────────┬─────────────┘ │
 │                                                      │               │
 │  ┌──────────────────────────────────────────────────┼───────────────┤
-│  │              dvmm-infrastructure                  │               │
+│  │              dcm-infrastructure                  │               │
 │  │  ┌────────────────┐    ┌─────────────────────────▼──────────┐   │
 │  │  │ VMware Adapter │    │ GuacamoleConnectionFactory         │   │
 │  │  │ (provision)    │    │ - Resolves VM IP/credentials       │   │
@@ -227,34 +227,34 @@ Option A is recommended because:
 2. **Security**: Single auth layer, JWT token reuse
 3. **Architecture**: Clean hexagonal design (Guacamole = infrastructure adapter)
 4. **Operational**: No separate service to manage
-5. **Consistency**: Same patterns as other DVMM infrastructure adapters
+5. **Consistency**: Same patterns as other DCM infrastructure adapters
 
 ### 3.3 Module Structure
 
 ```text
-dvmm/
-├── dvmm-domain/
-│   └── src/main/kotlin/de/acci/dvmm/domain/
+dcm/
+├── dcm-domain/
+│   └── src/main/kotlin/de/acci/dcm/domain/
 │       └── console/
 │           ├── ConsoleSession.kt           # Domain model
 │           ├── ConsoleAccessPolicy.kt      # Access rules
 │           └── ConsoleSessionRequested.kt  # Domain event
 │
-├── dvmm-application/
-│   └── src/main/kotlin/de/acci/dvmm/application/
+├── dcm-application/
+│   └── src/main/kotlin/de/acci/dcm/application/
 │       └── console/
 │           ├── RequestConsoleAccessCommand.kt
 │           ├── ConsoleAccessCommandHandler.kt
 │           └── ConsoleAccessPort.kt        # Port interface
 │
-├── dvmm-api/
-│   └── src/main/kotlin/de/acci/dvmm/api/
+├── dcm-api/
+│   └── src/main/kotlin/de/acci/dcm/api/
 │       └── console/
 │           ├── ConsoleController.kt        # REST endpoint
 │           └── GuacamoleTunnelEndpoint.kt  # WebSocket tunnel
 │
-└── dvmm-infrastructure/
-    └── src/main/kotlin/de/acci/dvmm/infrastructure/
+└── dcm-infrastructure/
+    └── src/main/kotlin/de/acci/dcm/infrastructure/
         └── console/
             ├── GuacamoleConnectionFactory.kt   # Creates configs
             ├── SshConsoleAdapter.kt            # SSH implementation
@@ -278,7 +278,7 @@ guacamole = "1.6.0"
 guacamole-common = { module = "org.apache.guacamole:guacamole-common", version.ref = "guacamole" }
 ```
 
-Add to `dvmm/dvmm-infrastructure/build.gradle.kts`:
+Add to `dcm/dcm-infrastructure/build.gradle.kts`:
 
 ```kotlin
 dependencies {
@@ -299,9 +299,9 @@ Add to frontend `package.json`:
 ### 4.2 Domain Model
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/console/ConsoleSession.kt
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/console/ConsoleSession.kt
 
-package de.acci.dvmm.domain.console
+package de.acci.dcm.domain.console
 
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -342,9 +342,9 @@ public enum class ConsoleProtocol {
 ### 4.3 Application Layer
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/console/RequestConsoleAccessCommand.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/console/RequestConsoleAccessCommand.kt
 
-package de.acci.dvmm.application.console
+package de.acci.dcm.application.console
 
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
@@ -358,13 +358,13 @@ public data class RequestConsoleAccessCommand(
 ```
 
 ```kotlin
-// dvmm-application/src/main/kotlin/de/acci/dvmm/application/console/ConsoleAccessCommandHandler.kt
+// dcm-application/src/main/kotlin/de/acci/dcm/application/console/ConsoleAccessCommandHandler.kt
 
-package de.acci.dvmm.application.console
+package de.acci.dcm.application.console
 
-import de.acci.dvmm.domain.console.ConsoleSession
-import de.acci.dvmm.domain.console.ConsoleSessionId
-import de.acci.dvmm.domain.vm.VmRepository
+import de.acci.dcm.domain.console.ConsoleSession
+import de.acci.dcm.domain.console.ConsoleSessionId
+import de.acci.dcm.domain.vm.VmRepository
 import java.time.Clock
 import java.time.Duration
 
@@ -420,14 +420,14 @@ public class ConsoleAccessCommandHandler(
 ### 4.4 Infrastructure Layer - Connection Factory
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/console/GuacamoleConnectionFactory.kt
+// dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/console/GuacamoleConnectionFactory.kt
 
-package de.acci.dvmm.infrastructure.console
+package de.acci.dcm.infrastructure.console
 
-import de.acci.dvmm.application.console.ConsoleAccessPort
-import de.acci.dvmm.domain.console.ConsoleProtocol
-import de.acci.dvmm.domain.console.ConsoleSession
-import de.acci.dvmm.infrastructure.vault.CredentialVault
+import de.acci.dcm.application.console.ConsoleAccessPort
+import de.acci.dcm.domain.console.ConsoleProtocol
+import de.acci.dcm.domain.console.ConsoleSession
+import de.acci.dcm.infrastructure.vault.CredentialVault
 import de.acci.eaf.tenant.TenantContext
 import de.acci.eaf.tenant.TenantContextElement
 import kotlinx.coroutines.withContext
@@ -544,12 +544,12 @@ private fun ConsoleProtocol.toGuacamoleProtocol(): String = when (this) {
 ### 4.5 API Layer - WebSocket Tunnel Endpoint
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/console/GuacamoleTunnelEndpoint.kt
+// dcm-api/src/main/kotlin/de/acci/dcm/api/console/GuacamoleTunnelEndpoint.kt
 
-package de.acci.dvmm.api.console
+package de.acci.dcm.api.console
 
-import de.acci.dvmm.domain.console.ConsoleSessionId
-import de.acci.dvmm.infrastructure.console.GuacamoleConnectionFactory
+import de.acci.dcm.domain.console.ConsoleSessionId
+import de.acci.dcm.infrastructure.console.GuacamoleConnectionFactory
 import de.acci.eaf.auth.JwtValidator
 import jakarta.websocket.CloseReason
 import jakarta.websocket.EndpointConfig
@@ -670,14 +670,14 @@ public class GuacamoleTunnelEndpoint(
 ### 4.6 API Layer - REST Controller
 
 ```kotlin
-// dvmm-api/src/main/kotlin/de/acci/dvmm/api/console/ConsoleController.kt
+// dcm-api/src/main/kotlin/de/acci/dcm/api/console/ConsoleController.kt
 
-package de.acci.dvmm.api.console
+package de.acci.dcm.api.console
 
-import de.acci.dvmm.application.console.ConsoleAccessCommandHandler
-import de.acci.dvmm.application.console.RequestConsoleAccessCommand
-import de.acci.dvmm.domain.console.ConsoleProtocol
-import de.acci.dvmm.domain.console.ConsoleSession
+import de.acci.dcm.application.console.ConsoleAccessCommandHandler
+import de.acci.dcm.application.console.RequestConsoleAccessCommand
+import de.acci.dcm.domain.console.ConsoleProtocol
+import de.acci.dcm.domain.console.ConsoleSession
 import de.acci.eaf.auth.TokenClaims
 import de.acci.eaf.tenant.TenantContext
 import org.springframework.http.HttpStatus
@@ -1201,7 +1201,7 @@ class GuacamoleVcsimIntegrationTest : VcsimIntegrationTest() {
     fun `console connects to vcsim container-vm via SSH`() = runTest {
         // 1. Configure vcsim VM with SSH container
         val vmPath = "/DC0/vm/DC0_H0_VM0"
-        vcsim.attachContainer(vmPath, "dvmm-test-ssh:latest")
+        vcsim.attachContainer(vmPath, "dcm-test-ssh:latest")
         vcsim.powerOn(vmPath)
 
         // 2. Wait for VM to get IP
@@ -1235,7 +1235,7 @@ class GuacamoleVcsimIntegrationTest : VcsimIntegrationTest() {
     @Test
     fun `console fails when VM is powered off`() = runTest {
         val vmPath = "/DC0/vm/DC0_H0_VM1"
-        vcsim.attachContainer(vmPath, "dvmm-test-ssh:latest")
+        vcsim.attachContainer(vmPath, "dcm-test-ssh:latest")
 
         // VM stays powered off - container not started
 
@@ -1251,7 +1251,7 @@ class GuacamoleVcsimIntegrationTest : VcsimIntegrationTest() {
     @Test
     fun `vm power state changes affect ssh availability`() = runTest {
         val vmPath = "/DC0/vm/DC0_H0_VM2"
-        vcsim.attachContainer(vmPath, "dvmm-test-ssh:latest")
+        vcsim.attachContainer(vmPath, "dcm-test-ssh:latest")
 
         // Power on - SSH should work
         vcsim.powerOn(vmPath)
@@ -1292,7 +1292,7 @@ import { loginAsUser, setupVcsimVm } from './helpers';
 test.describe('VM Console Access', () => {
   test.beforeAll(async () => {
     // Setup vcsim VM with SSH container
-    await setupVcsimVm('DC0_H0_VM0', 'dvmm-test-ssh:latest');
+    await setupVcsimVm('DC0_H0_VM0', 'dcm-test-ssh:latest');
   });
 
   test('user can open SSH console for running VM', async ({ page }) => {
@@ -1368,7 +1368,7 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: dvmm_test
+      POSTGRES_DB: dcm_test
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
     volumes:
@@ -1384,7 +1384,7 @@ services:
     networks:
       - test-net
 
-  dvmm-app:
+  dcm-app:
     build: .
     depends_on:
       - vcsim
@@ -1392,7 +1392,7 @@ services:
       - postgres
       - keycloak
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dvmm_test
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/dcm_test
       VMWARE_URL: https://vcsim:8989/sdk
       GUACD_HOST: guacd
       GUACD_PORT: 4822
@@ -1413,8 +1413,8 @@ networks:
 ```yaml
 # docker-compose.yml
 services:
-  dvmm-app:
-    image: dvmm:latest
+  dcm-app:
+    image: dcm:latest
     depends_on:
       - guacd
     environment:
@@ -1426,7 +1426,7 @@ services:
   guacd:
     image: guacamole/guacd:1.6.0
     restart: unless-stopped
-    # No exposed ports - only accessible from dvmm-app
+    # No exposed ports - only accessible from dcm-app
     networks:
       - internal
 
@@ -1438,18 +1438,18 @@ networks:
 ### 8.2 Kubernetes Deployment
 
 ```yaml
-# kubernetes/dvmm-deployment.yaml
+# kubernetes/dcm-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dvmm
+  name: dcm
 spec:
   replicas: 3
   template:
     spec:
       containers:
-        - name: dvmm-app
-          image: dvmm:latest
+        - name: dcm-app
+          image: dcm:latest
           env:
             - name: GUACD_HOST
               value: "localhost"  # Sidecar
@@ -1475,8 +1475,8 @@ spec:
 
 ```nginx
 # nginx.conf
-upstream dvmm {
-    server dvmm-app:8080;
+upstream dcm {
+    server dcm-app:8080;
 }
 
 server {
@@ -1484,7 +1484,7 @@ server {
 
     # WebSocket tunnel endpoint
     location /api/console/tunnel {
-        proxy_pass http://dvmm;
+        proxy_pass http://dcm;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -1496,7 +1496,7 @@ server {
 
     # Regular API endpoints
     location /api/ {
-        proxy_pass http://dvmm;
+        proxy_pass http://dcm;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -1512,14 +1512,14 @@ server {
 **Objective:** Set up Guacamole infrastructure and basic connectivity.
 
 **Tasks:**
-1. Add `guacamole-common` dependency to `dvmm-infrastructure`
+1. Add `guacamole-common` dependency to `dcm-infrastructure`
 2. Add `guacamole-common-js` to frontend
 3. Add guacd to Docker Compose
 4. Implement `GuacdProperties` configuration class
 5. Create basic connectivity test
 
 **Acceptance Criteria:**
-- guacd container starts with DVMM
+- guacd container starts with DCM
 - Basic health check verifies guacd connectivity
 - Unit tests for configuration
 
@@ -1632,7 +1632,7 @@ server {
 - [vcsim Features Wiki](https://github.com/vmware/govmomi/wiki/vcsim-features)
 - [Containers-as-VMs](https://github.com/vmware/govmomi/wiki/vcsim-features#containers-as-vms)
 
-### Related DVMM Documentation
+### Related DCM Documentation
 
 - [Architecture](architecture.md)
 - [Security Architecture](security-architecture.md)
@@ -1680,7 +1680,7 @@ CMD ["/usr/sbin/sshd", "-D", "-e"]
 
 ```kotlin
 // GuacdProperties.kt
-@ConfigurationProperties(prefix = "dvmm.guacd")
+@ConfigurationProperties(prefix = "dcm.guacd")
 data class GuacdProperties(
     val host: String = "localhost",
     val port: Int = 4822,
@@ -1691,7 +1691,7 @@ data class GuacdProperties(
 
 ```yaml
 # application.yml
-dvmm:
+dcm:
   guacd:
     host: ${GUACD_HOST:localhost}
     port: ${GUACD_PORT:4822}
@@ -1701,4 +1701,4 @@ dvmm:
 
 ---
 
-*This document provides comprehensive guidance for integrating Apache Guacamole into DVMM. Implementation should proceed according to the phased roadmap, with each phase producing working, tested software.*
+*This document provides comprehensive guidance for integrating Apache Guacamole into DCM. Implementation should proceed according to the phased roadmap, with each phase producing working, tested software.*

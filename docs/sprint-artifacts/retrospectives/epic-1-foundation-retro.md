@@ -69,7 +69,7 @@ Two modules have temporary coverage exclusions that must be resolved:
 | Module | Current Coverage | Required | Resolution Story |
 |--------|-----------------|----------|------------------|
 | `eaf-auth-keycloak` | 15% | ≥80% | Story 2.1 |
-| `dvmm-api` | 54% | ≥80% | Story 2.1 |
+| `dcm-api` | 54% | ≥80% | Story 2.1 |
 
 **Root Cause:** Tests require Keycloak Testcontainer integration tests and Spring Security WebFlux integration tests respectively.
 
@@ -116,7 +116,7 @@ Two modules have temporary coverage exclusions that must be resolved:
 | # | Action | Owner | Target Story | Priority |
 |---|--------|-------|--------------|----------|
 | 1 | Restore eaf-auth-keycloak coverage to ≥80% | DEV | 2.1 | HIGH |
-| 2 | Restore dvmm-api coverage to ≥80% | DEV | 2.1 | HIGH |
+| 2 | Restore dcm-api coverage to ≥80% | DEV | 2.1 | HIGH |
 | 3 | Add jooq-init.sql sync checklist to CLAUDE.md | SM | Immediate | HIGH |
 | 4 | Make "Learnings from Previous Story" mandatory | SM | Process | MEDIUM |
 | 5 | Automate bootJar/jar in Convention Plugin | Architect | Tech Debt | MEDIUM |

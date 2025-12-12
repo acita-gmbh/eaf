@@ -45,7 +45,7 @@ A separate background process (the "Poller") runs continuously.
 
 ## Why We Use It
 
-DVMM uses this to ensure that **Domain Events** (our source of truth) are reliably propagated to:
+DCM uses this to ensure that **Domain Events** (our source of truth) are reliably propagated to:
 1.  **Projections:** Read models must eventually match the write model.
 2.  **Notifications:** We don't want to lose "VM Ready" emails.
 3.  **External Integrations:** If we ever add a message bus, we are ready.

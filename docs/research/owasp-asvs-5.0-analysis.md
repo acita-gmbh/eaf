@@ -3,14 +3,14 @@
 **Date:** 2025-12-10
 **Version:** 1.0
 **Author:** Claude (AI Research)
-**Project:** DVMM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Virtual Machine Manager)
 **Target Compliance:** ASVS Level 2 (Standard) with Level 3 for critical controls
 
 ---
 
 ## Executive Summary
 
-This document analyzes the OWASP Application Security Verification Standard (ASVS) 5.0.0, released May 30, 2025, and maps its requirements against the DVMM security architecture. ASVS 5.0 represents a significant modernization with **~350 requirements across 17 chapters**, expanding from v4.0.3's 286 requirements across 14 chapters.
+This document analyzes the OWASP Application Security Verification Standard (ASVS) 5.0.0, released May 30, 2025, and maps its requirements against the DCM security architecture. ASVS 5.0 represents a significant modernization with **~350 requirements across 17 chapters**, expanding from v4.0.3's 286 requirements across 14 chapters.
 
 ### Key Findings
 
@@ -43,13 +43,13 @@ ASVS 5.0 introduces **Documented Security Decisions** at the start of each chapt
 - Why specific approaches were chosen
 - Rationale for any deviations
 
-This aligns well with DVMM's Architecture Decision Records (ADRs) approach.
+This aligns well with DCM's Architecture Decision Records (ADRs) approach.
 
 ---
 
 ## Complete ASVS 5.0 Chapter Structure
 
-| Chapter | Name | DVMM Relevance |
+| Chapter | Name | DCM Relevance |
 |---------|------|----------------|
 | **V1** | Encoding and Sanitization | High - Input/output handling |
 | **V2** | Validation and Business Logic | High - Domain validation |
@@ -67,7 +67,7 @@ This aligns well with DVMM's Architecture Decision Records (ADRs) approach.
 | **V14** | Data Protection | Critical - Multi-tenant RLS |
 | **V15** | Secure Coding and Architecture | High - Hexagonal architecture |
 | **V16** | Security Logging and Error Handling | High - Event Sourcing audit |
-| **V17** | WebRTC | Low - Not applicable to DVMM |
+| **V17** | WebRTC | Low - Not applicable to DCM |
 
 ---
 
@@ -77,7 +77,7 @@ This aligns well with DVMM's Architecture Decision Records (ADRs) approach.
 
 **ASVS Requirement Focus:** Protection against injection attacks through proper encoding and sanitization of untrusted data.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | OS Command Injection (1.2.5) | ✅ Covered | VMware API calls use SDK, no shell commands | None |
 | SQL Injection | ✅ Covered | jOOQ parameterized queries, no raw SQL | None |
@@ -85,7 +85,7 @@ This aligns well with DVMM's Architecture Decision Records (ADRs) approach.
 | LDAP Injection | ⚠️ Partial | Keycloak handles LDAP integration | Verify Keycloak config |
 | XML/XXE | ⚠️ Partial | Jackson JSON (no XML), but verify defaults | Verify Jackson XXE disabled |
 
-**DVMM Security Architecture Reference:** Section 6.2 Input Validation
+**DCM Security Architecture Reference:** Section 6.2 Input Validation
 
 ```kotlin
 // Current implementation (CreateVmRequestCommand)
@@ -106,14 +106,14 @@ data class CreateVmRequestCommand(
 
 **ASVS Requirement Focus:** Input validation, business logic flow protection, anti-automation.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Server-side validation | ✅ Covered | Bean Validation + Custom validators | None |
 | Business logic bypass prevention | ✅ Covered | State machine in VmRequestAggregate | None |
 | Anti-automation/rate limiting | ✅ Covered | 100 req/min/user (NFR-SEC-9) | None |
 | Mass assignment protection | ✅ Covered | Explicit DTOs, no entity binding | None |
 
-**DVMM Security Architecture Reference:** Section 3.2 Authorization Enforcement
+**DCM Security Architecture Reference:** Section 3.2 Authorization Enforcement
 
 **Strong Alignment:** Event sourcing naturally enforces business logic flow - state transitions are explicit and audited.
 
@@ -123,7 +123,7 @@ data class CreateVmRequestCommand(
 
 **ASVS Requirement Focus:** Client-side attacks, DOM-based XSS, prototype pollution, postMessage security.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | DOM XSS Prevention | ✅ Covered | React 19 auto-escaping | None |
 | CSP Headers | ⚠️ Partial | Planned (NFR-SEC-8) | Implement strict CSP |
@@ -153,7 +153,7 @@ Content-Security-Policy:
 
 **ASVS Requirement Focus:** REST API security, GraphQL (N/A), rate limiting, HTTP method restrictions.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | REST Security | ✅ Covered | Spring Security, Bearer JWT | None |
 | Rate Limiting | ✅ Covered | 100 req/min/user | None |
@@ -162,7 +162,7 @@ Content-Security-Policy:
 | Request Size Limits | ⚠️ Missing | Not explicitly configured | Add max request body size |
 | OpenAPI/Swagger Security | ⚠️ Partial | OpenAPI defined | Protect Swagger UI in prod |
 
-**DVMM Security Architecture Reference:** Section 6.1 Security Controls
+**DCM Security Architecture Reference:** Section 6.1 Security Controls
 
 **Gap: Need explicit max request body size configuration.**
 
@@ -183,7 +183,7 @@ spring:
 
 **ASVS Requirement Focus:** File upload validation, path traversal, file type verification.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | File Upload Validation | N/A | No file uploads in MVP | None |
 | Path Traversal | N/A | No file system access | None |
@@ -197,7 +197,7 @@ spring:
 
 **ASVS Requirement Focus:** Password policies, MFA, credential storage, digital identity.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Password Policy (min 8 chars) | ✅ Delegated | Keycloak enforces | Verify Keycloak config |
 | MFA Support | ✅ Delegated | Keycloak optional MFA | Document MFA policy |
@@ -206,7 +206,7 @@ spring:
 | Account Lockout | ⚠️ Unknown | Keycloak capability | Verify/enable in Keycloak |
 | Session Binding | ✅ Covered | JWT token validation | None |
 
-**DVMM Security Architecture Reference:** Section 2 Authentication Architecture
+**DCM Security Architecture Reference:** Section 2 Authentication Architecture
 
 **Key Strength:** IdP-agnostic architecture (ADR-002) delegates authentication complexity to Keycloak, which is regularly updated with security patches.
 
@@ -230,7 +230,7 @@ spring:
 
 **ASVS Requirement Focus:** Session lifecycle, token binding, logout, CSRF protection.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Session Token Generation | ✅ Covered | Keycloak JWT (cryptographic) | None |
 | Session Fixation Prevention | ✅ Covered | New token on auth | None |
@@ -240,7 +240,7 @@ spring:
 | Cookie Security | ✅ Covered | httpOnly, Secure, SameSite=Lax | None |
 | Concurrent Session Control | ⚠️ Missing | Not implemented | Consider for L3 |
 
-**DVMM Security Architecture Reference:** Section 2.3 Token Handling
+**DCM Security Architecture Reference:** Section 2.3 Token Handling
 
 **Gap: Server-side token revocation for immediate logout:**
 
@@ -260,7 +260,7 @@ interface TokenRevocationService {
 
 **ASVS Requirement Focus:** Access control design, operation-level controls, RBAC enforcement.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Centralized Authorization | ✅ Covered | Spring Security + RLS | None |
 | RBAC Implementation | ✅ Covered | 3 roles (User, Admin, Manager) | None |
@@ -270,9 +270,9 @@ interface TokenRevocationService {
 | Resource-based Authorization | ✅ Covered | Tenant + Owner checks | None |
 | Fail-Closed | ✅ Covered | RLS zero rows on missing context | None |
 
-**DVMM Security Architecture Reference:** Section 3 Authorization Architecture, Section 4 Multi-Tenant Isolation
+**DCM Security Architecture Reference:** Section 3 Authorization Architecture, Section 4 Multi-Tenant Isolation
 
-**Exceptional Alignment:** DVMM's three-layer authorization (Application → Service → Database RLS) exceeds ASVS requirements. This is a **model implementation**.
+**Exceptional Alignment:** DCM's three-layer authorization (Application → Service → Database RLS) exceeds ASVS requirements. This is a **model implementation**.
 
 ```sql
 -- RLS Policy (fail-closed by design)
@@ -288,7 +288,7 @@ CREATE POLICY tenant_isolation ON vm_requests
 
 **ASVS Requirement Focus:** JWT security, token integrity, claims validation.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Token Signature Verification | ✅ Covered | Spring Security JWT validation | None |
 | Algorithm Restriction | ⚠️ Partial | Keycloak RS256 default | Document allowed algorithms |
@@ -297,7 +297,7 @@ CREATE POLICY tenant_isolation ON vm_requests
 | Sensitive Data in Tokens | ✅ Covered | Minimal claims (no PII) | None |
 | Token Storage (Client) | ✅ Covered | httpOnly cookie | None |
 
-**DVMM Security Architecture Reference:** Section 2.2 JWT Token Structure
+**DCM Security Architecture Reference:** Section 2.2 JWT Token Structure
 
 **Gap: Explicitly document allowed JWT algorithms to prevent algorithm confusion attacks:**
 
@@ -320,7 +320,7 @@ fun jwtDecoder(): ReactiveJwtDecoder {
 
 **ASVS Requirement Focus:** OAuth 2.0 best practices, OIDC implementation, authorization server security.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | OIDC Discovery | ✅ Covered | Keycloak .well-known endpoint | None |
 | PKCE (Authorization Code) | ✅ Covered | Keycloak + react-oidc-context | None |
@@ -329,7 +329,7 @@ fun jwtDecoder(): ReactiveJwtDecoder {
 | Refresh Token Rotation | ⚠️ Unknown | Keycloak configuration | Verify rotation enabled |
 | Authorization Server Controls | ⚠️ Partial | Keycloak managed | Document Keycloak hardening |
 
-**DVMM Security Architecture Reference:** Section 2.1 Identity Provider Integration
+**DCM Security Architecture Reference:** Section 2.1 Identity Provider Integration
 
 **Gap: Document Keycloak OAuth/OIDC hardening checklist:**
 
@@ -349,7 +349,7 @@ fun jwtDecoder(): ReactiveJwtDecoder {
 
 **ASVS Requirement Focus:** Algorithm selection, key management, secure random, post-quantum planning.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Approved Algorithms | ✅ Covered | AES-256-GCM, TLS 1.3 | None |
 | Key Management | ⚠️ Partial | Environment/Vault | Document key rotation |
@@ -358,7 +358,7 @@ fun jwtDecoder(): ReactiveJwtDecoder {
 | Post-Quantum Planning (L3) | ❌ Gap | Not addressed | Create migration plan |
 | Crypto-Shredding | ✅ Covered | Per-user keys for GDPR | None |
 
-**DVMM Security Architecture Reference:** Section 5 Data Protection
+**DCM Security Architecture Reference:** Section 5 Data Protection
 
 **Strong Implementation:** Crypto-shredding pattern for GDPR compliance is excellent.
 
@@ -387,7 +387,7 @@ Action Items:
 
 **ASVS Requirement Focus:** TLS configuration, certificate pinning, HSTS.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | TLS 1.3 | ✅ Covered | All connections (NFR-SEC-5) | None |
 | HSTS | ⚠️ Partial | Not explicitly configured | Add HSTS header |
@@ -418,7 +418,7 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 **ASVS Requirement Focus:** Secure defaults, hardening, secrets management.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Secure Defaults | ✅ Covered | Spring Boot secure defaults | None |
 | Error Messages | ✅ Covered | No stack traces in prod | None |
@@ -444,7 +444,7 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 **ASVS Requirement Focus:** Data classification, PII protection, data minimization.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Data Classification | ✅ Covered | Section 1.1 Assets table | None |
 | PII Minimization | ✅ Covered | Minimal claims in JWT | None |
@@ -454,9 +454,9 @@ fun securityHeaders(): SecurityWebFilterChain {
 | Data Retention | ✅ Covered | 7-year audit (partitioned) | None |
 | Multi-Tenant Isolation | ✅ Covered | PostgreSQL RLS | None |
 
-**DVMM Security Architecture Reference:** Section 5 Data Protection
+**DCM Security Architecture Reference:** Section 5 Data Protection
 
-**Exceptional Alignment:** DVMM's data protection architecture is comprehensive and well-documented.
+**Exceptional Alignment:** DCM's data protection architecture is comprehensive and well-documented.
 
 ---
 
@@ -464,7 +464,7 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 **ASVS Requirement Focus:** Secure design, threat modeling, security requirements.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Threat Modeling | ✅ Covered | STRIDE analysis in security-architecture.md | None |
 | Security Requirements | ✅ Covered | 83 NFRs in PRD | None |
@@ -473,9 +473,9 @@ fun securityHeaders(): SecurityWebFilterChain {
 | Dependency Management | ✅ Covered | OWASP Dependency-Check | None |
 | Code Review | ✅ Covered | Mandatory before merge | None |
 
-**DVMM Security Architecture Reference:** Section 9 Security Testing
+**DCM Security Architecture Reference:** Section 9 Security Testing
 
-**Strong Alignment:** DVMM's architecture documentation and testing approach exemplifies ASVS 5.0's "Documented Security Decisions" philosophy.
+**Strong Alignment:** DCM's architecture documentation and testing approach exemplifies ASVS 5.0's "Documented Security Decisions" philosophy.
 
 ---
 
@@ -483,7 +483,7 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 **ASVS Requirement Focus:** Audit logging, error handling, log protection.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
 | Security Event Logging | ✅ Covered | Event Sourcing (complete audit) | None |
 | Log Integrity | ✅ Covered | Append-only event store | None |
@@ -491,9 +491,9 @@ fun securityHeaders(): SecurityWebFilterChain {
 | Sensitive Data in Logs | ✅ Covered | No PII in logs policy | None |
 | Error Message Sanitization | ✅ Covered | RFC 7807, no internals | None |
 | Correlation IDs | ✅ Covered | NFR-OBS-2 | None |
-| Failed Auth Logging | ⚠️ Partial | Keycloak logs | Aggregate in DVMM |
+| Failed Auth Logging | ⚠️ Partial | Keycloak logs | Aggregate in DCM |
 
-**DVMM Security Architecture Reference:** Section 7 Audit & Compliance
+**DCM Security Architecture Reference:** Section 7 Audit & Compliance
 
 **Exceptional Alignment:** Event Sourcing provides immutable, complete audit trail that exceeds typical logging requirements.
 
@@ -503,11 +503,11 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 **ASVS Requirement Focus:** WebRTC security, SRTP, ICE security.
 
-| Requirement Area | DVMM Status | Implementation | Gap |
+| Requirement Area | DCM Status | Implementation | Gap |
 |------------------|-------------|----------------|-----|
-| All V17 Requirements | N/A | DVMM doesn't use WebRTC | None |
+| All V17 Requirements | N/A | DCM doesn't use WebRTC | None |
 
-**Status:** Not applicable. DVMM uses polling (MVP) / WebSocket (Growth) for real-time updates, not WebRTC.
+**Status:** Not applicable. DCM uses polling (MVP) / WebSocket (Growth) for real-time updates, not WebRTC.
 
 ---
 
@@ -552,7 +552,7 @@ fun securityHeaders(): SecurityWebFilterChain {
 
 ### Level 1 (Opportunistic) - ✅ Achieved
 
-DVMM meets all Level 1 requirements with existing implementation.
+DCM meets all Level 1 requirements with existing implementation.
 
 ### Level 2 (Standard) - ⚠️ 95% Complete
 
@@ -573,7 +573,7 @@ DVMM meets all Level 1 requirements with existing implementation.
 
 ### Level 3 (Advanced) - ⚠️ 70% Complete
 
-DVMM exceeds L3 in multi-tenant isolation and audit trail, but lacks:
+DCM exceeds L3 in multi-tenant isolation and audit trail, but lacks:
 - Post-quantum cryptography planning
 - DPoP token binding
 - Advanced session controls
@@ -613,14 +613,14 @@ DVMM exceeds L3 in multi-tenant isolation and audit trail, but lacks:
 - [OWASP ASVS GitHub Repository](https://github.com/OWASP/ASVS)
 - [What's New in ASVS 5.0 - SoftwareMill](https://softwaremill.com/whats-new-in-asvs-5-0/)
 - [OWASP Cheat Sheet Series - ASVS Index](https://cheatsheetseries.owasp.org/IndexASVS.html)
-- [DVMM Security Architecture](../security-architecture.md)
-- [DVMM Architecture](../architecture.md)
+- [DCM Security Architecture](../security-architecture.md)
+- [DCM Architecture](../architecture.md)
 
 ---
 
-## Appendix A: ASVS 5.0 to DVMM NFR Mapping
+## Appendix A: ASVS 5.0 to DCM NFR Mapping
 
-| ASVS Chapter | DVMM NFR IDs |
+| ASVS Chapter | DCM NFR IDs |
 |--------------|--------------|
 | V1 Encoding | NFR-SEC-6, NFR-SEC-7 |
 | V2 Validation | NFR-SEC-6 |
@@ -641,4 +641,4 @@ DVMM exceeds L3 in multi-tenant isolation and audit trail, but lacks:
 
 *Generated: 2025-12-10*
 *ASVS Version: 5.0.0 (May 2025)*
-*DVMM Version: MVP (Phase 4 Implementation)*
+*DCM Version: MVP (Phase 4 Implementation)*

@@ -253,7 +253,7 @@ The TUI Admin Interface design was audited for accessibility following WCAG 2.1 
 |--------|--------------|--------|
 | Approve request | Dialog: "Approve REQ-XXX?" | ✓ |
 | Reject request | Dialog with reason | ✓ |
-| Quit application | Dialog: "Exit DVMM TUI?" | ✓ |
+| Quit application | Dialog: "Exit DCM TUI?" | ✓ |
 
 **Finding:** All destructive actions require confirmation.
 

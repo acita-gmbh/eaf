@@ -43,7 +43,7 @@ so that I can process requests efficiently.
 
 ## Tasks / Subtasks
 
-- [x] **Domain Layer (dvmm-domain)**
+- [x] **Domain Layer (dcm-domain)**
   - [x] **Define Events:** Create `VmRequestApproved` and `VmRequestRejected` events in `events/` folder with denormalized fields for notifications (see Event Structure below).
   - [x] **Update Aggregate:** In `VmRequestAggregate.kt`:
     - Add `approve(adminId: UserId, metadata: EventMetadata)` and `reject(adminId: UserId, reason: String, metadata: EventMetadata)` methods
@@ -59,7 +59,7 @@ so that I can process requests efficiently.
     - Approve/Reject from non-PENDING state throws `InvalidStateException`
     - Self-approval throws error
 
-- [x] **Application Layer (dvmm-application)**
+- [x] **Application Layer (dcm-application)**
   - [x] **Create Commands:** `ApproveVmRequestCommand(tenantId, requestId, adminId, version)` and `RejectVmRequestCommand(tenantId, requestId, adminId, reason, version)`.
   - [x] **Define Error Types:** Create `ApproveVmRequestError` and `RejectVmRequestError` sealed classes following `CancelVmRequestError` pattern (NotFound, Forbidden, InvalidState, ConcurrencyConflict, PersistenceFailure).
   - [x] **Implement Handlers:** `ApproveVmRequestHandler` and `RejectVmRequestHandler` following `CancelVmRequestHandler` pattern:
@@ -75,13 +75,13 @@ so that I can process requests efficiently.
     - ConcurrencyConflict when version mismatch
     - Timeline event created on success
 
-- [x] **API Layer (dvmm-api)**
+- [x] **API Layer (dcm-api)**
   - [x] **Add Endpoints:** `POST /api/admin/requests/{id}/approve` and `POST /api/admin/requests/{id}/reject` in `AdminRequestController`.
   - [x] **DTOs:** Create request body classes with validation (see DTO Structure below).
   - [x] **Error Handling:** Map handler errors to HTTP responses (see Controller Error Mapping below).
   - [x] **Security:** Endpoints already in admin controller with `@PreAuthorize("hasRole('ADMIN')")`.
 
-- [x] **Frontend (dvmm-web)**
+- [x] **Frontend (dcm-web)**
   - [x] **API Client:** Add `approveRequest(id, version)` and `rejectRequest(id, version, reason)` to `api/admin.ts`.
   - [x] **Enable Buttons:** Remove `disabled` state and tooltip from Approve/Reject buttons (currently showing "Available in Story 2.11").
   - [x] **UI Components:** Update `AdminRequestDetail.tsx`:
@@ -281,17 +281,17 @@ timelineUpdater.addTimelineEvent(
 
 ### Project Structure Notes
 
-- **Domain:** `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/`
-- **Domain Events:** `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/`
-- **Application:** `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/`
-- **API:** `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/`
-- **Frontend Pages:** `dvmm/dvmm-web/src/pages/admin/`
-- **Frontend Components:** `dvmm/dvmm-web/src/components/admin/`
-- **Frontend Hooks:** `dvmm/dvmm-web/src/hooks/`
-- **Frontend API:** `dvmm/dvmm-web/src/api/`
-- **Backend Tests:** `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/`
-- **Domain Tests:** `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/`
-- **Application Tests:** `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/`
+- **Domain:** `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/`
+- **Domain Events:** `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/`
+- **Application:** `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/`
+- **API:** `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/`
+- **Frontend Pages:** `dcm/dcm-web/src/pages/admin/`
+- **Frontend Components:** `dcm/dcm-web/src/components/admin/`
+- **Frontend Hooks:** `dcm/dcm-web/src/hooks/`
+- **Frontend API:** `dcm/dcm-web/src/api/`
+- **Backend Tests:** `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/admin/`
+- **Domain Tests:** `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/`
+- **Application Tests:** `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/`
 
 ### References
 
@@ -309,13 +309,13 @@ timelineUpdater.addTimelineEvent(
 - `docs/sprint-artifacts/2-8-request-status-timeline.md` (timeline projection)
 
 **Pattern References (Implementation):**
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt`
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestCancelled.kt` (event structure)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CancelVmRequestHandler.kt` (handler pattern)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CancelVmRequestCommand.kt` (command pattern)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt`
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestCancelled.kt` (event structure)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CancelVmRequestHandler.kt` (handler pattern)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CancelVmRequestCommand.kt` (command pattern)
 
 **Pattern References (Tests):**
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/CancelVmRequestHandlerTest.kt` (handler test pattern)
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/CancelVmRequestHandlerTest.kt` (handler test pattern)
 
 ### Agent Model Used
 
@@ -331,38 +331,38 @@ Gemini 2.0 Flash
 ### File List
 
 **Domain (modify existing + new events):**
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt` (update - add approve/reject methods + handleEvent branches)
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestApproved.kt` (new)
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestRejected.kt` (new)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt` (update - add approve/reject methods + handleEvent branches)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestApproved.kt` (new)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestRejected.kt` (new)
 
 **Application (new commands + handlers):**
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/ApproveVmRequestCommand.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/ApproveVmRequestHandler.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/RejectVmRequestCommand.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/RejectVmRequestHandler.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/ApproveVmRequestCommand.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/ApproveVmRequestHandler.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/RejectVmRequestCommand.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/RejectVmRequestHandler.kt` (new)
 
 **Infrastructure (deserializer implementation):**
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmrequest/JacksonVmRequestEventDeserializer.kt` (update - add VmRequestApproved/Rejected cases)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmrequest/JacksonVmRequestEventDeserializer.kt` (update - add VmRequestApproved/Rejected cases)
 
 **API (modify existing controller + new DTOs):**
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/AdminRequestController.kt` (update - add approve/reject endpoints)
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/AdminRequestBodies.kt` (new - ApproveRequestBody, RejectRequestBody)
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/AdminRequestController.kt` (update - add approve/reject endpoints)
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/AdminRequestBodies.kt` (new - ApproveRequestBody, RejectRequestBody)
 
 **Frontend (actual paths - not features/):**
-- `dvmm/dvmm-web/src/pages/admin/RequestDetail.tsx` (update - enable buttons, add dialogs)
-- `dvmm/dvmm-web/src/api/admin.ts` (update - add approveRequest/rejectRequest functions)
-- `dvmm/dvmm-web/src/hooks/useApproveRequest.ts` (new)
-- `dvmm/dvmm-web/src/hooks/useRejectRequest.ts` (new)
-- `dvmm/dvmm-web/src/components/admin/ApproveConfirmDialog.tsx` (new)
-- `dvmm/dvmm-web/src/components/admin/RejectFormDialog.tsx` (new)
+- `dcm/dcm-web/src/pages/admin/RequestDetail.tsx` (update - enable buttons, add dialogs)
+- `dcm/dcm-web/src/api/admin.ts` (update - add approveRequest/rejectRequest functions)
+- `dcm/dcm-web/src/hooks/useApproveRequest.ts` (new)
+- `dcm/dcm-web/src/hooks/useRejectRequest.ts` (new)
+- `dcm/dcm-web/src/components/admin/ApproveConfirmDialog.tsx` (new)
+- `dcm/dcm-web/src/components/admin/RejectFormDialog.tsx` (new)
 
 **Tests (Backend):**
-- `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateApproveRejectTest.kt` (new)
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/ApproveVmRequestHandlerTest.kt` (new)
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/RejectVmRequestHandlerTest.kt` (new)
-- `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerIntegrationTest.kt` (update)
+- `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregateApproveRejectTest.kt` (new)
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/ApproveVmRequestHandlerTest.kt` (new)
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/RejectVmRequestHandlerTest.kt` (new)
+- `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/admin/AdminRequestControllerIntegrationTest.kt` (update)
 
 **Tests (Frontend):**
-- `dvmm/dvmm-web/src/pages/admin/RequestDetail.test.tsx` (update - approve/reject flow tests)
-- `dvmm/dvmm-web/src/api/admin.test.ts` (update - approve/reject API function tests)
-- `dvmm/dvmm-web/e2e/admin-request-detail.spec.ts` (update - approve/reject E2E scenarios)
+- `dcm/dcm-web/src/pages/admin/RequestDetail.test.tsx` (update - approve/reject flow tests)
+- `dcm/dcm-web/src/api/admin.test.ts` (update - approve/reject API function tests)
+- `dcm/dcm-web/e2e/admin-request-detail.spec.ts` (update - approve/reject E2E scenarios)

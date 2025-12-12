@@ -25,7 +25,7 @@ Recommendation: Explicitly scope 3.3 to the "Orchestration/Saga" and basic `crea
 Pass Rate: FAIL
 
 [MARK] ✗ FAIL - Missing `VmAggregate` definition.
-Evidence: Architecture (ADR-001) and Schema show a `dvmm.vms` table and `VmAggregate`. Story 3.3 mentions `ProvisionVmCommand` and updating `VmRequest` status, but DOES NOT explicitly state if a `VmAggregate` should be created or if the `ProvisionVmCommand` is handled by the `VmAggregate`.
+Evidence: Architecture (ADR-001) and Schema show a `dcm.vms` table and `VmAggregate`. Story 3.3 mentions `ProvisionVmCommand` and updating `VmRequest` status, but DOES NOT explicitly state if a `VmAggregate` should be created or if the `ProvisionVmCommand` is handled by the `VmAggregate`.
 Impact: Developer might implement logic entirely within `VmRequestAggregate` or `Service`, bypassing the domain model for VMs.
 Recommendation: Explicitly require creation of `VmAggregate` (e.g., `VmAggregate.create(command)`) handling the `ProvisionVmCommand`.
 
@@ -43,8 +43,8 @@ Pass Rate: PARTIAL
 
 [MARK] ⚠ PARTIAL - Integration Test Location.
 Evidence: "Write integration tests... using VCSIM".
-Impact: `dvmm-application` cannot depend on `dvmm-infrastructure` (where `VcsimAdapter` lives). Tests involving `VcsimAdapter` MUST live in `dvmm-app` (the entry point) or `dvmm-infrastructure` (testing the adapter).
-Recommendation: Explicitly state that full-flow integration tests (Listener -> Command -> Adapter) must reside in `dvmm-app` module to satisfy dependency rules.
+Impact: `dcm-application` cannot depend on `dcm-infrastructure` (where `VcsimAdapter` lives). Tests involving `VcsimAdapter` MUST live in `dcm-app` (the entry point) or `dcm-infrastructure` (testing the adapter).
+Recommendation: Explicitly state that full-flow integration tests (Listener -> Command -> Adapter) must reside in `dcm-app` module to satisfy dependency rules.
 
 ### 5. LLM Optimization
 Pass Rate: PASS
@@ -53,12 +53,12 @@ Pass Rate: PASS
 
 ## Failed Items
 - **Missing `VmAggregate` Definition:** The story fails to define the lifecycle of the `VmAggregate`. It focuses on `VmRequest`.
-- **Integration Test Module Boundary:** Implicit assumption that `dvmm-application` tests can use `VcsimAdapter` directly (violation of Hexagonal dependency rule).
+- **Integration Test Module Boundary:** Implicit assumption that `dcm-application` tests can use `VcsimAdapter` directly (violation of Hexagonal dependency rule).
 
 ## Partial Items
 - **Scope overlap with 3.4:** "Initiate" vs "Execute".
 
 ## Recommendations
 1.  **Must Fix:** Add requirement to implement/use `VmAggregate` for the provisioning lifecycle. The `ProvisionVmCommand` should likely target the creation of this aggregate.
-2.  **Must Fix:** Clarify that Integration Tests using `VcsimAdapter` must be located in `dvmm-app` module due to dependency constraints.
+2.  **Must Fix:** Clarify that Integration Tests using `VcsimAdapter` must be located in `dcm-app` module due to dependency constraints.
 3.  **Should Improve:** Clarify strict scope: 3.3 connects the wires (Event -> Command -> Port Call), 3.4 handles the heavy lifting inside the Port (cloning, customization).

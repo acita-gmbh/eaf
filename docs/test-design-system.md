@@ -1,4 +1,4 @@
-# DVMM/EAF System-Level Test Design
+# DCM/EAF System-Level Test Design
 
 **Author:** Murat (Test Architect)
 **Date:** 2025-11-25
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document defines the **system-level testability strategy** for DVMM/EAF before implementation begins. It validates that the proposed architecture supports comprehensive testing across all quality dimensions (functional, security, performance, reliability, maintainability).
+This document defines the **system-level testability strategy** for DCM/EAF before implementation begins. It validates that the proposed architecture supports comprehensive testing across all quality dimensions (functional, security, performance, reliability, maintainability).
 
 **Key Findings:**
 - Architecture is **highly testable** due to CQRS/Event Sourcing, Hexagonal patterns, and Ports & Adapters
@@ -73,7 +73,7 @@ ASRs are requirements with **high architectural impact** that drive testing stra
 ### 2.1 ASR Utility Tree
 
 ```
-                        DVMM/EAF Quality
+                        DCM/EAF Quality
                               │
         ┌─────────────────────┼─────────────────────┐
         │                     │                     │
@@ -171,12 +171,12 @@ ASRs are requirements with **high architectural impact** that drive testing stra
 │                           ↑                                 │
 │                   Framework Tests                           │
 ├─────────────────────────────────────────────────────────────┤
-│                    DVMM (Product)                           │
+│                    DCM (Product)                           │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ dvmm-domain: Unit (aggregates, value objects)        │  │
-│  │ dvmm-application: Unit + Integration (use cases)     │  │
-│  │ dvmm-infrastructure: Integration (VMware, Keycloak)  │  │
-│  │ dvmm-presentation: E2E (user journeys)               │  │
+│  │ dcm-domain: Unit (aggregates, value objects)        │  │
+│  │ dcm-application: Unit + Integration (use cases)     │  │
+│  │ dcm-infrastructure: Integration (VMware, Keycloak)  │  │
+│  │ dcm-presentation: E2E (user journeys)               │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                           ↓                                 │
 │                    Product Tests                            │
@@ -639,7 +639,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: dvmm_test
+      POSTGRES_DB: dcm_test
     volumes:
       - ./init-rls.sql:/docker-entrypoint-initdb.d/init.sql
 
@@ -782,10 +782,10 @@ test:
 | `EAF-UNIT-CQRS-001` | eaf-cqrs-core unit test #1 |
 | `EAF-INT-TENANT-003` | eaf-tenant integration test #3 |
 | `EAF-ARCH-LAYER-001` | Architecture layer boundary test |
-| `DVMM-UNIT-VM-002` | DVMM VM domain unit test #2 |
-| `DVMM-E2E-JOURNEY-001` | VM request user journey E2E |
-| `DVMM-PERF-LOAD-001` | k6 load test for API |
-| `DVMM-SEC-RLS-001` | RLS security test |
+| `DCM-UNIT-VM-002` | DCM VM domain unit test #2 |
+| `DCM-E2E-JOURNEY-001` | VM request user journey E2E |
+| `DCM-PERF-LOAD-001` | k6 load test for API |
+| `DCM-SEC-RLS-001` | RLS security test |
 
 ---
 
@@ -809,8 +809,8 @@ test:
 | TC-001 | Coroutine context propagation | 6 | EAF Team | Test rule + context verification | Open |
 | TC-002 | RLS test isolation | 6 | EAF Team | RLS-aware test DB config | Open |
 | TC-003 | Event store growth | 4 | EAF Team | Per-test isolation extension | Open |
-| TC-004 | jOOQ projection sync | 4 | DVMM Team | Rebuild verification tests | Open |
-| TC-005 | FK constraint test sync | 4 | DVMM Team | Parent record helpers + CASCADE cleanup | Mitigated |
+| TC-004 | jOOQ projection sync | 4 | DCM Team | Rebuild verification tests | Open |
+| TC-005 | FK constraint test sync | 4 | DCM Team | Parent record helpers + CASCADE cleanup | Mitigated |
 
 ---
 
@@ -823,4 +823,4 @@ test:
 
 ---
 
-*This document establishes the testing foundation for DVMM/EAF. Implementation-phase epic-level test designs will build upon these system-level decisions.*
+*This document establishes the testing foundation for DCM/EAF. Implementation-phase epic-level test designs will build upon these system-level decisions.*

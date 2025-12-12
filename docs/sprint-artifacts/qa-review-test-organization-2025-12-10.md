@@ -14,17 +14,17 @@ Overall test infrastructure is **well-organized and mature**. Two issues identif
 
 ### ✅ VsphereClientIntegrationTest Package Location (FIXED)
 
-**Problem:** Test was in non-standard package `integration.vmware` instead of `de.acci.dvmm.infrastructure.vmware`
+**Problem:** Test was in non-standard package `integration.vmware` instead of `de.acci.dcm.infrastructure.vmware`
 
 **Fix Applied:** Moved file to correct location:
-- From: `dvmm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
-- To: `dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClientIntegrationTest.kt`
+- From: `dcm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt`
+- To: `dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClientIntegrationTest.kt`
 
 ## Outstanding Issues
 
 ### 🔴 Critical: E2E Tests Almost Entirely Skipped
 
-**Location:** `dvmm/dvmm-web/e2e/*.spec.ts`
+**Location:** `dcm/dcm-web/e2e/*.spec.ts`
 
 **Scope:** 56 test cases across 5 spec files are marked `test.skip`:
 
@@ -72,7 +72,7 @@ These 5-6 tests DO run and provide basic coverage for auth redirect behavior.
 Developers can run authenticated tests locally:
 ```bash
 # 1. Start backend
-./gradlew :dvmm:dvmm-app:bootRun
+./gradlew :dcm:dcm-app:bootRun
 
 # 2. Create auth sessions
 npm run test:e2e -- --project=setup
@@ -118,8 +118,8 @@ npm run test:e2e -- --project=chromium-user
 | Class | Location | Reason |
 |-------|----------|--------|
 
-| `VmProvisioningProgressProjectionRepositoryAdapter` | `dvmm-infrastructure/projection/` | Database interaction |
-| `TimelineEventProjectionUpdaterAdapter` | `dvmm-infrastructure/projection/` | Write-side projection logic |
+| `VmProvisioningProgressProjectionRepositoryAdapter` | `dcm-infrastructure/projection/` | Database interaction |
+| `TimelineEventProjectionUpdaterAdapter` | `dcm-infrastructure/projection/` | Write-side projection logic |
 
 ### ✅ Frontend Test Location Inconsistency (FIXED)
 

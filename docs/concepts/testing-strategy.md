@@ -2,7 +2,7 @@
 
 **Our safety net: How we ensure quality, stability, and speed.**
 
-In DVMM, testing isn't an afterthought—it's the foundation. We follow a "Tests First" philosophy, meaning we often write the test that fails before we write the code that passes. We prioritize integration tests because they give us the highest confidence that the system actually works.
+In DCM, testing isn't an afterthought—it's the foundation. We follow a "Tests First" philosophy, meaning we often write the test that fails before we write the code that passes. We prioritize integration tests because they give us the highest confidence that the system actually works.
 
 ---
 
@@ -100,6 +100,6 @@ await().atMost(5, SECONDS).untilAsserted {
 ## Running Tests
 
 *   **Run All:** `./gradlew test`
-*   **Run Specific:** `./gradlew :dvmm:dvmm-domain:test`
+*   **Run Specific:** `./gradlew :dcm:dcm-domain:test`
 *   **Check Coverage:** `./gradlew koverVerify`
 *   **Mutation Test:** `./gradlew pitest`

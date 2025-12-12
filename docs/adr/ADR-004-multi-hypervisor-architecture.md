@@ -2,7 +2,7 @@
 
 **Status:** Accepted (Design Only)
 **Date:** 2025-12-09
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Wall-E, John (PM)
 **Related:** [Research Document](../research/multi-hypervisor-support.md), [Epic 6](../epics.md#epic-6-multi-hypervisor-support-post-mvp)
 
@@ -19,11 +19,11 @@ See `docs/research/multi-hypervisor-support.md` for comprehensive market and tec
 
 ### Current State
 
-DVMM MVP uses VMware vSphere as the sole hypervisor, with the `HypervisorPort` interface (formerly `VspherePort`) abstracting hypervisor operations. The interface currently uses VMware-specific types (`VcenterConnectionParams`, `VsphereError`) which will be generalized in Epic 6.
+DCM MVP uses VMware vSphere as the sole hypervisor, with the `HypervisorPort` interface (formerly `VspherePort`) abstracting hypervisor operations. The interface currently uses VMware-specific types (`VcenterConnectionParams`, `VsphereError`) which will be generalized in Epic 6.
 
 ## Decision
 
-DVMM will support multiple hypervisors through a **port/adapter abstraction layer**, implemented **post-MVP**.
+DCM will support multiple hypervisors through a **port/adapter abstraction layer**, implemented **post-MVP**.
 
 **MVP:** VMware vSphere only (current implementation via `HypervisorPort` with VMware-specific types)
 **Post-MVP:** Extensible `HypervisorPort` interface with generic types supporting Proxmox VE, Hyper-V, PowerVM
@@ -33,7 +33,7 @@ DVMM will support multiple hypervisors through a **port/adapter abstraction laye
 ### Interface Abstraction (Post-MVP Target)
 
 ```kotlin
-// dvmm-application/src/main/kotlin/.../hypervisor/HypervisorPort.kt
+// dcm-application/src/main/kotlin/.../hypervisor/HypervisorPort.kt
 public interface HypervisorPort {
     suspend fun testConnection(config: HypervisorConfig, credentials: Credentials): Result<ConnectionInfo, ConnectionError>
     suspend fun listResources(): Result<HypervisorResources, HypervisorError>
@@ -48,7 +48,7 @@ public interface HypervisorPort {
 ### Adapter Implementations
 
 ```
-dvmm-infrastructure/
+dcm-infrastructure/
 └── hypervisor/
     ├── vsphere/
     │   └── VsphereAdapter.kt      # MVP (existing VcenterAdapter)
@@ -157,4 +157,4 @@ The following VMware-specific types will be generalized in Epic 6:
 - Research Document: `docs/research/multi-hypervisor-support.md`
 - Epic 6: Multi-Hypervisor Support (Post-MVP) in `docs/epics.md`
 - FR-HYPERVISOR-001 through FR-HYPERVISOR-005 in `docs/prd.md`
-- `HypervisorPort` interface: `dvmm-application/.../vmware/HypervisorPort.kt`
+- `HypervisorPort` interface: `dcm-application/.../vmware/HypervisorPort.kt`

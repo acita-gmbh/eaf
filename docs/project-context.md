@@ -1,6 +1,6 @@
 # Project Context for AI Agents
 
-_Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvious details that agents might miss._
+_Critical rules and patterns for implementing code in EAF/DCM. Focus on unobvious details that agents might miss._
 
 ---
 
@@ -16,7 +16,7 @@ _Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvio
 | jOOQ | 3.20 | Testcontainers + Flyway code generation |
 | JUnit | 6 | With MockK + Testcontainers |
 
-### Frontend (dvmm-web)
+### Frontend (dcm-web)
 
 | Technology | Version | Notes |
 |------------|---------|-------|
@@ -33,15 +33,15 @@ _Critical rules and patterns for implementing code in EAF/DVMM. Focus on unobvio
 
 **These are CI-blocking - violations prevent merge:**
 
-- `eaf/*` modules MUST NOT import from `de.acci.dvmm.*`
-- `dvmm-domain` MUST NOT import from `org.springframework.*`
+- `eaf/*` modules MUST NOT import from `de.acci.dcm.*`
+- `dcm-domain` MUST NOT import from `org.springframework.*`
 - All modules use **Explicit API mode** - public members require explicit visibility
 
 **Module Boundaries:**
 ```
 eaf-core → eaf-eventsourcing → eaf-tenant → eaf-auth → eaf-testing
                     ↓
-dvmm-domain → dvmm-application → dvmm-api → dvmm-infrastructure → dvmm-app
+dcm-domain → dcm-application → dcm-api → dcm-infrastructure → dcm-app
 ```
 
 ---
@@ -176,7 +176,7 @@ val expectedVersion = currentEvents.size.toLong()
 ```
 
 **New Domain Event Checklist:**
-- Create event class in `dvmm-domain/.../events/`
+- Create event class in `dcm-domain/.../events/`
 - Add case to `resolveEventClass()` in corresponding `*EventDeserializer`
 - Add deserialization test in `*EventDeserializerTest`
 - If aggregate handles event, add `apply()` method and test
@@ -284,24 +284,24 @@ The project uses **Docker Compose** for local development and E2E testing. Infra
 docker/
 ├── eaf/                    # EAF infrastructure (reusable by future products)
 │   └── docker-compose.yml  # PostgreSQL 16 + Keycloak 24.0.1
-└── dvmm/                   # DVMM product services
+└── dcm/                   # DCM product services
     ├── docker-compose.yml  # Includes EAF, adds backend + frontend
     └── Dockerfile.backend  # Runtime-only (expects pre-built JAR)
 ```
 
 **Quick Start:**
 ```bash
-./gradlew :dvmm:dvmm-app:bootJar -x test           # 1. Build backend JAR
-docker compose -f docker/dvmm/docker-compose.yml up -d  # 2. Start all services
-cd dvmm/dvmm-web && npm run test:e2e              # 3. Run E2E tests
-docker compose -f docker/dvmm/docker-compose.yml down -v  # 4. Cleanup
+./gradlew :dcm:dcm-app:bootJar -x test           # 1. Build backend JAR
+docker compose -f docker/dcm/docker-compose.yml up -d  # 2. Start all services
+cd dcm/dcm-web && npm run test:e2e              # 3. Run E2E tests
+docker compose -f docker/dcm/docker-compose.yml down -v  # 4. Cleanup
 ```
 
 **Development Mode (backend on host):**
 ```bash
-docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
-./gradlew :dvmm:dvmm-app:bootRun   # Backend with debugger
-cd dvmm/dvmm-web && npm run dev    # Frontend with hot-reload
+docker compose -f docker/dcm/docker-compose.yml up postgres keycloak -d
+./gradlew :dcm:dcm-app:bootRun   # Backend with debugger
+cd dcm/dcm-web && npm run dev    # Frontend with hot-reload
 ```
 
 **Service Ports:** PostgreSQL 5432, Keycloak 8180, Backend 8080, Frontend 5173
@@ -316,7 +316,7 @@ cd dvmm/dvmm-web && npm run dev    # Frontend with hot-reload
 
 **Migration locations:**
 - EAF framework: `eaf/eaf-eventsourcing/src/main/resources/db/migration/`
-- DVMM product: `dvmm/dvmm-infrastructure/src/main/resources/db/migration/`
+- DCM product: `dcm/dcm-infrastructure/src/main/resources/db/migration/`
 
 **PostgreSQL-native types work directly:**
 ```sql
@@ -330,7 +330,7 @@ CREATE TABLE "DOMAIN_EVENTS" (
 
 **After schema changes (automatic on build):**
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:compileKotlin
+./gradlew :dcm:dcm-infrastructure:compileKotlin
 ```
 
 **PostgreSQL Types in Generated Code:**
@@ -442,7 +442,7 @@ vspherePort.testConnection(params = params, password = resolvedPassword)
 ```
 <type>: <description>
 
-[DVMM-123] feat: Implement VM request validation
+[DCM-123] feat: Implement VM request validation
 ```
 
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`

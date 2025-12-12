@@ -8,7 +8,7 @@
 docker/
 ├── eaf/                    # EAF infrastructure (PostgreSQL 16 + Keycloak 24.0.1)
 │   └── docker-compose.yml
-└── dvmm/                   # DVMM services (includes EAF, adds backend + frontend)
+└── dcm/                   # DCM services (includes EAF, adds backend + frontend)
     ├── docker-compose.yml
     └── Dockerfile.backend
 ```
@@ -17,29 +17,29 @@ docker/
 
 ```bash
 # 1. Build backend JAR
-./gradlew :dvmm:dvmm-app:bootJar -x test
+./gradlew :dcm:dcm-app:bootJar -x test
 
 # 2. Start everything
-docker compose -f docker/dvmm/docker-compose.yml up -d
+docker compose -f docker/dcm/docker-compose.yml up -d
 
 # 3. Run E2E tests
-cd dvmm/dvmm-web && npm run test:e2e
+cd dcm/dcm-web && npm run test:e2e
 
 # 4. Stop
-docker compose -f docker/dvmm/docker-compose.yml down -v
+docker compose -f docker/dcm/docker-compose.yml down -v
 ```
 
 ## Development Mode (Backend on Host)
 
 ```bash
 # Start only infrastructure
-docker compose -f docker/dvmm/docker-compose.yml up postgres keycloak -d
+docker compose -f docker/dcm/docker-compose.yml up postgres keycloak -d
 
 # Run backend with debugger
-./gradlew :dvmm:dvmm-app:bootRun
+./gradlew :dcm:dcm-app:bootRun
 
 # Run frontend
-cd dvmm/dvmm-web && npm run dev
+cd dcm/dcm-web && npm run dev
 ```
 
 ## Service Ports
@@ -62,14 +62,14 @@ jOOQ generates type-safe Kotlin via **Testcontainers + Flyway** (real PostgreSQL
 ### Regenerate
 
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:generateJooqWithTestcontainers
+./gradlew :dcm:dcm-infrastructure:generateJooqWithTestcontainers
 # Or just build - happens automatically:
-./gradlew :dvmm:dvmm-infrastructure:compileKotlin
+./gradlew :dcm:dcm-infrastructure:compileKotlin
 ```
 
 ### Adding New Tables
 
-1. Add migration to `eaf/eaf-eventsourcing/.../db/migration/` or `dvmm/dvmm-infrastructure/.../db/migration/`
+1. Add migration to `eaf/eaf-eventsourcing/.../db/migration/` or `dcm/dcm-infrastructure/.../db/migration/`
 2. Use quoted uppercase identifiers: `CREATE TABLE "DOMAIN_EVENTS"`
 3. Include RLS policies with **both `USING` AND `WITH CHECK`**:
 

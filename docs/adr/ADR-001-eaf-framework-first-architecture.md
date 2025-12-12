@@ -2,14 +2,14 @@
 
 **Status:** Accepted
 **Date:** 2025-11-24
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Winston (Architect), Amelia (Dev), Murat (TEA), John (PM), Bob (SM), Sally (UX)
 
 ---
 
 ## Context
 
-DVMM is not just a product—it's the pilot project for EAF (Enterprise Application Framework). The framework must emerge from DVMM but remain completely independent of it, enabling future products to use EAF without any DVMM dependencies.
+DCM is not just a product—it's the pilot project for EAF (Enterprise Application Framework). The framework must emerge from DCM but remain completely independent of it, enabling future products to use EAF without any DCM dependencies.
 
 ## Decision
 
@@ -17,11 +17,11 @@ We adopt a **Framework-First Architecture** using Hexagonal Architecture princip
 
 ## Architectural Principles
 
-1. **Strict Dependency Direction:** EAF ← DVMM (never the reverse)
+1. **Strict Dependency Direction:** EAF ← DCM (never the reverse)
 2. **Domain Independence:** Framework core has zero external dependencies
 3. **Hexagonal Boundaries:** Ports & Adapters pattern for all integrations
 4. **Module Isolation:** Kotlin `internal` modifier + Konsist enforcement
-5. **First Consumer Pattern:** DVMM validates EAF, but doesn't define it
+5. **First Consumer Pattern:** DCM validates EAF, but doesn't define it
 
 ## Monorepo Structure
 
@@ -59,19 +59,19 @@ eaf-monorepo/
 │   ├── eaf-starters/                # Modular Auto-Configuration
 │   └── eaf-auth-providers/          # IdP Implementations
 │
-├── dvmm/                            # PRODUCT (First Consumer)
-│   ├── dvmm-domain/                 # DVMM Business Logic
-│   ├── dvmm-application/            # Use Cases / Application Services
-│   ├── dvmm-api/                    # REST API (Input Adapters)
-│   ├── dvmm-infrastructure/         # Output Adapters
-│   └── dvmm-app/                    # Spring Boot Application
+├── dcm/                            # PRODUCT (First Consumer)
+│   ├── dcm-domain/                 # DCM Business Logic
+│   ├── dcm-application/            # Use Cases / Application Services
+│   ├── dcm-api/                    # REST API (Input Adapters)
+│   ├── dcm-infrastructure/         # Output Adapters
+│   └── dcm-app/                    # Spring Boot Application
 │
 ├── frontend/                        # UI Components
 │   ├── packages/
 │   │   ├── eaf-ui/                  # Framework UI Kit
-│   │   └── dvmm-ui/                 # Product-specific UI
+│   │   └── dcm-ui/                 # Product-specific UI
 │   └── apps/
-│       └── dvmm-web/                # DVMM Web Application
+│       └── dcm-web/                # DCM Web Application
 │
 └── docs/                            # Documentation
 ```
@@ -102,10 +102,10 @@ eaf-monorepo/
 | `eaf-starter-auth` | + eaf-auth | Auth without specific IdP |
 | `eaf-starter-notifications` | + eaf-notifications | Email/Push/SMS notifications |
 
-**Example Usage (DVMM):**
+**Example Usage (DCM):**
 
 ```kotlin
-// dvmm-app/build.gradle.kts
+// dcm-app/build.gradle.kts
 dependencies {
     implementation("com.eaf:eaf-starter-core")
     implementation("com.eaf:eaf-starter-cqrs")
@@ -119,7 +119,7 @@ dependencies {
 
 ## Critical Rule: Aggregates ALWAYS in Product Domain
 
-Concrete aggregates (e.g., `VmRequestAggregate`, `ProjectAggregate`) MUST reside in `dvmm-domain`, never in `eaf-eventsourcing`. The EAF module provides only:
+Concrete aggregates (e.g., `VmRequestAggregate`, `ProjectAggregate`) MUST reside in `dcm-domain`, never in `eaf-eventsourcing`. The EAF module provides only:
 - `AggregateRoot<ID>` base class
 - `DomainEvent` interface
 - `EventStore` interface
@@ -134,24 +134,24 @@ Architecture rules are enforced using [Konsist](https://docs.konsist.lemonappdev
 class ArchitectureRulesTest {
 
     @Test
-    fun `EAF modules must not depend on DVMM`() {
+    fun `EAF modules must not depend on DCM`() {
         Konsist
             .scopeFromPackage("com.eaf..")
             .files
             .assertFalse {
-                it.hasImport { import -> import.name.startsWith("com.dvmm") }
+                it.hasImport { import -> import.name.startsWith("com.dcm") }
             }
     }
 
     @Test
-    fun `DVMM domain must not depend on infrastructure or Spring`() {
+    fun `DCM domain must not depend on infrastructure or Spring`() {
         Konsist
-            .scopeFromModule("dvmm-domain")
+            .scopeFromModule("dcm-domain")
             .classes()
             .assertFalse {
                 it.hasImport { import ->
-                    import.name.startsWith("com.dvmm.infrastructure") ||
-                    import.name.startsWith("com.dvmm.api") ||
+                    import.name.startsWith("com.dcm.infrastructure") ||
+                    import.name.startsWith("com.dcm.api") ||
                     import.name.startsWith("org.springframework")
                 }
             }
@@ -182,10 +182,10 @@ class ArchitectureRulesTest {
 | `eaf-eventsourcing` | Unit + Integration | Testcontainers (PostgreSQL) | ≥70% coverage |
 | `eaf-tenant` | Integration | Testcontainers (PostgreSQL) | RLS tests pass |
 | `eaf-auth` | Unit + Contract | WireMock (Keycloak) | Contract tests pass |
-| `dvmm-domain` | Unit only | eaf-testing | ≥85% coverage |
-| `dvmm-application` | Unit + Contract | Mocks for ports | ≥70% coverage |
-| `dvmm-infrastructure` | Integration + Contract | Pact, Testcontainers | Contract tests pass |
-| `dvmm-app` | E2E | Full stack | All scenarios pass |
+| `dcm-domain` | Unit only | eaf-testing | ≥85% coverage |
+| `dcm-application` | Unit + Contract | Mocks for ports | ≥70% coverage |
+| `dcm-infrastructure` | Integration + Contract | Pact, Testcontainers | Contract tests pass |
+| `dcm-app` | E2E | Full stack | All scenarios pass |
 
 ## Story Categorization
 
@@ -195,13 +195,13 @@ class ArchitectureRulesTest {
 | `EAF-CQRS-xxx` | CQRS Feature | eaf-cqrs | "Implement snapshot after N events" |
 | `EAF-TENANT-xxx` | Multi-Tenancy | eaf-tenant | "Add RLS policy generator" |
 | `EAF-AUTH-xxx` | Auth Feature | eaf-auth | "Configurable JWT claim mapping" |
-| `DVMM-xxx` | Product Feature | dvmm-* | "VM Request Form with size selection" |
-| `INT-xxx` | Integration | Cross-module | "DVMM uses EAF-CQRS for Request Aggregate" |
+| `DCM-xxx` | Product Feature | dcm-* | "VM Request Form with size selection" |
+| `INT-xxx` | Integration | Cross-module | "DCM uses EAF-CQRS for Request Aggregate" |
 
 **Acceptance Criteria for EAF Stories:**
 
 ```gherkin
-Given a new product "TestProduct" without DVMM dependency
+Given a new product "TestProduct" without DCM dependency
 When TestProduct includes EAF module {module}
 Then TestProduct compiles without errors
 And all EAF tests for {module} pass
@@ -212,7 +212,7 @@ And Konsist architecture rules pass
 
 ### Positive
 
-- Future products can use EAF without DVMM code
+- Future products can use EAF without DCM code
 - Clear boundaries enable parallel team development
 - Framework quality is independently testable
 - Consistent patterns across all EAF-based products
@@ -221,7 +221,7 @@ And Konsist architecture rules pass
 
 - More initial setup complexity
 - Need discipline to maintain boundaries
-- Some code duplication between EAF and DVMM initially
+- Some code duplication between EAF and DCM initially
 
 ### Mitigation
 

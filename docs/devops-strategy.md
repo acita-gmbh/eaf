@@ -1,4 +1,4 @@
-# DVMM DevOps Strategy
+# DCM DevOps Strategy
 
 **Author:** Wall-E
 **Date:** 2025-11-25
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document defines the DevOps strategy for DVMM, covering CI/CD pipeline design, infrastructure architecture, monitoring, and disaster recovery. The strategy aligns with Enterprise Method requirements and supports the quality-first development approach.
+This document defines the DevOps strategy for DCM, covering CI/CD pipeline design, infrastructure architecture, monitoring, and disaster recovery. The strategy aligns with Enterprise Method requirements and supports the quality-first development approach.
 
 **Key Decisions:**
 - **CI/CD:** GitHub Actions with quality gates (coverage, mutation testing, architecture tests)
@@ -89,7 +89,7 @@ quality_gates:
   architecture_tests:
     tool: konsist
     rules:
-      - "eaf modules have no dvmm dependencies"
+      - "eaf modules have no dcm dependencies"
       - "domain has no infrastructure dependencies"
       - "controllers only in api module"
 
@@ -109,10 +109,10 @@ quality_gates:
 ```
 main (protected)
   │
-  ├── feature/DVMM-123-feature-name
+  ├── feature/DCM-123-feature-name
   │     └── PR → main (requires: CI pass, 1 approval)
   │
-  ├── hotfix/DVMM-456-critical-fix
+  ├── hotfix/DCM-456-critical-fix
   │     └── PR → main (fast-track, post-deploy to prod)
   │
   └── release/v1.0.0
@@ -142,8 +142,8 @@ main (protected)
 ```yaml
 # docker-compose.yml (simplified)
 services:
-  dvmm-api:
-    image: dvmm/api:${VERSION}
+  dcm-api:
+    image: dcm/api:${VERSION}
     ports:
       - "8080:8080"
     environment:
@@ -154,8 +154,8 @@ services:
       - postgres
       - keycloak
 
-  dvmm-frontend:
-    image: dvmm/frontend:${VERSION}
+  dcm-frontend:
+    image: dcm/frontend:${VERSION}
     ports:
       - "3000:80"
 
@@ -164,8 +164,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=dvmm
-      - POSTGRES_USER=dvmm
+      - POSTGRES_DB=dcm
+      - POSTGRES_USER=dcm
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -180,24 +180,24 @@ services:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: dvmm-production
+  name: dcm-production
 
 ---
 # Deployment with health checks
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dvmm-api
+  name: dcm-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: dvmm-api
+      app: dcm-api
   template:
     spec:
       containers:
-      - name: dvmm-api
-        image: dvmm/api:${VERSION}
+      - name: dcm-api
+        image: dcm/api:${VERSION}
         ports:
         - containerPort: 8080
         livenessProbe:
@@ -256,7 +256,7 @@ spring:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │   Grafana   │◀───│ Prometheus  │◀───│  DVMM API   │        │
+│  │   Grafana   │◀───│ Prometheus  │◀───│  DCM API   │        │
 │  │ (Dashboard) │    │  (Metrics)  │    │ (/actuator) │        │
 │  └─────────────┘    └─────────────┘    └─────────────┘        │
 │         │                                      │               │
@@ -295,7 +295,7 @@ spring:
 {
   "timestamp": "2025-01-15T10:23:45.123Z",
   "level": "INFO",
-  "logger": "com.eaf.dvmm.api.VmRequestController",
+  "logger": "com.eaf.dcm.api.VmRequestController",
   "message": "VM request created",
   "correlationId": "abc-123-def",
   "tenantId": "tenant-uuid",
@@ -611,7 +611,7 @@ docker-compose up -d
 // Shared containers (singleton)
 object TestContainers {
     val postgres = PostgreSQLContainer("postgres:16")
-        .withDatabaseName("dvmm_test")
+        .withDatabaseName("dcm_test")
         .withUsername("test")
         .withPassword("test")
 
@@ -655,4 +655,4 @@ object TestContainers {
 
 ---
 
-*This DevOps Strategy document is part of the DVMM Enterprise Method documentation.*
+*This DevOps Strategy document is part of the DCM Enterprise Method documentation.*

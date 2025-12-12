@@ -29,7 +29,7 @@ We do not scan the database periodically (polling misses short-lived VMs). We us
 
 We use a dedicated **Billing Projection**.
 
-1.  **Stream Processor:** Listens to `dvmm.domain.vm.*` events.
+1.  **Stream Processor:** Listens to `dcm.domain.vm.*` events.
 2.  **Usage Log:** Appends a record to a `vm_usage_periods` table.
     ```sql
     INSERT INTO vm_usage_periods (vm_id, tenant_id, start_time, end_time, cpu, ram) ...

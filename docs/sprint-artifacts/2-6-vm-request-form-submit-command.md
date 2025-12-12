@@ -22,9 +22,9 @@ So that it enters the approval workflow.
 Before starting implementation, verify these are complete:
 
 - [x] **Story 2.5 completed:** VmRequestForm exists with all fields (vmName, projectId, size, justification)
-- [x] **dvmm-domain module exists:** Check `dvmm/dvmm-domain/build.gradle.kts`
-- [x] **dvmm-application module exists:** Check `dvmm/dvmm-application/build.gradle.kts`
-- [x] **dvmm-api module exists:** Check `dvmm/dvmm-api/build.gradle.kts`
+- [x] **dcm-domain module exists:** Check `dcm/dcm-domain/build.gradle.kts`
+- [x] **dcm-application module exists:** Check `dcm/dcm-application/build.gradle.kts`
+- [x] **dcm-api module exists:** Check `dcm/dcm-api/build.gradle.kts`
 - [x] **EAF eventsourcing available:** AggregateRoot, DomainEvent, EventMetadata in `eaf-eventsourcing`
 
 If any backend modules are missing, create them first following the build-logic conventions.
@@ -83,7 +83,7 @@ If any backend modules are missing, create them first following the build-logic 
 
 ### Backend Unit Tests
 
-**VmRequestAggregate (dvmm-domain):**
+**VmRequestAggregate (dcm-domain):**
 - Creates aggregate with valid input, emits VmRequestCreated event
 - Aggregate ID is a new UUID
 - Aggregate version starts at 0
@@ -91,13 +91,13 @@ If any backend modules are missing, create them first following the build-logic 
 - VmSize validation rejects invalid values
 - Justification minimum length enforced (10 chars)
 
-**CreateVmRequestHandler (dvmm-application):**
+**CreateVmRequestHandler (dcm-application):**
 - Creates aggregate and persists events to store
 - Returns created request ID
 - Propagates tenant context to aggregate
 - Fails with QuotaExceeded when quota check fails
 
-**VmRequestController (dvmm-api):**
+**VmRequestController (dcm-api):**
 - POST /api/requests returns 201 Created with Location header
 - Returns 400 Bad Request for invalid input
 - Returns 409 Conflict for quota exceeded
@@ -221,16 +221,16 @@ const handleSubmit = (data: VmRequestFormData) => {
 - [x] **Task 0.1: Update vm_requests_projection schema** (AC: 2)
   - [x] Create Flyway migration `V004__update_vm_requests_projection_for_submit.sql`
   - [x] Add columns: project_id (UUID NOT NULL), project_name (VARCHAR), size (VARCHAR), justification (TEXT), approved_by (UUID nullable), rejected_by (UUID nullable), requester_name (VARCHAR)
-  - [x] Update `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
-  - [x] Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+  - [x] Update `dcm/dcm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
+  - [x] Run `./gradlew :dcm:dcm-infrastructure:generateJooq`
   - [x] Verify generated code compiles
 
-### Phase 1: Backend Domain Layer (dvmm-domain)
+### Phase 1: Backend Domain Layer (dcm-domain)
 
-**WARNING: dvmm-domain MUST NOT import org.springframework.* (blocked by Konsist)**
+**WARNING: dcm-domain MUST NOT import org.springframework.* (blocked by Konsist)**
 
 - [x] **Task 1.1: Create value objects** (AC: 2, 3)
-  - [x] Create `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestId.kt`
+  - [x] Create `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestId.kt`
   - [x] Create `ProjectId.kt` (UUID value object for project reference)
   - [x] Create `VmName.kt` with regex validation `^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$`
   - [x] Create `VmSize.kt` enum (S, M, L, XL) with specs (cpu, memory, disk)
@@ -250,7 +250,7 @@ const handleSubmit = (data: VmRequestFormData) => {
   - [x] Inject Clock for timestamp (DO NOT use Clock.systemUTC() directly)
   - [x] Write unit tests for aggregate creation and event emission
 
-### Phase 2: Backend Application Layer (dvmm-application)
+### Phase 2: Backend Application Layer (dcm-application)
 
 - [x] **Task 2.1: Create command and handler** (AC: 2, 5)
   - [x] Create `CreateVmRequestCommand.kt`:
@@ -258,7 +258,7 @@ const handleSubmit = (data: VmRequestFormData) => {
     data class CreateVmRequestCommand(
         val tenantId: TenantId,      // From eaf-core
         val requesterId: UserId,      // From eaf-core
-        val projectId: ProjectId,     // From dvmm-domain
+        val projectId: ProjectId,     // From dcm-domain
         val vmName: VmName,
         val size: VmSize,
         val justification: String
@@ -268,7 +268,7 @@ const handleSubmit = (data: VmRequestFormData) => {
   - [x] Implement quota validation (stub for now, full implementation in Epic 4)
   - [x] Write unit tests with mocked EventStore
 
-### Phase 3: Backend API Layer (dvmm-api)
+### Phase 3: Backend API Layer (dcm-api)
 
 - [x] **Task 3.1: Create REST controller** (AC: 2, 3, 4, 5)
   - [x] Create `VmRequestController.kt` with POST /api/requests endpoint
@@ -287,7 +287,7 @@ const handleSubmit = (data: VmRequestFormData) => {
 ### Phase 4: Backend Projection Update
 
 - [x] **Task 4.1: Update VmRequestProjectionRepository** (AC: 2)
-  - [x] **MODIFY EXISTING** `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepository.kt`
+  - [x] **MODIFY EXISTING** `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepository.kt`
   - [x] Add insert/update methods for new fields (projectId, projectName, size, justification, etc.)
   - [x] Maintain RLS tenant isolation pattern (use TenantContextHolder)
   - [x] Update integration tests
@@ -357,20 +357,20 @@ const handleSubmit = (data: VmRequestFormData) => {
 
 | File | Changes Required |
 |------|------------------|
-| `dvmm-infrastructure/.../jooq-init.sql` | Add new columns to vm_requests_projection |
-| `dvmm-infrastructure/.../VmRequestProjectionRepository.kt` | Support new fields |
-| `dvmm-web/src/App.tsx` | Add QueryClientProvider, Toaster |
-| `dvmm-web/src/components/requests/VmRequestForm.tsx` | Replace placeholder with Button, add mutation |
-| `dvmm-web/src/components/requests/VmRequestForm.test.tsx` | Add submission tests |
-| `dvmm-web/package.json` | Add @tanstack/react-query dependency |
+| `dcm-infrastructure/.../jooq-init.sql` | Add new columns to vm_requests_projection |
+| `dcm-infrastructure/.../VmRequestProjectionRepository.kt` | Support new fields |
+| `dcm-web/src/App.tsx` | Add QueryClientProvider, Toaster |
+| `dcm-web/src/components/requests/VmRequestForm.tsx` | Replace placeholder with Button, add mutation |
+| `dcm-web/src/components/requests/VmRequestForm.test.tsx` | Add submission tests |
+| `dcm-web/package.json` | Add @tanstack/react-query dependency |
 
 ### New Files to Create (Backend)
 
 ```text
-dvmm/dvmm-infrastructure/src/main/resources/db/migration/
+dcm/dcm-infrastructure/src/main/resources/db/migration/
 └── V004__update_vm_requests_projection_for_submit.sql
 
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/
 ├── VmRequestId.kt
 ├── ProjectId.kt
 ├── VmName.kt
@@ -380,33 +380,33 @@ dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/
 └── events/
     └── VmRequestCreated.kt
 
-dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/
+dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/
 ├── VmNameTest.kt
 ├── VmSizeTest.kt
 ├── VmRequestAggregateTest.kt
 └── events/
     └── VmRequestCreatedTest.kt
 
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/
 ├── CreateVmRequestCommand.kt
 └── CreateVmRequestHandler.kt
 
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/
 └── CreateVmRequestHandlerTest.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/
 ├── VmRequestController.kt
 ├── CreateVmRequestRequest.kt
 └── VmRequestResponse.kt
 
-dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/
+dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/vmrequest/
 └── VmRequestControllerTest.kt
 ```
 
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── api/
 │   ├── api-client.ts           # Fetch wrapper with auth
 │   └── vm-requests.ts          # VM request API functions
@@ -581,69 +581,69 @@ data-testid="error-toast"               // Error notification
 
 ### File List
 
-#### Backend - Domain Layer (dvmm-domain)
+#### Backend - Domain Layer (dcm-domain)
 
 | File | Action |
 |------|--------|
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestId.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/ProjectId.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmName.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmSize.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestStatus.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt` | Created |
-| `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestCreated.kt` | Created |
-| `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmNameTest.kt` | Created |
-| `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmSizeTest.kt` | Created |
-| `dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregateTest.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestId.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/ProjectId.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmName.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmSize.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestStatus.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt` | Created |
+| `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestCreated.kt` | Created |
+| `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmNameTest.kt` | Created |
+| `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmSizeTest.kt` | Created |
+| `dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregateTest.kt` | Created |
 
-#### Backend - Application Layer (dvmm-application)
-
-| File | Action |
-|------|--------|
-| `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CreateVmRequestCommand.kt` | Created |
-| `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CreateVmRequestHandler.kt` | Created |
-| `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/CreateVmRequestHandlerTest.kt` | Created |
-
-#### Backend - API Layer (dvmm-api)
+#### Backend - Application Layer (dcm-application)
 
 | File | Action |
 |------|--------|
-| `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/VmRequestController.kt` | Created |
-| `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/CreateVmRequestRequest.kt` | Created |
-| `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/VmRequestResponse.kt` | Created |
-| `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/VmRequestControllerTest.kt` | Created |
+| `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CreateVmRequestCommand.kt` | Created |
+| `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CreateVmRequestHandler.kt` | Created |
+| `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/CreateVmRequestHandlerTest.kt` | Created |
 
-#### Backend - Infrastructure Layer (dvmm-infrastructure)
-
-| File | Action |
-|------|--------|
-| `dvmm/dvmm-infrastructure/src/main/resources/db/migration/V004__update_vm_requests_projection_for_submit.sql` | Created |
-| `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` | Modified |
-| `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepository.kt` | Modified |
-| `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt` | Created |
-
-#### Backend - App Layer (dvmm-app)
+#### Backend - API Layer (dcm-api)
 
 | File | Action |
 |------|--------|
-| `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt` | Modified |
-| `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmRequestIntegrationTest.kt` | Created |
-| `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/security/SecurityIntegrationTest.kt` | Modified |
+| `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/VmRequestController.kt` | Created |
+| `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/CreateVmRequestRequest.kt` | Created |
+| `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/VmRequestResponse.kt` | Created |
+| `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/vmrequest/VmRequestControllerTest.kt` | Created |
 
-#### Frontend (dvmm-web)
+#### Backend - Infrastructure Layer (dcm-infrastructure)
 
 | File | Action |
 |------|--------|
-| `dvmm/dvmm-web/src/api/api-client.ts` | Created |
-| `dvmm/dvmm-web/src/api/vm-requests.ts` | Created |
-| `dvmm/dvmm-web/src/api/vm-requests.test.ts` | Created |
-| `dvmm/dvmm-web/src/hooks/useCreateVmRequest.ts` | Created |
-| `dvmm/dvmm-web/src/hooks/useCreateVmRequest.test.ts` | Created |
-| `dvmm/dvmm-web/src/components/requests/VmRequestForm.tsx` | Modified |
-| `dvmm/dvmm-web/src/components/requests/VmRequestForm.test.tsx` | Modified |
-| `dvmm/dvmm-web/src/components/ui/sonner.tsx` | Created |
-| `dvmm/dvmm-web/src/App.tsx` | Modified |
-| `dvmm/dvmm-web/e2e/vm-request-form.spec.ts` | Created |
+| `dcm/dcm-infrastructure/src/main/resources/db/migration/V004__update_vm_requests_projection_for_submit.sql` | Created |
+| `dcm/dcm-infrastructure/src/main/resources/db/jooq-init.sql` | Modified |
+| `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepository.kt` | Modified |
+| `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt` | Created |
+
+#### Backend - App Layer (dcm-app)
+
+| File | Action |
+|------|--------|
+| `dcm/dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt` | Modified |
+| `dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmRequestIntegrationTest.kt` | Created |
+| `dcm/dcm-app/src/test/kotlin/de/acci/dcm/security/SecurityIntegrationTest.kt` | Modified |
+
+#### Frontend (dcm-web)
+
+| File | Action |
+|------|--------|
+| `dcm/dcm-web/src/api/api-client.ts` | Created |
+| `dcm/dcm-web/src/api/vm-requests.ts` | Created |
+| `dcm/dcm-web/src/api/vm-requests.test.ts` | Created |
+| `dcm/dcm-web/src/hooks/useCreateVmRequest.ts` | Created |
+| `dcm/dcm-web/src/hooks/useCreateVmRequest.test.ts` | Created |
+| `dcm/dcm-web/src/components/requests/VmRequestForm.tsx` | Modified |
+| `dcm/dcm-web/src/components/requests/VmRequestForm.test.tsx` | Modified |
+| `dcm/dcm-web/src/components/ui/sonner.tsx` | Created |
+| `dcm/dcm-web/src/App.tsx` | Modified |
+| `dcm/dcm-web/e2e/vm-request-form.spec.ts` | Created |
 
 ### Implementation Notes
 

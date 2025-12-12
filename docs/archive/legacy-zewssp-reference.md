@@ -1,6 +1,6 @@
 # ZEWSSP Legacy System Reference
 
-**Purpose:** Comprehensive documentation of the ZEWSSP legacy system and feature mapping to DVMM successor.
+**Purpose:** Comprehensive documentation of the ZEWSSP legacy system and feature mapping to DCM successor.
 
 **Author:** Winston (Architect)
 **Date:** 2025-11-28
@@ -13,11 +13,11 @@
 1. [Executive Summary](#1-executive-summary)
 2. [ZEWSSP Architecture](#2-zewssp-architecture)
 3. [Feature Inventory](#3-feature-inventory)
-4. [Feature Mapping: ZEWSSP → DVMM](#4-feature-mapping-zewssp--dvmm)
+4. [Feature Mapping: ZEWSSP → DCM](#4-feature-mapping-zewssp--dcm)
 5. [Ansible Playbook Reference](#5-ansible-playbook-reference)
 6. [POPS/DCA Collection Reference](#6-popsdca-collection-reference)
 7. [Docket System (Post-MVP)](#7-docket-system-post-mvp)
-8. [Architectural Improvements in DVMM](#8-architectural-improvements-in-dvmm)
+8. [Architectural Improvements in DCM](#8-architectural-improvements-in-dcm)
 9. [Migration Notes](#9-migration-notes)
 
 ---
@@ -37,11 +37,11 @@
 
 **Version:** 0.5.1 (Legacy/Pre-production)
 
-### 1.2 Why DVMM as Successor?
+### 1.2 Why DCM as Successor?
 
-DVMM (Dynamic Virtual Machine Manager) replaces ZEWSSP to address:
+DCM (Dynamic Virtual Machine Manager) replaces ZEWSSP to address:
 
-| Challenge in ZEWSSP | Solution in DVMM |
+| Challenge in ZEWSSP | Solution in DCM |
 |---------------------|------------------|
 | Single-tenant design | Multi-tenant with PostgreSQL RLS |
 | JSONB document store | Event Sourcing with audit trail |
@@ -53,7 +53,7 @@ DVMM (Dynamic Virtual Machine Manager) replaces ZEWSSP to address:
 ### 1.3 Key Differences at a Glance
 
 ```
-ZEWSSP                          DVMM
+ZEWSSP                          DCM
 ──────────────────────────────────────────────────────────
 Node.js/Fastify          →      Kotlin/Spring Boot 3.5
 React 18 + Redux         →      React + shadcn-ui
@@ -162,7 +162,7 @@ ansible_vaults (id, name, secret_data_json)
 audit_logs (id, action, entity_type, entity_id, user_id, timestamp, details_json)
 ```
 
-**Note:** The JSONB approach allows schema flexibility but makes querying and migrations harder. DVMM uses normalized tables with Event Sourcing instead.
+**Note:** The JSONB approach allows schema flexibility but makes querying and migrations harder. DCM uses normalized tables with Event Sourcing instead.
 
 ### 2.4 High-Level Architecture
 
@@ -250,7 +250,7 @@ ZEWSSP supports configurable approval chains:
 }
 ```
 
-**DVMM MVP Note:** Single-approval workflow only. Multi-step chains planned for Post-MVP.
+**DCM MVP Note:** Single-approval workflow only. Multi-step chains planned for Post-MVP.
 
 #### Email Notifications
 - On request submission (to approvers)
@@ -302,7 +302,7 @@ The Docket system enables complex automation workflows:
 - Progress tracking with event stream
 - Execution logs for audit
 
-**DVMM Note:** Docket system is planned for Post-MVP. See [Section 7](#7-docket-system-post-mvp).
+**DCM Note:** Docket system is planned for Post-MVP. See [Section 7](#7-docket-system-post-mvp).
 
 ### 3.4 Administration
 
@@ -340,11 +340,11 @@ The Docket system enables complex automation workflows:
 
 ---
 
-## 4. Feature Mapping: ZEWSSP → DVMM
+## 4. Feature Mapping: ZEWSSP → DCM
 
 ### 4.1 Complete Feature Mapping Table
 
-| ZEWSSP Feature | DVMM Epic | DVMM Story | Status | Notes |
+| ZEWSSP Feature | DCM Epic | DCM Story | Status | Notes |
 |----------------|-----------|------------|--------|-------|
 | **Authentication** |
 | JWT + LDAP login | Epic 2 | Story 2.1 | Mapped | Replaced by Keycloak OIDC |
@@ -719,16 +719,16 @@ Similar to POPS but with more detailed connection checking:
     api_query: "{ systemInfo { version } }"
 ```
 
-### 6.4 DVMM Relevance
+### 6.4 DCM Relevance
 
-| Component | DVMM Usage |
+| Component | DCM Usage |
 |-----------|------------|
 | api_connection_check | Not needed - direct vSphere API |
 | api_query | Not needed - no GraphQL |
 | maas.py inventory | Not needed - no MAAS integration |
 | GraphQL communication | Replaced by REST API |
 
-**Conclusion:** POPS/DCA collections are not required for DVMM MVP. The GraphQL-based communication pattern is replaced by direct vSphere API calls.
+**Conclusion:** POPS/DCA collections are not required for DCM MVP. The GraphQL-based communication pattern is replaced by direct vSphere API calls.
 
 ---
 
@@ -736,7 +736,7 @@ Similar to POPS but with more detailed connection checking:
 
 ### 7.1 Overview
 
-The Docket system provides automation workflow capabilities in ZEWSSP. This is **planned for Post-MVP** in DVMM.
+The Docket system provides automation workflow capabilities in ZEWSSP. This is **planned for Post-MVP** in DCM.
 
 ### 7.2 Architecture
 
@@ -823,9 +823,9 @@ The Docket system provides automation workflow capabilities in ZEWSSP. This is *
 }
 ```
 
-### 7.7 DVMM Implementation Recommendations
+### 7.7 DCM Implementation Recommendations
 
-When implementing Docket system in DVMM Post-MVP:
+When implementing Docket system in DCM Post-MVP:
 
 1. **Use Event Sourcing** for execution state
    - `DocketExecutionStarted`
@@ -848,11 +848,11 @@ When implementing Docket system in DVMM Post-MVP:
 
 ---
 
-## 8. Architectural Improvements in DVMM
+## 8. Architectural Improvements in DCM
 
 ### 8.1 Comparison Table
 
-| Aspect | ZEWSSP | DVMM | Improvement |
+| Aspect | ZEWSSP | DCM | Improvement |
 |--------|--------|------|-------------|
 | **Persistence** | JSONB Documents | Event Sourcing | Complete audit trail, temporal queries, replay capability |
 | **Multi-Tenancy** | Implicit (app-level) | PostgreSQL RLS | Database-level isolation, fail-closed security |
@@ -866,7 +866,7 @@ When implementing Docket system in DVMM Post-MVP:
 ### 8.2 Event Sourcing Benefits
 
 ```
-ZEWSSP (JSONB):                    DVMM (Event Sourcing):
+ZEWSSP (JSONB):                    DCM (Event Sourcing):
 ─────────────────────              ──────────────────────
 vm_requests:                       domain_events:
 ┌─────────────────────┐            ┌─────────────────────┐
@@ -884,7 +884,7 @@ No audit trail                     Immutable audit
 ### 8.3 Multi-Tenancy Security
 
 ```
-ZEWSSP:                            DVMM:
+ZEWSSP:                            DCM:
 ─────────                          ─────
 Application-level checks           Database-level RLS
 
@@ -907,7 +907,7 @@ function createVm(request) {
 ```
 
 ```kotlin
-// DVMM (Kotlin)
+// DCM (Kotlin)
 suspend fun createVm(command: CreateVmCommand): Result<VmId, ProvisioningError> {
     // Compile-time type checking
     // Explicit error handling
@@ -925,7 +925,7 @@ suspend fun createVm(command: CreateVmCommand): Result<VmId, ProvisioningError> 
 | Component | Reason |
 |-----------|--------|
 | JSONB data model | Incompatible with Event Sourcing |
-| GraphQL schema | REST API in DVMM |
+| GraphQL schema | REST API in DCM |
 | Ansible collection code | Python → not needed |
 | LDAP integration code | Replaced by Keycloak |
 | Redux state structure | Different frontend patterns |
@@ -945,7 +945,7 @@ suspend fun createVm(command: CreateVmCommand): Result<VmId, ProvisioningError> 
 
 Since ZEWSSP was single-tenant and uses JSONB:
 
-1. **No direct migration** - DVMM starts fresh
+1. **No direct migration** - DCM starts fresh
 2. **Historical reference** - Keep ZEWSSP read-only for history
 3. **Export reports** - Provide CSV exports for records
 4. **Parallel operation** - Run both during transition
@@ -983,7 +983,7 @@ Since ZEWSSP was single-tenant and uses JSONB:
 | Term | Definition |
 |------|------------|
 | **ZEWSSP** | ZEW Self Service Portal - Legacy system |
-| **DVMM** | Dynamic Virtual Machine Manager - Successor |
+| **DCM** | Dynamic Virtual Machine Manager - Successor |
 | **POPS** | Patch Operator - Ansible collection |
 | **DCA** | Data Center Automation - API collection |
 | **Docket** | Automation workflow definition |
@@ -993,4 +993,4 @@ Since ZEWSSP was single-tenant and uses JSONB:
 
 ---
 
-*Document generated by Winston (Architect) as part of DVMM project documentation.*
+*Document generated by Winston (Architect) as part of DCM project documentation.*

@@ -85,7 +85,7 @@ TUI-specific IDs use `TUI-` prefix to distinguish from main PRD requirements.
 |-------|--------------|--------|
 | 6.1 | Epic 2 (Core Workflow) complete | ✓ Epic 2 exists |
 | 6.1 | Epic 3 (VM Provisioning) complete | ✓ Epic 3 exists |
-| 6.1 | gRPC server in dvmm-infrastructure | ✓ Part of 6.1 tasks |
+| 6.1 | gRPC server in dcm-infrastructure | ✓ Part of 6.1 tasks |
 | 6.3 | 6.1, 6.2 | ✓ Same epic |
 | 6.5 | 6.1 | ✓ Same epic |
 | 6.7 | 6.1 | ✓ Same epic |
@@ -116,7 +116,7 @@ All dependencies reference valid epics/stories.
 
 | Concept | Tech Spec | architecture.md | Status |
 |---------|-----------|-----------------|--------|
-| Module naming | `dvmm-tui`, `dvmm-tui-protocol` | Convention followed | ✓ |
+| Module naming | `dcm-tui`, `dcm-tui-protocol` | Convention followed | ✓ |
 | No Spring in domain | TUI client has no Spring | Matches domain rule | ✓ |
 | Event sourcing | Uses event subscription | Consistent | ✓ |
 | Tenant isolation | RLS via tenant context | Consistent | ✓ |

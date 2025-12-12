@@ -12,7 +12,7 @@
 
 ### 1.1 Goal
 
-Establish the technical foundation for all DVMM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates.
+Establish the technical foundation for all DCM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates.
 
 ### 1.2 User Value
 
@@ -84,12 +84,12 @@ eaf-monorepo/
 │   ├── eaf-auth/                    # Story 1.7
 │   └── eaf-testing/                 # Story 1.9
 │
-├── dvmm/                            # 🔶 PRODUCT
-│   ├── dvmm-domain/                 # Uses eaf-core
-│   ├── dvmm-application/            # Uses eaf-eventsourcing
-│   ├── dvmm-api/                    # Uses eaf-auth
-│   ├── dvmm-infrastructure/         # Story 1.8
-│   └── dvmm-app/                    # Main application
+├── dcm/                            # 🔶 PRODUCT
+│   ├── dcm-domain/                 # Uses eaf-core
+│   ├── dcm-application/            # Uses eaf-eventsourcing
+│   ├── dcm-api/                    # Uses eaf-auth
+│   ├── dcm-infrastructure/         # Story 1.8
+│   └── dcm-app/                    # Main application
 │
 └── .github/workflows/               # Story 1.11
     └── ci.yml
@@ -190,12 +190,12 @@ eaf-monorepo/
 │   ├── eaf-auth/build.gradle.kts
 │   ├── eaf-auth-keycloak/build.gradle.kts
 │   └── eaf-testing/build.gradle.kts
-└── dvmm/
-    ├── dvmm-domain/build.gradle.kts
-    ├── dvmm-application/build.gradle.kts
-    ├── dvmm-api/build.gradle.kts
-    ├── dvmm-infrastructure/build.gradle.kts
-    └── dvmm-app/build.gradle.kts
+└── dcm/
+    ├── dcm-domain/build.gradle.kts
+    ├── dcm-application/build.gradle.kts
+    ├── dcm-api/build.gradle.kts
+    ├── dcm-infrastructure/build.gradle.kts
+    └── dcm-app/build.gradle.kts
 ```
 
 **Version Catalog Example:**
@@ -325,7 +325,7 @@ And DomainError sealed class has all required variants
 
 - [ ] Create Flyway migration V001__create_event_store.sql
 - [ ] Implement `EventStore` interface in eaf-eventsourcing
-- [ ] Implement `PostgresEventStore` in dvmm-infrastructure
+- [ ] Implement `PostgresEventStore` in dcm-infrastructure
 - [ ] Add optimistic locking via version constraint
 - [ ] Configure Jackson for JSONB serialization
 
@@ -357,7 +357,7 @@ sealed class EventStoreError {
 **PostgreSQL Implementation:**
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/.../PostgresEventStore.kt
+// dcm-infrastructure/src/main/kotlin/.../PostgresEventStore.kt
 @Repository
 class PostgresEventStore(
     private val dsl: DSLContext,
@@ -635,10 +635,10 @@ CREATE POLICY tenant_isolation_snapshots ON eaf_events.snapshots
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
 
 -- Create application role without superuser bypass
-CREATE ROLE dvmm_app NOINHERIT;
-GRANT USAGE ON SCHEMA eaf_events TO dvmm_app;
-GRANT SELECT, INSERT ON eaf_events.events TO dvmm_app;
-GRANT SELECT, INSERT, UPDATE ON eaf_events.snapshots TO dvmm_app;
+CREATE ROLE dcm_app NOINHERIT;
+GRANT USAGE ON SCHEMA eaf_events TO dcm_app;
+GRANT SELECT, INSERT ON eaf_events.events TO dcm_app;
+GRANT SELECT, INSERT, UPDATE ON eaf_events.snapshots TO dcm_app;
 
 -- Force RLS for application role
 ALTER TABLE eaf_events.events FORCE ROW LEVEL SECURITY;
@@ -715,7 +715,7 @@ And app.tenant_id session variable is set per connection
 **Security Configuration:**
 
 ```kotlin
-// dvmm-api/src/main/kotlin/com/dvmm/api/security/SecurityConfig.kt
+// dcm-api/src/main/kotlin/com/dcm/api/security/SecurityConfig.kt
 @Configuration
 @EnableWebFluxSecurity
 class SecurityConfig {
@@ -768,8 +768,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/dvmm}
-          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/dvmm/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/dcm}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/dcm/protocol/openid-connect/certs}
 ```
 
 **Acceptance Criteria:**
@@ -797,7 +797,7 @@ And invalid/expired tokens return HTTP 401
 **jOOQ Gradle Configuration:**
 
 ```kotlin
-// dvmm-infrastructure/build.gradle.kts
+// dcm-infrastructure/build.gradle.kts
 plugins {
     id("nu.studer.jooq") version "9.0"
 }
@@ -809,17 +809,17 @@ jooq {
             jooqConfiguration.apply {
                 jdbc.apply {
                     driver = "org.postgresql.Driver"
-                    url = "jdbc:postgresql://localhost:5432/dvmm"
-                    user = "dvmm"
-                    password = "dvmm"
+                    url = "jdbc:postgresql://localhost:5432/dcm"
+                    user = "dcm"
+                    password = "dcm"
                 }
                 generator.apply {
                     name = "org.jooq.codegen.KotlinGenerator"
                     database.apply {
-                        inputSchema = "dvmm"
+                        inputSchema = "dcm"
                     }
                     target.apply {
-                        packageName = "com.dvmm.infrastructure.jooq"
+                        packageName = "com.dcm.infrastructure.jooq"
                         directory = "build/generated-sources/jooq"
                     }
                 }
@@ -832,7 +832,7 @@ jooq {
 **Base Repository:**
 
 ```kotlin
-// dvmm-infrastructure/src/main/kotlin/.../BaseProjectionRepository.kt
+// dcm-infrastructure/src/main/kotlin/.../BaseProjectionRepository.kt
 abstract class BaseProjectionRepository<T : Any>(
     protected val dsl: DSLContext
 ) {
@@ -905,7 +905,7 @@ And tenant_id filter is automatically applied via RLS
 **Testcontainers Configuration:**
 
 ```kotlin
-// dvmm-app/src/test/kotlin/.../TestContainersConfig.kt
+// dcm-app/src/test/kotlin/.../TestContainersConfig.kt
 @TestConfiguration
 class TestContainersConfig {
 
@@ -913,7 +913,7 @@ class TestContainersConfig {
         @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("dvmm_test")
+            .withDatabaseName("dcm_test")
             .withUsername("test")
             .withPassword("test")
             .withReuse(true)
@@ -947,7 +947,7 @@ class TestContainersConfig {
 **Test Fixtures:**
 
 ```kotlin
-// dvmm-app/src/testFixtures/kotlin/.../TestFixtures.kt
+// dcm-app/src/testFixtures/kotlin/.../TestFixtures.kt
 object TestTenantFixture {
     fun createTenant(name: String = "Test Tenant"): TenantId {
         return TenantId.generate()
@@ -1029,7 +1029,7 @@ And containers are reused across test classes
 **VCSIM Container:**
 
 ```kotlin
-// dvmm-app/src/test/kotlin/.../VcsimContainerConfig.kt
+// dcm-app/src/test/kotlin/.../VcsimContainerConfig.kt
 @TestConfiguration
 class VcsimContainerConfig {
 
@@ -1061,7 +1061,7 @@ class VcsimContainerConfig {
 **VCSIM Test Fixture:**
 
 ```kotlin
-// dvmm-app/src/testFixtures/kotlin/.../VcsimTestFixture.kt
+// dcm-app/src/testFixtures/kotlin/.../VcsimTestFixture.kt
 object VcsimTestFixture {
 
     fun createTestVm(
@@ -1132,7 +1132,7 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: dvmm_test
+          POSTGRES_DB: dcm_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
         ports:

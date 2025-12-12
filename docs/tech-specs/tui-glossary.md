@@ -9,7 +9,7 @@
 
 ## Purpose
 
-This glossary defines technical terms used in the DVMM TUI Admin Interface documentation. It serves developers unfamiliar with gRPC/Protobuf, operators configuring the system, and stakeholders reviewing technical specifications.
+This glossary defines technical terms used in the DCM TUI Admin Interface documentation. It serves developers unfamiliar with gRPC/Protobuf, operators configuring the system, and stakeholders reviewing technical specifications.
 
 ---
 
@@ -19,7 +19,7 @@ This glossary defines technical terms used in the DVMM TUI Admin Interface docum
 
 A text-based user interface that runs in a terminal/console. Unlike a GUI (Graphical User Interface), a TUI uses characters, colors, and keyboard input instead of windows and mouse clicks.
 
-**Example:** The DVMM TUI displays approval queues as text tables, uses arrow keys for navigation, and keyboard shortcuts like `A` for approve.
+**Example:** The DCM TUI displays approval queues as text tables, uses arrow keys for navigation, and keyboard shortcuts like `A` for approve.
 
 **Why TUI?** SSH administrators can use the interface remotely without X11 forwarding or web browser access.
 
@@ -68,7 +68,7 @@ message ApproveCommand {
 
 A communication channel that exists as a file on the filesystem. Unlike TCP sockets (which use IP addresses and ports), Unix sockets use file paths.
 
-**Path Example:** `/var/run/dvmm/tui.sock`
+**Path Example:** `/var/run/dcm/tui.sock`
 
 **Advantages over TCP:**
 - **Faster** - No network stack overhead (~0.1ms vs ~1-3ms)
@@ -131,7 +131,7 @@ A Unix socket feature that allows the server to query the credentials (UID, GID,
 1. TUI connects to Unix socket
 2. Server calls `getsockopt(SO_PEERCRED)`
 3. Kernel returns Unix UID of TUI process
-4. Server maps UID to DVMM user
+4. Server maps UID to DCM user
 
 **Security benefit:** Cannot be spoofed - the kernel guarantees the identity.
 
@@ -139,7 +139,7 @@ A Unix socket feature that allows the server to query the credentials (UID, GID,
 
 ### Unix User Mapping
 
-Configuration that maps Unix usernames to DVMM users. When an SSH admin runs the TUI, they're automatically authenticated.
+Configuration that maps Unix usernames to DCM users. When an SSH admin runs the TUI, they're automatically authenticated.
 
 **Example Configuration:**
 ```yaml
@@ -150,7 +150,7 @@ unix-user-mappings:
     roles: [ADMIN]
 ```
 
-**Result:** User `admin` logs into SSH, runs TUI, and is automatically `admin@example.com` in DVMM.
+**Result:** User `admin` logs into SSH, runs TUI, and is automatically `admin@example.com` in DCM.
 
 ---
 
@@ -316,7 +316,7 @@ An immutable record of something that happened. Events are never modified or del
 
 ### Aggregate
 
-A cluster of domain objects treated as a unit. In DVMM, `VmRequest` is an aggregate.
+A cluster of domain objects treated as a unit. In DCM, `VmRequest` is an aggregate.
 
 ---
 

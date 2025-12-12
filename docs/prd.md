@@ -1,35 +1,35 @@
-# DVMM - Product Requirements Document
+# DCM - Product Requirements Document
 
 **Author:** Wall-E
 **Date:** 2025-11-24
 **Version:** 1.1 (Validated)
-**Product:** Dynamic Virtual Machine Manager (DVMM)
+**Product:** Dynamic Virtual Machine Manager (DCM)
 **Framework:** Enterprise Application Framework (EAF)
 
 ---
 
 ## Executive Summary
 
-DVMM (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
+DCM (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal** for VMware ESXi and Windows VM provisioning with workflow-based approval automation. It replaces the legacy ZEWSSP system and serves as the pilot project for the Enterprise Application Framework (EAF).
 
 **The Core Value Proposition:**
 
-> *"DVMM frees IT teams from VM provisioning chaos. End users get VMs in minutes instead of days. Admins retain full control through intelligent workflows—without becoming the bottleneck."*
+> *"DCM frees IT teams from VM provisioning chaos. End users get VMs in minutes instead of days. Admins retain full control through intelligent workflows—without becoming the bottleneck."*
 
 **Dual Perspective - Why Users Love It:**
 
-| Stakeholder | Pain Today | DVMM Solution |
+| Stakeholder | Pain Today | DCM Solution |
 |-------------|------------|---------------|
 | **End User** | 3-5 days waiting, no visibility, chasing IT | VM in minutes, real-time status, self-service |
 | **IT Admin** | Email chaos, manual approvals, bottleneck | Smart workflows, policy-based auto-approval, full audit |
 | **IT Manager** | Compliance gaps, no audit trail, scaling issues | ISO 27001-ready, event-sourced history, multi-tenant |
 
-**Why DVMM Over Alternatives:**
+**Why DCM Over Alternatives:**
 - **vs. ServiceNow:** Enterprise features at mid-market price, true multi-tenancy
 - **vs. ManageEngine:** On-premise option, German support, compliance-first
 - **vs. VMware vRealize:** No Broadcom lock-in, predictable pricing
 
-**Market Trigger:** Broadcom's VMware acquisition (150-500% price increases) is driving 74% of enterprises to seek alternatives. This creates a 3-year window—but the REASON customers choose DVMM is the value proposition above, not just escaping VMware.
+**Market Trigger:** Broadcom's VMware acquisition (150-500% price increases) is driving 74% of enterprises to seek alternatives. This creates a 3-year window—but the REASON customers choose DCM is the value proposition above, not just escaping VMware.
 
 **Strategic Position:** Enterprise capability at mid-market price. Made in Germany. ISO 27001-ready. Local support.
 
@@ -39,7 +39,7 @@ DVMM (Dynamic Virtual Machine Manager) is a **multi-tenant self-service portal**
 Not a feature list, but a single compelling moment: User requests → Admin approves → VM appears. Everything else enables this.
 
 **2. Perfect Timing - VMware Disruption**
-Broadcom's 150-500% price increases are driving enterprises to seek alternatives. DVMM captures this migration wave.
+Broadcom's 150-500% price increases are driving enterprises to seek alternatives. DCM captures this migration wave.
 
 **3. True Multi-Tenancy**
 PostgreSQL Row-Level Security (RLS) provides enterprise-grade tenant isolation—not just tenant_id fields, but database-enforced boundaries.
@@ -66,7 +66,7 @@ ISO 27001-ready from day 1. Event Sourcing provides complete audit trails. CQRS 
 - *Product Complexity* = What the customer needs to understand → **Medium**
 - *Implementation Complexity* = What the dev team builds → **High**
 
-This distinction matters: DVMM appears simple to users while hiding significant technical sophistication.
+This distinction matters: DCM appears simple to users while hiding significant technical sophistication.
 
 **Project Type Characteristics (saas_b2b):**
 - Multi-tenant architecture with PostgreSQL Row-Level Security
@@ -82,7 +82,7 @@ This distinction matters: DVMM appears simple to users while hiding significant 
 - Workflow Approval Systems
 
 **Input Documents:**
-- Product Brief: `docs/product-brief-dvmm-2025-11-24.md`
+- Product Brief: `docs/product-brief-dcm-2025-11-24.md`
 - Market Research: `docs/research/market-2025-11-24.md`
 - Brainstorming Results: `docs/brainstorming-session-results-2025-11-24.md`
 
@@ -92,7 +92,7 @@ This distinction matters: DVMM appears simple to users while hiding significant 
 
 ### What Winning Looks Like
 
-Success for DVMM is NOT generic metrics. It's these specific moments:
+Success for DCM is NOT generic metrics. It's these specific moments:
 
 **For End Users:**
 > "I requested a VM at 10:00. By 10:15, I was logged in and working."
@@ -178,7 +178,7 @@ Success for DVMM is NOT generic metrics. It's these specific moments:
 - ❌ No end-to-end workflow demo-able after initial development phase
 - ❌ Test coverage below 70%
 - ❌ "We need to finish X before we can show anything..."
-- ❌ Customers haven't seen DVMM after extended period
+- ❌ Customers haven't seen DCM after extended period
 - ❌ Team turnover starting
 - ❌ E2E tests becoming "flaky"
 
@@ -452,7 +452,7 @@ Tenant (Organization)
 ### Information Architecture
 
 ```
-DVMM Portal
+DCM Portal
 ├── Dashboard (home)
 │   ├── [User] Quick stats, recent requests, "New Request" CTA
 │   └── [Admin] Pending count, recent activity, quick approve
@@ -919,6 +919,6 @@ DVMM Portal
 
 ---
 
-_This PRD captures the essence of DVMM - transforming VM provisioning from a 3-5 day email chaos into a streamlined self-service experience where users get VMs in minutes while admins maintain full control through intelligent workflows._
+_This PRD captures the essence of DCM - transforming VM provisioning from a 3-5 day email chaos into a streamlined self-service experience where users get VMs in minutes while admins maintain full control through intelligent workflows._
 
 _Created through collaborative discovery with BMad Method Party Mode reviews._

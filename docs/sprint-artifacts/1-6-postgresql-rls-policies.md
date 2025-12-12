@@ -85,7 +85,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 ### Project Structure Notes
 
 - RLS infrastructure belongs in `eaf-tenant` module (connection customizer, RLS utilities).
-- Migration V002 should be placed in `dvmm-infrastructure` or `dvmm-app` (product-specific schema).
+- Migration V002 should be placed in `dcm-infrastructure` or `dcm-app` (product-specific schema).
 - `RlsEnforcingDataSource` belongs in `eaf-testing` module per tech spec.
 - `TenantTestContext` already exists in `eaf-testing` per tech spec — use for test tenant injection.
 
@@ -96,7 +96,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
   - [x] Enable RLS on `eaf_events.snapshots` table
   - [x] Create RLS policy `tenant_isolation_events` using `current_setting('app.tenant_id', true)::uuid`
   - [x] Create RLS policy `tenant_isolation_snapshots` using same pattern
-  - [x] Create role `eaf_app` with NOINHERIT (renamed from dvmm_app for framework-level)
+  - [x] Create role `eaf_app` with NOINHERIT (renamed from dcm_app for framework-level)
   - [x] Grant appropriate permissions to `eaf_app` role
   - [x] Apply `FORCE ROW LEVEL SECURITY` to prevent bypass
 
@@ -139,7 +139,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 
 - **Relevant architecture patterns:** See `docs/architecture.md` ADR-003 Decision 4 (PostgreSQL RLS); fail-closed semantics are mandatory.
 - **Source tree components to touch:**
-  - `dvmm/dvmm-infrastructure/src/main/resources/db/migration/V002__enable_rls.sql` (or dvmm-app)
+  - `dcm/dcm-infrastructure/src/main/resources/db/migration/V002__enable_rls.sql` (or dcm-app)
   - `eaf/eaf-tenant/src/main/kotlin/de/acci/eaf/tenant/rls/RlsConnectionCustomizer.kt`
   - `eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/RlsEnforcingDataSource.kt`
   - `eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt`
@@ -198,7 +198,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 - **Two complementary approaches implemented:**
   - `RlsConnectionCustomizer` - Coroutine-based for suspend functions
   - `TenantAwareDataSourceDecorator` - ThreadLocal-based for synchronous DataSource API
-- **Role naming:** Changed from `dvmm_app` to `eaf_app` since this is framework-level (EAF) not product-level (DVMM)
+- **Role naming:** Changed from `dcm_app` to `eaf_app` since this is framework-level (EAF) not product-level (DCM)
 - **Empty string handling:** V002 uses `NULLIF(current_setting('app.tenant_id', true), '')::uuid` to handle PostgreSQL returning empty string (not NULL) from `set_config(..., NULL, ...)` - prevents cast error when pooled connection tenant context is cleared
 
 ### File List
@@ -258,7 +258,7 @@ so that tenant isolation is guaranteed even if application code has bugs.
 ### Architecture Alignment
 
 - **ADR-003 Compliance:** PostgreSQL RLS with fail-closed semantics implemented correctly
-- **Module Boundaries:** EAF modules contain no DVMM imports (Konsist verified)
+- **Module Boundaries:** EAF modules contain no DCM imports (Konsist verified)
 - **Spring Independence:** RlsConnectionCustomizer and TenantAwareDataSourceDecorator are Spring-free
 - **Coroutine Integration:** TenantContextElement properly integrated with connection customizer
 

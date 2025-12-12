@@ -1,8 +1,8 @@
 # Why Kotlin & Spring Boot?
 
-**The "Superpower" Tech Stack of DVMM.**
+**The "Superpower" Tech Stack of DCM.**
 
-When building an enterprise-grade platform like DVMM, the choice of technology is not just about what's popular—it's about what delivers **safety, speed, and scalability**. We chose **Kotlin 2.2** and **Spring Boot 3.5**. Here is why this combination is our unfair advantage.
+When building an enterprise-grade platform like DCM, the choice of technology is not just about what's popular—it's about what delivers **safety, speed, and scalability**. We chose **Kotlin 2.2** and **Spring Boot 3.5**. Here is why this combination is our unfair advantage.
 
 ---
 
@@ -22,7 +22,7 @@ Traditional servers use one "Thread" per user. Threads are heavy (expensive memo
 *   **Java Threads:** Heavy (1MB per thread). 10k users = 10GB RAM just for threads!
 *   **Kotlin Coroutines:** Extremely light. 10k "threads" take less than 10MB RAM.
 
-**Advantage:** DVMM can handle thousands of concurrent requests on a tiny container, saving massive cloud infrastructure costs.
+**Advantage:** DCM can handle thousands of concurrent requests on a tiny container, saving massive cloud infrastructure costs.
 
 ### Expressiveness: Less Boilerplate
 *   **Java:** Needs getters, setters, equals(), hashCode(), toString(), builders...
@@ -73,7 +73,7 @@ Spring has a "Starter" for everything.
 | **Enterprise Features**| **Best in Class** | DIY (Do It Yourself) | Good (Django) | DIY |
 
 ### Why not Node.js?
-Node is great for startups, but "Undefined is not a function" is a runtime crash waiting to happen. In DVMM, a crash during a VM provisioning workflow is catastrophic. Kotlin's safety prevents this.
+Node is great for startups, but "Undefined is not a function" is a runtime crash waiting to happen. In DCM, a crash during a VM provisioning workflow is catastrophic. Kotlin's safety prevents this.
 
 ### Why not Python?
 Python is king for AI/Data, but slow for high-concurrency backends. Plus, dynamic typing means you find type errors only when the code actually runs (often in production).

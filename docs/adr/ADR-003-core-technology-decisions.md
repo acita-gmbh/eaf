@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2025-11-25
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Architecture Team
 **Origin:** Team Party Mode Discussion
 
@@ -320,12 +320,12 @@ class VmRequestProjectionRepository(private val dsl: DSLContext) {
 jOOQ code is generated from DDL files using `DDLDatabase` - no running database required:
 
 ```bash
-./gradlew :dvmm:dvmm-infrastructure:generateJooq
+./gradlew :dcm:dcm-infrastructure:generateJooq
 ```
 
 Key files:
-- `dvmm/dvmm-infrastructure/src/main/resources/db/jooq-init.sql` - Combined DDL script
-- `dvmm/dvmm-infrastructure/build.gradle.kts` - jOOQ configuration
+- `dcm/dcm-infrastructure/src/main/resources/db/jooq-init.sql` - Combined DDL script
+- `dcm/dcm-infrastructure/build.gradle.kts` - jOOQ configuration
 
 **PostgreSQL-Specific Syntax:**
 

@@ -98,7 +98,7 @@
 **Pass Rate:** 4/4 (100%)
 
 - [x] **PASS** - Module boundaries respected
-  - Evidence: VcenterAdapter stays in `dvmm-infrastructure`
+  - Evidence: VcenterAdapter stays in `dcm-infrastructure`
 
 - [x] **PASS** - Profile switching preserved
   - Evidence: Story maintains `@Profile("!vcsim")` pattern
@@ -173,7 +173,7 @@ com.vmware.vapi.std.errors.Unauthenticated → AuthenticationFailed
 The VCF SDK recommends using a BOM for dependency management:
 
 ```kotlin
-// In dvmm-infrastructure/build.gradle.kts
+// In dcm-infrastructure/build.gradle.kts
 implementation(platform(libs.vcf.sdk.bom))
 implementation(libs.vcf.sdk.vsphere.utils)
 ```

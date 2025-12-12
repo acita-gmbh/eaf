@@ -2,7 +2,7 @@
 
 **Handling the instability of the real world.**
 
-DVMM automates VM provisioning by talking to the **VMware vSphere API**. However, external APIs are unpredictable. They go down, they get slow, and they change. Our architecture is designed to handle this "weather" without crashing the entire platform.
+DCM automates VM provisioning by talking to the **VMware vSphere API**. However, external APIs are unpredictable. They go down, they get slow, and they change. Our architecture is designed to handle this "weather" without crashing the entire platform.
 
 ---
 
@@ -10,8 +10,8 @@ DVMM automates VM provisioning by talking to the **VMware vSphere API**. However
 
 We strictly separate *what* we want to do from *how* we do it.
 
-*   **Port (Interface):** `HypervisorPort` (in `dvmm-application`). Defines generic intent: `provisionVm(spec)`.
-*   **Adapter (Implementation):** `VsphereAdapter` (in `dvmm-infrastructure`). Knows how to talk to VMware using the VCF SDK 9.0.
+*   **Port (Interface):** `HypervisorPort` (in `dcm-application`). Defines generic intent: `provisionVm(spec)`.
+*   **Adapter (Implementation):** `VsphereAdapter` (in `dcm-infrastructure`). Knows how to talk to VMware using the VCF SDK 9.0.
 
 This means the core business logic doesn't know "VMware" exists. It just knows "Hypervisor". If we switch to Proxmox later, we just swap the adapter.
 
