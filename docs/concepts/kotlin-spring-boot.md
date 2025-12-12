@@ -46,8 +46,8 @@ Spring automatically wires our application together.
 
 ### WebFlux: Non-Blocking I/O
 We use **Spring WebFlux**, the reactive version of Spring.
-*   **Traditional:** App waits for Database. CPU sits idle.
-*   **Reactive (WebFlux):** App sends query to Database and immediately goes to work on something else. When Database finishes, it calls the App back.
+* **Traditional:** App waits for Database. CPU sits idle.
+* **Reactive (WebFlux):** App sends query to Database and immediately goes to work on something else. When Database finishes, it calls the App back.
 
 **Advantage:** Maximum hardware utilization. No CPU cycle is wasted waiting.
 

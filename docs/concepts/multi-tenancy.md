@@ -28,7 +28,7 @@ Every request to the API must carry a JWT (JSON Web Token) from Keycloak. This t
 
 *   **Mechanism:** Spring Security Filter Chain.
 *   **Action:** If the token is valid, the `tenant_id` is extracted.
-*   **Fail-Safe:** If the token has no `tenant_id`, the request is rejected immediately with `403 Forbidden`.
+*   **Fail-Safe:** If the token has no `tenant_id`, the request is rejected immediately with `404 Not Found`.
 
 ### Layer 2: Application Context (The Carrier)
 
@@ -39,7 +39,8 @@ Once inside the application, we need to pass this `tenant_id` around without clu
 *   **Usage:**
     ```kotlin
     // Accessing the current tenant safely
-    val currentTenant = currentTenant() // Throws if missing
+    val currentTenant = currentTenant() // Throws IllegalStateException if tenant is missing
+    // Handle this exception if you expect the tenant context might be absent
     ```
 
 ### Layer 3: Database RLS (The Enforcer)

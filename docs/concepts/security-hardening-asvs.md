@@ -47,7 +47,7 @@ We don't wait for a pentest to find ASVS violations.
 
 1.  **IDE:** SonarLint checks for common flaws while coding.
 2.  **CI/CD:** SAST (Static Analysis) scans every PR.
-3.  **Dependency Check:** Automated scans for vulnerable libraries (Log4Shell style issues).
+3.  **Dependency Check:** Automated scans for vulnerable libraries (Log4Shell-style issues).
 
 ## Why This Matters
 

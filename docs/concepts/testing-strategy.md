@@ -19,23 +19,23 @@ graph TD
     style Unit fill:#bef264
 ```
 
-### 1. Unit Tests (Junit 6 + MockK)
-*   **Focus:** Individual classes, domain logic, aggregates.
-*   **Speed:** Blazing fast (milliseconds).
-*   **Dependencies:** All mocked. No database, no network.
-*   **Example:** "Does the `VmRequestAggregate` switch to `APPROVED` status when the `Approve` command is applied?"
+### 1. Unit Tests (JUnit 5 + MockK)
+* **Focus:** Individual classes, domain logic, aggregates.
+* **Speed:** Blazing fast (milliseconds).
+* **Dependencies:** All mocked. No database, no network.
+* **Example:** "Does the `VmRequestAggregate` switch to `APPROVED` status when the `Approve` command is applied?"
 
 ### 2. Integration Tests (Testcontainers)
-*   **Focus:** Components working together, database interactions, API endpoints.
-*   **Speed:** Moderate (seconds).
-*   **Dependencies:** Real services in Docker containers (PostgreSQL, Keycloak).
-*   **Example:** "Can the `VmRequestController` save a request to the DB and read it back via the API?"
+* **Focus:** Components working together, database interactions, API endpoints.
+* **Speed:** Moderate (seconds).
+* **Dependencies:** Real services in Docker containers (PostgreSQL, Keycloak).
+* **Example:** "Can the `VmRequestController` save a request to the DB and read it back via the API?"
 
 ### 3. End-to-End (E2E) Tests (Playwright)
-*   **Focus:** Critical user journeys from the browser.
-*   **Speed:** Slow (minutes).
-*   **Dependencies:** Full running system (Frontend + Backend + DB + Auth).
-*   **Example:** "Can a user log in, fill out the VM form, and see it appear in the dashboard?"
+* **Focus:** Critical user journeys from the browser.
+* **Speed:** Slow (minutes).
+* **Dependencies:** Full running system (Frontend + Backend + DB + Auth).
+* **Example:** "Can a user log in, fill out the VM form, and see it appear in the dashboard?"
 
 ---
 
@@ -44,22 +44,22 @@ graph TD
 Our CI pipeline enforces strict quality standards. If you don't meet these, you cannot merge your code.
 
 ### 1. Code Coverage (Kover)
-*   **Tool:** Kover (Kotlin Coverage).
-*   **Rule:** Every module must have at least **70% line coverage**.
-*   **Why:** Ensures we aren't leaving large chunks of code untested.
+* **Tool:** Kover (Kotlin Coverage).
+* **Rule:** Every module must have at least **70% line coverage**.
+* **Why:** Ensures we aren't leaving large chunks of code untested.
 
 ### 2. Mutation Testing (Pitest)
-*   **Tool:** Pitest.
-*   **Rule:** We must achieve a **70% mutation score**.
-*   **Concept:** Pitest deliberately breaks your code (e.g., changes `if (a > b)` to `if (a < b)`). If your tests still pass, it means your tests are weak. We want tests that fail when the code is broken.
+* **Tool:** Pitest.
+* **Rule:** We must achieve a **70% mutation score**.
+* **Concept:** Pitest deliberately breaks your code (e.g., changes `if (a > b)` to `if (a < b)`). If your tests still pass, it means your tests are weak. We want tests that fail when the code is broken.
 
 ### 3. Architecture Tests (Konsist)
-*   **Tool:** Konsist.
-*   **Rule:** 100% pass.
-*   **Concept:** These tests check our code structure.
-    *   "Domain classes must not import Spring."
-    *   "Controllers must reside in the `api` package."
-    *   "All public classes must have KDoc."
+* **Tool:** Konsist.
+* **Rule:** 100% pass.
+* **Concept:** These tests check our code structure.
+    * "Domain classes must not import Spring."
+    * "Controllers must reside in the `api` package."
+    * "All public classes must have KDoc."
 
 ---
 
@@ -68,7 +68,7 @@ Our CI pipeline enforces strict quality standards. If you don't meet these, you 
 We've built a dedicated module, `eaf-testing`, to make testing easier.
 
 ### `Testcontainers`
-We don't mock the database in integration tests. We spin up a **real PostgreSQL instance** in a Docker container. This ensures that if our SQL is wrong, the test fails.
+We don't mock the database in integration tests. Instead, we spin up a **real PostgreSQL instance** in a Docker container. This ensures that if our SQL is wrong, the test fails.
 
 ### `InMemoryEventStore`
 For unit testing aggregates, we use an in-memory event store. It behaves like the real one but runs instantly in RAM.

@@ -59,6 +59,6 @@ Console access is dangerous. It bypasses OS-level security (like passwords, if a
 *   **Auth Proxy:** Users never connect directly to the hypervisor. All traffic goes through our Authenticated Proxy.
 *   **Audit:** "Console Opened" is logged as a high-severity audit event.
 
-## Why this matters
+## Why This Matters
 
 It's the "Emergency Cord." When everything else fails, Console Access allows the admin to fix the broken firewall rule or see the Blue Screen of Death.

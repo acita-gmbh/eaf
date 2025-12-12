@@ -70,4 +70,4 @@ We cannot easily mock Proxmox or Hyper-V in CI.
 
 ## Future Proofing
 
-This architecture allows us to add **AWS** or **Azure** support in the future simply by writing a new Adapter. The core business logic (Approvals, Quotas, Billing) remains exactly the same.
+This architecture allows us to add **AWS** or **Azure** support in the future simply by writing a new Adapter. The core business logic (Approvals, Quotas, Billing) remains the same.

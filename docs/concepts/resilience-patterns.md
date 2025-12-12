@@ -28,7 +28,7 @@ For transient errors (network glitch, timeout), a simple retry often works.
 
 *   **Policy:** 3 attempts.
 *   **Backoff:** Exponential (Wait 1s, then 2s, then 4s). This prevents us from overwhelming a struggling service.
-*   **Jitter:** Add random noise to the wait time so all our threads don't retry at the exact same millisecond (Thundering Herd).
+*   **Jitter:** Add random noise to the wait time so all our threads don't retry at the same millisecond (Thundering Herd).
 
 **DVMM Use Case:** Database connection drops, temporary DNS failures.
 
@@ -52,7 +52,7 @@ Isolate resources so a failure in one area doesn't consume everything.
 *   **Concept:** Limit the number of concurrent calls to a specific service.
 *   **Example:** Only allow 10 concurrent calls to the "Reporting Service". If 10 are running, the 11th fails immediately. This preserves threads for critical functions like "Login".
 
-**DVMM Use Case:** separating "Admin Reporting" threads from "User Login" threads.
+**DVMM Use Case:** "Separating 'Admin Reporting' threads from 'User Login' threads."
 
 ---
 

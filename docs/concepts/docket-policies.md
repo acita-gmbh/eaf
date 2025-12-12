@@ -10,9 +10,9 @@ The "Docket" system is DVMM's policy engine. It allows IT Admins to define rules
 
 Instead of a human reviewing every single request, we run each request through a series of **Policy Rules**.
 
-*   **If a request is safe:** Auto-approve it.
-*   **If a request is risky:** Flag it for manual review.
-*   **If a request is invalid:** Auto-reject it.
+*   **Safe requests:** Auto-approved automatically.
+*   **Risky requests:** Flagged for manual review.
+*   **Invalid requests:** Auto-rejected.
 
 ```mermaid
 flowchart LR
@@ -31,7 +31,7 @@ A policy is a set of conditions and an action.
 *   **Conditions:** Logic to evaluate against the request (e.g., `vm.ram <= 16GB`).
 *   **Action:** What to do if the conditions are met (`APPROVE`, `REJECT`, `FLAG`).
 
-**Example: "Dev Environment Auto-Approval"**
+### Example: "Dev Environment Auto-Approval"
 > If the Project is "Development" AND the VM size is "Small", automatically approve.
 
 ### 2. The Evaluation Process

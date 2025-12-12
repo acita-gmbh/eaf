@@ -20,7 +20,7 @@ This means the core business logic doesn't know "VMware" exists. It just knows "
 We use the official **VMware Cloud Foundation (VCF) SDK 9.0**.
 
 *   **Strict Typing:** We map VMware's complex, deeply nested objects (like `VirtualMachineConfigSpec`) to our simple, clean Domain Value Objects.
-*   **Property Collector:** Instead of fetching full objects (heavy), we use the `PropertyCollector` to fetch *only* the specific fields we need (e.g., `summary.config.memorySizeMB`). This makes our calls 10x faster.
+*   **Property Collector:** Instead of fetching full objects (heavy), we use the `PropertyCollector` to fetch *only* the specific fields we need (e.g., `summary.config.memorySizeMB`). This makes our calls significantly faster.
 
 ## 3. Resilience Patterns
 
@@ -60,7 +60,7 @@ flowchart TD
     end
 ```
 
-## Testing Strategy
+## Testing VMware Integration
 
 How do we test this without a real $50,000 vCenter server?
 

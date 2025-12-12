@@ -33,12 +33,12 @@ In production, we cannot stop the app to upgrade the DB. The old app code must r
 **Bad:** `ALTER TABLE users RENAME COLUMN name TO full_name;`
 *   *Crash!* The running app is still trying to read `name`.
 
-**Good (The 4-Step Process):**
+**Good (The 5-Step Process):**
 1.  **V1:** Add new column `full_name`. (App ignores it).
 2.  **Code Change:** Update App to write to *both* `name` and `full_name`, but read from `name`.
-3.  **Data Migration:** Copy all existing data from `name` to `full_name`.
+3.  **V2 (Data Migration):** Copy all existing data from `name` to `full_name` (e.g., `UPDATE users SET full_name = name WHERE full_name IS NULL;`).
 4.  **Code Change:** Switch App to read/write `full_name`.
-5.  **V2:** Remove old column `name`.
+5.  **V3:** Remove old column `name`.
 
 ## Testcontainers Integration
 
