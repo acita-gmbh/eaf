@@ -1,6 +1,6 @@
 # Story 3.8: VM Ready Notification
 
-Status: review
+Status: done
 
 ## Story
 

@@ -145,7 +145,7 @@ development_status:
   3-5-provisioning-progress-tracking: done       # Progress tracking implemented
   3-6-provisioning-error-handling: done            # PR #94 merged 2025-12-11
   3-7-provisioned-vm-details: done                # VM details view with bootTime/uptime - Code review PASSED 2025-12-12
-  3-8-vm-ready-notification: review                 # Email notification when VM ready
+  3-8-vm-ready-notification: done                   # Email notification when VM ready - Code review PASSED 2025-12-12
   3-9-vcenter-contract-test-suite: backlog       # BLOCKED: Awaiting vCenter access
   epic-3-retrospective: optional
 
