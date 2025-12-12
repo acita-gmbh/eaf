@@ -1,25 +1,25 @@
-# DVMM Infrastruktur-Briefing
+# DCM Infrastruktur-Briefing
 
 **Für:** Infrastruktur-Team (Ansible, OpenShift, Kubernetes-Experten)
 **Datum:** 2025-11-30
-**Zweck:** Beratung und Unterstützung für die DVMM/EAF Deployment-Strategie
+**Zweck:** Beratung und Unterstützung für die DCM/EAF Deployment-Strategie
 
 ---
 
 ## Was ihr wissen müsst
 
-### ZEWSSP-Nachfolger: DVMM
+### ZEWSSP-Nachfolger: DCM
 
-Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DVMM (Dynamic Virtual Machine Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschränkungen zu überwinden:
+Ihr kennt ZEWSSP - das VM-Provisionierungssystem. **DCM (Dynamic Cloud Manager)** ist der Nachfolger, komplett neu entwickelt, um die bisherigen Einschränkungen zu überwinden:
 
-| Problem (ZEWSSP) | Lösung (DVMM) |
+| Problem (ZEWSSP) | Lösung (DCM) |
 |------------------|---------------|
 | Nur Single-Tenant | Multi-Tenant mit PostgreSQL Row-Level Security |
 | Keine Compliance-Fähigkeit | ISO 27001 / DSGVO-ready von Anfang an |
 | Monolithischer Legacy-Code | Moderne modulare Architektur |
 | Manuelle Deployments | Container-basiert, CI/CD-automatisiert |
 
-### Was DVMM macht
+### Was DCM macht
 
 **Kern-Workflow:** Benutzer beantragt VM → Genehmigungsworkflow → Automatische Provisionierung auf VMware vSphere → Benachrichtigung
 
@@ -54,7 +54,7 @@ Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-
 │                Docker Compose                    │
 ├─────────────────────────────────────────────────┤
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ DVMM API │  │ Frontend │  │ Keycloak │      │
+│  │ DCM API │  │ Frontend │  │ Keycloak │      │
 │  │ (Spring) │  │ (Nginx)  │  │  (IdP)   │      │
 │  └────┬─────┘  └──────────┘  └──────────┘      │
 │       │                                         │
@@ -71,7 +71,7 @@ Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-
 ┌─────────────────────────────────────────────────────────┐
 │                    Kubernetes Cluster                    │
 ├─────────────────────────────────────────────────────────┤
-│  Namespace: dvmm-production                              │
+│  Namespace: dcm-production                              │
 │                                                          │
 │  ┌─────────────────────────────────────────────────────┐│
 │  │ Ingress (TLS 1.3)                                   ││
@@ -80,7 +80,7 @@ Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-
 │     ┌────────────────────────┼────────────────────┐     │
 │     ▼                        ▼                    ▼     │
 │  ┌──────────┐         ┌──────────┐         ┌──────────┐│
-│  │ Frontend │         │ DVMM API │         │ Keycloak ││
+│  │ Frontend │         │ DCM API │         │ Keycloak ││
 │  │ (3 Pods) │         │ (3 Pods) │         │ (2 Pods) ││
 │  └──────────┘         └────┬─────┘         └──────────┘│
 │                            │                            │
@@ -100,14 +100,14 @@ Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-
 
 | Image | Basis | Ports | Health Endpoints |
 |-------|-------|-------|------------------|
-| `dvmm/api` | Eclipse Temurin 21 | 8080 | `/actuator/health/liveness`, `/actuator/health/readiness` |
-| `dvmm/frontend` | Nginx Alpine | 80 | `/` (statisch) |
+| `dcm/api` | Eclipse Temurin 21 | 8080 | `/actuator/health/liveness`, `/actuator/health/readiness` |
+| `dcm/frontend` | Nginx Alpine | 80 | `/` (statisch) |
 
 ### Ressourcenanforderungen (pro Pod)
 
 | Komponente | CPU Request | CPU Limit | Memory Request | Memory Limit |
 |------------|-------------|-----------|----------------|--------------|
-| DVMM API | 250m | 1000m | 512Mi | 1Gi |
+| DCM API | 250m | 1000m | 512Mi | 1Gi |
 | Frontend | 50m | 200m | 64Mi | 128Mi |
 
 ---
@@ -118,16 +118,16 @@ Dies ist eine Webanwendung für mehrere Mandanten (Kunden), die Self-Service VM-
 
 ```yaml
 # Datenbank
-DB_HOST: postgres.dvmm.svc.cluster.local
+DB_HOST: postgres.dcm.svc.cluster.local
 DB_PORT: 5432
-DB_NAME: dvmm
-DB_USER: dvmm
+DB_NAME: dcm
+DB_USER: dcm
 DB_PASSWORD: <aus-secret>
 
 # Keycloak
 KEYCLOAK_URL: https://auth.example.com
-KEYCLOAK_REALM: dvmm
-KEYCLOAK_CLIENT_ID: dvmm-api
+KEYCLOAK_REALM: dcm
+KEYCLOAK_CLIENT_ID: dcm-api
 
 # VMware (pro Mandant, in DB gespeichert)
 # Zugangsdaten werden über die Anwendung verwaltet, nicht über Env-Vars
@@ -140,8 +140,8 @@ SPRING_PROFILES_ACTIVE: production
 
 | Secret | Inhalt | Hinweise |
 |--------|--------|----------|
-| `dvmm-db-credentials` | username, password | PostgreSQL-Zugang |
-| `dvmm-keycloak-client` | client-secret | OIDC Client Credentials |
+| `dcm-db-credentials` | username, password | PostgreSQL-Zugang |
+| `dcm-keycloak-client` | client-secret | OIDC Client Credentials |
 
 ---
 
@@ -151,7 +151,7 @@ Wir planen den Standard Grafana + Prometheus + Loki Stack:
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Grafana    │◀────│  Prometheus  │◀────│   DVMM API   │
+│   Grafana    │◀────│  Prometheus  │◀────│   DCM API   │
 │ (Dashboards) │     │  (Metriken)  │     │ (/actuator)  │
 └──────────────┘     └──────────────┘     └──────────────┘
        ▲                                         │
@@ -256,7 +256,7 @@ Wir nutzen **Flyway** für Schema-Migrationen mit diesen Regeln:
 
 ## EAF: Das größere Bild
 
-DVMM ist das erste Produkt, das auf unserem neuen **Enterprise Application Framework (EAF)** aufbaut. Das Framework bietet:
+DCM ist das erste Produkt, das auf unserem neuen **Enterprise Application Framework (EAF)** aufbaut. Das Framework bietet:
 
 - Multi-Tenancy mit PostgreSQL RLS
 - Event Sourcing Infrastruktur

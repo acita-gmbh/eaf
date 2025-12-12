@@ -45,7 +45,7 @@ Epic 2 is the **Tracer Bullet** that validates the complete stack:
    - Keycloak OIDC login/logout
    - JWT validation and refresh
    - httpOnly cookie session management
-   - Coverage restoration for `eaf-auth-keycloak` and `dvmm-api`
+   - Coverage restoration for `eaf-auth-keycloak` and `dcm-api`
 
 2. **End User Interface** (Stories 2.2-2.8)
    - Dashboard layout with request list
@@ -77,7 +77,7 @@ Epic 2 is the **Tracer Bullet** that validates the complete stack:
 | Item | Source | Action |
 |------|--------|--------|
 | `eaf-auth-keycloak` coverage | Story 1.7 | Restore ≥80% in Story 2.1 |
-| `dvmm-api` coverage | Story 1.7 | Restore ≥80% in Story 2.1 |
+| `dcm-api` coverage | Story 1.7 | Restore ≥80% in Story 2.1 |
 | Pitest `eaf-auth-keycloak` | Story 1.11 | Restore ≥70% mutation score |
 
 ---
@@ -88,15 +88,15 @@ Epic 2 is the **Tracer Bullet** that validates the complete stack:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     dvmm-app (Spring Boot)                  │
+│                     dcm-app (Spring Boot)                  │
 │   ┌─────────────┐   ┌──────────────┐   ┌────────────────┐  │
-│   │  dvmm-api   │──▶│dvmm-application│──▶│  dvmm-domain   │  │
+│   │  dcm-api   │──▶│dcm-application│──▶│  dcm-domain   │  │
 │   │  (REST)     │   │  (Use Cases) │   │  (Aggregates)  │  │
 │   └─────────────┘   └──────────────┘   └────────────────┘  │
 │         │                  │                    ▲          │
 │         ▼                  ▼                    │          │
 │   ┌───────────────────────────────────────────────────┐    │
-│   │              dvmm-infrastructure                   │    │
+│   │              dcm-infrastructure                   │    │
 │   │   (jOOQ Projections, Email, Keycloak Adapter)     │    │
 │   └───────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
@@ -117,15 +117,15 @@ Epic 2 is the **Tracer Bullet** that validates the complete stack:
 
 | Rule | Enforcement |
 |------|-------------|
-| EAF modules MUST NOT import `de.acci.dvmm.*` | Konsist `ArchitectureTest` |
-| `dvmm-domain` MUST NOT import `org.springframework.*` | Konsist `ArchitectureTest` |
-| Commands/Queries in `dvmm-application` only | Package convention |
-| REST controllers in `dvmm-api` only | Package convention |
+| EAF modules MUST NOT import `de.acci.dcm.*` | Konsist `ArchitectureTest` |
+| `dcm-domain` MUST NOT import `org.springframework.*` | Konsist `ArchitectureTest` |
+| Commands/Queries in `dcm-application` only | Package convention |
+| REST controllers in `dcm-api` only | Package convention |
 
 ### 3.3 CQRS Pattern Implementation
 
 ```kotlin
-// Command Side (dvmm-application)
+// Command Side (dcm-application)
 data class CreateVmRequestCommand(
     val tenantId: TenantId,
     val requesterId: UserId,
@@ -155,7 +155,7 @@ class CreateVmRequestHandler(
     }
 }
 
-// Query Side (dvmm-infrastructure)
+// Query Side (dcm-infrastructure)
 class VmRequestQueryService(
     private val dsl: DSLContext
 ) {
@@ -178,7 +178,7 @@ class VmRequestQueryService(
 #### 4.1.1 VmRequestAggregate
 
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/VmRequestAggregate.kt
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/VmRequestAggregate.kt
 
 class VmRequestAggregate private constructor(
     override val id: VmRequestId,
@@ -522,7 +522,7 @@ CREATE INDEX idx_timeline_request ON "REQUEST_TIMELINE_EVENTS"("REQUEST_ID", "OC
 #### 4.4.2 Component Structure
 
 ```
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── components/
 │   ├── ui/                    # shadcn/ui components
 │   ├── layout/
@@ -594,7 +594,7 @@ Usage pattern: `text-[hsl(var(--status-pending))] bg-[hsl(var(--status-pending)/
 
 ```html
 <!-- resources/templates/email/request-created.html -->
-Subject: [DVMM] New VM Request: {{vmName}}
+Subject: [DCM] New VM Request: {{vmName}}
 
 Hello Admin,
 
@@ -609,14 +609,14 @@ Justification: {{justification}}
 Review request: {{approvalLink}}
 
 Best regards,
-DVMM System
+DCM System
 ```
 
 #### 4.5.2 Request Approved (to Requester)
 
 ```html
 <!-- resources/templates/email/request-approved.html -->
-Subject: [DVMM] Request Approved: {{vmName}}
+Subject: [DCM] Request Approved: {{vmName}}
 
 Hello {{requesterName}},
 
@@ -632,7 +632,7 @@ once the VM is available.
 View details: {{requestLink}}
 
 Best regards,
-DVMM System
+DCM System
 ```
 
 ---
@@ -700,7 +700,7 @@ Story 2.1 (Keycloak Login) ──┬──▶ Story 2.2 (Dashboard)
 
 **Coverage Restoration:**
 - `eaf-auth-keycloak` module ≥80% line coverage (restore from exclusion)
-- `dvmm-api` module ≥80% line coverage (restore from exclusion)
+- `dcm-api` module ≥80% line coverage (restore from exclusion)
 - Pitest mutation score ≥70% for both modules
 
 #### Story 2.6: VM Request Form - Submit (HIGH)
@@ -790,11 +790,11 @@ Story 2.1 (Keycloak Login) ──┬──▶ Story 2.2 (Dashboard)
 
 | Metric Name | Type | Labels | Purpose |
 |-------------|------|--------|---------|
-| `dvmm_vm_requests_total` | Counter | `tenant_id`, `status` | Total requests created |
-| `dvmm_vm_requests_approved_total` | Counter | `tenant_id` | Approved requests |
-| `dvmm_vm_requests_rejected_total` | Counter | `tenant_id` | Rejected requests |
-| `dvmm_api_request_duration_seconds` | Histogram | `endpoint`, `method` | API latency |
-| `dvmm_email_sent_total` | Counter | `template`, `status` | Email delivery tracking |
+| `dcm_vm_requests_total` | Counter | `tenant_id`, `status` | Total requests created |
+| `dcm_vm_requests_approved_total` | Counter | `tenant_id` | Approved requests |
+| `dcm_vm_requests_rejected_total` | Counter | `tenant_id` | Rejected requests |
+| `dcm_api_request_duration_seconds` | Histogram | `endpoint`, `method` | API latency |
+| `dcm_email_sent_total` | Counter | `template`, `status` | Email delivery tracking |
 
 **Logging Standards:**
 
@@ -900,9 +900,9 @@ CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "C
 
 | Library | Version | Module | Purpose |
 |---------|---------|--------|---------|
-| Spring Mail | 3.5.x | dvmm-infrastructure | Email sending |
-| Thymeleaf | 3.1.x | dvmm-infrastructure | Email templates |
-| kotlinx-html | 0.11.x | dvmm-infrastructure | HTML generation |
+| Spring Mail | 3.5.x | dcm-infrastructure | Email sending |
+| Thymeleaf | 3.1.x | dcm-infrastructure | Email templates |
+| kotlinx-html | 0.11.x | dcm-infrastructure | HTML generation |
 
 ---
 
@@ -965,7 +965,7 @@ CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "C
 ### 10.1 Story 2.1 Priority Actions
 
 1. **First:** Add Keycloak Testcontainer tests for `eaf-auth-keycloak`
-2. **Second:** Add SecurityConfig integration tests for `dvmm-api`
+2. **Second:** Add SecurityConfig integration tests for `dcm-api`
 3. **Third:** Remove coverage exclusions from both `build.gradle.kts` files
 4. **Fourth:** Implement frontend OIDC flow
 
@@ -973,9 +973,9 @@ CREATE INDEX idx_email_dead_letter_tenant ON "EMAIL_DEAD_LETTER"("TENANT_ID", "C
 
 ```bash
 # Create React frontend (if not exists)
-cd dvmm
-npm create vite@latest dvmm-web -- --template react-ts
-cd dvmm-web
+cd dcm
+npm create vite@latest dcm-web -- --template react-ts
+cd dcm-web
 
 # Install shadcn/ui and dependencies
 npx shadcn@latest init
@@ -1023,9 +1023,9 @@ spring:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
-dvmm:
+dcm:
   email:
-    from: noreply@dvmm.example.com
+    from: noreply@dcm.example.com
     enabled: ${EMAIL_ENABLED:true}
 ```
 
@@ -1071,7 +1071,7 @@ dvmm:
 | # | Action | Status | Target Story |
 |---|--------|--------|--------------|
 | 1 | Restore `eaf-auth-keycloak` coverage ≥80% | **REQUIRED** | 2.1 |
-| 2 | Restore `dvmm-api` coverage ≥80% | **REQUIRED** | 2.1 |
+| 2 | Restore `dcm-api` coverage ≥80% | **REQUIRED** | 2.1 |
 | 3 | Restore `eaf-auth-keycloak` Pitest ≥70% | **REQUIRED** | 2.1 |
 | 4 | jooq-init.sql sync checklist | DONE | - |
 | 5 | "Learnings from Previous Story" mandatory | IN EFFECT | All stories |

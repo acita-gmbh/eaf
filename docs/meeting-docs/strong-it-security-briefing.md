@@ -1,4 +1,4 @@
-# Security Partnership Briefing: EAF/DVMM Project
+# Security Partnership Briefing: EAF/DCM Project
 
 **Prepared for:** Strong IT SOC Team
 **Date:** 2025-11-28
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive overview of the **EAF (Enterprise Application Framework)** and **DVMM (Dynamic Virtual Machine Manager)** project to facilitate evaluation by our internal SOC team for security partnership opportunities.
+This document provides a comprehensive overview of the **EAF (Enterprise Application Framework)** and **DCM (Dynamic Cloud Manager)** project to facilitate evaluation by our internal SOC team for security partnership opportunities.
 
 **Key Facts:**
 - **Product Type:** Multi-tenant B2B SaaS for VMware VM provisioning
@@ -29,9 +29,9 @@ This document provides a comprehensive overview of the **EAF (Enterprise Applica
 
 ## 1. Project Overview
 
-### 1.1 What is DVMM?
+### 1.1 What is DCM?
 
-DVMM is a **self-service portal** enabling:
+DCM is a **self-service portal** enabling:
 - End users to request virtual machines through a web interface
 - IT administrators to approve/reject requests via workflow
 - Automated VM provisioning on VMware vSphere
@@ -55,7 +55,7 @@ User Request → Approval Workflow → VM Provisioned → Notification
 
 ### 1.3 EAF Framework
 
-DVMM is built on a reusable **Enterprise Application Framework (EAF)** containing:
+DCM is built on a reusable **Enterprise Application Framework (EAF)** containing:
 - `eaf-core` - Domain primitives (pure Kotlin, zero dependencies)
 - `eaf-eventsourcing` - Event Store, projections, snapshots
 - `eaf-tenant` - Multi-tenancy with PostgreSQL RLS
@@ -76,7 +76,7 @@ DVMM is built on a reusable **Enterprise Application Framework (EAF)** containin
 │     │                                                           │
 │     ▼                                                           │
 │  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐       │
-│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DVMM API  │       │
+│  │   WAF/CDN   │────▶│   Keycloak  │────▶│   DCM API  │       │
 │  │  (Future)   │     │    (OIDC)   │     │  (Spring)   │       │
 │  └─────────────┘     └─────────────┘     └─────────────┘       │
 │                                                │                │
@@ -133,7 +133,7 @@ DVMM is built on a reusable **Enterprise Application Framework (EAF)** containin
 
 **Current Implementation:**
 ```text
-User → Keycloak Login → JWT Token → DVMM API Validation
+User → Keycloak Login → JWT Token → DCM API Validation
          ↓
    MFA (optional)
    LDAP/AD (optional)
@@ -276,7 +276,7 @@ SET LOCAL app.tenant_id = '123e4567-e89b-12d3-a456-426614174000';
 **Network Isolation:**
 - VMware vSphere in isolated VLAN
 - No direct internet access
-- DVMM API is only gateway
+- DCM API is only gateway
 
 **Review Needed:**
 - [ ] VMware credential storage security
@@ -317,7 +317,7 @@ SET LOCAL app.tenant_id = '123e4567-e89b-12d3-a456-426614174000';
 
 ### 4.1 ISO 27001 Control Mapping
 
-| ISO Control | Description | DVMM Implementation |
+| ISO Control | Description | DCM Implementation |
 |-------------|-------------|---------------------|
 | A.9.2.3 | Privileged access management | RBAC, approval workflow |
 | A.9.4.1 | Information access restriction | RLS, tenant isolation |
@@ -362,7 +362,7 @@ quality_gates:
   architecture_tests:
     tool: konsist
     rules:
-      - "eaf modules have no dvmm dependencies"
+      - "eaf modules have no dcm dependencies"
       - "domain has no infrastructure dependencies"
 
   security:
@@ -407,7 +407,7 @@ quality_gates:
 ### 6.1 Monitoring Stack
 
 ```text
-Grafana (Dashboards) ← Prometheus (Metrics) ← DVMM API (/actuator)
+Grafana (Dashboards) ← Prometheus (Metrics) ← DCM API (/actuator)
         ↑
        Loki (Logs) ← Promtail (Log Shipping)
         ↑
@@ -442,7 +442,7 @@ Based on Strong IT's service portfolio and our project requirements, we identify
 
 | Service | Our Need | Priority |
 |---------|----------|----------|
-| **Web Application Pentest** | Full security assessment of DVMM portal | **HIGH** |
+| **Web Application Pentest** | Full security assessment of DCM portal | **HIGH** |
 | **API Security Testing** | REST API vulnerability assessment | **HIGH** |
 | **Lateral Movement Analysis** | Multi-tenant isolation verification | **HIGH** |
 | **MITRE ATT&CK Assessment** | Threat model validation | MEDIUM |
@@ -536,7 +536,7 @@ Based on Strong IT's service portfolio and our project requirements, we identify
 | System Architecture | Technical architecture, ADRs | `docs/architecture.md` |
 | Product Requirements | FRs/NFRs including security | `docs/prd.md` |
 | DevOps Strategy | CI/CD, monitoring, DR | `docs/devops-strategy.md` |
-| Product Brief | Business context | `docs/product-brief-dvmm-2025-11-24.md` |
+| Product Brief | Business context | `docs/product-brief-dcm-2025-11-24.md` |
 
 ---
 

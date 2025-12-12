@@ -22,7 +22,7 @@ class KeycloakTestFixtureIntegrationTest {
         // Verify container is running and URLs are available
         val issuerUri = fixture.getIssuerUri()
         assertNotNull(issuerUri)
-        assertTrue(issuerUri.contains("realms/dvmm"))
+        assertTrue(issuerUri.contains("realms/dcm"))
 
         // Verify JWKS URI is available
         val jwksUri = fixture.getJwksUri()

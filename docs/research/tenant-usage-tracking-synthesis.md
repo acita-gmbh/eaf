@@ -1,4 +1,4 @@
-# Tenant Usage Tracking & Billing for DVMM: Synthesized Research Findings
+# Tenant Usage Tracking & Billing for DCM: Synthesized Research Findings
 
 **Document Version:** 1.0
 **Date:** 2025-12-11
@@ -10,13 +10,13 @@
 
 ### The Challenge
 
-DVMM requires a tenant usage tracking and billing system that:
+DCM requires a tenant usage tracking and billing system that:
 - Collects accurate resource metrics (VMs, CPU, memory, storage, network)
 - Applies flexible pricing models suitable for DACH enterprises
 - Generates compliant invoices (ZUGFeRD/XRechnung)
 - Integrates with enterprise ERP systems (primarily SAP)
 - Maintains strict multi-tenant data isolation
-- Aligns with DVMM's existing CQRS/Event Sourcing architecture
+- Aligns with DCM's existing CQRS/Event Sourcing architecture
 
 ### Recommended Approach
 
@@ -89,7 +89,7 @@ All sources emphasize these API optimization techniques:
 
 ### 1.2 Collection Architecture Options
 
-| Approach | Pros | Cons | DVMM Fit |
+| Approach | Pros | Cons | DCM Fit |
 |----------|------|------|----------|
 | **Direct vSphere API** | Rich counters, vCenter integration | High API load if frequent polling | Good for lifecycle events |
 | **Prometheus + vmware_exporter** | Flexible, open-source, Grafana dashboards | Needs exporter setup | **Excellent** |
@@ -107,7 +107,7 @@ All sources emphasize these API optimization techniques:
 └─────────────────┘     └──────────────────┘     └────────┬────────┘
                                                           │
 ┌─────────────────┐     ┌──────────────────┐              │
-│ vCenter Events  │────▶│  DVMM Event Bus  │────▶────────▶│
+│ vCenter Events  │────▶│  DCM Event Bus  │────▶────────▶│
 │ (lifecycle)     │     │ (Kafka/RabbitMQ) │              │
 └─────────────────┘     └──────────────────┘              ▼
                                                  ┌─────────────────┐
@@ -153,7 +153,7 @@ All sources agree that **vCenter Events** are essential for accurate billing:
 | `VmReconfiguredEvent` | Detect resize (vCPU/RAM changes) |
 | `VmRemovedEvent` | Stop all charges |
 
-**Event Sourcing Alignment:** These events naturally fit DVMM's ES architecture. Unlike sampled metrics (which can miss short-lived VMs), events guarantee every second of lifecycle is captured.
+**Event Sourcing Alignment:** These events naturally fit DCM's ES architecture. Unlike sampled metrics (which can miss short-lived VMs), events guarantee every second of lifecycle is captured.
 
 ---
 
@@ -183,7 +183,7 @@ Where:
 
 ### 2.3 Billing Granularity Standards
 
-| Dimension | Industry Standard | DVMM Recommendation |
+| Dimension | Industry Standard | DCM Recommendation |
 |-----------|-------------------|---------------------|
 | **Time** | Per-second (AWS) to hourly | **Per-minute collection, hourly billing** |
 | **Compute** | Per-vCPU-hour or per-MHz-hour | Per-vCPU-hour (simpler) |
@@ -309,7 +309,7 @@ ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 
 ### 3.4 Event Sourcing Integration
 
-Usage tracking fits DVMM's CQRS/ES architecture:
+Usage tracking fits DCM's CQRS/ES architecture:
 
 **Domain Events for Billing:**
 ```kotlin
@@ -511,10 +511,10 @@ class RatingService(
   </rsm:ExchangedDocument>
 
   <rsm:SupplyChainTradeTransaction>
-    <!-- Seller (DVMM Operator) -->
+    <!-- Seller (DCM Operator) -->
     <ram:ApplicableHeaderTradeAgreement>
       <ram:SellerTradeParty>
-        <ram:Name>DVMM Services GmbH</ram:Name>
+        <ram:Name>DCM Services GmbH</ram:Name>
         <ram:SpecifiedTaxRegistration>
           <ram:ID schemeID="VA">DE123456789</ram:ID>
         </ram:SpecifiedTaxRegistration>
@@ -658,11 +658,11 @@ Usage-based billing affects revenue timing:
 | **Proxmox VE** | No native billing | - | Relies on 3rd party (WHMCS, HostBill) |
 | **XenOrchestra** | Resource accounting only | Usage reports | No billing engine |
 
-**DVMM Differentiation:** Precise hypervisor-level metering (not estimates) + ZUGFeRD compliance + event-sourced audit trail.
+**DCM Differentiation:** Precise hypervisor-level metering (not estimates) + ZUGFeRD compliance + event-sourced audit trail.
 
 ### 6.2 Public Cloud Patterns Worth Adopting
 
-| Cloud | Feature | DVMM Application |
+| Cloud | Feature | DCM Application |
 |-------|---------|------------------|
 | **AWS** | Per-second billing | Consider for CI/CD workloads |
 | **AWS** | Reserved Instances draw-down | Committed use discount logic |
@@ -891,7 +891,7 @@ All three sources propose a phased approach. The synthesized roadmap:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                              DVMM Platform                                  │
+│                              DCM Platform                                  │
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                 │

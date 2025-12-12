@@ -1,4 +1,4 @@
-# The DVMM Design System
+# The DCM Design System
 
 **Building a consistent, accessible, and beautiful UI.**
 

@@ -17,7 +17,7 @@ So that I can specify what I need.
 - **Routing Note:** This story introduces React Router to the project (first multi-page navigation)
 - **UX Reference:** `docs/ux/design-specification.md` Section 3 (Visual Foundation), custom VM Size Selector component
 - **Tech Spec Reference:** `docs/sprint-artifacts/tech-spec-epic-2.md` Section 4.4 (Frontend Architecture)
-- **Existing Code:** Dashboard + layout components in `dvmm/dvmm-web/src/`
+- **Existing Code:** Dashboard + layout components in `dcm/dcm-web/src/`
 
 ## Pre-Flight Setup Checklist
 
@@ -324,7 +324,7 @@ If any items are missing, complete Tasks 1-2 first before proceeding.
 ### Component Structure (Target)
 
 ```
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── components/
 │   ├── auth/
 │   │   ├── ProtectedRoute.tsx      # Route guard (NEW - required for routing)
@@ -363,7 +363,7 @@ dvmm/dvmm-web/src/
 ### shadcn Components to Add
 
 ```bash
-# From dvmm/dvmm-web directory
+# From dcm/dcm-web directory
 npx shadcn@latest add input textarea select label form progress
 ```
 

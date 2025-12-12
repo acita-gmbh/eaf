@@ -2,7 +2,7 @@
 
 **Intelligent automation for approvals.**
 
-The "Docket" system is DVMM's policy engine. It allows IT Admins to define rules that automatically approve or reject VM requests based on criteria like size, cost, or project budget. This moves the system from "manual bottleneck" to "governance by exception."
+The "Docket" system is DCM's policy engine. It allows IT Admins to define rules that automatically approve or reject VM requests based on criteria like size, cost, or project budget. This moves the system from "manual bottleneck" to "governance by exception."
 
 ---
 

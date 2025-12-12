@@ -2,7 +2,7 @@
 
 **Wie wir aus technischen Daten Rechnungen machen.**
 
-Dieses Dokument erklärt das Konzept der verbrauchsbasierten Abrechnung in DVMM. Es richtet sich an Leser aus dem Bereich **Finanzbuchhaltung und Controlling**.
+Dieses Dokument erklärt das Konzept der verbrauchsbasierten Abrechnung in DCM. Es richtet sich an Leser aus dem Bereich **Finanzbuchhaltung und Controlling**.
 
 ---
 
@@ -10,7 +10,7 @@ Dieses Dokument erklärt das Konzept der verbrauchsbasierten Abrechnung in DVMM.
 
 Traditionelle IT-Kosten sind oft Pauschalen („Flat Rates“). Das ist einfach, aber oft unfair. Wenn eine Abteilung einen großen Server nur für 3 Stunden benötigt, zahlt sie oft für den ganzen Monat.
 
-DVMM nutzt ein **verbrauchsabhängiges Modell** (ähnlich wie Ihre Stromrechnung). Wir messen exakt, wie lange eine Ressource belegt war.
+DCM nutzt ein **verbrauchsabhängiges Modell** (ähnlich wie Ihre Stromrechnung). Wir messen exakt, wie lange eine Ressource belegt war.
 
 ### Was wir messen (Die Währung)
 

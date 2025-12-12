@@ -93,7 +93,7 @@ Before starting implementation, verify these are complete:
 
 ### Backend Unit Tests
 
-**GetVmRequestDetailHandler (dvmm-application):**
+**GetVmRequestDetailHandler (dcm-application):**
 - Returns full request details for valid ID in admin's tenant
 - Returns `NotFound` error for non-existent request ID
 - Returns `Forbidden` error for request from different tenant
@@ -101,7 +101,7 @@ Before starting implementation, verify these are complete:
 - Includes timeline events sorted chronologically
 - Maps DB entities to DTOs correctly (hiding internal IDs)
 
-**VmRequestProjectionRepository (dvmm-infrastructure):**
+**VmRequestProjectionRepository (dcm-infrastructure):**
 - `findByIdWithDetails` returns full request with joins
 - `findRecentRequestsByRequesterId` returns max 5 recent requests
 - RLS filter applied automatically
@@ -162,7 +162,7 @@ Before starting implementation, verify these are complete:
 ### Domain Events (Already Implemented)
 
 ```kotlin
-// From dvmm-domain - events already exist
+// From dcm-domain - events already exist
 VmRequestCreated
 VmRequestApproved
 VmRequestRejected
@@ -185,7 +185,7 @@ GET /api/admin/requests/{id} - Get request detail for admin
 
 - [x] **Task 1.1: Create GetVmRequestDetailQuery & Handler** (AC: 1, 2, 3, 5, 6, 10)
   - Create `GetVmRequestDetailQuery.kt` with `requestId` and `tenantId`
-  - Create `GetVmRequestDetailHandler.kt` in `dvmm-application`
+  - Create `GetVmRequestDetailHandler.kt` in `dcm-application`
   - Return `Result<VmRequestDetailResponse, GetVmRequestDetailError>`
   - **Error types (CRITICAL - per CLAUDE.md architecture rules):**
     ```kotlin
@@ -399,26 +399,26 @@ LIMIT :limit
 ### New Files to Create (Backend)
 
 ```text
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/
 ├── GetVmRequestDetailQuery.kt
 └── GetVmRequestDetailHandler.kt
 
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/
 └── GetVmRequestDetailHandlerTest.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/
 ├── VmRequestDetailResponse.kt
 ├── RequesterDto.kt
 └── TimelineEventDto.kt
 
-dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/
+dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/admin/
 └── AdminRequestDetailIntegrationTest.kt
 ```
 
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/
+dcm/dcm-web/
 ├── src/
 │   ├── hooks/
 │   │   ├── useAdminRequestDetail.ts

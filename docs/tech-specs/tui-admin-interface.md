@@ -1,6 +1,6 @@
-# Tech Spec: DVMM TUI Admin Interface
+# Tech Spec: DCM TUI Admin Interface
 
-**Author:** DVMM Team
+**Author:** DCM Team
 **Date:** 2025-11-29
 **Version:** 2.0
 **Status:** Draft
@@ -17,7 +17,7 @@ Experienced administrators need a fast, keyboard-driven interface for routine op
 
 ### Solution
 
-A standalone Terminal User Interface (TUI) application using Lanterna, communicating with `dvmm-app` via gRPC streaming over Unix socket for real-time updates and sub-millisecond latency.
+A standalone Terminal User Interface (TUI) application using Lanterna, communicating with `dcm-app` via gRPC streaming over Unix socket for real-time updates and sub-millisecond latency.
 
 ### Key Benefits
 
@@ -59,7 +59,7 @@ A standalone Terminal User Interface (TUI) application using Lanterna, communica
 |------------|------|-------------|
 | Epic 2 (Core Workflow) complete | Epic | All stories |
 | Epic 3 (VM Provisioning) complete | Epic | Health dashboard |
-| gRPC server in dvmm-infrastructure | Story | 6.1 |
+| gRPC server in dcm-infrastructure | Story | 6.1 |
 | Event store subscription API | Story | 6.1, 6.3 |
 
 ---
@@ -98,16 +98,16 @@ A standalone Terminal User Interface (TUI) application using Lanterna, communica
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              DVMM TUI Architecture                          │
+│                              DCM TUI Architecture                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌───────────────────────┐              ┌─────────────────────────────────┐│
 │  │                       │              │                                 ││
-│  │    dvmm-tui (CLI)     │   Unix       │     dvmm-app (Spring Boot)      ││
+│  │    dcm-tui (CLI)     │   Unix       │     dcm-app (Spring Boot)      ││
 │  │    ════════════════   │   Socket     │     ══════════════════════      ││
 │  │                       │              │                                 ││
 │  │  ┌─────────────────┐  │  /var/run/   │  ┌───────────────────────────┐  ││
-│  │  │  gRPC Client    │◄─┼──dvmm.sock──►┼─►│    TuiGrpcService         │  ││
+│  │  │  gRPC Client    │◄─┼──dcm.sock──►┼─►│    TuiGrpcService         │  ││
 │  │  │  ─────────────  │  │              │  │    ───────────────        │  ││
 │  │  │  • Commands     │  │   Streams    │  │    @GrpcService           │  ││
 │  │  │  • Subscriptions│  │   ◄────────  │  │                           │  ││
@@ -130,17 +130,17 @@ A standalone Terminal User Interface (TUI) application using Lanterna, communica
 ### Module Structure
 
 ```
-dvmm/
-├── dvmm-tui-protocol/                    ◄── Shared Protobuf definitions
+dcm/
+├── dcm-tui-protocol/                    ◄── Shared Protobuf definitions
 │   ├── build.gradle.kts
 │   └── src/main/proto/
-│       └── dvmm_tui.proto
+│       └── dcm_tui.proto
 │
-├── dvmm-tui/                             ◄── Standalone TUI client (NO Spring)
+├── dcm-tui/                             ◄── Standalone TUI client (NO Spring)
 │   ├── build.gradle.kts
 │   └── src/
-│       ├── main/kotlin/de/acci/dvmm/tui/
-│       │   ├── DvmmTuiApplication.kt           # Entry point
+│       ├── main/kotlin/de/acci/dcm/tui/
+│       │   ├── DcmTuiApplication.kt           # Entry point
 │       │   ├── TuiRunner.kt                    # Main loop
 │       │   ├── config/TuiConfig.kt             # YAML config loading
 │       │   ├── auth/
@@ -150,9 +150,9 @@ dvmm/
 │       │   │   ├── TuiGrpcClient.kt            # Unix socket channel
 │       │   │   └── EventSubscriber.kt          # Stream handler
 │       │   ├── dsl/                            # Kotlin DSL for Lanterna
-│       │   │   ├── DvmmWindow.kt
-│       │   │   ├── DvmmPanel.kt
-│       │   │   └── DvmmTable.kt
+│       │   │   ├── DcmWindow.kt
+│       │   │   ├── DcmPanel.kt
+│       │   │   └── DcmTable.kt
 │       │   ├── screens/
 │       │   │   ├── MainScreen.kt
 │       │   │   ├── ApprovalScreen.kt
@@ -164,11 +164,11 @@ dvmm/
 │       │       ├── StatusIndicator.kt
 │       │       ├── RequestTable.kt
 │       │       └── KeyHelpBar.kt
-│       └── test/kotlin/de/acci/dvmm/tui/
+│       └── test/kotlin/de/acci/dcm/tui/
 │           ├── grpc/TuiGrpcClientTest.kt       # gRPC mock tests
 │           └── screens/ApprovalScreenTest.kt
 │
-└── dvmm-infrastructure/
+└── dcm-infrastructure/
     └── src/main/kotlin/.../grpc/
         ├── TuiGrpcService.kt             ◄── Server-side gRPC impl
         └── TuiAuthService.kt             ◄── Unix user validation
@@ -181,13 +181,13 @@ dvmm/
 │                    Module Dependency Graph                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│   dvmm-tui-protocol ◄───────────────────────────────────────┐   │
+│   dcm-tui-protocol ◄───────────────────────────────────────┐   │
 │         │                                                    │   │
 │         │ (Protobuf stubs)                                  │   │
 │         │                                                    │   │
 │         ▼                                                    │   │
 │   ┌───────────┐                                    ┌────────┴─┐ │
-│   │ dvmm-tui  │                                    │ dvmm-    │ │
+│   │ dcm-tui  │                                    │ dcm-    │ │
 │   │ (client)  │                                    │ infra    │ │
 │   └───────────┘                                    └────────┬─┘ │
 │         │                                                   │   │
@@ -196,7 +196,7 @@ dvmm/
 │                                                                  │
 │   Client and Server share ONLY the protocol module               │
 │   Client has NO Spring dependencies                              │
-│   Client has NO access to dvmm-application internals             │
+│   Client has NO access to dcm-application internals             │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -209,7 +209,7 @@ dvmm/
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  DVMM Admin Console v1.0                              Tenant: acme-corp      ║
+║  DCM Admin Console v1.0                              Tenant: acme-corp      ║
 ║  User: admin@acme.de                                  Session: 2h 15m   ● ○  ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                              ║
@@ -362,14 +362,14 @@ Legend:  ● Healthy (< 100ms)   ○ Degraded (100-500ms)   ✖ Unhealthy (> 500
 ## Protobuf Service Definition
 
 ```protobuf
-// dvmm-tui-protocol/src/main/proto/dvmm_tui.proto
+// dcm-tui-protocol/src/main/proto/dcm_tui.proto
 syntax = "proto3";
-package de.acci.dvmm.tui;
+package de.acci.dcm.tui;
 
 option java_multiple_files = true;
-option java_package = "de.acci.dvmm.tui.proto";
+option java_package = "de.acci.dcm.tui.proto";
 
-service DvmmTuiService {
+service DcmTuiService {
   // Authentication
   rpc Authenticate(AuthRequest) returns (AuthResponse);
 
@@ -528,7 +528,7 @@ enum HealthStatus {
 ### Priority Order
 
 1. **Unix User Mapping** - Fastest for local SSH admins
-2. **Token File** - For automation/scripting (`~/.config/dvmm-tui/token`)
+2. **Token File** - For automation/scripting (`~/.config/dcm-tui/token`)
 3. **CLI Token Argument** - Explicit override (`--token=...`)
 4. **Interactive Login** - Fallback with username/password
 
@@ -540,7 +540,7 @@ enum HealthStatus {
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌──────────────┐     ┌──────────────────────────────────────────────────┐ │
-│  │ dvmm-tui     │     │                   Priority Chain                 │ │
+│  │ dcm-tui     │     │                   Priority Chain                 │ │
 │  │ starts       │────►│                                                  │ │
 │  └──────────────┘     │  1. --token=... arg?  ──Yes──► Validate Token    │ │
 │                       │          │                           │           │ │
@@ -571,8 +571,8 @@ enum HealthStatus {
 ### Unix User Mapping (Server Config)
 
 ```yaml
-# application.yml (dvmm-app)
-dvmm:
+# application.yml (dcm-app)
+dcm:
   tui:
     unix-user-mappings:
       admin:
@@ -617,16 +617,16 @@ dvmm:
 
 **Acceptance Criteria:**
 
-- [ ] `./gradlew :dvmm:dvmm-tui:build` succeeds
-- [ ] `./gradlew :dvmm:dvmm-tui-protocol:build` succeeds
+- [ ] `./gradlew :dcm:dcm-tui:build` succeeds
+- [ ] `./gradlew :dcm:dcm-tui-protocol:build` succeeds
 - [ ] gRPC client connects via Unix socket
 - [ ] Main dashboard displays with navigation menu
 - [ ] Architecture tests verify module boundaries
 
 **Technical Tasks:**
 
-1. Create `dvmm-tui-protocol` module with Protobuf setup
-2. Create `dvmm-tui` module with Lanterna dependency
+1. Create `dcm-tui-protocol` module with Protobuf setup
+2. Create `dcm-tui` module with Lanterna dependency
 3. Implement `TuiGrpcClient` with Unix socket support
 4. Implement `MainScreen` with navigation
 5. Add `TuiGrpcService` stub in infrastructure
@@ -747,7 +747,7 @@ dvmm:
 **Acceptance Criteria:**
 
 - [ ] `--token=...` CLI argument accepted
-- [ ] Token file at `~/.config/dvmm-tui/token` read if present
+- [ ] Token file at `~/.config/dcm-tui/token` read if present
 - [ ] Interactive login screen as final fallback
 - [ ] Session token stored for subsequent calls
 
@@ -767,16 +767,16 @@ dvmm:
 
 ## Configuration Reference
 
-### TUI Client (`~/.config/dvmm-tui/config.yml`)
+### TUI Client (`~/.config/dcm-tui/config.yml`)
 
 ```yaml
-socket-path: /var/run/dvmm/tui.sock
+socket-path: /var/run/dcm/tui.sock
 connection-timeout: 5s
 request-timeout: 30s
 
 auth:
   prefer-unix-user: true
-  token-file: ~/.config/dvmm-tui/token
+  token-file: ~/.config/dcm-tui/token
 
 ui:
   date-format: "yyyy-MM-dd HH:mm:ss"
@@ -791,11 +791,11 @@ grpc:
     port: 9090
     unix-socket:
       enabled: true
-      path: /var/run/dvmm/tui.sock
+      path: /var/run/dcm/tui.sock
       permissions: 660
-      group: dvmm-admins
+      group: dcm-admins
 
-dvmm:
+dcm:
   tui:
     session-timeout: 4h
     max-concurrent-sessions: 10
@@ -828,7 +828,7 @@ For each story in Epic 6:
 
 - [Lanterna 3.1.2 Documentation](https://github.com/mabe02/lanterna/tree/master/docs)
 - [gRPC Kotlin Documentation](https://grpc.io/docs/languages/kotlin/)
-- [DVMM Architecture](../architecture.md)
+- [DCM Architecture](../architecture.md)
 - [TUI Analysis](tui-analysis.md)
 
 ---

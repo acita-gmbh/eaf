@@ -15,7 +15,7 @@ So that I have a single place to see all my activity.
 - **Architecture constraint:** shadcn-admin-kit patterns, Tailwind CSS, Tech Teal theme
 - **Prerequisites:** Story 2.1 (Keycloak Login Flow) - DONE
 - **UX Reference:** `docs/ux/design-specification.md` Section 4.2 (Layout Strategy)
-- **Existing Code:** `dvmm/dvmm-web/src/App.tsx` - basic header and placeholder content
+- **Existing Code:** `dcm/dcm-web/src/App.tsx` - basic header and placeholder content
 
 ## Acceptance Criteria
 
@@ -30,7 +30,7 @@ So that I have a single place to see all my activity.
    - Given I am logged in
    - When I view the dashboard
    - Then the header displays:
-     - DVMM logo (left)
+     - DCM logo (left)
      - Tenant switcher dropdown (MVP: single tenant display, switcher post-MVP)
      - User avatar with name dropdown
      - Logout button
@@ -89,7 +89,7 @@ So that I have a single place to see all my activity.
 #### From Story 2-1-keycloak-login-flow (Status: done)
 
 - **Frontend Stack Established:**
-  - Vite + React + TypeScript at `dvmm/dvmm-web/`
+  - Vite + React + TypeScript at `dcm/dcm-web/`
   - shadcn/ui with Tailwind CSS configured
   - React OIDC Context for authentication
   - CSRF token handling via `api-client.ts`
@@ -179,7 +179,7 @@ So that I have a single place to see all my activity.
 ### Component Structure (Target)
 
 ```
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── components/
 │   ├── layout/
 │   │   ├── Header.tsx           # App header with logo, tenant, user
@@ -202,7 +202,7 @@ dvmm/dvmm-web/src/
 ### shadcn/ui Components to Add
 
 ```bash
-# From dvmm/dvmm-web directory
+# From dcm/dcm-web directory
 npx shadcn@latest add card
 npx shadcn@latest add badge
 npx shadcn@latest add avatar
@@ -461,42 +461,42 @@ claude-opus-4-5-20251101
 ### File List
 
 **New Files:**
-- dvmm/dvmm-web/vitest.config.ts
-- dvmm/dvmm-web/src/test/setup.ts
-- dvmm/dvmm-web/src/test/test-utils.tsx
-- dvmm/dvmm-web/src/components/layout/Header.tsx
-- dvmm/dvmm-web/src/components/layout/Sidebar.tsx
-- dvmm/dvmm-web/src/components/layout/MobileNav.tsx
-- dvmm/dvmm-web/src/components/layout/DashboardLayout.tsx
-- dvmm/dvmm-web/src/components/layout/index.ts
-- dvmm/dvmm-web/src/components/dashboard/StatsCard.tsx
-- dvmm/dvmm-web/src/components/dashboard/RequestsPlaceholder.tsx
-- dvmm/dvmm-web/src/components/dashboard/index.ts
-- dvmm/dvmm-web/src/pages/Dashboard.tsx
-- dvmm/dvmm-web/src/components/ui/card.tsx
-- dvmm/dvmm-web/src/components/ui/badge.tsx
-- dvmm/dvmm-web/src/components/ui/avatar.tsx
-- dvmm/dvmm-web/src/components/ui/separator.tsx
-- dvmm/dvmm-web/src/components/ui/sheet.tsx
-- dvmm/dvmm-web/src/components/layout/__tests__/Header.test.tsx
-- dvmm/dvmm-web/src/components/layout/__tests__/Sidebar.test.tsx
-- dvmm/dvmm-web/src/components/layout/__tests__/MobileNav.test.tsx
-- dvmm/dvmm-web/src/components/layout/__tests__/DashboardLayout.test.tsx
-- dvmm/dvmm-web/src/components/dashboard/__tests__/StatsCard.test.tsx
-- dvmm/dvmm-web/src/pages/__tests__/Dashboard.test.tsx
-- dvmm/dvmm-web/src/__tests__/App.integration.test.tsx
-- dvmm/dvmm-web/src/components/ErrorBoundary.tsx
-- dvmm/dvmm-web/components.json
+- dcm/dcm-web/vitest.config.ts
+- dcm/dcm-web/src/test/setup.ts
+- dcm/dcm-web/src/test/test-utils.tsx
+- dcm/dcm-web/src/components/layout/Header.tsx
+- dcm/dcm-web/src/components/layout/Sidebar.tsx
+- dcm/dcm-web/src/components/layout/MobileNav.tsx
+- dcm/dcm-web/src/components/layout/DashboardLayout.tsx
+- dcm/dcm-web/src/components/layout/index.ts
+- dcm/dcm-web/src/components/dashboard/StatsCard.tsx
+- dcm/dcm-web/src/components/dashboard/RequestsPlaceholder.tsx
+- dcm/dcm-web/src/components/dashboard/index.ts
+- dcm/dcm-web/src/pages/Dashboard.tsx
+- dcm/dcm-web/src/components/ui/card.tsx
+- dcm/dcm-web/src/components/ui/badge.tsx
+- dcm/dcm-web/src/components/ui/avatar.tsx
+- dcm/dcm-web/src/components/ui/separator.tsx
+- dcm/dcm-web/src/components/ui/sheet.tsx
+- dcm/dcm-web/src/components/layout/__tests__/Header.test.tsx
+- dcm/dcm-web/src/components/layout/__tests__/Sidebar.test.tsx
+- dcm/dcm-web/src/components/layout/__tests__/MobileNav.test.tsx
+- dcm/dcm-web/src/components/layout/__tests__/DashboardLayout.test.tsx
+- dcm/dcm-web/src/components/dashboard/__tests__/StatsCard.test.tsx
+- dcm/dcm-web/src/pages/__tests__/Dashboard.test.tsx
+- dcm/dcm-web/src/__tests__/App.integration.test.tsx
+- dcm/dcm-web/src/components/ErrorBoundary.tsx
+- dcm/dcm-web/components.json
 
 **Modified Files:**
-- dvmm/dvmm-web/package.json (added test deps, test script)
-- dvmm/dvmm-web/package-lock.json (updated dependencies)
-- dvmm/dvmm-web/tsconfig.json (added paths for shadcn)
-- dvmm/dvmm-web/eslint.config.js (added test ignores, react-refresh config)
-- dvmm/dvmm-web/src/index.css (added status colors, updated primary to oklch, fixed dark mode)
-- dvmm/dvmm-web/src/App.tsx (replaced inline layout with DashboardLayout + Dashboard, added ErrorBoundary)
-- dvmm/dvmm-web/src/lib/utils.ts (updated by shadcn)
-- dvmm/dvmm-web/src/auth/auth-config.ts (added env variable validation, error logging)
+- dcm/dcm-web/package.json (added test deps, test script)
+- dcm/dcm-web/package-lock.json (updated dependencies)
+- dcm/dcm-web/tsconfig.json (added paths for shadcn)
+- dcm/dcm-web/eslint.config.js (added test ignores, react-refresh config)
+- dcm/dcm-web/src/index.css (added status colors, updated primary to oklch, fixed dark mode)
+- dcm/dcm-web/src/App.tsx (replaced inline layout with DashboardLayout + Dashboard, added ErrorBoundary)
+- dcm/dcm-web/src/lib/utils.ts (updated by shadcn)
+- dcm/dcm-web/src/auth/auth-config.ts (added env variable validation, error logging)
 
 ### Code Review
 

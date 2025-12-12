@@ -2,7 +2,7 @@
 
 **Breaking free from vendor lock-in.**
 
-The IT world is shifting. Broadcom's acquisition of VMware has made "single-vendor" strategies risky. DVMM is designed to be hypervisor-agnostic, allowing customers to mix and match VMware, Proxmox, and Hyper-V within the same tenant.
+The IT world is shifting. Broadcom's acquisition of VMware has made "single-vendor" strategies risky. DCM is designed to be hypervisor-agnostic, allowing customers to mix and match VMware, Proxmox, and Hyper-V within the same tenant.
 
 ---
 
@@ -11,7 +11,7 @@ The IT world is shifting. Broadcom's acquisition of VMware has made "single-vend
 We don't sprinkle `if (isVmware)` logic throughout the codebase. Instead, we use the **Ports and Adapters** pattern.
 
 ### 1. The Generic Contract (Port)
-In the Domain layer (`dvmm-application`), we define a generic interface that describes *what* we need, not *how* it's done.
+In the Domain layer (`dcm-application`), we define a generic interface that describes *what* we need, not *how* it's done.
 
 ```kotlin
 interface HypervisorPort {
@@ -23,7 +23,7 @@ interface HypervisorPort {
 ```
 
 ### 2. The Specific Adapters (Infrastructure)
-In the Infrastructure layer (`dvmm-infrastructure`), we implement this interface for each technology.
+In the Infrastructure layer (`dcm-infrastructure`), we implement this interface for each technology.
 
 *   **VsphereAdapter:** Uses VCF SDK (SOAP) to talk to vCenter.
 *   **ProxmoxAdapter:** Uses REST API to talk to Proxmox VE.

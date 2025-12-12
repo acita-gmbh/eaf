@@ -2,7 +2,7 @@
 
 **Protecting our IP while enabling flexible commercial models.**
 
-As DVMM moves from an internal tool to a commercial product (SaaS and On-Premise), we need a robust way to enforce usage limits. We need to prevent piracy without annoying legitimate customers.
+As DCM moves from an internal tool to a commercial product (SaaS and On-Premise), we need a robust way to enforce usage limits. We need to prevent piracy without annoying legitimate customers.
 
 ---
 
@@ -14,7 +14,7 @@ A license key is not just a random string. It is a **Signed JWT (JSON Web Token)
 ```json
 {
   "sub": "customer-uuid",
-  "iss": "dvmm-licensing-server",
+  "iss": "dcm-licensing-server",
   "exp": 1767225600, // Expiration Date
   "entitlements": {
     "tier": "ENTERPRISE",
@@ -34,7 +34,7 @@ The application has our **Public Key** embedded in the binary. On startup (and p
 *   **Cons:** Cannot detect revoked keys immediately.
 
 ### 2. Online Validation (The Heartbeat)
-For connected instances, the system sends a daily "heartbeat" to our Licensing Server (`license.dvmm.io`).
+For connected instances, the system sends a daily "heartbeat" to our Licensing Server (`license.dcm.io`).
 *   **Data Sent:** `license_id`, `usage_metrics` (anonymized VM counts), `instance_id`.
 *   **Response:** `OK`, `REVOKED`, or `RENEWED` (auto-update key).
 

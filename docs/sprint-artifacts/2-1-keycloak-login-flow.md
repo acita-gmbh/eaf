@@ -6,7 +6,7 @@ Status: done
 
 As an **end user**,
 I want to log in via Keycloak SSO,
-so that I can access DVMM securely with my company credentials.
+so that I can access DCM securely with my company credentials.
 
 ## Requirements Context Summary
 
@@ -14,20 +14,20 @@ so that I can access DVMM securely with my company credentials.
 - **FRs Satisfied:** FR1 (SSO Authentication), FR2 (Session Management), FR7a (Token Refresh)
 - **Architecture constraint:** Frontend Tracer Bullet — first user-facing code validating complete UI stack.
 - **Prerequisites:** Story 1.7 (Keycloak Integration) — backend SecurityConfig completed.
-- **Technical Debt:** Coverage restoration required for `eaf-auth-keycloak` (15% → ≥80%) and `dvmm-api` (54% → ≥80%).
+- **Technical Debt:** Coverage restoration required for `eaf-auth-keycloak` (15% → ≥80%) and `dcm-api` (54% → ≥80%).
 - **Token Storage:** httpOnly cookie with `Secure` and `SameSite=Lax` flags, explicit CSRF token validation.
 
 ## Acceptance Criteria
 
 1. **Unauthenticated redirect to Keycloak**
-   - Given I navigate to DVMM root URL (`/`)
+   - Given I navigate to DCM root URL (`/`)
    - When I am not authenticated
    - Then I am redirected to Keycloak login page.
 
 2. **Successful login redirects to dashboard**
    - Given I complete Keycloak login successfully
-   - When Keycloak redirects back to DVMM
-   - Then I see the DVMM dashboard
+   - When Keycloak redirects back to DCM
+   - Then I see the DCM dashboard
    - And my session is maintained via httpOnly cookie (Secure, SameSite=Lax)
    - And my name and tenant are displayed in the header.
 
@@ -57,15 +57,15 @@ so that I can access DVMM securely with my company credentials.
    - And module achieves ≥80% test coverage
    - And `tasks.named("koverVerify") { enabled = false }` is removed from `eaf/eaf-auth-keycloak/build.gradle.kts`.
 
-7. **Coverage restored for dvmm-api (≥80%)**
-   - Given `dvmm-api` has coverage verification disabled
+7. **Coverage restored for dcm-api (≥80%)**
+   - Given `dcm-api` has coverage verification disabled
    - When this story is complete
    - Then SecurityConfig integration tests verify:
      - Unauthenticated `/api/**` requests return 401
      - Unauthenticated `/actuator/health` requests are allowed
      - Authenticated requests with valid JWT succeed
    - And module achieves ≥80% test coverage
-   - And `tasks.named("koverVerify") { enabled = false }` is removed from `dvmm/dvmm-api/build.gradle.kts`.
+   - And `tasks.named("koverVerify") { enabled = false }` is removed from `dcm/dcm-api/build.gradle.kts`.
 
 8. **Pitest restored for eaf-auth-keycloak (≥70%)**
    - Given `eaf-auth-keycloak` has mutation testing disabled
@@ -92,8 +92,8 @@ so that I can access DVMM securely with my company credentials.
   1. `eaf-auth-keycloak` module: 15% vs 80% required
      - Location: `eaf/eaf-auth-keycloak/build.gradle.kts` - `tasks.named("koverVerify") { enabled = false }`
      - Reason: Story 1.7 created implementation without Keycloak Testcontainer tests
-  2. `dvmm-api` module: 54% vs 80% required
-     - Location: `dvmm/dvmm-api/build.gradle.kts` - `tasks.named("koverVerify") { enabled = false }`
+  2. `dcm-api` module: 54% vs 80% required
+     - Location: `dcm/dcm-api/build.gradle.kts` - `tasks.named("koverVerify") { enabled = false }`
      - Reason: SecurityConfig requires Spring Security WebFlux integration tests
 
 - **Pitest Exclusions Currently in Place:**
@@ -107,10 +107,10 @@ so that I can access DVMM securely with my company credentials.
 
 ### Project Structure Notes
 
-- Frontend: `dvmm/dvmm-web/` (new React application with Vite)
+- Frontend: `dcm/dcm-web/` (new React application with Vite)
 - Backend: Existing modules from Epic 1
 - Auth module: `eaf/eaf-auth-keycloak/` (implementation exists, needs tests)
-- API module: `dvmm/dvmm-api/` (SecurityConfig exists, needs tests)
+- API module: `dcm/dcm-api/` (SecurityConfig exists, needs tests)
 - Test resources: `src/test/resources/` for test configuration
 
 ## Tasks / Subtasks
@@ -118,7 +118,7 @@ so that I can access DVMM securely with my company credentials.
 - [ ] **Task 1: Setup Keycloak Testcontainer** (AC: 6, 7, 8)
   - [ ] Add Keycloak Testcontainer dependency to `eaf-testing` module
   - [ ] Create `KeycloakTestFixture` class (realm import, test users)
-  - [ ] Configure test realm JSON with `dvmm` realm, clients, users
+  - [ ] Configure test realm JSON with `dcm` realm, clients, users
   - [ ] Verify Testcontainer starts and accepts logins
 
 - [ ] **Task 2: Write eaf-auth-keycloak integration tests** (AC: 6, 8)
@@ -130,18 +130,18 @@ so that I can access DVMM securely with my company credentials.
   - [ ] Remove `koverVerify { enabled = false }` from build.gradle.kts
   - [ ] Restore Pitest threshold, achieve ≥70% mutation score
 
-- [ ] **Task 3: Write dvmm-api SecurityConfig tests** (AC: 7)
+- [ ] **Task 3: Write dcm-api SecurityConfig tests** (AC: 7)
   - [ ] Create `SecurityConfigIntegrationTest` with WebTestClient
   - [ ] Test: GET /api/** without token returns 401
   - [ ] Test: GET /actuator/health without token returns 200
   - [ ] Test: GET /api/** with valid JWT returns 200
   - [ ] Test: POST /api/** without CSRF token returns 403
   - [ ] Test: POST /api/** with valid CSRF token succeeds
-  - [ ] Achieve ≥80% coverage on `dvmm-api`
+  - [ ] Achieve ≥80% coverage on `dcm-api`
   - [ ] Remove `koverVerify { enabled = false }` from build.gradle.kts
 
 - [ ] **Task 4: Initialize frontend application** (AC: 1, 2, 3, 4)
-  - [ ] Create `dvmm/dvmm-web/` with Vite + React + TypeScript
+  - [ ] Create `dcm/dcm-web/` with Vite + React + TypeScript
   - [ ] Add shadcn/ui with Tailwind CSS (Tech Teal theme)
   - [ ] Configure `react-oidc-context` for Keycloak integration
   - [ ] Setup environment variables for Keycloak URL, realm, client
@@ -187,8 +187,8 @@ so that I can access DVMM securely with my company credentials.
 - **Source tree components to touch:**
   - `eaf/eaf-testing/` — Keycloak Testcontainer fixture
   - `eaf/eaf-auth-keycloak/src/test/` — Integration tests
-  - `dvmm/dvmm-api/src/test/` — SecurityConfig tests
-  - `dvmm/dvmm-web/` — New React frontend application
+  - `dcm/dcm-api/src/test/` — SecurityConfig tests
+  - `dcm/dcm-web/` — New React frontend application
   - `build.gradle.kts` files — Remove coverage exclusions
 
 - **Testing standards:**
@@ -200,17 +200,17 @@ so that I can access DVMM securely with my company credentials.
 
 ```json
 {
-  "realm": "dvmm-test",
+  "realm": "dcm-test",
   "enabled": true,
   "clients": [
     {
-      "clientId": "dvmm-web",
+      "clientId": "dcm-web",
       "publicClient": true,
       "redirectUris": ["http://localhost:5173/*"],
       "webOrigins": ["+"]
     },
     {
-      "clientId": "dvmm-api",
+      "clientId": "dcm-api",
       "bearerOnly": true
     }
   ],
@@ -267,7 +267,7 @@ claude-opus-4-5-20251101
 | AC4 | ✅ IMPLEMENTED | `auth-config.ts:17` - automaticSilentRenew: true |
 | AC5 | ✅ IMPLEMENTED | `CsrfValidationFilter.kt:31-84`, `api-client.ts:72-90` |
 | AC6 | ✅ IMPLEMENTED | `eaf-auth-keycloak/build.gradle.kts` - koverVerify enabled |
-| AC7 | ✅ IMPLEMENTED | `dvmm-api/build.gradle.kts` - koverVerify enabled |
+| AC7 | ✅ IMPLEMENTED | `dcm-api/build.gradle.kts` - koverVerify enabled |
 | AC8 | ✅ IMPLEMENTED | `eaf-auth-keycloak/build.gradle.kts:6` - pitest-conventions applied |
 
 #### Task Validation Summary
@@ -277,7 +277,7 @@ claude-opus-4-5-20251101
 | Task 1 | ✅ VERIFIED | `KeycloakTestFixture.kt`, `test-realm.json` |
 | Task 2 | ✅ VERIFIED | `KeycloakIdentityProviderIntegrationTest.kt` |
 | Task 3 | ✅ VERIFIED | `SecurityConfigIntegrationTest.kt:79-244` |
-| Task 4 | ✅ VERIFIED | `dvmm-web/` Vite+React+TypeScript+shadcn |
+| Task 4 | ✅ VERIFIED | `dcm-web/` Vite+React+TypeScript+shadcn |
 | Task 5 | ✅ VERIFIED | `App.tsx:52-71` signinRedirect |
 | Task 6 | ✅ VERIFIED | `auth-config.ts:17` automaticSilentRenew |
 | Task 7 | ✅ VERIFIED | `App.tsx:103-111` signoutRedirect |
@@ -294,7 +294,7 @@ claude-opus-4-5-20251101
 #### Code Quality Notes
 
 **Strengths:**
-- Architecture compliance verified (EAF/DVMM separation)
+- Architecture compliance verified (EAF/DCM separation)
 - CSRF double-submit cookie pattern correctly implemented
 - Comprehensive integration tests with Keycloak Testcontainer
 - Proper error handling with domain-specific exceptions

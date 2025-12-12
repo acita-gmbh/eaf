@@ -34,13 +34,13 @@ Reusable framework with **zero product dependencies**:
 - `eaf-auth-keycloak` - Keycloak implementation
 - `eaf-testing` - Test utilities (InMemoryEventStore, TestClock)
 
-### DVMM (Dynamic Virtual Machine Manager) - `dvmm/`
+### DCM (Dynamic Cloud Manager) - `dcm/`
 Product modules following **Hexagonal Architecture**:
-- `dvmm-domain` - Business logic (NO Spring dependencies)
-- `dvmm-application` - Use cases, command/query handlers
-- `dvmm-api` - REST controllers, DTOs
-- `dvmm-infrastructure` - Persistence, external integrations
-- `dvmm-app` - Spring Boot entry point
+- `dcm-domain` - Business logic (NO Spring dependencies)
+- `dcm-application` - Use cases, command/query handlers
+- `dcm-api` - REST controllers, DTOs
+- `dcm-infrastructure` - Persistence, external integrations
+- `dcm-app` - Spring Boot entry point
 
 ### Build Logic - `build-logic/`
 Convention plugins: `eaf.kotlin-conventions`, `eaf.spring-conventions`, `eaf.test-conventions`, `eaf.pitest-conventions`
@@ -48,8 +48,8 @@ Convention plugins: `eaf.kotlin-conventions`, `eaf.spring-conventions`, `eaf.tes
 ## Critical Architecture Rules (ADR-001)
 
 **Enforced by Konsist tests in `ArchitectureTest.kt`:**
-- EAF modules MUST NOT import from `de.acci.dvmm.*`
-- `dvmm-domain` MUST NOT import from `org.springframework.*`
+- EAF modules MUST NOT import from `de.acci.dcm.*`
+- `dcm-domain` MUST NOT import from `org.springframework.*`
 - Detail query handlers (`Get*Detail*Handler`) MUST have `Forbidden` error type
 - Suspend functions catching `Exception` MUST handle `CancellationException`
 
@@ -138,4 +138,4 @@ Types: feat, fix, docs, refactor, test, chore
 | Run tests | `./gradlew test` |
 | Coverage report | `./gradlew :koverHtmlReport` |
 | Mutation testing | `./gradlew pitest` |
-| Architecture tests | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
+| Architecture tests | `./gradlew :dcm:dcm-app:test --tests "*ArchitectureTest*"` |

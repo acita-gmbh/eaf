@@ -129,7 +129,7 @@
     <constraint type="dependency">MUST use Result&lt;T,E&gt; from eaf-core, not exceptions for expected errors</constraint>
     <constraint type="dependency">MUST use TenantId, UserId, CorrelationId from eaf-core types</constraint>
     <constraint type="versioning">Event version starts at 1 (not 0). Each event increments by 1.</constraint>
-    <constraint type="architecture">EAF modules must not import from de.acci.dvmm.* (ADR-001)</constraint>
+    <constraint type="architecture">EAF modules must not import from de.acci.dcm.* (ADR-001)</constraint>
     <constraint type="coverage">Minimum 80% line coverage (Kover), 70% mutation score (Pitest)</constraint>
   </constraints>
 

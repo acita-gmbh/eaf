@@ -112,7 +112,7 @@ class TokenClaimsTest {
     @Test
     fun `claims contain correct values`() {
         val email = "user@example.com"
-        val issuer = "http://localhost:8180/realms/dvmm"
+        val issuer = "http://localhost:8180/realms/dcm"
         val roles = setOf("USER", "APPROVER")
         val issuedAt = Instant.now()
         val expiresAt = issuedAt.plusSeconds(3600)

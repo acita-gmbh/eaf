@@ -41,7 +41,7 @@ So that I can interact with VMware infrastructure reliably.
 ## Tasks / Subtasks
 
 - [x] **Session Management:** Implement `VsphereSessionManager` with `ConcurrentHashMap<TenantId, VsphereSession>` to manage multi-tenant connection state.
-- [x] **Core Client:** Implement `VsphereClient` class within `dvmm-infrastructure/vmware` as a **stateless** Singleton Spring bean that delegates to `VsphereSessionManager`.
+- [x] **Core Client:** Implement `VsphereClient` class within `dcm-infrastructure/vmware` as a **stateless** Singleton Spring bean that delegates to `VsphereSessionManager`.
 - [x] **Adapter Pattern:** Implement `VspherePort` interface (Application) and `VcenterAdapter` (Infrastructure) + `VcsimAdapter` (Test).
 - [x] **Connection Lifecycle:** Implement `connect(config)` with **coroutine-based active keepalive** and session reuse.
 - [x] **Read Operations:** Implement `listDatacenters`, `listClusters`, `listDatastores`, `listNetworks`, `listResourcePools` with **pagination safeguards**.
@@ -55,7 +55,7 @@ So that I can interact with VMware infrastructure reliably.
 ## Dev Notes
 
 ### Relevant Architecture Patterns and Constraints
-- **Hexagonal Architecture:** `VsphereClient` implements `VspherePort` (Output Port) in `dvmm-infrastructure`.
+- **Hexagonal Architecture:** `VsphereClient` implements `VspherePort` (Output Port) in `dcm-infrastructure`.
 - **Reactive Model:** Wrap all blocking SDK calls in `withContext(Dispatchers.IO)` (ADR-003).
 - **Concurrency:** Use `ConcurrentHashMap` for session storage. Keepalive jobs must use `launch` in a dedicated `CoroutineScope` (e.g., `GlobalScope` or a custom service scope), not blocking threads.
 - **Error Handling:** Use `Result<T, E>` exclusively. Do not throw exceptions across port boundaries.
@@ -71,10 +71,10 @@ So that I can interact with VMware infrastructure reliably.
   - Do not rely on the default factory if it doesn't support custom ports.
 
 ### Source Tree Components to Touch
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/` (Client, Adapters, SessionManager)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/` (Port Interface)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/` (Client, Adapters, SessionManager)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/` (Port Interface)
 - `eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimTestFixture.kt` (VCSIM Enhancements)
-- `dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/` (Tests)
+- `dcm/dcm-infrastructure/src/test/kotlin/integration/vmware/` (Tests)
 
 ### Testing Standards Summary
 - **Tests First:** Write integration tests with `VCSIM` before implementation.
@@ -134,21 +134,21 @@ init {
 **CI/CD:** Tests run normally on x86_64 GitHub Actions runners. For local ARM64 development, use a remote x86_64 Docker host:
 ```bash
 export DOCKER_HOST=tcp://x86-server:2375
-./gradlew :dvmm:dvmm-infrastructure:test --tests "*VsphereClientIntegrationTest*"
+./gradlew :dcm:dcm-infrastructure:test --tests "*VsphereClientIntegrationTest*"
 ```
 
 ## File List
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereSession.kt
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereSessionManager.kt
-- dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereSessionManagerTest.kt
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereTypes.kt
-- dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClientTest.kt
-- dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VspherePort.kt
-- dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/ConnectionTypes.kt
-- dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapter.kt
-- dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt
-- dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/vmware/VcenterAdapterTest.kt
-- dvmm/dvmm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereSession.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereSessionManager.kt
+- dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VsphereSessionManagerTest.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereTypes.kt
+- dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClientTest.kt
+- dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VspherePort.kt
+- dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/ConnectionTypes.kt
+- dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VsphereTypes.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcenterAdapter.kt
+- dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcsimAdapter.kt
+- dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/vmware/VcenterAdapterTest.kt
+- dcm/dcm-infrastructure/src/test/kotlin/integration/vmware/VsphereClientIntegrationTest.kt
 - eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/vcsim/VcsimTestFixture.kt (enhanced)

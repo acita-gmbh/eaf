@@ -6,7 +6,7 @@ Status: done
 
 As a **platform maintainer**,
 I want to replace yavijava with the official VMware vSphere SDK,
-So that DVMM uses a supported, maintained SDK for VMware integration with vSphere 7.x/8.x compatibility.
+So that DCM uses a supported, maintained SDK for VMware integration with vSphere 7.x/8.x compatibility.
 
 ## Background
 
@@ -102,7 +102,7 @@ the `VspherePort` abstraction. See Dev Notes for detailed rationale.
   vcf-sdk-vim25 = { module = "com.vmware.sdk:vim25", version.ref = "vcf-sdk" }
   vcf-sdk-vsphere-utils = { module = "com.vmware.sdk:vsphere-utils", version.ref = "vcf-sdk" }
   ```
-- [x] 1.2 Add VCF SDK dependency to `dvmm-infrastructure/build.gradle.kts`:
+- [x] 1.2 Add VCF SDK dependency to `dcm-infrastructure/build.gradle.kts`:
   ```kotlin
   // VCF SDK 9.0 (Official VMware SDK from Maven Central - Apache 2.0 license)
   implementation(platform(libs.vcf.sdk.bom))

@@ -19,7 +19,7 @@
         <subtask id="1.1">Create root settings.gradle.kts with all module includes</subtask>
         <subtask id="1.2">Create root build.gradle.kts with common configurations</subtask>
         <subtask id="1.3">Create directory structure for all eaf/* modules</subtask>
-        <subtask id="1.4">Create directory structure for all dvmm/* modules</subtask>
+        <subtask id="1.4">Create directory structure for all dcm/* modules</subtask>
       </task>
       <task id="2" ac="7,3">Set Up Version Catalog and Properties
         <subtask id="2.1">Create gradle/libs.versions.toml</subtask>
@@ -42,18 +42,18 @@
         <subtask id="4.4">Configure eaf-auth/build.gradle.kts (IdP-agnostic interfaces)</subtask>
         <subtask id="4.5">Configure eaf-testing/build.gradle.kts (test utilities)</subtask>
       </task>
-      <task id="5" ac="2">Configure DVMM Modules
-        <subtask id="5.1">Configure dvmm-domain/build.gradle.kts (depends on eaf-core)</subtask>
-        <subtask id="5.2">Configure dvmm-application/build.gradle.kts (depends on domain, eaf-eventsourcing)</subtask>
-        <subtask id="5.3">Configure dvmm-api/build.gradle.kts (depends on application, eaf-auth)</subtask>
-        <subtask id="5.4">Configure dvmm-infrastructure/build.gradle.kts (adapters, jOOQ)</subtask>
-        <subtask id="5.5">Configure dvmm-app/build.gradle.kts (main application, assembles all)</subtask>
+      <task id="5" ac="2">Configure DCM Modules
+        <subtask id="5.1">Configure dcm-domain/build.gradle.kts (depends on eaf-core)</subtask>
+        <subtask id="5.2">Configure dcm-application/build.gradle.kts (depends on domain, eaf-eventsourcing)</subtask>
+        <subtask id="5.3">Configure dcm-api/build.gradle.kts (depends on application, eaf-auth)</subtask>
+        <subtask id="5.4">Configure dcm-infrastructure/build.gradle.kts (adapters, jOOQ)</subtask>
+        <subtask id="5.5">Configure dcm-app/build.gradle.kts (main application, assembles all)</subtask>
       </task>
       <task id="6" ac="6">Configure Quality Gates
         <subtask id="6.1">Configure Kover in test-conventions (minimum 80% coverage)</subtask>
         <subtask id="6.2">Configure Pitest for mutation testing (minimum 70% mutation score)</subtask>
-        <subtask id="6.3">Create initial Konsist test file ArchitectureTest.kt in dvmm-app</subtask>
-        <subtask id="6.4">Add rule: eaf modules must not depend on dvmm modules</subtask>
+        <subtask id="6.3">Create initial Konsist test file ArchitectureTest.kt in dcm-app</subtask>
+        <subtask id="6.4">Add rule: eaf modules must not depend on dcm modules</subtask>
       </task>
       <task id="7" ac="1">Verify Build
         <subtask id="7.1">Run ./gradlew build and verify success</subtask>
@@ -73,7 +73,7 @@
     <criterion id="AC-2" title="Module Structure">
       <given>the project structure exists</given>
       <when>I inspect the modules</when>
-      <then>modules exist: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing, dvmm-domain, dvmm-application, dvmm-api, dvmm-infrastructure, dvmm-app</then>
+      <then>modules exist: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing, dcm-domain, dcm-application, dcm-api, dcm-infrastructure, dcm-app</then>
     </criterion>
     <criterion id="AC-3" title="Kotlin Configuration">
       <given>the project is configured</given>
@@ -104,19 +104,19 @@
 
   <artifacts>
     <docs>
-      <doc path="docs/architecture.md" title="DVMM Architecture" section="ADR-001: EAF Framework-First Architecture">
-        Defines Framework-First Architecture with Hexagonal Architecture principles. Strict dependency direction: EAF ← DVMM (never reverse). Module isolation via Kotlin internal modifier + Konsist enforcement.
+      <doc path="docs/architecture.md" title="DCM Architecture" section="ADR-001: EAF Framework-First Architecture">
+        Defines Framework-First Architecture with Hexagonal Architecture principles. Strict dependency direction: EAF ← DCM (never reverse). Module isolation via Kotlin internal modifier + Konsist enforcement.
       </doc>
-      <doc path="docs/architecture.md" title="DVMM Architecture" section="Monorepo Structure">
-        Complete directory structure for eaf-monorepo including build-logic conventions, eaf/* framework modules, and dvmm/* product modules.
+      <doc path="docs/architecture.md" title="DCM Architecture" section="Monorepo Structure">
+        Complete directory structure for eaf-monorepo including build-logic conventions, eaf/* framework modules, and dcm/* product modules.
       </doc>
       <doc path="docs/sprint-artifacts/tech-spec-epic-1.md" title="Epic 1 Tech Spec" section="Story 1.1: Project Scaffolding">
         Implementation checklist with key files to create, version catalog example, and Gherkin acceptance criteria for build verification.
       </doc>
-      <doc path="docs/epics.md" title="DVMM Epic Breakdown" section="Story 1.1: Project Scaffolding">
+      <doc path="docs/epics.md" title="DCM Epic Breakdown" section="Story 1.1: Project Scaffolding">
         Story definition with acceptance criteria, prerequisites (none), and technical notes for ADR-001, version catalogs, and coroutine configuration.
       </doc>
-      <doc path="docs/prd.md" title="DVMM PRD" section="Implementation Quality Gates">
+      <doc path="docs/prd.md" title="DCM PRD" section="Implementation Quality Gates">
         NFR targets: 80% test coverage (Kover), 70% mutation score (Pitest), Konsist architecture tests enforced.
       </doc>
     </docs>
@@ -158,7 +158,7 @@
   <scope>
     <in-scope>
       <item>5 EAF modules: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing</item>
-      <item>5 DVMM modules: dvmm-domain, dvmm-application, dvmm-api, dvmm-infrastructure, dvmm-app</item>
+      <item>5 DCM modules: dcm-domain, dcm-application, dcm-api, dcm-infrastructure, dcm-app</item>
       <item>Build-logic with 3 convention plugins</item>
       <item>Version catalog and quality tooling</item>
     </in-scope>
@@ -174,7 +174,7 @@
 
   <constraints>
     <constraint type="architecture" source="docs/architecture.md#ADR-001">
-      Strict Dependency Direction: EAF modules MUST NOT depend on DVMM modules. Dependency flow: dvmm-* → eaf-*.
+      Strict Dependency Direction: EAF modules MUST NOT depend on DCM modules. Dependency flow: dcm-* → eaf-*.
     </constraint>
     <constraint type="architecture" source="docs/architecture.md#ADR-001">
       Hexagonal Boundaries: All external integrations via Ports and Adapters pattern. No direct framework dependencies in domain modules.
@@ -220,7 +220,7 @@
     <locations>
       <location pattern="**/src/test/kotlin/**/*Test.kt" type="unit"/>
       <location pattern="**/src/test/kotlin/**/*IntegrationTest.kt" type="integration"/>
-      <location pattern="dvmm-app/src/test/kotlin/**/ArchitectureTest.kt" type="architecture"/>
+      <location pattern="dcm-app/src/test/kotlin/**/ArchitectureTest.kt" type="architecture"/>
     </locations>
     <ideas>
       <idea ac="AC-1">BuildSuccessTest: Run ./gradlew build programmatically and assert exit code 0</idea>
@@ -228,7 +228,7 @@
       <idea ac="AC-3">KotlinConfigTest: Assert Kotlin version ≥2.2.21 (K2 compiler is now default)</idea>
       <idea ac="AC-4">SpringBootConfigTest: Verify WebFlux starter present and reactive dependencies (reactor-kotlin-extensions) configured</idea>
       <idea ac="AC-5">ConventionsExistTest: Verify all three convention files exist in build-logic</idea>
-      <idea ac="AC-6">ArchitectureTest (Konsist): Assert eaf modules have no dependencies on dvmm modules</idea>
+      <idea ac="AC-6">ArchitectureTest (Konsist): Assert eaf modules have no dependencies on dcm modules</idea>
       <idea ac="AC-7">VersionCatalogTest: Parse libs.versions.toml and verify no hardcoded versions in build.gradle.kts files</idea>
     </ideas>
   </tests>

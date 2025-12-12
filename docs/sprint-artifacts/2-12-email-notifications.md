@@ -14,7 +14,7 @@ so that I stay informed without checking the portal.
 **Given** a user submits a VM request
 **When** `VmRequestCreated` event is persisted
 **Then** an email is sent to the tenant's configured admin address (or all admins)
-**And** Subject: "[DVMM] New VM Request: {vmName}"
+**And** Subject: "[DCM] New VM Request: {vmName}"
 **And** Body contains: Requester Name, VM Name, Project, Size, Justification
 **And** Body includes a link to the Admin Approval Queue
 
@@ -22,14 +22,14 @@ so that I stay informed without checking the portal.
 **Given** an admin approves a request
 **When** `VmRequestApproved` event is persisted
 **Then** an email is sent to the requester's email address
-**And** Subject: "[DVMM] Request Approved: {vmName}"
+**And** Subject: "[DCM] Request Approved: {vmName}"
 **And** Body contains: Approval confirmation, Next steps (Provisioning started)
 
 **Scenario 3: Rejection Notification (to Requester)**
 **Given** an admin rejects a request
 **When** `VmRequestRejected` event is persisted
 **Then** an email is sent to the requester's email address
-**And** Subject: "[DVMM] Request Rejected: {vmName}"
+**And** Subject: "[DCM] Request Rejected: {vmName}"
 **And** Body contains: Rejection reason, Link to request details
 
 **Scenario 4: Async Execution & Resilience**
@@ -60,19 +60,19 @@ so that I stay informed without checking the portal.
   - [x] **User Lookup:** Skipped - using `requesterEmail` in domain events instead.
   - [x] **Keycloak Implementation:** Skipped - email stored in events at creation time.
 
-- [x] **Domain Layer (dvmm-domain)**
+- [x] **Domain Layer (dcm-domain)**
   - [x] **Tenant Settings:** Skipped for MVP - using system default SMTP via `spring.mail.*` properties.
   - [x] **Email in Events:** Added `requesterEmail` field to `VmRequestCreated`, `VmRequestApproved`, `VmRequestRejected` events.
   - [x] **Email Validation:** Added `EmailAddress` value object with format validation.
 
-- [x] **Application Layer (dvmm-application)**
-  - [x] **Event Listener:** Created `VmRequestNotificationListener` in `dvmm-application`.
+- [x] **Application Layer (dcm-application)**
+  - [x] **Event Listener:** Created `VmRequestNotificationListener` in `dcm-application`.
     - Listens to: `VmRequestCreated`, `VmRequestApproved`, `VmRequestRejected`.
     - Uses fire-and-forget pattern with `CoroutineScope`.
   - [x] **Data Gathering:** Email retrieved directly from domain events (denormalized).
   - [x] **Send Logic:** Calls `NotificationService.sendEmail`.
 
-- [x] **Resources (dvmm-app)**
+- [x] **Resources (dcm-app)**
   - [x] **Templates:** Created Thymeleaf templates in `src/main/resources/templates/email/`:
     - `vm-request-created.html`
     - `vm-request-approved.html`
@@ -161,7 +161,7 @@ class VmRequestNotificationListener(
 ### Project Structure Notes
 
 - **New Module:** `eaf/eaf-notifications`
-- **Templates:** `dvmm/dvmm-app/src/main/resources/templates/email/`
+- **Templates:** `dcm/dcm-app/src/main/resources/templates/email/`
 
 ### References
 
@@ -208,21 +208,21 @@ Claude claude-opus-4-5-20251101
 - `eaf/eaf-notifications/src/main/kotlin/de/acci/eaf/notifications/NotificationError.kt`
 - `eaf/eaf-notifications/src/main/kotlin/de/acci/eaf/notifications/EafNotificationAutoConfiguration.kt`
 
-**dvmm-application:**
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/listeners/VmRequestNotificationListener.kt`
+**dcm-application:**
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/listeners/VmRequestNotificationListener.kt`
 
-**dvmm-domain (modified):**
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestCreated.kt` (added requesterEmail)
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestApproved.kt` (added requesterEmail)
-- `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestRejected.kt` (added requesterEmail)
+**dcm-domain (modified):**
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestCreated.kt` (added requesterEmail)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestApproved.kt` (added requesterEmail)
+- `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestRejected.kt` (added requesterEmail)
 
-**dvmm-app resources:**
-- `dvmm/dvmm-app/src/main/resources/templates/email/vm-request-created.html`
-- `dvmm/dvmm-app/src/main/resources/templates/email/vm-request-approved.html`
-- `dvmm/dvmm-app/src/main/resources/templates/email/vm-request-rejected.html`
+**dcm-app resources:**
+- `dcm/dcm-app/src/main/resources/templates/email/vm-request-created.html`
+- `dcm/dcm-app/src/main/resources/templates/email/vm-request-approved.html`
+- `dcm/dcm-app/src/main/resources/templates/email/vm-request-rejected.html`
 
 **Tests:**
 - `eaf/eaf-notifications/src/test/kotlin/.../SmtpNotificationServiceTest.kt`
 - `eaf/eaf-notifications/src/test/kotlin/.../SmtpNotificationServiceIntegrationTest.kt`
 - `eaf/eaf-notifications/src/test/kotlin/.../ThymeleafEmailTemplateEngineTest.kt`
-- `dvmm/dvmm-application/src/test/kotlin/.../VmRequestNotificationListenerTest.kt`
+- `dcm/dcm-application/src/test/kotlin/.../VmRequestNotificationListenerTest.kt`

@@ -1,5 +1,5 @@
 {
-  "realm": "dvmm",
+  "realm": "dcm",
   "enabled": true,
   "sslRequired": "none",
   "roles": {
@@ -16,7 +16,7 @@
   },
   "clients": [
     {
-      "clientId": "dvmm-web",
+      "clientId": "dcm-web",
       "enabled": true,
       "publicClient": true,
       "redirectUris": [
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "clientId": "dvmm-api",
+      "clientId": "dcm-api",
       "enabled": true,
       "bearerOnly": true,
       "protocolMappers": [

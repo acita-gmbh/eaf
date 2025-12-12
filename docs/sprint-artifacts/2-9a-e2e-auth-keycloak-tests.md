@@ -48,13 +48,13 @@ This story was created during the correct-course workflow after Story 2.9 (Admin
 
 ## Implementation Details
 
-### E2E Auth Setup (`dvmm-web/e2e/auth.setup.ts`)
+### E2E Auth Setup (`dcm-web/e2e/auth.setup.ts`)
 - `authenticateUser()` helper function extracts common authentication logic
 - Supports admin and regular user authentication
 - Saves `storageState` to `playwright/.auth/admin.json` and `playwright/.auth/user.json`
 - Uses `@seontechnologies/playwright-utils/log` for structured logging
 
-### Keycloak Role Mapping Test (`dvmm-api/.../KeycloakRoleMappingIntegrationTest.kt`)
+### Keycloak Role Mapping Test (`dcm-api/.../KeycloakRoleMappingIntegrationTest.kt`)
 - Integration test using real Keycloak Testcontainer (not mocked JWTs)
 - Test endpoint `/api/auth/roles` returns authentication details
 - Test endpoint `/api/auth/admin-only` protected with `@PreAuthorize("hasRole('admin')")`
@@ -73,9 +73,9 @@ This story was created during the correct-course workflow after Story 2.9 (Admin
 
 | File | Purpose |
 |------|---------|
-| `dvmm-web/e2e/auth.setup.ts` | E2E authentication setup with storageState |
-| `dvmm-web/e2e/README.md` | Documentation for E2E auth setup |
-| `dvmm-api/.../KeycloakRoleMappingIntegrationTest.kt` | Keycloak JWT role mapping tests |
+| `dcm-web/e2e/auth.setup.ts` | E2E authentication setup with storageState |
+| `dcm-web/e2e/README.md` | Documentation for E2E auth setup |
+| `dcm-api/.../KeycloakRoleMappingIntegrationTest.kt` | Keycloak JWT role mapping tests |
 
 ## Definition of Done
 
@@ -105,9 +105,9 @@ This story was created during the correct-course workflow after Story 2.9 (Admin
 
 | File | Change |
 |------|--------|
-| `dvmm-web/src/pages/Dashboard.tsx` | Added `data-testid="dashboard-authenticated"` |
-| `dvmm-web/e2e/login.spec.ts` | Updated selector to use data-testid |
-| `dvmm-web/playwright.config.ts` | Added global 60s timeout |
+| `dcm-web/src/pages/Dashboard.tsx` | Added `data-testid="dashboard-authenticated"` |
+| `dcm-web/e2e/login.spec.ts` | Updated selector to use data-testid |
+| `dcm-web/playwright.config.ts` | Added global 60s timeout |
 
 ## Related Stories
 

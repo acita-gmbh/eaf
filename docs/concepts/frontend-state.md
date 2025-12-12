@@ -4,7 +4,7 @@
 
 In the old days of Redux, we treated everything as "Global State." We manually fetched data, dispatched `FETCH_SUCCESS` actions, updated a massive reducer, and then selected it back out. It was boilerplate heaven.
 
-In DVMM, we distinguish between **Server State** and **Client State**.
+In DCM, we distinguish between **Server State** and **Client State**.
 
 ---
 

@@ -1,4 +1,4 @@
-# TUI Analysis for DVMM Admin Interface
+# TUI Analysis for DCM Admin Interface
 
 **Author:** Claude (AI Assistant)
 **Date:** 2025-11-29
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document analyzes the feasibility and approach for implementing an optional Terminal User Interface (TUI) for DVMM, targeting experienced administrators who prefer keyboard-driven workflows over web interfaces. The TUI would serve as a complementary interface for power users, particularly useful in headless server environments or SSH sessions.
+This document analyzes the feasibility and approach for implementing an optional Terminal User Interface (TUI) for DCM, targeting experienced administrators who prefer keyboard-driven workflows over web interfaces. The TUI would serve as a complementary interface for power users, particularly useful in headless server environments or SSH sessions.
 
 **Recommendation:** Implement a Lanterna-based TUI as a post-MVP feature, focusing on admin-critical workflows (approvals, monitoring, audit access).
 
@@ -150,7 +150,7 @@ The TUI integrates as a **Driving Adapter** in our hexagonal architecture:
                     │           Driving Adapters          │
                     │  ┌─────────┐  ┌─────────┐          │
                     │  │ REST API│  │   TUI   │ ◄── NEW  │
-                    │  │ (dvmm-  │  │ (dvmm-  │          │
+                    │  │ (dcm-  │  │ (dcm-  │          │
                     │  │   api)  │  │   tui)  │          │
                     │  └────┬────┘  └────┬────┘          │
                     └───────┼────────────┼───────────────┘
@@ -158,7 +158,7 @@ The TUI integrates as a **Driving Adapter** in our hexagonal architecture:
                             ▼            ▼
                     ┌─────────────────────────────────────┐
                     │         Application Layer           │
-                    │         (dvmm-application)          │
+                    │         (dcm-application)          │
                     │                                     │
                     │  CommandGateway    QueryGateway     │
                     │       │                 │           │
@@ -169,7 +169,7 @@ The TUI integrates as a **Driving Adapter** in our hexagonal architecture:
                                     ▼
                     ┌─────────────────────────────────────┐
                     │           Domain Layer              │
-                    │         (dvmm-domain)               │
+                    │         (dcm-domain)               │
                     └─────────────────────────────────────┘
 ```
 
@@ -178,16 +178,16 @@ The TUI integrates as a **Driving Adapter** in our hexagonal architecture:
 ### Module Structure
 
 ```
-dvmm/
-├── dvmm-domain/          # Unchanged
-├── dvmm-application/     # Unchanged
-├── dvmm-api/             # Unchanged (REST)
-├── dvmm-infrastructure/  # Unchanged
-├── dvmm-app/             # Web application entry point
-└── dvmm-tui/             # NEW: TUI adapter module
+dcm/
+├── dcm-domain/          # Unchanged
+├── dcm-application/     # Unchanged
+├── dcm-api/             # Unchanged (REST)
+├── dcm-infrastructure/  # Unchanged
+├── dcm-app/             # Web application entry point
+└── dcm-tui/             # NEW: TUI adapter module
     ├── build.gradle.kts
-    └── src/main/kotlin/de/acci/dvmm/tui/
-        ├── DvmmTuiApplication.kt
+    └── src/main/kotlin/de/acci/dcm/tui/
+        ├── DcmTuiApplication.kt
         ├── config/
         ├── screens/
         ├── widgets/
@@ -197,9 +197,9 @@ dvmm/
 ### Dependency Direction
 
 ```
-dvmm-tui
+dcm-tui
     │
-    ├──► dvmm-application (CommandGateway, QueryGateway)
+    ├──► dcm-application (CommandGateway, QueryGateway)
     ├──► eaf-cqrs-core (Command, Query interfaces)
     ├──► eaf-auth (Authentication context)
     └──► lanterna (TUI framework)
@@ -221,7 +221,7 @@ The TUI must authenticate users before allowing operations:
 **Option A: Interactive Login**
 ```
 ┌─────────────────────────────────────┐
-│         DVMM Admin Console          │
+│         DCM Admin Console          │
 ├─────────────────────────────────────┤
 │                                     │
 │  Username: admin@acme.de            │
@@ -237,11 +237,11 @@ The TUI must authenticate users before allowing operations:
 **Option B: Token-based (Recommended)**
 ```bash
 # User authenticates once via browser, gets token
-dvmm-tui --token=$(dvmm auth login)
+dcm-tui --token=$(dcm auth login)
 
 # Or use environment variable
-export DVMM_TOKEN="eyJ..."
-dvmm-tui
+export DCM_TOKEN="eyJ..."
+dcm-tui
 ```
 
 **Recommendation:** Option B for better security (no password in terminal history).
@@ -284,7 +284,7 @@ spring:
   profiles: tui
 logging:
   file:
-    name: dvmm-tui.log
+    name: dcm-tui.log
   pattern:
     console: ""  # Disable console logging
 ```
@@ -320,7 +320,7 @@ logging:
 
 ### Proceed with Lanterna-based TUI
 
-1. **Create `dvmm-tui` module** as optional adapter
+1. **Create `dcm-tui` module** as optional adapter
 2. **Build Kotlin DSL wrapper** for cleaner Lanterna usage
 3. **Implement Tier 1 features first** (approval queue, health dashboard)
 4. **Evaluate adoption** before investing in Tier 2/3

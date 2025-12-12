@@ -97,7 +97,7 @@ Before starting implementation, verify these are complete:
 
 ### Backend Unit Tests
 
-**GetRequestTimelineHandler (dvmm-application):**
+**GetRequestTimelineHandler (dcm-application):**
 - Returns timeline events for valid request ID
 - Returns events in chronological order (oldest first)
 - Filters by tenant (RLS enforced)
@@ -105,7 +105,7 @@ Before starting implementation, verify these are complete:
 - Throws Forbidden for other user's request
 - Maps DB entities to DTOs correctly (hiding internal IDs)
 
-**TimelineEventProjector (dvmm-infrastructure):**
+**TimelineEventProjector (dcm-infrastructure):**
 - Projects VmRequestCreated to timeline event
 - Projects VmRequestApproved to timeline event (RESOLVES admin name)
 - Projects VmRequestRejected to timeline event (RESOLVES admin name)
@@ -162,7 +162,7 @@ Before starting implementation, verify these are complete:
 ### Domain Events (REUSE - Already Implemented)
 
 ```kotlin
-// From dvmm-domain - events already exist
+// From dcm-domain - events already exist
 VmRequestCreated
 VmRequestApproved
 VmRequestRejected
@@ -200,7 +200,7 @@ GET /api/requests/{id}/timeline - Get request timeline events
 - [x] **Task 1.1: Create Flyway migration for REQUEST_TIMELINE_EVENTS** (AC: 2)
   - Create migration file `V00X__create_request_timeline_events.sql`
   - Use H2-compatible DDL (quoted UPPERCASE) in `jooq-init.sql`
-  - Run `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+  - Run `./gradlew :dcm:dcm-infrastructure:generateJooq`
 
 - [x] **Task 1.2: Create TimelineEvent domain type & Repository** (AC: 2)
   - Create `TimelineEvent.kt` mapping to jOOQ record
@@ -217,7 +217,7 @@ GET /api/requests/{id}/timeline - Get request timeline events
 ### Phase 2: Backend - API Endpoints
 
 - [x] **Task 2.1: Create GetRequestDetail & GetRequestTimeline Queries** (AC: 1, 2, 3, 5)
-  - Create Query classes and Handlers in `dvmm-application`
+  - Create Query classes and Handlers in `dcm-application`
   - Implement `GetRequestDetailHandler` returning full details
   - Implement `GetRequestTimelineHandler` returning event list sorted by date
   - Enforce ownership/admin checks (403 if forbidden)
@@ -340,21 +340,21 @@ Task 2.2 references updating `openapi/v1/paths/vm-requests.yaml`, but the OpenAP
 ### New Files to Create (Backend)
 
 ```text
-dvmm/dvmm-infrastructure/src/main/resources/db/migration/
+dcm/dcm-infrastructure/src/main/resources/db/migration/
 └── V00X__create_request_timeline_events.sql
 
-dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmrequest/projection/
+dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmrequest/projection/
 ├── TimelineEvent.kt
 ├── TimelineEventRepository.kt
 └── TimelineEventProjector.kt
 
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/
 ├── GetRequestDetailQuery.kt
 ├── GetRequestDetailHandler.kt
 ├── GetRequestTimelineQuery.kt
 └── GetRequestTimelineHandler.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/
 ├── VmRequestDetailResponse.kt
 └── TimelineEventResponse.kt
 ```
@@ -362,7 +362,7 @@ dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── hooks/
 │   ├── useRequestDetail.ts
 │   └── useRequestTimeline.ts

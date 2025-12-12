@@ -2,7 +2,7 @@
 
 **You can't fix what you can't see.**
 
-"Observability" is more than just logging errors. It's about understanding the internal state of the system by looking at its outputs. In DVMM, we rely on the "Three Pillars" of observability.
+"Observability" is more than just logging errors. It's about understanding the internal state of the system by looking at its outputs. In DCM, we rely on the "Three Pillars" of observability.
 
 ---
 
@@ -48,7 +48,7 @@ A single user request might touch the Load Balancer, API, Database, and Keycloak
 
 ---
 
-## The DVMM Stack
+## The DCM Stack
 
 | Pillar | Tool | Usage |
 | :--- | :--- | :--- |

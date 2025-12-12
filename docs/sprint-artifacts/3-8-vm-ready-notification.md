@@ -14,7 +14,7 @@ so that I can start using it immediately without constantly checking the portal.
 **Given** my VM provisioning completes successfully
 **When** `VmProvisioned` event is persisted
 **Then** an email is sent to me containing:
-- **Subject:** "[DVMM] VM ready: {vmName}"
+- **Subject:** "[DCM] VM ready: {vmName}"
 - **Body:**
   - VM Name, Project name
   - IP Address, Hostname
@@ -38,7 +38,7 @@ so that I can start using it immediately without constantly checking the portal.
 ### Backend Tasks
 
 - [x] **Task 1: Create VM Ready Email Template (AC: 3.8.1)**
-  - [x] Create `vm-ready.html` Thymeleaf template in `dvmm-infrastructure/src/main/resources/templates/email/`
+  - [x] Create `vm-ready.html` Thymeleaf template in `dcm-infrastructure/src/main/resources/templates/email/`
   - [x] Include: vmName, projectName, ipAddress, hostname, connectionCommand, portalLink, provisioningDuration
   - [x] OS-specific connection instructions: SSH command for Linux, RDP (`mstsc /v:`) for Windows
   - [x] Follow existing template styling from `vm-provisioning-failed-user.html`
@@ -134,12 +134,12 @@ Note: The `<username>` placeholder reminds users that the SSH username depends o
 ### Source Tree Locations
 
 **New Files:**
-- `dvmm/dvmm-infrastructure/src/main/resources/templates/email/vm-ready.html`
+- `dcm/dcm-infrastructure/src/main/resources/templates/email/vm-ready.html`
 
 **Modified Files:**
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestNotificationSender.kt` (add data class + method)
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt` (add implementation)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt` (add sendSuccessNotification)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmRequestNotificationSender.kt` (add data class + method)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt` (add implementation)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandler.kt` (add sendSuccessNotification)
 
 ### Testing Standards
 
@@ -194,16 +194,16 @@ Claude Opus 4.5 (via Claude Code)
 ### File List
 
 **New Files:**
-- `dvmm/dvmm-infrastructure/src/main/resources/templates/email/vm-ready.html` - VM Ready email template
+- `dcm/dcm-infrastructure/src/main/resources/templates/email/vm-ready.html` - VM Ready email template
 
 **Modified Files:**
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestNotificationSender.kt` - Added `VmReadyNotification` data class and interface method
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt` - Added `sendVmReadyNotification()` implementation with connection command logic
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandler.kt` - Added `sendSuccessNotification()` called from `emitSuccess()`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmRequestNotificationSender.kt` - Added `VmReadyNotification` data class and interface method
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/notification/VmRequestNotificationSenderAdapter.kt` - Added `sendVmReadyNotification()` implementation with connection command logic
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandler.kt` - Added `sendSuccessNotification()` called from `emitSuccess()`
 
 **Test Files:**
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt` - Added success notification tests
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapterTest.kt` - Added VM ready notification tests
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vm/TriggerProvisioningHandlerTest.kt` - Added success notification tests
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/notification/VmRequestNotificationSenderAdapterTest.kt` - Added VM ready notification tests
 
 ### Code Review Fixes (Claude Opus 4.5)
 

@@ -18,7 +18,7 @@ This document explores **vcsim's containers-as-VMs feature**, a powerful capabil
 - CI/CD-ready with Docker-based execution
 - Deterministic, reproducible test environments
 
-**Recommendation:** Adopt containers-as-VMs for all DVMM VMware integration tests to achieve higher test fidelity while maintaining fast feedback loops.
+**Recommendation:** Adopt containers-as-VMs for all DCM VMware integration tests to achieve higher test fidelity while maintaining fast feedback loops.
 
 ---
 
@@ -177,7 +177,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   # Application under test
-  dvmm-app:
+  dcm-app:
     build: .
     networks:
       - test-network  # Same network as vcsim containers
@@ -200,7 +200,7 @@ docker pull myregistry/custom-vm-image:latest
 
 ---
 
-## 4. Benefits for DVMM Testing
+## 4. Benefits for DCM Testing
 
 ### 4.1 Current Testing Approach
 
@@ -530,7 +530,7 @@ name: VMware Integration Tests
 on:
   push:
     paths:
-      - 'dvmm/dvmm-infrastructure/**'
+      - 'dcm/dcm-infrastructure/**'
       - 'eaf/eaf-testing/**'
 
 jobs:
@@ -548,11 +548,11 @@ jobs:
 
       - name: Build test container images
         run: |
-          docker build -t dvmm-test-vm:latest test-containers/base-vm/
-          docker build -t dvmm-app-vm:latest test-containers/app-vm/
+          docker build -t dcm-test-vm:latest test-containers/base-vm/
+          docker build -t dcm-app-vm:latest test-containers/app-vm/
 
       - name: Run VMware integration tests
-        run: ./gradlew :dvmm:dvmm-infrastructure:test --tests "*Vcsim*"
+        run: ./gradlew :dcm:dcm-infrastructure:test --tests "*Vcsim*"
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
@@ -561,7 +561,7 @@ jobs:
         if: always()
         with:
           name: vmware-test-results
-          path: dvmm/dvmm-infrastructure/build/reports/tests/
+          path: dcm/dcm-infrastructure/build/reports/tests/
 ```
 
 ### 7.2 Docker Compose for Local Development
@@ -621,7 +621,7 @@ services:
 
 ---
 
-## 10. Recommendations for DVMM
+## 10. Recommendations for DCM
 
 ### 10.1 Adoption Strategy
 
@@ -671,4 +671,4 @@ services:
 
 ---
 
-*This document provides the foundation for enhanced VMware testing in DVMM. Implementation details will be refined during sprint planning.*
+*This document provides the foundation for enhanced VMware testing in DCM. Implementation details will be refined during sprint planning.*

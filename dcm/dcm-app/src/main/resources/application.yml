@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: dcm
+
+  # OAuth2 Resource Server Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak issuer URI - validates JWT iss claim
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/dcm}
+          # Keycloak JWKS endpoint - validates JWT signature
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/dcm/protocol/openid-connect/certs}
+
+# EAF Auth Configuration
+eaf:
+  auth:
+    keycloak:
+      # OAuth2 client ID for role extraction from resource_access
+      client-id: ${KEYCLOAK_CLIENT_ID:dcm-web}
+      # UserInfo endpoint (optional - for getUserInfo calls)
+      user-info-uri: ${KEYCLOAK_USER_INFO_URI:http://localhost:8180/realms/dcm/protocol/openid-connect/userinfo}
+
+  # CORS Configuration
+  cors:
+    # Comma-separated list of allowed origins
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+# DCM Application Configuration
+dcm:
+  # Encryption settings for sensitive data (AC-3.1.4)
+  # CRITICAL: In production, use strong secrets via Vault/Secret Manager
+  encryption:
+    # Master password for AES-256 key derivation
+    password: ${DCM_ENCRYPTION_PASSWORD:dev-encryption-key-change-in-production}
+    # Hex-encoded salt for key derivation (must be persistent for data recovery)
+    # If not set, a random salt is generated (data unrecoverable after restart)
+    salt: ${DCM_ENCRYPTION_SALT:}
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Logging Configuration
+logging:
+  level:
+    de.acci.dcm: INFO
+    de.acci.eaf: INFO
+    org.springframework.security: WARN

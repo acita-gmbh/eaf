@@ -15,7 +15,7 @@ So that I can choose the right resources for my needs.
 - **Architecture constraint:** React Hook Form + Zod validation, shadcn-admin-kit patterns, Radio Group + Cards
 - **Prerequisites:** Story 2.4 (VM Request Form - Basic Fields) - DONE
 - **UX Reference:** `docs/ux/design-specification.md` Section 6.4 - VMSizeSelector component
-- **Existing Code:** VmRequestForm with placeholder in `dvmm/dvmm-web/src/components/requests/VmRequestForm.tsx`
+- **Existing Code:** VmRequestForm with placeholder in `dcm/dcm-web/src/components/requests/VmRequestForm.tsx`
 
 ## Pre-Flight Setup Checklist
 
@@ -288,7 +288,7 @@ This request uses 8 of 32 remaining vCPUs
 ### New Files to Create
 
 ```text
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── components/
 │   └── requests/
 │       ├── VmSizeSelector.tsx        # Main size selector component
@@ -613,23 +613,23 @@ All 8 tasks completed successfully:
 ### File List
 
 **New Files Created:**
-- `dvmm/dvmm-web/src/components/ui/radio-group.tsx` (shadcn generated)
-- `dvmm/dvmm-web/src/lib/config/vm-sizes.ts`
-- `dvmm/dvmm-web/src/lib/config/vm-sizes.test.ts`
-- `dvmm/dvmm-web/src/components/requests/VmSizeSelector.tsx`
-- `dvmm/dvmm-web/src/components/requests/VmSizeSelector.test.tsx`
-- `dvmm/dvmm-web/src/components/requests/VmSizeQuotaInfo.tsx`
-- `dvmm/dvmm-web/src/components/requests/VmSizeQuotaInfo.test.tsx`
-- `dvmm/dvmm-web/src/components/requests/VmRequestForm.integration.test.tsx`
+- `dcm/dcm-web/src/components/ui/radio-group.tsx` (shadcn generated)
+- `dcm/dcm-web/src/lib/config/vm-sizes.ts`
+- `dcm/dcm-web/src/lib/config/vm-sizes.test.ts`
+- `dcm/dcm-web/src/components/requests/VmSizeSelector.tsx`
+- `dcm/dcm-web/src/components/requests/VmSizeSelector.test.tsx`
+- `dcm/dcm-web/src/components/requests/VmSizeQuotaInfo.tsx`
+- `dcm/dcm-web/src/components/requests/VmSizeQuotaInfo.test.tsx`
+- `dcm/dcm-web/src/components/requests/VmRequestForm.integration.test.tsx`
 
 **Modified Files:**
-- `dvmm/dvmm-web/src/lib/validations/vm-request.ts` (added vmSizeSchema)
-- `dvmm/dvmm-web/src/lib/validations/vm-request.test.ts` (added size validation tests)
-- `dvmm/dvmm-web/src/components/requests/VmRequestForm.tsx` (integrated size selector)
-- `dvmm/dvmm-web/src/components/requests/VmRequestForm.test.tsx` (updated for size field)
-- `dvmm/dvmm-web/src/components/requests/index.ts` (barrel exports)
-- `dvmm/dvmm-web/src/test/setup.ts` (ResizeObserver mock)
-- `dvmm/dvmm-web/package.json` (@radix-ui/react-radio-group dependency)
+- `dcm/dcm-web/src/lib/validations/vm-request.ts` (added vmSizeSchema)
+- `dcm/dcm-web/src/lib/validations/vm-request.test.ts` (added size validation tests)
+- `dcm/dcm-web/src/components/requests/VmRequestForm.tsx` (integrated size selector)
+- `dcm/dcm-web/src/components/requests/VmRequestForm.test.tsx` (updated for size field)
+- `dcm/dcm-web/src/components/requests/index.ts` (barrel exports)
+- `dcm/dcm-web/src/test/setup.ts` (ResizeObserver mock)
+- `dcm/dcm-web/package.json` (@radix-ui/react-radio-group dependency)
 
 ### Code Review
 

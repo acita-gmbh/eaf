@@ -142,7 +142,7 @@ public object TestContainers {
      *
      * Migrations are loaded from `classpath:db/migration` which includes:
      * - EAF framework migrations (eaf-eventsourcing module)
-     * - Product-specific migrations (e.g., dvmm-infrastructure module)
+     * - Product-specific migrations (e.g., dcm-infrastructure module)
      *
      * Thread-safe and idempotent - multiple calls will only initialize once.
      * Uses Flyway's clean + migrate pattern to ensure consistent state across

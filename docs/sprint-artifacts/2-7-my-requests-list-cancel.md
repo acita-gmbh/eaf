@@ -89,14 +89,14 @@ Before starting implementation, verify these are complete:
 
 ### Backend Unit Tests
 
-**VmRequestAggregate (dvmm-domain):**
+**VmRequestAggregate (dcm-domain):**
 - `cancel()` on PENDING request emits VmRequestCancelled event
 - `cancel()` on APPROVED request throws InvalidStateException
 - `cancel()` on REJECTED request throws InvalidStateException
 - `cancel()` on CANCELLED request is idempotent (no-op) and does not change state
 - VmRequestCancelled event contains correct metadata (tenantId, correlationId, requesterId) and aggregateId
 
-**CancelVmRequestHandler (dvmm-application):**
+**CancelVmRequestHandler (dcm-application):**
 - Loads aggregate from event store
 - Calls cancel() on aggregate
 - Persists VmRequestCancelled event
@@ -106,7 +106,7 @@ Before starting implementation, verify these are complete:
 - Returns 200 OK if already CANCELLED (idempotent)
 - Enforces requester ownership and tenant match
 
-**VmRequestController (dvmm-api):**
+**VmRequestController (dcm-api):**
 - GET /api/requests/my returns paginated list for current user with tenant filter
 - GET /api/requests/my supports page/size params (10/25/50 options) returns correct page
 - POST /api/requests/{id}/cancel returns 200 OK on success
@@ -218,10 +218,10 @@ const mutation = useMutation({
 
 ## Tasks / Subtasks
 
-### Phase 1: Backend Domain Layer (dvmm-domain)
+### Phase 1: Backend Domain Layer (dcm-domain)
 
 - [x] **Task 1.1: Create VmRequestCancelled event** (AC: 5)
-  - [x] Create `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/VmRequestCancelled.kt`
+  - [x] Create `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/VmRequestCancelled.kt`
   - [x] Implement DomainEvent interface with EventMetadata (tenantId, correlationId, requesterId)
   - [x] Include: aggregateId, cancellationReason (optional)
   - [x] Write unit tests for event structure
@@ -236,17 +236,17 @@ const mutation = useMutation({
   - [x] Write unit tests for cancel behavior
 
 - [x] **Task 1.3: Create InvalidStateException** (AC: 7)
-  - [x] Create `dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/exceptions/InvalidStateException.kt`
+  - [x] Create `dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/exceptions/InvalidStateException.kt`
   - [x] Include: currentState, expectedState, operation
 
-### Phase 2: Backend Application Layer (dvmm-application)
+### Phase 2: Backend Application Layer (dcm-application)
 
 - [x] **Task 2.1: Create CancelVmRequestCommand** (AC: 5)
-  - [x] Create `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CancelVmRequestCommand.kt`
+  - [x] Create `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CancelVmRequestCommand.kt`
   - [x] Include: requestId (VmRequestId), userId (UserId), tenantId (TenantId), correlationId
 
 - [x] **Task 2.2: Create CancelVmRequestHandler** (AC: 5, 7)
-  - [x] Create `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/CancelVmRequestHandler.kt`
+  - [x] Create `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/CancelVmRequestHandler.kt`
   - [x] Load aggregate from EventStore
   - [x] Verify user owns the request (requesterId matches) and tenant matches
   - [x] Call aggregate.cancel()
@@ -255,13 +255,13 @@ const mutation = useMutation({
   - [x] Write unit tests with mocked EventStore
 
 - [x] **Task 2.3: Create GetMyRequestsQuery** (AC: 1, 4)
-  - [x] Create `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/GetMyRequestsQuery.kt`
+  - [x] Create `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/GetMyRequestsQuery.kt`
   - [x] Create `GetMyRequestsHandler.kt` using VmRequestProjectionRepository
   - [x] Use existing findByRequesterId() method with tenant filter
   - [x] Support page size options 10/25/50
   - [x] Write unit tests
 
-### Phase 3: Backend API Layer (dvmm-api)
+### Phase 3: Backend API Layer (dcm-api)
 
 - [x] **Task 3.1: Add GET /api/requests/my endpoint** (AC: 1, 2, 4)
   - [x] Modify `VmRequestController.kt` to add GET /api/requests/my
@@ -380,44 +380,44 @@ const mutation = useMutation({
 
 | File | Changes Required |
 |------|------------------|
-| `dvmm-domain/.../VmRequestAggregate.kt` | Add cancel() method, handleEvent for VmRequestCancelled |
-| `dvmm-api/.../VmRequestController.kt` | Add GET /my and POST /{id}/cancel endpoints |
-| `dvmm-web/src/App.tsx` | Add route for /requests/my |
-| `dvmm-web/src/components/layout/Sidebar.tsx` | Add "My Requests" navigation item |
+| `dcm-domain/.../VmRequestAggregate.kt` | Add cancel() method, handleEvent for VmRequestCancelled |
+| `dcm-api/.../VmRequestController.kt` | Add GET /my and POST /{id}/cancel endpoints |
+| `dcm-web/src/App.tsx` | Add route for /requests/my |
+| `dcm-web/src/components/layout/Sidebar.tsx` | Add "My Requests" navigation item |
 
 ### New Files to Create (Backend)
 
 ```text
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vmrequest/events/
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/vmrequest/events/
 └── VmRequestCancelled.kt
 
-dvmm/dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/exceptions/
+dcm/dcm-domain/src/main/kotlin/de/acci/dcm/domain/exceptions/
 └── InvalidStateException.kt
 
-dvmm/dvmm-domain/src/test/kotlin/de/acci/dvmm/domain/vmrequest/
+dcm/dcm-domain/src/test/kotlin/de/acci/dcm/domain/vmrequest/
 └── VmRequestAggregateCancelTest.kt
 
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/
 ├── CancelVmRequestCommand.kt
 ├── CancelVmRequestHandler.kt
 ├── GetMyRequestsQuery.kt
 └── GetMyRequestsHandler.kt
 
-dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/
 ├── CancelVmRequestHandlerTest.kt
 └── GetMyRequestsHandlerTest.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/
 └── PagedVmRequestsResponse.kt
 
-dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/
+dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/vmrequest/
 └── VmRequestControllerMyRequestsTest.kt
 ```
 
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── api/
 │   └── my-requests.ts
 ├── hooks/

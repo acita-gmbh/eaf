@@ -1,4 +1,4 @@
-# DVMM - Epic Breakdown
+# DCM - Epic Breakdown
 
 **Author:** Wall-E
 **Date:** 2025-11-25
@@ -10,7 +10,7 @@
 
 ## Overview
 
-This document provides the complete epic and story breakdown for DVMM (Dynamic Virtual Machine Manager), decomposing the requirements from the [PRD](./prd.md) into implementable stories.
+This document provides the complete epic and story breakdown for DCM (Dynamic Cloud Manager), decomposing the requirements from the [PRD](./prd.md) into implementable stories.
 
 **Living Document Notice:** This document incorporates context from:
 - ✅ PRD (90 FRs, 95 NFRs)
@@ -193,7 +193,7 @@ Epic 5 (Compliance) ──────► Audit-ready, ISO 27001 prepared
 
 ## Epic 1: Foundation
 
-**Goal:** Establish the technical foundation for all DVMM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates.
+**Goal:** Establish the technical foundation for all DCM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates.
 
 **User Value:** None directly (technical foundation exception) - but enables ALL subsequent user-facing features.
 
@@ -218,10 +218,10 @@ So that I can start implementing domain logic immediately.
 - `eaf-eventsourcing` (event store abstractions)
 - `eaf-tenant` (multi-tenancy)
 - `eaf-auth` (authentication)
-- `dvmm-domain` (aggregates, events)
-- `dvmm-application` (commands, queries, handlers)
-- `dvmm-api` (REST controllers)
-- `dvmm-infrastructure` (adapters, projections)
+- `dcm-domain` (aggregates, events)
+- `dcm-application` (commands, queries, handlers)
+- `dcm-api` (REST controllers)
+- `dcm-infrastructure` (adapters, projections)
 
 **And** Kotlin 2.2+ with K2 compiler is configured
 **And** Spring Boot 3.5+ with WebFlux is configured
@@ -463,8 +463,8 @@ So that users can authenticate securely.
 **Prerequisites:** Story 1.5
 
 **Technical Notes:**
-- Keycloak realm: `dvmm`
-- Client: `dvmm-api` (confidential) and `dvmm-web` (public)
+- Keycloak realm: `dcm`
+- Client: `dcm-api` (confidential) and `dcm-web` (public)
 - Custom claim mapper for tenant_id in Keycloak
 - FR7a (token refresh) handled client-side
 
@@ -657,7 +657,7 @@ So that code quality standards are maintained automatically.
 
 ## Epic 2: Core Workflow
 
-**Goal:** Implement the complete "Request → Approve → Notify" workflow that demonstrates DVMM's core value proposition. This is the **Tracer Bullet** - users can request VMs, admins can approve/reject, and everyone gets notified.
+**Goal:** Implement the complete "Request → Approve → Notify" workflow that demonstrates DCM's core value proposition. This is the **Tracer Bullet** - users can request VMs, admins can approve/reject, and everyone gets notified.
 
 **User Value:** "I can create a VM request and see exactly what happens with it" - Complete transparency from request to decision.
 
@@ -671,15 +671,15 @@ So that code quality standards are maintained automatically.
 
 As an **end user**,
 I want to log in via Keycloak SSO,
-So that I can access DVMM securely with my company credentials.
+So that I can access DCM securely with my company credentials.
 
 **Acceptance Criteria:**
 
-**Given** I navigate to DVMM root URL (`/`)
+**Given** I navigate to DCM root URL (`/`)
 **When** I am not authenticated
 **Then** I am redirected to Keycloak login page
 
-**And** after successful Keycloak login, I am redirected back to DVMM dashboard
+**And** after successful Keycloak login, I am redirected back to DCM dashboard
 **And** my session is maintained via an httpOnly cookie (Secure, SameSite=Lax)
 **And** my name and tenant are displayed in the header
 **And** logout button is visible and functional
@@ -709,15 +709,15 @@ So that I can access DVMM securely with my company credentials.
   3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `eaf/eaf-auth-keycloak/build.gradle.kts`
 - Reason: Story 1.7 created the implementation, but testing requires Keycloak Testcontainer setup
 
-**Module 2: `dvmm-api`**
-- Has temporarily disabled coverage verification (see `dvmm/dvmm-api/build.gradle.kts`)
+**Module 2: `dcm-api`**
+- Has temporarily disabled coverage verification (see `dcm/dcm-api/build.gradle.kts`)
 - **Action Required:**
   1. Add SecurityConfig integration tests verifying:
      - Unauthenticated /api/** requests return 401
      - Unauthenticated /actuator/health requests are allowed
      - Authenticated requests with valid JWT succeed
-  2. Achieve ≥70% test coverage for `dvmm-api` module
-  3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `dvmm/dvmm-api/build.gradle.kts`
+  2. Achieve ≥70% test coverage for `dcm-api` module
+  3. Remove the `tasks.named("koverVerify") { enabled = false }` block in `dcm/dcm-api/build.gradle.kts`
 - Reason: SecurityConfig.securityWebFilterChain() requires Spring Security WebFlux integration testing with Keycloak
 
 **Frontend Tracer Bullet Note:**
@@ -1137,19 +1137,19 @@ So that I stay informed without checking the portal.
 **Given** a user submits a VM request
 **When** `VmRequestCreated` event is persisted
 **Then** email is sent to tenant admins:
-  - Subject: "[DVMM] New VM Request: {vmName}"
+  - Subject: "[DCM] New VM Request: {vmName}"
   - Body: Requester, VM details, link to approve
 
 **Given** an admin approves a request
 **When** `VmRequestApproved` event is persisted
 **Then** email is sent to requester:
-  - Subject: "[DVMM] Request Approved: {vmName}"
+  - Subject: "[DCM] Request Approved: {vmName}"
   - Body: Approval confirmation, next steps
 
 **Given** an admin rejects a request
 **When** `VmRequestRejected` event is persisted
 **Then** email is sent to requester:
-  - Subject: "[DVMM] Request Rejected: {vmName}"
+  - Subject: "[DCM] Request Rejected: {vmName}"
   - Body: Rejection reason, contact info
 
 **And** SMTP settings are configurable per tenant
@@ -1171,7 +1171,7 @@ So that I stay informed without checking the portal.
 
 ## Epic 3: VM Provisioning
 
-**Goal:** Implement actual VM provisioning on VMware ESXi via vSphere API. This transforms DVMM from a workflow tool into a real infrastructure automation system.
+**Goal:** Implement actual VM provisioning on VMware ESXi via vSphere API. This transforms DCM from a workflow tool into a real infrastructure automation system.
 
 **User Value:** "My VM is actually created - not just a ticket" - From approved request to running VM without manual intervention.
 
@@ -1189,7 +1189,7 @@ So that I stay informed without checking the portal.
 
 As a **tenant admin**,
 I want to configure VMware vCenter connection settings,
-So that DVMM can provision VMs in my infrastructure.
+So that DCM can provision VMs in my infrastructure.
 
 **Acceptance Criteria:**
 
@@ -1260,7 +1260,7 @@ class VmProvisioningService {
 
 As a **platform maintainer**,
 I want to replace yavijava with the official VMware vSphere SDK,
-So that DVMM uses a supported, maintained SDK for VMware integration with vSphere 7.x/8.x compatibility.
+So that DCM uses a supported, maintained SDK for VMware integration with vSphere 7.x/8.x compatibility.
 
 **Acceptance Criteria:**
 
@@ -1552,7 +1552,7 @@ So that I can start using it immediately.
 **Given** my VM provisioning completes successfully
 **When** `VmProvisioned` event is persisted
 **Then** email is sent to me:
-  - Subject: "[DVMM] VM ready: {vmName}"
+  - Subject: "[DCM] VM ready: {vmName}"
   - Body:
     - VM Name, Project
     - IP Address, Hostname
@@ -1566,7 +1566,7 @@ So that I can start using it immediately.
 **Given** VM provisioning fails
 **When** `VmProvisioningFailed` event is persisted
 **Then** email is sent to me:
-  - Subject: "[DVMM] VM could not be created: {vmName}"
+  - Subject: "[DCM] VM could not be created: {vmName}"
   - Body:
     - Error summary (user-friendly)
     - Suggested actions
@@ -2104,7 +2104,7 @@ So that I can analyze data in spreadsheets or for audits.
   - IP Address (if provisioned)
 
 **And** export includes all filtered results (not just current page)
-**And** filename: `dvmm-requests-{tenant}-{date}.csv`
+**And** filename: `dcm-requests-{tenant}-{date}.csv`
 **And** large exports (>10000 rows) run async with download link
 
 **Given** I want audit-formatted export
@@ -2232,7 +2232,7 @@ So that I can demonstrate compliance during audits.
 
 **And** clicking a control shows:
   - Control details
-  - How DVMM implements it
+  - How DCM implements it
   - Link to relevant audit logs
   - Export evidence as PDF
 
@@ -2338,7 +2338,7 @@ So that I know if the system is operating normally.
 | Event Store | ✓ Healthy | Events today: 1,234 |
 | VMware | ✓ Connected | vCenter 8.0 |
 | Email (SMTP) | ✓ Configured | Last sent: 5 min ago |
-| Keycloak | ✓ Connected | Realm: dvmm |
+| Keycloak | ✓ Connected | Realm: dcm |
 
 **And** status refreshes every 30 seconds
 **And** warning/error states shown prominently
@@ -2476,7 +2476,7 @@ So that GDPR right-to-erasure is enforced while preserving audit integrity.
 
 ## Epic 6: Multi-Hypervisor Support (Post-MVP)
 
-**Goal:** Enable DVMM to provision VMs on hypervisors beyond VMware vSphere, starting with Proxmox VE.
+**Goal:** Enable DCM to provision VMs on hypervisors beyond VMware vSphere, starting with Proxmox VE.
 
 **User Value:** "Freedom from vendor lock-in" — Customers can choose their preferred hypervisor or migrate away from VMware post-Broadcom acquisition.
 

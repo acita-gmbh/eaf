@@ -23,7 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient
  * - AC 8: Achieves coverage for mutation testing
  *
  * Uses Keycloak Testcontainer with configured test realm including:
- * - dvmm-web client (public, direct access grants enabled)
+ * - dcm-web client (public, direct access grants enabled)
  * - Test users with tenant_id attribute and realm roles
  */
 class KeycloakIdentityProviderIntegrationTest {
@@ -145,7 +145,7 @@ class KeycloakIdentityProviderIntegrationTest {
         val claims = identityProvider.validateToken(accessToken)
 
         // Then: Issuer is present and matches Keycloak realm
-        assertTrue(claims.issuer.contains("dvmm"), "Issuer should contain realm name 'dvmm'")
+        assertTrue(claims.issuer.contains("dcm"), "Issuer should contain realm name 'dcm'")
     }
 
     @Test

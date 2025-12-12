@@ -24,11 +24,11 @@ so that I can start implementing domain logic immediately.
      - `eaf-tenant` (multi-tenancy)
      - `eaf-auth` (authentication)
      - `eaf-testing` (test utilities)
-     - `dvmm-domain` (aggregates, events)
-     - `dvmm-application` (commands, queries, handlers)
-     - `dvmm-api` (REST controllers)
-     - `dvmm-infrastructure` (adapters, projections)
-     - `dvmm-app` (main application)
+     - `dcm-domain` (aggregates, events)
+     - `dcm-application` (commands, queries, handlers)
+     - `dcm-api` (REST controllers)
+     - `dcm-infrastructure` (adapters, projections)
+     - `dcm-app` (main application)
 
 3. **AC-3: Kotlin Configuration**
    - Given the project is configured
@@ -64,7 +64,7 @@ so that I can start implementing domain logic immediately.
   - [x] 1.1 Create root `settings.gradle.kts` with all module includes
   - [x] 1.2 Create root `build.gradle.kts` with common configurations
   - [x] 1.3 Create directory structure for all eaf/* modules
-  - [x] 1.4 Create directory structure for all dvmm/* modules
+  - [x] 1.4 Create directory structure for all dcm/* modules
 
 - [x] **Task 2: Set Up Version Catalog & Properties** (AC: 7, 3)
   - [x] 2.1 Create `gradle/libs.versions.toml`
@@ -87,18 +87,18 @@ so that I can start implementing domain logic immediately.
   - [x] 4.4 Configure `eaf-auth/build.gradle.kts` (IdP-agnostic interfaces)
   - [x] 4.5 Configure `eaf-testing/build.gradle.kts` (test utilities)
 
-- [x] **Task 5: Configure DVMM Modules** (AC: 2)
-  - [x] 5.1 Configure `dvmm-domain/build.gradle.kts` (depends on eaf-core)
-  - [x] 5.2 Configure `dvmm-application/build.gradle.kts` (depends on domain, eaf-eventsourcing)
-  - [x] 5.3 Configure `dvmm-api/build.gradle.kts` (depends on application, eaf-auth)
-  - [x] 5.4 Configure `dvmm-infrastructure/build.gradle.kts` (adapters, jOOQ)
-  - [x] 5.5 Configure `dvmm-app/build.gradle.kts` (main application, assembles all)
+- [x] **Task 5: Configure DCM Modules** (AC: 2)
+  - [x] 5.1 Configure `dcm-domain/build.gradle.kts` (depends on eaf-core)
+  - [x] 5.2 Configure `dcm-application/build.gradle.kts` (depends on domain, eaf-eventsourcing)
+  - [x] 5.3 Configure `dcm-api/build.gradle.kts` (depends on application, eaf-auth)
+  - [x] 5.4 Configure `dcm-infrastructure/build.gradle.kts` (adapters, jOOQ)
+  - [x] 5.5 Configure `dcm-app/build.gradle.kts` (main application, assembles all)
 
 - [x] **Task 6: Configure Quality Gates** (AC: 6)
   - [x] 6.1 Configure Kover in test-conventions (minimum 80% coverage)
   - [x] 6.2 Configure Pitest for mutation testing (minimum 70% mutation score)
-  - [x] 6.3 Create initial Konsist test file `ArchitectureTest.kt` in dvmm-app
-  - [x] 6.4 Add rule: eaf modules must not depend on dvmm modules
+  - [x] 6.3 Create initial Konsist test file `ArchitectureTest.kt` in dcm-app
+  - [x] 6.4 Add rule: eaf modules must not depend on dcm modules
 
 - [x] **Task 7: Verify Build** (AC: 1)
   - [x] 7.1 Run `./gradlew build` and verify success
@@ -112,7 +112,7 @@ so that I can start implementing domain logic immediately.
 
 **In Scope (Story 1.1):**
 - 5 EAF modules: eaf-core, eaf-eventsourcing, eaf-tenant, eaf-auth, eaf-testing
-- 5 DVMM modules: dvmm-domain, dvmm-application, dvmm-api, dvmm-infrastructure, dvmm-app
+- 5 DCM modules: dcm-domain, dcm-application, dcm-api, dcm-infrastructure, dcm-app
 - Build-logic with 3 convention plugins
 - Version catalog and quality tooling
 
@@ -127,7 +127,7 @@ so that I can start implementing domain logic immediately.
 ### Architecture References
 
 - **ADR-001:** EAF Framework-First Architecture defines the module structure
-- **Dependency Direction:** EAF ← DVMM (never the reverse)
+- **Dependency Direction:** EAF ← DCM (never the reverse)
 - **Hexagonal Boundaries:** All integrations via Ports & Adapters
 
 [Source: docs/architecture.md#ADR-001]
@@ -177,12 +177,12 @@ eaf-monorepo/
 │   ├── eaf-tenant/build.gradle.kts
 │   ├── eaf-auth/build.gradle.kts
 │   └── eaf-testing/build.gradle.kts
-└── dvmm/
-    ├── dvmm-domain/build.gradle.kts
-    ├── dvmm-application/build.gradle.kts
-    ├── dvmm-api/build.gradle.kts
-    ├── dvmm-infrastructure/build.gradle.kts
-    └── dvmm-app/build.gradle.kts
+└── dcm/
+    ├── dcm-domain/build.gradle.kts
+    ├── dcm-application/build.gradle.kts
+    ├── dcm-api/build.gradle.kts
+    ├── dcm-infrastructure/build.gradle.kts
+    └── dcm-app/build.gradle.kts
 ```
 
 ### Version Catalog Template
@@ -257,7 +257,7 @@ claude-opus-4-5-20251101
 
 - **JUnit 6 Compatibility**: Required Gradle 9.2.1 for JUnit 6.0.1 support. Added explicit JUnit BOM and platform-engine dependencies.
 - **Kotlin Context Parameters**: Changed from deprecated `-Xcontext-receivers` to `-Xcontext-parameters` in Kotlin 2.2.
-- **Library Module Configuration**: dvmm-api and dvmm-infrastructure use Spring Boot plugin but are libraries (not runnable apps). Disabled bootJar task, enabled regular jar task.
+- **Library Module Configuration**: dcm-api and dcm-infrastructure use Spring Boot plugin but are libraries (not runnable apps). Disabled bootJar task, enabled regular jar task.
 - **Konsist Scope Fix**: `scopeFromProject()` scans generated Gradle DSL accessors in build-logic. Modified architecture test to use `scopeFromModule()` for specific modules only.
 - **Testcontainers 2.x**: Module names changed to `testcontainers-<module>` format (e.g., `testcontainers-postgresql`).
 
@@ -283,14 +283,14 @@ claude-opus-4-5-20251101
 - `eaf/eaf-auth/build.gradle.kts` - Authentication interfaces
 - `eaf/eaf-testing/build.gradle.kts` - Test utilities (exposes JUnit 6, Testcontainers as API)
 
-**DVMM Modules:**
-- `dvmm/dvmm-domain/build.gradle.kts` - Domain aggregates and events
-- `dvmm/dvmm-application/build.gradle.kts` - Commands, queries, handlers
-- `dvmm/dvmm-api/build.gradle.kts` - REST controllers (library, bootJar disabled)
-- `dvmm/dvmm-infrastructure/build.gradle.kts` - Adapters, jOOQ projections (library, bootJar disabled)
-- `dvmm/dvmm-app/build.gradle.kts` - Main application (runnable)
-- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/DvmmApplication.kt` - Application entry point
-- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
+**DCM Modules:**
+- `dcm/dcm-domain/build.gradle.kts` - Domain aggregates and events
+- `dcm/dcm-application/build.gradle.kts` - Commands, queries, handlers
+- `dcm/dcm-api/build.gradle.kts` - REST controllers (library, bootJar disabled)
+- `dcm/dcm-infrastructure/build.gradle.kts` - Adapters, jOOQ projections (library, bootJar disabled)
+- `dcm/dcm-app/build.gradle.kts` - Main application (runnable)
+- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/DcmApplication.kt` - Application entry point
+- `dcm/dcm-app/src/test/kotlin/de/acci/dcm/architecture/ArchitectureTest.kt` - Konsist architecture tests (7 rules)
 
 ## Change Log
 
@@ -331,7 +331,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
    - `eaf.kotlin-conventions.gradle.kts:34` - Coroutines BOM `1.10.2`
    - `eaf.spring-conventions.gradle.kts:13` - Reactor-kotlin `1.2.3`
    - `eaf-testing/build.gradle.kts:11,16,19` - JUnit, MockK, Testcontainers
-   - `dvmm-infrastructure/build.gradle.kts:21-22` - jOOQ `3.20.8`
+   - `dcm-infrastructure/build.gradle.kts:21-22` - jOOQ `3.20.8`
 
 **LOW Severity:**
 - None
@@ -358,11 +358,11 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 | 2.1-2.5 Version Catalog | ✅ Complete | ✅ VERIFIED | `libs.versions.toml`, `gradle.properties` |
 | 3.1-3.5 Build-Logic | ✅ Complete | ✅ VERIFIED | All 3 convention plugins exist |
 | 4.1-4.5 EAF Modules | ✅ Complete | ✅ VERIFIED | All 5 EAF build.gradle.kts |
-| 5.1-5.5 DVMM Modules | ✅ Complete | ✅ VERIFIED | All 5 DVMM build.gradle.kts |
+| 5.1-5.5 DCM Modules | ✅ Complete | ✅ VERIFIED | All 5 DCM build.gradle.kts |
 | 6.1 Kover | ✅ Complete | ✅ VERIFIED | `eaf.test-conventions.gradle.kts:7-28` |
 | 6.2 Pitest | ✅ Complete | ⚠️ PARTIAL | Version in catalog, NO plugin applied |
 | 6.3 ArchitectureTest.kt | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:1-104` |
-| 6.4 EAF→DVMM rule | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:17-74` |
+| 6.4 EAF→DCM rule | ✅ Complete | ✅ VERIFIED | `ArchitectureTest.kt:17-74` |
 | 7.1-7.4 Verify Build | ✅ Complete | ✅ VERIFIED | Build and tests pass |
 
 **Summary: 26 of 27 tasks verified, 1 partial (6.2 Pitest), 0 false completions**
@@ -373,7 +373,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 - Kover reports generated successfully
 
 ### Architectural Alignment
-- ✅ Dependency direction correct: DVMM → EAF (never reverse)
+- ✅ Dependency direction correct: DCM → EAF (never reverse)
 - ✅ Hexagonal boundaries maintained
 - ✅ Module isolation via Konsist tests enforced
 - ✅ Convention plugins applied consistently
@@ -397,7 +397,7 @@ Story 1.1 Project Scaffolding is largely complete. All 10 modules compile, the b
 - [x] [Med] Replace hardcoded Konsist version with `libs.konsist` [file: eaf.test-conventions.gradle.kts:67]
 - [x] [Med] Replace hardcoded Coroutines BOM with catalog ref [file: eaf.kotlin-conventions.gradle.kts:37]
 - [x] [Med] Replace hardcoded Reactor-kotlin version [file: eaf.spring-conventions.gradle.kts:16]
-- [x] [Med] Replace hardcoded jOOQ versions with catalog refs [file: dvmm-infrastructure/build.gradle.kts:21-22]
+- [x] [Med] Replace hardcoded jOOQ versions with catalog refs [file: dcm-infrastructure/build.gradle.kts:21-22]
 - [x] [Med] Replace hardcoded versions in eaf-testing [file: eaf/eaf-testing/build.gradle.kts:11,14-16,19-22]
 
 **Advisory Notes:**
@@ -418,7 +418,7 @@ All action items from the Senior Developer Review have been addressed.
    - Applied `info.solidsoft.pitest` plugin
    - Configured 70% mutation score threshold
    - Uses version catalog for all versions
-   - Applied to dvmm-app module as example
+   - Applied to dcm-app module as example
 
 2. **Updated `gradle/libs.versions.toml`**:
    - Added `kover = "0.9.3"`
@@ -433,12 +433,12 @@ All action items from the Senior Developer Review have been addressed.
 
 4. **Updated module build files to use version catalog**:
    - `eaf/eaf-testing/build.gradle.kts`: All dependencies from catalog
-   - `dvmm/dvmm-infrastructure/build.gradle.kts`: jOOQ from catalog
+   - `dcm/dcm-infrastructure/build.gradle.kts`: jOOQ from catalog
 
 ### Verification:
 - ✅ `./gradlew clean build` passes
 - ✅ All 7 Konsist architecture tests pass
-- ✅ Pitest task available: `./gradlew :dvmm:dvmm-app:pitest`
+- ✅ Pitest task available: `./gradlew :dcm:dcm-app:pitest`
 
 ### AC Status After Fix:
 | AC | Requirement | Status |

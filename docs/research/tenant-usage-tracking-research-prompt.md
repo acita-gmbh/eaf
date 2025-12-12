@@ -1,8 +1,8 @@
-# Deep Research Prompt: Tenant Usage Tracking & Billing for DVMM
+# Deep Research Prompt: Tenant Usage Tracking & Billing for DCM
 
 ## Research Context
 
-**Product:** DVMM (Dynamic Virtual Machine Manager) - A multi-tenant VM lifecycle management platform
+**Product:** DCM (Dynamic Cloud Manager) - A multi-tenant VM lifecycle management platform
 **Infrastructure:** VMware vSphere/VCF, PostgreSQL with Row-Level Security
 **Architecture:** CQRS/Event Sourcing, Hexagonal Architecture
 **Target Market:** DACH region enterprises, MSPs, and internal IT departments
@@ -237,7 +237,7 @@ Research how VMware Cloud Provider partners implement billing:
 #### Event Sourcing for Usage
 - Immutable usage event log
 - Derived billing projections
-- **Research:** How does this align with DVMM's existing CQRS/ES architecture?
+- **Research:** How does this align with DCM's existing CQRS/ES architecture?
 - **Research:** Event schemas for usage tracking
 
 #### Relational Models
@@ -262,7 +262,7 @@ Research how VMware Cloud Provider partners implement billing:
 #### Data Isolation
 - How to ensure tenants only see their own usage data
 - Row-level security patterns for billing data
-- **Research:** Best practices aligned with DVMM's PostgreSQL RLS
+- **Research:** Best practices aligned with DCM's PostgreSQL RLS
 
 #### Tenant Hierarchies
 - Sub-tenants, departments, cost centers
@@ -363,11 +363,11 @@ Research how VMware Cloud Provider partners implement billing:
 
 ---
 
-## Section 7: Implementation Considerations for DVMM
+## Section 7: Implementation Considerations for DCM
 
 ### 7.1 Architecture Alignment
 
-Given DVMM's architecture (CQRS/ES, PostgreSQL RLS, Hexagonal), research:
+Given DCM's architecture (CQRS/ES, PostgreSQL RLS, Hexagonal), research:
 
 - How does usage tracking fit into the existing event sourcing model?
 - Should usage events be domain events or separate telemetry?
@@ -376,7 +376,7 @@ Given DVMM's architecture (CQRS/ES, PostgreSQL RLS, Hexagonal), research:
 
 ### 7.2 VMware VCF Integration
 
-Given DVMM uses VCF SDK 9.0:
+Given DCM uses VCF SDK 9.0:
 
 - What is the most efficient API for collecting billing metrics?
 - How frequently can metrics be polled without performance impact?
@@ -421,7 +421,7 @@ Research how these competitors implement tenant billing:
 
 ### Technical Questions
 
-1. What is the minimum viable metering implementation for DVMM MVP?
+1. What is the minimum viable metering implementation for DCM MVP?
 2. Should usage data live in the main PostgreSQL database or a separate time-series DB?
 3. How do we handle retroactive pricing changes?
 4. What happens to usage data when a tenant is deleted (GDPR vs. accounting)?
@@ -433,7 +433,7 @@ Research how these competitors implement tenant billing:
 2. What level of billing detail do enterprise customers expect?
 3. Is real-time cost visibility a must-have or nice-to-have?
 4. How important is budget alerting and forecasting?
-5. Should DVMM support reseller/partner billing hierarchies?
+5. Should DCM support reseller/partner billing hierarchies?
 
 ### Integration Questions
 
@@ -451,7 +451,7 @@ After research, provide:
 ### 10.1 Findings Summary
 - Executive summary of key findings
 - Comparison matrix of approaches
-- Recommended approach for DVMM with rationale
+- Recommended approach for DCM with rationale
 
 ### 10.2 Technical Deep-Dives
 - Metering data collection architecture options
@@ -508,7 +508,7 @@ The research is complete when:
 
 1. ✅ All collection methods are documented with pros/cons
 2. ✅ At least 5 industry solutions are analyzed in depth
-3. ✅ Data architecture patterns are evaluated for DVMM fit
+3. ✅ Data architecture patterns are evaluated for DCM fit
 4. ✅ Billing engine requirements are specified
 5. ✅ Compliance requirements for DACH region are clarified
 6. ✅ Clear recommendation with MVP scope is provided

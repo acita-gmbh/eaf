@@ -15,7 +15,7 @@ Pass Rate: 1/1 (100%)
 ✓ PASS - Requirement fully met
 Evidence:
 - "Epic ID: Epic 1, Epic Name: Foundation" (Line 3)
-- "1.1 Goal: Establish the technical foundation for all DVMM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates." (Lines 9-10)
+- "1.1 Goal: Establish the technical foundation for all DCM features including project structure, event sourcing infrastructure, multi-tenant context, and quality gates." (Lines 9-10)
 - "FRs Covered: FR66, FR67, FR80" (Line 24)
 
 ### Item 2: Scope explicitly lists in-scope and out-of-scope

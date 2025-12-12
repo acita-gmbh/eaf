@@ -1,8 +1,8 @@
-# Multi-Tenancy in DVMM
+# Multi-Tenancy in DCM
 
 **Three layers of defense to keep tenant data completely isolated.**
 
-DVMM is a multi-tenant SaaS platform. This means multiple organizations (Tenants) use the same running application and database. However, it is **critical** that Tenant A never sees Tenant B's data.
+DCM is a multi-tenant SaaS platform. This means multiple organizations (Tenants) use the same running application and database. However, it is **critical** that Tenant A never sees Tenant B's data.
 
 We don't rely on developers remembering to add `WHERE tenant_id = ?` to every query. Instead, we enforce isolation at three distinct architectural layers.
 
@@ -62,7 +62,7 @@ If the application forgets to set `app.tenant_id`, the `current_setting` functio
 
 ## Developer Guidelines
 
-1.  **Never Bypass RLS:** Do not use the `superuser` database role for the application connection. Use a restricted role (`dvmm_app`) that is subject to RLS policies.
+1.  **Never Bypass RLS:** Do not use the `superuser` database role for the application connection. Use a restricted role (`dcm_app`) that is subject to RLS policies.
 2.  **Context is Automatic:** You rarely need to handle `tenant_id` manually in business logic. The framework handles it.
 3.  **Testing:** We have mandatory architecture tests that attempt to cross tenant boundaries. If you can read Tenant B's data while logged in as Tenant A, the build fails.
 

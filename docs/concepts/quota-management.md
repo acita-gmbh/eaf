@@ -2,7 +2,7 @@
 
 **Solving the "Check-Then-Act" problem in an eventually consistent system.**
 
-In a standard system, checking a quota is easy: lock the row, check the value, update it. But DVMM uses **CQRS** (Command Query Responsibility Segregation), where the "Write Side" (Events) is separate from the "Read Side" (Projections).
+In a standard system, checking a quota is easy: lock the row, check the value, update it. But DCM uses **CQRS** (Command Query Responsibility Segregation), where the "Write Side" (Events) is separate from the "Read Side" (Projections).
 
 This creates a race condition risk: Two users might request a large VM at the same millisecond. Both checks pass against the *old* read model, but together they exceed the quota.
 

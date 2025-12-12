@@ -1,4 +1,4 @@
-# Dynamic Virtual Machine Manager (DVMM)
+# Dynamic Cloud Manager (DCM)
 
 **Enterprise-grade VM provisioning platform built on the EAF framework for ISO 27001-compliant organizations.**
 
@@ -23,7 +23,7 @@
 
 ## Overview
 
-DVMM is a self-service VM provisioning platform designed for medium-sized enterprises (50-500 employees) in regulated industries. It streamlines the VM request-approval-provisioning workflow while maintaining full audit trails for compliance.
+DCM is a self-service VM provisioning platform designed for medium-sized enterprises (50-500 employees) in regulated industries. It streamlines the VM request-approval-provisioning workflow while maintaining full audit trails for compliance.
 
 **Key Value Propositions:**
 - **30-Second Audit Trail:** Complete request history accessible instantly for ISO 27001 audits
@@ -49,16 +49,16 @@ DVMM is a self-service VM provisioning platform designed for medium-sized enterp
 | **EAF Tenant** | `eaf/eaf-tenant` | Multi-tenancy with PostgreSQL RLS |
 | **EAF Auth** | `eaf/eaf-auth` | IdP-agnostic authentication interfaces |
 | **EAF Testing** | `eaf/eaf-testing` | Test utilities (InMemoryEventStore, TestClock) |
-| **DVMM Domain** | `dvmm/dvmm-domain` | Business logic, aggregates (NO Spring) |
-| **DVMM Application** | `dvmm/dvmm-application` | Use cases, command/query handlers |
-| **DVMM API** | `dvmm/dvmm-api` | REST controllers, DTOs |
-| **DVMM Infrastructure** | `dvmm/dvmm-infrastructure` | Persistence, VMware integration |
-| **DVMM App** | `dvmm/dvmm-app` | Spring Boot entry point |
-| **DVMM Web** | `dvmm/dvmm-web` | React frontend (Vite + TypeScript) |
+| **DCM Domain** | `dcm/dcm-domain` | Business logic, aggregates (NO Spring) |
+| **DCM Application** | `dcm/dcm-application` | Use cases, command/query handlers |
+| **DCM API** | `dcm/dcm-api` | REST controllers, DTOs |
+| **DCM Infrastructure** | `dcm/dcm-infrastructure` | Persistence, VMware integration |
+| **DCM App** | `dcm/dcm-app` | Spring Boot entry point |
+| **DCM Web** | `dcm/dcm-web` | React frontend (Vite + TypeScript) |
 
 ## Architecture
 
-DVMM follows a **Hexagonal Architecture** with **CQRS/Event Sourcing**, enforced by Konsist architecture tests.
+DCM follows a **Hexagonal Architecture** with **CQRS/Event Sourcing**, enforced by Konsist architecture tests.
 
 ```mermaid
 graph TD
@@ -66,7 +66,7 @@ graph TD
         UI[React Frontend<br/>shadcn/ui]
     end
 
-    subgraph DVMM Platform
+    subgraph DCM Platform
         API[REST API<br/>Spring WebFlux]
         CMD[Command Handlers<br/>CQRS Write Side]
         EVT[Event Store<br/>PostgreSQL]
@@ -113,20 +113,20 @@ graph TD
 
 #### 1. Start Infrastructure (PostgreSQL + Keycloak)
 ```bash
-docker compose -f docker/dvmm/docker-compose.yml up -d postgres keycloak
+docker compose -f docker/dcm/docker-compose.yml up -d postgres keycloak
 ```
 *Wait for containers to be healthy.*
 
 #### 2. Start Backend (Spring Boot)
 ```bash
-./gradlew :dvmm:dvmm-app:bootRun
+./gradlew :dcm:dcm-app:bootRun
 ```
 *Backend API runs on: `http://localhost:8080`*
 
 #### 3. Start Frontend (React)
 Open a new terminal:
 ```bash
-cd dvmm/dvmm-web
+cd dcm/dcm-web
 npm install
 npm run dev
 ```
@@ -169,14 +169,14 @@ cd eaf
 
 ```bash
 # Build specific module
-./gradlew :dvmm:dvmm-app:build
+./gradlew :dcm:dcm-app:build
 ./gradlew :eaf:eaf-core:build
 
 # Test specific module
-./gradlew :dvmm:dvmm-domain:test
+./gradlew :dcm:dcm-domain:test
 
 # Run single test
-./gradlew :dvmm:dvmm-app:test --tests "ArchitectureTest"
+./gradlew :dcm:dcm-app:test --tests "ArchitectureTest"
 ```
 
 ## Quality Gates
@@ -219,9 +219,9 @@ To configure (GitHub → Settings → Branches → Add rule for `main`):
 
 Enforced by Konsist tests in `ArchitectureTest.kt`:
 
-- EAF modules **MUST NOT** import from `de.acci.dvmm.*`
-- DVMM modules **CAN** import from `de.acci.eaf.*`
-- `dvmm-domain` **MUST NOT** import from `org.springframework.*`
+- EAF modules **MUST NOT** import from `de.acci.dcm.*`
+- DCM modules **CAN** import from `de.acci.eaf.*`
+- `dcm-domain` **MUST NOT** import from `org.springframework.*`
 
 ## Testing
 
@@ -235,7 +235,7 @@ The project follows a **Tests First** approach with integration tests taking pri
 ./gradlew test --info
 
 # Run architecture tests
-./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"
+./gradlew :dcm:dcm-app:test --tests "*ArchitectureTest*"
 ```
 
 ### Testing Stack
@@ -262,12 +262,12 @@ eaf/
 │   ├── eaf-tenant/
 │   ├── eaf-auth/
 │   └── eaf-testing/
-├── dvmm/                     # Product modules
-│   ├── dvmm-domain/
-│   ├── dvmm-application/
-│   ├── dvmm-api/
-│   ├── dvmm-infrastructure/
-│   └── dvmm-app/
+├── dcm/                     # Product modules
+│   ├── dcm-domain/
+│   ├── dcm-application/
+│   ├── dcm-api/
+│   ├── dcm-infrastructure/
+│   └── dcm-app/
 ├── docs/                     # Documentation
 │   ├── architecture.md
 │   ├── prd.md
@@ -286,7 +286,7 @@ We follow **Conventional Commits** and require all quality gates to pass:
 # Commit message format
 git commit -m "feat: implement VM request validation"
 git commit -m "fix: correct tenant isolation in event store"
-git commit -m "[DVMM-123] feat: add approval workflow"
+git commit -m "[DCM-123] feat: add approval workflow"
 
 # Branch naming
 git checkout -b feature/story-1.2-eaf-core-module

@@ -11,8 +11,8 @@ val libs = versionCatalogs.named("libs")
 configure<PitestPluginExtension> {
     pitestVersion.set(libs.findVersion("pitest").get().toString())
     junit5PluginVersion.set(libs.findVersion("pitest-junit5-plugin").get().toString())
-    targetClasses.set(listOf("de.acci.eaf.*", "de.acci.dvmm.*"))
-    targetTests.set(listOf("de.acci.eaf.*", "de.acci.dvmm.*"))
+    targetClasses.set(listOf("de.acci.eaf.*", "de.acci.dcm.*"))
+    targetTests.set(listOf("de.acci.eaf.*", "de.acci.dcm.*"))
     threads.set(Runtime.getRuntime().availableProcessors())
     outputFormats.set(listOf("HTML", "XML"))
     mutationThreshold.set(70) // 70% mutation score threshold

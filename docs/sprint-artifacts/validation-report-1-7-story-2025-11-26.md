@@ -42,7 +42,7 @@
 **Learnings Captured:**
 - RLS Infrastructure: `set_config('app.tenant_id', ?, false)` session-scoped
 - Two Complementary Approaches: Coroutine-based + ThreadLocal-based
-- Role Naming: Framework uses `eaf_app` (not `dvmm_app`)
+- Role Naming: Framework uses `eaf_app` (not `dcm_app`)
 - Tenant Context Chain: JWT → JwtTenantClaimExtractor → TenantContextWebFilter → TenantContext → RLS
 
 ---

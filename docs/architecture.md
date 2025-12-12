@@ -1,8 +1,8 @@
-# DVMM Architecture
+# DCM Architecture
 
 ## Executive Summary
 
-DVMM is a multi-tenant self-service portal for VMware VM provisioning, built as the pilot project for the Enterprise Application Framework (EAF). The architecture follows **Framework-First principles** with strict separation between reusable framework modules (`eaf-*`) and product-specific code (`dvmm-*`).
+DCM is a multi-tenant self-service portal for VMware VM provisioning, built as the pilot project for the Enterprise Application Framework (EAF). The architecture follows **Framework-First principles** with strict separation between reusable framework modules (`eaf-*`) and product-specific code (`dcm-*`).
 
 **Key Architectural Decisions:**
 - **CQRS + Event Sourcing** with PostgreSQL-based Event Store and jOOQ Read Projections
@@ -13,7 +13,7 @@ DVMM is a multi-tenant self-service portal for VMware VM provisioning, built as 
 
 ## Project Context Understanding
 
-**Project:** DVMM (Dynamic Virtual Machine Manager)
+**Project:** DCM (Dynamic Cloud Manager)
 **Type:** Multi-Tenant Self-Service Portal for VMware ESXi/Windows VM Provisioning
 **Framework:** Enterprise Application Framework (EAF) Pilot Project
 
@@ -88,10 +88,10 @@ DVMM is a multi-tenant self-service portal for VMware VM provisioning, built as 
 
 **Status:** Accepted | **Date:** 2025-11-24
 
-We adopt a **Framework-First Architecture** using Hexagonal Architecture principles within a Gradle multi-module monorepo structure. EAF (Enterprise Application Framework) must remain completely independent of DVMM, enabling future products to use EAF without any DVMM dependencies.
+We adopt a **Framework-First Architecture** using Hexagonal Architecture principles within a Gradle multi-module monorepo structure. EAF (Enterprise Application Framework) must remain completely independent of DCM, enabling future products to use EAF without any DCM dependencies.
 
 **Key Principles:**
-1. Strict Dependency Direction: EAF ← DVMM (never the reverse)
+1. Strict Dependency Direction: EAF ← DCM (never the reverse)
 2. Domain Independence: Framework core has zero external dependencies
 3. Hexagonal Boundaries: Ports & Adapters pattern for all integrations
 4. Module Isolation: Kotlin `internal` modifier + Konsist enforcement
@@ -138,7 +138,7 @@ See the full ADR for detailed rationale and code examples for each decision.
 
 **Status:** Accepted (Design Only) | **Date:** 2025-12-09
 
-DVMM will support multiple hypervisors (VMware vSphere, Proxmox VE, Hyper-V, PowerVM) through a port/adapter abstraction layer, implemented post-MVP. The `HypervisorPort` interface already exists with VMware-specific types; Epic 6 will generalize these for multi-hypervisor support.
+DCM will support multiple hypervisors (VMware vSphere, Proxmox VE, Hyper-V, PowerVM) through a port/adapter abstraction layer, implemented post-MVP. The `HypervisorPort` interface already exists with VMware-specific types; Epic 6 will generalize these for multi-hypervisor support.
 
 See the full ADR for architecture patterns, SDK landscape, and migration path.
 
@@ -164,26 +164,26 @@ See the full ADR for architecture patterns, SDK landscape, and migration path.
 
 ## Project Structure
 
-See **ADR-001: EAF Framework-First Architecture** above for the complete monorepo structure with all EAF and DVMM modules.
+See **ADR-001: EAF Framework-First Architecture** above for the complete monorepo structure with all EAF and DCM modules.
 
 ## FR Category to Architecture Mapping
 
 | FR Category | Primary Module(s) | Key Patterns |
 |-------------|-------------------|--------------|
 | FR-01: User Account & Auth | eaf-auth, eaf-auth-keycloak | OIDC, JWT, RBAC |
-| FR-02: Project Management | dvmm-domain/project | Aggregate, Event Sourcing |
-| FR-03: VM Request Management | dvmm-domain/request | Aggregate, State Machine |
-| FR-04: Approval Workflow | dvmm-application | Command Handlers, Events |
-| FR-05: VM Provisioning | dvmm-infrastructure/vmware | Adapter, Circuit Breaker |
-| FR-06: Status & Notifications | eaf-notifications, dvmm-api | Polling MVP, WebSocket Growth |
-| FR-07: Onboarding & Empty States | dvmm-ui | React Components |
-| FR-08: Admin Dashboard | dvmm-api, dvmm-ui | jOOQ Projections |
+| FR-02: Project Management | dcm-domain/project | Aggregate, Event Sourcing |
+| FR-03: VM Request Management | dcm-domain/request | Aggregate, State Machine |
+| FR-04: Approval Workflow | dcm-application | Command Handlers, Events |
+| FR-05: VM Provisioning | dcm-infrastructure/vmware | Adapter, Circuit Breaker |
+| FR-06: Status & Notifications | eaf-notifications, dcm-api | Polling MVP, WebSocket Growth |
+| FR-07: Onboarding & Empty States | dcm-ui | React Components |
+| FR-08: Admin Dashboard | dcm-api, dcm-ui | jOOQ Projections |
 | FR-09: Reporting & Audit | eaf-audit | Partitioned Tables, Crypto-Shredding |
 | FR-10: Multi-Tenancy | eaf-tenant | RLS Policies, TenantContext |
-| FR-11: System Administration | dvmm-api/admin | Admin Endpoints |
-| FR-12: Error Handling & Resilience | eaf-core, dvmm-infrastructure | Result Type, Circuit Breaker |
-| FR-13: Quota Management | dvmm-domain/project | Synchronous Validation |
-| FR-14: Capacity & Cost Visibility | dvmm-application | jOOQ Aggregations |
+| FR-11: System Administration | dcm-api/admin | Admin Endpoints |
+| FR-12: Error Handling & Resilience | eaf-core, dcm-infrastructure | Result Type, Circuit Breaker |
+| FR-13: Quota Management | dcm-domain/project | Synchronous Validation |
+| FR-14: Capacity & Cost Visibility | dcm-application | jOOQ Aggregations |
 
 ## Technology Stack Details
 
@@ -261,7 +261,7 @@ jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
 
 | System | Protokoll | Adapter-Modul | Resilience-Pattern |
 |--------|-----------|---------------|-------------------|
-| VMware vSphere | REST API | dvmm-infrastructure | Circuit Breaker, Retry, Queue |
+| VMware vSphere | REST API | dcm-infrastructure | Circuit Breaker, Retry, Queue |
 | Keycloak | OIDC/OAuth2 | eaf-auth-keycloak | Token Refresh, Fallback |
 | PostgreSQL | R2DBC | eaf-eventsourcing, eaf-tenant | Connection Pool, Health Check |
 | Email/Notifications | SMTP/API | eaf-notifications | Async Queue, Retry, Templates |
@@ -391,17 +391,17 @@ CREATE POLICY tenant_isolation ON eaf_events.snapshots
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
 ```
 
-### DVMM Read Model Schema
+### DCM Read Model Schema
 
 ```sql
 -- =============================================================================
--- SCHEMA: dvmm (Product-specific Read Models)
+-- SCHEMA: dcm (Product-specific Read Models)
 -- =============================================================================
 
-CREATE SCHEMA IF NOT EXISTS dvmm;
+CREATE SCHEMA IF NOT EXISTS dcm;
 
 -- Projects
-CREATE TABLE dvmm.projects (
+CREATE TABLE dcm.projects (
     id                  UUID PRIMARY KEY,
     tenant_id           UUID NOT NULL,
     name                VARCHAR(255) NOT NULL,
@@ -423,10 +423,10 @@ CREATE TABLE dvmm.projects (
 );
 
 -- VM Requests
-CREATE TABLE dvmm.vm_requests (
+CREATE TABLE dcm.vm_requests (
     id                  UUID PRIMARY KEY,
     tenant_id           UUID NOT NULL,
-    project_id          UUID NOT NULL REFERENCES dvmm.projects(id),
+    project_id          UUID NOT NULL REFERENCES dcm.projects(id),
     requester_id        UUID NOT NULL,
 
     name                VARCHAR(255) NOT NULL,
@@ -448,11 +448,11 @@ CREATE TABLE dvmm.vm_requests (
 );
 
 -- VMs
-CREATE TABLE dvmm.vms (
+CREATE TABLE dcm.vms (
     id                  UUID PRIMARY KEY,
     tenant_id           UUID NOT NULL,
-    request_id          UUID NOT NULL REFERENCES dvmm.vm_requests(id),
-    project_id          UUID NOT NULL REFERENCES dvmm.projects(id),
+    request_id          UUID NOT NULL REFERENCES dcm.vm_requests(id),
+    project_id          UUID NOT NULL REFERENCES dcm.projects(id),
 
     name                VARCHAR(255) NOT NULL,
     vsphere_id          VARCHAR(255),
@@ -474,15 +474,15 @@ CREATE TABLE dvmm.vms (
 );
 
 -- RLS on all tables
-ALTER TABLE dvmm.projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dvmm.vm_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dvmm.vms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dcm.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dcm.vm_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dcm.vms ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation ON dvmm.projects
+CREATE POLICY tenant_isolation ON dcm.projects
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
-CREATE POLICY tenant_isolation ON dvmm.vm_requests
+CREATE POLICY tenant_isolation ON dcm.vm_requests
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
-CREATE POLICY tenant_isolation ON dvmm.vms
+CREATE POLICY tenant_isolation ON dcm.vms
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
 
 -- =============================================================================
@@ -490,8 +490,8 @@ CREATE POLICY tenant_isolation ON dvmm.vms
 -- =============================================================================
 
 -- Approval Queue View (computed waiting_hours)
-CREATE TABLE dvmm.approval_queue_base (
-    request_id          UUID PRIMARY KEY REFERENCES dvmm.vm_requests(id),
+CREATE TABLE dcm.approval_queue_base (
+    request_id          UUID PRIMARY KEY REFERENCES dcm.vm_requests(id),
     tenant_id           UUID NOT NULL,
     project_id          UUID NOT NULL,
     project_name        VARCHAR(255) NOT NULL,
@@ -506,19 +506,19 @@ CREATE TABLE dvmm.approval_queue_base (
     requested_at        TIMESTAMPTZ NOT NULL
 );
 
-ALTER TABLE dvmm.approval_queue_base ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON dvmm.approval_queue_base
+ALTER TABLE dcm.approval_queue_base ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON dcm.approval_queue_base
     USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
 
 -- View with computed waiting_hours (always fresh)
-CREATE VIEW dvmm.approval_queue AS
+CREATE VIEW dcm.approval_queue AS
 SELECT
     aq.*,
     FLOOR(EXTRACT(EPOCH FROM (NOW() - aq.requested_at)) / 3600)::INT AS waiting_hours
-FROM dvmm.approval_queue_base aq;
+FROM dcm.approval_queue_base aq;
 
 -- Quota Audit View (source of truth for reporting)
-CREATE VIEW dvmm.project_quota_audit AS
+CREATE VIEW dcm.project_quota_audit AS
 SELECT
     p.id AS project_id,
     p.tenant_id,
@@ -536,8 +536,8 @@ SELECT
     p.used_cpu_cores - COALESCE(SUM(v.cpu_cores) FILTER (WHERE v.status NOT IN ('DECOMMISSIONED')), 0) AS cpu_drift,
     p.used_memory_gb - COALESCE(SUM(v.memory_gb) FILTER (WHERE v.status NOT IN ('DECOMMISSIONED')), 0) AS memory_drift,
     p.used_storage_gb - COALESCE(SUM(v.storage_gb) FILTER (WHERE v.status NOT IN ('DECOMMISSIONED')), 0) AS storage_drift
-FROM dvmm.projects p
-LEFT JOIN dvmm.vms v ON v.project_id = p.id
+FROM dcm.projects p
+LEFT JOIN dcm.vms v ON v.project_id = p.id
 GROUP BY p.id, p.tenant_id, p.name,
          p.quota_cpu_cores, p.quota_memory_gb, p.quota_storage_gb,
          p.used_cpu_cores, p.used_memory_gb, p.used_storage_gb;
@@ -554,8 +554,8 @@ GROUP BY p.id, p.tenant_id, p.name,
 ```
 migrations/
 ├── V001__create_eaf_events_schema.sql
-├── V002__create_dvmm_schema.sql
-├── V003__create_dvmm_views.sql
+├── V002__create_dcm_schema.sql
+├── V003__create_dcm_views.sql
 └── V004__add_outbox_dlq.sql
 ```
 
@@ -805,7 +805,7 @@ openapi/
 # openapi/v1/openapi.yaml
 openapi: 3.1.0
 info:
-  title: DVMM API
+  title: DCM API
   version: 1.0.0
 
 servers:
@@ -819,9 +819,9 @@ x-rate-limit:
   window: 60  # seconds
 
 x-contract-testing:
-  provider: dvmm-api
+  provider: dcm-api
   consumers:
-    - dvmm-web
+    - dcm-web
 
 components:
   securitySchemes:
@@ -842,7 +842,7 @@ components:
 ### Authentication Flow (Keycloak OIDC)
 
 ```
-User Browser → DVMM Frontend → Keycloak IdP → DVMM API
+User Browser → DCM Frontend → Keycloak IdP → DCM API
      │              │              │              │
      │ 1. Access    │              │              │
      │─────────────▶│              │              │
@@ -865,13 +865,13 @@ User Browser → DVMM Frontend → Keycloak IdP → DVMM API
 
 ```json
 {
-  "iss": "https://auth.company.com/realms/dvmm",
+  "iss": "https://auth.company.com/realms/dcm",
   "sub": "user-uuid",
   "tenant_id": "tenant-uuid",
   "email": "user@tenant.com",
   "realm_access": { "roles": ["user"] },
   "resource_access": {
-    "dvmm-api": { "roles": ["vm-requester"] }
+    "dcm-api": { "roles": ["vm-requester"] }
   }
 }
 ```
@@ -1114,7 +1114,7 @@ fun `direct SQL cannot bypass RLS`() {
     withTenant(tenantA) { createVmRequest("secret") }
     withTenant(tenantB) {
         val result = jdbcTemplate.query(
-            "SELECT * FROM dvmm.vm_requests WHERE name = 'secret'"
+            "SELECT * FROM dcm.vm_requests WHERE name = 'secret'"
         )
         assertThat(result).isEmpty()  // RLS blocks access
     }
@@ -1127,16 +1127,16 @@ fun `direct SQL cannot bypass RLS`() {
 
 ```mermaid
 C4Context
-    title DVMM System Deployment Architecture
+    title DCM System Deployment Architecture
 
     Person(user, "End User", "Requests VMs via browser")
     Person(admin, "IT Admin", "Approves requests")
 
     System_Boundary(k8s, "Kubernetes Cluster") {
-        System_Boundary(dvmm_ns, "Namespace: dvmm") {
+        System_Boundary(dcm_ns, "Namespace: dcm") {
             Container(ingress, "Ingress", "Traefik/Nginx", "TLS termination, routing")
-            Container(api, "dvmm-api", "Spring Boot 3.5", "REST API, WebFlux")
-            Container(web, "dvmm-web", "React/Nginx", "SPA Frontend")
+            Container(api, "dcm-api", "Spring Boot 3.5", "REST API, WebFlux")
+            Container(web, "dcm-web", "React/Nginx", "SPA Frontend")
             Container(worker, "projection-worker", "Spring Boot", "Async projections")
             Container(poller, "outbox-poller", "Spring Boot", "Event publishing")
         }
@@ -1182,12 +1182,12 @@ C4Context
 │  └─────────────────────────┬─────────────────────────────────┘  │
 │                            │                                    │
 │  ┌─────────────────────────┼─────────────────────────────────┐  │
-│  │                  Namespace: dvmm                          │  │
+│  │                  Namespace: dcm                          │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐                │  │
-│  │  │ dvmm-api │  │ dvmm-api │  │ dvmm-api │  (3 replicas)  │  │
+│  │  │ dcm-api │  │ dcm-api │  │ dcm-api │  (3 replicas)  │  │
 │  │  └──────────┘  └──────────┘  └──────────┘                │  │
 │  │  ┌──────────┐  ┌────────────────┐  ┌──────────────┐      │  │
-│  │  │ dvmm-web │  │projection-worker│  │outbox-poller │      │  │
+│  │  │ dcm-web │  │projection-worker│  │outbox-poller │      │  │
 │  │  └──────────┘  └────────────────┘  └──────────────┘      │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -1209,10 +1209,10 @@ C4Context
 
 | Image | Base | Size | Purpose |
 |-------|------|------|---------|
-| `dvmm-api` | `eclipse-temurin:21-jre-alpine` | <200MB | Backend API |
-| `dvmm-web` | `nginx:alpine` | <50MB | Frontend SPA |
-| `dvmm-projection-worker` | `eclipse-temurin:21-jre-alpine` | <200MB | Async Projections |
-| `dvmm-outbox-poller` | `eclipse-temurin:21-jre-alpine` | <150MB | Event Publishing |
+| `dcm-api` | `eclipse-temurin:21-jre-alpine` | <200MB | Backend API |
+| `dcm-web` | `nginx:alpine` | <50MB | Frontend SPA |
+| `dcm-projection-worker` | `eclipse-temurin:21-jre-alpine` | <200MB | Async Projections |
+| `dcm-outbox-poller` | `eclipse-temurin:21-jre-alpine` | <150MB | Event Publishing |
 
 ### Worker Deployment (Leader Election)
 
@@ -1241,9 +1241,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: dvmm
-      POSTGRES_USER: dvmm
-      POSTGRES_PASSWORD: dvmm
+      POSTGRES_DB: dcm
+      POSTGRES_USER: dcm
+      POSTGRES_PASSWORD: dcm
     ports:
       - "5432:5432"
     volumes:
@@ -1290,7 +1290,7 @@ cat <<EOF > /usr/share/nginx/html/config.js
 window.ENV = {
   API_URL: "${API_URL:-http://localhost:8080}",
   KEYCLOAK_URL: "${KEYCLOAK_URL:-http://localhost:8180}",
-  KEYCLOAK_REALM: "${KEYCLOAK_REALM:-dvmm}"
+  KEYCLOAK_REALM: "${KEYCLOAK_REALM:-dcm}"
 };
 EOF
 ```
@@ -1342,7 +1342,7 @@ jobs:
     services:
       postgres:
         image: postgres:16-alpine
-        env: { POSTGRES_DB: dvmm_test, POSTGRES_USER: test, POSTGRES_PASSWORD: test }
+        env: { POSTGRES_DB: dcm_test, POSTGRES_USER: test, POSTGRES_PASSWORD: test }
     steps:
       - name: Flyway Validate
         run: ./gradlew flywayValidate
@@ -1398,14 +1398,14 @@ jobs:
 
 ```kotlin
 @Component
-class DvmmMetrics(registry: MeterRegistry) {
-    val vmRequestsCreated = registry.counter("dvmm.vm_requests.created")
-    val vmRequestsApproved = registry.counter("dvmm.vm_requests.approved")
-    val vmRequestsRejected = registry.counter("dvmm.vm_requests.rejected")
-    val approvalWaitTime = registry.timer("dvmm.approval.wait_time")
-    val slaBreaches = registry.counter("dvmm.sla.breaches")
-    val outboxQueueSize = registry.gauge("dvmm.outbox.queue_size") { ... }
-    val deadLetterCount = registry.gauge("dvmm.outbox.dead_letters") { ... }
+class DcmMetrics(registry: MeterRegistry) {
+    val vmRequestsCreated = registry.counter("dcm.vm_requests.created")
+    val vmRequestsApproved = registry.counter("dcm.vm_requests.approved")
+    val vmRequestsRejected = registry.counter("dcm.vm_requests.rejected")
+    val approvalWaitTime = registry.timer("dcm.approval.wait_time")
+    val slaBreaches = registry.counter("dcm.sla.breaches")
+    val outboxQueueSize = registry.gauge("dcm.outbox.queue_size") { ... }
+    val deadLetterCount = registry.gauge("dcm.outbox.dead_letters") { ... }
 }
 ```
 
@@ -1413,7 +1413,7 @@ class DvmmMetrics(registry: MeterRegistry) {
 
 ```yaml
 groups:
-  - name: dvmm-alerts
+  - name: dcm-alerts
     rules:
       # Infrastructure Alerts
       - alert: HighErrorRate
@@ -1422,34 +1422,34 @@ groups:
         labels: { severity: critical }
 
       - alert: OutboxBacklog
-        expr: dvmm_outbox_queue_size > 1000
+        expr: dcm_outbox_queue_size > 1000
         for: 10m
         labels: { severity: warning }
 
       - alert: DeadLettersDetected
-        expr: increase(dvmm_outbox_dead_letters[1h]) > 0
+        expr: increase(dcm_outbox_dead_letters[1h]) > 0
         labels: { severity: critical }
 
       - alert: VMwareAPIDown
-        expr: dvmm_vmware_circuit_breaker_state == 1
+        expr: dcm_vmware_circuit_breaker_state == 1
         for: 5m
         labels: { severity: critical }
 
       # Business Alerts
       - alert: HighRejectionRate
-        expr: rate(dvmm_vm_requests_rejected_total[1h]) > 10
+        expr: rate(dcm_vm_requests_rejected_total[1h]) > 10
         labels: { severity: warning, team: business }
         annotations:
           summary: "High rejection rate - review approval criteria"
 
       - alert: SlowApprovalProcess
-        expr: avg(dvmm_approval_wait_time_seconds) > 86400
+        expr: avg(dcm_approval_wait_time_seconds) > 86400
         labels: { severity: warning, team: business }
         annotations:
           summary: "Average approval time exceeds 24h"
 
       - alert: SLABreachRisk
-        expr: dvmm_approval_wait_time_seconds > 43200
+        expr: dcm_approval_wait_time_seconds > 43200
         for: 1h
         labels: { severity: warning }
         annotations:
@@ -1472,7 +1472,7 @@ groups:
 {
   "timestamp": "2025-01-15T10:30:00Z",
   "level": "INFO",
-  "logger": "com.dvmm.api.VmRequestController",
+  "logger": "com.dcm.api.VmRequestController",
   "message": "VM request created",
   "traceId": "abc123",
   "spanId": "def456",
@@ -1557,7 +1557,7 @@ class GetApprovalQueueHandler(
 ### Aggregate Pattern (Event Sourcing)
 
 ```kotlin
-// Aggregate in domain layer (dvmm-domain)
+// Aggregate in domain layer (dcm-domain)
 class VmRequestAggregate private constructor(
     override val id: VmRequestId
 ) : AggregateRoot<VmRequestId>() {
@@ -1726,8 +1726,8 @@ suspend fun currentTenant(): TenantId {
 | **Kotlin Functions** | camelCase | `createVmRequest()`, `validateQuota()` |
 | **Kotlin Properties** | camelCase | `tenantId`, `createdAt` |
 | **Constants** | SCREAMING_SNAKE_CASE | `MAX_RETRY_COUNT`, `DEFAULT_PAGE_SIZE` |
-| **Packages** | lowercase, dot-separated | `com.eaf.core.domain`, `com.dvmm.application.vm` |
-| **Modules** | kebab-case | `eaf-core`, `dvmm-domain`, `eaf-auth-keycloak` |
+| **Packages** | lowercase, dot-separated | `com.eaf.core.domain`, `com.dcm.application.vm` |
+| **Modules** | kebab-case | `eaf-core`, `dcm-domain`, `eaf-auth-keycloak` |
 | **Database Tables** | snake_case | `vm_requests`, `approval_queue_base` |
 | **Database Columns** | snake_case | `tenant_id`, `created_at`, `vm_size` |
 | **API Endpoints** | kebab-case, plural nouns | `/api/v1/vm-requests`, `/api/v1/approvals` |
@@ -1747,9 +1747,9 @@ suspend fun currentTenant(): TenantId {
 
 ### Code Organization
 
-**Domain Module (`dvmm-domain`)**
+**Domain Module (`dcm-domain`)**
 ```
-com/dvmm/domain/
+com/dcm/domain/
 ├── vm/
 │   ├── VmAggregate.kt           # Aggregate root
 │   ├── VmId.kt                  # Value object (ID)
@@ -1775,9 +1775,9 @@ com/dvmm/domain/
     └── UserId.kt
 ```
 
-**Application Module (`dvmm-application`)**
+**Application Module (`dcm-application`)**
 ```
-com/dvmm/application/
+com/dcm/application/
 ├── vm/
 │   ├── commands/
 │   │   ├── CreateVmRequestCommand.kt
@@ -1798,9 +1798,9 @@ com/dvmm/application/
     └── QuotaValidator.kt        # Interface for quota checks
 ```
 
-**API Module (`dvmm-api`)**
+**API Module (`dcm-api`)**
 ```
-com/dvmm/api/
+com/dcm/api/
 ├── rest/
 │   ├── VmRequestController.kt
 │   ├── ApprovalController.kt
@@ -1817,9 +1817,9 @@ com/dvmm/api/
     └── SecurityConfig.kt
 ```
 
-**Infrastructure Module (`dvmm-infrastructure`)**
+**Infrastructure Module (`dcm-infrastructure`)**
 ```
-com/dvmm/infrastructure/
+com/dcm/infrastructure/
 ├── persistence/
 │   ├── EventStoreImpl.kt        # PostgreSQL Event Store
 │   └── jooq/                    # Generated jOOQ classes
@@ -1835,13 +1835,13 @@ com/dvmm/infrastructure/
 ```
 src/test/kotlin/
 ├── unit/                        # Pure unit tests (no Spring)
-│   └── com/dvmm/domain/
+│   └── com/dcm/domain/
 │       └── VmRequestAggregateTest.kt
 ├── integration/                 # Testcontainers tests
-│   └── com/dvmm/infrastructure/
+│   └── com/dcm/infrastructure/
 │       └── EventStoreIntegrationTest.kt
 ├── contract/                    # Pact contract tests
-│   └── com/dvmm/infrastructure/vmware/
+│   └── com/dcm/infrastructure/vmware/
 │       └── VsphereContractTest.kt
 └── architecture/                # Konsist tests
     └── ArchitectureRulesTest.kt
@@ -1969,7 +1969,7 @@ suspend fun createVmRequest(command: CreateVmRequestCommand) {
 {
   "timestamp": "2025-01-15T10:30:00.123Z",
   "level": "INFO",
-  "logger": "com.dvmm.application.vm.CreateVmRequestHandler",
+  "logger": "com.dcm.application.vm.CreateVmRequestHandler",
   "message": "VM request created successfully",
   "traceId": "abc123",
   "spanId": "def456",
@@ -2017,7 +2017,7 @@ Without `kotlinx-coroutines-slf4j`, logs from different dispatcher switches (e.g
 
 See **Data Architecture** section above (lines 1009-1299) for complete schema definitions including:
 - Event Store Schema (`eaf_events`)
-- DVMM Read Model Schema (`dvmm`)
+- DCM Read Model Schema (`dcm`)
 - RLS Policies and Views
 
 ## API Contracts
@@ -2093,7 +2093,7 @@ docker-compose up -d
 ./gradlew bootRun
 
 # Run frontend
-cd frontend/apps/dvmm-web
+cd frontend/apps/dcm-web
 pnpm install
 pnpm dev
 
@@ -2117,7 +2117,7 @@ See ADR sections above:
 
 ## Related Documents
 
-This architecture document is part of the DVMM Enterprise Method documentation set. The following companion documents provide detailed specifications for specific architectural concerns:
+This architecture document is part of the DCM Enterprise Method documentation set. The following companion documents provide detailed specifications for specific architectural concerns:
 
 | Document | Description |
 |----------|-------------|

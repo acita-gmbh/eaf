@@ -11,7 +11,7 @@ import java.time.Instant
 
 class KeycloakJwtAuthenticationConverterTest {
 
-    private val clientId = "dvmm-api"
+    private val clientId = "dcm-api"
     private val converter = KeycloakJwtAuthenticationConverter(clientId)
 
     private fun createMockJwt(

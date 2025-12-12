@@ -97,7 +97,7 @@ Before starting implementation, verify these are complete:
 
 ### Backend Unit Tests
 
-**GetPendingRequestsHandler (dvmm-application):**
+**GetPendingRequestsHandler (dcm-application):**
 - Returns pending requests for admin's tenant only
 - Returns empty list when no pending requests
 - Sorts by creation date ascending (oldest first)
@@ -106,7 +106,7 @@ Before starting implementation, verify these are complete:
 - Throws Forbidden for non-admin users
 - Maps DB entities to DTOs correctly (hiding internal IDs)
 
-**VmRequestProjectionRepository (dvmm-infrastructure):**
+**VmRequestProjectionRepository (dcm-infrastructure):**
 - `findPendingByTenantId` returns only PENDING status
 - RLS filter applied automatically
 - Pagination works correctly with size cap
@@ -171,7 +171,7 @@ Before starting implementation, verify these are complete:
 ### Domain Events & Projection (REUSE - Already Implemented)
 
 ```kotlin
-// From dvmm-domain - events already exist
+// From dcm-domain - events already exist
 VmRequestCreated  // Contains requesterId, vmName, project, size
 VmRequestApproved // Contains userId (approver)
 VmRequestRejected // Contains userId (rejector), reason
@@ -225,7 +225,7 @@ GET /api/admin/projects - Distinct projects for filter
 
 - [x] **Task 1.1: Create GetPendingRequestsQuery & Handler** (AC: 1, 2, 3, 6)
   - Create `GetPendingRequestsQuery.kt` with optional `projectId` filter and pagination (page,size) capped at 100
-  - Create `GetPendingRequestsHandler.kt` in `dvmm-application`
+  - Create `GetPendingRequestsHandler.kt` in `dcm-application`
   - Inject `VmRequestProjectionRepository`
   - Filter by tenant (from security context) and status PENDING
   - Sort by `createdAt` ascending
@@ -422,11 +422,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 ### New Files to Create (Backend)
 
 ```text
-dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/
+dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/
 ├── GetPendingRequestsQuery.kt
 └── GetPendingRequestsHandler.kt
 
-dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/
+dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/
 ├── AdminRequestController.kt
 └── PendingRequestResponse.kt
 ```
@@ -434,7 +434,7 @@ dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/
 ### New Files to Create (Frontend)
 
 ```text
-dvmm/dvmm-web/src/
+dcm/dcm-web/src/
 ├── api/
 │   └── admin-requests.ts
 ├── hooks/
@@ -507,46 +507,46 @@ Test coverage:
 ## File List
 
 ### New Files (Backend)
-- `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/security/MethodSecurityIntegrationTest.kt`
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/PendingRequestResponse.kt`
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/admin/AdminRequestController.kt`
-- `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerTest.kt`
-- `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/admin/AdminRequestControllerIntegrationTest.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/GetPendingRequestsQuery.kt`
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/GetPendingRequestsHandler.kt`
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/GetPendingRequestsHandlerTest.kt`
+- `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/security/MethodSecurityIntegrationTest.kt`
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/PendingRequestResponse.kt`
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/admin/AdminRequestController.kt`
+- `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/admin/AdminRequestControllerTest.kt`
+- `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/admin/AdminRequestControllerIntegrationTest.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/GetPendingRequestsQuery.kt`
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/GetPendingRequestsHandler.kt`
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/GetPendingRequestsHandlerTest.kt`
 
 ### New Files (Frontend)
-- `dvmm/dvmm-web/src/api/admin.ts`
-- `dvmm/dvmm-web/src/hooks/usePendingRequests.ts`
-- `dvmm/dvmm-web/src/hooks/usePendingRequests.test.ts`
-- `dvmm/dvmm-web/src/hooks/useProjects.ts`
-- `dvmm/dvmm-web/src/hooks/useProjects.test.ts`
-- `dvmm/dvmm-web/src/hooks/useIsAdmin.ts`
-- `dvmm/dvmm-web/src/hooks/useIsAdmin.test.ts`
-- `dvmm/dvmm-web/src/pages/admin/PendingRequests.tsx`
-- `dvmm/dvmm-web/src/components/admin/PendingRequestsTable.tsx`
-- `dvmm/dvmm-web/src/components/admin/__tests__/PendingRequestsTable.test.tsx`
-- `dvmm/dvmm-web/src/components/admin/ProjectFilter.tsx`
-- `dvmm/dvmm-web/src/components/auth/AdminProtectedRoute.tsx`
-- `dvmm/dvmm-web/src/components/auth/__tests__/AdminProtectedRoute.test.tsx`
-- `dvmm/dvmm-web/src/components/ui/table.tsx` (shadcn)
-- `dvmm/dvmm-web/src/components/ui/tooltip.tsx` (shadcn)
-- `dvmm/dvmm-web/src/components/ui/skeleton.tsx` (shadcn)
-- `dvmm/dvmm-web/e2e/admin-approval-queue.spec.ts`
+- `dcm/dcm-web/src/api/admin.ts`
+- `dcm/dcm-web/src/hooks/usePendingRequests.ts`
+- `dcm/dcm-web/src/hooks/usePendingRequests.test.ts`
+- `dcm/dcm-web/src/hooks/useProjects.ts`
+- `dcm/dcm-web/src/hooks/useProjects.test.ts`
+- `dcm/dcm-web/src/hooks/useIsAdmin.ts`
+- `dcm/dcm-web/src/hooks/useIsAdmin.test.ts`
+- `dcm/dcm-web/src/pages/admin/PendingRequests.tsx`
+- `dcm/dcm-web/src/components/admin/PendingRequestsTable.tsx`
+- `dcm/dcm-web/src/components/admin/__tests__/PendingRequestsTable.test.tsx`
+- `dcm/dcm-web/src/components/admin/ProjectFilter.tsx`
+- `dcm/dcm-web/src/components/auth/AdminProtectedRoute.tsx`
+- `dcm/dcm-web/src/components/auth/__tests__/AdminProtectedRoute.test.tsx`
+- `dcm/dcm-web/src/components/ui/table.tsx` (shadcn)
+- `dcm/dcm-web/src/components/ui/tooltip.tsx` (shadcn)
+- `dcm/dcm-web/src/components/ui/skeleton.tsx` (shadcn)
+- `dcm/dcm-web/e2e/admin-approval-queue.spec.ts`
 
 ### Modified Files
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/security/SecurityConfig.kt`
-- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt` (bean registration)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmRequestReadRepository.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepository.kt`
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt`
-- `dvmm/dvmm-web/src/App.tsx`
-- `dvmm/dvmm-web/src/components/layout/Sidebar.tsx`
-- `dvmm/dvmm-web/src/components/auth/index.ts`
-- `dvmm/dvmm-web/src/components/layout/__tests__/Sidebar.test.tsx`
-- `dvmm/dvmm-web/src/components/layout/__tests__/MobileNav.test.tsx`
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/security/SecurityConfig.kt`
+- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt` (bean registration)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmRequestReadRepository.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepository.kt`
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestReadRepositoryAdapter.kt`
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt`
+- `dcm/dcm-web/src/App.tsx`
+- `dcm/dcm-web/src/components/layout/Sidebar.tsx`
+- `dcm/dcm-web/src/components/auth/index.ts`
+- `dcm/dcm-web/src/components/layout/__tests__/Sidebar.test.tsx`
+- `dcm/dcm-web/src/components/layout/__tests__/MobileNav.test.tsx`
 - `docs/sprint-artifacts/sprint-status.yaml`
 
 ## Change Log

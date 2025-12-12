@@ -111,13 +111,13 @@ so that I can connect to and utilize the virtual machine I requested.
 
 ### Architecture Patterns & Constraints
 -   **CQRS Separation:** Do NOT query vSphere directly in the `GET` request. The `GET` request must remain fast and read from the DB projection. Use the "Sync" pattern (Task 3) to fetch fresh data from vSphere.
--   **Event Consistency:** The `dvmm_vms` table is the read model. It is updated *only* by events (`VmProvisioned`, `VmStatusChanged`).
+-   **Event Consistency:** The `dcm_vms` table is the read model. It is updated *only* by events (`VmProvisioned`, `VmStatusChanged`).
 -   **VCSIM Support:** The `VcsimAdapter` must simulate a running VM with an IP address after provisioning is complete. Hardcode a mock IP (e.g., `192.168.1.100`) in the VCSIM adapter for testing.
 
 ### Source Tree Locations
--   `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/SyncVmStatusHandler.kt` (New)
--   `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt` (Update)
--   `dvmm/dvmm-web/src/components/requests/VmDetailsCard.tsx` (New)
+-   `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/SyncVmStatusHandler.kt` (New)
+-   `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt` (Update)
+-   `dcm/dcm-web/src/components/requests/VmDetailsCard.tsx` (New)
 
 ### Testing Standards
 -   **Integration Test:** Test `SyncVmStatusHandler` with `VcsimAdapter`. Verify that calling sync triggers an event if data changed.
@@ -140,40 +140,40 @@ Claude Opus 4.5 (via Claude Code)
 ### File List
 
 **Database Migrations:**
-- `dvmm/dvmm-infrastructure/src/main/resources/db/migration/V011__add_vm_details_to_projection.sql` (new)
-- `dvmm/dvmm-infrastructure/src/main/resources/db/migration/V012__add_boot_time_to_projection.sql` (new)
+- `dcm/dcm-infrastructure/src/main/resources/db/migration/V011__add_vm_details_to_projection.sql` (new)
+- `dcm/dcm-infrastructure/src/main/resources/db/migration/V012__add_boot_time_to_projection.sql` (new)
 
 **Backend - API Layer:**
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/VmRequestController.kt` (modified)
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/VmRequestDetailResponse.kt` (modified)
-- `dvmm/dvmm-api/src/main/kotlin/de/acci/dvmm/api/vmrequest/ErrorResponses.kt` (modified)
-- `dvmm/dvmm-api/src/test/kotlin/de/acci/dvmm/api/vmrequest/VmRequestControllerTest.kt` (modified)
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/VmRequestController.kt` (modified)
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/VmRequestDetailResponse.kt` (modified)
+- `dcm/dcm-api/src/main/kotlin/de/acci/dcm/api/vmrequest/ErrorResponses.kt` (modified)
+- `dcm/dcm-api/src/test/kotlin/de/acci/dcm/api/vmrequest/VmRequestControllerTest.kt` (modified)
 
 **Backend - Application Layer:**
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/GetRequestDetailHandler.kt` (modified)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/SyncVmStatusCommand.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/SyncVmStatusHandler.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmrequest/VmStatusProjectionPort.kt` (new)
-- `dvmm/dvmm-application/src/main/kotlin/de/acci/dvmm/application/vmware/VsphereTypes.kt` (modified)
-- `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vmrequest/SyncVmStatusHandlerTest.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/GetRequestDetailHandler.kt` (modified)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/SyncVmStatusCommand.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/SyncVmStatusHandler.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmrequest/VmStatusProjectionPort.kt` (new)
+- `dcm/dcm-application/src/main/kotlin/de/acci/dcm/application/vmware/VsphereTypes.kt` (modified)
+- `dcm/dcm-application/src/test/kotlin/de/acci/dcm/application/vmrequest/SyncVmStatusHandlerTest.kt` (new)
 
 **Backend - Infrastructure Layer:**
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestDetailRepositoryAdapter.kt` (modified)
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepository.kt` (modified)
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/VmStatusProjectionAdapter.kt` (new)
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VcsimAdapter.kt` (modified)
-- `dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/vmware/VsphereClient.kt` (modified)
-- `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt` (modified)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestDetailRepositoryAdapter.kt` (modified)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepository.kt` (modified)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/VmStatusProjectionAdapter.kt` (new)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VcsimAdapter.kt` (modified)
+- `dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/vmware/VsphereClient.kt` (modified)
+- `dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/projection/VmRequestProjectionRepositoryIntegrationTest.kt` (modified)
 
 **Backend - App Configuration:**
-- `dvmm/dvmm-app/src/main/kotlin/de/acci/dvmm/config/ApplicationConfig.kt` (modified)
-- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmProvisioningIntegrationTest.kt` (modified)
-- `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/vmrequest/VmRequestIntegrationTest.kt` (modified)
+- `dcm/dcm-app/src/main/kotlin/de/acci/dcm/config/ApplicationConfig.kt` (modified)
+- `dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmProvisioningIntegrationTest.kt` (modified)
+- `dcm/dcm-app/src/test/kotlin/de/acci/dcm/vmrequest/VmRequestIntegrationTest.kt` (modified)
 
 **Frontend:**
-- `dvmm/dvmm-web/src/api/vm-requests.ts` (modified)
-- `dvmm/dvmm-web/src/components/requests/VmDetailsCard.tsx` (new)
-- `dvmm/dvmm-web/src/components/requests/VmDetailsCard.test.tsx` (new)
-- `dvmm/dvmm-web/src/hooks/useSyncVmStatus.ts` (new)
-- `dvmm/dvmm-web/src/hooks/useSyncVmStatus.test.tsx` (new)
-- `dvmm/dvmm-web/src/pages/RequestDetail.tsx` (modified)
+- `dcm/dcm-web/src/api/vm-requests.ts` (modified)
+- `dcm/dcm-web/src/components/requests/VmDetailsCard.tsx` (new)
+- `dcm/dcm-web/src/components/requests/VmDetailsCard.test.tsx` (new)
+- `dcm/dcm-web/src/hooks/useSyncVmStatus.ts` (new)
+- `dcm/dcm-web/src/hooks/useSyncVmStatus.test.tsx` (new)
+- `dcm/dcm-web/src/pages/RequestDetail.tsx` (modified)

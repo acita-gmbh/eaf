@@ -1,4 +1,4 @@
-# Multi-Hypervisor Support Research for DVMM
+# Multi-Hypervisor Support Research for DCM
 
 **Author:** Claude (Research Agent)
 **Date:** 2025-12-09
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document provides exhaustive research on extending DVMM to support multiple hypervisors beyond VMware vSphere. We analyze four primary platforms: **Proxmox VE**, **Microsoft Hyper-V**, **IBM PowerVM**, and **Apache CloudStack/OpenNebula** as reference architectures. Additionally, we examine the seismic market shift caused by **Broadcom's VMware acquisition**, which has fundamentally altered the DACH virtualization landscape.
+This document provides exhaustive research on extending DCM to support multiple hypervisors beyond VMware vSphere. We analyze four primary platforms: **Proxmox VE**, **Microsoft Hyper-V**, **IBM PowerVM**, and **Apache CloudStack/OpenNebula** as reference architectures. Additionally, we examine the seismic market shift caused by **Broadcom's VMware acquisition**, which has fundamentally altered the DACH virtualization landscape.
 
 **Key Findings:**
 
@@ -86,14 +86,14 @@ The November 2023 Broadcom acquisition of VMware triggered the most significant 
 
 ### Existing VMware Integration Pattern
 
-DVMM implements a **clean port/adapter pattern** for hypervisor integration:
+DCM implements a **clean port/adapter pattern** for hypervisor integration:
 
 ```text
-dvmm-application/
+dcm-application/
 └── vmware/
     └── VspherePort.kt          # Interface (Port)
 
-dvmm-infrastructure/
+dcm-infrastructure/
 └── vmware/
     ├── VcenterAdapter.kt       # Production implementation
     ├── VcsimAdapter.kt         # Test simulator implementation
@@ -258,9 +258,9 @@ For direct KVM control without Proxmox API (host-by-host management):
 | List networks | `/nodes/{node}/network` | GET |
 | List storage | `/nodes/{node}/storage` | GET |
 
-### Concept Mapping to DVMM
+### Concept Mapping to DCM
 
-| DVMM Concept | Proxmox Equivalent |
+| DCM Concept | Proxmox Equivalent |
 |--------------|-------------------|
 | Datacenter | Proxmox Cluster |
 | Cluster | Node (single host) or Node Group |
@@ -438,7 +438,7 @@ Unlike vSphere's centralized vCenter, Hyper-V deployments can be:
 3. **Windows Admin Center** - Web-based management
 4. **Azure Stack HCI** - Azure-integrated management
 
-For DVMM integration, targeting **standalone hosts via WinRM** is most practical for MVP.
+For DCM integration, targeting **standalone hosts via WinRM** is most practical for MVP.
 
 ### Integration Complexity Assessment
 
@@ -583,9 +583,9 @@ try {
 | Power On LPAR | `/uom/LogicalPartition/{lparId}?operation=PowerOn` | POST |
 | Power Off LPAR | `/uom/LogicalPartition/{lparId}?operation=PowerOff` | POST |
 
-### Concept Mapping to DVMM
+### Concept Mapping to DCM
 
-| DVMM Concept | PowerVM Equivalent |
+| DCM Concept | PowerVM Equivalent |
 |--------------|-------------------|
 | Datacenter | HMC (Management Console) |
 | Cluster | Managed System (physical POWER server) |
@@ -696,7 +696,7 @@ val name = vm.name  // Now populated
 ### Pattern 1: Abstraction Layer (HypervisorPort)
 
 ```kotlin
-// dvmm-application/src/main/kotlin/.../hypervisor/HypervisorPort.kt
+// dcm-application/src/main/kotlin/.../hypervisor/HypervisorPort.kt
 public interface HypervisorPort {
     suspend fun testConnection(config: HypervisorConfig, credentials: Credentials): Result<ConnectionInfo, ConnectionError>
     suspend fun listResources(): Result<HypervisorResources, HypervisorError>
@@ -711,7 +711,7 @@ public interface HypervisorPort {
 ### Pattern 2: Adapter Implementations
 
 ```text
-dvmm-infrastructure/
+dcm-infrastructure/
 └── hypervisor/
     ├── vsphere/
     │   └── VsphereAdapter.kt

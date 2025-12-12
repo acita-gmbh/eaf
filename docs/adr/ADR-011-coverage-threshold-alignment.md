@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2025-12-05
-**Author:** DVMM Team
+**Author:** DCM Team
 **Deciders:** Architecture Team
 **Related:** [Story 3.1.1 - Migrate to VCF SDK](../sprint-artifacts/3-1-1-migrate-vsphere-sdk.md)
 
@@ -29,7 +29,7 @@ val vimPort = vimService.getVimPort()
 
 | Module | Coverage | Notes |
 |--------|----------|-------|
-| `dvmm-infrastructure` | ~65% | `VcenterAdapter` untestable with real SDK |
+| `dcm-infrastructure` | ~65% | `VcenterAdapter` untestable with real SDK |
 | Other modules | >80% | No SDK constraints |
 
 The `VcenterAdapter` class (~150 lines) is excluded from coverage because:

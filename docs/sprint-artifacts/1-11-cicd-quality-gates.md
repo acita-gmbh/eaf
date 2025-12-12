@@ -73,7 +73,7 @@ so that code quality standards are maintained automatically.
 - **Kover Configuration:** Already configured in `eaf.test-conventions.gradle.kts` with ≥80% threshold
 - **Pitest Configuration:** Already configured in `eaf.pitest-conventions.gradle.kts` with ≥70% threshold
 - **Test Structure:** Unit tests in `src/test/kotlin`, integration tests use Testcontainers
-- **Konsist Tests:** Architecture tests in `dvmm/dvmm-app/src/test/kotlin/de/acci/dvmm/architecture/ArchitectureTest.kt`
+- **Konsist Tests:** Architecture tests in `dcm/dcm-app/src/test/kotlin/de/acci/dcm/architecture/ArchitectureTest.kt`
 
 [Source: docs/sprint-artifacts/1-10-vcsim-integration.md#Dev-Agent-Record]
 
@@ -235,18 +235,18 @@ claude-opus-4-5-20251101
   1. `eaf-auth-keycloak` module (15% vs 80% required)
      - Exclusion: `eaf/eaf-auth-keycloak/build.gradle.kts`
      - Reason: Story 1.7 created implementation but tests require Keycloak Testcontainer
-  2. `dvmm-api` module (54% vs 80% required)
-     - Exclusion: `dvmm/dvmm-api/build.gradle.kts`
+  2. `dcm-api` module (54% vs 80% required)
+     - Exclusion: `dcm/dcm-api/build.gradle.kts`
      - Reason: SecurityConfig.securityWebFilterChain() requires Spring Security WebFlux integration tests
   - Both tracked for restoration in: `docs/epics.md` Story 2.1 (Keycloak Login Flow)
 - **Pitest Exclusions Applied (2 modules):**
   1. `eaf-auth-keycloak` module (12% mutation score)
      - Same reason as coverage - no tests until Keycloak Testcontainer setup
-  2. `dvmm-app` module (0% mutation score)
+  2. `dcm-app` module (0% mutation score)
      - Only contains Spring Boot main() bootstrap function which is untestable
 - **Test Fixes Applied:**
   1. Created test-specific `jooq-init.sql` with quoted uppercase identifiers for jOOQ compatibility
-     - Location: `dvmm/dvmm-infrastructure/src/test/resources/db/jooq-init.sql`
+     - Location: `dcm/dcm-infrastructure/src/test/resources/db/jooq-init.sql`
      - Reason: jOOQ DDLDatabase (H2) generates uppercase table names; PostgreSQL requires exact case match
   2. Made VCSIM SSL-based tests resilient to CI environments
      - Location: `eaf/eaf-testing/src/test/kotlin/.../VcsimIntegrationTest.kt`
@@ -254,8 +254,8 @@ claude-opus-4-5-20251101
      - Solution: Use Assumptions.assumeTrue() to skip HTTP health checks when SSL fails
 - **Additional Build Fixes:**
   1. Root `build.gradle.kts` - Global Kover exclusions for merged coverage report
-  2. `dvmm/dvmm-infrastructure/build.gradle.kts` - jOOQ generated code exclusion from coverage
-  3. `dvmm/dvmm-app/build.gradle.kts` - DvmmApplicationKt (main) exclusion from coverage
+  2. `dcm/dcm-infrastructure/build.gradle.kts` - jOOQ generated code exclusion from coverage
+  3. `dcm/dcm-app/build.gradle.kts` - DcmApplicationKt (main) exclusion from coverage
   4. `ArchitectureTest.kt` - Fixed to exclude annotation classes from Test suffix check
 
 ### File List
@@ -264,13 +264,13 @@ claude-opus-4-5-20251101
 - `README.md` (modified) - Updated Quality Gates section with CI/Branch Protection docs
 - `build.gradle.kts` (root, modified) - Global Kover exclusions for merged coverage report
 - `eaf/eaf-auth-keycloak/build.gradle.kts` (modified) - Temporary coverage + mutation exclusion
-- `dvmm/dvmm-api/build.gradle.kts` (modified) - Temporary coverage exclusion
-- `dvmm/dvmm-app/build.gradle.kts` (modified) - Coverage + mutation exclusion for main()
-- `dvmm/dvmm-infrastructure/build.gradle.kts` (modified) - jOOQ code exclusion from coverage
-- `dvmm/dvmm-infrastructure/src/test/resources/db/jooq-init.sql` (new) - Test-specific SQL with uppercase identifiers
-- `dvmm/dvmm-infrastructure/src/test/kotlin/.../VmRequestProjectionRepositoryIntegrationTest.kt` (modified) - Updated for jOOQ compatibility
-- `dvmm/dvmm-app/src/test/kotlin/.../ArchitectureTest.kt` (modified) - Fixed annotation class exclusion
-- `dvmm/dvmm-app/src/test/kotlin/.../DvmmApplicationTest.kt` (new) - Context load smoke test
+- `dcm/dcm-api/build.gradle.kts` (modified) - Temporary coverage exclusion
+- `dcm/dcm-app/build.gradle.kts` (modified) - Coverage + mutation exclusion for main()
+- `dcm/dcm-infrastructure/build.gradle.kts` (modified) - jOOQ code exclusion from coverage
+- `dcm/dcm-infrastructure/src/test/resources/db/jooq-init.sql` (new) - Test-specific SQL with uppercase identifiers
+- `dcm/dcm-infrastructure/src/test/kotlin/.../VmRequestProjectionRepositoryIntegrationTest.kt` (modified) - Updated for jOOQ compatibility
+- `dcm/dcm-app/src/test/kotlin/.../ArchitectureTest.kt` (modified) - Fixed annotation class exclusion
+- `dcm/dcm-app/src/test/kotlin/.../DcmApplicationTest.kt` (new) - Context load smoke test
 - `eaf/eaf-testing/src/main/kotlin/.../VcsimTestFixture.kt` (modified) - SSL hostname verification bypass
 - `eaf/eaf-testing/src/test/kotlin/.../VcsimIntegrationTest.kt` (modified) - CI-resilient SSL tests
 - `docs/epics.md` (modified) - Story 2.1 coverage/mutation restoration requirements
@@ -283,7 +283,7 @@ claude-opus-4-5-20251101
 - 2025-11-27: Implementation complete - CI workflow created, README updated with branch protection docs
 - 2025-11-28: Fixed jOOQ/PostgreSQL case sensitivity issues in VmRequestProjectionRepositoryIntegrationTest
 - 2025-11-28: Fixed VCSIM SSL hostname verification failures in CI environment
-- 2025-11-28: Fixed Pitest mutation score failures (eaf-auth-keycloak, dvmm-app)
+- 2025-11-28: Fixed Pitest mutation score failures (eaf-auth-keycloak, dcm-app)
 - 2025-11-28: CI pipeline passes all quality gates - status changed to review
 - 2025-11-28: Senior Developer Review (AI) - APPROVED, status changed to done
 
@@ -332,7 +332,7 @@ Story 1.11 delivers a comprehensive GitHub Actions CI/CD pipeline with enforced 
 - Mutation threshold: ≥70% (enforced via Pitest)
 - **Known exclusions** (tracked for Story 2.1):
   - `eaf-auth-keycloak` - needs Keycloak Testcontainer
-  - `dvmm-api` SecurityConfig - needs Spring Security integration tests
+  - `dcm-api` SecurityConfig - needs Spring Security integration tests
 - **No test gaps** for CI/CD pipeline itself (validated by actual CI runs)
 
 ### Architectural Alignment
@@ -361,6 +361,6 @@ Story 1.11 delivers a comprehensive GitHub Actions CI/CD pipeline with enforced 
 
 **Advisory Notes:**
 - Note: Branch protection rules require manual configuration in GitHub Settings (documented in README)
-- Note: Coverage exclusions for `eaf-auth-keycloak` and `dvmm-api` tracked for restoration in Story 2.1
+- Note: Coverage exclusions for `eaf-auth-keycloak` and `dcm-api` tracked for restoration in Story 2.1
 
 **No code changes required - story approved for merge.**

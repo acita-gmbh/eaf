@@ -6,7 +6,7 @@ Status: done
 
 As a **tenant admin**,
 I want to configure VMware vCenter connection settings,
-So that DVMM can provision VMs in my infrastructure.
+So that DCM can provision VMs in my infrastructure.
 
 ## Acceptance Criteria
 
@@ -86,13 +86,13 @@ So that DVMM can provision VMs in my infrastructure.
   ALTER TABLE "VMWARE_CONFIGURATIONS" FORCE ROW LEVEL SECURITY;
   GRANT SELECT, INSERT, UPDATE, DELETE ON "VMWARE_CONFIGURATIONS" TO eaf_app;
   ```
-- [x] 1.2 Update `dvmm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
-- [x] 1.3 Regenerate jOOQ code: `./gradlew :dvmm:dvmm-infrastructure:generateJooq`
+- [x] 1.2 Update `dcm-infrastructure/src/main/resources/db/jooq-init.sql` with H2-compatible DDL
+- [x] 1.3 Regenerate jOOQ code: `./gradlew :dcm:dcm-infrastructure:generateJooq`
 - [x] 1.4 Verify RLS policy has both USING and WITH CHECK clauses
 
 ### Task 2: Backend Domain & Application (AC: 3.1.1, 3.1.4)
-- [x] 2.1 Create `VmwareConfiguration` data class in `dvmm-domain` (configuration entity, not value object - has ID and lifecycle)
-- [x] 2.2 Create `VmwareConfigurationPort` interface in `dvmm-application/ports`
+- [x] 2.1 Create `VmwareConfiguration` data class in `dcm-domain` (configuration entity, not value object - has ID and lifecycle)
+- [x] 2.2 Create `VmwareConfigurationPort` interface in `dcm-application/ports`
 - [x] 2.3 Create `CreateVmwareConfigCommand` and handler (use `Result<T,E>` pattern)
 - [x] 2.4 Create `UpdateVmwareConfigCommand` and handler (include VERSION for optimistic locking)
 - [x] 2.5 Create `GetVmwareConfigQuery` and handler
@@ -159,7 +159,7 @@ So that DVMM can provision VMs in my infrastructure.
 ## Dev Notes
 
 ### Epic 3 Context: VM Provisioning
-**Goal:** Transform DVMM from a workflow tool into a real infrastructure automation system by implementing actual VM provisioning on VMware ESXi.
+**Goal:** Transform DCM from a workflow tool into a real infrastructure automation system by implementing actual VM provisioning on VMware ESXi.
 **User Value:** "My VM is actually created - not just a ticket."
 **Critical Risk:** VMware API complexity and infrastructure dependency.
 **Mitigation Strategy:** Use VCSIM for all integration tests, implement idempotent provisioning, and use circuit breakers.
@@ -209,7 +209,7 @@ This story is the **VMware Tracer Bullet**, validating the complete VMware integ
 
 - **Backend:**
   - **API:** `GET/PUT /api/admin/vmware-config`, `POST /api/admin/vmware-config/test`
-  - **Command Pattern:** Commands in `dvmm-application`, handlers with `Result<T,E>`
+  - **Command Pattern:** Commands in `dcm-application`, handlers with `Result<T,E>`
   - **Security:** AES-256 encryption for passwords (Spring Security Crypto)
   - **Multi-tenancy:** `tenant_id` column with RLS enforcement (USING + WITH CHECK)
   - **Context:** Propagate `TenantContext` via coroutine context element
@@ -223,19 +223,19 @@ This story is the **VMware Tracer Bullet**, validating the complete VMware integ
 ### Architecture Compliance
 
 - **Module Boundaries (ADR-001):**
-  - `dvmm-api`: Controllers, DTOs
-  - `dvmm-application`: Commands, Queries, Handlers, Ports (interfaces)
-  - `dvmm-infrastructure`: Adapters, Repositories, External clients
-  - **NO** direct EAF -> DVMM dependencies (Konsist enforced)
+  - `dcm-api`: Controllers, DTOs
+  - `dcm-application`: Commands, Queries, Handlers, Ports (interfaces)
+  - `dcm-infrastructure`: Adapters, Repositories, External clients
+  - **NO** direct EAF -> DCM dependencies (Konsist enforced)
 
 - **Adapter Pattern (CRITICAL):**
   ```kotlin
-  // Port in dvmm-application
+  // Port in dcm-application
   interface VspherePort {
       suspend fun testConnection(config: VmwareConfiguration): Result<ConnectionInfo, ConnectionError>
   }
 
-  // Adapters in dvmm-infrastructure - switched via Spring Profile
+  // Adapters in dcm-infrastructure - switched via Spring Profile
   @Profile("vcsim")
   class VcsimAdapter : VspherePort { ... }
 
@@ -262,33 +262,33 @@ This story is the **VMware Tracer Bullet**, validating the complete VMware integ
 ### File Structure Targets
 
 **Backend:**
-- `dvmm-infrastructure/src/main/resources/db/migration/V008__vmware_configurations.sql`
-- `dvmm-infrastructure/src/main/resources/db/jooq-init.sql` (UPDATE)
-- `dvmm-api/src/main/kotlin/.../VmwareConfigurationController.kt`
-- `dvmm-api/src/main/kotlin/.../dto/VmwareConfigurationDto.kt`
-- `dvmm-application/src/main/kotlin/.../vmware/CreateVmwareConfigCommand.kt`
-- `dvmm-application/src/main/kotlin/.../vmware/UpdateVmwareConfigCommand.kt`
-- `dvmm-application/src/main/kotlin/.../vmware/GetVmwareConfigQuery.kt`
-- `dvmm-application/src/main/kotlin/.../ports/VspherePort.kt`
-- `dvmm-infrastructure/src/main/kotlin/.../vmware/VmwareConfigurationRepository.kt`
-- `dvmm-infrastructure/src/main/kotlin/.../vmware/VcenterAdapter.kt`
-- `dvmm-infrastructure/src/main/kotlin/.../vmware/VcsimAdapter.kt`
-- `dvmm-infrastructure/src/main/kotlin/.../crypto/CredentialEncryptor.kt`
+- `dcm-infrastructure/src/main/resources/db/migration/V008__vmware_configurations.sql`
+- `dcm-infrastructure/src/main/resources/db/jooq-init.sql` (UPDATE)
+- `dcm-api/src/main/kotlin/.../VmwareConfigurationController.kt`
+- `dcm-api/src/main/kotlin/.../dto/VmwareConfigurationDto.kt`
+- `dcm-application/src/main/kotlin/.../vmware/CreateVmwareConfigCommand.kt`
+- `dcm-application/src/main/kotlin/.../vmware/UpdateVmwareConfigCommand.kt`
+- `dcm-application/src/main/kotlin/.../vmware/GetVmwareConfigQuery.kt`
+- `dcm-application/src/main/kotlin/.../ports/VspherePort.kt`
+- `dcm-infrastructure/src/main/kotlin/.../vmware/VmwareConfigurationRepository.kt`
+- `dcm-infrastructure/src/main/kotlin/.../vmware/VcenterAdapter.kt`
+- `dcm-infrastructure/src/main/kotlin/.../vmware/VcsimAdapter.kt`
+- `dcm-infrastructure/src/main/kotlin/.../crypto/CredentialEncryptor.kt`
 
 **Frontend:**
-- `dvmm-web/src/pages/settings/VmwareConfigurationPage.tsx`
-- `dvmm-web/src/components/settings/VmwareConfigurationForm.tsx`
-- `dvmm-web/src/api/vmware-config.ts`
-- `dvmm-web/src/hooks/useVmwareConfig.ts`
+- `dcm-web/src/pages/settings/VmwareConfigurationPage.tsx`
+- `dcm-web/src/components/settings/VmwareConfigurationForm.tsx`
+- `dcm-web/src/api/vmware-config.ts`
+- `dcm-web/src/hooks/useVmwareConfig.ts`
 
 **Tests:**
-- `dvmm-application/src/test/.../CreateVmwareConfigCommandHandlerTest.kt`
-- `dvmm-application/src/test/.../UpdateVmwareConfigCommandHandlerTest.kt`
-- `dvmm-infrastructure/src/test/.../VmwareConfigurationRepositoryIntegrationTest.kt`
-- `dvmm-infrastructure/src/test/.../VcenterAdapterVcsimTest.kt`
-- `dvmm-infrastructure/src/test/.../CredentialEncryptorTest.kt`
-- `dvmm-api/src/test/.../VmwareConfigurationControllerIntegrationTest.kt`
-- `dvmm-web/src/components/settings/__tests__/VmwareConfigurationForm.test.tsx`
+- `dcm-application/src/test/.../CreateVmwareConfigCommandHandlerTest.kt`
+- `dcm-application/src/test/.../UpdateVmwareConfigCommandHandlerTest.kt`
+- `dcm-infrastructure/src/test/.../VmwareConfigurationRepositoryIntegrationTest.kt`
+- `dcm-infrastructure/src/test/.../VcenterAdapterVcsimTest.kt`
+- `dcm-infrastructure/src/test/.../CredentialEncryptorTest.kt`
+- `dcm-api/src/test/.../VmwareConfigurationControllerIntegrationTest.kt`
+- `dcm-web/src/components/settings/__tests__/VmwareConfigurationForm.test.tsx`
 
 ### Testing Strategy
 

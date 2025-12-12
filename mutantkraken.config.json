@@ -31,8 +31,8 @@
       ".idea",
       "gradle",
       "mutant-kraken-dist",
-      "dvmm",
-      "dvmm-web",
+      "dcm",
+      "dcm-web",
       "build-logic",
       "docs",
       "scripts"

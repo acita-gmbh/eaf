@@ -48,7 +48,7 @@ So that tests run against real infrastructure.
 **From Story 1-2-eaf-core-module (Status: done)**
 - **New Files**: `Result.kt`, `DomainError.kt`, `Identifiers.kt` in `eaf-core`.
 - **Standards**: Build conventions and version catalog are authoritative.
-- **Architecture**: EAF modules must not import from DVMM. `eaf-testing` should depend on `eaf-core` and `eaf-eventsourcing` but NOT `dvmm-*`.
+- **Architecture**: EAF modules must not import from DCM. `eaf-testing` should depend on `eaf-core` and `eaf-eventsourcing` but NOT `dcm-*`.
 
 ### Architecture & Constraints
 - **Module**: `eaf-testing`
@@ -147,7 +147,7 @@ Story 1.9 successfully implements the Testcontainers setup for `eaf-testing` mod
 | 1.2 | Container reused (singleton) | ✅ IMPLEMENTED | `TestContainers.kt:9` - `by lazy` + `withReuse(true)` |
 | 1.3 | Flyway schema init | ⚠️ PARTIAL | Dependency present, integration deferred to Story 1.3 |
 | 2.1 | Keycloak container available | ✅ IMPLEMENTED | `TestContainers.kt:18-23` |
-| 2.2 | Test realm imported | ✅ IMPLEMENTED | `test-realm.json` with "dvmm" realm |
+| 2.2 | Test realm imported | ✅ IMPLEMENTED | `test-realm.json` with "dcm" realm |
 | 3.1 | TestTenantFixture | ✅ IMPLEMENTED | `TestFixtures.kt:11-15` |
 | 3.2 | TestUserFixture with JWT | ✅ IMPLEMENTED | `TestFixtures.kt:17-52` |
 | 3.3 | TestDataFixture | ⏸️ DEFERRED | No reference data for EAF framework |
@@ -182,7 +182,7 @@ Story 1.9 successfully implements the Testcontainers setup for `eaf-testing` mod
 - **Gap:** No tests for `SCHEMA_PER_TEST` strategy (deferred)
 
 ### Architectural Alignment
-- ✅ `eaf-testing` correctly depends only on `eaf-core` (no DVMM dependencies)
+- ✅ `eaf-testing` correctly depends only on `eaf-core` (no DCM dependencies)
 - ✅ Architecture tests verify EAF module isolation
 - ✅ Singleton pattern follows tech spec recommendation
 - ✅ RLS enforcement aligns with TC-002 groundwork
@@ -205,5 +205,5 @@ Story 1.9 successfully implements the Testcontainers setup for `eaf-testing` mod
 
 **Advisory Notes:**
 - Note: Consider implementing `SCHEMA_PER_TEST` strategy when parallel E2E tests are needed
-- Note: `TestDataFixture` can be added when DVMM product-specific reference data is defined
+- Note: `TestDataFixture` can be added when DCM product-specific reference data is defined
 - Note: Flyway migration execution will be integrated in Story 1.3 (Event Store Setup)

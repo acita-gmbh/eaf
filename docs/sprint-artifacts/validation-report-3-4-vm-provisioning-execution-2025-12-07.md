@@ -41,7 +41,7 @@ The story is well-structured with comprehensive acceptance criteria and detailed
 | ✓ PASS | Code patterns documented | Lines 116-137: Enhancement roadmap with before/after code |
 | ✓ PASS | VMware API patterns | Lines 139-165, 167-191: Guest customization and VMware Tools wait patterns |
 | ⚠ PARTIAL | VmStatus READY vs RUNNING inconsistency | Story says add `READY` (line 55) but `VmStatus.kt:10` already has `RUNNING`, not `READY`. **Which should be used?** Tech spec says READY (Section 4.1.3). |
-| ✗ FAIL | **Missing VmProvisioningResult location** | Line 223 says create in `dvmm-application` but pattern in VsphereClient (infrastructure) returns result. **Port/Adapter boundary unclear.** |
+| ✗ FAIL | **Missing VmProvisioningResult location** | Line 223 says create in `dcm-application` but pattern in VsphereClient (infrastructure) returns result. **Port/Adapter boundary unclear.** |
 | ⚠ PARTIAL | Disk size extension mentioned but not detailed | AC-1 mentions "Disk: as per size specification (requires extending clone spec)" but no code example provided for `VirtualDeviceConfigSpec` |
 | ✓ PASS | Network configuration mentioned | AC-1: "Network: tenant default from config (FR36)" |
 | ✓ PASS | CQRS pattern reminder included | Lines 235-254: Explicit write-side + read-side update pattern |
@@ -58,7 +58,7 @@ The story is well-structured with comprehensive acceptance criteria and detailed
 | ✓ PASS | Uses established event metadata | EventMetadata pattern consistent with VmProvisioningStarted |
 | ✓ PASS | Follows MockK patterns | Line 215: Explicit reminder about `any()` for all parameters |
 | ✓ PASS | Uses TimelineEventProjectionUpdater | Lines 248-254: Follows established pattern |
-| ⚠ PARTIAL | VspherePort interface changes unclear | Story modifies VsphereClient but doesn't mention VspherePort interface updates. Port is in dvmm-application, adapter in dvmm-infrastructure. |
+| ⚠ PARTIAL | VspherePort interface changes unclear | Story modifies VsphereClient but doesn't mention VspherePort interface updates. Port is in dcm-application, adapter in dcm-infrastructure. |
 | ✓ PASS | Hexagonal architecture respected | Domain events in domain, handlers in application |
 | ✗ FAIL | **Missing VmRequestAggregate.handleEvent update** | Story mentions adding `markReady()` but doesn't specify updating `handleEvent()` to process `VmRequestReady` event |
 | ✓ PASS | ARM64 VCSIM limitation documented | Lines 256-262: Clear guidance on ARM64 test skipping |
@@ -165,11 +165,11 @@ public enum class VmStatus {
 ## Enhancement Opportunities (Should Add)
 
 ### Enhancement 1: Add VmProvisioningResult as Value Object in Domain
-**Why:** Current story places it in dvmm-application (line 223) but it represents domain knowledge
+**Why:** Current story places it in dcm-application (line 223) but it represents domain knowledge
 
 **Suggestion:**
 ```kotlin
-// dvmm-domain/src/main/kotlin/de/acci/dvmm/domain/vm/VmProvisioningResult.kt
+// dcm-domain/src/main/kotlin/de/acci/dcm/domain/vm/VmProvisioningResult.kt
 public data class VmProvisioningResult(
     val vmwareVmId: VmwareVmId,  // From tech-spec Section 4.1.2
     val ipAddress: String?,

@@ -120,7 +120,7 @@
     - `dependency`: Use Result<T,E> from eaf-core ✓
     - `dependency`: Use typed IDs from eaf-core ✓
     - `versioning`: Version starts at 1 ✓
-    - `architecture`: ADR-001 no DVMM imports ✓
+    - `architecture`: ADR-001 no DCM imports ✓
     - `coverage`: 80% line, 70% mutation ✓
 
 ---

@@ -2,7 +2,7 @@
 
 **How to delete data from an immutable history.**
 
-DVMM uses **Event Sourcing**, meaning we store a permanent history of everything that happened. This is great for auditing (ISO 27001), but it conflicts with **GDPR Article 17 (Right to Erasure)**.
+DCM uses **Event Sourcing**, meaning we store a permanent history of everything that happened. This is great for auditing (ISO 27001), but it conflicts with **GDPR Article 17 (Right to Erasure)**.
 
 *   **The Conflict:** GDPR says "Delete user data." Event Sourcing says "Never delete history."
 *   **The Solution:** Crypto-Shredding.

@@ -63,15 +63,15 @@ EAF has 11 modules across two component groups. Mutant-Kraken expects:
 - Single `gradlew` at project root ✅ (we have this)
 - Tests run via `./gradlew test` with file-based filtering
 
-**Problem:** When mutating a file in `eaf-core`, running `./gradlew test` will execute ALL tests across ALL modules, including dvmm modules that may have complex Spring Boot test contexts.
+**Problem:** When mutating a file in `eaf-core`, running `./gradlew test` will execute ALL tests across ALL modules, including dcm modules that may have complex Spring Boot test contexts.
 
 ```text
 eaf/
 ├── eaf-core/            # If file here is mutated...
 ├── eaf-eventsourcing/
 ├── ...
-└── dvmm/
-    └── dvmm-app/        # ...this module's integration tests still run
+└── dcm/
+    └── dcm-app/        # ...this module's integration tests still run
 ```
 
 ### 2. No Module-Specific Test Filtering
@@ -84,7 +84,7 @@ Mutant-Kraken builds test commands like:
 This is suboptimal because:
 - It matches by filename across ALL modules
 - No way to specify `:eaf:eaf-core:test` for a mutation in eaf-core
-- Integration tests in `dvmm-app` may timeout or fail due to Spring context
+- Integration tests in `dcm-app` may timeout or fail due to Spring context
 
 ### 3. Test Timeout Defaults
 
@@ -207,9 +207,9 @@ Create `mutantkraken.config.json` at project root:
       ".gradle",
       ".idea",
       "gradle",
-      "dvmm-web",
-      "dvmm-infrastructure",
-      "dvmm-app"
+      "dcm-web",
+      "dcm-infrastructure",
+      "dcm-app"
     ]
   },
   "threading": {
@@ -343,7 +343,7 @@ Results are collected in `mutant-kraken-results/<module>/`:
 ### Configuration Details
 
 The root `mutantkraken.config.json` excludes:
-- All DVMM product modules (focus on framework only)
+- All DCM product modules (focus on framework only)
 - Test files (`*Test.kt`, `*IntegrationTest.kt`)
 - Build directories
 

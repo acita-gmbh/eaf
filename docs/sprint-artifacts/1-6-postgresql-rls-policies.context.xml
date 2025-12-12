@@ -121,7 +121,7 @@
     <docs>
       <doc>
         <path>docs/architecture.md</path>
-        <title>DVMM Architecture</title>
+        <title>DCM Architecture</title>
         <section>ADR-003 Decision 4: PostgreSQL Row-Level Security</section>
         <snippet>RLS Policies on all tenant-related tables. Policy: tenant_id = current_setting('app.tenant_id')::UUID. Database-Level Enforcement (fail-closed). No possibility of forgetting WHERE clauses.</snippet>
       </doc>
@@ -214,8 +214,8 @@
   </artifacts>
 
   <constraints>
-    <constraint source="architecture">EAF modules MUST NOT import from de.acci.dvmm.* (Konsist enforced)</constraint>
-    <constraint source="architecture">dvmm-domain MUST NOT import from org.springframework.* (Konsist enforced)</constraint>
+    <constraint source="architecture">EAF modules MUST NOT import from de.acci.dcm.* (Konsist enforced)</constraint>
+    <constraint source="architecture">dcm-domain MUST NOT import from org.springframework.* (Konsist enforced)</constraint>
     <constraint source="architecture">Fail-closed semantics: missing tenant context = zero rows returned (NOT exception at DB level)</constraint>
     <constraint source="story-1.5">Use set_config('app.tenant_id', ?, false) for session-scoped tenant context - is_local=false persists for connection lifetime, compatible with autocommit and connection pooling</constraint>
     <constraint source="tech-spec">Application role eaf_app exists (created in V001). Use SET ROLE eaf_app to enforce RLS in tests.</constraint>

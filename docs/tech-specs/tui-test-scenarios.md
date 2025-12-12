@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document defines test scenarios for the DVMM TUI Admin Interface, mapping to Functional Requirements (TUI-FR) and Non-Functional Requirements (TUI-NFR) from the tech spec.
+This document defines test scenarios for the DCM TUI Admin Interface, mapping to Functional Requirements (TUI-FR) and Non-Functional Requirements (TUI-NFR) from the tech spec.
 
 ---
 
@@ -68,7 +68,7 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Create `~/.config/dvmm-tui/token` | Valid JWT token |
+| 1 | Create `~/.config/dcm-tui/token` | Valid JWT token |
 | 2 | Launch TUI | Token file read |
 | 3 | Token validated | Session established |
 | 4 | Main dashboard displayed | No login prompt |
@@ -85,7 +85,7 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Run `dvmm-tui --token=eyJ...` | Token parsed from CLI |
+| 1 | Run `dcm-tui --token=eyJ...` | Token parsed from CLI |
 | 2 | Token validated with server | AuthResponse received |
 | 3 | Session established | Dashboard displayed |
 
@@ -110,9 +110,9 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | User not in `dvmm-admins` group | Launch TUI |
+| 1 | User not in `dcm-admins` group | Launch TUI |
 | 2 | Connect to socket | Permission denied |
-| 3 | Error displayed | "Access denied. Add user to dvmm-admins group." |
+| 3 | Error displayed | "Access denied. Add user to dcm-admins group." |
 
 ---
 
@@ -122,9 +122,9 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | dvmm-app not running | Socket file absent |
+| 1 | dcm-app not running | Socket file absent |
 | 2 | Launch TUI | Connection attempt fails |
-| 3 | Error displayed | "Cannot connect to DVMM. Is the service running?" |
+| 3 | Error displayed | "Cannot connect to DCM. Is the service running?" |
 | 4 | Retry option | Press R to retry |
 
 ---
@@ -476,7 +476,7 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 |------|--------|-----------------|
 | 1 | Press `E` | Export dialog |
 | 2 | Confirm export | CSV generated |
-| 3 | File saved | `~/dvmm-audit-export-2025-11-29.csv` |
+| 3 | File saved | `~/dcm-audit-export-2025-11-29.csv` |
 | 4 | Success message | "Exported 142 entries" |
 
 ---
@@ -487,7 +487,7 @@ This document defines test scenarios for the DVMM TUI Admin Interface, mapping t
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | dvmm-app crashes | Socket closes |
+| 1 | dcm-app crashes | Socket closes |
 | 2 | Next gRPC call | UNAVAILABLE error |
 | 3 | Error displayed | "Server unavailable. Retrying..." |
 | 4 | Reconnect attempts | With backoff |

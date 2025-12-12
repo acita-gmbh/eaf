@@ -14,10 +14,10 @@
     <iWant>jOOQ configured for type-safe read queries</iWant>
     <soThat>I can build efficient read projections</soThat>
     <tasks>
-      <task id="1" ac="1">Configure jOOQ Gradle plugin in dvmm-infrastructure/build.gradle.kts</task>
+      <task id="1" ac="1">Configure jOOQ Gradle plugin in dcm-infrastructure/build.gradle.kts</task>
       <task id="2" ac="1,2">Add jOOQ dependencies to gradle/libs.versions.toml</task>
       <task id="3" ac="5">Create PageRequest and PagedResponse in eaf-eventsourcing</task>
-      <task id="4" ac="3,4">Create BaseProjectionRepository in dvmm-infrastructure</task>
+      <task id="4" ac="3,4">Create BaseProjectionRepository in dcm-infrastructure</task>
       <task id="5" ac="6">Create awaitProjection helper in eaf-testing</task>
       <task id="6" ac="2,4">Create sample projection for validation</task>
       <task id="7" ac="1,2,3,4,5,6">Write integration tests</task>
@@ -58,7 +58,7 @@
       <file path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/TenantTestContext.kt" kind="test-utility" symbol="TenantTestContext" lines="5-17" reason="ThreadLocal tenant context for tests - awaitProjection must respect this">
         Simple ThreadLocal holder for tenant ID in tests. Used by RlsEnforcingDataSource.
       </file>
-      <file path="dvmm/dvmm-infrastructure/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-24" reason="Target file for jOOQ plugin configuration - currently has jOOQ dependencies only">
+      <file path="dcm/dcm-infrastructure/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-24" reason="Target file for jOOQ plugin configuration - currently has jOOQ dependencies only">
         Add nu.studer.jooq plugin and jooq { configurations { ... } } block here.
       </file>
       <file path="eaf/eaf-eventsourcing/build.gradle.kts" kind="build" symbol="build.gradle.kts" lines="1-31" reason="Shows existing jOOQ dependency setup - reuse for pagination helpers">
@@ -108,14 +108,14 @@
   <constraints>
     <constraint type="architecture">CQRS pattern - projections are separate read model using jOOQ for type-safe queries</constraint>
     <constraint type="architecture">RLS handles tenant filtering automatically - do NOT add explicit WHERE tenant_id = ? clauses</constraint>
-    <constraint type="architecture">Library modules must disable bootJar and enable jar (see dvmm-infrastructure/build.gradle.kts:8-14)</constraint>
+    <constraint type="architecture">Library modules must disable bootJar and enable jar (see dcm-infrastructure/build.gradle.kts:8-14)</constraint>
     <constraint type="module">Pagination helpers (PageRequest, PagedResponse) go in eaf-eventsourcing module (framework layer)</constraint>
-    <constraint type="module">BaseProjectionRepository goes in dvmm-infrastructure module (product layer)</constraint>
+    <constraint type="module">BaseProjectionRepository goes in dcm-infrastructure module (product layer)</constraint>
     <constraint type="module">awaitProjection helper goes in eaf-testing module</constraint>
     <constraint type="testing">Tests First pattern - write tests before implementation</constraint>
     <constraint type="testing">Minimum 80% test coverage (CI blocks merge)</constraint>
     <constraint type="testing">Minimum 70% mutation score (CI blocks merge)</constraint>
-    <constraint type="naming">Package: de.acci.dvmm.infrastructure.jooq for generated code</constraint>
+    <constraint type="naming">Package: de.acci.dcm.infrastructure.jooq for generated code</constraint>
     <constraint type="naming">Package: de.acci.eaf.eventsourcing.projection for pagination helpers</constraint>
     <constraint type="pattern">Use withContext(Dispatchers.IO) for blocking database operations</constraint>
     <constraint type="pattern">Use suspend functions for all repository methods</constraint>
@@ -128,7 +128,7 @@
     <interface name="PagedResponse" kind="data-class" path="eaf/eaf-eventsourcing/src/main/kotlin/de/acci/eaf/eventsourcing/projection/PagedResponse.kt">
       data class PagedResponse&lt;T&gt;(val items: List&lt;T&gt;, val page: Int, val size: Int, val totalElements: Long, val totalPages: Int)
     </interface>
-    <interface name="BaseProjectionRepository" kind="abstract-class" path="dvmm/dvmm-infrastructure/src/main/kotlin/de/acci/dvmm/infrastructure/projection/BaseProjectionRepository.kt">
+    <interface name="BaseProjectionRepository" kind="abstract-class" path="dcm/dcm-infrastructure/src/main/kotlin/de/acci/dcm/infrastructure/projection/BaseProjectionRepository.kt">
       abstract class BaseProjectionRepository&lt;T : Any&gt;(protected val dsl: DSLContext) with paginate() extension function
     </interface>
     <interface name="awaitProjection" kind="suspend-function" path="eaf/eaf-testing/src/main/kotlin/de/acci/eaf/testing/ProjectionTestUtils.kt">
@@ -145,7 +145,7 @@
     <locations>
       <location>eaf/eaf-eventsourcing/src/test/kotlin/de/acci/eaf/eventsourcing/projection/</location>
       <location>eaf/eaf-testing/src/test/kotlin/de/acci/eaf/testing/</location>
-      <location>dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/projection/</location>
+      <location>dcm/dcm-infrastructure/src/test/kotlin/de/acci/dcm/infrastructure/projection/</location>
     </locations>
     <ideas>
       <idea ac="1">Test jOOQ code generation produces expected classes in build/generated-sources/jooq</idea>

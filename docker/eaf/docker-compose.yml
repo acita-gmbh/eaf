@@ -3,7 +3,7 @@
 #
 # Usage:
 #   This file is meant to be included by product-specific compose files.
-#   See docker/dvmm/docker-compose.yml for example usage.
+#   See docker/dcm/docker-compose.yml for example usage.
 
 services:
   postgres:
@@ -31,7 +31,7 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       # Realm name for healthcheck (can be overridden by product compose files)
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-dvmm}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-dcm}
     ports:
       - "8180:8080"
     volumes:
