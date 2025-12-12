@@ -302,6 +302,7 @@ public data class ResourcePool(public val id: String, public val name: String)
  * @property ipAddress Primary IP address from VMware Tools (null if tools not running/installed)
  * @property hostname Guest hostname from VMware Tools (null if tools not running/installed)
  * @property guestOs Detected guest OS type from VMware Tools (null if not detected)
+ * @property bootTime Timestamp when the VM was last powered on (null if not available)
  */
 public data class VmInfo(
     public val id: String,
@@ -309,7 +310,8 @@ public data class VmInfo(
     public val powerState: VmPowerState = VmPowerState.UNKNOWN,
     public val ipAddress: String? = null,
     public val hostname: String? = null,
-    public val guestOs: String? = null
+    public val guestOs: String? = null,
+    public val bootTime: java.time.Instant? = null
 )
 
 /**

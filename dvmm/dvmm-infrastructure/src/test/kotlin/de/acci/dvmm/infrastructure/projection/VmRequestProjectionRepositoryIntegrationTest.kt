@@ -3,8 +3,8 @@ package de.acci.dvmm.infrastructure.projection
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.testing.TenantTestContext
+import de.acci.eaf.testing.TestContainers
 import de.acci.eaf.testing.awaitProjection
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -23,8 +23,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.testcontainers.postgresql.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.sql.Connection
 import java.time.OffsetDateTime
@@ -44,47 +42,25 @@ import java.util.UUID
 class VmRequestProjectionRepositoryIntegrationTest {
 
     companion object {
-        // Testcontainers default credentials - not sensitive, used only for local testing
-        private const val TC_DB_NAME = "dvmm_test"
-
         // Default test values for VM request projections
         private const val DEFAULT_CPU_CORES = 4
         private const val DEFAULT_MEMORY_GB = 16
-
-        @Container
-        @JvmStatic
-        val postgres: PostgreSQLContainer = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName(TC_DB_NAME)
-            // Use Testcontainers default credentials (test/test) - superuser privileges
-            // needed to bypass FORCE ROW LEVEL SECURITY for test data setup
 
         private lateinit var superuserDsl: DSLContext
 
         @BeforeAll
         @JvmStatic
         fun setupSchema() {
-            // Copy SQL file to container and execute with psql -f for proper multi-statement handling
-            // This handles DO $$ ... $$ blocks and other PostgreSQL-specific syntax correctly
-            // Note: Uses test-specific jooq-init.sql with quoted uppercase identifiers for jOOQ compatibility
-            val tmpFile = "/tmp/init.sql"
-            postgres.copyFileToContainer(
-                org.testcontainers.utility.MountableFile.forClasspathResource("db/jooq-init.sql"),
-                tmpFile
-            )
-
-            val result = postgres.execInContainer(
-                "psql",
-                "-U", postgres.username,
-                "-d", postgres.databaseName,
-                "-v", "ON_ERROR_STOP=1",
-                "-f", tmpFile
-            )
-            if (result.exitCode != 0) {
-                throw IllegalStateException("Failed to initialize schema: ${result.stderr}")
-            }
+            // Use Flyway migrations from classpath - same as production
+            // This eliminates the need to maintain a separate jooq-init.sql file
+            TestContainers.ensureFlywayMigrations()
 
             // Superuser DSL bypasses RLS for test data setup/cleanup
-            superuserDsl = DSL.using(postgres.jdbcUrl, postgres.username, postgres.password)
+            superuserDsl = DSL.using(
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
+            )
         }
     }
 
@@ -111,7 +87,7 @@ class VmRequestProjectionRepositoryIntegrationTest {
      * Consider using withTenantDsl() for automatic resource management.
      */
     private fun createTenantDsl(tenant: TenantId): Pair<Connection, DSLContext> {
-        val conn = postgres.createConnection("")
+        val conn = TestContainers.postgres.createConnection("")
         // Switch to eaf_app role so RLS is enforced
         conn.createStatement().execute("SET ROLE eaf_app")
         // Set tenant context
@@ -149,7 +125,7 @@ class VmRequestProjectionRepositoryIntegrationTest {
     ): UUID {
         // Use raw JDBC to properly handle OffsetDateTime -> TIMESTAMPTZ conversion
         // Column names must be quoted uppercase to match jOOQ-generated schema
-        postgres.createConnection("").use { conn ->
+        TestContainers.postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
                 INSERT INTO public."VM_REQUESTS_PROJECTION"

@@ -3,6 +3,7 @@ package de.acci.eaf.testing
 import dasniko.testcontainers.keycloak.KeycloakContainer
 import de.acci.eaf.testing.vcsim.VcsimCertificateGenerator
 import de.acci.eaf.testing.vcsim.VcsimContainer
+import org.flywaydb.core.Flyway
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
@@ -51,6 +52,7 @@ public object TestContainers {
 
     private val eventStoreSchemaInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
     private val eventStoreRlsInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val flywayMigrationsInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     /**
      * Sets up the event store schema if not already initialized.
@@ -112,6 +114,37 @@ public object TestContainers {
                     """.trimIndent()
                 )
             }
+        }
+    }
+
+    /**
+     * Sets up the database schema using Flyway migrations from classpath.
+     *
+     * This is the preferred method for integration tests as it uses the same
+     * migrations that run in production, eliminating schema synchronization issues.
+     *
+     * Migrations are loaded from `classpath:db/migration` which includes:
+     * - EAF framework migrations (eaf-eventsourcing module)
+     * - Product-specific migrations (e.g., dvmm-infrastructure module)
+     *
+     * Thread-safe and idempotent - multiple calls will only initialize once.
+     * Uses Flyway's clean + migrate pattern to ensure consistent state across
+     * reused containers.
+     */
+    public fun ensureFlywayMigrations() {
+        synchronized(this) {
+            if (!flywayMigrationsInitialized.compareAndSet(false, true)) {
+                return
+            }
+            Flyway.configure()
+                .dataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+                .locations("classpath:db/migration")
+                .cleanDisabled(false) // Allow clean for test isolation
+                .load()
+                .apply {
+                    clean() // Start fresh for reused containers
+                    migrate()
+                }
         }
     }
 }

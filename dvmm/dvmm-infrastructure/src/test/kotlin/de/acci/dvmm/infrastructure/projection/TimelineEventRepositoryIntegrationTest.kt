@@ -2,6 +2,7 @@ package de.acci.dvmm.infrastructure.projection
 
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.testing.TenantTestContext
+import de.acci.eaf.testing.TestContainers
 import kotlinx.coroutines.runBlocking
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
@@ -16,9 +17,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.postgresql.PostgreSQLContainer
 import java.sql.Connection
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -36,36 +35,17 @@ import java.util.UUID
 class TimelineEventRepositoryIntegrationTest {
 
     companion object {
-        private const val TC_DB_NAME = "dvmm_test"
-
-        @Container
-        @JvmStatic
-        val postgres: PostgreSQLContainer = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName(TC_DB_NAME)
-
         private lateinit var superuserDsl: DSLContext
 
         @BeforeAll
         @JvmStatic
         fun setupSchema() {
-            val tmpFile = "/tmp/init.sql"
-            postgres.copyFileToContainer(
-                org.testcontainers.utility.MountableFile.forClasspathResource("db/jooq-init.sql"),
-                tmpFile
+            TestContainers.ensureFlywayMigrations()
+            superuserDsl = DSL.using(
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             )
-
-            val result = postgres.execInContainer(
-                "psql",
-                "-U", postgres.username,
-                "-d", postgres.databaseName,
-                "-v", "ON_ERROR_STOP=1",
-                "-f", tmpFile
-            )
-            if (result.exitCode != 0) {
-                throw IllegalStateException("Failed to initialize schema: ${result.stderr}")
-            }
-
-            superuserDsl = DSL.using(postgres.jdbcUrl, postgres.username, postgres.password)
         }
     }
 
@@ -94,7 +74,7 @@ class TimelineEventRepositoryIntegrationTest {
         id: UUID,
         tenantId: TenantId
     ) {
-        postgres.createConnection("").use { conn ->
+        TestContainers.postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
                 INSERT INTO public."VM_REQUESTS_PROJECTION"
@@ -117,7 +97,7 @@ class TimelineEventRepositoryIntegrationTest {
     }
 
     private fun createTenantDsl(tenant: TenantId): Pair<Connection, DSLContext> {
-        val conn = postgres.createConnection("")
+        val conn = TestContainers.postgres.createConnection("")
         conn.createStatement().execute("SET ROLE eaf_app")
         conn.prepareStatement("SELECT set_config('app.tenant_id', ?, false)").use { stmt ->
             stmt.setString(1, tenant.value.toString())
@@ -144,7 +124,7 @@ class TimelineEventRepositoryIntegrationTest {
         // First ensure parent request exists (FK constraint)
         insertParentRequest(id = requestId, tenantId = tenantId)
 
-        postgres.createConnection("").use { conn ->
+        TestContainers.postgres.createConnection("").use { conn ->
             conn.prepareStatement(
                 """
                 INSERT INTO public."REQUEST_TIMELINE_EVENTS"

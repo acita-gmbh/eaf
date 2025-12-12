@@ -170,7 +170,8 @@ public class SyncVmStatusHandler(
                 hostname = vmInfo.hostname,
                 powerState = vmInfo.powerState.name,
                 guestOs = vmInfo.guestOs,
-                lastSyncedAt = clock.instant()
+                lastSyncedAt = clock.instant(),
+                bootTime = vmInfo.bootTime
             )
         } catch (e: CancellationException) {
             throw e

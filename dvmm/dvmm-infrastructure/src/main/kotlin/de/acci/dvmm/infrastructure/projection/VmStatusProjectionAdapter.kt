@@ -28,7 +28,8 @@ public class VmStatusProjectionAdapter(
         hostname: String?,
         powerState: String?,
         guestOs: String?,
-        lastSyncedAt: Instant
+        lastSyncedAt: Instant,
+        bootTime: Instant?
     ): Int = withContext(Dispatchers.IO) {
         dsl.update(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.VMWARE_VM_ID, vmwareVmId)
@@ -37,6 +38,7 @@ public class VmStatusProjectionAdapter(
             .set(VM_REQUESTS_PROJECTION.POWER_STATE, powerState)
             .set(VM_REQUESTS_PROJECTION.GUEST_OS, guestOs)
             .set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, OffsetDateTime.ofInstant(lastSyncedAt, ZoneOffset.UTC))
+            .set(VM_REQUESTS_PROJECTION.BOOT_TIME, bootTime?.let { OffsetDateTime.ofInstant(it, ZoneOffset.UTC) })
             .set(VM_REQUESTS_PROJECTION.UPDATED_AT, OffsetDateTime.now(ZoneOffset.UTC))
             .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
             .execute()

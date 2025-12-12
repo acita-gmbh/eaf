@@ -58,112 +58,9 @@ class VmProvisioningIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun setupSchema() {
-            TestContainers.ensureEventStoreSchema {
-                VmProvisioningIntegrationTest::class.java
-                    .getResource("/db/migration/V001__create_event_store.sql")!!
-                    .readText()
-            }
-            createConfigTable()
-            createProjectionTables()
-        }
-
-        private fun createProjectionTables() {
-            TestContainers.postgres.createConnection("").use { conn ->
-                conn.createStatement().use { stmt ->
-                    // VM Requests Projection (full schema matching jOOQ code)
-                    // Must include all columns from V011__add_vm_details_to_projection.sql
-                    stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS public."VM_REQUESTS_PROJECTION" (
-                            "ID" UUID PRIMARY KEY,
-                            "TENANT_ID" UUID NOT NULL,
-                            "REQUESTER_ID" UUID NOT NULL,
-                            "REQUESTER_NAME" VARCHAR(255) NOT NULL,
-                            "REQUESTER_EMAIL" VARCHAR(255),
-                            "REQUESTER_ROLE" VARCHAR(100),
-                            "PROJECT_ID" UUID NOT NULL,
-                            "PROJECT_NAME" VARCHAR(255) NOT NULL,
-                            "VM_NAME" VARCHAR(255) NOT NULL,
-                            "SIZE" VARCHAR(10) NOT NULL,
-                            "CPU_CORES" INT NOT NULL,
-                            "MEMORY_GB" INT NOT NULL,
-                            "DISK_GB" INT NOT NULL,
-                            "JUSTIFICATION" TEXT NOT NULL,
-                            "STATUS" VARCHAR(50) NOT NULL,
-                            "APPROVED_BY" UUID,
-                            "APPROVED_BY_NAME" VARCHAR(255),
-                            "REJECTED_BY" UUID,
-                            "REJECTED_BY_NAME" VARCHAR(255),
-                            "REJECTION_REASON" TEXT,
-                            "CREATED_AT" TIMESTAMPTZ NOT NULL,
-                            "UPDATED_AT" TIMESTAMPTZ NOT NULL,
-                            "VERSION" INT NOT NULL DEFAULT 1,
-                            "VMWARE_VM_ID" VARCHAR(100),
-                            "IP_ADDRESS" VARCHAR(45),
-                            "HOSTNAME" VARCHAR(255),
-                            "POWER_STATE" VARCHAR(50),
-                            "GUEST_OS" VARCHAR(100),
-                            "LAST_SYNCED_AT" TIMESTAMPTZ
-                        )
-                    """.trimIndent())
-
-                    // Request Timeline Events (references VM_REQUESTS_PROJECTION)
-                    stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS public."REQUEST_TIMELINE_EVENTS" (
-                            "ID" UUID PRIMARY KEY,
-                            "REQUEST_ID" UUID NOT NULL REFERENCES public."VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
-                            "TENANT_ID" UUID NOT NULL,
-                            "EVENT_TYPE" VARCHAR(50) NOT NULL,
-                            "ACTOR_ID" UUID,
-                            "ACTOR_NAME" VARCHAR(255),
-                            "DETAILS" VARCHAR(4000),
-                            "OCCURRED_AT" TIMESTAMPTZ NOT NULL
-                        )
-                    """.trimIndent())
-
-                    // Provisioning Progress (for Story 3.5)
-                    // Note: STAGE_TIMESTAMPS added in V010 migration - stored as JSONB in prod,
-                    // using TEXT here for PostgreSQL test container compatibility
-                    stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS public."PROVISIONING_PROGRESS" (
-                            "VM_REQUEST_ID" UUID PRIMARY KEY,
-                            "STAGE" VARCHAR(255) NOT NULL,
-                            "DETAILS" VARCHAR(4000) NOT NULL,
-                            "STARTED_AT" TIMESTAMPTZ NOT NULL,
-                            "UPDATED_AT" TIMESTAMPTZ NOT NULL,
-                            "TENANT_ID" UUID NOT NULL,
-                            "STAGE_TIMESTAMPS" JSONB NOT NULL DEFAULT '{}'
-                        )
-                    """.trimIndent())
-                }
-            }
-        }
-
-        private fun createConfigTable() {
-            TestContainers.postgres.createConnection("").use { conn ->
-                conn.createStatement().use { stmt ->
-                    stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS public."VMWARE_CONFIGURATIONS" (
-                            "ID" UUID PRIMARY KEY,
-                            "TENANT_ID" UUID NOT NULL UNIQUE,
-                            "VCENTER_URL" VARCHAR(255) NOT NULL,
-                            "USERNAME" VARCHAR(255) NOT NULL,
-                            "PASSWORD_ENCRYPTED" BYTEA NOT NULL,
-                            "DATACENTER_NAME" VARCHAR(255) NOT NULL,
-                            "CLUSTER_NAME" VARCHAR(255) NOT NULL,
-                            "DATASTORE_NAME" VARCHAR(255) NOT NULL,
-                            "NETWORK_NAME" VARCHAR(255) NOT NULL,
-                            "TEMPLATE_NAME" VARCHAR(255) NOT NULL,
-                            "FOLDER_PATH" VARCHAR(255),
-                            "VERIFIED_AT" TIMESTAMPTZ,
-                            "CREATED_AT" TIMESTAMPTZ NOT NULL,
-                            "UPDATED_AT" TIMESTAMPTZ NOT NULL,
-                            "CREATED_BY" UUID NOT NULL,
-                            "UPDATED_BY" UUID NOT NULL,
-                            "VERSION" BIGINT NOT NULL
-                        )
-                    """.trimIndent())
-                }
-            }
+            // Use Flyway migrations for consistent schema setup
+            // This ensures all tables including new columns (like BOOT_TIME from V012) are present
+            TestContainers.ensureFlywayMigrations()
         }
 
         @JvmStatic
@@ -274,10 +171,8 @@ class VmProvisioningIntegrationTest {
 
     @BeforeEach
     fun cleanDatabase() {
-        // Ensure tables exist
-        createConfigTable()
-        createProjectionTables()
-
+        // Tables are created by Flyway migrations in @BeforeAll
+        // Just truncate data between tests
         TestContainers.postgres.createConnection("").use { conn ->
             conn.autoCommit = true
             conn.createStatement().use { stmt ->

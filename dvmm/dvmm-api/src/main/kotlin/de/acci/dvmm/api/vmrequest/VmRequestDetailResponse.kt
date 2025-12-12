@@ -65,6 +65,7 @@ public data class VmRequestDetailResponse(
  * @property powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED
  * @property guestOs Detected guest OS from VMware Tools
  * @property lastSyncedAt Timestamp of last status sync from vSphere
+ * @property bootTime Timestamp when VM was last powered on (for uptime calculation)
  */
 public data class VmRuntimeDetailsResponse(
     val vmwareVmId: String?,
@@ -72,7 +73,8 @@ public data class VmRuntimeDetailsResponse(
     val hostname: String?,
     val powerState: String?,
     val guestOs: String?,
-    val lastSyncedAt: Instant?
+    val lastSyncedAt: Instant?,
+    val bootTime: Instant?
 ) {
     public companion object {
         /**
@@ -90,7 +92,8 @@ public data class VmRuntimeDetailsResponse(
                 hostname = detail.hostname,
                 powerState = detail.powerState,
                 guestOs = detail.guestOs,
-                lastSyncedAt = detail.lastSyncedAt
+                lastSyncedAt = detail.lastSyncedAt,
+                bootTime = detail.bootTime
             )
         }
     }

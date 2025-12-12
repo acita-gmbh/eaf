@@ -91,6 +91,7 @@ public class VmRequestProjectionRepository(
         public data object PowerState : ProjectionColumns
         public data object GuestOs : ProjectionColumns
         public data object LastSyncedAt : ProjectionColumns
+        public data object BootTime : ProjectionColumns
 
         public companion object {
             /**
@@ -102,7 +103,8 @@ public class VmRequestProjectionRepository(
                 ProjectId, ProjectName, VmName, Size, CpuCores, MemoryGb, DiskGb,
                 Justification, Status, ApprovedBy, ApprovedByName, RejectedBy,
                 RejectedByName, RejectionReason, CreatedAt, UpdatedAt, Version,
-                VmwareVmId, IpAddress, Hostname, PowerState, GuestOs, LastSyncedAt
+                VmwareVmId, IpAddress, Hostname, PowerState, GuestOs, LastSyncedAt,
+                BootTime
             )
         }
     }
@@ -141,6 +143,7 @@ public class VmRequestProjectionRepository(
         ProjectionColumns.PowerState -> record.get(VM_REQUESTS_PROJECTION.POWER_STATE)
         ProjectionColumns.GuestOs -> record.get(VM_REQUESTS_PROJECTION.GUEST_OS)
         ProjectionColumns.LastSyncedAt -> record.get(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT)
+        ProjectionColumns.BootTime -> record.get(VM_REQUESTS_PROJECTION.BOOT_TIME)
     }
 
     /**
@@ -182,6 +185,7 @@ public class VmRequestProjectionRepository(
         ProjectionColumns.PowerState -> step.set(VM_REQUESTS_PROJECTION.POWER_STATE, projection.powerState)
         ProjectionColumns.GuestOs -> step.set(VM_REQUESTS_PROJECTION.GUEST_OS, projection.guestOs)
         ProjectionColumns.LastSyncedAt -> step.set(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT, projection.lastSyncedAt)
+        ProjectionColumns.BootTime -> step.set(VM_REQUESTS_PROJECTION.BOOT_TIME, projection.bootTime)
     }
 
     override fun mapRecord(record: Record): VmRequestsProjection {
@@ -215,7 +219,8 @@ public class VmRequestProjectionRepository(
             hostname = mapColumn(record, ProjectionColumns.Hostname) as String?,
             powerState = mapColumn(record, ProjectionColumns.PowerState) as String?,
             guestOs = mapColumn(record, ProjectionColumns.GuestOs) as String?,
-            lastSyncedAt = mapColumn(record, ProjectionColumns.LastSyncedAt) as OffsetDateTime?
+            lastSyncedAt = mapColumn(record, ProjectionColumns.LastSyncedAt) as OffsetDateTime?,
+            bootTime = mapColumn(record, ProjectionColumns.BootTime) as OffsetDateTime?
         )
     }
 

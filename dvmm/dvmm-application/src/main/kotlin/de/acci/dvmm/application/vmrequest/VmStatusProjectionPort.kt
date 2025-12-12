@@ -28,6 +28,7 @@ public interface VmStatusProjectionPort {
      * @param powerState Power state: POWERED_ON, POWERED_OFF, SUSPENDED
      * @param guestOs Detected guest OS type
      * @param lastSyncedAt Timestamp of this sync
+     * @param bootTime Timestamp when VM was last powered on (for uptime calculation)
      * @return Number of rows updated (0 if request not found)
      */
     public suspend fun updateVmDetails(
@@ -37,7 +38,8 @@ public interface VmStatusProjectionPort {
         hostname: String?,
         powerState: String?,
         guestOs: String?,
-        lastSyncedAt: Instant
+        lastSyncedAt: Instant,
+        bootTime: Instant? = null
     ): Int
 
     /**

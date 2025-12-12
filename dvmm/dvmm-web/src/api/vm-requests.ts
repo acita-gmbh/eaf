@@ -527,6 +527,8 @@ export interface VmRuntimeDetails {
   guestOs: string | null
   /** ISO timestamp of last status sync from vSphere */
   lastSyncedAt: string | null
+  /** ISO timestamp when VM was last powered on (for uptime calculation) */
+  bootTime: string | null
 }
 
 /**

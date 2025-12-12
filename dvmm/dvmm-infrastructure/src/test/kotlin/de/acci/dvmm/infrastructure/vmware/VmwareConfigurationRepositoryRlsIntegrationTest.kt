@@ -5,6 +5,7 @@ import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.testing.TenantTestContext
+import de.acci.eaf.testing.TestContainers
 import kotlinx.coroutines.test.runTest
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
@@ -20,8 +21,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.sql.Connection
 import java.time.Instant
@@ -41,38 +40,17 @@ import java.time.Instant
 class VmwareConfigurationRepositoryRlsIntegrationTest {
 
     companion object {
-        private const val TC_DB_NAME = "dvmm_test"
-
-        @Container
-        @JvmStatic
-        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName(TC_DB_NAME)
-
         private lateinit var superuserDsl: DSLContext
 
         @BeforeAll
         @JvmStatic
         fun setupSchema() {
-            // Copy and execute schema with RLS policies
-            val tmpFile = "/tmp/init.sql"
-            postgres.copyFileToContainer(
-                org.testcontainers.utility.MountableFile.forClasspathResource("db/jooq-init.sql"),
-                tmpFile
+            TestContainers.ensureFlywayMigrations()
+            superuserDsl = DSL.using(
+                TestContainers.postgres.jdbcUrl,
+                TestContainers.postgres.username,
+                TestContainers.postgres.password
             )
-
-            val result = postgres.execInContainer(
-                "psql",
-                "-U", postgres.username,
-                "-d", postgres.databaseName,
-                "-v", "ON_ERROR_STOP=1",
-                "-f", tmpFile
-            )
-            if (result.exitCode != 0) {
-                throw IllegalStateException("Failed to initialize schema: ${result.stderr}")
-            }
-
-            // Superuser DSL bypasses RLS for test data setup/cleanup
-            superuserDsl = DSL.using(postgres.jdbcUrl, postgres.username, postgres.password)
         }
     }
 
@@ -95,7 +73,7 @@ class VmwareConfigurationRepositoryRlsIntegrationTest {
      * Creates a DSLContext with tenant context set for RLS.
      */
     private fun createTenantDsl(tenant: TenantId): Pair<Connection, DSLContext> {
-        val conn = postgres.createConnection("")
+        val conn = TestContainers.postgres.createConnection("")
         // Switch to eaf_app role so RLS is enforced
         conn.createStatement().execute("SET ROLE eaf_app")
         // Set tenant context
@@ -322,7 +300,7 @@ class VmwareConfigurationRepositoryRlsIntegrationTest {
             }
 
             // When - query directly without setting app.tenant_id (bypass RlsEnforcingDataSource)
-            val directConnection = postgres.createConnection("")
+            val directConnection = TestContainers.postgres.createConnection("")
             directConnection.use { conn ->
                 conn.createStatement().execute("SET ROLE eaf_app")
                 // Don't set app.tenant_id - this tests fail-closed behavior

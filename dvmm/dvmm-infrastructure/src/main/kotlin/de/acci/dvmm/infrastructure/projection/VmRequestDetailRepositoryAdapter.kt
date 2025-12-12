@@ -43,7 +43,8 @@ public class VmRequestDetailRepositoryAdapter(
                         hostname = record.get(VM_REQUESTS_PROJECTION.HOSTNAME),
                         powerState = record.get(VM_REQUESTS_PROJECTION.POWER_STATE),
                         guestOs = record.get(VM_REQUESTS_PROJECTION.GUEST_OS),
-                        lastSyncedAt = record.get(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT)?.toInstant()
+                        lastSyncedAt = record.get(VM_REQUESTS_PROJECTION.LAST_SYNCED_AT)?.toInstant(),
+                        bootTime = record.get(VM_REQUESTS_PROJECTION.BOOT_TIME)?.toInstant()
                     )
                 }
         }

@@ -853,6 +853,7 @@ public class VsphereClient(
                     vmRef,
                     "name",
                     "runtime.powerState",
+                    "runtime.bootTime",
                     "guest.ipAddress",
                     "guest.hostName",
                     "guest.guestFullName"
@@ -872,13 +873,19 @@ public class VsphereClient(
                     }
                 }
 
+                // Map XMLGregorianCalendar to Instant
+                val bootTime = (props["runtime.bootTime"] as? javax.xml.datatype.XMLGregorianCalendar)
+                    ?.toGregorianCalendar()
+                    ?.toInstant()
+
                 VmInfo(
                     id = vmId.value,
                     name = name,
                     powerState = powerState,
                     ipAddress = props["guest.ipAddress"] as? String,
                     hostname = props["guest.hostName"] as? String,
-                    guestOs = props["guest.guestFullName"] as? String
+                    guestOs = props["guest.guestFullName"] as? String,
+                    bootTime = bootTime
                 ).success()
             } catch (e: CancellationException) {
                 throw e

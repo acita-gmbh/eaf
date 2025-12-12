@@ -87,6 +87,7 @@ public data class TimelineEventItem(
  * @param powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
  * @param guestOs Detected guest OS from VMware Tools (null if not detected)
  * @param lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
+ * @param bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetail(
     val id: VmRequestId,
@@ -106,7 +107,8 @@ public data class VmRequestDetail(
     val hostname: String? = null,
     val powerState: String? = null,
     val guestOs: String? = null,
-    val lastSyncedAt: Instant? = null
+    val lastSyncedAt: Instant? = null,
+    val bootTime: Instant? = null
 )
 
 /**
@@ -184,7 +186,8 @@ public class GetRequestDetailHandler(
                 hostname = requestDetails.hostname,
                 powerState = requestDetails.powerState,
                 guestOs = requestDetails.guestOs,
-                lastSyncedAt = requestDetails.lastSyncedAt
+                lastSyncedAt = requestDetails.lastSyncedAt,
+                bootTime = requestDetails.bootTime
             ).success()
         } catch (e: CancellationException) {
             throw e
@@ -242,6 +245,7 @@ public interface VmRequestDetailRepository {
  * @property powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
  * @property guestOs Detected guest OS from VMware Tools (null if not detected)
  * @property lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
+ * @property bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetailProjection(
     val id: VmRequestId,
@@ -261,7 +265,8 @@ public data class VmRequestDetailProjection(
     val hostname: String? = null,
     val powerState: String? = null,
     val guestOs: String? = null,
-    val lastSyncedAt: Instant? = null
+    val lastSyncedAt: Instant? = null,
+    val bootTime: Instant? = null
 )
 
 /**

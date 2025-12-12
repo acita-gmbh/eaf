@@ -8,6 +8,7 @@ import {
   Copy,
   CheckCircle,
   RefreshCw,
+  Timer,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -15,6 +16,34 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { VmRuntimeDetails } from '@/api/vm-requests'
 import { formatDateTime } from '@/lib/date-utils'
+
+/**
+ * Formats uptime duration from boot time to now in human-readable format.
+ * Returns null if bootTime is not provided.
+ *
+ * @example formatUptime('2024-01-01T00:00:00Z') // "2d 4h 30m"
+ */
+function formatUptime(bootTime: string | null): string | null {
+  if (!bootTime) return null
+
+  const bootDate = new Date(bootTime)
+  const now = new Date()
+  const diffMs = now.getTime() - bootDate.getTime()
+
+  if (diffMs < 0) return null // bootTime in the future (shouldn't happen)
+
+  const totalSeconds = Math.floor(diffMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
+
+  return parts.join(' ')
+}
 
 interface VmDetailsCardProps {
   vmDetails: VmRuntimeDetails
@@ -47,9 +76,20 @@ export function VmDetailsCard({
   const isPoweredOff = vmDetails.powerState === 'POWERED_OFF'
   const isSuspended = vmDetails.powerState === 'SUSPENDED'
 
-  const sshCommand = vmDetails.ipAddress
-    ? `ssh <username>@${vmDetails.ipAddress}`
+  // Detect Windows OS for connection instructions (AC-3.7.2)
+  const isWindowsOs = vmDetails.guestOs?.toLowerCase().includes('windows') ?? false
+
+  // OS-specific connection command
+  const connectionCommand = vmDetails.ipAddress
+    ? isWindowsOs
+      ? `mstsc /v:${vmDetails.ipAddress}`
+      : `ssh <username>@${vmDetails.ipAddress}`
     : null
+
+  const connectionLabel = isWindowsOs ? 'Connect via RDP:' : 'Connect via SSH:'
+
+  // Calculate uptime only when VM is powered on and has bootTime (AC-3.7.2)
+  const uptime = isPoweredOn ? formatUptime(vmDetails.bootTime) : null
 
   const copyToClipboard = async (text: string, type: 'ip' | 'ssh') => {
     try {
@@ -176,23 +216,38 @@ export function VmDetailsCard({
           </div>
         )}
 
-        {/* SSH Connection Instructions */}
-        {isPoweredOn && sshCommand && (
+        {/* Uptime (only shown when powered on with bootTime) */}
+        {uptime && (
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-muted">
+              <Timer className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Uptime</p>
+              <p className="font-medium" data-testid="vm-uptime">
+                {uptime}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Connection Instructions (SSH for Linux, RDP for Windows) */}
+        {isPoweredOn && connectionCommand && (
           <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
             <p className="text-sm text-muted-foreground mb-2">
-              Connect via SSH:
+              {connectionLabel}
             </p>
             <div className="flex items-center gap-2">
               <code
                 className="flex-1 font-mono text-sm bg-background px-3 py-2 rounded border"
-                data-testid="vm-ssh-command"
+                data-testid="vm-connection-command"
               >
-                {sshCommand}
+                {connectionCommand}
               </code>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => void copyToClipboard(sshCommand, 'ssh')}
+                onClick={() => void copyToClipboard(connectionCommand, 'ssh')}
                 className="shrink-0"
               >
                 {copiedSsh ? (

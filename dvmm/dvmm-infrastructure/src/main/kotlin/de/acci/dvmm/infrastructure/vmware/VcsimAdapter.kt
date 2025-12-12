@@ -259,7 +259,8 @@ public class VcsimAdapter : HypervisorPort {
             powerState = VmPowerState.POWERED_ON,
             ipAddress = "192.168.1.100",
             hostname = "simulated-vm.local",
-            guestOs = "Ubuntu 22.04.3 LTS (64-bit)"
+            guestOs = "Ubuntu 22.04.3 LTS (64-bit)",
+            bootTime = java.time.Instant.now().minusSeconds(86400 * 2 + 3600 * 4) // 2 days, 4 hours ago
         ).success()
     }
 

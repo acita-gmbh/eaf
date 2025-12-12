@@ -100,9 +100,11 @@ kotlin {
 // See: https://www.jooq.org/doc/latest/manual/code-generation/codegen-jooq-database/
 // =============================================================================
 
-// Resolve migration paths at configuration time (not execution time)
-val eafMigrationsPath = "${rootProject.projectDir}/eaf/eaf-eventsourcing/src/main/resources/db/migration"
-val dvmmMigrationsPath = "${projectDir}/src/main/resources/db/migration"
+// Resolve paths as plain strings at configuration time (configuration-cache compatible)
+// These are resolved immediately to avoid capturing Project references
+val eafMigrationsPath: String = rootProject.projectDir.resolve("eaf/eaf-eventsourcing/src/main/resources/db/migration").absolutePath
+val dvmmMigrationsPath: String = projectDir.resolve("src/main/resources/db/migration").absolutePath
+val jooqOutputDir: String = layout.buildDirectory.dir("generated-sources/jooq").get().asFile.absolutePath
 
 // Custom task that:
 // 1. Starts a PostgreSQL Testcontainer
@@ -113,15 +115,17 @@ val generateJooqWithTestcontainers by tasks.registering {
     group = "jooq"
     description = "Generate jOOQ code using Testcontainers PostgreSQL + Flyway migrations"
 
-    // Mark as incompatible with configuration cache (uses Testcontainers at execution time)
-    notCompatibleWithConfigurationCache("Uses Testcontainers which manages Docker containers")
-
     // Track migration files as inputs for up-to-date checking
     inputs.files(
         fileTree(eafMigrationsPath) { include("*.sql") },
         fileTree(dvmmMigrationsPath) { include("*.sql") }
     )
-    outputs.dir("${layout.buildDirectory.get()}/generated-sources/jooq")
+    outputs.dir(jooqOutputDir)
+
+    // Use @Input properties to pass configuration-cache-compatible values to doLast
+    val eafPath = eafMigrationsPath
+    val dvmmPath = dvmmMigrationsPath
+    val outputDir = jooqOutputDir
 
     doLast {
         // Start PostgreSQL container (uses Testcontainers default random credentials)
@@ -130,20 +134,20 @@ val generateJooqWithTestcontainers by tasks.registering {
             .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))  // Faster I/O
 
         postgres.start()
-        logger.lifecycle("PostgreSQL container started: ${postgres.jdbcUrl}")
+        println("PostgreSQL container started: ${postgres.jdbcUrl}")
 
         try {
             // Run Flyway migrations from both locations
             val flyway = org.flywaydb.core.Flyway.configure()
                 .dataSource(postgres.jdbcUrl, postgres.username, postgres.password)
                 .locations(
-                    "filesystem:$eafMigrationsPath",
-                    "filesystem:$dvmmMigrationsPath"
+                    "filesystem:$eafPath",
+                    "filesystem:$dvmmPath"
                 )
                 .load()
 
             val result = flyway.migrate()
-            logger.lifecycle("Flyway applied ${result.migrationsExecuted} migrations")
+            println("Flyway applied ${result.migrationsExecuted} migrations")
 
             // Generate jOOQ code from the migrated database
             val jooqConfig = org.jooq.meta.jaxb.Configuration()
@@ -186,16 +190,16 @@ val generateJooqWithTestcontainers by tasks.registering {
                         .withTarget(
                             org.jooq.meta.jaxb.Target()
                                 .withPackageName("de.acci.dvmm.infrastructure.jooq")
-                                .withDirectory("${layout.buildDirectory.get()}/generated-sources/jooq")
+                                .withDirectory(outputDir)
                         )
                 )
 
             org.jooq.codegen.GenerationTool.generate(jooqConfig)
-            logger.lifecycle("jOOQ code generation complete")
+            println("jOOQ code generation complete")
 
         } finally {
             postgres.stop()
-            logger.lifecycle("PostgreSQL container stopped")
+            println("PostgreSQL container stopped")
         }
     }
 }
@@ -209,7 +213,7 @@ tasks.named("compileKotlin") {
 sourceSets {
     main {
         kotlin {
-            srcDir("${layout.buildDirectory.get()}/generated-sources/jooq")
+            srcDir(jooqOutputDir)
         }
     }
 }
