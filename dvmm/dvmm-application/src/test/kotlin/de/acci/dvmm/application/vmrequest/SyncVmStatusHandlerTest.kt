@@ -177,7 +177,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -198,7 +202,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -226,7 +234,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -245,7 +257,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -276,7 +292,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -302,7 +322,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -325,7 +349,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -346,7 +374,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -371,7 +403,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then
@@ -388,7 +424,11 @@ class SyncVmStatusHandlerTest {
 
             // When
             val result = handler.handle(
-                SyncVmStatusCommand(testTenantId, testRequestId, testUserId)
+                SyncVmStatusCommand(
+                    tenantId = testTenantId,
+                    requestId = testRequestId,
+                    userId = testUserId
+                )
             )
 
             // Then

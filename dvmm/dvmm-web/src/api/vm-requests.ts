@@ -505,6 +505,12 @@ export interface TimelineEvent {
 }
 
 /**
+ * VM power state from VMware vSphere.
+ * Maps to VCF SDK 9.0 VirtualMachinePowerState enum (UPPER_SNAKE_CASE).
+ */
+export type VmPowerState = 'POWERED_ON' | 'POWERED_OFF' | 'SUSPENDED' | 'UNKNOWN'
+
+/**
  * VM runtime details for provisioned VMs.
  * Story 3-7: Shows IP address, hostname, power state, and other runtime info.
  */
@@ -515,8 +521,8 @@ export interface VmRuntimeDetails {
   ipAddress: string | null
   /** Guest hostname from VMware Tools */
   hostname: string | null
-  /** VM power state: POWERED_ON, POWERED_OFF, SUSPENDED */
-  powerState: string | null
+  /** VM power state from vSphere */
+  powerState: VmPowerState | null
   /** Detected guest OS from VMware Tools */
   guestOs: string | null
   /** ISO timestamp of last status sync from vSphere */
@@ -671,7 +677,7 @@ export async function getProvisioningProgress(
 export interface SyncVmStatusResponse {
   type: 'synced'
   requestId: string
-  powerState: string
+  powerState: VmPowerState
   ipAddress: string | null
   message: string
 }

@@ -82,9 +82,17 @@ export function RequestDetail() {
         toast.error('Unable to connect to vSphere', {
           description: 'Please try again later.',
         })
+      } else if (err.status === 404) {
+        toast.error('VM request not found', {
+          description: 'This VM request may have been deleted.',
+        })
       } else if (err.status === 409 && isNotProvisionedError(err.body)) {
         toast.error('VM not yet provisioned', {
           description: 'Status sync is only available for provisioned VMs.',
+        })
+      } else if (err.status === 500) {
+        toast.error('Failed to update VM status', {
+          description: 'An error occurred while saving the status. Please try again.',
         })
       } else {
         toast.error('Failed to refresh VM status', {
