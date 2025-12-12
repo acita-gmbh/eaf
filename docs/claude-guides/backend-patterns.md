@@ -29,7 +29,17 @@ fun process(userId: UserId, tenantId: TenantId) { }
 process(tenantId, userId)  // Compile error! Type mismatch
 ```
 
-Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers. Validate inputs at construction boundaries to ensure value objects never hold invalid state.
+Value classes are inlined at runtime (no object allocation) but enforce type safety at compile time. Use them for all domain identifiers. Validate inputs at construction boundaries to ensure value objects never hold invalid state:
+
+```kotlin
+@JvmInline
+public value class VmName(public val value: String) {
+    init {
+        require(value.isNotBlank()) { "VM name cannot be blank" }
+        require(value.length <= 80) { "VM name exceeds 80 characters" }
+    }
+}
+```
 
 ## MockK Unit Testing
 
@@ -124,6 +134,8 @@ private val limitedIo = Dispatchers.IO.limitedParallelism(64)
 **Use `supervisorScope` when child failures should NOT cancel siblings.**
 
 ```kotlin
+import kotlin.coroutines.cancellation.CancellationException
+
 // ❌ coroutineScope - one failure cancels all children
 suspend fun notifyAll(users: List<User>) = coroutineScope {
     users.forEach { user ->
@@ -181,16 +193,23 @@ Key benefits:
 
 ```kotlin
 import app.cash.turbine.test
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 
-@Test
-fun `should emit progress updates`() = runTest {
-    val service = ProvisioningProgressService()
+class ProvisioningProgressServiceTest {
+    private val testDispatcher = StandardTestDispatcher()
 
-    service.progressFlow(vmRequestId).test {
-        assertEquals(VmProvisioningStage.CLONING, awaitItem().stage)
-        assertEquals(VmProvisioningStage.CUSTOMIZING, awaitItem().stage)
-        assertEquals(VmProvisioningStage.READY, awaitItem().stage)
-        awaitComplete()
+    @Test
+    fun `should emit progress updates`() = runTest(testDispatcher) {
+        // Service uses injectable dispatcher (see Dispatcher Injection section)
+        val service = ProvisioningProgressService(ioDispatcher = testDispatcher)
+
+        service.progressFlow(vmRequestId).test {
+            assertEquals(VmProvisioningStage.CLONING, awaitItem().stage)
+            assertEquals(VmProvisioningStage.CUSTOMIZING, awaitItem().stage)
+            assertEquals(VmProvisioningStage.READY, awaitItem().stage)
+            awaitComplete()
+        }
     }
 }
 ```
