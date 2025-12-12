@@ -9,7 +9,7 @@ import de.acci.eaf.eventsourcing.projection.PagedResponse
 import de.acci.dcm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -79,7 +79,7 @@ class VmRequestReadRepositoryAdapterTest {
     inner class FindByRequesterId {
 
         @Test
-        fun `maps projection to VmRequestSummary correctly`() = runBlocking {
+        fun `maps projection to VmRequestSummary correctly`() = runTest {
             // Given: A projection in the repository
             val projection = createTestProjection(
                 vmName = "web-server-01",
@@ -122,7 +122,7 @@ class VmRequestReadRepositoryAdapterTest {
         }
 
         @Test
-        fun `maps all VmSize values correctly`() = runBlocking {
+        fun `maps all VmSize values correctly`() = runTest {
             // Given: Projections with all size values
             val sizes = listOf("S", "M", "L", "XL")
             val projections = sizes.mapIndexed { index, size ->
@@ -154,7 +154,7 @@ class VmRequestReadRepositoryAdapterTest {
         }
 
         @Test
-        fun `maps all VmRequestStatus values correctly`() = runBlocking {
+        fun `maps all VmRequestStatus values correctly`() = runTest {
             // Given: Projections with various statuses
             val statuses = listOf("PENDING", "APPROVED", "REJECTED", "CANCELLED", "PROVISIONING", "READY", "FAILED")
             val projections = statuses.map { status ->
@@ -190,7 +190,7 @@ class VmRequestReadRepositoryAdapterTest {
         }
 
         @Test
-        fun `returns empty list when no projections found`() = runBlocking {
+        fun `returns empty list when no projections found`() = runTest {
             // Given: No projections in repository
             val pageRequest = PageRequest(page = 0, size = 10)
             coEvery {
@@ -211,7 +211,7 @@ class VmRequestReadRepositoryAdapterTest {
         }
 
         @Test
-        fun `preserves pagination metadata`() = runBlocking {
+        fun `preserves pagination metadata`() = runTest {
             // Given: Paginated results
             val projections = listOf(createTestProjection())
             val pageRequest = PageRequest(page = 2, size = 25)
@@ -234,7 +234,7 @@ class VmRequestReadRepositoryAdapterTest {
         }
 
         @Test
-        fun `converts timestamps from OffsetDateTime to Instant`() = runBlocking {
+        fun `converts timestamps from OffsetDateTime to Instant`() = runTest {
             // Given: A projection with specific timestamps
             val createdAt = OffsetDateTime.parse("2025-01-15T10:30:00Z")
             val updatedAt = OffsetDateTime.parse("2025-01-15T14:45:00Z")

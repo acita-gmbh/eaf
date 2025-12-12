@@ -14,7 +14,7 @@ import de.acci.eaf.core.types.UserId
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -52,7 +52,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenVmProvisioned {
 
         @Test
-        fun `returns success with VM status details`() = runBlocking {
+        fun `returns success with VM status details`() = runTest {
             // Given
             val vmInfo = VmInfo(
                 id = testVmwareVmId,
@@ -107,7 +107,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `handles VM with no IP address detected`() = runBlocking {
+        fun `handles VM with no IP address detected`() = runTest {
             // Given: VM is powered on but VMware Tools hasn't detected IP yet
             val vmInfo = VmInfo(
                 id = testVmwareVmId,
@@ -149,7 +149,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `handles powered off VM`() = runBlocking {
+        fun `handles powered off VM`() = runTest {
             // Given
             val vmInfo = VmInfo(
                 id = testVmwareVmId,
@@ -195,7 +195,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenVmNotProvisioned {
 
         @Test
-        fun `returns NotProvisioned error`() = runBlocking {
+        fun `returns NotProvisioned error`() = runTest {
             // Given: No vmwareVmId in projection (VM not yet provisioned)
             coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns null
@@ -222,7 +222,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenVsphereQueryFails {
 
         @Test
-        fun `returns HypervisorError when VM not found in vSphere`() = runBlocking {
+        fun `returns HypervisorError when VM not found in vSphere`() = runTest {
             // Given
             coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
@@ -248,7 +248,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `returns HypervisorError on connection failure`() = runBlocking {
+        fun `returns HypervisorError on connection failure`() = runTest {
             // Given
             coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } returns testVmwareVmId
@@ -275,7 +275,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenProjectionUpdateFails {
 
         @Test
-        fun `returns NotFound when no rows updated`() = runBlocking {
+        fun `returns NotFound when no rows updated`() = runTest {
             // Given: vSphere returns VM info but projection update affects 0 rows (request deleted?)
             val vmInfo = VmInfo(
                 id = testVmwareVmId,
@@ -305,7 +305,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `returns UpdateFailure on database exception`() = runBlocking {
+        fun `returns UpdateFailure on database exception`() = runTest {
             // Given
             val vmInfo = VmInfo(
                 id = testVmwareVmId,
@@ -342,7 +342,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenProjectionLookupFails {
 
         @Test
-        fun `returns UpdateFailure when getRequesterId throws exception`() = runBlocking {
+        fun `returns UpdateFailure when getRequesterId throws exception`() = runTest {
             // Given: Database error during ownership lookup
             coEvery { projectionPort.getRequesterId(testRequestId) } throws
                 RuntimeException("Database connection refused")
@@ -366,7 +366,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `returns UpdateFailure when getVmwareVmId throws exception`() = runBlocking {
+        fun `returns UpdateFailure when getVmwareVmId throws exception`() = runTest {
             // Given: Ownership check passes but VM ID lookup fails
             coEvery { projectionPort.getRequesterId(testRequestId) } returns testUserId
             coEvery { projectionPort.getVmwareVmId(testRequestId) } throws
@@ -396,7 +396,7 @@ class SyncVmStatusHandlerTest {
     inner class WhenUserNotAuthorized {
 
         @Test
-        fun `returns Forbidden when user is not the requester`() = runBlocking {
+        fun `returns Forbidden when user is not the requester`() = runTest {
             // Given: Request exists but was created by a different user
             val differentUserId = UserId(UUID.randomUUID())
             coEvery { projectionPort.getRequesterId(testRequestId) } returns differentUserId
@@ -418,7 +418,7 @@ class SyncVmStatusHandlerTest {
         }
 
         @Test
-        fun `returns NotFound when request does not exist`() = runBlocking {
+        fun `returns NotFound when request does not exist`() = runTest {
             // Given: Request doesn't exist (getRequesterId returns null)
             coEvery { projectionPort.getRequesterId(testRequestId) } returns null
 

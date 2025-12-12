@@ -16,7 +16,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -48,7 +48,7 @@ class VmRequestProjectionUpdaterAdapterTest {
     inner class Insert {
 
         @Test
-        fun `inserts projection with correct field mappings and returns success`() = runBlocking {
+        fun `inserts projection with correct field mappings and returns success`() = runTest {
             // Given: A new projection to insert
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
@@ -100,7 +100,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `maps VmSize S correctly`() = runBlocking {
+        fun `maps VmSize S correctly`() = runTest {
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
                 tenantId = testTenantId,
@@ -129,7 +129,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `maps VmSize XL correctly`() = runBlocking {
+        fun `maps VmSize XL correctly`() = runTest {
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
                 tenantId = testTenantId,
@@ -158,7 +158,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `returns DatabaseError on insert failure`() = runBlocking {
+        fun `returns DatabaseError on insert failure`() = runTest {
             // Given: Insert will fail
             val projection = NewVmRequestProjection(
                 id = testVmRequestId,
@@ -194,7 +194,7 @@ class VmRequestProjectionUpdaterAdapterTest {
     inner class UpdateStatus {
 
         @Test
-        fun `updates to CANCELLED status and returns success`() = runBlocking {
+        fun `updates to CANCELLED status and returns success`() = runTest {
             // Given: A status update to CANCELLED
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -236,7 +236,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `updates to APPROVED status with approver details`() = runBlocking {
+        fun `updates to APPROVED status with approver details`() = runTest {
             // Given: A status update to APPROVED
             val approverId = UserId(UUID.randomUUID())
             val update = VmRequestStatusUpdate(
@@ -278,7 +278,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `updates to REJECTED status with rejector details and reason`() = runBlocking {
+        fun `updates to REJECTED status with rejector details and reason`() = runTest {
             // Given: A status update to REJECTED
             val rejectorId = UserId(UUID.randomUUID())
             val update = VmRequestStatusUpdate(
@@ -321,7 +321,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `returns NotFound when projection not found`() = runBlocking {
+        fun `returns NotFound when projection not found`() = runTest {
             // Given: Update returns 0 rows
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -344,7 +344,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `returns DatabaseError on update failure`() = runBlocking {
+        fun `returns DatabaseError on update failure`() = runTest {
             // Given: Update will fail
             val update = VmRequestStatusUpdate(
                 id = testVmRequestId,
@@ -368,7 +368,7 @@ class VmRequestProjectionUpdaterAdapterTest {
         }
 
         @Test
-        fun `updates to all valid statuses`() = runBlocking {
+        fun `updates to all valid statuses`() = runTest {
             // Given: All possible status values
             val statuses = listOf(
                 VmRequestStatus.PENDING,

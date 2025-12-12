@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -23,17 +24,19 @@ import java.util.UUID
  *
  * @property dsl jOOQ DSLContext for database operations
  * @property objectMapper Jackson ObjectMapper for JSON serialization
+ * @property ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class PostgresEventStore(
     private val dsl: DSLContext,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : EventStore {
 
     override suspend fun append(
         aggregateId: UUID,
         events: List<DomainEvent>,
         expectedVersion: Long
-    ): Result<Long, EventStoreError> = withContext(Dispatchers.IO) {
+    ): Result<Long, EventStoreError> = withContext(ioDispatcher) {
         if (events.isEmpty()) {
             return@withContext expectedVersion.success()
         }
@@ -75,7 +78,7 @@ public class PostgresEventStore(
         loadFrom(aggregateId, fromVersion = 1)
 
     override suspend fun loadFrom(aggregateId: UUID, fromVersion: Long): List<StoredEvent> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.fetch(
                 """
                 SELECT id, aggregate_id, aggregate_type, event_type, payload, metadata, version, created_at
