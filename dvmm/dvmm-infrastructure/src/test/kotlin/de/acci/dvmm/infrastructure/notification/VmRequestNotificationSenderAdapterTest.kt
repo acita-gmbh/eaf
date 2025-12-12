@@ -471,7 +471,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -503,7 +502,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -538,7 +536,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -577,7 +574,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -611,7 +607,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = null,  // IP not yet assigned
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -646,7 +641,6 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )

@@ -54,7 +54,7 @@ so that I can start using it immediately without constantly checking the portal.
         val projectName: String,
         val ipAddress: String?,
         val hostname: String,
-        val guestOs: String?,
+        // val guestOs: String?, // Removed (dead code)
         val provisioningDurationMinutes: Long,
         val portalLink: String
     )
@@ -67,22 +67,22 @@ so that I can start using it immediately without constantly checking the portal.
   - [x] Use template name `vm-ready`
   - [x] Map notification fields to template context:
     - `vmName`, `projectName`, `ipAddress`, `hostname`
-    - `connectionCommand` (computed from guestOs + ipAddress)
+    - `connectionCommand` (SSH and RDP)
     - `portalLink`, `provisioningDuration`
 
 - [x] **Task 4: Add Success Notification to TriggerProvisioningHandler (AC: 3.8.1)**
   - [x] Add `sendSuccessNotification()` private method following `sendFailureNotifications()` pattern
   - [x] Call from `emitSuccess()` after Step 3 (timeline event)
-  - [x] Query `vmRequestReadRepository.findById()` for requester email, guestOs, createdAt
+  - [x] Query `vmRequestReadRepository.findById()` for requester email, createdAt (guestOs not available in summary)
   - [x] Calculate provisioning duration: `Duration.between(requestDetails.createdAt, Instant.now())`
   - [x] Build portal link: `${baseUrl}/requests/${requestId}`
-  - [x] Determine connection command based on guestOs (Linux -> SSH, Windows -> RDP)
+  - [x] Provide both SSH and RDP commands (OS agnostic)
   - [x] Log success/failure but do NOT fail the handler on email errors
 
 - [x] **Task 5: Unit & Integration Tests (AC: 3.8.1)**
   - [x] `TriggerProvisioningHandlerTest` - verify `sendVmReadyNotification()` called on success
   - [x] `VmRequestNotificationSenderAdapterTest` - verify template rendering with new method
-  - [x] Verify connection command logic: SSH for "Linux*", RDP for "Windows*"
+  - [x] Verify connection command logic: SSH for "Linux*", RDP for "Windows*" (Updated to provide both)
 
 ### Frontend Tasks
 
@@ -210,3 +210,7 @@ Claude Opus 4.5 (via Claude Code)
 4. **LOW: Hardcoded SSH username** - Changed to `ssh <username>@ip` with note about template-specific usernames
 5. **LOW: Missing requestId** - Added requestId to vm-ready template context for consistency
 6. **LOW: Missing error test** - Added TemplateError mapping test for sendVmReadyNotification
+
+### Code Review Fixes (Amelia)
+1. **HIGH: Task 4 False Claim** - Removed claim about querying `guestOs` since it's not available in summary.
+2. **MEDIUM: Dead Code** - Removed unused `guestOs` field from `VmReadyNotification` and updated handlers/tests.

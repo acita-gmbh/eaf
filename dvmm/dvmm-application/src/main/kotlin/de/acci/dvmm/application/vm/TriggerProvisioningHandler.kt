@@ -695,7 +695,6 @@ public class TriggerProvisioningHandler(
                 projectName = requestDetails.projectName,
                 ipAddress = provisioningResult.ipAddress,
                 hostname = provisionedHostname,
-                guestOs = null,
                 provisioningDurationMinutes = provisioningDurationMinutes,
                 portalLink = portalLink
             )
