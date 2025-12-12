@@ -944,5 +944,67 @@ class TriggerProvisioningHandlerTest {
             coVerify(exactly = 1) { mockNotificationSender.sendVmReadyNotification(any()) }
             assertEquals("#", notificationSlot.captured.portalLink)
         }
+
+        @Test
+        fun `should continue successfully when notification fails`() = runTest {
+            // Given - notification will fail but handler should complete successfully
+            val tenantId = TenantId.generate()
+            val userId = UserId.generate()
+            val event = createEvent(tenantId, userId)
+            val config = createConfig(tenantId, userId)
+            val provisioningResult = createProvisioningResult()
+            val projectInfo = createVmRequestSummary(
+                id = event.requestId,
+                projectName = "My Project",
+                requesterEmail = "user@example.com"
+            )
+
+            coEvery { configPort.findByTenantId(tenantId) } returns config
+            coEvery { vmRequestReadRepository.findById(event.requestId) } returns projectInfo
+            coEvery { provisioningService.createVmWithRetry(any(), any(), any()) } returns provisioningResult.success()
+
+            // Mock event store for success path
+            val vmStoredEvent = createStoredEvent(event.aggregateId.value, "VmProvisioningStarted")
+            coEvery { eventStore.load(event.aggregateId.value) } returns listOf(vmStoredEvent)
+            coEvery { vmEventDeserializer.deserialize(vmStoredEvent) } returns event
+            coEvery { eventStore.append(event.aggregateId.value, any(), any()) } returns 2L.success()
+
+            val requestStoredEvent = createStoredEvent(event.requestId.value, "VmRequestProvisioningStarted")
+            val provisioningStartedEvent = createVmRequestProvisioningStartedEvent(event.requestId, tenantId, userId)
+            coEvery { eventStore.load(event.requestId.value) } returns listOf(requestStoredEvent)
+            coEvery { vmRequestEventDeserializer.deserialize(requestStoredEvent) } returns provisioningStartedEvent
+            coEvery { eventStore.append(event.requestId.value, any(), any()) } returns 2L.success()
+
+            coEvery { timelineUpdater.addTimelineEvent(any()) } returns Unit.success()
+
+            // Mock notification sender that returns failure
+            val mockNotificationSender = mockk<VmRequestNotificationSender>()
+            coEvery { mockNotificationSender.sendVmReadyNotification(any()) } returns de.acci.eaf.core.result.Result.Failure(
+                de.acci.dvmm.application.vmrequest.VmRequestNotificationError.SendFailure("SMTP server unavailable")
+            )
+
+            val handler = TriggerProvisioningHandler(
+                provisioningService = provisioningService,
+                configPort = configPort,
+                eventStore = eventStore,
+                vmEventDeserializer = vmEventDeserializer,
+                vmRequestEventDeserializer = vmRequestEventDeserializer,
+                timelineUpdater = timelineUpdater,
+                vmRequestReadRepository = vmRequestReadRepository,
+                progressRepository = progressRepository,
+                notificationSender = mockNotificationSender,
+                portalBaseUrl = "https://dvmm.example.com"
+            )
+
+            // When - should not throw despite notification failure
+            handler.onVmProvisioningStarted(event)
+
+            // Then - all events were still appended successfully
+            coVerify(exactly = 1) { eventStore.append(event.aggregateId.value, any(), any()) }
+            coVerify(exactly = 1) { eventStore.append(event.requestId.value, any(), any()) }
+            coVerify(exactly = 1) { timelineUpdater.addTimelineEvent(any()) }
+            // Notification was attempted
+            coVerify(exactly = 1) { mockNotificationSender.sendVmReadyNotification(any()) }
+        }
     }
 }

@@ -528,7 +528,7 @@ class VmRequestNotificationSenderAdapterTest {
         }
 
         @Test
-        fun `passes correct context to notification service`() = runTest {
+        fun `passes correct context to notification service including requestId`() = runTest {
             // Given
             val notification = VmReadyNotification(
                 requestId = testRequestId,
@@ -557,6 +557,7 @@ class VmRequestNotificationSenderAdapterTest {
             adapter.sendVmReadyNotification(notification)
 
             // Then
+            assertEquals(testRequestId.value.toString(), contextSlot.captured["requestId"])
             assertEquals(testVmName, contextSlot.captured["vmName"])
             assertEquals(testProjectName, contextSlot.captured["projectName"])
             assertEquals("192.168.1.100", contextSlot.captured["ipAddress"])
@@ -566,8 +567,8 @@ class VmRequestNotificationSenderAdapterTest {
         }
 
         @Test
-        fun `generates SSH connection command for Linux guest OS`() = runTest {
-            // Given
+        fun `includes both SSH and RDP connection commands`() = runTest {
+            // Given - email shows both commands so user can choose based on their OS
             val notification = VmReadyNotification(
                 requestId = testRequestId,
                 tenantId = testTenantId,
@@ -576,7 +577,7 @@ class VmRequestNotificationSenderAdapterTest {
                 projectName = testProjectName,
                 ipAddress = "192.168.1.100",
                 hostname = "MYPR-web-server-01",
-                guestOs = "Ubuntu 22.04.3 LTS (64-bit)",
+                guestOs = null,
                 provisioningDurationMinutes = 5,
                 portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
             )
@@ -594,78 +595,13 @@ class VmRequestNotificationSenderAdapterTest {
             // When
             adapter.sendVmReadyNotification(notification)
 
-            // Then
-            assertEquals("ssh user@192.168.1.100", contextSlot.captured["connectionCommand"])
+            // Then - both commands provided for user to choose
+            assertEquals("ssh <username>@192.168.1.100", contextSlot.captured["sshCommand"])
+            assertEquals("mstsc /v:192.168.1.100", contextSlot.captured["rdpCommand"])
         }
 
         @Test
-        fun `generates RDP connection command for Windows guest OS`() = runTest {
-            // Given
-            val notification = VmReadyNotification(
-                requestId = testRequestId,
-                tenantId = testTenantId,
-                requesterEmail = testEmail,
-                vmName = testVmName,
-                projectName = testProjectName,
-                ipAddress = "192.168.1.100",
-                hostname = "MYPR-web-server-01",
-                guestOs = "Microsoft Windows Server 2022 (64-bit)",
-                provisioningDurationMinutes = 5,
-                portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
-            )
-            val contextSlot = slot<Map<String, Any>>()
-            coEvery {
-                notificationService.sendEmail(
-                    tenantId = any(),
-                    recipient = any(),
-                    subject = any(),
-                    templateName = any(),
-                    context = capture(contextSlot)
-                )
-            } returns Unit.success()
-
-            // When
-            adapter.sendVmReadyNotification(notification)
-
-            // Then
-            assertEquals("mstsc /v:192.168.1.100", contextSlot.captured["connectionCommand"])
-        }
-
-        @Test
-        fun `defaults to SSH when guest OS is null`() = runTest {
-            // Given
-            val notification = VmReadyNotification(
-                requestId = testRequestId,
-                tenantId = testTenantId,
-                requesterEmail = testEmail,
-                vmName = testVmName,
-                projectName = testProjectName,
-                ipAddress = "192.168.1.100",
-                hostname = "MYPR-web-server-01",
-                guestOs = null,  // Guest OS not detected yet
-                provisioningDurationMinutes = 5,
-                portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
-            )
-            val contextSlot = slot<Map<String, Any>>()
-            coEvery {
-                notificationService.sendEmail(
-                    tenantId = any(),
-                    recipient = any(),
-                    subject = any(),
-                    templateName = any(),
-                    context = capture(contextSlot)
-                )
-            } returns Unit.success()
-
-            // When
-            adapter.sendVmReadyNotification(notification)
-
-            // Then
-            assertEquals("ssh user@192.168.1.100", contextSlot.captured["connectionCommand"])
-        }
-
-        @Test
-        fun `handles pending IP address in connection command`() = runTest {
+        fun `handles pending IP address in connection commands`() = runTest {
             // Given
             val notification = VmReadyNotification(
                 requestId = testRequestId,
@@ -694,8 +630,47 @@ class VmRequestNotificationSenderAdapterTest {
             adapter.sendVmReadyNotification(notification)
 
             // Then
-            assertEquals("ssh user@pending", contextSlot.captured["connectionCommand"])
+            assertEquals("ssh <username>@pending", contextSlot.captured["sshCommand"])
+            assertEquals("mstsc /v:pending", contextSlot.captured["rdpCommand"])
             assertEquals("Pending assignment", contextSlot.captured["ipAddress"])
+        }
+
+        @Test
+        fun `maps TemplateError from notification service`() = runTest {
+            // Given
+            val notification = VmReadyNotification(
+                requestId = testRequestId,
+                tenantId = testTenantId,
+                requesterEmail = testEmail,
+                vmName = testVmName,
+                projectName = testProjectName,
+                ipAddress = "192.168.1.100",
+                hostname = "MYPR-web-server-01",
+                guestOs = null,
+                provisioningDurationMinutes = 5,
+                portalLink = "https://dvmm.example.com/requests/${testRequestId.value}"
+            )
+            coEvery {
+                notificationService.sendEmail(
+                    tenantId = any(),
+                    recipient = any(),
+                    subject = any(),
+                    templateName = any(),
+                    context = any()
+                )
+            } returns NotificationError.TemplateError(
+                templateName = "vm-ready",
+                message = "Template not found"
+            ).failure()
+
+            // When
+            val result = adapter.sendVmReadyNotification(notification)
+
+            // Then
+            assertTrue(result is Result.Failure)
+            val error = (result as Result.Failure).error
+            assertTrue(error is VmRequestNotificationError.TemplateError)
+            assertEquals("vm-ready", (error as VmRequestNotificationError.TemplateError).templateName)
         }
     }
 }

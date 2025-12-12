@@ -194,3 +194,14 @@ Claude Opus 4.5 (via Claude Code)
 **Test Files:**
 - `dvmm/dvmm-application/src/test/kotlin/de/acci/dvmm/application/vm/TriggerProvisioningHandlerTest.kt` - Added success notification tests
 - `dvmm/dvmm-infrastructure/src/test/kotlin/de/acci/dvmm/infrastructure/notification/VmRequestNotificationSenderAdapterTest.kt` - Added VM ready notification tests
+
+### Code Review Fixes (Claude Opus 4.5)
+
+**Issues Addressed:**
+
+1. **HIGH: Portal link fallback** - Template now conditionally hides portal link section when URL is "#"
+2. **MEDIUM: Wrong connection command** - Email now shows BOTH SSH and RDP commands instead of guessing OS
+3. **MEDIUM: Notification failure resilience** - Added test verifying handler continues when notification fails
+4. **LOW: Hardcoded SSH username** - Changed to `ssh <username>@ip` with note about template-specific usernames
+5. **LOW: Missing requestId** - Added requestId to vm-ready template context for consistency
+6. **LOW: Missing error test** - Added TemplateError mapping test for sendVmReadyNotification

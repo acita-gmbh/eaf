@@ -185,17 +185,16 @@ public class VmRequestNotificationSenderAdapter(
     override suspend fun sendVmReadyNotification(
         notification: VmReadyNotification
     ): Result<Unit, VmRequestNotificationError> {
-        val connectionCommand = determineConnectionCommand(
-            guestOs = notification.guestOs,
-            ipAddress = notification.ipAddress
-        )
+        val ip = notification.ipAddress ?: "pending"
 
         val context = mapOf(
+            "requestId" to notification.requestId.value.toString(),
             "vmName" to notification.vmName,
             "projectName" to notification.projectName,
             "ipAddress" to (notification.ipAddress ?: "Pending assignment"),
             "hostname" to notification.hostname,
-            "connectionCommand" to connectionCommand,
+            "sshCommand" to "ssh <username>@$ip",
+            "rdpCommand" to "mstsc /v:$ip",
             "portalLink" to notification.portalLink,
             "provisioningDuration" to notification.provisioningDurationMinutes.toString()
         )
@@ -214,21 +213,6 @@ public class VmRequestNotificationSenderAdapter(
             templateName = TEMPLATE_VM_READY,
             context = context
         ).mapToNotificationError(TEMPLATE_VM_READY)
-    }
-
-    /**
-     * Determine the appropriate connection command based on guest OS.
-     *
-     * @param guestOs The guest operating system (e.g., "Windows Server 2019", "Ubuntu Linux")
-     * @param ipAddress The IP address of the VM
-     * @return SSH command for Linux/Unix, RDP command for Windows
-     */
-    private fun determineConnectionCommand(guestOs: String?, ipAddress: String?): String {
-        val ip = ipAddress ?: "pending"
-        return when {
-            guestOs?.contains("Windows", ignoreCase = true) == true -> "mstsc /v:$ip"
-            else -> "ssh user@$ip"
-        }
     }
 
     /**

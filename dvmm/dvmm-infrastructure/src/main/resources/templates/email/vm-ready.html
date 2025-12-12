@@ -140,11 +140,21 @@
 
         <div class="connection-box">
             <h3>Connect to Your VM</h3>
-            <p style="margin: 0 0 10px 0; color: #166534; font-size: 0.875rem;">Use the following command to connect:</p>
-            <div class="connection-command" th:text="${connectionCommand}">ssh user@192.168.1.100</div>
+            <p style="margin: 0 0 10px 0; color: #166534; font-size: 0.875rem;">Use one of the following commands to connect:</p>
+            <div style="margin-bottom: 8px;">
+                <span style="color: #166534; font-size: 0.75rem; font-weight: 600;">Linux/Unix (SSH):</span>
+                <div class="connection-command" th:text="${sshCommand}">ssh &lt;username&gt;@192.168.1.100</div>
+            </div>
+            <div>
+                <span style="color: #166534; font-size: 0.75rem; font-weight: 600;">Windows (RDP):</span>
+                <div class="connection-command" th:text="${rdpCommand}">mstsc /v:192.168.1.100</div>
+            </div>
+            <p style="margin: 10px 0 0 0; color: #6b7280; font-size: 0.75rem;">
+                <em>Note: The SSH username depends on your VM template (e.g., ubuntu, admin, root).</em>
+            </p>
         </div>
 
-        <div class="info-box">
+        <div class="info-box" th:if="${portalLink != '#'}">
             <h3>View VM Details</h3>
             <p style="margin: 0; color: #1e3a8a;">
                 <a th:href="${portalLink}">View your VM in the portal</a> to see detailed information, resource usage, and management options.
