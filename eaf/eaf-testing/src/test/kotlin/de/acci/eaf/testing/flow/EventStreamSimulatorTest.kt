@@ -32,6 +32,12 @@ import org.junit.jupiter.api.Test
 @DisplayName("EventStreamSimulator - Flow Testing Reference")
 class EventStreamSimulatorTest {
 
+    private companion object {
+        const val MIN_STEPS = 1
+        const val MAX_STEPS = 100
+        const val MAX_PROGRESS = 100
+    }
+
     @Test
     fun `should emit events with virtual time control`() = runTest {
         // Given: A Flow that emits 3 events with 100ms delays
@@ -95,16 +101,16 @@ class EventStreamSimulatorTest {
 
     // Helper function to create a progress stream
     private fun simulateProgress(steps: Int, stepDelayMs: Long): Flow<Int> = flow {
-        require(steps in 1..100) { "Steps must be between 1 and 100" }
+        require(steps in MIN_STEPS..MAX_STEPS) { "Steps must be between $MIN_STEPS and $MAX_STEPS" }
         
         emit(0) // Initial progress
         
-        val increment = 100 / steps
+        val increment = MAX_PROGRESS / steps
         var currentProgress = 0
         
         repeat(steps) {
             delay(stepDelayMs)
-            currentProgress = minOf(currentProgress + increment, 100)
+            currentProgress = minOf(currentProgress + increment, MAX_PROGRESS)
             emit(currentProgress)
         }
     }
