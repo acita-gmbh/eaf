@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.beans.factory.BeanCreationException
 import org.springframework.mail.javamail.JavaMailSender
 import org.thymeleaf.ITemplateEngine
 
@@ -60,7 +61,7 @@ class EafNotificationAutoConfigurationTest {
         }
 
         @Test
-        fun `throws IllegalStateException for invalid email address`() {
+        fun `throws BeanCreationException for invalid email address`() {
             // Given
             val mockTemplateEngine: TemplateEngine = mockk()
             val properties = EafNotificationProperties(
@@ -68,8 +69,8 @@ class EafNotificationAutoConfigurationTest {
                 enabled = true
             )
 
-            // When/Then
-            val exception = assertThrows<IllegalStateException> {
+            // When/Then - Spring convention is to throw BeanCreationException for config issues
+            val exception = assertThrows<BeanCreationException> {
                 autoConfig.notificationService(
                     mailSender = mockMailSender,
                     templateEngine = mockTemplateEngine,
@@ -85,7 +86,7 @@ class EafNotificationAutoConfigurationTest {
         }
 
         @Test
-        fun `throws IllegalStateException for empty email address`() {
+        fun `throws BeanCreationException for empty email address`() {
             // Given
             val mockTemplateEngine: TemplateEngine = mockk()
             val properties = EafNotificationProperties(
@@ -93,8 +94,8 @@ class EafNotificationAutoConfigurationTest {
                 enabled = true
             )
 
-            // When/Then
-            val exception = assertThrows<IllegalStateException> {
+            // When/Then - Spring convention is to throw BeanCreationException for config issues
+            val exception = assertThrows<BeanCreationException> {
                 autoConfig.notificationService(
                     mailSender = mockMailSender,
                     templateEngine = mockTemplateEngine,
