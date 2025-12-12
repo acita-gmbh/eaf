@@ -13,6 +13,18 @@ vi.mock('@/hooks/useCancelRequest', () => ({
   })),
 }))
 
+// Mock useSyncVmStatus hook for Story 3-7
+const mockSyncMutate = vi.fn()
+const mockUseSyncVmStatus = vi.hoisted(() =>
+  vi.fn(() => ({
+    mutate: mockSyncMutate,
+    isPending: false,
+  }))
+)
+vi.mock('@/hooks/useSyncVmStatus', () => ({
+  useSyncVmStatus: mockUseSyncVmStatus,
+}))
+
 // Hoisted mocks for useRequestDetail
 const mockRefetch = vi.hoisted(() => vi.fn())
 const mockNavigate = vi.hoisted(() => vi.fn())
@@ -621,6 +633,192 @@ describe('RequestDetail', () => {
       render(<RequestDetail />)
 
       expect(screen.getByTestId('status-badge-failed')).toBeInTheDocument()
+    })
+  })
+
+  describe('Sync VM Status - Story 3-7', () => {
+    const readyRequestData = {
+      ...mockRequestData,
+      status: 'READY' as const,
+      vmDetails: {
+        vmwareVmId: 'vm-12345',
+        ipAddress: '192.168.1.100',
+        hostname: 'web-server-01.local',
+        powerState: 'POWERED_ON',
+        guestOs: 'Ubuntu 22.04',
+        bootTime: '2024-01-01T08:00:00Z',
+        lastSyncedAt: '2024-01-01T12:00:00Z',
+      },
+    }
+
+    beforeEach(() => {
+      mockUseSyncVmStatus.mockReturnValue({
+        mutate: mockSyncMutate,
+        isPending: false,
+      })
+    })
+
+    it('shows success toast when sync succeeds', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      // Capture the onSuccess callback when useSyncVmStatus is called
+      let capturedOnSuccess: (() => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnSuccess = options?.onSuccess
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      // Trigger the success callback
+      capturedOnSuccess?.()
+
+      expect(mockToast.success).toHaveBeenCalledWith('VM status refreshed')
+    })
+
+    it('shows error toast for 502 vSphere error', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      let capturedOnError: ((err: ApiError) => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnError = options?.onError
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      // Trigger the error callback with 502
+      capturedOnError?.(new ApiError(502, 'Bad Gateway', {}))
+
+      expect(mockToast.error).toHaveBeenCalledWith('Unable to connect to vSphere', {
+        description: 'Please try again later.',
+      })
+    })
+
+    it('shows error toast for 404 not found', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      let capturedOnError: ((err: ApiError) => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnError = options?.onError
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      capturedOnError?.(new ApiError(404, 'Not Found', {}))
+
+      expect(mockToast.error).toHaveBeenCalledWith('VM request not found', {
+        description: 'This VM request may have been deleted.',
+      })
+    })
+
+    it('shows error toast for 409 not provisioned', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      let capturedOnError: ((err: ApiError) => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnError = options?.onError
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      capturedOnError?.(new ApiError(409, 'Conflict', { type: 'not_provisioned' }))
+
+      expect(mockToast.error).toHaveBeenCalledWith('VM not yet provisioned', {
+        description: 'Status sync is only available for provisioned VMs.',
+      })
+    })
+
+    it('shows error toast for 500 update failure', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      let capturedOnError: ((err: ApiError) => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnError = options?.onError
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      capturedOnError?.(new ApiError(500, 'Internal Server Error', {}))
+
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to update VM status', {
+        description: 'An error occurred while saving the status. Please try again.',
+      })
+    })
+
+    it('shows generic error toast for unknown errors', async () => {
+      mockUseRequestDetail.mockReturnValue({
+        data: readyRequestData,
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      let capturedOnError: ((err: ApiError) => void) | undefined
+      mockUseSyncVmStatus.mockImplementation((_id, options) => {
+        capturedOnError = options?.onError
+        return {
+          mutate: mockSyncMutate,
+          isPending: false,
+        }
+      })
+
+      render(<RequestDetail />)
+
+      capturedOnError?.(new ApiError(418, "I'm a teapot", {}))
+
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to refresh VM status', {
+        description: "API Error: 418 I'm a teapot",
+      })
     })
   })
 })
