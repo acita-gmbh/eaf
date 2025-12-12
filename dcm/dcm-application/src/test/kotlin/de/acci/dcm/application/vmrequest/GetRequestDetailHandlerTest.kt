@@ -6,7 +6,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -41,7 +41,7 @@ class GetRequestDetailHandlerTest {
     inner class WhenRequestExists {
 
         @Test
-        fun `returns request detail with timeline`() = runBlocking {
+        fun `returns request detail with timeline`() = runTest {
             // Given
             val projection = VmRequestDetailProjection(
                 id = testRequestId,
@@ -94,7 +94,7 @@ class GetRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns request with multiple timeline events in chronological order`() = runBlocking {
+        fun `returns request with multiple timeline events in chronological order`() = runTest {
             // Given
             val projection = VmRequestDetailProjection(
                 id = testRequestId,
@@ -152,7 +152,7 @@ class GetRequestDetailHandlerTest {
     inner class WhenUserIsNotAuthorized {
 
         @Test
-        fun `returns Forbidden error when accessing another user's request`() = runBlocking {
+        fun `returns Forbidden error when accessing another user's request`() = runTest {
             // Given
             val otherUserId = UserId(UUID.randomUUID())
             val projection = VmRequestDetailProjection(
@@ -193,7 +193,7 @@ class GetRequestDetailHandlerTest {
     inner class WhenRequestDoesNotExist {
 
         @Test
-        fun `returns NotFound error`() = runBlocking {
+        fun `returns NotFound error`() = runTest {
             // Given
             coEvery { requestRepository.findById(testRequestId) } returns null
 
@@ -219,7 +219,7 @@ class GetRequestDetailHandlerTest {
     inner class WhenRepositoryThrowsException {
 
         @Test
-        fun `returns QueryFailure error when request repository fails`() = runBlocking {
+        fun `returns QueryFailure error when request repository fails`() = runTest {
             // Given
             coEvery { requestRepository.findById(testRequestId) } throws RuntimeException("Database connection failed")
 
@@ -240,7 +240,7 @@ class GetRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns QueryFailure error when timeline repository fails after auth`() = runBlocking {
+        fun `returns QueryFailure error when timeline repository fails after auth`() = runTest {
             // Given - request exists and user is authorized, but timeline query fails
             val projection = VmRequestDetailProjection(
                 id = testRequestId,

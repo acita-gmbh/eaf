@@ -41,6 +41,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.kotlin.circuitbreaker.executeSuspendFunction
 import jakarta.annotation.PreDestroy
 import jakarta.xml.ws.BindingProvider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -88,7 +89,8 @@ public class VsphereClient(
     @Value("\${dcm.vcenter.ignore-cert:false}")
     private val ignoreCert: Boolean = false,
     @Value("\${dcm.vsphere.timeout-ms:60000}")
-    private val timeoutMs: Long = 60000
+    private val timeoutMs: Long = 60000,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private companion object {
         init {
@@ -99,7 +101,7 @@ public class VsphereClient(
     }
 
     private val logger = KotlinLogging.logger {}
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val circuitBreaker = CircuitBreaker.of("vsphere", CircuitBreakerConfig.custom()
         .slidingWindowSize(5)
@@ -265,7 +267,7 @@ public class VsphereClient(
         properties: List<String>,
         root: ManagedObjectReference? = null,
         mapper: (ManagedObjectReference, Map<String, Any?>) -> T
-    ): List<T> = withContext(Dispatchers.IO) {
+    ): List<T> = withContext(ioDispatcher) {
         val vimPort = session.vimPort
         val serviceContent = session.serviceContent
         val propertyCollector = serviceContent.propertyCollector
@@ -335,7 +337,7 @@ public class VsphereClient(
         }
     }
 
-    private suspend fun getProperty(session: VsphereSession, obj: ManagedObjectReference, prop: String): Any? = withContext(Dispatchers.IO) {
+    private suspend fun getProperty(session: VsphereSession, obj: ManagedObjectReference, prop: String): Any? = withContext(ioDispatcher) {
         val vimPort = session.vimPort
         val serviceContent = session.serviceContent
         
@@ -373,7 +375,7 @@ public class VsphereClient(
         session: VsphereSession,
         obj: ManagedObjectReference,
         vararg props: String
-    ): Map<String, Any?> = withContext(Dispatchers.IO) {
+    ): Map<String, Any?> = withContext(ioDispatcher) {
         val vimPort = session.vimPort
         val serviceContent = session.serviceContent
 
@@ -405,7 +407,7 @@ public class VsphereClient(
         session: VsphereSession,
         task: ManagedObjectReference,
         timeoutMs: Long = 300_000 // 5 minutes default timeout
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(ioDispatcher) {
         val vimPort = session.vimPort
         val serviceContent = session.serviceContent
         val startTime = System.currentTimeMillis()
@@ -441,7 +443,7 @@ public class VsphereClient(
         }
     }
     
-    private suspend fun getTaskInfo(session: VsphereSession, task: ManagedObjectReference): TaskInfo = withContext(Dispatchers.IO) {
+    private suspend fun getTaskInfo(session: VsphereSession, task: ManagedObjectReference): TaskInfo = withContext(ioDispatcher) {
         val result = getProperty(session, task, "info") as? TaskInfo
             ?: throw RuntimeException("Failed to get task info")
         result
@@ -579,7 +581,7 @@ public class VsphereClient(
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
         try {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val vimPort = session.vimPort
                 val serviceContent = session.serviceContent
                 
@@ -669,7 +671,7 @@ public class VsphereClient(
         // Saga compensation: Track partial VM for cleanup on failure
         var partialVmRef: ManagedObjectReference? = null
 
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 val vimPort = session.vimPort
                 val searchIndex = session.serviceContent.searchIndex
@@ -866,7 +868,7 @@ public class VsphereClient(
     private suspend fun waitForVmwareToolsIp(
         session: VsphereSession,
         vmRef: ManagedObjectReference
-    ): IpDetectionResult = withContext(Dispatchers.IO) {
+    ): IpDetectionResult = withContext(ioDispatcher) {
         val startTime = System.currentTimeMillis()
 
         while (isActive) {
@@ -931,7 +933,7 @@ public class VsphereClient(
             is Result.Failure -> return@executeResilient sessionResult.error.failure()
         }
 
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 val vmRef = moRef("VirtualMachine", vmId.value)
 
@@ -1002,7 +1004,7 @@ public class VsphereClient(
             is Result.Failure -> return@executeResilient VsphereError.DeletionError("Connection failed", sessionResult.error).failure()
         }
 
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 val vmRef = moRef("VirtualMachine", vmId.value)
                 val task = session.vimPort.destroyTask(vmRef)

@@ -11,6 +11,7 @@ import de.acci.eaf.core.result.success
 import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -44,11 +45,13 @@ import kotlin.coroutines.cancellation.CancellationException
  * The `app.tenant_id` session variable is set by the connection customizer,
  * and RLS policies filter queries automatically.
  *
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  * @see ConfigurationColumns
  */
 @Repository
 public class VmwareConfigurationRepository(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : VmwareConfigurationPort {
 
     private val logger = KotlinLogging.logger {}
@@ -204,7 +207,7 @@ public class VmwareConfigurationRepository(
     }
 
     override suspend fun findByTenantId(tenantId: TenantId): VmwareConfiguration? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(VMWARE_CONFIGURATIONS)
                 .where(VMWARE_CONFIGURATIONS.TENANT_ID.eq(tenantId.value))
                 .fetchOne()
@@ -212,7 +215,7 @@ public class VmwareConfigurationRepository(
         }
 
     override suspend fun findById(id: VmwareConfigurationId): VmwareConfiguration? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(VMWARE_CONFIGURATIONS)
                 .where(VMWARE_CONFIGURATIONS.ID.eq(id.value))
                 .fetchOne()
@@ -220,7 +223,7 @@ public class VmwareConfigurationRepository(
         }
 
     override suspend fun save(configuration: VmwareConfiguration): Result<Unit, VmwareConfigurationError> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 // Use atomic INSERT ON CONFLICT to avoid TOCTOU race condition
                 // Start with ID column to get InsertSetMoreStep type
@@ -287,7 +290,7 @@ public class VmwareConfigurationRepository(
      * @return Success if update succeeded, or failure with ConcurrencyConflict/NotFound
      */
     override suspend fun update(configuration: VmwareConfiguration): Result<Unit, VmwareConfigurationError> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 // Start update with vcenterUrl column
                 val initialStep: UpdateSetMoreStep<*> = dsl.update(VMWARE_CONFIGURATIONS)
@@ -347,7 +350,7 @@ public class VmwareConfigurationRepository(
         }
 
     override suspend fun existsByTenantId(tenantId: TenantId): Boolean =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.fetchExists(
                 dsl.selectFrom(VMWARE_CONFIGURATIONS)
                     .where(VMWARE_CONFIGURATIONS.TENANT_ID.eq(tenantId.value))

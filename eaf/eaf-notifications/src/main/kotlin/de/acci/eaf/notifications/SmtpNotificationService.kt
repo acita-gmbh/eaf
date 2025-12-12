@@ -6,6 +6,7 @@ import de.acci.eaf.core.result.success
 import de.acci.eaf.core.types.TenantId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.mail.MessagingException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.mail.MailAuthenticationException
@@ -24,11 +25,13 @@ private val logger = KotlinLogging.logger {}
  * @property mailSender Spring's JavaMailSender configured via properties
  * @property templateEngine Template engine for rendering email content
  * @property fromAddress Default sender address
+ * @property ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class SmtpNotificationService(
     private val mailSender: JavaMailSender,
     private val templateEngine: TemplateEngine,
-    private val fromAddress: EmailAddress
+    private val fromAddress: EmailAddress,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : NotificationService {
 
     override suspend fun sendEmail(
@@ -56,7 +59,7 @@ public class SmtpNotificationService(
         recipient: EmailAddress,
         subject: String,
         htmlContent: String
-    ): Result<Unit, NotificationError> = withContext(Dispatchers.IO) {
+    ): Result<Unit, NotificationError> = withContext(ioDispatcher) {
         try {
             val message = mailSender.createMimeMessage()
             val helper = MimeMessageHelper(message, true, "UTF-8")

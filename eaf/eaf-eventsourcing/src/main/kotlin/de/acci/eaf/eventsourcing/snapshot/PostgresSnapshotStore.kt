@@ -1,5 +1,6 @@
 package de.acci.eaf.eventsourcing.snapshot
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -19,9 +20,11 @@ import java.util.UUID
  * so save() performs an upsert operation (INSERT ON CONFLICT DO UPDATE).
  *
  * @property dsl jOOQ DSLContext for database operations
+ * @property ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class PostgresSnapshotStore(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : SnapshotStore {
 
     /**
@@ -32,7 +35,7 @@ public class PostgresSnapshotStore(
      * @param snapshot The snapshot to persist
      * @throws IllegalArgumentException if version exceeds [Int.MAX_VALUE] (database schema limitation)
      */
-    override suspend fun save(snapshot: AggregateSnapshot): Unit = withContext(Dispatchers.IO) {
+    override suspend fun save(snapshot: AggregateSnapshot): Unit = withContext(ioDispatcher) {
         require(snapshot.version <= Int.MAX_VALUE) {
             "Snapshot version ${snapshot.version} exceeds maximum supported value ${Int.MAX_VALUE}. " +
                 "Consider upgrading the database schema to use BIGINT for the version column."
@@ -68,7 +71,7 @@ public class PostgresSnapshotStore(
      * @param aggregateId The aggregate's unique identifier
      * @return The snapshot if found, null otherwise
      */
-    override suspend fun load(aggregateId: UUID): AggregateSnapshot? = withContext(Dispatchers.IO) {
+    override suspend fun load(aggregateId: UUID): AggregateSnapshot? = withContext(ioDispatcher) {
         dsl.fetchOne(
             """
             SELECT id, aggregate_id, aggregate_type, version, state, tenant_id, created_at

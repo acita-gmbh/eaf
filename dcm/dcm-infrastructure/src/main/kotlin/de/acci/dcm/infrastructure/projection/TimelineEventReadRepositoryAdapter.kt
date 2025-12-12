@@ -5,6 +5,7 @@ import de.acci.dcm.application.vmrequest.TimelineEventReadRepository
 import de.acci.dcm.application.vmrequest.TimelineEventType
 import de.acci.dcm.domain.vmrequest.VmRequestId
 import de.acci.dcm.infrastructure.jooq.`public`.tables.RequestTimelineEvents.Companion.REQUEST_TIMELINE_EVENTS
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -14,13 +15,17 @@ import org.jooq.DSLContext
  *
  * Provides read access to timeline event projections.
  * RLS ensures tenant isolation automatically.
+ *
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class TimelineEventReadRepositoryAdapter(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : TimelineEventReadRepository {
 
     override suspend fun findByRequestId(requestId: VmRequestId): List<TimelineEventItem> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(REQUEST_TIMELINE_EVENTS)
                 .where(REQUEST_TIMELINE_EVENTS.REQUEST_ID.eq(requestId.value))
                 .orderBy(REQUEST_TIMELINE_EVENTS.OCCURRED_AT.asc())

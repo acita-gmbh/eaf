@@ -2,6 +2,7 @@ package de.acci.dcm.infrastructure.projection
 
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.eventsourcing.projection.PagedResponse
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -16,9 +17,12 @@ import org.jooq.Table
  * DO NOT add explicit WHERE tenant_id = ? clauses - RLS policies enforce this at the database level.
  *
  * @param T The domain entity type returned by this repository
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public abstract class BaseProjectionRepository<T : Any>(
-    protected val dsl: DSLContext
+    protected val dsl: DSLContext,
+    protected val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
 
     /**
@@ -49,7 +53,7 @@ public abstract class BaseProjectionRepository<T : Any>(
      * @return PagedResponse containing the entities
      */
     public open suspend fun findAll(pageRequest: PageRequest = PageRequest()): PagedResponse<T> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val totalElements = dsl.fetchCount(table()).toLong()
 
             val query = dsl.selectFrom(table())
@@ -79,7 +83,7 @@ public abstract class BaseProjectionRepository<T : Any>(
      *
      * @return The total count
      */
-    public open suspend fun count(): Long = withContext(Dispatchers.IO) {
+    public open suspend fun count(): Long = withContext(ioDispatcher) {
         dsl.fetchCount(table()).toLong()
     }
 
@@ -88,7 +92,7 @@ public abstract class BaseProjectionRepository<T : Any>(
      *
      * @return true if at least one entity exists
      */
-    public open suspend fun exists(): Boolean = withContext(Dispatchers.IO) {
+    public open suspend fun exists(): Boolean = withContext(ioDispatcher) {
         dsl.fetchExists(table())
     }
 }

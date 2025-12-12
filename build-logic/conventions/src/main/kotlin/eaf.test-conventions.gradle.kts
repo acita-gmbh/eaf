@@ -56,6 +56,9 @@ dependencies {
     // Konsist for architecture testing
     testImplementation("com.lemonappdev:konsist:${libs.findVersion("konsist").get()}")
 
+    // Turbine for Flow testing
+    testImplementation("app.cash.turbine:turbine:${libs.findVersion("turbine").get()}")
+
     // Pitest mutation testing (JUnit 5 plugin)
     testImplementation("org.pitest:pitest-junit5-plugin:${libs.findVersion("pitest-junit5-plugin").get()}")
 }

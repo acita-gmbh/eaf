@@ -6,7 +6,7 @@ import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -50,7 +50,7 @@ class GetAdminRequestDetailHandlerTest {
     inner class WhenRequestExistsAndAdminHasAccess {
 
         @Test
-        fun `returns full request details with requester info`() = runBlocking {
+        fun `returns full request details with requester info`() = runTest {
             // Given - AC 1, 2, 3: Admin sees complete request details
             val projection = AdminRequestDetailProjection(
                 id = testRequestId,
@@ -130,7 +130,7 @@ class GetAdminRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns request with empty requester history when no other requests`() = runBlocking {
+        fun `returns request with empty requester history when no other requests`() = runTest {
             // Given - AC 6: Edge case - first request from this user
             val projection = createTestProjection()
             val timelineEvents = listOf(
@@ -167,7 +167,7 @@ class GetAdminRequestDetailHandlerTest {
         }
 
         @Test
-        fun `limits requester history to 5 items and excludes current request`() = runBlocking {
+        fun `limits requester history to 5 items and excludes current request`() = runTest {
             // Given - AC 6: Max 5 recent requests excluding current
             val projection = createTestProjection()
             val recentRequests = (1..5).map { i ->
@@ -206,7 +206,7 @@ class GetAdminRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns request with multiple timeline events in chronological order`() = runBlocking {
+        fun `returns request with multiple timeline events in chronological order`() = runTest {
             // Given - AC 5: Timeline with multiple events
             val projection = createTestProjection().copy(status = "APPROVED")
             val timelineEvents = listOf(
@@ -252,7 +252,7 @@ class GetAdminRequestDetailHandlerTest {
     inner class WhenRequestDoesNotExist {
 
         @Test
-        fun `returns NotFound error for non-existent request ID`() = runBlocking {
+        fun `returns NotFound error for non-existent request ID`() = runTest {
             // Given - AC 10: Error handling for invalid ID
             coEvery { requestRepository.findById(testRequestId) } returns null
 
@@ -276,7 +276,7 @@ class GetAdminRequestDetailHandlerTest {
     inner class WhenRequestIsFromDifferentTenant {
 
         @Test
-        fun `returns NotFound to prevent tenant enumeration`() = runBlocking {
+        fun `returns NotFound to prevent tenant enumeration`() = runTest {
             // Given - AC 10: RLS will typically prevent this, but handler has defense-in-depth
             // RLS filter means findById returns null for other tenant's requests
             coEvery { requestRepository.findById(testRequestId) } returns null
@@ -301,7 +301,7 @@ class GetAdminRequestDetailHandlerTest {
     inner class WhenRepositoryThrowsException {
 
         @Test
-        fun `returns QueryFailure error when request repository fails`() = runBlocking {
+        fun `returns QueryFailure error when request repository fails`() = runTest {
             // Given
             coEvery { requestRepository.findById(testRequestId) } throws RuntimeException("Database error")
 
@@ -321,7 +321,7 @@ class GetAdminRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns QueryFailure error when timeline repository fails`() = runBlocking {
+        fun `returns QueryFailure error when timeline repository fails`() = runTest {
             // Given
             val projection = createTestProjection()
             coEvery { requestRepository.findById(testRequestId) } returns projection
@@ -342,7 +342,7 @@ class GetAdminRequestDetailHandlerTest {
         }
 
         @Test
-        fun `returns QueryFailure error when history repository fails`() = runBlocking {
+        fun `returns QueryFailure error when history repository fails`() = runTest {
             // Given
             val projection = createTestProjection()
             coEvery { requestRepository.findById(testRequestId) } returns projection

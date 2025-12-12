@@ -5,6 +5,7 @@ import de.acci.dcm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dcm.domain.vmrequest.VmRequestId
 import de.acci.dcm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Companion.VM_REQUESTS_PROJECTION
 import de.acci.eaf.core.types.UserId
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -14,13 +15,17 @@ import org.jooq.DSLContext
  *
  * Provides read access to detailed VM request projections.
  * RLS ensures tenant isolation automatically.
+ *
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class VmRequestDetailRepositoryAdapter(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : VmRequestDetailRepository {
 
     override suspend fun findById(requestId: VmRequestId): VmRequestDetailProjection? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(VM_REQUESTS_PROJECTION)
                 .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
                 .fetchOne()
