@@ -212,13 +212,19 @@ public class TriggerProvisioningHandler(
     }
 
     /**
-     * Emits success events for VM and VmRequest aggregates, plus timeline update.
+     * Emits success events for VM and VmRequest aggregates, plus timeline update and notification.
      *
-     * **Note on partial failures:** This method performs 3 sequential updates without
-     * distributed transaction guarantees. If step 1 (VmProvisioned) succeeds but step 2
-     * (VmRequestReady) fails, the VM aggregate is updated but the VmRequest is not.
+     * **Note on partial failures:** This method performs 4 sequential updates without
+     * distributed transaction guarantees:
+     * 1. VmProvisioned event (VM aggregate)
+     * 2. VmRequestReady event (VmRequest aggregate)
+     * 3. VM_READY timeline event (projection)
+     * 4. Success notification email (side effect)
+     *
+     * If an early step succeeds but a later step fails, earlier changes persist.
      * This is acceptable for eventual consistency - a retry mechanism or manual
      * reconciliation can fix the inconsistency. Detailed logging ensures traceability.
+     * Step 4 (notification) failures are logged but do not affect the overall success.
      */
     private suspend fun emitSuccess(
         event: VmProvisioningStarted,
