@@ -6,6 +6,7 @@ import de.acci.dcm.application.vmrequest.VmRequestHistorySummary
 import de.acci.dcm.domain.vmrequest.VmRequestId
 import de.acci.dcm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Companion.VM_REQUESTS_PROJECTION
 import de.acci.eaf.core.types.UserId
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -20,9 +21,13 @@ import org.jooq.DSLContext
  *
  * RLS ensures tenant isolation automatically - admins can only see
  * requests within their own tenant.
+ *
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class AdminRequestDetailRepositoryAdapter(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : AdminRequestDetailRepository {
 
     /**
@@ -35,7 +40,7 @@ public class AdminRequestDetailRepositoryAdapter(
      * @return The projection with admin-specific fields or null if not found
      */
     override suspend fun findById(requestId: VmRequestId): AdminRequestDetailProjection? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(VM_REQUESTS_PROJECTION)
                 .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
                 .fetchOne()
@@ -77,7 +82,7 @@ public class AdminRequestDetailRepositoryAdapter(
         requesterId: UserId,
         excludeRequestId: VmRequestId,
         limit: Int
-    ): List<VmRequestHistorySummary> = withContext(Dispatchers.IO) {
+    ): List<VmRequestHistorySummary> = withContext(ioDispatcher) {
         dsl.select(
             VM_REQUESTS_PROJECTION.ID,
             VM_REQUESTS_PROJECTION.VM_NAME,

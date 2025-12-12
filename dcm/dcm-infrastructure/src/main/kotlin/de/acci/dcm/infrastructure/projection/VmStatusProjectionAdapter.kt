@@ -4,6 +4,7 @@ import de.acci.dcm.application.vmrequest.VmStatusProjectionPort
 import de.acci.dcm.domain.vmrequest.VmRequestId
 import de.acci.dcm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Companion.VM_REQUESTS_PROJECTION
 import de.acci.eaf.core.types.UserId
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -16,9 +17,13 @@ import java.time.ZoneOffset
  *
  * Story 3-7: Provides access to VM status operations on the projection.
  * RLS ensures tenant isolation automatically.
+ *
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class VmStatusProjectionAdapter(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : VmStatusProjectionPort {
 
     override suspend fun updateVmDetails(
@@ -30,7 +35,7 @@ public class VmStatusProjectionAdapter(
         guestOs: String?,
         lastSyncedAt: Instant,
         bootTime: Instant?
-    ): Int = withContext(Dispatchers.IO) {
+    ): Int = withContext(ioDispatcher) {
         dsl.update(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.VMWARE_VM_ID, vmwareVmId)
             .set(VM_REQUESTS_PROJECTION.IP_ADDRESS, ipAddress)
@@ -44,14 +49,14 @@ public class VmStatusProjectionAdapter(
             .execute()
     }
 
-    override suspend fun getVmwareVmId(requestId: VmRequestId): String? = withContext(Dispatchers.IO) {
+    override suspend fun getVmwareVmId(requestId: VmRequestId): String? = withContext(ioDispatcher) {
         dsl.select(VM_REQUESTS_PROJECTION.VMWARE_VM_ID)
             .from(VM_REQUESTS_PROJECTION)
             .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))
             .fetchOne(VM_REQUESTS_PROJECTION.VMWARE_VM_ID)
     }
 
-    override suspend fun getRequesterId(requestId: VmRequestId): UserId? = withContext(Dispatchers.IO) {
+    override suspend fun getRequesterId(requestId: VmRequestId): UserId? = withContext(ioDispatcher) {
         dsl.select(VM_REQUESTS_PROJECTION.REQUESTER_ID)
             .from(VM_REQUESTS_PROJECTION)
             .where(VM_REQUESTS_PROJECTION.ID.eq(requestId.value))

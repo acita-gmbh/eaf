@@ -22,6 +22,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -63,7 +64,9 @@ import org.springframework.stereotype.Component
  */
 @Component
 @Profile("vcsim")
-public class VcsimAdapter : HypervisorPort {
+public class VcsimAdapter(
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
 
@@ -110,7 +113,7 @@ public class VcsimAdapter : HypervisorPort {
     override suspend fun testConnection(
         params: VcenterConnectionParams,
         password: String
-    ): Result<de.acci.dcm.application.vmware.ConnectionInfo, de.acci.dcm.application.vmware.ConnectionError> = withContext(Dispatchers.IO) {
+    ): Result<de.acci.dcm.application.vmware.ConnectionInfo, de.acci.dcm.application.vmware.ConnectionError> = withContext(ioDispatcher) {
         logger.info {
             "Testing VCSIM connection: " +
                 "url=${params.vcenterUrl}, " +

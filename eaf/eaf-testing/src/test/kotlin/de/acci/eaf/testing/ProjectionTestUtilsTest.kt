@@ -1,7 +1,6 @@
 package de.acci.eaf.testing
 
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -53,7 +52,7 @@ class ProjectionTestUtilsTest {
     fun `awaitProjection throws TimeoutCancellationException when projection never appears`() {
         // Given / When / Then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
+            runTest {
                 awaitProjection<TestProjection>(
                     repository = { null },
                     timeout = 100.milliseconds,
@@ -87,7 +86,7 @@ class ProjectionTestUtilsTest {
 
         // When / Then
         val exception = assertThrows<IllegalStateException> {
-            runBlocking {
+            runTest {
                 awaitProjection<TestProjection>(
                     aggregateId = aggregateId,
                     repository = { null },
@@ -142,7 +141,7 @@ class ProjectionTestUtilsTest {
     fun `awaitProjectionCondition throws timeout when condition never satisfied`() {
         // Given / When / Then
         assertThrows<TimeoutCancellationException> {
-            runBlocking {
+            runTest {
                 ProjectionTestUtils.awaitProjectionCondition<TestProjection>(
                     repository = { TestProjection("wrong-state") },
                     condition = { proj -> proj?.value == "expected-state" },

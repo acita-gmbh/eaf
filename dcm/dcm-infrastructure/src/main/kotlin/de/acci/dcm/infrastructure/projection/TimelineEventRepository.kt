@@ -2,6 +2,7 @@ package de.acci.dcm.infrastructure.projection
 
 import de.acci.dcm.infrastructure.jooq.`public`.tables.RequestTimelineEvents.Companion.REQUEST_TIMELINE_EVENTS
 import de.acci.dcm.infrastructure.jooq.`public`.tables.pojos.RequestTimelineEvents
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.DSLContext
@@ -32,10 +33,13 @@ import java.util.UUID
  * 4. Compile will fail if any step is missed
  *
  * @see ProjectionColumns
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class TimelineEventRepository(
-    dsl: DSLContext
-) : BaseProjectionRepository<RequestTimelineEvents>(dsl) {
+    dsl: DSLContext,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : BaseProjectionRepository<RequestTimelineEvents>(dsl, ioDispatcher) {
 
     /**
      * Sealed interface defining all columns in REQUEST_TIMELINE_EVENTS.
@@ -128,7 +132,7 @@ public class TimelineEventRepository(
      * @return List of timeline events sorted chronologically (oldest first)
      */
     public suspend fun findByRequestId(requestId: UUID): List<RequestTimelineEvents> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             dsl.selectFrom(REQUEST_TIMELINE_EVENTS)
                 .where(REQUEST_TIMELINE_EVENTS.REQUEST_ID.eq(requestId))
                 .orderBy(defaultOrderBy())
@@ -145,7 +149,7 @@ public class TimelineEventRepository(
      *
      * @param event The timeline event to insert
      */
-    public suspend fun insert(event: RequestTimelineEvents): Unit = withContext(Dispatchers.IO) {
+    public suspend fun insert(event: RequestTimelineEvents): Unit = withContext(ioDispatcher) {
         // Start with ID column to get InsertSetMoreStep type
         val initialStep: InsertSetMoreStep<*> = dsl.insertInto(REQUEST_TIMELINE_EVENTS)
             .set(REQUEST_TIMELINE_EVENTS.ID, event.id)
@@ -203,7 +207,7 @@ public class TimelineEventRepository(
      * @param eventId The event ID to check
      * @return true if the event exists
      */
-    public suspend fun exists(eventId: UUID): Boolean = withContext(Dispatchers.IO) {
+    public suspend fun exists(eventId: UUID): Boolean = withContext(ioDispatcher) {
         dsl.fetchExists(
             dsl.selectFrom(REQUEST_TIMELINE_EVENTS)
                 .where(REQUEST_TIMELINE_EVENTS.ID.eq(eventId))

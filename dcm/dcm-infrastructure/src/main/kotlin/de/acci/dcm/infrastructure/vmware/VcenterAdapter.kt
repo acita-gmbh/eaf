@@ -29,6 +29,7 @@ import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
 import de.acci.eaf.core.result.success
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
@@ -45,7 +46,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * Production vCenter adapter using VCF SDK 9.0 (Official VMware SDK).
  *
  * This adapter connects to real VMware vCenter servers for production use.
- * All blocking SOAP calls are wrapped in `withContext(Dispatchers.IO)` to
+ * All blocking SOAP calls are wrapped in `withContext(ioDispatcher)` to
  * avoid blocking WebFlux's event loop.
  *
  * ## SDK Migration (Story 3.1.1)
@@ -70,7 +71,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * ## Threading
  *
  * VCF SDK uses blocking SOAP calls. This adapter wraps all vSphere operations
- * in `withContext(Dispatchers.IO)` to ensure they don't block the event loop.
+ * in `withContext(ioDispatcher)` to ensure they don't block the event loop.
  *
  * @see VcsimAdapter for test environment implementation
  */
@@ -79,7 +80,8 @@ import kotlin.coroutines.cancellation.CancellationException
 public class VcenterAdapter(
     private val vsphereClient: VsphereClient,
     @Value("\${dcm.vcenter.ignore-cert:false}")
-    private val ignoreCert: Boolean = false
+    private val ignoreCert: Boolean = false,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : HypervisorPort {
 
     private val logger = KotlinLogging.logger {}
@@ -110,7 +112,7 @@ public class VcenterAdapter(
     override suspend fun testConnection(
         params: VcenterConnectionParams,
         password: String
-    ): Result<ConnectionInfo, ConnectionError> = withContext(Dispatchers.IO) {
+    ): Result<ConnectionInfo, ConnectionError> = withContext(ioDispatcher) {
         logger.info {
             "Testing vCenter connection: " +
                 "url=${params.vcenterUrl}, " +

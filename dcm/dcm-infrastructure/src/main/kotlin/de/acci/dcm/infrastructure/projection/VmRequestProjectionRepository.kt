@@ -4,6 +4,7 @@ import de.acci.dcm.infrastructure.jooq.`public`.tables.VmRequestsProjection.Comp
 import de.acci.dcm.infrastructure.jooq.`public`.tables.pojos.VmRequestsProjection
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.eventsourcing.projection.PagedResponse
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jooq.Condition
@@ -46,10 +47,13 @@ public data class ProjectInfo(
  * 4. Compile will fail if any step is missed
  *
  * @see ProjectionColumns
+ * @param dsl The jOOQ DSLContext for database operations
+ * @param ioDispatcher Dispatcher for blocking I/O operations (injectable for testing)
  */
 public class VmRequestProjectionRepository(
-    dsl: DSLContext
-) : BaseProjectionRepository<VmRequestsProjection>(dsl) {
+    dsl: DSLContext,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : BaseProjectionRepository<VmRequestsProjection>(dsl, ioDispatcher) {
 
     /**
      * Sealed interface defining all columns in VM_REQUESTS_PROJECTION.
@@ -242,7 +246,7 @@ public class VmRequestProjectionRepository(
      *
      * @param projection The projection data to insert
      */
-    public suspend fun insert(projection: VmRequestsProjection): Unit = withContext(Dispatchers.IO) {
+    public suspend fun insert(projection: VmRequestsProjection): Unit = withContext(ioDispatcher) {
         // Start with ID column to get InsertSetMoreStep type
         val initialStep: InsertSetMoreStep<*> = dsl.insertInto(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.ID, projection.id)
@@ -279,7 +283,7 @@ public class VmRequestProjectionRepository(
         rejectedByName: String? = null,
         rejectionReason: String? = null,
         version: Int?
-    ): Int = withContext(Dispatchers.IO) {
+    ): Int = withContext(ioDispatcher) {
         dsl.update(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.STATUS, status)
             .set(VM_REQUESTS_PROJECTION.APPROVED_BY, approvedBy)
@@ -316,7 +320,7 @@ public class VmRequestProjectionRepository(
         powerState: String?,
         guestOs: String?,
         lastSyncedAt: OffsetDateTime
-    ): Int = withContext(Dispatchers.IO) {
+    ): Int = withContext(ioDispatcher) {
         dsl.update(VM_REQUESTS_PROJECTION)
             .set(VM_REQUESTS_PROJECTION.VMWARE_VM_ID, vmwareVmId)
             .set(VM_REQUESTS_PROJECTION.IP_ADDRESS, ipAddress)
@@ -335,7 +339,7 @@ public class VmRequestProjectionRepository(
      * @param id The unique identifier of the VM request
      * @return The projection if found, null otherwise
      */
-    public suspend fun findById(id: UUID): VmRequestsProjection? = withContext(Dispatchers.IO) {
+    public suspend fun findById(id: UUID): VmRequestsProjection? = withContext(ioDispatcher) {
         dsl.selectFrom(VM_REQUESTS_PROJECTION)
             .where(VM_REQUESTS_PROJECTION.ID.eq(id))
             .fetchOne()
@@ -391,7 +395,7 @@ public class VmRequestProjectionRepository(
     public suspend fun findPendingByTenantId(
         projectId: UUID? = null,
         pageRequest: PageRequest = PageRequest()
-    ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
+    ): PagedResponse<VmRequestsProjection> = withContext(ioDispatcher) {
         // Build condition: always filter by PENDING status
         var condition: Condition = VM_REQUESTS_PROJECTION.STATUS.eq("PENDING")
 
@@ -435,7 +439,7 @@ public class VmRequestProjectionRepository(
      *
      * @return List of distinct projects, sorted alphabetically by name
      */
-    public suspend fun findDistinctProjects(): List<ProjectInfo> = withContext(Dispatchers.IO) {
+    public suspend fun findDistinctProjects(): List<ProjectInfo> = withContext(ioDispatcher) {
         dsl.selectDistinct(
             VM_REQUESTS_PROJECTION.PROJECT_ID,
             VM_REQUESTS_PROJECTION.PROJECT_NAME
@@ -460,7 +464,7 @@ public class VmRequestProjectionRepository(
     private suspend fun findByCondition(
         condition: Condition,
         pageRequest: PageRequest
-    ): PagedResponse<VmRequestsProjection> = withContext(Dispatchers.IO) {
+    ): PagedResponse<VmRequestsProjection> = withContext(ioDispatcher) {
         val totalElements = dsl.selectCount()
             .from(VM_REQUESTS_PROJECTION)
             .where(condition)
