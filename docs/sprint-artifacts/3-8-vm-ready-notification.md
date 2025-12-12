@@ -86,9 +86,9 @@ so that I can start using it immediately without constantly checking the portal.
 
 ### Frontend Tasks
 
-- [ ] **Task 6: Dashboard Status Indicator (AC: 3.8.2) - Optional Enhancement**
-  - [ ] Existing TanStack Query polling already handles status refresh
-  - [ ] Optional: Add toast notification when polling detects status change to "Ready"
+- [~] **Task 6: Dashboard Status Indicator (AC: 3.8.2) - SKIPPED (Optional Enhancement)**
+  - [x] Existing TanStack Query polling already handles status refresh (no changes needed)
+  - [~] Optional toast notification deferred to future story (not required for AC-3.8.2)
 
 ## Dev Notes
 

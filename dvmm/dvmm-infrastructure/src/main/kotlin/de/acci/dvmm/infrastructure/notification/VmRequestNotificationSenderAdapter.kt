@@ -197,7 +197,7 @@ public class VmRequestNotificationSenderAdapter(
             "sshCommand" to "ssh <username>@$connectionTarget",
             "rdpCommand" to "mstsc /v:$connectionTarget",
             "portalLink" to notification.portalLink,
-            "provisioningDuration" to notification.provisioningDurationMinutes.toString()
+            "provisioningDuration" to notification.provisioningDurationMinutes
         )
 
         logger.debug {

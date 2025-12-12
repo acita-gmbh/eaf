@@ -562,7 +562,7 @@ class VmRequestNotificationSenderAdapterTest {
             assertEquals(testProjectName, contextSlot.captured["projectName"])
             assertEquals("192.168.1.100", contextSlot.captured["ipAddress"])
             assertEquals("MYPR-web-server-01", contextSlot.captured["hostname"])
-            assertEquals("5", contextSlot.captured["provisioningDuration"])
+            assertEquals(5L, contextSlot.captured["provisioningDuration"])
             assertEquals("https://dvmm.example.com/requests/${testRequestId.value}", contextSlot.captured["portalLink"])
         }
 

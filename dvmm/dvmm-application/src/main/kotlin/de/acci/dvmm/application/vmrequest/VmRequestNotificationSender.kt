@@ -120,7 +120,7 @@ public data class VmReadyNotification(
     val ipAddress: String?,
     /** Hostname of the provisioned VM */
     val hostname: String,
-    /** Guest operating system for connection command generation */
+    /** Guest operating system (currently unused; reserved for future connection command generation) */
     val guestOs: String?,
     /** Time taken to provision the VM in minutes */
     val provisioningDurationMinutes: Long,

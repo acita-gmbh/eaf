@@ -131,7 +131,12 @@ public class TriggerProvisioningHandler(
                         "vCenter ID: ${provisioningResult.vmwareVmId.value}, " +
                         "IP: ${provisioningResult.ipAddress ?: "pending"}"
                 }
-                emitSuccess(event, provisioningResult, prefixedVmName, projectInfo)
+                emitSuccess(
+                    event = event,
+                    provisioningResult = provisioningResult,
+                    provisionedHostname = prefixedVmName,
+                    requestDetails = projectInfo
+                )
             }
             is Result.Failure -> {
                 val failure = result.error
@@ -681,7 +686,7 @@ public class TriggerProvisioningHandler(
 
         try {
             // Note: guestOs is null at provisioning time. It's populated later by VMware Tools
-            // via SyncVmStatusHandler. Connection command defaults to SSH for non-Windows VMs.
+            // via SyncVmStatusHandler. Both SSH and RDP commands are provided in the email.
             val notification = VmReadyNotification(
                 requestId = event.requestId,
                 tenantId = event.metadata.tenantId,
