@@ -111,15 +111,20 @@ private suspend fun emitSuccess(...) {
 
 ### Connection Command Logic
 
+The email displays both SSH and RDP commands, letting users choose based on their VM's OS:
+
 ```kotlin
-private fun determineConnectionCommand(guestOs: String?, ipAddress: String?): String {
-    val ip = ipAddress ?: "pending"
-    return when {
-        guestOs?.contains("Windows", ignoreCase = true) == true -> "mstsc /v:$ip"
-        else -> "ssh user@$ip"
-    }
-}
+// In VmRequestNotificationSenderAdapter.sendVmReadyNotification()
+val ip = notification.ipAddress ?: "pending"
+val context = mapOf(
+    // ...
+    "sshCommand" to "ssh <username>@$ip",
+    "rdpCommand" to "mstsc /v:$ip",
+    // ...
+)
 ```
+
+Note: The `<username>` placeholder reminds users that the SSH username depends on their VM template (e.g., ubuntu, admin, root).
 
 ### Source Tree Locations
 
