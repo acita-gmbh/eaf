@@ -6,10 +6,16 @@ package de.acci.eaf.core.result
  */
 public sealed interface Result<out T, out E> {
     /** Success branch carrying a value. */
-    public data class Success<T>(public val value: T) : Result<T, Nothing>
+    public data class Success<T>(
+        /** The success value */
+        public val value: T
+    ) : Result<T, Nothing>
 
     /** Failure branch carrying a domain-specific error. */
-    public data class Failure<E>(public val error: E) : Result<Nothing, E>
+    public data class Failure<E>(
+        /** The error details */
+        public val error: E
+    ) : Result<Nothing, E>
 }
 
 /**

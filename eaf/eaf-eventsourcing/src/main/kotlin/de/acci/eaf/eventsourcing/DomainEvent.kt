@@ -29,16 +29,15 @@ public interface DomainEvent {
  * Metadata attached to every domain event.
  *
  * Provides audit trail and multi-tenancy support for event sourcing.
- *
- * @property tenantId The tenant this event belongs to (for RLS enforcement)
- * @property userId The user who triggered the action that produced this event
- * @property correlationId Unique ID for tracing related operations across services
- * @property timestamp When the event occurred (should be set at creation time)
  */
 public data class EventMetadata(
+    /** The tenant this event belongs to (for RLS enforcement) */
     public val tenantId: TenantId,
+    /** The user who triggered the action that produced this event */
     public val userId: UserId,
+    /** Unique ID for tracing related operations across services */
     public val correlationId: CorrelationId,
+    /** When the event occurred (should be set at creation time) */
     public val timestamp: Instant
 ) {
     public companion object {

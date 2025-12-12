@@ -135,6 +135,23 @@ public data class TestVmwareConnectionRequest(
  *
  * Password is intentionally excluded from the response for security.
  * A placeholder (masked) indication is provided instead.
+ *
+ * @property id Unique identifier of the configuration
+ * @property vcenterUrl vCenter SDK URL
+ * @property username Service account username
+ * @property hasPassword Indicates if a password is currently set (true) or missing (false)
+ * @property datacenterName Default datacenter name
+ * @property clusterName Default cluster name
+ * @property datastoreName Default datastore name
+ * @property networkName Default network name
+ * @property templateName Default VM template name
+ * @property folderPath VM folder path (optional)
+ * @property verifiedAt Timestamp of last successful connection test
+ * @property createdAt Timestamp when configuration was created
+ * @property updatedAt Timestamp when configuration was last updated
+ * @property createdBy User who created the configuration
+ * @property updatedBy User who last updated the configuration
+ * @property version Optimistic locking version
  */
 public data class VmwareConfigApiResponse(
     val id: String,

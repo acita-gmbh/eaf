@@ -286,10 +286,39 @@ public sealed class VsphereError(
     }
 }
 
+/**
+ * Represents a vSphere Datacenter.
+ * @property id The managed object reference value (e.g., "datacenter-2").
+ * @property name The display name of the datacenter.
+ */
 public data class Datacenter(public val id: String, public val name: String)
+
+/**
+ * Represents a vSphere Cluster (ClusterComputeResource).
+ * @property id The managed object reference value (e.g., "domain-c7").
+ * @property name The display name of the cluster.
+ */
 public data class Cluster(public val id: String, public val name: String)
+
+/**
+ * Represents a vSphere Datastore.
+ * @property id The managed object reference value (e.g., "datastore-10").
+ * @property name The display name of the datastore.
+ */
 public data class Datastore(public val id: String, public val name: String)
+
+/**
+ * Represents a vSphere Network (Port Group).
+ * @property id The managed object reference value (e.g., "network-12").
+ * @property name The display name of the network.
+ */
 public data class Network(public val id: String, public val name: String)
+
+/**
+ * Represents a vSphere Resource Pool.
+ * @property id The managed object reference value (e.g., "resgroup-8").
+ * @property name The display name of the resource pool.
+ */
 public data class ResourcePool(public val id: String, public val name: String)
 /**
  * VM information returned from hypervisor queries.
@@ -325,6 +354,11 @@ public enum class VmPowerState {
     SUSPENDED,
     UNKNOWN
 }
+
+/**
+ * Value object representing a VMware Virtual Machine ID (MoRef).
+ * @property value The string representation of the Managed Object Reference (e.g., "vm-123").
+ */
 public data class VmId(public val value: String)
 
 /**

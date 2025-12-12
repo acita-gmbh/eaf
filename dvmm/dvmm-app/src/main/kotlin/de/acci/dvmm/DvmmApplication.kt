@@ -15,6 +15,9 @@ import org.springframework.context.annotation.Import
 @Import(TenantContextWebFilter::class)
 public class DvmmApplication
 
+/**
+ * Main entry point.
+ */
 public fun main(args: Array<String>) {
     runApplication<DvmmApplication>(*args)
 }

@@ -14,13 +14,29 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * Errors that can occur when marking a request as provisioning.
+ */
 public sealed class MarkVmRequestProvisioningError {
+    /** Request not found or tenant mismatch. */
     public data class NotFound(val message: String) : MarkVmRequestProvisioningError()
+    /** Invalid state transition (e.g., request not approved). */
     public data class InvalidState(val message: String) : MarkVmRequestProvisioningError()
+    /** Concurrency conflict during save. */
     public data class ConcurrencyConflict(val message: String) : MarkVmRequestProvisioningError()
+    /** Persistence failure. */
     public data class PersistenceFailure(val message: String) : MarkVmRequestProvisioningError()
 }
 
+/**
+ * Handler for [MarkVmRequestProvisioningCommand].
+ *
+ * Transitions the [VmRequestAggregate] to provisioning state and emits
+ * [VmRequestProvisioningStarted] event.
+ *
+ * ## Side Effects
+ * Also updates the timeline projection.
+ */
 public class MarkVmRequestProvisioningHandler(
     private val eventStore: EventStore,
     private val deserializer: VmRequestEventDeserializer,
@@ -28,12 +44,27 @@ public class MarkVmRequestProvisioningHandler(
 ) {
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * Handles the command to mark a VM request as provisioning.
+     *
+     * @param command The command containing request ID and context.
+     * @param correlationId Optional correlation ID for tracing.
+     * @return Success or error.
+     */
     public suspend fun handle(
         command: MarkVmRequestProvisioningCommand,
         correlationId: CorrelationId = CorrelationId.generate()
     ): Result<Unit, MarkVmRequestProvisioningError> {
         
-        val storedEvents = eventStore.load(command.requestId.value)
+        val storedEvents = try {
+            eventStore.load(command.requestId.value)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to load events for request ${command.requestId.value}" }
+            return MarkVmRequestProvisioningError.PersistenceFailure("Failed to load events").failure()
+        }
+
         if (storedEvents.isEmpty()) {
             return MarkVmRequestProvisioningError.NotFound("VM request ${command.requestId.value} not found").failure()
         }
@@ -85,18 +116,26 @@ public class MarkVmRequestProvisioningHandler(
         return when (appendResult) {
             is Result.Success -> {
                 // AC-6: Add timeline event "Provisioning started"
-                timelineUpdater.addTimelineEvent(
-                    NewTimelineEvent(
-                        id = UUID.randomUUID(),
-                        requestId = command.requestId,
-                        tenantId = command.tenantId,
-                        eventType = TimelineEventType.PROVISIONING_STARTED,
-                        actorId = command.userId,
-                        actorName = "System",
-                        details = "VM provisioning has started",
-                        occurredAt = Instant.now()
+                try {
+                    timelineUpdater.addTimelineEvent(
+                        NewTimelineEvent(
+                            // Consider a deterministic ID to avoid duplicates on retries if needed, random UUID for now
+                            id = UUID.randomUUID(),
+                            requestId = command.requestId,
+                            tenantId = command.tenantId,
+                            eventType = TimelineEventType.PROVISIONING_STARTED,
+                            actorId = command.userId,
+                            actorName = "System",
+                            details = "VM provisioning has started",
+                            occurredAt = Instant.now()
+                        )
                     )
-                )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to update timeline for request ${command.requestId.value} after provisioning-start persisted" }
+                    // Best-effort: event is already persisted; prefer projection repair/outbox over failing the command here.
+                }
                 Unit.success()
             }
             is Result.Failure -> {

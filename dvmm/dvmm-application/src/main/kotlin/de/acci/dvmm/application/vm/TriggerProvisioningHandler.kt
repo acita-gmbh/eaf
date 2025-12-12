@@ -66,6 +66,16 @@ public class TriggerProvisioningHandler(
 ) {
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * Reacts to [VmProvisioningStarted] event by initiating the VM creation process.
+     *
+     * 1. Validates configuration and project info.
+     * 2. Generates a prefixed VM name (ADR-001).
+     * 3. Calls [ResilientProvisioningService] to create the VM.
+     * 4. Emits success or failure events based on the outcome.
+     *
+     * @param event The domain event triggering the provisioning.
+     */
     public suspend fun onVmProvisioningStarted(event: VmProvisioningStarted) {
         val tenantId = event.metadata.tenantId
         val config = configPort.findByTenantId(tenantId)
@@ -149,6 +159,15 @@ public class TriggerProvisioningHandler(
         }
     }
 
+    /**
+     * Updates the VM aggregate with provisioning progress.
+     *
+     * Also updates the [VmProvisioningProgressProjection] to allow
+     * the frontend to display real-time status.
+     *
+     * @param event The original start event (for context/IDs).
+     * @param stage The current provisioning stage.
+     */
     private suspend fun emitProgress(event: VmProvisioningStarted, stage: VmProvisioningStage) {
         val vmId = event.aggregateId.value
         try {

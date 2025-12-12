@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * REST controller for admin VM request operations.
@@ -64,8 +65,6 @@ import java.util.UUID
  * - **422 Unprocessable Entity**: Invalid state or invalid rejection reason
  * - **500 Internal Server Error**: Database query failure
  */
-private val logger = KotlinLogging.logger {}
-
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('admin')")
@@ -76,6 +75,7 @@ public class AdminRequestController(
     private val rejectVmRequestHandler: RejectVmRequestHandler,
     private val readRepository: VmRequestReadRepository
 ) {
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Get pending VM requests for admin approval.
@@ -140,24 +140,29 @@ public class AdminRequestController(
             pageRequest = PageRequest(page = validatedPage, size = validatedSize)
         )
 
-        return when (val result = getPendingRequestsHandler.handle(query)) {
-            is Result.Success -> {
-                ResponseEntity.ok(PendingRequestsPageResponse.fromPagedResponse(result.value))
+        return try {
+            when (val result = getPendingRequestsHandler.handle(query)) {
+                is Result.Success -> {
+                    ResponseEntity.ok(PendingRequestsPageResponse.fromPagedResponse(result.value))
+                }
+                is Result.Failure -> handleGetPendingRequestsError(result.error)
             }
-            is Result.Failure -> handleGetPendingRequestsError(result.error)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Unexpected error fetching pending requests" }
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                mapOf("error" to "INTERNAL_ERROR", "message" to "Unexpected error")
+            )
         }
     }
 
     private fun handleGetPendingRequestsError(error: GetPendingRequestsError): ResponseEntity<Any> {
         return when (error) {
             is GetPendingRequestsError.Forbidden -> {
-                logger.warn { "Forbidden access to pending requests" }
-                ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    mapOf(
-                        "error" to "FORBIDDEN",
-                        "message" to "Access denied"
-                    )
-                )
+                val tenantId = try { TenantContext.currentOrNull()?.value } catch (e: Exception) { "unknown" }
+                logger.warn { "Forbidden access to pending requests: tenantId=$tenantId" }
+                ResponseEntity.notFound().build()
             }
             is GetPendingRequestsError.QueryFailure -> {
                 logger.error { "Failed to retrieve pending requests: ${error.message}" }
@@ -194,6 +199,8 @@ public class AdminRequestController(
         return try {
             val projects = readRepository.findDistinctProjects(tenantId)
             ResponseEntity.ok(projects.map { ProjectResponse.fromSummary(it) })
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error(e) { "Failed to retrieve projects for tenant ${tenantId.value}: ${e.message}" }
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(

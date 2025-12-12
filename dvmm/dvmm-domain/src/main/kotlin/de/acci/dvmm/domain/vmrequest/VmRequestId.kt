@@ -8,7 +8,10 @@ import java.util.UUID
  * Provides type safety for VM request references across the domain.
  */
 @JvmInline
-public value class VmRequestId(public val value: UUID) {
+public value class VmRequestId(
+    /** The raw UUID value */
+    public val value: UUID
+) {
     public companion object {
         /** Generate a new random VM request identifier. */
         public fun generate(): VmRequestId = VmRequestId(UUID.randomUUID())

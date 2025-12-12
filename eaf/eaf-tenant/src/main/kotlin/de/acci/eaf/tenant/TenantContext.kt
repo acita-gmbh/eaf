@@ -4,12 +4,23 @@ import de.acci.eaf.core.types.TenantId
 import kotlinx.coroutines.reactor.ReactorContext
 import kotlin.coroutines.coroutineContext
 
+/**
+ * Accessor for the current Tenant Context.
+ *
+ * Supports both coroutine context element (optionally backed by ThreadLocal) and reactive
+ * (Reactor context) execution models.
+ */
 public object TenantContext {
 
     /** Key used to store tenant ID in Reactor context. */
     public const val REACTOR_TENANT_KEY: String = "tenantId"
 
-    /** Returns the tenant from the current coroutine context or throws. */
+    /**
+     * Returns the tenant from the current coroutine context or throws.
+     *
+     * @throws TenantContextMissingException if no tenant is set in context.
+     * @throws IllegalStateException if context contains invalid type.
+     */
     public suspend fun current(): TenantId =
         currentOrNull() ?: throw TenantContextMissingException()
 
@@ -20,14 +31,14 @@ public object TenantContext {
 
         val reactorContext = coroutineContext[ReactorContext]?.context ?: return null
 
-        // Use hasKey + get pattern to avoid type inference issues with value classes.
-        // getOrDefault(key, null) can cause ClassCastException with @JvmInline value classes
-        // due to Kotlin/Reactor generic type inference mismatch.
-        return if (reactorContext.hasKey(REACTOR_TENANT_KEY)) {
-            @Suppress("UNCHECKED_CAST")
-            reactorContext.get<Any>(REACTOR_TENANT_KEY) as? TenantId
-        } else {
-            null
+        if (reactorContext.hasKey(REACTOR_TENANT_KEY)) {
+            val value = reactorContext.get<Any>(REACTOR_TENANT_KEY)
+            return if (value is TenantId) {
+                value
+            } else {
+                throw IllegalStateException("Invalid type for tenant context: ${value?.javaClass?.name}")
+            }
         }
+        return null
     }
 }

@@ -6,10 +6,17 @@ import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.eventsourcing.DomainEvent
 import de.acci.eaf.eventsourcing.EventMetadata
 
+/**
+ * Event emitted when VM provisioning makes progress (e.g. step completed).
+ */
 public data class VmProvisioningProgressUpdated(
+    /** The VM aggregate ID */
     public val aggregateId: VmId,
+    /** The related Request ID */
     public val requestId: VmRequestId,
+    /** The current stage reached */
     public val currentStage: VmProvisioningStage,
+    /** Human-readable details */
     public val details: String,
     override val metadata: EventMetadata
 ) : DomainEvent {

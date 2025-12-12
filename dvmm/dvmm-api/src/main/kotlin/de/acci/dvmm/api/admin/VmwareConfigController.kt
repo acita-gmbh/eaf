@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * REST controller for VMware vCenter configuration management.
@@ -58,8 +59,6 @@ import java.net.URI
  * - **422 Unprocessable Entity**: Validation or connection test failure
  * - **500 Internal Server Error**: Database or encryption failure
  */
-private val logger = KotlinLogging.logger {}
-
 @RestController
 @RequestMapping("/api/admin/vmware-config")
 @PreAuthorize("hasRole('admin')")
@@ -70,6 +69,7 @@ public class VmwareConfigController(
     private val testVmwareConnectionHandler: TestVmwareConnectionHandler,
     private val checkVmwareConfigExistsHandler: CheckVmwareConfigExistsHandler
 ) {
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Get current VMware configuration for the tenant.
@@ -111,7 +111,8 @@ public class VmwareConfigController(
             }
             is GetVmwareConfigError.Forbidden -> {
                 // SECURITY: Return 404 to prevent tenant enumeration
-                logger.warn { "Forbidden access to VMware configuration" }
+                val tenantId = try { TenantContext.currentOrNull()?.value } catch (e: Exception) { "unknown" }
+                logger.warn { "Forbidden access to VMware configuration for tenant $tenantId" }
                 ResponseEntity.notFound().build()
             }
             is GetVmwareConfigError.QueryFailure -> {
@@ -454,6 +455,8 @@ public class VmwareConfigController(
             try {
                 val config = getVmwareConfigHandler.handle(GetVmwareConfigQuery(tenantId))
                 (config as? Result.Success)?.value?.verifiedAt
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error(e) { "Failed to fetch VMware config verifiedAt for tenant=${tenantId.value}" }
                 null
