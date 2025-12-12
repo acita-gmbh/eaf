@@ -50,16 +50,28 @@ jobs:
           # Start postgres, keycloak, and backend via docker compose
           docker compose -f docker/dcm/docker-compose.yml up postgres keycloak backend -d
 
+          # Resolve container IDs dynamically (avoids issues with compose project prefixes)
+          CONTAINER_POSTGRES="$(docker compose -f docker/dcm/docker-compose.yml ps -q postgres)"
+          CONTAINER_KEYCLOAK="$(docker compose -f docker/dcm/docker-compose.yml ps -q keycloak)"
+          CONTAINER_BACKEND="$(docker compose -f docker/dcm/docker-compose.yml ps -q backend)"
+
+          echo "Container IDs: postgres=$CONTAINER_POSTGRES, keycloak=$CONTAINER_KEYCLOAK, backend=$CONTAINER_BACKEND"
+
+          # Export for use in failure step
+          echo "CONTAINER_POSTGRES=$CONTAINER_POSTGRES" >> $GITHUB_ENV
+          echo "CONTAINER_KEYCLOAK=$CONTAINER_KEYCLOAK" >> $GITHUB_ENV
+          echo "CONTAINER_BACKEND=$CONTAINER_BACKEND" >> $GITHUB_ENV
+
           # Wait for all services to be healthy
           echo "Waiting for services to be healthy..."
-          timeout 180s bash -c '
-            until [ "$(docker inspect --format="{{.State.Health.Status}}" eaf-postgres 2>/dev/null)" = "healthy" ] && \
-                  [ "$(docker inspect --format="{{.State.Health.Status}}" eaf-keycloak 2>/dev/null)" = "healthy" ] && \
-                  [ "$(docker inspect --format="{{.State.Health.Status}}" dcm-backend 2>/dev/null)" = "healthy" ]; do
-              echo "Waiting... (postgres: $(docker inspect --format="{{.State.Health.Status}}" eaf-postgres 2>/dev/null || echo starting), keycloak: $(docker inspect --format="{{.State.Health.Status}}" eaf-keycloak 2>/dev/null || echo starting), backend: $(docker inspect --format="{{.State.Health.Status}}" dcm-backend 2>/dev/null || echo starting))"
+          timeout 180s bash -c "
+            until [ \"\$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_POSTGRES 2>/dev/null)\" = 'healthy' ] && \
+                  [ \"\$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_KEYCLOAK 2>/dev/null)\" = 'healthy' ] && \
+                  [ \"\$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_BACKEND 2>/dev/null)\" = 'healthy' ]; do
+              echo \"Waiting... (postgres: \$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_POSTGRES 2>/dev/null || echo starting), keycloak: \$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_KEYCLOAK 2>/dev/null || echo starting), backend: \$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_BACKEND 2>/dev/null || echo starting))\"
               sleep 10
             done
-          '
+          "
           echo "All services are healthy!"
 
       - name: Install Frontend Dependencies
@@ -80,9 +92,9 @@ jobs:
       - name: Show Service Logs on Failure
         if: failure()
         run: |
-          echo "=== Keycloak Logs ===" && docker logs eaf-keycloak --tail 50 || true
-          echo "=== Backend Logs ===" && docker logs dcm-backend --tail 100 || true
-          echo "=== PostgreSQL Logs ===" && docker logs eaf-postgres --tail 30 || true
+          echo "=== Keycloak Logs ===" && docker logs "$CONTAINER_KEYCLOAK" --tail 50 || true
+          echo "=== Backend Logs ===" && docker logs "$CONTAINER_BACKEND" --tail 100 || true
+          echo "=== PostgreSQL Logs ===" && docker logs "$CONTAINER_POSTGRES" --tail 30 || true
 
       - name: Upload Test Results
         if: always()
