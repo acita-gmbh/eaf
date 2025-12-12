@@ -1,10 +1,11 @@
 installation:
-  version: 6.0.0-alpha.13
-  installDate: '2025-12-01T12:52:00.465Z'
-  lastUpdated: '2025-12-01T12:52:00.465Z'
+  version: 6.0.0-alpha.16
+  installDate: '2025-12-12T08:26:09.736Z'
+  lastUpdated: '2025-12-12T08:26:09.736Z'
 modules:
   - core
   - bmm
+customModules: []
 ides:
   - claude-code
   - codex
@@ -16,6 +17,5 @@ ides:
   - antigravity
   - rovo-dev
   - auggie
-  - cline
   - crush
   - roo

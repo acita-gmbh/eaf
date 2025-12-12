@@ -23,6 +23,7 @@ import de.acci.dvmm.application.vmware.Network
 import de.acci.dvmm.application.vmware.ResourcePool
 import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
+import de.acci.dvmm.application.vmware.VmPowerState
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
@@ -336,6 +337,48 @@ public class VsphereClient(
         val result = vimPort.retrievePropertiesEx(serviceContent.propertyCollector, listOf(filterSpec), RetrieveOptions())
         
         result?.objects?.firstOrNull()?.propSet?.firstOrNull { it.name == prop }?.`val`
+    }
+
+    /**
+     * Fetch multiple properties from a managed object in a single API call.
+     *
+     * Story 3-7: More efficient property retrieval for VM runtime details.
+     *
+     * @param session Active vSphere session
+     * @param obj Managed object reference
+     * @param props List of property paths to retrieve
+     * @return Map of property name to value (missing properties not included)
+     */
+    private suspend fun getProperties(
+        session: VsphereSession,
+        obj: ManagedObjectReference,
+        vararg props: String
+    ): Map<String, Any?> = withContext(Dispatchers.IO) {
+        val vimPort = session.vimPort
+        val serviceContent = session.serviceContent
+
+        val propSpec = PropertySpec().apply {
+            this.type = obj.type
+            this.pathSet.addAll(props.toList())
+        }
+
+        val objSpec = ObjectSpec().apply {
+            this.obj = obj
+            this.isSkip = false
+        }
+
+        val filterSpec = PropertyFilterSpec().apply {
+            this.propSet.add(propSpec)
+            this.objectSet.add(objSpec)
+        }
+
+        val result = vimPort.retrievePropertiesEx(
+            serviceContent.propertyCollector,
+            listOf(filterSpec),
+            RetrieveOptions()
+        )
+
+        result?.objects?.firstOrNull()?.propSet?.associate { it.name to it.`val` } ?: emptyMap()
     }
 
     private suspend fun waitForTask(
@@ -771,8 +814,29 @@ public class VsphereClient(
         val warningMessage: String?
     )
 
+    /**
+     * Get VM information including runtime details from vSphere.
+     *
+     * Story 3-7: Extended to return full runtime details (power state, IP, hostname, guest OS).
+     *
+     * VMware property paths used:
+     * - name: VM display name
+     * - runtime.powerState: VirtualMachinePowerState enum
+     * - guest.ipAddress: Primary IP from VMware Tools
+     * - guest.hostName: Guest hostname from VMware Tools
+     * - guest.guestFullName: Detected OS type from VMware Tools
+     *
+     * @param vmId VMware MoRef ID (e.g., "vm-123")
+     * @return VmInfo with runtime details, or ResourceNotFound if VM doesn't exist
+     */
     public suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> = executeResilient("getVm") {
-        val tenantId = try { TenantContext.current() } catch (e: CancellationException) { throw e } catch (e: Exception) { return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure() }
+        val tenantId = try {
+            TenantContext.current()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return@executeResilient VsphereError.ConnectionError("No tenant context", e).failure()
+        }
         val sessionResult = ensureSession(tenantId)
         val session = when (sessionResult) {
             is Result.Success -> sessionResult.value
@@ -782,12 +846,56 @@ public class VsphereClient(
         withContext(Dispatchers.IO) {
             try {
                 val vmRef = moRef("VirtualMachine", vmId.value)
-                val name = getProperty(session, vmRef, "name") as? String ?: throw RuntimeException("Name not found")
-                VmInfo(vmId.value, name).success()
+
+                // Fetch all properties in a single API call for efficiency
+                val props = getProperties(
+                    session,
+                    vmRef,
+                    "name",
+                    "runtime.powerState",
+                    "runtime.bootTime",
+                    "guest.ipAddress",
+                    "guest.hostName",
+                    "guest.guestFullName"
+                )
+
+                val name = props["name"] as? String
+                    ?: throw RuntimeException("VM name not found for ${vmId.value}")
+
+                // Map VMware power state to our enum
+                val powerState = when (val rawState = props["runtime.powerState"]) {
+                    VirtualMachinePowerState.POWERED_ON -> VmPowerState.POWERED_ON
+                    VirtualMachinePowerState.POWERED_OFF -> VmPowerState.POWERED_OFF
+                    VirtualMachinePowerState.SUSPENDED -> VmPowerState.SUSPENDED
+                    else -> {
+                        logger.warn { "Unexpected VM power state '$rawState' for VM ${vmId.value}, mapping to UNKNOWN" }
+                        VmPowerState.UNKNOWN
+                    }
+                }
+
+                // Map XMLGregorianCalendar to Instant
+                val bootTime = (props["runtime.bootTime"] as? javax.xml.datatype.XMLGregorianCalendar)
+                    ?.toGregorianCalendar()
+                    ?.toInstant()
+
+                VmInfo(
+                    id = vmId.value,
+                    name = name,
+                    powerState = powerState,
+                    ipAddress = props["guest.ipAddress"] as? String,
+                    hostname = props["guest.hostName"] as? String,
+                    guestOs = props["guest.guestFullName"] as? String,
+                    bootTime = bootTime
+                ).success()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                VsphereError.ResourceNotFound(resourceType = "VirtualMachine", resourceId = vmId.value, cause = e).failure()
+                logger.warn(e) { "Failed to get VM ${vmId.value}" }
+                VsphereError.ResourceNotFound(
+                    resourceType = "VirtualMachine",
+                    resourceId = vmId.value,
+                    cause = e
+                ).failure()
             }
         }
     }

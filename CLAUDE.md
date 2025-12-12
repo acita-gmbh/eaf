@@ -161,3 +161,6 @@ Story Lifecycle: `backlog` → `drafted` → `ready-for-dev` → `in-progress` �
 | Coverage report | `./gradlew :koverHtmlReport` |
 | Mutation testing | `./gradlew pitest` |
 | Architecture tests | `./gradlew :dvmm:dvmm-app:test --tests "*ArchitectureTest*"` |
+| Sprint status | Check `docs/sprint-artifacts/sprint-status.yaml` |
+| Start workflow | `/bmad:bmm:workflows:workflow-status` |
+- BMAD framework files (.bmad/) are external framework components that get updated through their own release cycle. Any inconsistencies or issues in BMAD should be reported upstream or addressed in a separate BMAD update, not as part of feature PRs.

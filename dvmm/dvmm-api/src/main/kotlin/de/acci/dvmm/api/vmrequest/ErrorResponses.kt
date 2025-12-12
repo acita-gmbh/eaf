@@ -72,3 +72,37 @@ public data class CancelSuccessResponse(
     val message: String,
     val requestId: String
 )
+
+/**
+ * Response DTO for successful VM status sync (HTTP 200).
+ *
+ * Story 3-7: Returns the synced VM runtime details.
+ */
+public data class SyncVmStatusResponse(
+    val type: String = "synced",
+    val requestId: String,
+    val powerState: String,
+    val ipAddress: String?,
+    val message: String
+)
+
+/**
+ * Response DTO for sync when VM not provisioned (HTTP 409).
+ *
+ * Story 3-7: VM must be provisioned before status can be synced.
+ */
+public data class SyncNotProvisionedResponse(
+    val type: String = "not_provisioned",
+    val message: String,
+    val requestId: String
+)
+
+/**
+ * Response DTO for hypervisor errors (HTTP 502).
+ *
+ * Story 3-7: vSphere query failed.
+ */
+public data class HypervisorErrorResponse(
+    val type: String = "hypervisor_error",
+    val message: String
+)

@@ -67,7 +67,7 @@ public data class TimelineEventItem(
 )
 
 /**
- * Detailed VM request information with timeline.
+ * Detailed VM request information with timeline and VM runtime details.
  *
  * @param id Unique identifier for the request
  * @param vmName Name of the requested VM
@@ -81,6 +81,13 @@ public data class TimelineEventItem(
  * @param requesterName Name of the user who submitted the request
  * @param createdAt When the request was submitted
  * @param timeline List of timeline events in chronological order
+ * @param vmwareVmId VMware MoRef ID (null if not yet provisioned)
+ * @param ipAddress Primary IP address from VMware Tools (null if not detected)
+ * @param hostname Guest hostname from VMware Tools (null if not detected)
+ * @param powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
+ * @param guestOs Detected guest OS from VMware Tools (null if not detected)
+ * @param lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
+ * @param bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetail(
     val id: VmRequestId,
@@ -94,7 +101,14 @@ public data class VmRequestDetail(
     val projectName: String,
     val requesterName: String,
     val createdAt: Instant,
-    val timeline: List<TimelineEventItem>
+    val timeline: List<TimelineEventItem>,
+    val vmwareVmId: String? = null,
+    val ipAddress: String? = null,
+    val hostname: String? = null,
+    val powerState: String? = null,
+    val guestOs: String? = null,
+    val lastSyncedAt: Instant? = null,
+    val bootTime: Instant? = null
 )
 
 /**
@@ -166,7 +180,14 @@ public class GetRequestDetailHandler(
                 projectName = requestDetails.projectName,
                 requesterName = requestDetails.requesterName,
                 createdAt = requestDetails.createdAt,
-                timeline = timelineEvents
+                timeline = timelineEvents,
+                vmwareVmId = requestDetails.vmwareVmId,
+                ipAddress = requestDetails.ipAddress,
+                hostname = requestDetails.hostname,
+                powerState = requestDetails.powerState,
+                guestOs = requestDetails.guestOs,
+                lastSyncedAt = requestDetails.lastSyncedAt,
+                bootTime = requestDetails.bootTime
             ).success()
         } catch (e: CancellationException) {
             throw e
@@ -204,6 +225,8 @@ public interface VmRequestDetailRepository {
 /**
  * Projection data for detailed VM request view.
  *
+ * Story 3-7: Includes VM runtime details for provisioned VMs.
+ *
  * @property id Unique identifier for the request
  * @property requesterId User who created the request (used for authorization checks)
  * @property vmName Name of the requested virtual machine
@@ -216,6 +239,13 @@ public interface VmRequestDetailRepository {
  * @property projectName Name of the associated project
  * @property requesterName Display name of the requester
  * @property createdAt Timestamp when the request was created
+ * @property vmwareVmId VMware MoRef ID (null if not yet provisioned)
+ * @property ipAddress Primary IP address from VMware Tools (null if not detected)
+ * @property hostname Guest hostname from VMware Tools (null if not detected)
+ * @property powerState VM power state: POWERED_ON, POWERED_OFF, SUSPENDED (null if not provisioned)
+ * @property guestOs Detected guest OS from VMware Tools (null if not detected)
+ * @property lastSyncedAt Timestamp of last status sync from vSphere (null if never synced)
+ * @property bootTime Timestamp when VM was last powered on (null if not running or not detected)
  */
 public data class VmRequestDetailProjection(
     val id: VmRequestId,
@@ -229,7 +259,14 @@ public data class VmRequestDetailProjection(
     val status: String,
     val projectName: String,
     val requesterName: String,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val vmwareVmId: String? = null,
+    val ipAddress: String? = null,
+    val hostname: String? = null,
+    val powerState: String? = null,
+    val guestOs: String? = null,
+    val lastSyncedAt: Instant? = null,
+    val bootTime: Instant? = null
 )
 
 /**

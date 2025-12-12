@@ -1,7 +1,7 @@
 ---
-name: PRD Workflow
-description: Creates a comprehensive PRDs through collaborative step-by-step discovery between two product managers working as peers.
-main_config: `{project-root}/.bmad/bmm/config.yaml`
+name: create-prd
+description: Creates a comprehensive PRD through collaborative step-by-step discovery between two product managers working as peers.
+main_config: '{project-root}/.bmad/bmm/config.yaml'
 web_bundle: true
 ---
 

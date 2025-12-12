@@ -505,6 +505,33 @@ export interface TimelineEvent {
 }
 
 /**
+ * VM power state from VMware vSphere.
+ * Maps to VCF SDK 9.0 VirtualMachinePowerState enum (UPPER_SNAKE_CASE).
+ */
+export type VmPowerState = 'POWERED_ON' | 'POWERED_OFF' | 'SUSPENDED' | 'UNKNOWN'
+
+/**
+ * VM runtime details for provisioned VMs.
+ * Story 3-7: Shows IP address, hostname, power state, and other runtime info.
+ */
+export interface VmRuntimeDetails {
+  /** VMware MoRef ID (e.g., "vm-123") */
+  vmwareVmId: string | null
+  /** Primary IP address from VMware Tools */
+  ipAddress: string | null
+  /** Guest hostname from VMware Tools */
+  hostname: string | null
+  /** VM power state from vSphere */
+  powerState: VmPowerState | null
+  /** Detected guest OS from VMware Tools */
+  guestOs: string | null
+  /** ISO timestamp of last status sync from vSphere */
+  lastSyncedAt: string | null
+  /** ISO timestamp when VM was last powered on (for uptime calculation) */
+  bootTime: string | null
+}
+
+/**
  * Backend response for VM request detail with timeline.
  */
 interface BackendVmRequestDetailResponse {
@@ -517,6 +544,7 @@ interface BackendVmRequestDetailResponse {
   requesterName: string
   createdAt: string
   timeline: TimelineEvent[]
+  vmDetails: VmRuntimeDetails | null
 }
 
 /**
@@ -532,6 +560,7 @@ export interface VmSizeResponse {
 /**
  * VM request detail with timeline.
  * Size is a nested object containing resource specifications.
+ * Story 3-7: Includes VM runtime details for provisioned VMs.
  */
 export interface VmRequestDetailResponse {
   id: string
@@ -543,6 +572,8 @@ export interface VmRequestDetailResponse {
   requesterName: string
   createdAt: string
   timeline: TimelineEvent[]
+  /** VM runtime details (null if not yet provisioned) */
+  vmDetails: VmRuntimeDetails | null
 }
 
 /**
@@ -581,6 +612,7 @@ export async function getRequestDetail(
     requesterName: backendResponse.requesterName,
     createdAt: backendResponse.createdAt,
     timeline: backendResponse.timeline,
+    vmDetails: backendResponse.vmDetails,
   }
 }
 
@@ -637,4 +669,88 @@ export async function getProvisioningProgress(
   }
 
   return responseBody as VmProvisioningProgressResponse
+}
+
+// ==================== VM Status Sync API (Story 3-7) ====================
+
+/**
+ * Response from successful VM status sync.
+ */
+export interface SyncVmStatusResponse {
+  type: 'synced'
+  requestId: string
+  powerState: VmPowerState
+  ipAddress: string | null
+  message: string
+}
+
+/**
+ * Not provisioned error response from backend.
+ */
+export interface NotProvisionedErrorResponse {
+  type: 'not_provisioned'
+  message: string
+  requestId: string
+}
+
+/**
+ * Hypervisor error response from backend.
+ */
+export interface HypervisorErrorResponse {
+  type: 'hypervisor_error'
+  message: string
+}
+
+/**
+ * Type guard for not provisioned error response.
+ */
+export function isNotProvisionedError(body: unknown): body is NotProvisionedErrorResponse {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'type' in body &&
+    (body as Record<string, unknown>).type === 'not_provisioned'
+  )
+}
+
+/**
+ * Type guard for hypervisor error response.
+ */
+export function isHypervisorError(body: unknown): body is HypervisorErrorResponse {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'type' in body &&
+    (body as Record<string, unknown>).type === 'hypervisor_error'
+  )
+}
+
+/**
+ * Syncs VM status from vSphere.
+ *
+ * Story 3-7: Refreshes VM runtime details (power state, IP, hostname, guest OS)
+ * by querying vSphere and updating the projection.
+ *
+ * @param requestId - The ID of the request to sync
+ * @param accessToken - OAuth2 access token
+ * @returns Success response with synced status
+ * @throws ApiError on failure (404 not found, 409 not provisioned, 502 hypervisor error)
+ */
+export async function syncVmStatus(
+  requestId: string,
+  accessToken: string
+): Promise<SyncVmStatusResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/sync-status`, {
+    method: 'POST',
+    headers: createApiHeaders(accessToken, true), // Include CSRF for mutations
+    credentials: 'include',
+  })
+
+  const responseBody = await parseResponseBody(response)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, responseBody)
+  }
+
+  return responseBody as SyncVmStatusResponse
 }

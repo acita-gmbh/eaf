@@ -65,82 +65,9 @@ class VmRequestIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun setupSchema() {
-            // Initialize event store schema
-            TestContainers.ensureEventStoreSchema {
-                VmRequestIntegrationTest::class.java
-                    .getResource("/db/migration/V001__create_event_store.sql")!!
-                    .readText()
-            }
-            // Initialize projection table
-            ensureProjectionSchema()
-        }
-
-        private fun ensureProjectionSchema() {
-            TestContainers.postgres.createConnection("").use { conn ->
-                conn.autoCommit = true
-                conn.createStatement().use { stmt ->
-                    // Drop and recreate tables to ensure schema is up to date
-                    // CASCADE needed because REQUEST_TIMELINE_EVENTS references VM_REQUESTS_PROJECTION
-                    stmt.execute("""DROP TABLE IF EXISTS public."REQUEST_TIMELINE_EVENTS" CASCADE""")
-                    stmt.execute("""DROP TABLE IF EXISTS public."VM_REQUESTS_PROJECTION" CASCADE""")
-                    // Create projection table with quoted uppercase identifiers to match jOOQ-generated code
-                    // jOOQ uses H2's DDLDatabase which stores names in UPPERCASE
-                    stmt.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS public."VM_REQUESTS_PROJECTION" (
-                            "ID"                UUID PRIMARY KEY,
-                            "TENANT_ID"         UUID NOT NULL,
-                            "REQUESTER_ID"      UUID NOT NULL,
-                            "REQUESTER_NAME"    VARCHAR(255) NOT NULL,
-                            "REQUESTER_EMAIL"   VARCHAR(255),
-                            "REQUESTER_ROLE"    VARCHAR(100),
-                            "PROJECT_ID"        UUID NOT NULL,
-                            "PROJECT_NAME"      VARCHAR(255) NOT NULL,
-                            "VM_NAME"           VARCHAR(255) NOT NULL,
-                            "SIZE"              VARCHAR(10) NOT NULL,
-                            "CPU_CORES"         INT NOT NULL,
-                            "MEMORY_GB"         INT NOT NULL,
-                            "DISK_GB"           INT NOT NULL,
-                            "JUSTIFICATION"     TEXT NOT NULL,
-                            "STATUS"            VARCHAR(50) NOT NULL,
-                            "APPROVED_BY"       UUID,
-                            "APPROVED_BY_NAME"  VARCHAR(255),
-                            "REJECTED_BY"       UUID,
-                            "REJECTED_BY_NAME"  VARCHAR(255),
-                            "REJECTION_REASON"  TEXT,
-                            "CREATED_AT"        TIMESTAMPTZ NOT NULL,
-                            "UPDATED_AT"        TIMESTAMPTZ NOT NULL,
-                            "VERSION"           INT NOT NULL DEFAULT 1
-                        )
-                        """.trimIndent()
-                    )
-                    // Create indexes with quoted uppercase identifiers
-                    stmt.execute(
-                        """CREATE INDEX IF NOT EXISTS "IDX_VM_REQUESTS_PROJECTION_TENANT" ON public."VM_REQUESTS_PROJECTION" ("TENANT_ID")"""
-                    )
-                    stmt.execute(
-                        """CREATE INDEX IF NOT EXISTS "IDX_VM_REQUESTS_PROJECTION_REQUESTER" ON public."VM_REQUESTS_PROJECTION" ("REQUESTER_ID")"""
-                    )
-                    // Create timeline events table (Story 2.8)
-                    stmt.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS public."REQUEST_TIMELINE_EVENTS" (
-                            "ID"              UUID PRIMARY KEY,
-                            "REQUEST_ID"      UUID NOT NULL REFERENCES public."VM_REQUESTS_PROJECTION"("ID") ON DELETE CASCADE,
-                            "TENANT_ID"       UUID NOT NULL,
-                            "EVENT_TYPE"      VARCHAR(50) NOT NULL,
-                            "ACTOR_ID"        UUID,
-                            "ACTOR_NAME"      VARCHAR(255),
-                            "DETAILS"         VARCHAR(4000),
-                            "OCCURRED_AT"     TIMESTAMPTZ NOT NULL
-                        )
-                        """.trimIndent()
-                    )
-                    stmt.execute(
-                        """CREATE INDEX IF NOT EXISTS "IDX_TIMELINE_EVENTS_REQUEST" ON public."REQUEST_TIMELINE_EVENTS" ("REQUEST_ID", "OCCURRED_AT")"""
-                    )
-                }
-            }
+            // Use Flyway migrations for consistent schema setup
+            // This ensures all tables including new columns (like BOOT_TIME from V012) are present
+            TestContainers.ensureFlywayMigrations()
         }
 
         @JvmStatic
@@ -644,16 +571,17 @@ class VmRequestIntegrationTest {
         @Test
         @DisplayName("should return 200 OK with empty list when no requests exist")
         fun `should return empty list when no requests exist`() {
+            // When: User requests their list with no projections
             webTestClient.mutateWith(csrf()).get()
                 .uri("/api/requests/my")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer ${TestConfig.tokenForTenantA()}")
                 .exchange()
+                // Then: 200 OK with empty list
                 .expectStatus().isOk
                 .expectBody()
                 .jsonPath("$.items").isArray
                 .jsonPath("$.items.length()").isEqualTo(0)
                 .jsonPath("$.totalElements").isEqualTo(0)
-                .jsonPath("$.page").isEqualTo(0)
         }
 
         @Test

@@ -1,40 +1,13 @@
-# /create-excalidraw-dataflow Command
+---
+description: 'Create data flow diagrams (DFD) in Excalidraw format'
+---
 
-When this command is used, execute the following workflow:
+IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:
 
-## Create Excalidraw Dataflow Workflow
-
-name: create-excalidraw-dataflow
-description: "Create data flow diagrams (DFD) in Excalidraw format"
-author: "BMad"
-
-# Config values
-config_source: "{project-root}/.bmad/bmm/config.yaml"
-output_folder: "{config_source}:output_folder"
-
-# Workflow components
-installed_path: "{project-root}/.bmad/bmm/workflows/diagrams/create-dataflow"
-shared_path: "{project-root}/.bmad/bmm/workflows/diagrams/_shared"
-instructions: "{installed_path}/instructions.md"
-validation: "{installed_path}/checklist.md"
-
-# Core Excalidraw resources (universal knowledge)
-helpers: "{project-root}/.bmad/core/resources/excalidraw/excalidraw-helpers.md"
-json_validation: "{project-root}/.bmad/core/resources/excalidraw/validate-json-instructions.md"
-
-# Domain-specific resources (technical diagrams)
-templates: "{shared_path}/excalidraw-templates.yaml"
-library: "{shared_path}/excalidraw-library.json"
-
-# Output file (respects user's configured output_folder)
-default_output_file: "{output_folder}/diagrams/dataflow-{timestamp}.excalidraw"
-
-standalone: true
-
-## Command Usage
-
-This command executes the Create Excalidraw Dataflow workflow from the BMAD BMM module.
-
-## Module
-
-Part of the BMAD BMM module.
+<steps CRITICAL="TRUE">
+1. Always LOAD the FULL @.bmad/core/tasks/workflow.xml
+2. READ its entire contents - this is the CORE OS for EXECUTING the specific workflow-config @.bmad/bmm/workflows/diagrams/create-dataflow/workflow.yaml
+3. Pass the yaml path .bmad/bmm/workflows/diagrams/create-dataflow/workflow.yaml as 'workflow-config' parameter to the workflow.xml instructions
+4. Follow workflow.xml instructions EXACTLY as written to process and follow the specific workflow config and its instructions
+5. Save outputs after EACH section when generating any documents from templates
+</steps>

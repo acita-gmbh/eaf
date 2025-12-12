@@ -19,7 +19,9 @@ import de.acci.dvmm.application.vmrequest.GetPendingRequestsHandler
 import de.acci.dvmm.application.vmrequest.GetRequestDetailHandler
 import de.acci.dvmm.application.vmrequest.MarkVmRequestProvisioningHandler
 import de.acci.dvmm.application.vmrequest.RejectVmRequestHandler
+import de.acci.dvmm.application.vmrequest.SyncVmStatusHandler
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
+import de.acci.dvmm.application.vmrequest.VmStatusProjectionPort
 import de.acci.dvmm.application.vmrequest.TimelineEventReadRepository
 import de.acci.dvmm.application.vmrequest.VmRequestDetailRepository
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
@@ -45,6 +47,7 @@ import de.acci.dvmm.infrastructure.projection.VmRequestDetailRepositoryAdapter
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionRepository
 import de.acci.dvmm.infrastructure.projection.VmRequestProjectionUpdaterAdapter
 import de.acci.dvmm.infrastructure.projection.VmRequestReadRepositoryAdapter
+import de.acci.dvmm.infrastructure.projection.VmStatusProjectionAdapter
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreObjectMapper
 import de.acci.eaf.eventsourcing.PostgresEventStore
@@ -374,6 +377,35 @@ public class ApplicationConfig {
     ): GetRequestDetailHandler = GetRequestDetailHandler(
         requestRepository = requestRepository,
         timelineRepository = timelineRepository
+    )
+
+    // ==================== VM Status Sync (Story 3.7) ====================
+
+    /**
+     * Adapter for updating VM status projections.
+     *
+     * Story 3-7: Implements the application-layer VmStatusProjectionPort.
+     */
+    @Bean
+    public fun vmStatusProjectionPort(dsl: DSLContext): VmStatusProjectionPort =
+        VmStatusProjectionAdapter(dsl)
+
+    /**
+     * Handler for syncing VM status from vSphere.
+     *
+     * Story 3-7: Refreshes VM runtime details (power state, IP, hostname, guest OS)
+     * by querying vSphere and updating the projection.
+     *
+     * @param hypervisorPort Port for vSphere API operations
+     * @param projectionPort Port for VM status projection updates
+     */
+    @Bean
+    public fun syncVmStatusHandler(
+        hypervisorPort: HypervisorPort,
+        projectionPort: VmStatusProjectionPort
+    ): SyncVmStatusHandler = SyncVmStatusHandler(
+        hypervisorPort = hypervisorPort,
+        projectionPort = projectionPort
     )
 
     // ==================== Admin Query Handlers (Story 2.10) ====================

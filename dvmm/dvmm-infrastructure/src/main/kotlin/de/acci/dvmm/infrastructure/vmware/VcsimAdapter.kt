@@ -7,6 +7,7 @@ import de.acci.dvmm.application.vmware.Network
 import de.acci.dvmm.application.vmware.ResourcePool
 import de.acci.dvmm.application.vmware.VmId
 import de.acci.dvmm.application.vmware.VmInfo
+import de.acci.dvmm.application.vmware.VmPowerState
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VsphereError
 import de.acci.dvmm.application.vmware.HypervisorPort
@@ -251,7 +252,16 @@ public class VcsimAdapter : HypervisorPort {
     public class SimulatedVsphereException(public val error: VsphereError) : RuntimeException(error.message)
 
     override suspend fun getVm(vmId: VmId): Result<VmInfo, VsphereError> {
-        return VmInfo(vmId.value, "simulated-vm").success()
+        logger.info { "VCSIM simulating getVm: ${vmId.value}" }
+        return VmInfo(
+            id = vmId.value,
+            name = "simulated-vm",
+            powerState = VmPowerState.POWERED_ON,
+            ipAddress = "192.168.1.100",
+            hostname = "simulated-vm.local",
+            guestOs = "Ubuntu 22.04.3 LTS (64-bit)",
+            bootTime = java.time.Instant.now().minusSeconds(86400 * 2 + 3600 * 4) // 2 days, 4 hours ago
+        ).success()
     }
 
     override suspend fun deleteVm(vmId: VmId): Result<Unit, VsphereError> {

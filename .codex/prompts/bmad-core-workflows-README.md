@@ -10,6 +10,10 @@
 - Path: `.bmad/core/workflows/party-mode/workflow.yaml`
 - Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations
 
+**brainstorming-session**
+- Path: `.bmad/core/workflows/brainstorming/workflow.md`
+- Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods
+
 
 ## Execution
 

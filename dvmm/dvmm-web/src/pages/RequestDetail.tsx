@@ -15,14 +15,17 @@ import { StatusBadge } from '@/components/requests/StatusBadge'
 import { Timeline } from '@/components/requests/Timeline'
 import { CancelConfirmDialog } from '@/components/requests/CancelConfirmDialog'
 import { ProvisioningProgress } from '@/components/requests/ProvisioningProgress'
+import { VmDetailsCard } from '@/components/requests/VmDetailsCard'
 import { useRequestDetail } from '@/hooks/useRequestDetail'
 import { useCancelRequest } from '@/hooks/useCancelRequest'
 import { useProvisioningProgress } from '@/hooks/useProvisioningProgress'
+import { useSyncVmStatus } from '@/hooks/useSyncVmStatus'
 import {
   ApiError,
   isNotFoundError,
   isForbiddenError,
   isInvalidStateError,
+  isNotProvisionedError,
   type TimelineEvent,
 } from '@/api/vm-requests'
 import { formatDateTime } from '@/lib/date-utils'
@@ -68,6 +71,40 @@ export function RequestDetail() {
   const { data: progress } = useProvisioningProgress(id ?? '', isProvisioning)
 
   const cancelMutation = useCancelRequest()
+
+  // Sync VM status mutation (Story 3-7)
+  const syncMutation = useSyncVmStatus(id ?? '', {
+    onSuccess: () => {
+      toast.success('VM status refreshed')
+    },
+    onError: (err) => {
+      if (err.status === 502) {
+        toast.error('Unable to connect to vSphere', {
+          description: 'Please try again later.',
+        })
+      } else if (err.status === 404) {
+        toast.error('VM request not found', {
+          description: 'This VM request may have been deleted.',
+        })
+      } else if (err.status === 409 && isNotProvisionedError(err.body)) {
+        toast.error('VM not yet provisioned', {
+          description: 'Status sync is only available for provisioned VMs.',
+        })
+      } else if (err.status === 500) {
+        toast.error('Failed to update VM status', {
+          description: 'An error occurred while saving the status. Please try again.',
+        })
+      } else {
+        toast.error('Failed to refresh VM status', {
+          description: err.message,
+        })
+      }
+    },
+  })
+
+  const handleRefreshVmStatus = () => {
+    syncMutation.mutate()
+  }
 
   const handleCancelConfirm = (reason?: string) => {
     if (!id) return
@@ -299,6 +336,15 @@ export function RequestDetail() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* VM Details Card (Story 3-7) */}
+      {data.status === 'READY' && data.vmDetails && (
+        <VmDetailsCard
+          vmDetails={data.vmDetails}
+          onRefresh={handleRefreshVmStatus}
+          isRefreshing={syncMutation.isPending}
+        />
       )}
 
       {/* Provisioning Failed Alert (AC-3.6.3) */}
