@@ -9,6 +9,7 @@ import de.acci.dvmm.application.vmrequest.VmReadyNotification
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
+import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.application.vmrequest.logNotificationError
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
@@ -130,7 +131,7 @@ public class TriggerProvisioningHandler(
                         "vCenter ID: ${provisioningResult.vmwareVmId.value}, " +
                         "IP: ${provisioningResult.ipAddress ?: "pending"}"
                 }
-                emitSuccess(event, provisioningResult, prefixedVmName)
+                emitSuccess(event, provisioningResult, prefixedVmName, projectInfo)
             }
             is Result.Failure -> {
                 val failure = result.error
@@ -220,9 +221,10 @@ public class TriggerProvisioningHandler(
      * reconciliation can fix the inconsistency. Detailed logging ensures traceability.
      */
     private suspend fun emitSuccess(
-        event: VmProvisioningStarted, 
+        event: VmProvisioningStarted,
         provisioningResult: VmProvisioningResult,
-        provisionedHostname: String
+        provisionedHostname: String,
+        requestDetails: VmRequestSummary
     ) {
         val vmId = event.aggregateId.value
         val requestId = event.requestId.value
@@ -353,7 +355,8 @@ public class TriggerProvisioningHandler(
         sendSuccessNotification(
             event = event,
             provisioningResult = provisioningResult,
-            provisionedHostname = provisionedHostname
+            provisionedHostname = provisionedHostname,
+            requestDetails = requestDetails
         )
     }
 
@@ -633,34 +636,15 @@ public class TriggerProvisioningHandler(
      *
      * Includes VM details, connection instructions, and portal link.
      * Notification failures are logged but do not fail the overall operation.
+     *
+     * @param requestDetails Pre-fetched request details from the handler to avoid duplicate repository call
      */
     private suspend fun sendSuccessNotification(
         event: VmProvisioningStarted,
         provisioningResult: VmProvisioningResult,
-        provisionedHostname: String
+        provisionedHostname: String,
+        requestDetails: VmRequestSummary
     ) {
-        // Load request details for notification context
-        val requestDetails = try {
-            vmRequestReadRepository.findById(event.requestId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn(e) {
-                "[Step 4/4] Failed to load request details for success notification, skipping. " +
-                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}, " +
-                    "error=${e::class.simpleName}: ${e.message}"
-            }
-            return
-        }
-
-        if (requestDetails == null) {
-            logger.warn {
-                "[Step 4/4] Request not found, skipping success notification. " +
-                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
-            }
-            return
-        }
-
         val requesterEmail = requestDetails.requesterEmail
         if (requesterEmail == null) {
             logger.warn {

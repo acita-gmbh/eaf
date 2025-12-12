@@ -128,11 +128,11 @@ public data class VmReadyNotification(
     val portalLink: String
 ) {
     init {
-        require(vmName.isNotBlank()) { "VM name must not be blank" }
-        require(projectName.isNotBlank()) { "Project name must not be blank" }
-        require(hostname.isNotBlank()) { "Hostname must not be blank" }
+        require(vmName.trim().isNotBlank()) { "VM name must not be blank" }
+        require(projectName.trim().isNotBlank()) { "Project name must not be blank" }
+        require(hostname.trim().isNotBlank()) { "Hostname must not be blank" }
         require(provisioningDurationMinutes >= 0) { "Provisioning duration cannot be negative" }
-        require(portalLink.isNotBlank()) { "Portal link must not be blank" }
+        require(portalLink.trim().isNotBlank()) { "Portal link must not be blank" }
     }
 }
 
