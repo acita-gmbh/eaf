@@ -185,7 +185,8 @@ public class VmRequestNotificationSenderAdapter(
     override suspend fun sendVmReadyNotification(
         notification: VmReadyNotification
     ): Result<Unit, VmRequestNotificationError> {
-        val ip = notification.ipAddress ?: "pending"
+        // Use IP if available, otherwise fallback to hostname for connection commands
+        val connectionTarget = notification.ipAddress ?: notification.hostname
 
         val context = mapOf(
             "requestId" to notification.requestId.value.toString(),
@@ -193,8 +194,8 @@ public class VmRequestNotificationSenderAdapter(
             "projectName" to notification.projectName,
             "ipAddress" to (notification.ipAddress ?: "Pending assignment"),
             "hostname" to notification.hostname,
-            "sshCommand" to "ssh <username>@$ip",
-            "rdpCommand" to "mstsc /v:$ip",
+            "sshCommand" to "ssh <username>@$connectionTarget",
+            "rdpCommand" to "mstsc /v:$connectionTarget",
             "portalLink" to notification.portalLink,
             "provisioningDuration" to notification.provisioningDurationMinutes.toString()
         )

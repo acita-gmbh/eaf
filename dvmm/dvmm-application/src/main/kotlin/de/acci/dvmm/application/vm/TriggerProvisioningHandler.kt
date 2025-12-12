@@ -10,7 +10,6 @@ import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.application.vmrequest.logNotificationError
-import java.time.Duration
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
 import de.acci.dvmm.application.vmware.VsphereError
@@ -29,6 +28,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
@@ -647,19 +647,26 @@ public class TriggerProvisioningHandler(
         } catch (e: Exception) {
             logger.warn(e) {
                 "[Step 4/4] Failed to load request details for success notification, skipping. " +
-                    "RequestId: ${event.requestId.value}, Error: ${e::class.simpleName}: ${e.message}"
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}, " +
+                    "error=${e::class.simpleName}: ${e.message}"
             }
             return
         }
 
         if (requestDetails == null) {
-            logger.warn { "[Step 4/4] Request ${event.requestId.value} not found, skipping success notification" }
+            logger.warn {
+                "[Step 4/4] Request not found, skipping success notification. " +
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
+            }
             return
         }
 
         val requesterEmail = requestDetails.requesterEmail
         if (requesterEmail == null) {
-            logger.warn { "[Step 4/4] No requester email for request ${event.requestId.value}, skipping success notification" }
+            logger.warn {
+                "[Step 4/4] No requester email, skipping success notification. " +
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
+            }
             return
         }
 
@@ -670,6 +677,10 @@ public class TriggerProvisioningHandler(
         val portalLink = if (portalBaseUrl != null) {
             "${portalBaseUrl.trimEnd('/')}/requests/${event.requestId.value}"
         } else {
+            logger.warn {
+                "[Step 4/4] portalBaseUrl not configured, notification will contain placeholder link. " +
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
+            }
             "#" // Fallback if base URL not configured
         }
 

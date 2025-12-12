@@ -126,7 +126,15 @@ public data class VmReadyNotification(
     val provisioningDurationMinutes: Long,
     /** Link to view VM details in the portal */
     val portalLink: String
-)
+) {
+    init {
+        require(vmName.isNotBlank()) { "VM name must not be blank" }
+        require(projectName.isNotBlank()) { "Project name must not be blank" }
+        require(hostname.isNotBlank()) { "Hostname must not be blank" }
+        require(provisioningDurationMinutes >= 0) { "Provisioning duration cannot be negative" }
+        require(portalLink.isNotBlank()) { "Portal link must not be blank" }
+    }
+}
 
 /**
  * Interface for sending VM request notifications.

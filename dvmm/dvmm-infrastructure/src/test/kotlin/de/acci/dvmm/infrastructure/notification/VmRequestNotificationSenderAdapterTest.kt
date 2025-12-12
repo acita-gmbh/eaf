@@ -629,9 +629,9 @@ class VmRequestNotificationSenderAdapterTest {
             // When
             adapter.sendVmReadyNotification(notification)
 
-            // Then
-            assertEquals("ssh <username>@pending", contextSlot.captured["sshCommand"])
-            assertEquals("mstsc /v:pending", contextSlot.captured["rdpCommand"])
+            // Then - uses hostname as fallback when IP is pending
+            assertEquals("ssh <username>@MYPR-web-server-01", contextSlot.captured["sshCommand"])
+            assertEquals("mstsc /v:MYPR-web-server-01", contextSlot.captured["rdpCommand"])
             assertEquals("Pending assignment", contextSlot.captured["ipAddress"])
         }
 
