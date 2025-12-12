@@ -16,6 +16,7 @@ import de.acci.dvmm.application.vmware.UpdateVmwareConfigError
 import de.acci.dvmm.application.vmware.UpdateVmwareConfigHandler
 import de.acci.dvmm.domain.vmware.VmwareConfiguration
 import de.acci.eaf.core.result.Result
+import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.tenant.TenantContext
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -99,20 +100,19 @@ public class VmwareConfigController(
             is Result.Success -> {
                 ResponseEntity.ok(VmwareConfigApiResponse.fromDomain(result.value))
             }
-            is Result.Failure -> handleGetConfigError(result.error)
+            is Result.Failure -> handleGetConfigError(result.error, tenantId)
         }
     }
 
-    private fun handleGetConfigError(error: GetVmwareConfigError): ResponseEntity<Any> {
+    private fun handleGetConfigError(error: GetVmwareConfigError, tenantId: TenantId): ResponseEntity<Any> {
         return when (error) {
             is GetVmwareConfigError.NotFound -> {
-                logger.debug { "VMware configuration not found for tenant" }
+                logger.debug { "VMware configuration not found for tenant: tenantId=${tenantId.value}" }
                 ResponseEntity.notFound().build()
             }
             is GetVmwareConfigError.Forbidden -> {
                 // SECURITY: Return 404 to prevent tenant enumeration
-                val tenantId = try { TenantContext.currentOrNull()?.value } catch (e: Exception) { "unknown" }
-                logger.warn { "Forbidden access to VMware configuration for tenant $tenantId" }
+                logger.warn { "Forbidden access to VMware configuration: tenantId=${tenantId.value}" }
                 ResponseEntity.notFound().build()
             }
             is GetVmwareConfigError.QueryFailure -> {

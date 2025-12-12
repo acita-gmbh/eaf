@@ -26,9 +26,9 @@ public class VsphereSessionManager {
      */
     public fun registerSession(tenantId: TenantId, session: VsphereSession) {
         val existingSession = sessions.put(tenantId, session)
-        // Only cancel if we replaced a DIFFERENT session (or different job instance)
-        if (existingSession != null && existingSession.keepAliveJob !== session.keepAliveJob) {
-            existingSession.keepAliveJob.cancel()
+        // Always cancel the previous session's keepAliveJob to prevent resource leaks
+        if (existingSession != null) {
+            existingSession.keepAliveJob?.cancel()
         }
     }
 

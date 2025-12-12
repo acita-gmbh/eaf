@@ -16,6 +16,7 @@ import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
 import de.acci.dvmm.domain.vmrequest.ProjectId
 import de.acci.dvmm.domain.vmrequest.VmRequestId
 import de.acci.eaf.core.result.Result
+import de.acci.eaf.core.types.TenantId
 import de.acci.eaf.core.types.UserId
 import de.acci.eaf.eventsourcing.projection.PageRequest
 import de.acci.eaf.tenant.TenantContext
@@ -145,7 +146,7 @@ public class AdminRequestController(
                 is Result.Success -> {
                     ResponseEntity.ok(PendingRequestsPageResponse.fromPagedResponse(result.value))
                 }
-                is Result.Failure -> handleGetPendingRequestsError(result.error)
+                is Result.Failure -> handleGetPendingRequestsError(result.error, tenantId)
             }
         } catch (e: CancellationException) {
             throw e
@@ -157,15 +158,17 @@ public class AdminRequestController(
         }
     }
 
-    private fun handleGetPendingRequestsError(error: GetPendingRequestsError): ResponseEntity<Any> {
+    private fun handleGetPendingRequestsError(
+        error: GetPendingRequestsError,
+        tenantId: TenantId
+    ): ResponseEntity<Any> {
         return when (error) {
             is GetPendingRequestsError.Forbidden -> {
-                val tenantId = try { TenantContext.currentOrNull()?.value } catch (e: Exception) { "unknown" }
-                logger.warn { "Forbidden access to pending requests: tenantId=$tenantId" }
+                logger.warn { "Forbidden access to pending requests: tenantId=${tenantId.value}" }
                 ResponseEntity.notFound().build()
             }
             is GetPendingRequestsError.QueryFailure -> {
-                logger.error { "Failed to retrieve pending requests: ${error.message}" }
+                logger.error { "Failed to retrieve pending requests for tenantId=${tenantId.value}: ${error.message}" }
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     mapOf(
                         "error" to "QUERY_FAILURE",

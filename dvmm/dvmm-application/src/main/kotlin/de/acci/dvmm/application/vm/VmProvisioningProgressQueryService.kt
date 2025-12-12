@@ -30,17 +30,31 @@ public class VmProvisioningProgressQueryService(
             throw e // Allow proper coroutine cancellation
         } catch (e: Exception) {
             logger.warn(e) { "Failed to get tenant context for provisioning progress query of request ${vmRequestId.value}" }
-            return Error.TenantContextUnavailable(vmRequestId, e).failure()
+            return Error.TenantContextUnavailable(
+                vmRequestId = vmRequestId,
+                message = "Tenant context missing or invalid: ${e.message}"
+            ).failure()
         }
 
-        return repository.findByVmRequestId(vmRequestId, tenantId).success()
+        return try {
+            repository.findByVmRequestId(vmRequestId, tenantId).success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to query provisioning progress for request ${vmRequestId.value}" }
+            Error.QueryFailure("Failed to query provisioning progress: ${e.message}").failure()
+        }
     }
 
-    /** Service error. */
+    /** Service errors. */
     public sealed interface Error {
+        /** Tenant context is missing or invalid. */
         public data class TenantContextUnavailable(
             val vmRequestId: VmRequestId,
-            val cause: Throwable? = null
+            val message: String
         ) : Error
+
+        /** Database query failed. */
+        public data class QueryFailure(val message: String) : Error
     }
 }

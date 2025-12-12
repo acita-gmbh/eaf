@@ -133,7 +133,7 @@ public class MarkVmRequestProvisioningHandler(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    logger.error(e) { "Failed to update timeline for request ${command.requestId.value} after provisioning-start persisted" }
+                    logger.error(e) { "Failed to update timeline for request ${command.requestId.value} after provisioning-start persisted. Timeline may be inconsistent." }
                     // Best-effort: event is already persisted; prefer projection repair/outbox over failing the command here.
                 }
                 Unit.success()
