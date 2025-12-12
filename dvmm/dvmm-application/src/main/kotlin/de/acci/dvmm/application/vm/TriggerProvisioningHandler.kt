@@ -671,11 +671,14 @@ public class TriggerProvisioningHandler(
         }
 
         // Calculate provisioning duration (from VmProvisioningStarted event to now)
-        val provisioningDurationMinutes = Duration.between(event.metadata.timestamp, Instant.now()).toMinutes()
+        // Clamp to >= 0 to handle clock skew between servers
+        val provisioningDurationMinutes = Duration.between(event.metadata.timestamp, Instant.now())
+            .toMinutes()
+            .coerceAtLeast(0)
 
-        // Build portal link (normalize URL to avoid double slashes)
+        // Build portal link (normalize URL to avoid double slashes and whitespace)
         val portalLink = if (portalBaseUrl != null) {
-            "${portalBaseUrl.trimEnd('/')}/requests/${event.requestId.value}"
+            "${portalBaseUrl.trim().trimEnd('/')}/requests/${event.requestId.value}"
         } else {
             logger.warn {
                 "[Step 4/4] portalBaseUrl not configured, notification will contain placeholder link. " +
