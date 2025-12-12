@@ -128,13 +128,13 @@
                 <dd th:text="${hostname}">vm-12345.internal</dd>
 
                 <dt>IP Address</dt>
-                <dd th:text="${ipAddress} ?: 'Pending assignment'">192.168.1.100</dd>
+                <dd th:text="${ipAddress}">192.168.1.100</dd>
 
                 <dt>Status</dt>
                 <dd><span class="status-badge">Ready</span></dd>
 
                 <dt>Provisioning Time</dt>
-                <dd><span class="duration-badge" th:text="'Completed in ' + ${provisioningDuration} + ' minutes'">Completed in 5 minutes</span></dd>
+                <dd><span class="duration-badge" th:text="|Completed in ${provisioningDuration} ${provisioningDuration == 1 ? 'minute' : 'minutes'}|">Completed in 5 minutes</span></dd>
             </dl>
         </div>
 

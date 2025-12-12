@@ -202,7 +202,7 @@ public class VmRequestNotificationSenderAdapter(
         logger.debug {
             "Sending VM ready notification: " +
                 "requestId=${notification.requestId.value}, " +
-                "to=${notification.requesterEmail.value}, " +
+                "tenantId=${notification.tenantId.value}, " +
                 "hostname=${notification.hostname}"
         }
 

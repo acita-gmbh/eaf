@@ -663,12 +663,12 @@ public class TriggerProvisioningHandler(
             return
         }
 
-        // Calculate provisioning duration
-        val provisioningDurationMinutes = Duration.between(requestDetails.createdAt, Instant.now()).toMinutes()
+        // Calculate provisioning duration (from VmProvisioningStarted event to now)
+        val provisioningDurationMinutes = Duration.between(event.metadata.timestamp, Instant.now()).toMinutes()
 
-        // Build portal link
+        // Build portal link (normalize URL to avoid double slashes)
         val portalLink = if (portalBaseUrl != null) {
-            "$portalBaseUrl/requests/${event.requestId.value}"
+            "${portalBaseUrl.trimEnd('/')}/requests/${event.requestId.value}"
         } else {
             "#" // Fallback if base URL not configured
         }
@@ -692,7 +692,7 @@ public class TriggerProvisioningHandler(
             val result = notificationSender.sendVmReadyNotification(notification)
             when (result) {
                 is Result.Success -> logger.info {
-                    "[Step 4/4] Sent VM ready notification to $requesterEmail for VM $provisionedHostname"
+                    "[Step 4/4] Sent VM ready notification for request ${event.requestId.value}, VM $provisionedHostname"
                 }
                 is Result.Failure -> logger.logNotificationError(
                     notificationError = result.error,
