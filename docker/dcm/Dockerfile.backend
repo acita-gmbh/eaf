@@ -1,11 +1,11 @@
-# DVMM Backend - Runtime-only Dockerfile
+# DCM Backend - Runtime-only Dockerfile
 # Expects JAR to be pre-built (jOOQ generation needs host Docker access)
 #
 # Build JAR first:
-#   ./gradlew :dvmm:dvmm-app:bootJar -x test
+#   ./gradlew :dcm:dcm-app:bootJar -x test
 #
 # Then build image:
-#   docker compose -f docker/dvmm/docker-compose.yml build backend
+#   docker compose -f docker/dcm/docker-compose.yml build backend
 
 FROM eclipse-temurin:21-jre-alpine
 
@@ -21,8 +21,8 @@ RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 # Copy the pre-built bootJar
-# Note: The plain JAR is disabled in dvmm-app/build.gradle.kts, so only bootJar exists
-COPY --chown=spring:spring dvmm/dvmm-app/build/libs/dvmm-app-*-SNAPSHOT.jar app.jar
+# Note: The plain JAR is disabled in dcm-app/build.gradle.kts, so only bootJar exists
+COPY --chown=spring:spring dcm/dcm-app/build/libs/dcm-app-*-SNAPSHOT.jar app.jar
 
 # Expose the application port
 EXPOSE 8080
