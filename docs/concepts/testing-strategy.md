@@ -19,7 +19,7 @@ graph TD
     style Unit fill:#bef264
 ```
 
-### 1. Unit Tests (JUnit 5 + MockK)
+### 1. Unit Tests (JUnit 6 + MockK)
 * **Focus:** Individual classes, domain logic, aggregates.
 * **Speed:** Blazing fast (milliseconds).
 * **Dependencies:** All mocked. No database, no network.

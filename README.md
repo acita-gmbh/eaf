@@ -5,10 +5,10 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin" alt="Kotlin">
   <img src="https://img.shields.io/badge/Spring%20Boot-3.5.8-brightgreen.svg?logo=spring" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/React-18.2.0-61DAFB.svg?logo=react" alt="React">
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB.svg?logo=react" alt="React">
   <img src="https://img.shields.io/badge/Gradle-9.2.1-02303A.svg?logo=gradle" alt="Gradle">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/JUnit-5.10.2-25A162.svg?logo=junit5" alt="JUnit 5">
+  <img src="https://img.shields.io/badge/JUnit-6.0.1-25A162.svg" alt="JUnit 6">
   <img src="https://img.shields.io/badge/Coverage-70%25-success.svg" alt="Coverage">
 </p>
 
