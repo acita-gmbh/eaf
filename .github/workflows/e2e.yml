@@ -55,6 +55,13 @@ jobs:
           CONTAINER_KEYCLOAK="$(docker compose -f docker/dcm/docker-compose.yml ps -q keycloak)"
           CONTAINER_BACKEND="$(docker compose -f docker/dcm/docker-compose.yml ps -q backend)"
 
+          # Fail fast if any container didn't start / service name mismatch
+          if [ -z "$CONTAINER_POSTGRES" ] || [ -z "$CONTAINER_KEYCLOAK" ] || [ -z "$CONTAINER_BACKEND" ]; then
+            echo "ERROR: Failed to resolve container IDs."
+            docker compose -f docker/dcm/docker-compose.yml ps
+            exit 1
+          fi
+
           echo "Container IDs: postgres=$CONTAINER_POSTGRES, keycloak=$CONTAINER_KEYCLOAK, backend=$CONTAINER_BACKEND"
 
           # Export for use in failure step
