@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VM Ready</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #10b981;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9fafb;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .details {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 1px solid #e5e7eb;
+        }
+        .details dt {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .details dd {
+            margin: 0 0 10px 0;
+            color: #111827;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .status-badge {
+            display: inline-block;
+            background-color: #d1fae5;
+            color: #064e3b; /* green-900 for WCAG AAA contrast (7:1) */
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .connection-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .connection-box h3 {
+            margin: 0 0 10px 0;
+            color: #166534;
+            font-size: 0.875rem;
+        }
+        .connection-command {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .info-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #1e40af;
+            font-size: 0.875rem;
+        }
+        .info-box a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+        .duration-badge {
+            display: inline-block;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="margin: 0; font-size: 1.5rem;">Your VM is Ready</h1>
+    </div>
+    <div class="content">
+        <p>Great news! Your virtual machine has been successfully provisioned and is now ready for use.</p>
+
+        <div class="details">
+            <dl>
+                <dt>Request ID</dt>
+                <dd th:text="${requestId}">abc-123</dd>
+
+                <dt>VM Name</dt>
+                <dd th:text="${vmName}">web-server-01</dd>
+
+                <dt>Project</dt>
+                <dd th:text="${projectName}">Production</dd>
+
+                <dt>Hostname</dt>
+                <dd th:text="${hostname}">vm-12345.internal</dd>
+
+                <dt>IP Address</dt>
+                <dd th:text="${ipAddress}">192.168.1.100</dd>
+
+                <dt>Status</dt>
+                <dd><span class="status-badge">Ready</span></dd>
+
+                <dt>Provisioning Time</dt>
+                <dd><span class="duration-badge" th:text="|Completed in ${provisioningDuration} ${provisioningDuration == 1 ? 'minute' : 'minutes'}|">Completed in 5 minutes</span></dd>
+            </dl>
+        </div>
+
+        <div class="connection-box">
+            <h3>Connect to Your VM</h3>
+            <p style="margin: 0 0 10px 0; color: #166534; font-size: 0.875rem;">Use one of the following commands to connect:</p>
+            <div style="margin-bottom: 8px;">
+                <span style="color: #166534; font-size: 0.75rem; font-weight: 600;">Linux/Unix (SSH):</span>
+                <div class="connection-command" th:text="${sshCommand}">ssh &lt;username&gt;@192.168.1.100</div>
+            </div>
+            <div>
+                <span style="color: #166534; font-size: 0.75rem; font-weight: 600;">Windows (RDP):</span>
+                <div class="connection-command" th:text="${rdpCommand}">mstsc /v:192.168.1.100</div>
+            </div>
+            <p style="margin: 10px 0 0 0; color: #6b7280; font-size: 0.75rem;">
+                <em>Note: The SSH username depends on your VM template (e.g., ubuntu, admin, root).</em>
+            </p>
+        </div>
+
+        <div class="info-box" th:if="${portalLink != '#'}">
+            <h3>View VM Details</h3>
+            <p style="margin: 0; color: #1e3a8a;">
+                <a th:href="${portalLink}">View your VM in the portal</a> to see detailed information, resource usage, and management options.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the VM Management System. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

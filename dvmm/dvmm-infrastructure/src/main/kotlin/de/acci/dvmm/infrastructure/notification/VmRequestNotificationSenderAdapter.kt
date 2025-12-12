@@ -5,6 +5,7 @@ import de.acci.dvmm.application.vmrequest.ProvisioningFailedUserNotification
 import de.acci.dvmm.application.vmrequest.RequestApprovedNotification
 import de.acci.dvmm.application.vmrequest.RequestCreatedNotification
 import de.acci.dvmm.application.vmrequest.RequestRejectedNotification
+import de.acci.dvmm.application.vmrequest.VmReadyNotification
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationError
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.eaf.core.result.Result
@@ -181,6 +182,40 @@ public class VmRequestNotificationSenderAdapter(
         ).mapToNotificationError(TEMPLATE_PROVISIONING_FAILED_ADMIN)
     }
 
+    override suspend fun sendVmReadyNotification(
+        notification: VmReadyNotification
+    ): Result<Unit, VmRequestNotificationError> {
+        // Use IP if available, otherwise fallback to hostname for connection commands
+        val connectionTarget = notification.ipAddress ?: notification.hostname
+
+        val context = mapOf(
+            "requestId" to notification.requestId.value.toString(),
+            "vmName" to notification.vmName,
+            "projectName" to notification.projectName,
+            "ipAddress" to (notification.ipAddress ?: "Pending assignment"),
+            "hostname" to notification.hostname,
+            "sshCommand" to "ssh <username>@$connectionTarget",
+            "rdpCommand" to "mstsc /v:$connectionTarget",
+            "portalLink" to notification.portalLink,
+            "provisioningDuration" to notification.provisioningDurationMinutes
+        )
+
+        logger.debug {
+            "Sending VM ready notification: " +
+                "requestId=${notification.requestId.value}, " +
+                "tenantId=${notification.tenantId.value}, " +
+                "hostname=${notification.hostname}"
+        }
+
+        return notificationService.sendEmail(
+            tenantId = notification.tenantId,
+            recipient = notification.requesterEmail,
+            subject = "[DVMM] VM ready: ${notification.vmName}",
+            templateName = TEMPLATE_VM_READY,
+            context = context
+        ).mapToNotificationError(TEMPLATE_VM_READY)
+    }
+
     /**
      * Map NotificationService errors to VmRequestNotificationError.
      */
@@ -216,5 +251,6 @@ public class VmRequestNotificationSenderAdapter(
         const val TEMPLATE_REJECTED = "vm-request-rejected"
         const val TEMPLATE_PROVISIONING_FAILED_USER = "vm-provisioning-failed-user"
         const val TEMPLATE_PROVISIONING_FAILED_ADMIN = "vm-provisioning-failed-admin"
+        const val TEMPLATE_VM_READY = "vm-ready"
     }
 }

@@ -5,9 +5,11 @@ import de.acci.dvmm.application.vmrequest.ProvisioningFailedAdminNotification
 import de.acci.dvmm.application.vmrequest.ProvisioningFailedUserNotification
 import de.acci.dvmm.application.vmrequest.TimelineEventProjectionUpdater
 import de.acci.dvmm.application.vmrequest.TimelineEventType
+import de.acci.dvmm.application.vmrequest.VmReadyNotification
 import de.acci.dvmm.application.vmrequest.VmRequestEventDeserializer
 import de.acci.dvmm.application.vmrequest.VmRequestNotificationSender
 import de.acci.dvmm.application.vmrequest.VmRequestReadRepository
+import de.acci.dvmm.application.vmrequest.VmRequestSummary
 import de.acci.dvmm.application.vmrequest.logNotificationError
 import de.acci.dvmm.application.vmware.VmSpec
 import de.acci.dvmm.application.vmware.VmwareConfigurationPort
@@ -27,6 +29,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.notifications.EmailAddress
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
@@ -57,7 +60,9 @@ public class TriggerProvisioningHandler(
     private val progressRepository: VmProvisioningProgressProjectionRepository,
     private val notificationSender: VmRequestNotificationSender,
     /** Admin email for provisioning failure alerts (AC-3.6.5). Null disables admin notifications. */
-    private val adminNotificationEmail: String? = null
+    private val adminNotificationEmail: String? = null,
+    /** Base URL for portal links in notifications (AC-3.8.1). Example: "https://dvmm.example.com" */
+    private val portalBaseUrl: String? = null
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -126,7 +131,12 @@ public class TriggerProvisioningHandler(
                         "vCenter ID: ${provisioningResult.vmwareVmId.value}, " +
                         "IP: ${provisioningResult.ipAddress ?: "pending"}"
                 }
-                emitSuccess(event, provisioningResult, prefixedVmName)
+                emitSuccess(
+                    event = event,
+                    provisioningResult = provisioningResult,
+                    provisionedHostname = prefixedVmName,
+                    requestDetails = projectInfo
+                )
             }
             is Result.Failure -> {
                 val failure = result.error
@@ -207,18 +217,25 @@ public class TriggerProvisioningHandler(
     }
 
     /**
-     * Emits success events for VM and VmRequest aggregates, plus timeline update.
+     * Emits success events for VM and VmRequest aggregates, plus timeline update and notification.
      *
-     * **Note on partial failures:** This method performs 3 sequential updates without
-     * distributed transaction guarantees. If step 1 (VmProvisioned) succeeds but step 2
-     * (VmRequestReady) fails, the VM aggregate is updated but the VmRequest is not.
+     * **Note on partial failures:** This method performs 4 sequential updates without
+     * distributed transaction guarantees:
+     * 1. VmProvisioned event (VM aggregate)
+     * 2. VmRequestReady event (VmRequest aggregate)
+     * 3. VM_READY timeline event (projection)
+     * 4. Success notification email (side effect)
+     *
+     * If an early step succeeds but a later step fails, earlier changes persist.
      * This is acceptable for eventual consistency - a retry mechanism or manual
      * reconciliation can fix the inconsistency. Detailed logging ensures traceability.
+     * Step 4 (notification) failures are logged but do not affect the overall success.
      */
     private suspend fun emitSuccess(
-        event: VmProvisioningStarted, 
+        event: VmProvisioningStarted,
         provisioningResult: VmProvisioningResult,
-        provisionedHostname: String
+        provisionedHostname: String,
+        requestDetails: VmRequestSummary
     ) {
         val vmId = event.aggregateId.value
         val requestId = event.requestId.value
@@ -236,7 +253,7 @@ public class TriggerProvisioningHandler(
         try {
             val vmEvents = eventStore.load(vmId)
             if (vmEvents.isEmpty()) {
-                logger.error { "[Step 1/3] Cannot emit VmProvisioned: VM aggregate $vmId not found" }
+                logger.error { "[Step 1/4] Cannot emit VmProvisioned: VM aggregate $vmId not found" }
                 return
             }
 
@@ -258,19 +275,19 @@ public class TriggerProvisioningHandler(
                 expectedVersion = vmEvents.size.toLong()
             )
             when (vmAppendResult) {
-                is Result.Success -> logger.info { "[Step 1/3] Emitted VmProvisioned for VM $vmId" }
+                is Result.Success -> logger.info { "[Step 1/4] Emitted VmProvisioned for VM $vmId" }
                 is Result.Failure -> {
-                    logger.error { "[Step 1/3] Failed to emit VmProvisioned: ${vmAppendResult.error}" }
+                    logger.error { "[Step 1/4] Failed to emit VmProvisioned: ${vmAppendResult.error}" }
                     return
                 }
             }
         } catch (e: CancellationException) {
             throw e  // Allow proper coroutine cancellation
         } catch (e: IllegalArgumentException) {
-            logger.error(e) { "[Step 1/3] Invalid state transition for VM $vmId" }
+            logger.error(e) { "[Step 1/4] Invalid state transition for VM $vmId" }
             return
         } catch (e: IllegalStateException) {
-            logger.error(e) { "[Step 1/3] Invalid aggregate state for VM $vmId" }
+            logger.error(e) { "[Step 1/4] Invalid aggregate state for VM $vmId" }
             return
         }
 
@@ -278,7 +295,7 @@ public class TriggerProvisioningHandler(
         try {
             val requestEvents = eventStore.load(requestId)
             if (requestEvents.isEmpty()) {
-                logger.error { "[Step 2/3] Cannot emit VmRequestReady: request $requestId not found (VM $vmId was updated)" }
+                logger.error { "[Step 2/4] Cannot emit VmRequestReady: request $requestId not found (VM $vmId was updated)" }
                 return
             }
 
@@ -301,10 +318,10 @@ public class TriggerProvisioningHandler(
                 expectedVersion = requestEvents.size.toLong()
             )
             when (requestAppendResult) {
-                is Result.Success -> logger.info { "[Step 2/3] Emitted VmRequestReady for request $requestId" }
+                is Result.Success -> logger.info { "[Step 2/4] Emitted VmRequestReady for request $requestId" }
                 is Result.Failure -> {
                     logger.error {
-                        "CRITICAL: [Step 2/3] Failed to emit VmRequestReady for request $requestId " +
+                        "CRITICAL: [Step 2/4] Failed to emit VmRequestReady for request $requestId " +
                             "after VM $vmId was already marked provisioned. " +
                             "System may be in inconsistent state. Error: ${requestAppendResult.error}"
                     }
@@ -314,10 +331,10 @@ public class TriggerProvisioningHandler(
         } catch (e: CancellationException) {
             throw e  // Allow proper coroutine cancellation
         } catch (e: de.acci.dvmm.domain.exceptions.InvalidStateException) {
-            logger.error(e) { "[Step 2/3] Invalid state transition for request $requestId (VM $vmId was updated)" }
+            logger.error(e) { "[Step 2/4] Invalid state transition for request $requestId (VM $vmId was updated)" }
             return
         } catch (e: IllegalArgumentException) {
-            logger.error(e) { "[Step 2/3] Invalid argument for request $requestId (VM $vmId was updated)" }
+            logger.error(e) { "[Step 2/4] Invalid argument for request $requestId (VM $vmId was updated)" }
             return
         }
 
@@ -336,14 +353,22 @@ public class TriggerProvisioningHandler(
                 )
             )
             when (timelineResult) {
-                is Result.Success -> logger.info { "[Step 3/3] Added VM_READY timeline event for request $requestId" }
-                is Result.Failure -> logger.error { "[Step 3/3] Failed to add VM_READY timeline: ${timelineResult.error}" }
+                is Result.Success -> logger.info { "[Step 3/4] Added VM_READY timeline event for request $requestId" }
+                is Result.Failure -> logger.error { "[Step 3/4] Failed to add VM_READY timeline: ${timelineResult.error}" }
             }
         } catch (e: CancellationException) {
             throw e  // Allow proper coroutine cancellation
         } catch (e: IllegalArgumentException) {
-            logger.error(e) { "[Step 3/3] Invalid timeline event for request $requestId" }
+            logger.error(e) { "[Step 3/4] Invalid timeline event for request $requestId" }
         }
+
+        // Step 4: Send success notification (AC-3.8.1)
+        sendSuccessNotification(
+            event = event,
+            provisioningResult = provisioningResult,
+            provisionedHostname = provisionedHostname,
+            requestDetails = requestDetails
+        )
     }
 
     private fun buildReadyDetails(result: VmProvisioningResult, hostname: String): String {
@@ -561,7 +586,8 @@ public class TriggerProvisioningHandler(
                 val userResult = notificationSender.sendProvisioningFailedUserNotification(userNotification)
                 when (userResult) {
                     is Result.Success -> logger.info {
-                        "[Step 3/4] Sent provisioning failed notification to user $requesterEmail"
+                        "[Step 3/4] Sent provisioning failed notification to user. " +
+                            "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
                     }
                     is Result.Failure -> logger.logNotificationError(
                         notificationError = userResult.error,
@@ -601,7 +627,8 @@ public class TriggerProvisioningHandler(
             val adminResult = notificationSender.sendProvisioningFailedAdminNotification(adminNotification)
             when (adminResult) {
                 is Result.Success -> logger.info {
-                    "[Step 4/4] Sent provisioning failed notification to admin $adminNotificationEmail"
+                    "[Step 4/4] Sent provisioning failed notification to admin. " +
+                        "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
                 }
                 is Result.Failure -> logger.logNotificationError(
                     notificationError = adminResult.error,
@@ -614,6 +641,81 @@ public class TriggerProvisioningHandler(
             throw e
         } catch (e: Exception) {
             logger.error(e) { "[Step 4/4] Failed to send admin notification for request ${event.requestId.value}" }
+        }
+    }
+
+    /**
+     * Sends VM ready notification to the requester (AC-3.8.1).
+     *
+     * Includes VM details, connection instructions, and portal link.
+     * Notification failures are logged but do not fail the overall operation.
+     *
+     * @param requestDetails Pre-fetched request details from the handler to avoid duplicate repository call
+     */
+    private suspend fun sendSuccessNotification(
+        event: VmProvisioningStarted,
+        provisioningResult: VmProvisioningResult,
+        provisionedHostname: String,
+        requestDetails: VmRequestSummary
+    ) {
+        val requesterEmail = requestDetails.requesterEmail
+        if (requesterEmail == null) {
+            logger.warn {
+                "[Step 4/4] No requester email, skipping success notification. " +
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
+            }
+            return
+        }
+
+        // Calculate provisioning duration (from VmProvisioningStarted event to now)
+        // Clamp to >= 0 to handle clock skew between servers
+        val provisioningDurationMinutes = Duration.between(event.metadata.timestamp, Instant.now())
+            .toMinutes()
+            .coerceAtLeast(0)
+
+        // Build portal link (normalize URL to avoid double slashes and whitespace)
+        val portalLink = if (portalBaseUrl != null) {
+            "${portalBaseUrl.trim().trimEnd('/')}/requests/${event.requestId.value}"
+        } else {
+            logger.warn {
+                "[Step 4/4] portalBaseUrl not configured, notification will contain placeholder link. " +
+                    "requestId=${event.requestId.value}, correlationId=${event.metadata.correlationId.value}"
+            }
+            "#" // Fallback if base URL not configured
+        }
+
+        try {
+            // Note: guestOs is null at provisioning time. It's populated later by VMware Tools
+            // via SyncVmStatusHandler. Both SSH and RDP commands are provided in the email.
+            val notification = VmReadyNotification(
+                requestId = event.requestId,
+                tenantId = event.metadata.tenantId,
+                requesterEmail = EmailAddress.of(requesterEmail),
+                vmName = requestDetails.vmName,
+                projectName = requestDetails.projectName,
+                ipAddress = provisioningResult.ipAddress,
+                hostname = provisionedHostname,
+                provisioningDurationMinutes = provisioningDurationMinutes,
+                portalLink = portalLink
+            )
+
+            val result = notificationSender.sendVmReadyNotification(notification)
+            when (result) {
+                is Result.Success -> logger.info {
+                    "[Step 4/4] Sent VM ready notification for request ${event.requestId.value}, " +
+                        "VM $provisionedHostname, correlationId=${event.metadata.correlationId.value}"
+                }
+                is Result.Failure -> logger.logNotificationError(
+                    notificationError = result.error,
+                    requestId = event.requestId,
+                    correlationId = event.metadata.correlationId,
+                    action = "VmReady"
+                )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "[Step 4/4] Failed to send success notification for request ${event.requestId.value}" }
         }
     }
 
