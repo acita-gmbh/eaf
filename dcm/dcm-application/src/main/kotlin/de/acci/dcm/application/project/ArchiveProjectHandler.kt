@@ -196,7 +196,11 @@ public class ArchiveProjectHandler(
                         version = aggregate.version.toInt()
                     )
                 ).onFailure { error ->
-                    logger.logProjectionError(error, command.projectId, correlationId)
+                    logger.logProjectionError(
+                        error = error,
+                        projectId = command.projectId,
+                        correlationId = correlationId
+                    )
                 }
 
                 ArchiveProjectResult(projectId = command.projectId).success()

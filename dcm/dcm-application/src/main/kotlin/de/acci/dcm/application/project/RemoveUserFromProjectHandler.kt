@@ -234,12 +234,27 @@ public class RemoveUserFromProjectHandler(
                         "removedBy=${command.removedBy.value}"
                 }
 
-                // Update projection
-                projectionUpdater.removeMember(
-                    projectId = command.projectId,
-                    userId = command.userId
-                ).onFailure { error ->
-                    logger.logProjectionError(error, command.projectId, correlationId)
+                // Update projection (non-fatal)
+                try {
+                    projectionUpdater.removeMember(
+                        projectId = command.projectId,
+                        userId = command.userId
+                    ).onFailure { error ->
+                        logger.logProjectionError(
+                            error = error,
+                            projectId = command.projectId,
+                            correlationId = correlationId
+                        )
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.error(e) {
+                        "Projection update failed (removeMember): " +
+                            "projectId=${command.projectId.value}, " +
+                            "userId=${command.userId.value}, " +
+                            "correlationId=${correlationId.value}"
+                    }
                 }
 
                 RemoveUserFromProjectResult(

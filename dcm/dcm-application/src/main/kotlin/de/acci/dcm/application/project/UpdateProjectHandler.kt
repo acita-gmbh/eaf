@@ -243,7 +243,11 @@ public class UpdateProjectHandler(
                         version = aggregate.version.toInt()
                     )
                 ).onFailure { error ->
-                    logger.logProjectionError(error, command.projectId, correlationId)
+                    logger.logProjectionError(
+                        error = error,
+                        projectId = command.projectId,
+                        correlationId = correlationId
+                    )
                 }
 
                 UpdateProjectResult(projectId = command.projectId).success()

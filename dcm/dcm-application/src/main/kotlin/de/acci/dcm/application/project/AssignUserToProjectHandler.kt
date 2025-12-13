@@ -225,7 +225,11 @@ public class AssignUserToProjectHandler(
                                 role = command.role
                             )
                         ).onFailure { error ->
-                            logger.logProjectionError(error, command.projectId, correlationId)
+                            logger.logProjectionError(
+                                error = error,
+                                projectId = command.projectId,
+                                correlationId = correlationId
+                            )
                         }
                     } else {
                         // New member
@@ -239,7 +243,11 @@ public class AssignUserToProjectHandler(
                                 assignedAt = member.assignedAt
                             )
                         ).onFailure { error ->
-                            logger.logProjectionError(error, command.projectId, correlationId)
+                            logger.logProjectionError(
+                                error = error,
+                                projectId = command.projectId,
+                                correlationId = correlationId
+                            )
                         }
                     }
                 }

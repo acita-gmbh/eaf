@@ -195,7 +195,11 @@ public class UnarchiveProjectHandler(
                         version = aggregate.version.toInt()
                     )
                 ).onFailure { error ->
-                    logger.logProjectionError(error, command.projectId, correlationId)
+                    logger.logProjectionError(
+                        error = error,
+                        projectId = command.projectId,
+                        correlationId = correlationId
+                    )
                 }
 
                 UnarchiveProjectResult(projectId = command.projectId).success()
