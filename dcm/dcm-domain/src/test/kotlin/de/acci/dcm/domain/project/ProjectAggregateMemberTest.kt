@@ -155,7 +155,8 @@ class ProjectAggregateMemberTest {
             val exception = assertThrows<IllegalArgumentException> {
                 aggregate.removeUser(creatorUserId, createTestMetadata())
             }
-            assertTrue(exception.message!!.contains("creator"))
+            val message = requireNotNull(exception.message) { "Expected exception message" }
+            assertTrue(message.contains("creator"))
         }
 
         @Test
@@ -188,9 +189,9 @@ class ProjectAggregateMemberTest {
             val member = aggregate.getMember(memberId)
 
             // Then: Member is returned with correct data
-            assertTrue(member != null)
-            assertEquals(memberId, member!!.userId)
-            assertEquals(ProjectRole.MEMBER, member.role)
+            val actualMember = requireNotNull(member) { "Expected member to be present" }
+            assertEquals(memberId, actualMember.userId)
+            assertEquals(ProjectRole.MEMBER, actualMember.role)
         }
 
         @Test

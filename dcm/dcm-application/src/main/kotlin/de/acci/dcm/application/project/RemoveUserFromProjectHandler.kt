@@ -11,7 +11,6 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
-import de.acci.eaf.eventsourcing.projection.ProjectionError
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -237,7 +236,7 @@ public class RemoveUserFromProjectHandler(
                     projectId = command.projectId,
                     userId = command.userId
                 ).onFailure { error ->
-                    logProjectionError(error, command.projectId, correlationId)
+                    logger.logProjectionError(error, command.projectId, correlationId)
                 }
 
                 RemoveUserFromProjectResult(
@@ -250,27 +249,6 @@ public class RemoveUserFromProjectHandler(
                     RemoveUserFromProjectError.ConcurrencyConflict(
                         message = "Concurrent modification detected for project ${error.aggregateId}"
                     ).failure()
-                }
-            }
-        }
-    }
-
-    private fun logProjectionError(
-        error: ProjectionError,
-        projectId: ProjectId,
-        correlationId: CorrelationId
-    ) {
-        when (error) {
-            is ProjectionError.DatabaseError -> {
-                logger.warn {
-                    "Projection update failed for project ${projectId.value}: ${error.message}. " +
-                        "correlationId=${correlationId.value}."
-                }
-            }
-            is ProjectionError.NotFound -> {
-                logger.warn {
-                    "Projection not found for project ${projectId.value}. " +
-                        "correlationId=${correlationId.value}."
                 }
             }
         }

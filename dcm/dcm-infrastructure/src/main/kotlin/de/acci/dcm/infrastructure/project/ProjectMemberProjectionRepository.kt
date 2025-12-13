@@ -27,13 +27,13 @@ public class ProjectMemberProjectionRepository(
 ) : BaseProjectionRepository<ProjectMembers>(dsl, ioDispatcher) {
 
     override fun mapRecord(record: Record): ProjectMembers = ProjectMembers(
-        id = record.get(PROJECT_MEMBERS.ID)!!,
-        projectId = record.get(PROJECT_MEMBERS.PROJECT_ID)!!,
-        tenantId = record.get(PROJECT_MEMBERS.TENANT_ID)!!,
-        userId = record.get(PROJECT_MEMBERS.USER_ID)!!,
-        role = record.get(PROJECT_MEMBERS.ROLE)!!,
-        assignedBy = record.get(PROJECT_MEMBERS.ASSIGNED_BY)!!,
-        assignedAt = record.get(PROJECT_MEMBERS.ASSIGNED_AT)!!,
+        id = requireNotNull(record.get(PROJECT_MEMBERS.ID)) { "PROJECT_MEMBERS.ID is null" },
+        projectId = requireNotNull(record.get(PROJECT_MEMBERS.PROJECT_ID)) { "PROJECT_MEMBERS.PROJECT_ID is null" },
+        tenantId = requireNotNull(record.get(PROJECT_MEMBERS.TENANT_ID)) { "PROJECT_MEMBERS.TENANT_ID is null" },
+        userId = requireNotNull(record.get(PROJECT_MEMBERS.USER_ID)) { "PROJECT_MEMBERS.USER_ID is null" },
+        role = requireNotNull(record.get(PROJECT_MEMBERS.ROLE)) { "PROJECT_MEMBERS.ROLE is null" },
+        assignedBy = requireNotNull(record.get(PROJECT_MEMBERS.ASSIGNED_BY)) { "PROJECT_MEMBERS.ASSIGNED_BY is null" },
+        assignedAt = requireNotNull(record.get(PROJECT_MEMBERS.ASSIGNED_AT)) { "PROJECT_MEMBERS.ASSIGNED_AT is null" },
         version = record.get(PROJECT_MEMBERS.VERSION)
     )
 

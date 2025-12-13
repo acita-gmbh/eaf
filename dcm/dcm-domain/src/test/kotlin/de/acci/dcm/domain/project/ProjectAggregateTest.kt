@@ -169,7 +169,8 @@ class ProjectAggregateTest {
                     metadata = createTestMetadata()
                 )
             }
-            assertTrue(exception.message!!.contains("archived"))
+            val message = requireNotNull(exception.message) { "Expected exception message" }
+            assertTrue(message.contains("archived"))
         }
     }
 

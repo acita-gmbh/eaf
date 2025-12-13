@@ -76,6 +76,9 @@ public class ProjectAggregate private constructor(
             is ProjectUnarchived -> apply(event)
             is UserAssignedToProject -> apply(event)
             is UserRemovedFromProject -> apply(event)
+            else -> throw IllegalArgumentException(
+                "Unknown event type for ProjectAggregate: ${event::class.simpleName}"
+            )
         }
     }
 

@@ -133,7 +133,8 @@ class ProjectAggregateArchiveTest {
                     metadata = createTestMetadata()
                 )
             }
-            assertTrue(exception.message!!.contains("archived"))
+            val message = requireNotNull(exception.message) { "Expected exception message" }
+            assertTrue(message.contains("archived"))
         }
 
         @Test
@@ -148,7 +149,8 @@ class ProjectAggregateArchiveTest {
             val exception = assertThrows<IllegalStateException> {
                 aggregate.removeUser(memberId, createTestMetadata())
             }
-            assertTrue(exception.message!!.contains("archived"))
+            val message = requireNotNull(exception.message) { "Expected exception message" }
+            assertTrue(message.contains("archived"))
         }
     }
 }

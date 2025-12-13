@@ -334,7 +334,8 @@ class ResilientProvisioningServiceTest {
             assertTrue(failure is ProvisioningFailure.HypervisorError)
             val apiError = (failure as ProvisioningFailure.HypervisorError).error
             assertTrue(apiError is VsphereError.ApiError)
-            assertTrue(apiError.message!!.contains("Unexpected"))
+            val message = requireNotNull(apiError.message) { "Expected error message to be present" }
+            assertTrue(message.contains("Unexpected"))
         }
     }
 }

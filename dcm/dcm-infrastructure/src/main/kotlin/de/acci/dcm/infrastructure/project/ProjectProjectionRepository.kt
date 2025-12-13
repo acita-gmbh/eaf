@@ -30,14 +30,14 @@ public class ProjectProjectionRepository(
 ) : BaseProjectionRepository<Projects>(dsl, ioDispatcher) {
 
     override fun mapRecord(record: Record): Projects = Projects(
-        id = record.get(PROJECTS.ID)!!,
-        tenantId = record.get(PROJECTS.TENANT_ID)!!,
-        name = record.get(PROJECTS.NAME)!!,
+        id = requireNotNull(record.get(PROJECTS.ID)) { "PROJECTS.ID is null" },
+        tenantId = requireNotNull(record.get(PROJECTS.TENANT_ID)) { "PROJECTS.TENANT_ID is null" },
+        name = requireNotNull(record.get(PROJECTS.NAME)) { "PROJECTS.NAME is null" },
         description = record.get(PROJECTS.DESCRIPTION),
         status = record.get(PROJECTS.STATUS),
-        createdBy = record.get(PROJECTS.CREATED_BY)!!,
-        createdAt = record.get(PROJECTS.CREATED_AT)!!,
-        updatedAt = record.get(PROJECTS.UPDATED_AT)!!,
+        createdBy = requireNotNull(record.get(PROJECTS.CREATED_BY)) { "PROJECTS.CREATED_BY is null" },
+        createdAt = requireNotNull(record.get(PROJECTS.CREATED_AT)) { "PROJECTS.CREATED_AT is null" },
+        updatedAt = requireNotNull(record.get(PROJECTS.UPDATED_AT)) { "PROJECTS.UPDATED_AT is null" },
         version = record.get(PROJECTS.VERSION)
     )
 
