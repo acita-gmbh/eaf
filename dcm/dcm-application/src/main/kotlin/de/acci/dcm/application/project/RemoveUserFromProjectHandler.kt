@@ -134,21 +134,21 @@ public class RemoveUserFromProjectHandler(
         }
 
         // 3. Deserialize events and reconstitute aggregate
-        val domainEvents = try {
-            storedEvents.map { eventDeserializer.deserialize(it) }
+        val aggregate = try {
+            val domainEvents = storedEvents.map { eventDeserializer.deserialize(it) }
+            ProjectAggregate.reconstitute(command.projectId, domainEvents)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             logger.error(e) {
-                "Failed to deserialize events for project: " +
+                "Failed to deserialize/reconstitute events for project: " +
                     "projectId=${command.projectId.value}, " +
                     "correlationId=${correlationId.value}"
             }
             return RemoveUserFromProjectError.PersistenceFailure(
-                message = "Failed to deserialize project events: ${e.message}"
+                message = "Failed to reconstitute project: $e"
             ).failure()
         }
-        val aggregate = ProjectAggregate.reconstitute(command.projectId, domainEvents)
 
         // 4. Verify expected version matches (optimistic locking)
         if (aggregate.version != command.version) {
@@ -183,9 +183,12 @@ public class RemoveUserFromProjectHandler(
                 metadata = metadata
             )
         } catch (e: IllegalArgumentException) {
-            logger.warn {
-                "Attempt to remove project creator: projectId=${command.projectId.value}, " +
-                    "userId=${command.userId.value}"
+            logger.warn(e) {
+                "Attempt to remove project creator: " +
+                    "projectId=${command.projectId.value}, " +
+                    "userId=${command.userId.value}, " +
+                    "removedBy=${command.removedBy.value}, " +
+                    "correlationId=${correlationId.value}"
             }
             return RemoveUserFromProjectError.CannotRemoveCreator(
                 projectId = command.projectId

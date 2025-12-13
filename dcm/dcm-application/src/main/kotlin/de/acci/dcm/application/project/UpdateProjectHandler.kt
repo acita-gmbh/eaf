@@ -131,21 +131,21 @@ public class UpdateProjectHandler(
         }
 
         // 3. Deserialize events and reconstitute aggregate
-        val domainEvents = try {
-            storedEvents.map { eventDeserializer.deserialize(it) }
+        val aggregate = try {
+            val domainEvents = storedEvents.map { eventDeserializer.deserialize(it) }
+            ProjectAggregate.reconstitute(command.projectId, domainEvents)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             logger.error(e) {
-                "Failed to deserialize events for project: " +
+                "Failed to deserialize/reconstitute events for project: " +
                     "projectId=${command.projectId.value}, " +
                     "correlationId=${correlationId.value}"
             }
             return UpdateProjectError.PersistenceFailure(
-                message = "Failed to deserialize project events: ${e.message}"
+                message = "Failed to reconstitute project: $e"
             ).failure()
         }
-        val aggregate = ProjectAggregate.reconstitute(command.projectId, domainEvents)
 
         // 4. Verify expected version matches (optimistic locking)
         if (aggregate.version != command.version) {
@@ -195,8 +195,9 @@ public class UpdateProjectHandler(
                 metadata = metadata
             )
         } catch (e: IllegalStateException) {
-            logger.debug {
-                "Update failed: projectId=${command.projectId.value}, reason=${e.message}"
+            logger.debug(e) {
+                "Update failed: projectId=${command.projectId.value}, " +
+                    "correlationId=${correlationId.value}"
             }
             return UpdateProjectError.ProjectArchived(
                 projectId = command.projectId
