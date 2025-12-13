@@ -135,7 +135,7 @@ public class ProjectProjectionRepository(
     public suspend fun findIdByName(name: String): UUID? = withContext(ioDispatcher) {
         dsl.select(PROJECTS.ID)
             .from(PROJECTS)
-            .where(PROJECTS.NAME.likeIgnoreCase(name))
+            .where(PROJECTS.NAME.equalIgnoreCase(name))
             .fetchOne()
             ?.get(PROJECTS.ID)
     }

@@ -5,6 +5,7 @@ import de.acci.dcm.domain.project.ProjectId
 import de.acci.dcm.domain.project.ProjectName
 import de.acci.eaf.core.result.Result
 import de.acci.eaf.core.result.failure
+import de.acci.eaf.core.result.onFailure
 import de.acci.eaf.core.result.success
 import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
@@ -182,7 +183,12 @@ public class CreateProjectHandler(
                         createdAt = metadata.timestamp,
                         version = aggregate.version.toInt()
                     )
-                )
+                ).onFailure { error ->
+                    logger.warn {
+                        "Failed to insert project projection: projectId=${aggregate.id.value}, " +
+                            "error=$error. Projection can be reconstructed from event store."
+                    }
+                }
 
                 // Insert creator as member
                 val creatorMember = aggregate.getMember(command.createdBy)
@@ -196,7 +202,13 @@ public class CreateProjectHandler(
                             assignedBy = creatorMember.assignedBy,
                             assignedAt = creatorMember.assignedAt
                         )
-                    )
+                    ).onFailure { error ->
+                        logger.warn {
+                            "Failed to insert member projection: projectId=${aggregate.id.value}, " +
+                                "userId=${command.createdBy.value}, error=$error. " +
+                                "Projection can be reconstructed from event store."
+                        }
+                    }
                 }
 
                 CreateProjectResult(projectId = aggregate.id).success()

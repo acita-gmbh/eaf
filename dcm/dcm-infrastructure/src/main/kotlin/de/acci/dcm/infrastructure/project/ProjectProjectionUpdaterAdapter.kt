@@ -228,14 +228,24 @@ public class ProjectProjectionUpdaterAdapter(
         userId: UserId
     ): Result<Unit, ProjectionError> {
         return try {
-            memberRepository.remove(
+            val rowsDeleted = memberRepository.remove(
                 projectId = projectId.value,
                 userId = userId.value
             )
-            logger.debug {
-                "Removed project member: project=${projectId.value}, user=${userId.value}"
+            if (rowsDeleted > 0) {
+                logger.debug {
+                    "Removed project member: project=${projectId.value}, user=${userId.value}"
+                }
+                Unit.success()
+            } else {
+                logger.warn {
+                    "No member found to remove: project=${projectId.value}, user=${userId.value}. " +
+                        "Projection may be out of sync with event store."
+                }
+                // Return success anyway - the member doesn't exist, which is the desired end state
+                // This handles idempotent removal scenarios
+                Unit.success()
             }
-            Unit.success()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
