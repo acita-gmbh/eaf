@@ -143,7 +143,7 @@ public class UpdateProjectHandler(
                     "correlationId=${correlationId.value}"
             }
             return UpdateProjectError.PersistenceFailure(
-                message = "Failed to reconstitute project: $e"
+                message = "Failed to reconstitute project: ${e.message}"
             ).failure()
         }
 

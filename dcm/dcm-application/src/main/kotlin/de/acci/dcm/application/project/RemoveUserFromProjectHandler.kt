@@ -146,7 +146,7 @@ public class RemoveUserFromProjectHandler(
                     "correlationId=${correlationId.value}"
             }
             return RemoveUserFromProjectError.PersistenceFailure(
-                message = "Failed to reconstitute project: $e"
+                message = "Failed to reconstitute project: ${e.message}"
             ).failure()
         }
 

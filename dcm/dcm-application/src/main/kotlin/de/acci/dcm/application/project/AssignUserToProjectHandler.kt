@@ -135,7 +135,7 @@ public class AssignUserToProjectHandler(
                     "correlationId=${correlationId.value}"
             }
             return AssignUserToProjectError.PersistenceFailure(
-                message = "Failed to reconstitute project: $e"
+                message = "Failed to reconstitute project: ${e.message}"
             ).failure()
         }
 

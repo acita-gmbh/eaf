@@ -128,7 +128,7 @@ public class UnarchiveProjectHandler(
                     "correlationId=${correlationId.value}"
             }
             return UnarchiveProjectError.PersistenceFailure(
-                message = "Failed to reconstitute project: $e"
+                message = "Failed to reconstitute project: ${e.message}"
             ).failure()
         }
 
@@ -156,7 +156,17 @@ public class UnarchiveProjectHandler(
         )
 
         // 7. Perform unarchive
-        aggregate.unarchive(metadata)
+        try {
+            aggregate.unarchive(metadata)
+        } catch (e: IllegalStateException) {
+            logger.debug(e) {
+                "Unarchive failed: projectId=${command.projectId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return UnarchiveProjectError.NotArchived(
+                projectId = command.projectId
+            ).failure()
+        }
 
         // 8. Persist new events
         val appendResult = try {

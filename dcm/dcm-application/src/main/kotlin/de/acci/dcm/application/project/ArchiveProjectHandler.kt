@@ -129,7 +129,7 @@ public class ArchiveProjectHandler(
                     "correlationId=${correlationId.value}"
             }
             return ArchiveProjectError.PersistenceFailure(
-                message = "Failed to reconstitute project: $e"
+                message = "Failed to reconstitute project: ${e.message}"
             ).failure()
         }
 
