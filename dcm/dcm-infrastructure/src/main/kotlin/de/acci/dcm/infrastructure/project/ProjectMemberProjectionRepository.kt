@@ -50,6 +50,7 @@ public class ProjectMemberProjectionRepository(
      */
     public suspend fun insert(member: ProjectMembers): Unit = withContext(ioDispatcher) {
         dsl.insertInto(PROJECT_MEMBERS)
+            .set(PROJECT_MEMBERS.ID, member.id)
             .set(PROJECT_MEMBERS.PROJECT_ID, member.projectId)
             .set(PROJECT_MEMBERS.TENANT_ID, member.tenantId)
             .set(PROJECT_MEMBERS.USER_ID, member.userId)
