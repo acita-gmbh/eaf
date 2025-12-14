@@ -99,6 +99,30 @@ class ArchiveProjectHandlerTest {
         )
     }
 
+    private fun createStoredEvents(
+        count: Int = 2,
+        tenantId: TenantId = testTenantId
+    ): List<StoredEvent> {
+        val metadata = EventMetadata(
+            tenantId = tenantId,
+            userId = testUserId,
+            correlationId = CorrelationId(UUID.randomUUID()),
+            timestamp = Instant.now()
+        )
+        return (1..count).map { i ->
+            StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testProjectId.value,
+                aggregateType = "Project",
+                eventType = "ProjectCreated",
+                payload = "{}",
+                metadata = metadata,
+                version = i.toLong(),
+                createdAt = Instant.now()
+            )
+        }
+    }
+
     @Nested
     @DisplayName("handle()")
     inner class HandleTests {
@@ -111,10 +135,7 @@ class ArchiveProjectHandlerTest {
             val events = createActiveProjectEvents()
             val eventsSlot = slot<List<DomainEvent>>()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents(count = 2)
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -164,11 +185,7 @@ class ArchiveProjectHandlerTest {
             val command = createArchiveCommand(version = 3L)
             val events = createArchivedProjectEvents()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents(count = 3)
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -190,10 +207,7 @@ class ArchiveProjectHandlerTest {
             val command = createArchiveCommand(version = 5L) // Wrong version
             val events = createActiveProjectEvents()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents(count = 2)
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -206,6 +220,29 @@ class ArchiveProjectHandlerTest {
             assertTrue(result is Result.Failure)
             val failure = result as Result.Failure
             assertTrue(failure.error is ArchiveProjectError.ConcurrencyConflict)
+        }
+
+        @Test
+        @DisplayName("should return NotFound when tenant does not match (security)")
+        fun `should return NotFound when tenant does not match`() = runTest {
+            // Given: Events belong to a different tenant
+            val otherTenantId = TenantId(UUID.randomUUID())
+            val command = createArchiveCommand()
+
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents(
+                count = 2,
+                tenantId = otherTenantId
+            )
+
+            val handler = ArchiveProjectHandler(eventStore, eventDeserializer)
+
+            // When
+            val result = handler.handle(command)
+
+            // Then: Returns NotFound (not Forbidden) to prevent tenant enumeration
+            assertTrue(result is Result.Failure)
+            val failure = result as Result.Failure
+            assertTrue(failure.error is ArchiveProjectError.NotFound)
         }
     }
 }

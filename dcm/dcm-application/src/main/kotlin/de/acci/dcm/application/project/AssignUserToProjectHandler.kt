@@ -115,14 +115,26 @@ public class AssignUserToProjectHandler(
             ).failure()
         }
 
-        // 2. Check if aggregate exists
+        // 2. Validate tenant ownership (defense-in-depth security)
+        if (!validateTenantOwnership(storedEvents, command.tenantId)) {
+            logger.warn {
+                "Tenant mismatch for project: projectId=${command.projectId.value}, " +
+                    "requestedTenant=${command.tenantId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return AssignUserToProjectError.NotFound(
+                projectId = command.projectId
+            ).failure()
+        }
+
+        // 3. Check if aggregate exists
         if (storedEvents.isEmpty()) {
             return AssignUserToProjectError.NotFound(
                 projectId = command.projectId
             ).failure()
         }
 
-        // 3. Deserialize events and reconstitute aggregate
+        // 4. Deserialize events and reconstitute aggregate
         val aggregate = try {
             val domainEvents = storedEvents.map { eventDeserializer.deserialize(it) }
             ProjectAggregate.reconstitute(command.projectId, domainEvents)

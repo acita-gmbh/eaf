@@ -81,6 +81,37 @@ class UpdateProjectHandlerTest {
         )
     }
 
+    private fun createStoredEvents(tenantId: TenantId = testTenantId): List<StoredEvent> {
+        val metadata = EventMetadata(
+            tenantId = tenantId,
+            userId = testUserId,
+            correlationId = CorrelationId(UUID.randomUUID()),
+            timestamp = Instant.now()
+        )
+        return listOf(
+            StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testProjectId.value,
+                aggregateType = "Project",
+                eventType = "ProjectCreated",
+                payload = "{}",
+                metadata = metadata,
+                version = 1L,
+                createdAt = Instant.now()
+            ),
+            StoredEvent(
+                id = UUID.randomUUID(),
+                aggregateId = testProjectId.value,
+                aggregateType = "Project",
+                eventType = "UserAssignedToProject",
+                payload = "{}",
+                metadata = metadata,
+                version = 2L,
+                createdAt = Instant.now()
+            )
+        )
+    }
+
     @Nested
     @DisplayName("handle()")
     inner class HandleTests {
@@ -93,10 +124,7 @@ class UpdateProjectHandlerTest {
             val events = createProjectEvents()
             val eventsSlot = slot<List<DomainEvent>>()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents()
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -150,10 +178,7 @@ class UpdateProjectHandlerTest {
             val command = createUpdateCommand(version = 5L) // Wrong version
             val events = createProjectEvents()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents()
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -176,10 +201,7 @@ class UpdateProjectHandlerTest {
             val events = createProjectEvents()
             val conflictingId = ProjectId.generate()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents()
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -205,10 +227,7 @@ class UpdateProjectHandlerTest {
             val command = createUpdateCommand(name = ProjectName.of("Original Name"))
             val events = createProjectEvents()
 
-            coEvery { eventStore.load(testProjectId.value) } returns listOf(
-                mockk<StoredEvent>(),
-                mockk<StoredEvent>()
-            )
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents()
 
             coEvery { eventDeserializer.deserialize(any()) } returnsMany events
 
@@ -228,6 +247,26 @@ class UpdateProjectHandlerTest {
 
             // Then
             assertTrue(result is Result.Success)
+        }
+
+        @Test
+        @DisplayName("should return NotFound when tenant does not match (security)")
+        fun `should return NotFound when tenant does not match`() = runTest {
+            // Given: Events belong to a different tenant
+            val otherTenantId = TenantId(UUID.randomUUID())
+            val command = createUpdateCommand()
+
+            coEvery { eventStore.load(testProjectId.value) } returns createStoredEvents(tenantId = otherTenantId)
+
+            val handler = UpdateProjectHandler(eventStore, eventDeserializer, projectQueryService)
+
+            // When
+            val result = handler.handle(command)
+
+            // Then: Returns NotFound (not Forbidden) to prevent tenant enumeration
+            assertTrue(result is Result.Failure)
+            val failure = result as Result.Failure
+            assertTrue(failure.error is UpdateProjectError.NotFound)
         }
     }
 }
