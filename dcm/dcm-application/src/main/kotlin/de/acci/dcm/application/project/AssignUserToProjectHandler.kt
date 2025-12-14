@@ -226,41 +226,52 @@ public class AssignUserToProjectHandler(
                         "assignedBy=${command.assignedBy.value}"
                 }
 
-                // Update projection
+                // Update projection (non-fatal)
                 val member = aggregate.getMember(command.userId)
                 if (member != null) {
-                    if (existingMember != null) {
-                        // Role upgrade
-                        projectionUpdater.updateMemberRole(
-                            UpdateProjectMemberRole(
-                                projectId = command.projectId,
-                                userId = command.userId,
-                                role = command.role
-                            )
-                        ).onFailure { error ->
-                            logger.logProjectionError(
-                                error = error,
-                                projectId = command.projectId,
-                                correlationId = correlationId
-                            )
+                    try {
+                        if (existingMember != null) {
+                            // Role upgrade
+                            projectionUpdater.updateMemberRole(
+                                UpdateProjectMemberRole(
+                                    projectId = command.projectId,
+                                    userId = command.userId,
+                                    role = command.role
+                                )
+                            ).onFailure { error ->
+                                logger.logProjectionError(
+                                    error = error,
+                                    projectId = command.projectId,
+                                    correlationId = correlationId
+                                )
+                            }
+                        } else {
+                            // New member
+                            projectionUpdater.insertMember(
+                                NewProjectMemberProjection(
+                                    projectId = command.projectId,
+                                    tenantId = command.tenantId,
+                                    userId = command.userId,
+                                    role = command.role,
+                                    assignedBy = command.assignedBy,
+                                    assignedAt = member.assignedAt
+                                )
+                            ).onFailure { error ->
+                                logger.logProjectionError(
+                                    error = error,
+                                    projectId = command.projectId,
+                                    correlationId = correlationId
+                                )
+                            }
                         }
-                    } else {
-                        // New member
-                        projectionUpdater.insertMember(
-                            NewProjectMemberProjection(
-                                projectId = command.projectId,
-                                tenantId = command.tenantId,
-                                userId = command.userId,
-                                role = command.role,
-                                assignedBy = command.assignedBy,
-                                assignedAt = member.assignedAt
-                            )
-                        ).onFailure { error ->
-                            logger.logProjectionError(
-                                error = error,
-                                projectId = command.projectId,
-                                correlationId = correlationId
-                            )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logger.error(e) {
+                            "Projection update failed (member): " +
+                                "projectId=${command.projectId.value}, " +
+                                "userId=${command.userId.value}, " +
+                                "correlationId=${correlationId.value}"
                         }
                     }
                 }

@@ -257,20 +257,30 @@ public class UpdateProjectHandler(
                         "updatedBy=${command.updatedBy.value}"
                 }
 
-                // Update projection
-                projectionUpdater.updateProject(
-                    UpdateProjectProjection(
-                        id = command.projectId,
-                        name = command.name,
-                        description = command.description,
-                        version = aggregate.version.toInt()
-                    )
-                ).onFailure { error ->
-                    logger.logProjectionError(
-                        error = error,
-                        projectId = command.projectId,
-                        correlationId = correlationId
-                    )
+                // Update projection (non-fatal)
+                try {
+                    projectionUpdater.updateProject(
+                        UpdateProjectProjection(
+                            id = command.projectId,
+                            name = command.name,
+                            description = command.description,
+                            version = aggregate.version.toInt()
+                        )
+                    ).onFailure { error ->
+                        logger.logProjectionError(
+                            error = error,
+                            projectId = command.projectId,
+                            correlationId = correlationId
+                        )
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.error(e) {
+                        "Projection update failed (updateProject): " +
+                            "projectId=${command.projectId.value}, " +
+                            "correlationId=${correlationId.value}"
+                    }
                 }
 
                 UpdateProjectResult(projectId = command.projectId).success()

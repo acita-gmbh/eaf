@@ -201,19 +201,29 @@ public class ArchiveProjectHandler(
                         "archivedBy=${command.archivedBy.value}"
                 }
 
-                // Update projection
-                projectionUpdater.updateStatus(
-                    ProjectStatusUpdate(
-                        id = command.projectId,
-                        status = ProjectStatus.ARCHIVED,
-                        version = aggregate.version.toInt()
-                    )
-                ).onFailure { error ->
-                    logger.logProjectionError(
-                        error = error,
-                        projectId = command.projectId,
-                        correlationId = correlationId
-                    )
+                // Update projection (non-fatal)
+                try {
+                    projectionUpdater.updateStatus(
+                        ProjectStatusUpdate(
+                            id = command.projectId,
+                            status = ProjectStatus.ARCHIVED,
+                            version = aggregate.version.toInt()
+                        )
+                    ).onFailure { error ->
+                        logger.logProjectionError(
+                            error = error,
+                            projectId = command.projectId,
+                            correlationId = correlationId
+                        )
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.error(e) {
+                        "Projection update failed (updateStatus): " +
+                            "projectId=${command.projectId.value}, " +
+                            "correlationId=${correlationId.value}"
+                    }
                 }
 
                 ArchiveProjectResult(projectId = command.projectId).success()

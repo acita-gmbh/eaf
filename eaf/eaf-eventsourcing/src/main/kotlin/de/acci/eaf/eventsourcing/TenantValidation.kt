@@ -33,7 +33,7 @@ public fun List<StoredEvent>.belongsToTenant(expectedTenantId: TenantId): Boolea
         return true // No events = aggregate doesn't exist, handled by NotFound
     }
 
-    // Check first event's tenant - all events for an aggregate share the same tenant
-    val eventTenantId = first().metadata.tenantId
-    return eventTenantId == expectedTenantId
+    // Defense-in-depth: ensure ALL loaded events belong to the expected tenant
+    // This protects against potential bugs, corruption, or misconfigured RLS
+    return all { it.metadata.tenantId == expectedTenantId }
 }
