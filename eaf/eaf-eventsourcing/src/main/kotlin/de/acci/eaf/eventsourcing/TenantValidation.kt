@@ -1,7 +1,6 @@
-package de.acci.dcm.application.project
+package de.acci.eaf.eventsourcing
 
 import de.acci.eaf.core.types.TenantId
-import de.acci.eaf.eventsourcing.StoredEvent
 
 /**
  * Validates that loaded events belong to the expected tenant.
@@ -16,16 +15,25 @@ import de.acci.eaf.eventsourcing.StoredEvent
  * than throwing an exception with details. Callers should return
  * `NotFound` (not `Forbidden`) to prevent tenant enumeration attacks.
  *
- * @param events The events loaded from the event store
+ * ## Usage
+ *
+ * ```kotlin
+ * val storedEvents = eventStore.load(aggregateId)
+ *
+ * if (!storedEvents.belongsToTenant(command.tenantId)) {
+ *     return NotFoundError(aggregateId).failure()
+ * }
+ * ```
+ *
  * @param expectedTenantId The tenant ID from the command/request
  * @return true if events belong to the expected tenant, false otherwise
  */
-internal fun validateTenantOwnership(events: List<StoredEvent>, expectedTenantId: TenantId): Boolean {
-    if (events.isEmpty()) {
+public fun List<StoredEvent>.belongsToTenant(expectedTenantId: TenantId): Boolean {
+    if (isEmpty()) {
         return true // No events = aggregate doesn't exist, handled by NotFound
     }
 
     // Check first event's tenant - all events for an aggregate share the same tenant
-    val eventTenantId = events.first().metadata.tenantId
+    val eventTenantId = first().metadata.tenantId
     return eventTenantId == expectedTenantId
 }

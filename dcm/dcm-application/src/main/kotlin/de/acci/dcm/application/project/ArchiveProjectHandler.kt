@@ -11,6 +11,7 @@ import de.acci.eaf.core.types.CorrelationId
 import de.acci.eaf.eventsourcing.EventMetadata
 import de.acci.eaf.eventsourcing.EventStore
 import de.acci.eaf.eventsourcing.EventStoreError
+import de.acci.eaf.eventsourcing.belongsToTenant
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -110,7 +111,7 @@ public class ArchiveProjectHandler(
         }
 
         // 2. Validate tenant ownership (defense-in-depth security)
-        if (!validateTenantOwnership(storedEvents, command.tenantId)) {
+        if (!storedEvents.belongsToTenant(command.tenantId)) {
             logger.warn {
                 "Tenant mismatch for project: projectId=${command.projectId.value}, " +
                     "requestedTenant=${command.tenantId.value}, " +
