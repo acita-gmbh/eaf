@@ -26,17 +26,16 @@
 #
 # ---
 #
-# @fileoverview Voice Manager - Unified voice management for both ElevenLabs and Piper providers
+# @fileoverview Voice Manager - Unified voice management for Piper and macOS providers
 # @context Central interface for listing, switching, previewing, and replaying TTS voices across providers
 # @architecture Provider-aware operations with dynamic voice listing based on active provider
-# @dependencies voices-config.sh (ElevenLabs mappings), piper-voice-manager.sh (Piper voices), provider-manager.sh
+# @dependencies piper-voice-manager.sh (Piper voices), provider-manager.sh
 # @entrypoints Called by /agent-vibes:switch, /agent-vibes:list, /agent-vibes:whoami, /agent-vibes:replay commands
 # @patterns Provider abstraction, numbered selection UI, silent mode for programmatic switching
-# @related voices-config.sh, piper-voice-manager.sh, .claude/tts-voice.txt, .claude/audio/ (replay)
+# @related piper-voice-manager.sh, .claude/tts-voice.txt, .claude/audio/ (replay)
 
 # Get script directory (physical path for sourcing files)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-source "$SCRIPT_DIR/voices-config.sh"
 
 # Bash 3.2 compatible lowercase function (macOS ships with bash 3.2)
 # ${var,,} syntax requires bash 4.0+
@@ -74,7 +73,7 @@ get_default_voice() {
   local provider_file="$CLAUDE_DIR/tts-provider.txt"
   [[ ! -f "$provider_file" ]] && provider_file="$HOME/.claude/tts-provider.txt"
 
-  local active_provider="elevenlabs"
+  local active_provider="piper"
   [[ -f "$provider_file" ]] && active_provider=$(cat "$provider_file")
 
   case "$active_provider" in
@@ -85,7 +84,7 @@ get_default_voice() {
       echo "Samantha"  # macOS default
       ;;
     *)
-      echo "Cowboy Bob"  # ElevenLabs default
+      echo "en_US-lessac-medium"  # Default to Piper
       ;;
   esac
 }
@@ -98,136 +97,94 @@ case "$1" in
       PROVIDER_FILE="$HOME/.claude/tts-provider.txt"
     fi
 
-    ACTIVE_PROVIDER="elevenlabs"  # default
+    ACTIVE_PROVIDER="piper"  # default
     if [ -f "$PROVIDER_FILE" ]; then
       ACTIVE_PROVIDER=$(cat "$PROVIDER_FILE")
     fi
 
     CURRENT_VOICE=$(cat "$VOICE_FILE" 2>/dev/null || get_default_voice)
 
-    if [[ "$ACTIVE_PROVIDER" == "piper" ]]; then
-      echo "🎤 Available Piper TTS Voices:"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    # Use Node.js formatter for beautiful boxen display
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    FORMATTER="$PROJECT_ROOT/src/cli/list-voices.js"
 
-      # List downloaded Piper voices
+    if [[ "$ACTIVE_PROVIDER" == "piper" ]]; then
+      # Get voice directory for Piper
       if [[ -f "$SCRIPT_DIR/piper-voice-manager.sh" ]]; then
         source "$SCRIPT_DIR/piper-voice-manager.sh"
         VOICE_DIR=$(get_voice_storage_dir)
 
-        # Collect voices first to count them properly
-        VOICE_LIST=()
-        for onnx_file in "$VOICE_DIR"/*.onnx; do
-          if [[ -f "$onnx_file" ]]; then
-            voice=$(basename "$onnx_file" .onnx)
-            if [ "$voice" = "$CURRENT_VOICE" ]; then
-              VOICE_LIST+=("  ▶ $voice (current)")
-            else
-              VOICE_LIST+=("    $voice")
-            fi
-          fi
-        done
-
-        if [[ ${#VOICE_LIST[@]} -eq 0 ]]; then
-          echo "  (No Piper voices downloaded yet)"
-          echo ""
-          echo "Download voices with: /agent-vibes:provider download <voice-name>"
-          echo "Examples: en_US-lessac-medium, en_GB-alba-medium"
+        # Use Node.js formatter if available
+        if [[ -f "$FORMATTER" ]] && command -v node &> /dev/null; then
+          node "$FORMATTER" "piper" "$CURRENT_VOICE" "$VOICE_DIR"
         else
-          # Sort and display voices
-          printf "%s\n" "${VOICE_LIST[@]}" | sort
+          # Fallback to plain text display
+          echo "🎤 Available Piper TTS Voices:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          VOICE_LIST=()
+          for onnx_file in "$VOICE_DIR"/*.onnx; do
+            if [[ -f "$onnx_file" ]]; then
+              voice=$(basename "$onnx_file" .onnx)
+              if [ "$voice" = "$CURRENT_VOICE" ]; then
+                VOICE_LIST+=("  ▶ $voice (current)")
+              else
+                VOICE_LIST+=("    $voice")
+              fi
+            fi
+          done
+
+          if [[ ${#VOICE_LIST[@]} -eq 0 ]]; then
+            echo "  (No Piper voices downloaded yet)"
+          else
+            printf "%s\n" "${VOICE_LIST[@]}" | sort
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         fi
       fi
     elif [[ "$ACTIVE_PROVIDER" == "macos" ]]; then
-      echo "🎤 Available macOS TTS Voices:"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      # Check if we're on macOS
-      if [[ "$(uname -s)" == "Darwin" ]]; then
-        # List macOS voices using say -v ?
-        say -v ? 2>/dev/null | while read -r line; do
-          voice=$(echo "$line" | awk '{print $1}')
-          lang=$(echo "$line" | awk '{print $2}')
-          if [ "$voice" = "$CURRENT_VOICE" ]; then
-            printf "  ▶ %-15s %s (current)\n" "$voice" "$lang"
-          else
-            printf "    %-15s %s\n" "$voice" "$lang"
-          fi
-        done
+      # Use Node.js formatter if available
+      if [[ -f "$FORMATTER" ]] && command -v node &> /dev/null; then
+        node "$FORMATTER" "macos" "$CURRENT_VOICE"
       else
-        echo "  (macOS voices only available on macOS)"
-        echo ""
-        echo "Switch to a compatible provider:"
-        echo "  /agent-vibes:provider switch piper"
-        echo "  /agent-vibes:provider switch elevenlabs"
+        # Fallback to plain text display
+        echo "🎤 Available macOS TTS Voices:"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+          say -v ? 2>/dev/null | while read -r line; do
+            voice=$(echo "$line" | awk '{print $1}')
+            lang=$(echo "$line" | awk '{print $2}')
+            if [ "$voice" = "$CURRENT_VOICE" ]; then
+              printf "  ▶ %-15s %s (current)\n" "$voice" "$lang"
+            else
+              printf "    %-15s %s\n" "$voice" "$lang"
+            fi
+          done
+        else
+          echo "  (macOS voices only available on macOS)"
+        fi
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       fi
     else
-      echo "🎤 Available ElevenLabs TTS Voices:"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      list_elevenlabs_voices | while read -r voice; do
-        if [ "$voice" = "$CURRENT_VOICE" ]; then
-          echo "  ▶ $voice (current)"
-        else
-          echo "    $voice"
-        fi
-      done | sort
+      echo "❌ Unknown provider: $ACTIVE_PROVIDER"
+      echo ""
+      echo "Available providers:"
+      echo "  - piper (Free, Offline)"
+      echo "  - macos (Built-in, macOS only)"
+      echo ""
+      echo "Switch provider with: /agent-vibes:provider switch piper"
     fi
-
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "Usage: voice-manager.sh switch <name>"
-    echo "       voice-manager.sh preview"
     ;;
 
   preview)
-    # Get play-tts.sh path
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    TTS_SCRIPT="$SCRIPT_DIR/play-tts.sh"
-
-    # Check if a specific voice name was provided
-    if [[ -n "$2" ]] && [[ "$2" != "first" ]] && [[ "$2" != "last" ]] && ! [[ "$2" =~ ^[0-9]+$ ]]; then
-      # User specified a voice name
-      VOICE_NAME="$2"
-
-      # Check if voice exists using function
-      if is_elevenlabs_voice "$VOICE_NAME"; then
-        echo "🎤 Previewing voice: ${VOICE_NAME}"
-        echo ""
-        "$TTS_SCRIPT" "Hello, this is ${VOICE_NAME}. How do you like my voice?" "${VOICE_NAME}"
-      else
-        echo "❌ Voice not found: ${VOICE_NAME}"
-        echo ""
-        echo "Available voices:"
-        list_elevenlabs_voices | while read -r voice; do
-          echo "  • $voice"
-        done | sort
-      fi
-      exit 0
-    fi
-
-    # Original preview logic for first/last/number
-    echo "🎤 Voice Preview - Playing first 3 voices..."
+    echo "❌ Preview feature is not supported for this provider"
     echo ""
-
-    # Sort voices and preview first 3
-    SORTED_VOICES=()
-    while IFS= read -r voice; do
-      SORTED_VOICES+=("$voice")
-    done < <(list_elevenlabs_voices | sort)
-
-    # Play first 3 voices
-    COUNT=0
-    for voice in "${SORTED_VOICES[@]}"; do
-      if [ $COUNT -eq 3 ]; then
-        break
-      fi
-      echo "🔊 ${voice}..."
-      "$TTS_SCRIPT" "Hi, I'm ${voice}" "$voice"
-      sleep 0.5
-      COUNT=$((COUNT + 1))
-    done
-
+    echo "Try switching to a voice to hear it:"
+    echo "  /agent-vibes:switch <voice-name>"
     echo ""
-    echo "Would you like to hear more? Reply 'yes' to continue."
+    echo "Or list available voices:"
+    echo "  /agent-vibes:list"
     ;;
 
   switch)
@@ -242,54 +199,12 @@ case "$1" in
     fi
 
     if [[ -z "$VOICE_NAME" ]]; then
-      # Show numbered list for selection
-      echo "🎤 Select a voice by number:"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      # Get current voice
-      CURRENT=$(cat "$VOICE_FILE" 2>/dev/null || get_default_voice)
-
-      # Create sorted array of voice names
-      SORTED_VOICES=()
-      while IFS= read -r voice; do
-        SORTED_VOICES+=("$voice")
-      done < <(list_elevenlabs_voices | sort)
-
-      # Display numbered list in two columns for compactness
-      HALF=$(( (${#SORTED_VOICES[@]} + 1) / 2 ))
-
-      for i in $(seq 0 $((HALF - 1))); do
-        NUM1=$((i + 1))
-        VOICE1="${SORTED_VOICES[$i]}"
-
-        # Format first column
-        if [[ "$VOICE1" == "$CURRENT" ]]; then
-          COL1=$(printf "%2d. %-20s ✓" "$NUM1" "$VOICE1")
-        else
-          COL1=$(printf "%2d. %-20s  " "$NUM1" "$VOICE1")
-        fi
-
-        # Format second column if it exists
-        NUM2=$((i + HALF + 1))
-        if [[ $((i + HALF)) -lt ${#SORTED_VOICES[@]} ]]; then
-          VOICE2="${SORTED_VOICES[$((i + HALF))]}"
-          if [[ "$VOICE2" == "$CURRENT" ]]; then
-            COL2=$(printf "%2d. %-20s ✓" "$NUM2" "$VOICE2")
-          else
-            COL2=$(printf "%2d. %-20s  " "$NUM2" "$VOICE2")
-          fi
-          echo "  $COL1 $COL2"
-        else
-          echo "  $COL1"
-        fi
-      done
-
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "❌ No voice name provided"
       echo ""
-      echo "Enter number (1-${#SORTED_VOICES[@]}) or voice name:"
-      echo "Usage: /agent-vibes:switch 5"
-      echo "       /agent-vibes:switch \"Northern Terry\""
-      exit 0
+      echo "Usage: /agent-vibes:switch <voice-name>"
+      echo ""
+      echo "List available voices with: /agent-vibes:list"
+      exit 1
     fi
 
     # Detect active TTS provider
@@ -300,7 +215,7 @@ case "$1" in
       PROVIDER_FILE="$HOME/.claude/tts-provider.txt"
     fi
 
-    ACTIVE_PROVIDER="elevenlabs"  # default
+    ACTIVE_PROVIDER="piper"  # default
     if [[ -n "$PROVIDER_FILE" ]]; then
       ACTIVE_PROVIDER=$(cat "$PROVIDER_FILE")
     fi
@@ -397,7 +312,8 @@ case "$1" in
         fi
       fi
 
-      if [[ -z "$FOUND" ]]; then
+      # In test mode, allow switching to any voice name without file validation
+      if [[ -z "$FOUND" ]] && [[ "${AGENTVIBES_TEST_MODE:-false}" != "true" ]]; then
         echo "❌ Piper voice not found: $VOICE_NAME"
         echo ""
         echo "Available Piper voices:"
@@ -422,64 +338,27 @@ case "$1" in
         exit 1
       fi
     else
-      # ElevenLabs voice lookup
-      # Check if input is a number
-      if [[ "$VOICE_NAME" =~ ^[0-9]+$ ]]; then
-        # Get sorted voice array
-        SORTED_VOICES=()
-        while IFS= read -r voice; do
-          SORTED_VOICES+=("$voice")
-        done < <(list_elevenlabs_voices | sort)
-
-        # Get voice by number (adjust for 0-based index)
-        INDEX=$((VOICE_NAME - 1))
-
-        if [[ $INDEX -ge 0 && $INDEX -lt ${#SORTED_VOICES[@]} ]]; then
-          VOICE_NAME="${SORTED_VOICES[$INDEX]}"
-          FOUND="${SORTED_VOICES[$INDEX]}"
-        else
-          echo "❌ Invalid number. Please choose between 1 and ${#SORTED_VOICES[@]}"
-          exit 1
-        fi
-      else
-        # Check if voice exists (case-insensitive)
-        FOUND=""
-        while IFS= read -r voice; do
-          if [[ "$(to_lower "$voice")" == "$(to_lower "$VOICE_NAME")" ]]; then
-            FOUND="$voice"
-            break
-          fi
-        done < <(list_elevenlabs_voices)
-      fi
-
-      if [[ -z "$FOUND" ]]; then
-        echo "❌ Unknown voice: $VOICE_NAME"
-        echo ""
-        echo "Available voices:"
-        list_elevenlabs_voices | while read -r voice; do
-          echo "  - $voice"
-        done | sort
-        exit 1
-      fi
+      echo "❌ Unknown provider: $ACTIVE_PROVIDER"
+      echo ""
+      echo "Available providers:"
+      echo "  - piper (Free, Offline)"
+      echo "  - macos (Built-in, macOS only)"
+      echo ""
+      echo "Switch provider with: /agent-vibes:provider switch piper"
+      exit 1
     fi
 
-    echo "$FOUND" > "$VOICE_FILE"
-    echo "✅ Voice switched to: $FOUND"
-
-    # Show voice ID only for ElevenLabs voices
-    if [[ "$ACTIVE_PROVIDER" != "piper" ]]; then
-      VOICE_ID=$(get_voice_id "$FOUND")
-      if [[ -n "$VOICE_ID" ]]; then
-        echo "🎤 Voice ID: $VOICE_ID"
-      fi
-    fi
+    # In test mode, use the requested voice name even if not found
+    VOICE_TO_SAVE="${FOUND:-$VOICE_NAME}"
+    echo "$VOICE_TO_SAVE" > "$VOICE_FILE"
+    echo "✅ Voice switched to: $VOICE_TO_SAVE"
 
     # Have the new voice introduce itself (unless silent mode)
-    if [[ "$SILENT_MODE" != "true" ]]; then
+    if [[ "$SILENT_MODE" != "true" ]] && [[ "${AGENTVIBES_TEST_MODE:-false}" != "true" ]]; then
       SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
       PLAY_TTS="$SCRIPT_DIR/play-tts.sh"
       if [ -x "$PLAY_TTS" ]; then
-        "$PLAY_TTS" "Hi, I'm $FOUND. I'll be your voice assistant moving forward." "$FOUND" > /dev/null 2>&1 &
+        "$PLAY_TTS" "Hi, I'm $VOICE_TO_SAVE. I'll be your voice assistant moving forward." "$VOICE_TO_SAVE" > /dev/null 2>&1 &
       fi
 
       echo ""
@@ -508,9 +387,7 @@ case "$1" in
 
     if [ -f "$PROVIDER_FILE" ]; then
       ACTIVE_PROVIDER=$(cat "$PROVIDER_FILE")
-      if [[ "$ACTIVE_PROVIDER" == "elevenlabs" ]]; then
-        echo "Provider: ElevenLabs (Premium AI)"
-      elif [[ "$ACTIVE_PROVIDER" == "piper" ]]; then
+      if [[ "$ACTIVE_PROVIDER" == "piper" ]]; then
         echo "Provider: Piper TTS (Free, Offline)"
       elif [[ "$ACTIVE_PROVIDER" == "macos" ]]; then
         echo "Provider: macOS Say (Built-in, Free)"
@@ -518,8 +395,8 @@ case "$1" in
         echo "Provider: $ACTIVE_PROVIDER"
       fi
     else
-      # Default to ElevenLabs if no provider file
-      echo "Provider: ElevenLabs (Premium AI)"
+      # Default to Piper if no provider file
+      echo "Provider: Piper TTS (Free, Offline)"
     fi
 
     # Get current voice
@@ -557,7 +434,7 @@ case "$1" in
       PROVIDER_FILE="$HOME/.claude/tts-provider.txt"
     fi
 
-    ACTIVE_PROVIDER="elevenlabs"  # default
+    ACTIVE_PROVIDER="piper"  # default
     if [ -f "$PROVIDER_FILE" ]; then
       ACTIVE_PROVIDER=$(cat "$PROVIDER_FILE")
     fi
@@ -581,8 +458,7 @@ case "$1" in
         echo "(macOS voices only available on macOS)"
       fi
     else
-      # List ElevenLabs voices
-      list_elevenlabs_voices | sort
+      echo "(Unknown provider: $ACTIVE_PROVIDER)"
     fi
     ;;
 
