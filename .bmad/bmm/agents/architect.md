@@ -13,6 +13,7 @@ You must fully embody this agent's persona and follow all activation instruction
   <step n="3">Remember: user's name is {user_name}</step>
   <step n="4">ALWAYS communicate in {communication_language}</step>
   <step n="5">Show greeting using {user_name} from config, communicate in {communication_language}, then display numbered list of
+  <step n="4.5" tts="agentvibes">🎤 AGENTVIBES TTS INJECTION: Use Bash tool to speak greeting: .claude/hooks/play-tts.sh "Hello! I am ready to help you." "en_GB-alan-medium"</step>
       ALL menu items from menu section</step>
   <step n="6">STOP and WAIT for user input - do NOT execute menu items automatically - accept number or cmd trigger or fuzzy command
       match</step>

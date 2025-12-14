@@ -140,8 +140,8 @@ fi
 # @why Provide seamless experience with automatic downloads
 # @param Uses global: $VOICE_MODEL
 # @sideeffects Downloads voice model files
-# @edgecases Prompts user for consent before downloading
-if ! verify_voice "$VOICE_MODEL"; then
+# @edgecases Prompts user for consent before downloading, skipped in test mode
+if [[ "${AGENTVIBES_TEST_MODE:-false}" != "true" ]] && ! verify_voice "$VOICE_MODEL"; then
   echo "📥 Voice model not found: $VOICE_MODEL"
   echo "   File size: ~25MB"
   echo "   Preview: https://huggingface.co/rhasspy/piper-voices"
@@ -162,10 +162,15 @@ if ! verify_voice "$VOICE_MODEL"; then
 fi
 
 # Get voice model path
-VOICE_PATH=$(get_voice_path "$VOICE_MODEL")
-if [[ $? -ne 0 ]]; then
-  echo "❌ Voice model path not found: $VOICE_MODEL"
-  exit 3
+# In test mode, use a fake path since we have mock piper that doesn't need real files
+if [[ "${AGENTVIBES_TEST_MODE:-false}" == "true" ]]; then
+  VOICE_PATH="/tmp/mock-voice-${VOICE_MODEL}.onnx"
+else
+  VOICE_PATH=$(get_voice_path "$VOICE_MODEL")
+  if [[ $? -ne 0 ]]; then
+    echo "❌ Voice model path not found: $VOICE_MODEL"
+    exit 3
+  fi
 fi
 
 # @function determine_audio_directory
@@ -262,10 +267,12 @@ SPEECH_RATE=$(get_speech_rate)
 # @edgecases Handles piper errors, invalid models, multi-speaker voices
 if [[ -n "$SPEAKER_ID" ]]; then
   # Multi-speaker voice: Pass speaker ID
-  echo "$TEXT" | piper --model "$VOICE_PATH" --speaker "$SPEAKER_ID" --length-scale "$SPEECH_RATE" --output_file "$TEMP_FILE" 2>/dev/null
+  # Add 2-second pause between sentences for better pacing
+  echo "$TEXT" | piper --model "$VOICE_PATH" --speaker "$SPEAKER_ID" --length-scale "$SPEECH_RATE" --sentence-silence 2.0 --output_file "$TEMP_FILE" 2>/dev/null
 else
   # Single-speaker voice
-  echo "$TEXT" | piper --model "$VOICE_PATH" --length-scale "$SPEECH_RATE" --output_file "$TEMP_FILE" 2>/dev/null
+  # Add 2-second pause between sentences for better pacing
+  echo "$TEXT" | piper --model "$VOICE_PATH" --length-scale "$SPEECH_RATE" --sentence-silence 2.0 --output_file "$TEMP_FILE" 2>/dev/null
 fi
 
 if [[ ! -f "$TEMP_FILE" ]] || [[ ! -s "$TEMP_FILE" ]]; then
@@ -273,6 +280,36 @@ if [[ ! -f "$TEMP_FILE" ]] || [[ ! -s "$TEMP_FILE" ]]; then
   echo "Voice model: $VOICE_MODEL"
   echo "Check that voice model is valid"
   exit 4
+fi
+
+# @function detect_remote_session
+# @intent Auto-detect SSH/RDP sessions and enable audio compression
+# @why Remote desktop audio is choppy without compression
+# @returns Sets AGENTVIBES_RDP_MODE environment variable
+# @detection Checks SSH_CLIENT, SSH_TTY, and DISPLAY variables
+if [[ -z "${AGENTVIBES_RDP_MODE:-}" ]]; then
+  # Auto-detect remote session
+  if [[ -n "${SSH_CLIENT:-}" ]] || [[ -n "${SSH_TTY:-}" ]] || [[ "${DISPLAY:-}" =~ ^localhost:.* ]]; then
+    export AGENTVIBES_RDP_MODE=true
+    echo "🌐 Remote session detected - enabling audio compression"
+  fi
+fi
+
+# @function compress_for_remote
+# @intent Compress TTS audio for remote sessions (SSH/RDP)
+# @why Reduces bandwidth and prevents choppy playback
+# @param Uses global: $TEMP_FILE, $AGENTVIBES_RDP_MODE
+# @returns Updates $TEMP_FILE to compressed version
+# @sideeffects Converts to mono 22kHz for lower bandwidth
+if [[ "${AGENTVIBES_RDP_MODE:-false}" == "true" ]] && command -v ffmpeg &> /dev/null; then
+  COMPRESSED_FILE="$AUDIO_DIR/tts-compressed-$(date +%s).wav"
+  # Convert to mono, 22kHz, 64kbps for remote sessions
+  ffmpeg -i "$TEMP_FILE" -ac 1 -ar 22050 -b:a 64k -y "$COMPRESSED_FILE" 2>/dev/null
+
+  if [[ -f "$COMPRESSED_FILE" ]]; then
+    rm -f "$TEMP_FILE"
+    TEMP_FILE="$COMPRESSED_FILE"
+  fi
 fi
 
 # @function add_silence_padding
@@ -295,6 +332,31 @@ if command -v ffmpeg &> /dev/null; then
   fi
 fi
 
+# @function apply_audio_effects
+# @intent Apply sox effects and background music via audio-processor.sh
+# @param Uses global: $TEMP_FILE
+# @returns Updates $TEMP_FILE to processed version, sets $BACKGROUND_MUSIC if used
+# @sideeffects Applies audio effects and background music
+BACKGROUND_MUSIC=""
+if [[ -f "$SCRIPT_DIR/audio-processor.sh" ]]; then
+  PROCESSED_FILE="$AUDIO_DIR/tts-processed-$(date +%s).wav"
+  # audio-processor.sh returns: FILE_PATH|BACKGROUND_FILE
+  PROCESSOR_OUTPUT=$("$SCRIPT_DIR/audio-processor.sh" "$TEMP_FILE" "default" "$PROCESSED_FILE" 2>/dev/null) || {
+    echo "Warning: Audio processing failed, using unprocessed audio" >&2
+    PROCESSED_FILE="$TEMP_FILE"
+    PROCESSOR_OUTPUT="$TEMP_FILE|"
+  }
+
+  # Parse output: FILE|BACKGROUND
+  PROCESSED_FILE="${PROCESSOR_OUTPUT%%|*}"
+  BACKGROUND_MUSIC="${PROCESSOR_OUTPUT##*|}"
+
+  if [[ -f "$PROCESSED_FILE" ]] && [[ "$PROCESSED_FILE" != "$TEMP_FILE" ]]; then
+    rm -f "$TEMP_FILE"
+    TEMP_FILE="$PROCESSED_FILE"
+  fi
+fi
+
 # @function play_audio
 # @intent Play generated audio using available player with sequential playback
 # @why Support multiple audio players and prevent overlapping audio in learning mode
@@ -302,13 +364,19 @@ fi
 # @sideeffects Plays audio with lock mechanism for sequential playback
 LOCK_FILE="/tmp/agentvibes-audio.lock"
 
-# Wait for previous audio to finish (max 30 seconds)
-for i in {1..60}; do
+# Wait for previous audio to finish (max 2 seconds to prevent blocking)
+for i in {1..4}; do
   if [ ! -f "$LOCK_FILE" ]; then
     break
   fi
   sleep 0.5
 done
+
+# If still locked after 2 seconds, skip this TTS to prevent blocking Claude
+if [ -f "$LOCK_FILE" ]; then
+  echo "⏭️  Skipping TTS (previous audio still playing)" >&2
+  exit 0
+fi
 
 # Track last target language audio for replay command
 if [[ "$CURRENT_LANGUAGE" != "english" ]]; then
@@ -324,16 +392,17 @@ DURATION=$(ffprobe -v error -show_entries format=duration -of default=noprint_wr
 DURATION=${DURATION%.*}  # Round to integer
 DURATION=${DURATION:-1}   # Default to 1 second if detection fails
 
-# Play audio in background (skip if in test mode)
-if [[ "${AGENTVIBES_TEST_MODE:-false}" != "true" ]]; then
+# Play audio in background (skip if in test mode or no-playback mode)
+# AGENTVIBES_NO_PLAYBACK: Set to "true" to generate audio without playing (for post-processing)
+if [[ "${AGENTVIBES_TEST_MODE:-false}" != "true" ]] && [[ "${AGENTVIBES_NO_PLAYBACK:-false}" != "true" ]]; then
   # Detect platform and use appropriate audio player
   if [[ "$(uname -s)" == "Darwin" ]]; then
     # macOS: Use afplay (native macOS audio player)
     afplay "$TEMP_FILE" >/dev/null 2>&1 &
     PLAYER_PID=$!
   else
-    # Linux/WSL: Try mpv, aplay, or paplay
-    (mpv "$TEMP_FILE" || aplay "$TEMP_FILE" || paplay "$TEMP_FILE") >/dev/null 2>&1 &
+    # Linux/WSL: Prefer paplay (PulseAudio) for best WSL audio quality
+    (paplay "$TEMP_FILE" || mpv "$TEMP_FILE" || aplay "$TEMP_FILE") >/dev/null 2>&1 &
     PLAYER_PID=$!
   fi
 fi
@@ -343,4 +412,31 @@ fi
 disown
 
 echo "🎵 Saved to: $TEMP_FILE"
+if [[ -n "$BACKGROUND_MUSIC" ]]; then
+  echo "🎶 Background music: $BACKGROUND_MUSIC"
+fi
 echo "🎤 Voice used: $VOICE_MODEL (Piper TTS)"
+
+# Show status indicators
+GLOBAL_MUTE_FILE="$HOME/.agentvibes-muted"
+PROJECT_MUTE_FILE="$PROJECT_ROOT/.claude/agentvibes-muted"
+PROJECT_UNMUTE_FILE="$PROJECT_ROOT/.claude/agentvibes-unmuted"
+BACKGROUND_ENABLED_FILE="$PROJECT_ROOT/.claude/config/background-music-enabled.txt"
+
+# Mute status indicator
+if [[ -f "$PROJECT_UNMUTE_FILE" ]] && [[ -f "$GLOBAL_MUTE_FILE" ]]; then
+  echo "🔊 Status: Unmuted (project overrides global mute)"
+elif [[ -f "$PROJECT_MUTE_FILE" ]]; then
+  echo "🔇 Status: Muted (project)"
+elif [[ -f "$GLOBAL_MUTE_FILE" ]]; then
+  echo "🔇 Status: Would be muted (global) - but this project is speaking"
+fi
+
+# Background music status indicator
+if [[ -z "$BACKGROUND_MUSIC" ]]; then
+  if [[ -f "$BACKGROUND_ENABLED_FILE" ]] && grep -q "true" "$BACKGROUND_ENABLED_FILE" 2>/dev/null; then
+    echo "🎵 Background music: Enabled but not playing (check config)"
+  else
+    echo "🎵 Background music: Disabled"
+  fi
+fi

@@ -14,6 +14,7 @@ You must fully embody this agent's persona and follow all activation instruction
   <step n="4">Find if this exists, if it does, always treat it as the bible I plan and execute against: `**/project-context.md`</step>
   <step n="5">ALWAYS communicate in {communication_language}</step>
   <step n="6">Show greeting using {user_name} from config, communicate in {communication_language}, then display numbered list of
+  <step n="4.5" tts="agentvibes">🎤 AGENTVIBES TTS INJECTION: Use Bash tool to speak greeting: .claude/hooks/play-tts.sh "Hello! I am ready to help you." "kristin"</step>
       ALL menu items from menu section</step>
   <step n="7">STOP and WAIT for user input - do NOT execute menu items automatically - accept number or cmd trigger or fuzzy command
       match</step>

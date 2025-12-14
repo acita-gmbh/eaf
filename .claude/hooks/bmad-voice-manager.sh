@@ -141,7 +141,7 @@ auto_enable_if_bmad_detected() {
 # @edgecases Returns empty string if plugin disabled/missing, parses markdown table syntax
 # @calledby bmad-tts-injector.sh, play-tts.sh when BMAD agent is active
 # @calls auto_enable_if_bmad_detected, grep, awk, sed
-# @version 2.0.0 - Now provider-aware: returns ElevenLabs or Piper voice based on active provider
+# @version 2.0.0 - Now provider-aware: returns Piper or macOS voice based on active provider
 get_agent_voice() {
     local agent_id="$1"
 
@@ -159,9 +159,63 @@ get_agent_voice() {
         # Read from BMAD's standard _cfg directory
         # CSV format: agent_id,voice_name
         local voice=$(grep "^$agent_id," "$bmad_voice_map" | cut -d',' -f2)
-        echo "$voice"
-        return
+
+        # If voice is empty or generic (same for all), use defaults
+        if [[ -n "$voice" ]] && [[ "$voice" != "en_US-lessac-medium" ]]; then
+            echo "$voice"
+            return
+        fi
+        # If empty or generic, fall through to defaults below
     fi
+
+    # Default voice mappings (hardcoded fallback when CSV is missing or has generic values)
+    # These match the BMAD-METHOD defaults for consistency
+    case "$agent_id" in
+        bmad-master)
+            echo "en_US-lessac-medium"
+            return
+            ;;
+        analyst)
+            echo "en_US-kristin-medium"
+            return
+            ;;
+        architect)
+            echo "en_GB-alan-medium"
+            return
+            ;;
+        dev)
+            echo "en_US-joe-medium"
+            return
+            ;;
+        pm)
+            echo "en_US-ryan-high"
+            return
+            ;;
+        quick-flow-solo-dev)
+            echo "en_US-joe-medium"
+            return
+            ;;
+        sm)
+            echo "en_US-amy-medium"
+            return
+            ;;
+        tea)
+            echo "en_US-kusal-medium"
+            return
+            ;;
+        tech-writer)
+            echo "en_US-kristin-medium"
+            return
+            ;;
+        ux-designer)
+            echo "en_US-kristin-medium"
+            return
+            ;;
+        frame-expert)
+            echo "en_GB-alan-medium"
+            return
+            ;;
+    esac
 
     # Auto-enable if BMAD is detected (for legacy markdown config)
     auto_enable_if_bmad_detected
@@ -185,15 +239,15 @@ get_agent_voice() {
         provider_file="$HOME/.claude/tts-provider.txt"
     fi
 
-    local active_provider="elevenlabs"  # default
+    local active_provider="piper"  # default
     if [[ -n "$provider_file" ]] && [[ -f "$provider_file" ]]; then
         active_provider=$(cat "$provider_file")
     fi
 
     # Extract voice from markdown table based on provider
-    # Table: Agent ID | Agent Name | Intro | ElevenLabs Voice | Piper Voice | Personality
-    # AWK columns: $1=empty | $2=ID | $3=Name | $4=Intro | $5=ElevenLabs | $6=Piper | $7=Personality
-    local column=5  # Default to ElevenLabs (AWK column 5)
+    # Table: Agent ID | Agent Name | Intro | Piper Voice | macOS Voice | Personality
+    # AWK columns: $1=empty | $2=ID | $3=Name | $4=Intro | $5=Piper | $6=macOS | $7=Personality
+    local column=5  # Default to Piper (AWK column 5)
     if [[ "$active_provider" == "piper" ]]; then
         column=6  # Use Piper (AWK column 6)
     fi
@@ -205,20 +259,225 @@ get_agent_voice() {
     echo "$voice"
 }
 
+# @function sync_intros_from_manifest
+# @intent Synchronize generic intros in agent-voice-map.csv with displayNames from agent-manifest.csv
+# @why Until BMAD PR 987 merges, CSV has generic "Hello! Ready to help with the discussion." intros
+# @param None (operates on .bmad/_cfg files)
+# @returns 0 on success, 1 on error
+# @exitcode 0 on success, 1 if files missing or sync fails
+# @sideeffects Updates agent-voice-map.csv, creates .backup on first run, writes .bmad-csv-sync-timestamp
+# @edgecases Only updates EXACT match of generic intro, preserves all custom intros, idempotent
+# @calledby get_agent_intro (lazy trigger on manifest change)
+# @calls grep, cut, sed, stat, date
+# @version 2.17.4 - Safe CSV sync utility that preserves user customizations
+sync_intros_from_manifest() {
+    # Locate the CSV and manifest files
+    local bmad_voice_map=""
+    local manifest_file=""
+
+    if [[ -f ".bmad/_cfg/agent-voice-map.csv" ]]; then
+        bmad_voice_map=".bmad/_cfg/agent-voice-map.csv"
+    elif [[ -f "bmad/_cfg/agent-voice-map.csv" ]]; then
+        bmad_voice_map="bmad/_cfg/agent-voice-map.csv"
+    fi
+
+    if [[ -f ".bmad/_cfg/agent-manifest.csv" ]]; then
+        manifest_file=".bmad/_cfg/agent-manifest.csv"
+    elif [[ -f "bmad/_cfg/agent-manifest.csv" ]]; then
+        manifest_file="bmad/_cfg/agent-manifest.csv"
+    fi
+
+    # Both files must exist for sync to work
+    if [[ -z "$bmad_voice_map" ]] || [[ -z "$manifest_file" ]]; then
+        return 1
+    fi
+
+    # Check if sync is needed based on manifest timestamp
+    local timestamp_file="${bmad_voice_map%/*}/.bmad-csv-sync-timestamp"
+    local manifest_mtime=$(stat -c '%Y' "$manifest_file" 2>/dev/null || stat -f '%m' "$manifest_file" 2>/dev/null)
+
+    if [[ -f "$timestamp_file" ]]; then
+        local last_sync=$(cat "$timestamp_file" 2>/dev/null || echo "0")
+        if [[ "$manifest_mtime" -le "$last_sync" ]]; then
+            # Manifest hasn't changed since last sync
+            return 0
+        fi
+    fi
+
+    # Create backup on first sync
+    if [[ ! -f "${bmad_voice_map}.backup" ]]; then
+        cp "$bmad_voice_map" "${bmad_voice_map}.backup"
+    fi
+
+    # Build a temp file with synced intros
+    local temp_file="${bmad_voice_map}.tmp"
+    local generic_intro="Hello! Ready to help with the discussion."
+
+    # Read header
+    head -n 1 "$bmad_voice_map" > "$temp_file"
+
+    # Process each agent entry
+    tail -n +2 "$bmad_voice_map" | while IFS=, read -r agent voice intro; do
+        # Remove quotes from intro
+        intro=$(echo "$intro" | sed 's/^"//;s/"$//')
+
+        # Only update if intro is the exact generic placeholder
+        if [[ "$intro" == "$generic_intro" ]]; then
+            # Look up displayName and title from manifest using awk for proper CSV parsing
+            # CSV format: name,displayName,title,icon,role,...
+            local manifest_data=$(grep "^\"*${agent}\"*," "$manifest_file" | awk -F'","' '{
+                gsub(/^"/, "", $2);
+                gsub(/"$/, "", $3);
+                print $2 "|" $3
+            }')
+
+            local display_name=$(echo "$manifest_data" | cut -d'|' -f1)
+            local title=$(echo "$manifest_data" | cut -d'|' -f2)
+
+            if [[ -n "$display_name" ]] && [[ -n "$title" ]]; then
+                # Generate intro like PR 987: "Hi! I'm [Name], your [Title]."
+                intro="Hi! I'm ${display_name}, your ${title}."
+            elif [[ -n "$display_name" ]]; then
+                # Fallback if title missing
+                intro="${display_name} here"
+            fi
+        fi
+
+        # Write the line (preserving custom intros, updating generic ones)
+        echo "${agent},${voice},\"${intro}\""
+    done >> "$temp_file"
+
+    # Replace original with synced version
+    mv "$temp_file" "$bmad_voice_map"
+
+    # Update timestamp
+    echo "$manifest_mtime" > "$timestamp_file"
+
+    return 0
+}
+
 # @function get_agent_intro
 # @intent Retrieve intro text for BMAD agent (spoken before their message)
 # @why Helps users identify which agent is speaking in party mode
 # @param $1 {string} agent_id - BMAD agent identifier
 # @returns Echoes intro text to stdout, empty string if not configured
 # @exitcode Always 0
-# @sideeffects None
-# @edgecases Returns empty string if plugin file missing, parses column 3 of markdown table
+# @sideeffects Triggers CSV sync on first call or manifest change
+# @edgecases Returns empty string if plugin file missing, parses column 3 of CSV or markdown table
 # @calledby bmad-speak.sh for agent identification in party mode
-# @calls grep, awk, sed
-# @version 2.1.0 - New function for customizable agent introductions
+# @calls sync_intros_from_manifest, grep, awk, sed, cut
+# @version 2.2.1 - Added lazy CSV sync trigger
 get_agent_intro() {
     local agent_id="$1"
 
+    # Check for BMAD v6 CSV file first (preferred, loose coupling)
+    # If this exists, use it directly without requiring plugin enable flag
+    # Support both .bmad (standard) and bmad (alternative) paths
+    local bmad_voice_map=""
+    if [[ -f ".bmad/_cfg/agent-voice-map.csv" ]]; then
+        bmad_voice_map=".bmad/_cfg/agent-voice-map.csv"
+    elif [[ -f "bmad/_cfg/agent-voice-map.csv" ]]; then
+        bmad_voice_map="bmad/_cfg/agent-voice-map.csv"
+    fi
+
+    # Lazy trigger: sync intros from manifest if needed
+    if [[ -n "$bmad_voice_map" ]]; then
+        sync_intros_from_manifest
+    fi
+
+    if [[ -n "$bmad_voice_map" ]]; then
+        # Read from BMAD's standard _cfg directory
+        # CSV format: agent,voice,intro
+        # Use awk to properly handle quoted CSV fields (intro may contain commas)
+        local intro=$(grep "^$agent_id," "$bmad_voice_map" | awk -F',' '{
+            # Extract field 3 onwards (intro may span multiple comma-separated parts)
+            intro = $3;
+            for (i = 4; i <= NF; i++) {
+                intro = intro "," $i;
+            }
+            gsub(/^"/, "", intro);
+            gsub(/"$/, "", intro);
+            print intro;
+        }')
+
+        # If intro is empty or generic, fall back to agent display name from manifest
+        if [[ -z "$intro" ]] || [[ "$intro" == "Hello! Ready to help with the discussion." ]]; then
+            # Try to get display name from agent-manifest.csv
+            local manifest_file=""
+            if [[ -f ".bmad/_cfg/agent-manifest.csv" ]]; then
+                manifest_file=".bmad/_cfg/agent-manifest.csv"
+            elif [[ -f "bmad/_cfg/agent-manifest.csv" ]]; then
+                manifest_file="bmad/_cfg/agent-manifest.csv"
+            fi
+
+            if [[ -n "$manifest_file" ]]; then
+                # Extract displayName (column 2) where name (column 1) matches agent_id
+                # CSV format: name,displayName,title,icon,role,...
+                local display_name=$(grep "^\"*${agent_id}\"*," "$manifest_file" | cut -d',' -f2 | sed 's/^"//;s/"$//')
+                if [[ -n "$display_name" ]]; then
+                    intro="$display_name here"
+                fi
+            fi
+        fi
+
+        # If we got an intro, return it
+        if [[ -n "$intro" ]]; then
+            echo "$intro"
+            return
+        fi
+        # Otherwise fall through to hardcoded defaults below
+    fi
+
+    # Hardcoded default intro mappings (final fallback)
+    # These match the BMAD-METHOD agent display names for consistency
+    case "$agent_id" in
+        bmad-master)
+            echo "BMad Master here"
+            return
+            ;;
+        analyst)
+            echo "Mary here"
+            return
+            ;;
+        architect)
+            echo "Winston here"
+            return
+            ;;
+        dev)
+            echo "Amelia here"
+            return
+            ;;
+        pm)
+            echo "John here"
+            return
+            ;;
+        quick-flow-solo-dev)
+            echo "Barry here"
+            return
+            ;;
+        sm)
+            echo "Bob here"
+            return
+            ;;
+        tea)
+            echo "Murat here"
+            return
+            ;;
+        tech-writer)
+            echo "Paige here"
+            return
+            ;;
+        ux-designer)
+            echo "Sally here"
+            return
+            ;;
+        frame-expert)
+            echo "Frame Expert here"
+            return
+            ;;
+    esac
+
+    # Fallback to legacy markdown config file
     if [[ ! -f "$VOICE_CONFIG_FILE" ]]; then
         echo ""
         return
@@ -490,7 +749,7 @@ disable_plugin() {
 # @edgecases Parses markdown table format, skips header and separator rows
 # @calledby enable_plugin, show_status, main command dispatcher with "list"
 # @calls grep, sed, echo
-# @version 2.1.0 - Now provider-aware: shows ElevenLabs or Piper voices based on active provider
+# @version 2.1.0 - Now provider-aware: shows Piper or macOS voices based on active provider
 list_mappings() {
     if [[ ! -f "$VOICE_CONFIG_FILE" ]]; then
         echo "❌ Plugin file not found: $VOICE_CONFIG_FILE"
@@ -505,7 +764,7 @@ list_mappings() {
         provider_file="$HOME/.claude/tts-provider.txt"
     fi
 
-    local active_provider="elevenlabs"  # default
+    local active_provider="piper"  # default
     if [[ -n "$provider_file" ]] && [[ -f "$provider_file" ]]; then
         active_provider=$(cat "$provider_file")
     fi
@@ -514,11 +773,11 @@ list_mappings() {
     echo "📊 BMAD Agent Voice Mappings (Provider: $active_provider):"
     echo ""
 
-    # Table: Agent ID | Agent Name | Intro | ElevenLabs Voice | Piper Voice | Personality
-    # AWK columns: $1=empty | $2=ID | $3=Name | $4=Intro | $5=ElevenLabs | $6=Piper | $7=Personality
-    local voice_column=5  # Default to ElevenLabs (AWK column 5)
+    # Table: Agent ID | Agent Name | Intro | Piper Voice | macOS Voice | Personality
+    # AWK columns: $1=empty | $2=ID | $3=Name | $4=Intro | $5=Piper | $6=macOS | $7=Personality
+    local voice_column=6  # Default to macOS (AWK column 6)
     if [[ "$active_provider" == "piper" ]]; then
-        voice_column=6  # Use Piper (AWK column 6)
+        voice_column=5  # Use Piper (AWK column 5)
     fi
 
     grep "^| " "$VOICE_CONFIG_FILE" | grep -v "Agent ID" | grep -v "^|---" | \
