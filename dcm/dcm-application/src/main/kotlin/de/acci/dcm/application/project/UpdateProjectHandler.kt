@@ -194,6 +194,8 @@ public class UpdateProjectHandler(
                 description = command.description,
                 metadata = metadata
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IllegalStateException) {
             logger.debug(e) {
                 "Update failed: projectId=${command.projectId.value}, " +
@@ -201,6 +203,14 @@ public class UpdateProjectHandler(
             }
             return UpdateProjectError.ProjectArchived(
                 projectId = command.projectId
+            ).failure()
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Unexpected error during project update: projectId=${command.projectId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return UpdateProjectError.PersistenceFailure(
+                message = "Failed to update project: ${e.message}"
             ).failure()
         }
 

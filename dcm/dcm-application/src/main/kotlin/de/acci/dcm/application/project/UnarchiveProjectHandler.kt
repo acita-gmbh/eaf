@@ -158,6 +158,8 @@ public class UnarchiveProjectHandler(
         // 7. Perform unarchive
         try {
             aggregate.unarchive(metadata)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: IllegalStateException) {
             logger.debug(e) {
                 "Unarchive failed: projectId=${command.projectId.value}, " +
@@ -165,6 +167,14 @@ public class UnarchiveProjectHandler(
             }
             return UnarchiveProjectError.NotArchived(
                 projectId = command.projectId
+            ).failure()
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Failed to unarchive project: projectId=${command.projectId.value}, " +
+                    "correlationId=${correlationId.value}"
+            }
+            return UnarchiveProjectError.PersistenceFailure(
+                message = "Failed to unarchive project: ${e.message}"
             ).failure()
         }
 
